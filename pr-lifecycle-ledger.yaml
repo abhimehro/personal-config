@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 44
+ledger_revision: 45
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -15728,25 +15728,28 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge sticky pathlib DoS #788 from Stage 1. Canonical keeper; leave open for Stage 3/human.'
-  next_action: 'Stage 3: reconcile MERGEABLE-green keeper #788 (str(filepath) null-byte check + pathlib test). Do not close losers already closed. Expires 2026-09-10T22:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged #788.'
+  next_action: 'None. Squash-merged to main at 3ceee784c01b2fad8cedb8fd18c24cd954d4e891. Jules REVIEW_SECURITY exception Batch 5; not a standing merge rule.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/788
+  - https://github.com/abhimehro/Seatek_Analysis/commit/3ceee784c01b2fad8cedb8fd18c24cd954d4e891
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260903-seatekanalys-788-h
-  revision: 1
-  updated_at_utc: '2026-09-03T22:20:00Z'
+  - evt-s3-20260903-seatekanalys-788-a
+  - evt-s3-20260903-seatekanalys-788-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:35:00Z'
 - key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd
   repository: abhimehro/Seatek_Analysis
   pr: 800
@@ -30278,6 +30281,40 @@ events:
   created_at_utc: '2026-09-03T22:33:00Z'
   acknowledged_at_utc: null
   reason: 'Abhi salvage exception (same as #1550/#799): marked ready then squash-merged #800. GHAS failed, not required. Merge 122b0f3de275c701dd34026668d83cee8cf368ce. Closed #791 superseded. #643 untouched.'
+- event_id: evt-s3-20260903-seatekanalys-788-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260903-seatekanalys-788-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9:evt-s3-20260903-seatekanalys-788-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-03T22:35:00Z'
+  acknowledged_at_utc: '2026-09-03T22:35:00Z'
+  reason: Stage 3 accepted Stage 1 REVIEW_SECURITY pathlib DoS keeper handoff before Abhi-authorized bounded completion of #788.
+- event_id: evt-s3-20260903-seatekanalys-788-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9:evt-s3-20260903-seatekanalys-788-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:35:00Z'
+  acknowledged_at_utc: null
+  reason: Jules REVIEW_SECURITY exception Batch 5; squash-merged GITHUB_SQUASH to main at 3ceee784c01b2fad8cedb8fd18c24cd954d4e891. Not a standing merge rule. CLEAN after #800; no update-branch.
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
