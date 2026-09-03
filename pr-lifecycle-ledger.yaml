@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 46
+ledger_revision: 47
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -4983,26 +4983,29 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition:
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge Sentinel/security PRs without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster; do not squash-merge overlapping security
-    patches.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged #709.'
+  next_action: 'None. Squash-merged to main at 143944f9824b483370d969271ad780905a79138d. Jules REVIEW_SECURITY exception Batch 6; not a standing merge rule.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/709
+  - https://github.com/abhimehro/Seatek_Analysis/commit/143944f9824b483370d969271ad780905a79138d
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
   changed_paths:
   - Series_27/Analysis/outlier_analysis_series27.py
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260822-seatekanalys-709-h
-  revision: 1
-  updated_at_utc: '2026-08-22T08:10:00Z'
+  - evt-s3-20260903-seatekanalys-709-a
+  - evt-s3-20260903-seatekanalys-709-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:43:30Z'
+
 - key: abhimehro/Seatek_Analysis#707@a5aedcdf7530f92c5fa9777a3962917c7256947a
   repository: abhimehro/Seatek_Analysis
   pr: 707
@@ -32444,6 +32447,40 @@ events:
   acknowledged_at_utc:
   reason: 'Stage 2 Desk-assigned salvage draft #2148 from #2146 (Completion prompt line-break
     sync only; export/continuity remainder already on main). Original left open.'
+- event_id: evt-s3-20260903-seatekanalys-709-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#709@bdcc2af5cabdc06e4ddcba7dc0e70228a4c31b7e
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260822-seatekanalys-709-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#709@bdcc2af5cabdc06e4ddcba7dc0e70228a4c31b7e:evt-s3-20260903-seatekanalys-709-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-03T22:43:30Z'
+  acknowledged_at_utc: '2026-09-03T22:43:30Z'
+  reason: Stage 3 accepted Stage 1 REVIEW_SECURITY Sentinel #709 handoff before Abhi-authorized bounded completion.
+- event_id: evt-s3-20260903-seatekanalys-709-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#709@bdcc2af5cabdc06e4ddcba7dc0e70228a4c31b7e
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#709@bdcc2af5cabdc06e4ddcba7dc0e70228a4c31b7e:evt-s3-20260903-seatekanalys-709-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:43:30Z'
+  acknowledged_at_utc: null
+  reason: Jules REVIEW_SECURITY exception Batch 6; squash-merged GITHUB_SQUASH to main at 143944f9824b483370d969271ad780905a79138d. Not a standing merge rule. CLEAN after recent main; no update-branch.
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: 
