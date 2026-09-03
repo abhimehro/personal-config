@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 52
+ledger_revision: 53
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -16017,6 +16017,50 @@ items:
   - evt-s1-20260903-ctrld-sync-1232-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/repoprompt-ce#319@ea7a6588474e959dc722e708bbe1a4bf71ffa888
+  repository: abhimehro/repoprompt-ce
+  pr: 319
+  url: https://github.com/abhimehro/repoprompt-ce/pull/319
+  base_sha: 0dfe3782afaf7e9095b464748328a1530b77d955
+  head_sha: ea7a6588474e959dc722e708bbe1a4bf71ffa888
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: cursor
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged docs/templates PR #319. personal-config #2142 stays open.'
+  next_action: None. Squash-merged at 2e7ca8bfba0830f02ebd3738ec89501f859cf3b0.
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/319
+  - https://github.com/abhimehro/repoprompt-ce/commit/2e7ca8bfba0830f02ebd3738ec89501f859cf3b0
+  changed_paths:
+  - .github/ISSUE_TEMPLATE/bug_report.md
+  - .github/ISSUE_TEMPLATE/feature_request.md
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - README.md
+  - docs/open-source-readiness.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260903-repopromptc-319-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -30737,6 +30781,23 @@ events:
   created_at_utc: '2026-09-03T23:26:10Z'
   acknowledged_at_utc: null
   reason: Marked ready then squash-merged docs General issue template + Trunk vs app Python note. MERGEABLE CLEAN. Merge 70e835358bb9295da4a1386789c7647d7edf10e4.
+- event_id: evt-s1-20260903-repopromptc-319-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#319@ea7a6588474e959dc722e708bbe1a4bf71ffa888
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#319@ea7a6588474e959dc722e708bbe1a4bf71ffa888:evt-s1-20260903-repopromptc-319-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:29:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk HOLD_PLATFORM docs exception: marked ready then squash-merged CoC/templates/readiness 1.4.0. MERGEABLE CLEAN. Linux Swift/make ignored. Merge 2e7ca8bfba0830f02ebd3738ec89501f859cf3b0. #2142 untouched.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
