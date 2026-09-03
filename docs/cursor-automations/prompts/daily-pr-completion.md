@@ -38,7 +38,8 @@ state-changing actions. An approval, merge submission, closure, comment, branch
 create/delete, failed mutation, and retry each count as one state-changing
 action. Stop before exceeding the cap.
 
-Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to Stage 1** with an executable `next_action`. Do **not** bounce MERGEABLE green
+Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to Stage 1**
+with an executable `next_action`. Do **not** bounce MERGEABLE green
 BOT that Stage 1 overflowed this UTC day: spend the five completion actions on
 those overflow merges, elapsed closes, GitHub-green routine merges, and salvage
 drafts that pass an independent predicate re-read. Bouncing overflow back to a
