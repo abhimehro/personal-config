@@ -346,5 +346,7 @@ def validate_prompt(content: str, name: str) -> None:
         "Dashboard-referenced MCP set",
         "ledger, run records, and lessons",
     }
-    if any(marker not in content for marker in required):
+    # NOTE: reviewed prompts may soft-wrap continuity markers across lines.
+    normalized = " ".join(content.split())
+    if any(marker not in normalized for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
