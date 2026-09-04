@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 56
+ledger_revision: 57
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -191,24 +191,26 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge floating workflow tags; prefer SHA-pinned twins.
-  next_action: Keep HOLD until the workflow pin is SHA-locked or a human clears the contract.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1170.'
+  next_action: None. Squash-merged at 76b9a7f4fc5ade23c585aa1b2b492c98324c12e8.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1170
+  - https://github.com/abhimehro/ctrld-sync/commit/76b9a7f4fc5ade23c585aa1b2b492c98324c12e8
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260819-ctrld-sync-1170-h
-  revision: 1
-  updated_at_utc: '2026-08-19T22:45:00Z'
+  - evt-s1-20260904-ctrld-sync-1170-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1136@3c61628cfc0a0825e2bd959b2b71eda9e6007432
   repository: abhimehro/ctrld-sync
   pr: 1136
@@ -8114,25 +8116,27 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge uv.lock bumps.
-  next_action: 'Stage 3: HOLD_CONTRACT uv.lock. Do not merge this run (0fb). Expires 2026-08-30T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1209.'
+  next_action: None. Squash-merged at 800df0b89dc371760bf84382f7c43dd16dc50676.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1209
   - https://api.github.com/repos/abhimehro/ctrld-sync/rulesets/11617361
+  - https://github.com/abhimehro/ctrld-sync/commit/800df0b89dc371760bf84382f7c43dd16dc50676
   changed_paths:
   - uv.lock
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260823-ctrldsync-1209-h
-  revision: 1
-  updated_at_utc: '2026-08-23T19:20:00Z'
+  - evt-s1-20260904-ctrld-sync-1209-old-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1519@6fb1456c8c147968a7f596d92741d6b3da1e7b7a
   repository: abhimehro/email-security-pipeline
   pr: 1519
@@ -16560,6 +16564,79 @@ items:
     mutations: 1
   handoffs:
   - evt-s1-20260904-hydrographve-565-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/ctrld-sync#1209@653f95a310fe553884c17588a12c57f9d95684c2
+  repository: abhimehro/ctrld-sync
+  pr: 1209
+  url: https://github.com/abhimehro/ctrld-sync/pull/1209
+  base_sha: 041db659f8681d4b4cb19e061699e15a50b9789a
+  head_sha: 653f95a310fe553884c17588a12c57f9d95684c2
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance: &id007
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1209.'
+  next_action: None. Squash-merged at 800df0b89dc371760bf84382f7c43dd16dc50676.
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1209
+  - https://github.com/abhimehro/ctrld-sync/commit/800df0b89dc371760bf84382f7c43dd16dc50676
+  changed_paths:
+  - uv.lock
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260904-ctrld-sync-1209-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/series_correction_project_updated#433@d583feb1b379fb86409c30c2ef876873f97b14d7
+  repository: abhimehro/series_correction_project_updated
+  pr: 433
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/433
+  base_sha: a6689eb58fda978c7a158daf3bd8f561094336b5
+  head_sha: d583feb1b379fb86409c30c2ef876873f97b14d7
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance: *id007
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #433.'
+  next_action: None. Squash-merged at 0f60813d101fe7327c46edff2f1b7b3ffc7380a7.
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/433
+  - https://github.com/abhimehro/series_correction_project_updated/commit/0f60813d101fe7327c46edff2f1b7b3ffc7380a7
+  changed_paths:
+  - scripts/requirements-dev.txt
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260904-seriescorre-433-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
 events:
@@ -31537,6 +31614,74 @@ events:
   created_at_utc: '2026-09-04T01:55:00Z'
   acknowledged_at_utc: null
   reason: 'Desk Dependabot CLEAN cluster 13: squash-merged scipy 1.18.0→1.18.1. MERGEABLE CLEAN. Merge 7bf40206794d79f60e807741e86e584ca9d0a8bf.'
+- event_id: evt-s1-20260904-ctrld-sync-1170-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1170@c8d37ef3d58f80387399c6debf5742596c808319
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1170@c8d37ef3d58f80387399c6debf5742596c808319:evt-s1-20260904-ctrld-sync-1170-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:50:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 14: squash-merged github/gh-aw 0.85.4→0.86.2. MERGEABLE CLEAN. Desk cleared prior HOLD_CONTRACT. Merge 76b9a7f4fc5ade23c585aa1b2b492c98324c12e8.'
+- event_id: evt-s1-20260904-ctrld-sync-1209-old-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1209@7a80810d8d75fd0ff7135ce45d641781a25e5ae6
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1209@7a80810d8d75fd0ff7135ce45d641781a25e5ae6:evt-s1-20260904-ctrld-sync-1209-old-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:50:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 14: prior HOLD_CONTRACT tip superseded; PR squash-merged at current head. Merge 800df0b89dc371760bf84382f7c43dd16dc50676.'
+- event_id: evt-s1-20260904-ctrld-sync-1209-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1209@653f95a310fe553884c17588a12c57f9d95684c2
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1209@653f95a310fe553884c17588a12c57f9d95684c2:evt-s1-20260904-ctrld-sync-1209-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:50:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 14: squash-merged types-pyyaml 6.0.12.20250915→6.0.12.20260815. MERGEABLE CLEAN. Merge 800df0b89dc371760bf84382f7c43dd16dc50676.'
+- event_id: evt-s1-20260904-seriescorre-433-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#433@d583feb1b379fb86409c30c2ef876873f97b14d7
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#433@d583feb1b379fb86409c30c2ef876873f97b14d7:evt-s1-20260904-seriescorre-433-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:50:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 14: squash-merged pylint 4.0.7→4.0.8. MERGEABLE CLEAN. Merge 0f60813d101fe7327c46edff2f1b7b3ffc7380a7.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
