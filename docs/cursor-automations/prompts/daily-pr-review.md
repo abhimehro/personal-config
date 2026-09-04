@@ -146,3 +146,40 @@ stage's report. Push later stages onto this branch instead of opening siblings.
 pass, **after** product mutations. Continuity read is today's lineage head, then
 yesterday's if open, then `main`. Notion is the human plane (packets); do not
 duplicate run records there.
+
+2026-09-03 drain lessons (Grok HITL burndown, ~154 to 68 open). Apply these
+without relaxing security or HUMAN boundaries.
+- Dense Dependabot clusters. Prefer MERGEABLE CLEAN Dependabot patch/minor
+  action and library bumps in one run, aiming several merges per session up
+  to the 40 product-mutation cap. For same-batch siblings that touch the same
+  workflow path, update_pull_request_branch the later PR after the earlier
+  merge before squash-merge (observed: email #1561 then #1560).
+- Majors stay sticky. Do not autonomous-merge major bumps: actions/ai-inference
+  2 to 3, upload-sarif 3 to 4, OpenCV 5, pandas 3, mypy 2.x, large numpy
+  majors. Route them to Stage 3 / human. Patch/minor Dependabot bumps
+  (codescene 1.0.8 to 1.1.x, setup-r/renv patch, python-dotenv patch, gh-aw
+  setup minor) are routine when every other predicate passes.
+- Docs-only HOLD_PLATFORM. Linux Swift / make guardrails remains
+  salvage-ineligible, but a docs/templates-only BOT PR that is otherwise
+  MERGEABLE CLEAN may Stage 1 merge while ignoring that platform check
+  (example: repoprompt-ce CoC/templates). Do not extend this to product code.
+- GHAS / github-advanced-security infra misses. When CodeQL/GHAS is NEUTRAL
+  or fails as model/infra noise with no actionable finding, do not treat that
+  alone as a merge block for otherwise routine BOT work (maintainer pattern
+  from the 2026-09-03 HITL). Real findings still block.
+- Workflow consolidate sticky. personal-config #2142-class and sibling
+  consolidate-workflow-automation PRs stay Stage 3 / human, not routine.
+- Maintainer-login bot identity. Jules/Bolt/Palette/Sentinel under the
+  abhimehro login still need two or more identity signals; bare HUMAN-looking
+  titles stay HUMAN. The Palette/Bolt/Sentinel pile on personal-config is
+  mostly HUMAN for autonomous purposes, so do not merge it as
+  Dependabot-class routine.
+- Calibration. Ledger calibration.status is APPROVED (7/7). Never rewrite
+  calibration to REPORT_ONLY for a volume or prompt paste. If the only
+  validation failure is a stale calibration policy and live Stage 3 is the
+  completion variant with APPROVED, leave calibration alone and continue.
+  The stale-policy reset-to-REPORT_ONLY path is retired while completion is
+  live.
+- Throughput also FAILs if this run only merged docs-lineage / bookkeeping
+  while MERGEABLE green Dependabot patch/minor PRs remained with unused
+  product slots.
