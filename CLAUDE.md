@@ -85,3 +85,20 @@ relationships, 286 execution flows).
 | Work in the Cluster_0 area (3 symbols)       | `.claude/skills/gitnexus-area-cluster-0/SKILL.md`     |
 
 <!-- gitnexus:end -->
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues via the `gh` CLI (Linear syncs downstream
+from GitHub). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage roles, label strings equal to role names; the pre-existing
+`wontfix` label is reused as-is. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root, created
+lazily by `/domain-modeling`. See `docs/agents/domain.md`.
