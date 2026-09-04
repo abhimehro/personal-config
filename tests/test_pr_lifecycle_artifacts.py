@@ -329,7 +329,9 @@ class TestStage1ThroughputGate(unittest.TestCase):
 
     def test_completion_prompt_bounce_back(self):
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("back to Stage 1", completion)
+        # NOTE: completion prompt may soft-wrap "back to" / "Stage 1" across lines.
+        normalized = completion.replace("\n", " ")
+        self.assertIn("back to Stage 1", normalized)
         self.assertIn("canonical-pick", completion)
 
     def test_lifecycle_contract_sha_match_exception(self):
