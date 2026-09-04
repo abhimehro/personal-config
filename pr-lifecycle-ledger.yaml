@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 55
+ledger_revision: 56
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -16453,6 +16453,115 @@ items:
   - evt-s1-20260903-seatekanalys-784-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e
+  repository: abhimehro/ctrld-sync
+  pr: 1215
+  url: https://github.com/abhimehro/ctrld-sync/pull/1215
+  base_sha: e1105e03d332cfa17518e306859ab96196944f32
+  head_sha: 2f9751e1ce26d41c40903816d197e56e7a53ae3e
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance: &id006
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1215.'
+  next_action: None. Squash-merged at 0cba79d22e17bcbf8edcc0f0e425da1c22a14638.
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1215
+  - https://github.com/abhimehro/ctrld-sync/commit/0cba79d22e17bcbf8edcc0f0e425da1c22a14638
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260904-ctrld-sync-1215-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/ctrld-sync#1221@33603a68051d6e93ea75330deb1574b0bc591fe8
+  repository: abhimehro/ctrld-sync
+  pr: 1221
+  url: https://github.com/abhimehro/ctrld-sync/pull/1221
+  base_sha: 041db659f8681d4b4cb19e061699e15a50b9789a
+  head_sha: 33603a68051d6e93ea75330deb1574b0bc591fe8
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance: *id006
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1221.'
+  next_action: None. Squash-merged at 54a5a66e681b9f557e9330e714c06d95da9888bb.
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1221
+  - https://github.com/abhimehro/ctrld-sync/commit/54a5a66e681b9f557e9330e714c06d95da9888bb
+  changed_paths:
+  - uv.lock
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260904-ctrld-sync-1221-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 565
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
+  base_sha: cddb8a3ac786e184802629bda0adb3ec728338cb
+  head_sha: 69e6dd5d24d266d68bf88b53876c0c62d2139ebb
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance: *id006
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #565.'
+  next_action: None. Squash-merged at 7bf40206794d79f60e807741e86e584ca9d0a8bf.
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/7bf40206794d79f60e807741e86e584ca9d0a8bf
+  changed_paths:
+  - poetry.lock
+  - pyproject.toml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260904-hydrographve-565-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -31377,6 +31486,57 @@ events:
   created_at_utc: '2026-09-03T23:42:00Z'
   acknowledged_at_utc: null
   reason: 'Desk Dependabot CLEAN cluster: squash-merged r-lib/actions/setup-r 2.12.1→2.13.0. MERGEABLE CLEAN. Merge 1c770c5b0359546394adb95c0110784b75bdccbe.'
+- event_id: evt-s1-20260904-ctrld-sync-1215-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e:evt-s1-20260904-ctrld-sync-1215-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged github/gh-aw/actions/setup 0.86.2→0.87.3. MERGEABLE CLEAN. Merge 0cba79d22e17bcbf8edcc0f0e425da1c22a14638.'
+- event_id: evt-s1-20260904-ctrld-sync-1221-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1221@33603a68051d6e93ea75330deb1574b0bc591fe8
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1221@33603a68051d6e93ea75330deb1574b0bc591fe8:evt-s1-20260904-ctrld-sync-1221-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged ruff 0.16.2→0.16.5. MERGEABLE CLEAN. Merge 54a5a66e681b9f557e9330e714c06d95da9888bb.'
+- event_id: evt-s1-20260904-hydrographve-565-t
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb:evt-s1-20260904-hydrographve-565-t
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged scipy 1.18.0→1.18.1. MERGEABLE CLEAN. Merge 7bf40206794d79f60e807741e86e584ca9d0a8bf.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
