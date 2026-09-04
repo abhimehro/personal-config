@@ -62,6 +62,10 @@ the 20-slot cap):**
 5. Record the new dashboard fingerprints in the next runtime-ledger event. Do
    **not** reset calibration to `REPORT_ONLY` for this volume change.
 
+- After the 2026-09-03 drain: paste prompts that include the 2026-09-03 drain
+  lessons addendum; never reset calibration to REPORT_ONLY while completion is
+  live.
+
 Monitor: `python3 scripts/pr_lifecycle_pipeline_health.py <fetched-ledger>`
 (schema + runtime records; `stage2_work_item_count` is complete unexpired WIs;
 empty required strings and owned items without a usable WI do not suppress
