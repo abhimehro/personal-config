@@ -80,3 +80,16 @@ missed it). Push to that branch; do not open a sibling docs PR. Write only
 `tasks/salvage-session-reports.md`, optional `tasks/pr-salvage-YYYY-MM-DD*.md`,
 and EOF lessons. Do not edit `AGENTS.md` or `tasks/todo.md`. Notion stays the
 human packet plane.
+
+2026-09-03 drain lessons.
+- Queued work items first. Before any other salvage, process complete
+  unexpired stage2_work_items already on the ledger. As of CAS 55 these
+  include (expire 2026-09-07T05:20:00Z): series #390 spreadsheet_safety;
+  email #1512 nlp_analyzer Aho-Corasick; ctrld #1207 PRNG jitter. An expiry
+  miss is a failed run.
+- Do not invent recoveries for mega CI_INFRA (Seatek #643 venv deletion). The
+  human wants a new gitignore-only draft, not reuse of the mega-diff.
+- HOLD_PLATFORM Swift/make remains non-salvage-eligible. The docs-only Stage 1
+  merge exception does not create a Stage 2 salvage path for Swift.
+- Ready landing to draft. After GitHub returns a PR number, re-read isDraft
+  and convert a ready landing back to draft before handoff.

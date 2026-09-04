@@ -91,3 +91,7 @@ or `tasks/todo.md`. Notion stays packets for the human; git run records stay for
 agents. Do not enable bounded completion until the ledger’s calibration record
 is `APPROVED` with a dated human approver, policy revision, scope, evidence, and
 rollback conditions.
+
+2026-09-03 status banner. This calibration variant must remain
+Dashboard-disabled while Stage 3 completion is live. Do not paste-enable.
+Kept only for rollback reference.
