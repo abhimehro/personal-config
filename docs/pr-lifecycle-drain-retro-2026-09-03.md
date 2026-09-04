@@ -4,9 +4,9 @@
 
 Grok Bot HITL three-stage pipeline (PR Desk + Stage 1/2/3) drained open PRs
 across the seven configured repos from ~154 to 68 (CAS ledger revision 55).
-Cursor daily Automations stayed paused during the drain; weeklies may remain
-on for gap-fill. Stage 3 calibration remains disabled; completion remains the
-live Stage 3 variant (APPROVED 7/7).
+Cursor daily Automations stayed paused during the drain; weeklies may remain on
+for gap-fill. Stage 3 calibration remains disabled; completion remains the live
+Stage 3 variant (APPROVED 7/7).
 
 ## What unblocked drain
 
@@ -21,14 +21,14 @@ live Stage 3 variant (APPROVED 7/7).
 
 ## What still sticks
 
-| Class | Examples | Owner |
-| --- | --- | --- |
-| Workflow consolidate | pc #2142, email #1527 | human / Stage 3 packet |
-| Major deps | ai-inference 2-3, upload-sarif 3-4, OpenCV 5, pandas 3, mypy 2 | human |
-| REVIEW_SECURITY salvage | ctrld #1195 | Desk exception or packet |
-| Open Notion packets | Hydro #543 vs #535; Seatek #708 | human |
-| Mega CI_INFRA | Seatek #643 venv deletion | new gitignore-only draft |
-| HUMAN Palette/Bolt/Sentinel pile | many personal-config MERGABLE under abhimehro | not Stage 1 BOT routine |
+| Class                            | Examples                                                       | Owner                    |
+| -------------------------------- | -------------------------------------------------------------- | ------------------------ |
+| Workflow consolidate             | pc #2142, email #1527                                          | human / Stage 3 packet   |
+| Major deps                       | ai-inference 2-3, upload-sarif 3-4, OpenCV 5, pandas 3, mypy 2 | human                    |
+| REVIEW_SECURITY salvage          | ctrld #1195                                                    | Desk exception or packet |
+| Open Notion packets              | Hydro #543 vs #535; Seatek #708                                | human                    |
+| Mega CI_INFRA                    | Seatek #643 venv deletion                                      | new gitignore-only draft |
+| HUMAN Palette/Bolt/Sentinel pile | many personal-config MERGABLE under abhimehro                  | not Stage 1 BOT routine  |
 
 ## Stage 2 queue (process before 2026-09-07T05:20:00Z)
 
@@ -38,9 +38,9 @@ live Stage 3 variant (APPROVED 7/7).
 
 ## Resume checklist (Cursor Dashboard)
 
-- Paste updated `docs/cursor-automations/prompts/daily-pr-review.md` into
-  Stage 1 `77c168e0-7f6b-42de-bad6-da4e4e640b79` (no enablement toggle
-  required if already set).
+- Paste updated `docs/cursor-automations/prompts/daily-pr-review.md` into Stage
+  1 `77c168e0-7f6b-42de-bad6-da4e4e640b79` (no enablement toggle required if
+  already set).
 - Paste `daily-pr-salvage.md` into Stage 2
   `3e537981-04a6-456f-89a3-272d9d5fddd7`.
 - Paste `daily-pr-completion.md` into Stage 3 completion
@@ -53,6 +53,5 @@ live Stage 3 variant (APPROVED 7/7).
 ## Prompt source of truth
 
 Updated paste bodies live in this change under
-`docs/cursor-automations/prompts/`. Spec docs (`automated-pr-*-agent.md`)
-remain normative; prompt files are Dashboard paste records plus the
-2026-09-03 addenda.
+`docs/cursor-automations/prompts/`. Spec docs (`automated-pr-*-agent.md`) remain
+normative; prompt files are Dashboard paste records plus the 2026-09-03 addenda.
