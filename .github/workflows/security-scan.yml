@@ -65,7 +65,7 @@ jobs:
       # the same commit after checkout and TruffleHog exits 1 ("BASE and HEAD
       # commits are the same"). Let the action use the GitHub event range.
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@cc1fe982afc515d2991365ce8d4d0dd07170fcad # v3.97.2
+        uses: trufflesecurity/trufflehog@363923b901c911a9164f50b6c423f47c15372b1c # v3.97.4
         with:
           path: ./
           filter: files
