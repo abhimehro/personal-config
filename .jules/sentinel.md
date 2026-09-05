@@ -824,3 +824,7 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+## 2026-08-19 - Command Injection Risk via eval in Trap Restoration
+**Vulnerability:** Command Injection (CWE-78 variant). Found that some scripts using `eval` to restore trap configurations and shell states (e.g. `eval "$previous_int_trap"`) were vulnerable to command injection.
+**Learning:** Shell-assigned variable expansions inside `eval` can introduce command injection if an attacker previously influenced the environment's `trap` commands or state variables. Using `eval` is unnecessary because bash can directly execute the command string stored in a variable by calling it directly.
+**Prevention:** Avoid using `eval` for restoring trap commands or executing shell commands stored in variables. Instead, directly execute the unquoted variable (e.g. `$previous_int_trap` or `$_nullglob_state`).
