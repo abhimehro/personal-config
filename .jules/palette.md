@@ -530,3 +530,8 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+
+## 2026-08-27 - Use <meter> for numeric scalar metrics
+
+**Learning:** Displaying raw percentages or numerical counts in text (e.g., "Rain: 30%") lacks visual context and requires users to parse the text to gauge its relative impact, degrading accessibility.
+**Action:** When generating HTML reports with numeric scalar metrics (like counts, scores, or percentages), use native HTML5 `<meter>` elements with appropriate `min`, `max`, `low`, `high`, `optimum`, and `aria-label` attributes to provide semantic and visual context.
