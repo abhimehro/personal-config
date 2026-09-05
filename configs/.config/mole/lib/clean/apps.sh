@@ -4,6 +4,16 @@ set -euo pipefail
 
 readonly ORPHAN_AGE_THRESHOLD=${ORPHAN_AGE_THRESHOLD:-${MOLE_ORPHAN_AGE_DAYS:-30}}
 readonly CLAUDE_VM_ORPHAN_AGE_THRESHOLD=${MOLE_CLAUDE_VM_ORPHAN_AGE_DAYS:-7}
+
+_restore_shopt_state() {
+	local state="$1"
+	local expected_option="$2"
+	local -a parts=()
+	read -r -a parts <<<"$state"
+	if [[ ${#parts[@]} -eq 3 && ${parts[0]} == "shopt" && ( ${parts[1]} == "-s" || ${parts[1]} == "-u" ) && ${parts[2]} == "$expected_option" ]]; then
+		shopt "${parts[1]}" "${parts[2]}"
+	fi
+}
 # Args: $1=target_dir, $2=label
 clean_ds_store_tree() {
 	local target="$1"
@@ -403,7 +413,7 @@ clean_orphaned_app_data() {
 					fi
 				done
 			done
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+			_restore_shopt_state "$_nullglob_state" nullglob
 		fi
 	done
 	stop_section_spinner
@@ -855,7 +865,7 @@ clean_orphaned_container_stubs() {
 		done
 	done
 
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
+	_restore_shopt_state "$_ng_state" nullglob
 
 	if [[ $removed_count -gt 0 ]]; then
 		if [[ $DRY_RUN == "true" ]]; then
