@@ -14,6 +14,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_validation as validator  # noqa: E402
+from pr_lifecycle_ledger import validate_transition_table  # noqa: E402
 
 
 class TestPrLifecycleArtifacts(unittest.TestCase):
@@ -150,6 +151,16 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ledger = self.example()
         ledger["items"][0]["revision"] = 2
         self.assert_invalid(ledger, "projection revision disagrees")
+
+    def test_stage2_can_return_routine_results_to_stage1(self):
+        for state in ("STAGE2_QUEUED", "STAGE2_ACTIVE"):
+            validate_transition_table(
+                {
+                    "event_id": f"evt-test-{state.lower()}-stage1",
+                    "from_state": state,
+                    "to_state": "STAGE1_INTAKE",
+                }
+            )
 
     def test_acknowledgement_and_cancellation_do_not_increment_revision(self):
         validator.validate(self.write_ledger(self.example()))
@@ -324,12 +335,12 @@ class TestStage1ThroughputGate(unittest.TestCase):
     def test_completion_calibration_bounce_back(self):
         calibration = self._prompt("daily-pr-completion.calibration.md")
         self.assertIn("router", calibration)
-        self.assertIn("back to Stage 1", calibration)
+        self.assertIn("back to Stage 1", " ".join(calibration.split()))
         self.assertIn("file-collision", calibration)
 
     def test_completion_prompt_bounce_back(self):
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("back to Stage 1", completion)
+        self.assertIn("back to Stage 1", " ".join(completion.split()))
         self.assertIn("canonical-pick", completion)
 
     def test_lifecycle_contract_sha_match_exception(self):
