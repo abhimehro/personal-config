@@ -39,20 +39,28 @@ state-changing actions. An approval, merge submission, closure, comment, branch
 create/delete, failed mutation, and retry each count as one state-changing
 action. Stop before exceeding the cap.
 
-Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick, elapsed
-close-candidates that Stage 1 should close, and GitHub-green BOT items parked
-only as salvage `HOLD_PLATFORM` **back to Stage 1** with an executable
-`next_action`. Spend the five completion actions on qualified non-security BOT
-work Stage 1 overflowed: elapsed closes, GitHub-green routine merges, and
-salvage drafts that pass an independent predicate re-read. Do not packet
+Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to
+Stage 1** with an executable `next_action`. Do **not** bounce MERGEABLE green
+BOT that Stage 1 overflowed this UTC day: spend the five completion actions on
+those overflow merges, elapsed closes, GitHub-green routine merges, and salvage
+drafts that pass an independent predicate re-read. Bouncing overflow back to a
+full Stage 1 cap wastes a day and keeps the backlog near 200. Do not packet
 Jules/Bolt/Palette file-collision clusters.
+
+For salvage-eligible mechanical `HOLD_CONTRACT` / `HOLD_EVIDENCE` (unique-source
+rebase, wrap, lint, import, conflict markers; sticky paths empty or only
+`generated_output`), create a complete Stage 2 work item. Do not file
+WAITING_HUMAN with recover-via-Stage-2 advice unless five unexpired work items
+already exist. Sticky lockfile, workflow, auth, secrets, schema, and public-API
+`HOLD_CONTRACT` stay packets if irreducible.
 
 For each candidate, re-read GitHub API identity with the versioned identity
 policy, the registered repository merge method, required-check source, and
-immutable anchors immediately before every action. Never act on human, unknown,
-security-sensitive, `REVIEW_SECURITY`, `HOLD_CONTRACT`, `HOLD_PLATFORM`,
-`HOLD_CANONICAL`, or incomplete-audit items. Never make a recovery
-implementation: create a complete Stage 2 work item instead.
+immutable anchors immediately before every action. Never merge, close, or
+approve human, unknown, security-sensitive, `REVIEW_SECURITY`, sticky
+`HOLD_CONTRACT`, `HOLD_PLATFORM`, `HOLD_CANONICAL`, or incomplete-audit items.
+Never make a recovery implementation: create a complete Stage 2 work item
+instead.
 
 You may complete only qualified non-security bot work. A salvage draft must have
 matching anchors, one bounded scope, a complete Stage 2 provenance record
@@ -81,3 +89,23 @@ missed it). Do not open a sibling docs PR. Write only
 `tasks/pr-completion-YYYY-MM-DD*.md`, and EOF lessons. Do not edit `AGENTS.md`
 or `tasks/todo.md`. Continuity read is today's lineage, then yesterday's if
 open, then `main`. Notion stays the human packet plane.
+
+2026-09-03 drain lessons.
+
+- Completion is live; calibration stays disabled on Dashboard id
+  d9d2c058-9c42-11f1-ba66-0e7d0216e441. Never enable calibration while
+  completion 66a8e7a8-9c42-11f1-ba66-0e7d0216e441 is enabled. Never reset ledger
+  calibration to REPORT_ONLY for prompt or volume updates.
+- Desk-named exceptions only. REVIEW_SECURITY / HUMAN salvage merges require an
+  explicit PR Desk / maintainer exception naming the PR (HITL pattern: Seatek
+  #801). Without that, keep the WAITING_HUMAN / packet path.
+- Complete Stage 1 overflow MERGEABLE green BOT PRs (including Dependabot
+  patch/minor) within the five state-changing actions. Bounce HOLD_CANONICAL
+  clusters to Stage 1. Create Stage 2 work items for mechanical HOLD_CONTRACT /
+  HOLD_EVIDENCE only.
+- Packets are reserved for sticky security, HUMAN, major-dep policy, and open
+  Notion decisions (e.g. Hydro #543 vs #535; Seatek #708). Do not packet
+  Jules/Bolt/Sentinel file-overlap clusters.
+- Parked examples, do not autonomous-complete: personal-config #2142; ctrld
+  #1195 REVIEW_SECURITY; ai-inference / upload-sarif / OpenCV / pandas / mypy
+  majors; Seatek #643 mega venv PR.

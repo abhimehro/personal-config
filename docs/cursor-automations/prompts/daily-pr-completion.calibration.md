@@ -43,17 +43,20 @@ calibration. The live Dashboard must then run the **completion** variant, not
 this one.
 
 During REPORT_ONLY you are a **router**, not a parking lot. Bounce BOT
-`HOLD_CANONICAL` clusters that Stage 1 can canonical-pick, elapsed
-close-candidates, and GitHub-green BOT `HOLD_PLATFORM` items (required checks
-already passing; Linux Swift salvage is irrelevant to merge) **back to Stage 1**
-with an executable `next_action`. Packets only for irreducible sticky security,
-HUMAN, or real platform spend. Do not packet Jules/Bolt/Palette file-collision
-clusters.
+`HOLD_CANONICAL` clusters that Stage 1 can canonical-pick, and GitHub-green BOT
+`HOLD_PLATFORM` items (required checks already passing; Linux Swift salvage is
+irrelevant to merge) **back to Stage 1** with an executable `next_action`. Do
+**not** bounce MERGEABLE green BOT that Stage 1 overflowed; record them as
+completion candidates for the live completion variant. Create complete Stage 2
+work items for salvage-eligible mechanical repairs instead of WAITING_HUMAN
+recover-via-draft notes. Packets only for irreducible sticky security, HUMAN, or
+real platform spend. Do not packet Jules/Bolt/Palette file-collision clusters.
 
 Calibration still requires ledger progress: live-reconcile Stage-3 items, create
 complete Stage 2 work items for mechanical repairs, record close-candidates with
 evidence, bounce executable clusters to Stage 1, and write one-question packets
-only for irreducible security, policy, or real platform judgment.
+only for irreducible security, policy, or real platform judgment. This
+calibration variant stays **disabled** while completion is live.
 
 For every item, reconcile observed versus ledger anchors, identity from the
 versioned GitHub API policy, author type, classification, sticky sensitive
@@ -89,3 +92,7 @@ or `tasks/todo.md`. Notion stays packets for the human; git run records stay for
 agents. Do not enable bounded completion until the ledger’s calibration record
 is `APPROVED` with a dated human approver, policy revision, scope, evidence, and
 rollback conditions.
+
+2026-09-03 status banner. This calibration variant must remain
+Dashboard-disabled while Stage 3 completion is live. Do not paste-enable. Kept
+only for rollback reference.

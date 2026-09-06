@@ -114,8 +114,8 @@ lifecycle:
   no_op_or_supersession_cooldown_hours: 24
   stale_close_cooldown_hours: 72
   stage_caps:
-    stage1_inventory: 50
-    stage1_actions: 20
+    stage1_inventory: 80
+    stage1_actions: 40
     stage2_salvage_candidates: 5
     stage3_reconciliation: 20
     stage3_decision_packets: 5

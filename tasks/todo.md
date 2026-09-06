@@ -1,3 +1,19 @@
+# PR backlog burndown + Stage 2 starvation (2026-08-30)
+
+T5 — Orchestrate. 20 mutations/day equals arrivals; Stage 2 is idle. Do not bump
+`policy_revision`. Stage 2 still never merges. PR Desk stays read-only.
+
+- [x] Diagnose: cap-equals-arrivals, Stage 2 WI starvation, Stage 3 bounce
+      wasting overflow completions
+- [x] Stage 1 caps 80/40; salvage-eligible reselect; WI queue is bookkeeping
+- [x] Stage 2 EMPTY_INTAKE_STARVATION label; still no invented recoveries
+- [x] Stage 3 complete MERGEABLE overflow; mechanical HOLD_CONTRACT → WI
+- [x] Monitor `scripts/pr_lifecycle_pipeline_health.py`; PR Desk health line
+- [x] Owned-without-WI does not hide starvation; WI completeness from schema
+- [x] Tests + `sync_cursor_export_prompts.py --write/--check`
+- [x] Commit, push, open PR (not Trunk-merged unless asked)
+- [ ] HITL: paste Stage 1/2/3 completion prompts; keep calibration disabled
+
 # Grok Bot PR Desk (filter, not a fourth stage) — 2026-08-27
 
 Paste-ready files: `docs/grok-bot/`. Do not give this Bot merge/issue/CAS

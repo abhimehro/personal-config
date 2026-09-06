@@ -42,10 +42,14 @@ items exist is a failed run. If the ledger has **zero** `current_owner: stage2`
 items and Stage 1 queued none, this is **empty intake**: write a short
 empty-intake record, push onto today's `pr-lifecycle-docs-YYYYMMDD` lineage if
 it exists, and **stop**. Do not invent recoveries. Do not open a sibling docs
-PR. Empty intake is not a failed run. If a Stage-2-owned ledger item lacks a
-complete work item, materialize one from that item’s `changed_paths`,
-`next_action`, and live GitHub evidence, then recover. Remainder markdown is a
-hint requiring live verify, never a work item by itself.
+PR. If salvage-eligible BOT items exist (lifecycle contract: unique-source
+draft, wrap, lint/import, conflict markers; not sticky lockfile/workflow/auth
+and not Linux Swift `HOLD_PLATFORM`), label the record `EMPTY_INTAKE_STARVATION`
+so PR Desk flags it, then still stop. Empty intake with zero salvage-eligible
+remainder is not a failed run. If a Stage-2-owned ledger item lacks a complete
+work item, materialize one from that item’s `changed_paths`, `next_action`, and
+live GitHub evidence, then recover. Remainder markdown is a hint requiring live
+verify, never a work item by itself.
 
 Create at most one focused **draft** recovery branch per work item from the
 trusted current base. Recheck base SHA immediately before creation. Abort on
@@ -77,3 +81,17 @@ missed it). Push to that branch; do not open a sibling docs PR. Write only
 `tasks/salvage-session-reports.md`, optional `tasks/pr-salvage-YYYY-MM-DD*.md`,
 and EOF lessons. Do not edit `AGENTS.md` or `tasks/todo.md`. Notion stays the
 human packet plane.
+
+2026-09-03 drain lessons.
+
+- Queued work items first. Before any other salvage, process complete unexpired
+  stage2_work_items already on the ledger. As of CAS 55 these include (expire
+  2026-09-07T05:20:00Z): series #390 spreadsheet_safety; email #1512
+  nlp_analyzer Aho-Corasick; ctrld #1207 PRNG jitter. An expiry miss is a failed
+  run.
+- Do not invent recoveries for mega CI_INFRA (Seatek #643 venv deletion). The
+  human wants a new gitignore-only draft, not reuse of the mega-diff.
+- HOLD_PLATFORM Swift/make remains non-salvage-eligible. The docs-only Stage 1
+  merge exception does not create a Stage 2 salvage path for Swift.
+- Ready landing to draft. After GitHub returns a PR number, re-read isDraft and
+  convert a ready landing back to draft before handoff.

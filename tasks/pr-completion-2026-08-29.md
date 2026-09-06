@@ -17,16 +17,16 @@ record: `tasks/completion-session-reports.md` (2026-08-29).
 
 ## Caps
 
-| Cap | Used |
-| --- | ---: |
-| Reconciliations | 20/20 |
-| Decision packets | 0/5 |
-| Product GitHub mutations | 0/5 |
+| Cap                      |  Used |
+| ------------------------ | ----: |
+| Reconciliations          | 20/20 |
+| Decision packets         |   0/5 |
+| Product GitHub mutations |   0/5 |
 
 ## Product mutations
 
-None. No qualified non-security BOT merge/close in the 20. Did not steal Stage
-1 leftovers. Did not Trunk-queue workflows/security. Did not merge drafts.
+None. No qualified non-security BOT merge/close in the 20. Did not steal Stage 1
+leftovers. Did not Trunk-queue workflows/security. Did not merge drafts.
 
 ## Ledger TERMINAL (already closed on GitHub)
 
@@ -40,14 +40,13 @@ None. No qualified non-security BOT merge/close in the 20. Did not steal Stage
 ## Not stolen
 
 pc #2116 HOLD_EVIDENCE; rpce #300 / #309 HOLD_EVIDENCE; rpce #306 close after
-`2026-08-29T20:53:21Z`; Seatek #764 close after `2026-08-29T19:45:04Z`;
-series #419 close after `2026-08-29T20:10:37Z`. Keep pc #2097 draft CONFLICTING
-docs sibling HOLD_EVIDENCE. Extra wrap-export draft pc #2112 is not in the
-ledger and is not salvage; leave for Stage 1 ingest.
+`2026-08-29T20:53:21Z`; Seatek #764 close after `2026-08-29T19:45:04Z`; series
+#419 close after `2026-08-29T20:10:37Z`. Keep pc #2097 draft CONFLICTING docs
+sibling HOLD_EVIDENCE. Extra wrap-export draft pc #2112 is not in the ledger and
+is not salvage; leave for Stage 1 ingest.
 
 ## Docs lineage
 
-Appended on
-[#2117](https://github.com/abhimehro/personal-config/pull/2117)
-`pr-lifecycle-docs-20260829`. Did not open a sibling. Did not Trunk-merge.
-Did not merge conflicting draft #2097.
+Appended on [#2117](https://github.com/abhimehro/personal-config/pull/2117)
+`pr-lifecycle-docs-20260829`. Did not open a sibling. Did not Trunk-merge. Did
+not merge conflicting draft #2097.

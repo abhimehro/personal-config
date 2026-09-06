@@ -26,12 +26,18 @@ Agent run and **not** a Dashboard Automation.
 | **Grok Bot PR Desk**    | Digest, stall flags, one recommended next step | GitHub mutations, Cloud Agent launches, new issues |
 
 ```text
-15:00 Stage 1  →  17:00 Stage 2  →  19:00 Stage 3
-                                          ↓
-                         01:00 UTC  PR Desk digest (8:00 PM CDT)
-                                          ↓
-                         Abhi: ≤5 decisions, or "nothing for you"
+15:00 Stage 1 (80 inventory / 40 product mutations)
+        → queue ≤5 Stage 2 work items (ledger bookkeeping)
+17:00 Stage 2 (≤5 drafts or structured failed recovery)
+19:00 Stage 3 (≤5 overflow completions; mechanical remainder → Stage 2 WI)
+        ↓
+01:00 UTC  PR Desk digest (8:00 PM CDT) — read-only
+        ↓
+Abhi: ≤5 decisions, or "nothing for you"
 ```
+
+PR Desk observes Health (starvation, unused Stage 1 slots, calibration still
+enabled). It does not route stages, CAS-write the ledger, or launch agents.
 
 ## Setup (about fifteen minutes)
 

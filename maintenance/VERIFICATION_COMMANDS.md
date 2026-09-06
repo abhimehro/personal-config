@@ -72,7 +72,7 @@ FORCE_RUN=1 ./run_all_maintenance.sh monthly
 launchctl list | grep com.abhimehrotra
 
 # Check specific agent status
-launchctl list com.abhimehrotra.maintenance.healthcheck
+launchctl list com.abhimehrotra.maint.healthcheck
 launchctl list com.abhimehrotra.maint.weekly
 launchctl list com.abhimehrotra.maint.monthly
 ```

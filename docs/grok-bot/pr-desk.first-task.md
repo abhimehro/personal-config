@@ -19,7 +19,8 @@ Constraints:
 - Do not launch Cloud Agents or edit the ledger.
 - Do not summarize every session report. Compress.
 - Max five “needs you” items. If none, say so.
-- If a source is missing, report the gap instead of guessing.
+- If Health would be `Stage 2 EMPTY_INTAKE while salvage-eligible > 0`, say so.
+  Do not offer to launch Stage 2.
 
 Deliverable: the Output block from your profile, in this thread only.
 
