@@ -52,7 +52,9 @@ def _fetch_pr_diff_only(item, info):
 def _build_graphql_query(queue_items):
     parts = []
     for i, item in enumerate(queue_items):
-        owner, _, name = item[0].partition("/")
+        owner, separator, name = item[0].partition("/")
+        if not separator or "/" in name:
+            raise ValueError(f"invalid repository reference: {item[0]}")
         parts.append(
             f'pr{i}: repository(owner: "{owner}", name: "{name}") {{ pullRequest(number: {item[1]}) {{ mergeStateStatus }} }}'
         )
