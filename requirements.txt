@@ -2,3 +2,5 @@
 pyyaml==6.0.3
 # DEPENDENCY: jsonschema==4.26.0 — execute the normative PR lifecycle JSON Schema — pinned 2026-08-19 (OSV-clean)
 jsonschema==4.26.0
+# DEPENDENCY: requests==2.32.5 — SSRF-safe HTTP client used by lib.safe_http — pinned 2026-09-06 (OSV-clean)
+requests==2.32.5
