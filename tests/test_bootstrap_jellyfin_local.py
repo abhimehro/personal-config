@@ -6,6 +6,7 @@ import contextlib
 import importlib.util
 import io
 import pathlib
+import tempfile
 import unittest
 from unittest.mock import patch
 
