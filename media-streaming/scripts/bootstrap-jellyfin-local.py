@@ -374,7 +374,7 @@ def main() -> int:
     ensure_library(token, "TV Shows", MOUNT / "TV Shows", "tvshows")
     http("POST", "/Library/Refresh", token=token)
     count = wait_for_items(token)
-    print(f"DONE items={count} url={BASE} user={user} creds={CREDS}")
+    print(f"DONE items={count} url={BASE}")
     return 0 if count > 0 else 2
 
 
