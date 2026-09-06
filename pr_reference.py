@@ -55,7 +55,7 @@ def _split_repo(repo: str) -> tuple[str, str]:
         raise InvalidPrReferenceError(
             f"repo must be exactly owner/name (got {repo.count('/')} '/'): {repo!r}"
         )
-    owner, name = repo.split("/", 1)
+    owner, _, name = repo.partition("/")
     _validate_component(owner, "owner", _OWNER_NAME_RE)
     _validate_component(name, "repo name", _OWNER_NAME_RE)
     return owner, name
