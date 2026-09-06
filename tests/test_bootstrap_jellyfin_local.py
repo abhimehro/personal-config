@@ -29,40 +29,42 @@ class TestBootstrapJellyfinLocal(unittest.TestCase):
         credential_path = str(bootstrap_jellyfin_local.CREDS)
         output = io.StringIO()
 
-        with (
-            patch.object(
-                bootstrap_jellyfin_local,
-                "public_info",
-                return_value={"StartupWizardCompleted": True},
-            ),
-            patch.object(
-                bootstrap_jellyfin_local,
-                "MOUNT",
-                pathlib.Path("/tmp"),
-            ),
-            patch.object(
-                bootstrap_jellyfin_local,
-                "load_or_create_creds",
-                return_value=(username, "sensitive-password"),
-            ),
-            patch.object(
-                bootstrap_jellyfin_local,
-                "ensure_admin",
-                return_value="sensitive-token",
-            ),
-            patch.object(bootstrap_jellyfin_local, "ensure_library"),
-            patch.object(bootstrap_jellyfin_local, "wait_for_items", return_value=3),
-            patch.object(bootstrap_jellyfin_local, "http"),
-            contextlib.redirect_stdout(output),
-        ):
-            result = bootstrap_jellyfin_local.main()
+        with tempfile.TemporaryDirectory() as mount_dir:
+            pathlib.Path(mount_dir, "fixture").touch()
+            with (
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "public_info",
+                    return_value={"StartupWizardCompleted": True},
+                ),
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "MOUNT",
+                    pathlib.Path(mount_dir),
+                ),
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "load_or_create_creds",
+                    return_value=(username, "sensitive-password"),
+                ),
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "ensure_admin",
+                    return_value="sensitive-token",
+                ),
+                patch.object(bootstrap_jellyfin_local, "ensure_library"),
+                patch.object(bootstrap_jellyfin_local, "wait_for_items", return_value=3),
+                patch.object(bootstrap_jellyfin_local, "http"),
+                contextlib.redirect_stdout(output),
+            ):
+                result = bootstrap_jellyfin_local.main()
 
         out = output.getvalue()
         self.assertEqual(result, 0)
         self.assertIn("DONE items=3 url=", out)
         for secret in (
-            " user=",
-            " creds=",
+            "user=",
+            "creds=",
             username,
             credential_path,
             "sensitive-password",
