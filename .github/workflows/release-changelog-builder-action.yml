@@ -1,0 +1,55 @@
+- name: Release Changelog Builder
+  # You may pin to the exact commit or the version.
+  # uses: mikepenz/release-changelog-builder-action@cb021f9b36a51a7c6f18e4679b6fa2cb77a1260c
+  uses: mikepenz/release-changelog-builder-action@v6.3.0
+  with:
+    # Defines the configuration json. If provided, will be prefered over `configuration`.
+    configurationJson: # optional
+    # Defines the relative path to the configuration file.
+    configuration: # optional
+    # Defines the directory the repo is located in (checkout directory)
+    path: # optional
+    # Defines the owner of the repository to create the changelog for
+    owner: # optional
+    # Defines the repository to create the changelog for
+    repo: # optional
+    # Defines the previous tag to compare against
+    fromTag: # optional
+    # Defines the newly tag created
+    toTag: # optional
+    # Defines if the changelog should include open PRs
+    includeOpen: # optional, default is false
+    # Defines if the action will only use full releases to compare against (Only used if fromTag is not defined). E.g. for 1.0.1... 1.0.0-rc02 <- ignore, 1.0.0 <- pick
+    ignorePreReleases: # optional, default is false
+    # Defines if the action should result in a build failure, if an error was discovered
+    failOnError: # optional, default is false
+    # Defines if PRs are fetched via the commits identified. This will do 1 API request per commit -> Best for scenarios with squash merges | Or shorter from-to diffs (< 10 commits) | Also effective for shorters diffs for very old PRs
+    fetchViaCommits: # optional, default is false
+    # Will enable fetching the users/reviewers who approved the PR
+    fetchReviewers: # optional, default is false
+    # Will enable fetching release information for the tags. E.g. creation date
+    fetchReleaseInformation: # optional, default is false
+    # Will enable fetching the reviews (comments) attached to the PR
+    fetchReviews: # optional, default is false
+    # Defines the mode used to retrieve the information. Available options: [`PR`, `COMMIT`, `HYBRID`]. Defaults to `PR`.
+    mode: # optional
+    # [Deprecated] Enables the commit based mode. This mode generates changelogs based on the commits. Please note that this lacks a lot of features only possible with PRs.
+    commitMode: # optional, default is false
+    # Enables offline mode which disables API requests to GitHub or Gitea. Only works with commitMode and retrieves tags and diffs from the local repository.
+    offlineMode: # optional, default is false
+    # If defined, the changelog will get written to this file. (relative to the checkout dir)
+    outputFile: # optional
+    # Defines the token to use to execute the git API requests with, uses `env.GITHUB_TOKEN` by default
+    token: # optional, default is ${{ github.token }}
+    # Defines the base url for GitHub Enterprise authentication, uses `https://api.github.com` by default
+    baseUrl: # optional
+    # If enabled, the action will export the collected data to the cache. This is disabled by default. Can be passed to a follow up run via `cache`.
+    exportCache: # optional, default is false
+    # If enabled, the action will only collect the data and terminate afterwards. Data can then be consumed by steps afterwards. This requires `exportCache` to be enabled
+    exportOnly: # optional, default is false
+    # Provide the cache of a previous run. Allows to re-use collected information multiple times to generate different release notes. Requires `exportCache` to be enabled for the previous run.
+    cache: # optional
+    # Defines the platform the action is run on. Available options: [`github`, `gitea`]. Defaults to `github`.
+    platform: # optional, default is github
+    # List of path patterns to include. Provide as multiline input (one per line). Only commits that touched these paths will be included in the changelog. Useful for monorepo setups.
+    includeOnlyPaths: # optional
