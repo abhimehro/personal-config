@@ -2754,3 +2754,37 @@ most one WI for the keeper; close non-keepers instead of five salvage drafts.
 
 **Detection cost:** Low — `gh api repos/{owner}/{repo}/pulls/{n} --jq .head.sha`
 versus `item.key` suffix.
+
+## Lesson 0gy: Large ledger Contents responses can omit content (2026-09-06)
+
+**Pattern:** Once `pr-lifecycle-ledger.yaml` exceeded 1 MB, the JSON Contents
+API returned the correct metadata but reported `encoding: none` with an empty
+`content` field. Treating that body as the ledger would falsely produce an empty
+or missing runtime state. The raw media response and Git blob remained complete.
+
+**Rule:** Read large runtime ledgers with
+`Accept: application/vnd.github.raw+json` or the current blob SHA, then validate
+the downloaded bytes. Keep using the JSON Contents response for the CAS blob SHA
+and size. An empty `content` with `encoding: none` is a transport-shape signal,
+not permission to bootstrap, truncate, or reconstruct the ledger.
+
+**Detection cost:** Low — JSON Contents metadata reports a nonzero size above 1
+MB while `content` is empty; raw media returns the full YAML.
+
+## Lesson 0gz: Unsupported external review models are platform holds (2026-09-06)
+
+**Pattern:** A required `github-advanced-security` review job for
+Seatek_Analysis #809 failed before source analysis with
+`The requested model is
+not supported` for its configured Copilot agent model.
+Repository tests and ordinary source checks did not reproduce an application
+failure.
+
+**Rule:** When a required external review job rejects its configured model
+before inspecting the repository, retain `HOLD_PLATFORM` and preserve any
+replacement as draft. Do not change application code, weaken the security gate,
+or reinterpret unrelated green checks as replacement evidence. Retry only after
+the platform configuration supports the selected model.
+
+**Detection cost:** Low — job logs show model rejection before checkout or
+source analysis, plus the configured model identifier.

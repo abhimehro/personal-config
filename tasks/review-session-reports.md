@@ -1,3 +1,40 @@
+# Stage 1 — 2026-08-29 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **211**; SHA_MATCH **187** (161 overflow + 26 reselects in the
+50); NEW **24**; HEAD_DRIFT **0**. Product mutations **20/20** (9 squash, 11
+close). Ledger CAS **28 → 29** (blob `d6d073e64ccf274d7d17265f0eaa2dfdee6a10e9`,
+data-branch commit `30e2b3a1b481071015cbf28b4d164ff569027a1a`). `/trunk merge`
+**1** (personal-config #2111 `24b694d1` at `2026-08-29T15:29:37Z`) —
+bookkeeping. Stage 2 queued **0**. Stage 3 **2** handoffs (pc #2099
+HOLD_CONTRACT, pc #2114 sticky workflows). Throughput **PASS** (open PRs 211 →
+191; product slots fully used). Docs lineage: `pr-lifecycle-docs-20260829` (this
+PR). Do **not** `/trunk merge` today's lineage in the opening run (**0gj**). Do
+**not** Trunk-merge conflicting draft sibling **#2097**. Full record:
+`tasks/pr-review-2026-08-29-1500.md`.
+
+| Metric                       | Count |
+| ---------------------------- | ----: |
+| Inventoried (open PRs)       |   211 |
+| SHA_MATCH skipped (overflow) |   161 |
+| SHA_MATCH acted (reselect)   |    26 |
+| NEW                          |    24 |
+| HEAD_DRIFT                   |     0 |
+| Ledger items this run        |    12 |
+| Merged                       |     9 |
+| Closed superseded            |     9 |
+| Closed no-op                 |     2 |
+| Stage 2 queued (this run)    |     0 |
+| Stage 3 handoffs (this run)  |     2 |
+| GitHub PR mutations          |    20 |
+| Ledger CAS writes            |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-29-1500.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-31 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
@@ -939,3 +976,49 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).
 - Open EOD approx: **19** (pc1 / Seatek2 / hg3 / rpce13).
+
+## 2026-09-06 Stage 1 (one-time backlog cleanup)
+
+- Preflight/runtime ledger repaired and validated before product mutations;
+  approved calibration `pr-lifecycle-v1.4` remained 7/7.
+- Inventoried **67** automation-attributed PRs across all seven configured
+  repositories with **67/67** current-head ledger coverage.
+- Closed **2** superseded Cursor PRs: personal-config #2153 and #2158 after
+  merged #2162 supplied the complete repair.
+- Queued **3** bounded Stage 2 recoveries: personal-config #2116, current-head
+  #2054, and Seatek_Analysis #807.
+- Routed workflow, security, generated-output, contract, stale-anchor, and
+  canonical-choice items to Stage 3/human review; no sensitive PR was merged.
+- Re-ingested seven drifted heads without replacing immutable history:
+  personal-config #2054/#2046/#2030/#2029/#2020 and Seatek_Analysis #657/#643.
+- Final Stage 1 runtime ledger: revision **62**, blob
+  `d144c447e1d3317ef165ec8abc3c389361919c86`, commit
+  `58c464baadb7bbbe690f2d2155c7740d08e03ef2`; CAS re-read validator:
+  `PR_LIFECYCLE_VALID`.
+- Snapshot: `tasks/pr-review-2026-09-06.md`.
+
+### Stage 1 re-ingest of 2026-09-06 salvage outputs
+
+- [personal-config #2163](https://github.com/abhimehro/personal-config/pull/2163):
+  re-ingested corrected head `dcded5c72e100984d0d138df2ec93fd688f42fe8`;
+  token-authored BOT, PERFORMANCE/ROUTINE, non-sensitive, clean, no unresolved
+  discussions, and 25/25 checks passed. Stage 1 marked it ready and submitted it
+  through the registered Trunk queue; it merged as
+  `64d937b78e71cdeaf37b169dee8e06000142fd46`.
+- [personal-config #2164](https://github.com/abhimehro/personal-config/pull/2164):
+  re-ingested head `73ebf209891b15f527b27a2deb8d962ea955576e`; token-authored
+  BOT, PERFORMANCE/ROUTINE, non-sensitive, clean, no unresolved discussions, and
+  27/27 checks passed. Trunk merged current main into the queued branch,
+  producing immutable current head `37b4007a0c2dde8cbce09e45cb2386478cac8d57`;
+  after queue validation it merged as
+  `070a5d43eda15669ce0b48b400dbf34293532817`.
+- [Seatek_Analysis #809](https://github.com/abhimehro/Seatek_Analysis/pull/809):
+  re-ingested unchanged head `328d14747329f266bd874f0d3cc1d30dea9e6cf3`; 15
+  checks and the complete R suite passed, but `github-advanced-security`
+  remained failed before repository analysis because its configured Copilot
+  model was unsupported. Stage 1 kept the PR draft and handed it to Stage 3 as
+  `HOLD_PLATFORM`.
+- Runtime-ledger CAS: revision 64 → 65, 394 immutable items, 952 events, and 0
+  Stage 2 work items; remote re-read returned `PR_LIFECYCLE_VALID`. The
+  pre-queue #2164 head remains an immutable `HOLD_EVIDENCE` record rather than
+  being rewritten to the queue-generated head.

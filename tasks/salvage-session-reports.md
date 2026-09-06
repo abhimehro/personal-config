@@ -6,6 +6,78 @@
 
 ## Entry template
 
+## Run — 2026-08-29 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **29** (`github_contents_api`); blob
+  `d6d073e64ccf274d7d17265f0eaa2dfdee6a10e9`; data-branch commit
+  `30e2b3a1b481071015cbf28b4d164ff569027a1a`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable; unused — no salvage disposition)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior remainder live-verify: seatek #695 `MERGED_ROUTINE` at
+  2026-08-29T15:10:22Z head `a0c620406ee0…`; series #415 `CLOSED_NOOP` at
+  2026-08-29T15:09:57Z head `dd59b0f6d385…`; hydro #583 `MERGED_ROUTINE` at
+  2026-08-29T15:10:04Z head `4d560af4ca81…`; hydro #578 `CLOSED_SUPERSEDED` at
+  2026-08-29T15:11:34Z head `6c56999c6dd7…`; esp #1540 `MERGED_ROUTINE` at
+  2026-08-29T15:10:08Z head `0d348c9514b7…`; rpce #308 `MERGED_ROUTINE` at
+  2026-08-29T15:10:13Z head `efd8f12ce0af…`. Do not recreate `display.py` (0gm).
+  Do not Trunk-merge draft sibling #2097 (0gu / HOLD_EVIDENCE)
+
+### Outcomes
+
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **29**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev 29.
+  Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `APPROVED` count **7/7** / `pr-lifecycle-v1.4` (no stale reset;
+  this run is **not** a successful calibration run).
+- Live GitHub: seatek #695 `state=CLOSED` `merged=true`
+  `merged_at=2026-08-29T15:10:22Z` head `a0c620406ee0…`; series #415 `CLOSED`
+  `merged=false` `2026-08-29T15:09:57Z` head `dd59b0f6d385…`; hydro #583
+  `CLOSED` `merged=true` `2026-08-29T15:10:04Z` head `4d560af4ca81…`; hydro #578
+  `CLOSED` `merged=false` `2026-08-29T15:11:34Z` head `6c56999c6dd7…`; esp #1540
+  `CLOSED` `merged=true` `2026-08-29T15:10:08Z` head `0d348c9514b7…`; rpce #308
+  `CLOSED` `merged=true` `2026-08-29T15:10:13Z` head `efd8f12ce0af…`. Docs
+  lineage [#2117](https://github.com/abhimehro/personal-config/pull/2117) open
+  on `pr-lifecycle-docs-20260829` head `cb5f6319` at intake. Draft sibling
+  [#2097](https://github.com/abhimehro/personal-config/pull/2097) `draft=true`.
+- Last three Stage 2 records: 2026-08-28 17:00 EMPTY_INTAKE (merged #2111),
+  2026-08-27 17:00 EMPTY_INTAKE (merged #2106), 2026-08-26 17:00 EMPTY_INTAKE
+  (on unmerged #2097).
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel clusters,
+  rpce Swift (0gi), workflow Dependabot bumps, or HEAD_DRIFT pc #2022 / #1969.
+
+### Handoff
+
+1. Stage 3: ACK today's 2 Stage 1 handoffs (pc #2099 HOLD_CONTRACT, pc #2114
+   sticky workflows); close-candidates seatek #764 after `2026-08-29T19:45:04Z`,
+   series #419 after `2026-08-29T20:10:37Z`, rpce #306 after
+   `2026-08-29T20:53:21Z`; never merge salvage drafts (0gd); do not Trunk-merge
+   #2097
+2. Stage 1 later: `/trunk merge` this docs lineage when routine predicates pass;
+   do not GitHub-squash personal-config; leftover STAGE1_INTAKE rpce #300/#309,
+   pc #2116 stay Stage 1
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-29-1700.md`.
+
 ## Run — 2026-08-30 17:00
 
 ### Input tail
@@ -1990,3 +2062,58 @@ it from memory.
   [Runtime ledger](docs/pr-lifecycle-runtime-ledger.md),
   [Salvage spec](docs/automated-pr-salvage-agent.md),
   [Lessons](tasks/lessons.md) (0gd, 0ga, 0fw, 0fy)
+
+---
+
+# Stage 2 Salvage Report — 2026-09-06 one-time backlog cleanup
+
+## Run summary
+
+- Mode: `review_and_merge` lifecycle run with the user-authorized one-time cap
+  override; Stage 2 retained its no-merge/no-close boundary.
+- Intake: 3 complete, current, unexpired `stage2_work_items`; all 3 consumed.
+- Result: 3 tested replacement PRs created, all originals left open, 0 merges, 0
+  closes, 0 approvals, and 0 review requests.
+- Ledger: revision 62 → 63 recorded the three replacements and source handoffs;
+  revision 63 → 64 preserved the initial #2163 head after review-driven drift
+  and added its corrected current-head record. Both Contents API CAS writes were
+  re-read and returned `PR_LIFECYCLE_VALID`.
+- Final runtime ledger: blob `11e64b4f6bbdd1e28f6a1fb58a334488a2b00e24`,
+  revision 64, 393 items, 948 events, and 0 Stage 2 work items.
+
+## Per-item evidence, action, and outcome
+
+| Source ledger key / work item                                                                               | Repository / source → replacement                                                       | Observed vs ledger anchors                                                                                                                                                                                                                                                                                 | Owner before → after                                            | GitHub identity                              | Classification / risk / sticky paths                                  | Guardrail outcome                                                                        | Allowed / prohibited / actual paths                                                                                      | Evidence                                                                                                                                                                                                                                             | Proposed / actual action                                                                                                                                                               | Mode / audit IDs / attempts                                                                                                                                             | Retry or error                                                                                                                                                                                                                                                                                                                                                                                                            | Calibration / final observed result                                                                                                                                                                                                                               | Next owner / action / expiry / canonical relation                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029` / `s2-20260906-personal-con-2116` | personal-config #2116 → [#2163](https://github.com/abhimehro/personal-config/pull/2163) | source base/head matched `dd972eb83986fe0e67ab79efd9541ede369e0743` / `22c5c38bbec68a1df81e021450a1b3f9afedf029`; replacement base `818a1f3d45d2ac641b14e710db2737fe72f2151a`; initial head `512aaeb46a495f92bfb57a152ff656c77e759ad7` → corrected current head `dcded5c72e100984d0d138df2ec93fd688f42fe8` | source `stage2` → `stage3`; replacement current head → `stage1` | `abhimehro`, token-authored automation / BOT | PERFORMANCE / ROUTINE / none                                          | `PASS_ROUTINE`; initial replacement head preserved as `HOLD_EVIDENCE` after review drift | allowed and actual `run_merges.py`; prohibited four `docs/cursor-automations/exports/daily-pr-*.json` files, none copied | [source](https://github.com/abhimehro/personal-config/pull/2116), [replacement](https://github.com/abhimehro/personal-config/pull/2163), [review finding](https://github.com/abhimehro/personal-config/pull/2163#discussion_r3944677324)             | Clean-room `partition()` optimization; review found lost malformed-reference validation, so one deterministic correction restored fail-fast behavior without copying generated exports | `review_and_merge` / `evt-s2-20260906-personal-con-2116-handoff`, `evt-s2-20260906-personal-con-2163-review-drift` / recovery 2, replacement mutations 3, CAS retries 0 | Initial focused tests passed; Copilot found a concrete regression. Follow-up `dcded5c7` added explicit missing/extra-separator validation; thread answered and resolved. Draft state required two authoritative corrections under lesson 0gd.                                                                                                                                                                             | 10 focused tests passed before and after correction; malformed-input assertions, Black, Ruff, 23 CI checks, CodeScene, and required dependency review passed; one Swift analysis check pending at final Stage 2 observation; `draft=true` re-read at current head | Stage 1 re-ingests corrected #2163; Stage 3 retains immutable initial head and reconciles original #2116 only after the replacement's final outcome. Work-item expiry was `2026-09-13T17:00:00Z`. |
+| `abhimehro/personal-config#2054@eba7c04619ac59e0a63ac277d2d39ffd55565573` / `s2-20260906-personal-con-2054` | personal-config #2054 → [#2164](https://github.com/abhimehro/personal-config/pull/2164) | source base/head matched `299a0ee1bd3c659df0169261014abd7a830630a6` / `eba7c04619ac59e0a63ac277d2d39ffd55565573`; replacement base/head `818a1f3d45d2ac641b14e710db2737fe72f2151a` / `73ebf209891b15f527b27a2deb8d962ea955576e`                                                                            | source `stage2` → `stage3`; replacement → `stage1`              | `abhimehro`, token-authored automation / BOT | PERFORMANCE / ROUTINE / none                                          | `PASS_ROUTINE`                                                                           | allowed and actual `detect_duplicates.py`; no prohibited paths                                                           | [source](https://github.com/abhimehro/personal-config/pull/2054), [replacement](https://github.com/abhimehro/personal-config/pull/2164)                                                                                                              | Reimplemented duplicate collection as one bounded `extend()` generator expression on current main                                                                                      | `review_and_merge` / `evt-s2-20260906-personal-con-2054-handoff` / recovery 1, replacement mutations 2, CAS retries 0                                                   | Black initially required deterministic formatting; formatted once and reran the exact focused test plus Ruff. Draft state was authoritatively restored twice under lesson 0gd.                                                                                                                                                                                                                                            | 22 focused tests passed; Black, Ruff, 25 CI checks, CodeScene, GitHub Advanced Security, and required dependency review passed; one Swift analysis check pending at final Stage 2 observation; `draft=true` re-read                                               | Stage 1 re-ingests #2164; Stage 3 keeps original #2054 open until canonical replacement evidence exists. Work-item expiry was `2026-09-13T17:00:00Z`.                                             |
+| `abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f` / `s2-20260906-seatekanalys-807`   | Seatek_Analysis #807 → [#809](https://github.com/abhimehro/Seatek_Analysis/pull/809)    | source base/head matched `704586baefc4aee8eb3c1b0ed7165824ce11869b` / `5f8abfecdb42d64860e507509c1f5efbb5e64f2f`; replacement base/head `704586baefc4aee8eb3c1b0ed7165824ce11869b` / `328d14747329f266bd874f0d3cc1d30dea9e6cf3`                                                                            | source `stage2` → `stage3`; replacement → `stage1`              | `abhimehro`, token-authored automation / BOT | PERFORMANCE / ROUTINE / none on replacement; generated output removed | `HOLD_PLATFORM` pending current-head re-ingest                                           | allowed and actual `Updated_Seatek_Analysis.R`; prohibited `.jules/bolt.md` and `test_perf.R`, neither copied            | [source](https://github.com/abhimehro/Seatek_Analysis/pull/807), [replacement](https://github.com/abhimehro/Seatek_Analysis/pull/809), [failed platform job](https://github.com/abhimehro/Seatek_Analysis/actions/runs/34047696631/job/101525607986) | Reimplemented only the positive-value average fast paths on current main and removed the generated Bolt artifact from recovery scope                                                   | `review_and_merge` / `evt-s2-20260906-seatekanalys-807-handoff` / recovery 1, replacement mutations 2, CAS retries 0                                                    | GitNexus could not index the R function and returned `UNKNOWN`; text search established one production caller and affected tests, then the complete R suite passed. The `github-advanced-security` AI review job failed before code analysis because `sweagent-capi:gpt-5.3-codex` was unsupported (HTTP 400); no source repair can correct that platform configuration. Draft state was restored twice under lesson 0gd. | `./run_tests.sh` passed; repository `lint-and-test`, `r-testthat`, Gate, CodeQL, dependency review, and 15 other checks passed; the unsupported-model AI job remained the sole failure; `draft=true` re-read                                                      | Stage 1 re-ingests #809 and routes the platform hold; Stage 3 keeps original #807 open pending the canonical outcome. Work-item expiry was `2026-09-13T17:00:00Z`.                                |
+
+## Continuity and lessons
+
+- Reused lesson 0gd: creation APIs and later automation can leave salvage PRs
+  ready despite `draft: true`; authoritative REST re-reads detected this on all
+  three replacements and each was restored to draft before handoff.
+- New verified finding: a micro-optimization must preserve incidental validation
+  semantics. The initial #2163 `split()` → `partition()` replay removed
+  missing/extra-separator rejection; one bounded retry added explicit validation
+  while retaining the allocation reduction.
+- New verified platform finding: the Seatek `github-advanced-security` AI review
+  job can fail before repository code analysis when its configured Copilot model
+  is unsupported. Treat this as `HOLD_PLATFORM`, retain all normal security/test
+  evidence, and never weaken a code or security gate to bypass it.
+- GitNexus R coverage remained incomplete: `UNKNOWN` was resolved by text-search
+  call-site evidence plus the complete repository R suite, not treated as low
+  risk.
+- No recurring schedules, repository settings, branch protections, source PRs,
+  or contributor branches were modified.
+
+## Stage 3 handoff
+
+1. Stage 1 must re-ingest current draft heads #2163, #2164, and #809.
+2. Stage 3 must reconcile originals #2116, #2054, and #807 against those
+   replacements; originals stay open until canonical outcomes and cooldowns.
+3. Preserve #2163's initial immutable head record; only
+   `dcded5c72e100984d0d138df2ec93fd688f42fe8` is the current replacement head.
+4. Keep #809 held for the unsupported-model platform failure unless an
+   authoritative rerun or configuration change clears that job.
