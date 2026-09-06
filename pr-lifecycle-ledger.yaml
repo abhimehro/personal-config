@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 62
+ledger_revision: 63
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -13417,15 +13417,16 @@ items:
   classification: PERFORMANCE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Keep the original PR open and do not submit it to Trunk while stale export snapshots remain in the diff.
-  next_action: 'Stage 2: rebuild only run_merges.py from current main, run tests, and create a draft replacement by 2026-09-13T17:00:00Z.'
-  evidence_urls: &id008
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Keep original #2116 open until replacement #2163 has an authoritative final outcome.'
+  next_action: 'Stage 3: reconcile original #2116 against replacement #2163; do not close before canonical evidence and cooldown.'
+  evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2116
+  - https://github.com/abhimehro/personal-config/pull/2163
   changed_paths:
   - docs/cursor-automations/exports/daily-pr-completion.calibration.json
   - docs/cursor-automations/exports/daily-pr-completion.json
@@ -13433,13 +13434,14 @@ items:
   - docs/cursor-automations/exports/daily-pr-salvage.json
   - run_merges.py
   attempts:
-    evidence: 3
-    recovery: 0
-    mutations: 0
+    evidence: 4
+    recovery: 1
+    mutations: 2
   handoffs:
   - evt-s1-20260906-personal-con-2116-queue
-  revision: 1
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  - evt-s2-20260906-personal-con-2116-handoff
+  revision: 2
+  updated_at_utc: '2026-09-06T17:15:00Z'
 - key: abhimehro/repoprompt-ce#309@29807d3f3ef337966377ed4ddd3dd4cd2141d0de
   repository: abhimehro/repoprompt-ce
   pr: 309
@@ -16619,25 +16621,27 @@ items:
   classification: PERFORMANCE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge the drifted original; rebuild the one-file optimization from current main.
-  next_action: 'Stage 2: rebuild detect_duplicates.py only, run the focused tests, and create a draft replacement by 2026-09-13T17:00:00Z.'
-  evidence_urls: &id009
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Keep original #2054 open until replacement #2164 has an authoritative final outcome.'
+  next_action: 'Stage 3: reconcile original #2054 against replacement #2164; do not close before canonical evidence and cooldown.'
+  evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2054
+  - https://github.com/abhimehro/personal-config/pull/2164
   changed_paths:
   - detect_duplicates.py
   attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 0
+    evidence: 2
+    recovery: 1
+    mutations: 2
   handoffs:
   - evt-s1-20260906-personal-con-2054-reingest
-  revision: 1
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  - evt-s2-20260906-personal-con-2054-handoff
+  revision: 2
+  updated_at_utc: '2026-09-06T17:15:00Z'
 - key: abhimehro/personal-config#2046@e9c2f8cbb8d8826b7ad5aea4809ebb6e1cc15fac
   repository: abhimehro/personal-config
   pr: 2046
@@ -17030,27 +17034,29 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
-  guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge unrelated deletion of the Jules journal or test_perf.R.
-  next_action: 'Stage 2: rebuild only the R averaging change from current main and run ./run_tests.sh by 2026-09-13T17:00:00Z.'
-  evidence_urls: &id010
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Keep original #807 open until replacement #809 has an authoritative final outcome.'
+  next_action: 'Stage 3: reconcile original #807 against replacement #809; do not close before canonical evidence and cooldown.'
+  evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/807
+  - https://github.com/abhimehro/Seatek_Analysis/pull/809
   changed_paths:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   - test_perf.R
   attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 0
+    evidence: 2
+    recovery: 1
+    mutations: 2
   handoffs:
   - evt-s1-20260906-seatekanalys-807-import
-  revision: 1
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  - evt-s2-20260906-seatekanalys-807-handoff
+  revision: 2
+  updated_at_utc: '2026-09-06T17:15:00Z'
 - key: abhimehro/Seatek_Analysis#806@75ae88f07c48172009eb3bf99a9533d6e9eed122
   repository: abhimehro/Seatek_Analysis
   pr: 806
@@ -17288,6 +17294,127 @@ items:
   - evt-s1-20260906b-seatekanalys-643-reingest
   revision: 1
   updated_at_utc: '2026-09-06T17:20:00Z'
+- key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7
+  repository: abhimehro/personal-config
+  pr: 2163
+  url: https://github.com/abhimehro/personal-config/pull/2163
+  base_sha: 818a1f3d45d2ac641b14e710db2737fe72f2151a
+  head_sha: 512aaeb46a495f92bfb57a152ff656c77e759ad7
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Keep the replacement draft until Stage 1 re-ingests its current head and required checks.
+  next_action: 'Stage 1: re-ingest draft #2163 from s2-20260906-personal-con-2116; verify draft state, current anchors, and required checks. Test evidence: python3 -m unittest tests.test_run_merges (10 tests passed).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2163
+  - https://github.com/abhimehro/personal-config/pull/2116
+  changed_paths:
+  - run_merges.py
+  attempts:
+    evidence: 1
+    recovery: 1
+    mutations: 2
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-09-06T17:15:00Z'
+- key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
+  repository: abhimehro/personal-config
+  pr: 2164
+  url: https://github.com/abhimehro/personal-config/pull/2164
+  base_sha: 818a1f3d45d2ac641b14e710db2737fe72f2151a
+  head_sha: 73ebf209891b15f527b27a2deb8d962ea955576e
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Keep the replacement draft until Stage 1 re-ingests its current head and required checks.
+  next_action: 'Stage 1: re-ingest draft #2164 from s2-20260906-personal-con-2054; verify draft state, current anchors, and required checks. Test evidence: python3 -m unittest tests.test_detect_duplicates (22 tests passed).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2164
+  - https://github.com/abhimehro/personal-config/pull/2054
+  changed_paths:
+  - detect_duplicates.py
+  attempts:
+    evidence: 1
+    recovery: 1
+    mutations: 2
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-09-06T17:15:00Z'
+- key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3
+  repository: abhimehro/Seatek_Analysis
+  pr: 809
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/809
+  base_sha: 704586baefc4aee8eb3c1b0ed7165824ce11869b
+  head_sha: 328d14747329f266bd874f0d3cc1d30dea9e6cf3
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_PLATFORM
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Keep the replacement draft while the GitHub Advanced Security AI job uses an unsupported model.
+  next_action: 'Stage 1: re-ingest draft #809 from s2-20260906-seatekanalys-807; verify draft state, current anchors, and required checks. Test evidence: ./run_tests.sh (full R test suite passed).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/809
+  - https://github.com/abhimehro/Seatek_Analysis/pull/807
+  - https://github.com/abhimehro/Seatek_Analysis/actions/runs/34047696631/job/101525607986
+  changed_paths:
+  - Updated_Seatek_Analysis.R
+  attempts:
+    evidence: 1
+    recovery: 1
+    mutations: 2
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-09-06T17:15:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -33401,80 +33528,64 @@ events:
   policy_revision: null
   successful: null
   reason: Current-head re-ingest remains a high-volume file-boundary cleanup with mixed docs and generated artifacts.
-stage2_work_items:
-- work_item_id: s2-20260906-personal-con-2116
-  source_item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
-  repository: abhimehro/personal-config
-  pr: 2116
-  base_sha: dd972eb83986fe0e67ab79efd9541ede369e0743
-  head_sha: 22c5c38bbec68a1df81e021450a1b3f9afedf029
-  allowed_paths:
-  - run_merges.py
-  prohibited_paths:
-  - docs/cursor-automations/exports/daily-pr-completion.calibration.json
-  - docs/cursor-automations/exports/daily-pr-completion.json
-  - docs/cursor-automations/exports/daily-pr-review.json
-  - docs/cursor-automations/exports/daily-pr-salvage.json
-  repair_description: Create a fresh branch from current main and apply only the split-to-partition optimization.
-  required_test_command: python3 -m unittest tests.test_run_merges
-  expected_test_result: Command exits 0 with all affected tests passing.
-  acceptance_criteria:
-  - Only run_merges.py changes.
-  - The focused unit test passes.
-  - The replacement PR is created as a draft with source provenance.
-  provenance_urls: *id008
-  expiry_utc: '2026-09-13T17:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260906-personal-con-2116-queue
-  history: []
-- work_item_id: s2-20260906-personal-con-2054
-  source_item_key: abhimehro/personal-config#2054@eba7c04619ac59e0a63ac277d2d39ffd55565573
-  repository: abhimehro/personal-config
-  pr: 2054
-  base_sha: 299a0ee1bd3c659df0169261014abd7a830630a6
-  head_sha: eba7c04619ac59e0a63ac277d2d39ffd55565573
-  allowed_paths:
-  - detect_duplicates.py
-  prohibited_paths: []
-  repair_description: Create a fresh branch from current main and apply only the append-loop-to-extend optimization.
-  required_test_command: python3 -m unittest tests.test_detect_duplicates
-  expected_test_result: Command exits 0 with all affected tests passing.
-  acceptance_criteria:
-  - Only detect_duplicates.py changes.
-  - The focused unit test passes.
-  - The replacement PR is created as a draft with source provenance.
-  provenance_urls: *id009
-  expiry_utc: '2026-09-13T17:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260906-personal-con-2054-reingest
-  history: []
-- work_item_id: s2-20260906-seatekanalys-807
-  source_item_key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f
-  repository: abhimehro/Seatek_Analysis
-  pr: 807
-  base_sha: 704586baefc4aee8eb3c1b0ed7165824ce11869b
-  head_sha: 5f8abfecdb42d64860e507509c1f5efbb5e64f2f
-  allowed_paths:
-  - Updated_Seatek_Analysis.R
-  prohibited_paths:
-  - .jules/bolt.md
-  - test_perf.R
-  repair_description: Create a fresh branch from current main and apply only the positive-value averaging optimization.
-  required_test_command: ./run_tests.sh
-  expected_test_result: Command exits 0 with all affected tests passing.
-  acceptance_criteria:
-  - Only Updated_Seatek_Analysis.R changes.
-  - Empty positive-value subsets retain NaN behavior.
-  - The R test suite passes.
-  - The replacement PR is created as a draft with source provenance.
-  provenance_urls: *id010
-  expiry_utc: '2026-09-13T17:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260906-seatekanalys-807-import
-  history: []
+- event_id: evt-s2-20260906-personal-con-2116-handoff
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029:evt-s2-20260906-personal-con-2116-handoff
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:15:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 created tested draft #2163 from s2-20260906-personal-con-2116; Stage 3 now owns the original and canonical relationship.'
+- event_id: evt-s2-20260906-personal-con-2054-handoff
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2054@eba7c04619ac59e0a63ac277d2d39ffd55565573
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2054@eba7c04619ac59e0a63ac277d2d39ffd55565573:evt-s2-20260906-personal-con-2054-handoff
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:15:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 created tested draft #2164 from s2-20260906-personal-con-2054; Stage 3 now owns the original and canonical relationship.'
+- event_id: evt-s2-20260906-seatekanalys-807-handoff
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f:evt-s2-20260906-seatekanalys-807-handoff
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:15:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 created tested draft #809 from s2-20260906-seatekanalys-807; Stage 3 now owns the original and canonical relationship.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
