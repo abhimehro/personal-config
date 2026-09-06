@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 64
+ledger_revision: 65
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -17322,11 +17322,11 @@ items:
   next_owner: stage3
   safe_default: Do not act on the superseded initial replacement head.
   next_action: 'Stage 3: retain this immutable historical head while Stage 1 processes current head dcded5c72e100984d0d138df2ec93fd688f42fe8.'
-  evidence_urls: &id010
+  evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2163
   - https://github.com/abhimehro/personal-config/pull/2116
   - https://github.com/abhimehro/personal-config/pull/2163#discussion_r3944677324
-  changed_paths: &id011
+  changed_paths: &id010
   - run_merges.py
   attempts:
     evidence: 2
@@ -17342,7 +17342,7 @@ items:
   url: https://github.com/abhimehro/personal-config/pull/2164
   base_sha: 818a1f3d45d2ac641b14e710db2737fe72f2151a
   head_sha: 73ebf209891b15f527b27a2deb8d962ea955576e
-  author:
+  author: &id011
     login: abhimehro
     identity_source: github_api
     app_slug: null
@@ -17357,25 +17357,27 @@ items:
   classification: PERFORMANCE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Keep the replacement draft until Stage 1 re-ingests its current head and required checks.
-  next_action: 'Stage 1: re-ingest draft #2164 from s2-20260906-personal-con-2054; verify draft state, current anchors, and required checks. Test evidence: python3 -m unittest tests.test_detect_duplicates (22 tests passed).'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: Do not act on the superseded pre-queue replacement head.
+  next_action: 'Stage 3: retain this immutable queue-parent head while using merged current head 37b4007a0c2dde8cbce09e45cb2386478cac8d57 as canonical evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2164
   - https://github.com/abhimehro/personal-config/pull/2054
+  - https://github.com/abhimehro/personal-config/commit/37b4007a0c2dde8cbce09e45cb2386478cac8d57
   changed_paths:
   - detect_duplicates.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 1
-    mutations: 2
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-09-06T17:15:00Z'
+    mutations: 4
+  handoffs:
+  - evt-s1-20260906-personal-con-2164-trunk-head-drift
+  revision: 1
+  updated_at_utc: '2026-09-06T17:43:30Z'
 - key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3
   repository: abhimehro/Seatek_Analysis
   pr: 809
@@ -17398,12 +17400,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_PLATFORM
-  lifecycle_state: STAGE1_INTAKE
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Keep the replacement draft while the GitHub Advanced Security AI job uses an unsupported model.
-  next_action: 'Stage 1: re-ingest draft #809 from s2-20260906-seatekanalys-807; verify draft state, current anchors, and required checks. Test evidence: ./run_tests.sh (full R test suite passed).'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Keep replacement #809 draft and do not bypass the unsupported-model platform hold.'
+  next_action: 'Stage 3: reconcile the platform failure and original #807; merge only after an independent predicate re-read clears or safely classifies the failed AI-review check.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/809
   - https://github.com/abhimehro/Seatek_Analysis/pull/807
@@ -17411,12 +17413,13 @@ items:
   changed_paths:
   - Updated_Seatek_Analysis.R
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 1
     mutations: 2
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-09-06T17:15:00Z'
+  handoffs:
+  - evt-s1-20260906-seatekanalys-809-platform-hold
+  revision: 1
+  updated_at_utc: '2026-09-06T17:43:30Z'
 - key: abhimehro/personal-config#2163@dcded5c72e100984d0d138df2ec93fd688f42fe8
   repository: abhimehro/personal-config
   pr: 2163
@@ -17429,21 +17432,59 @@ items:
   risk_class: ROUTINE
   sensitive_paths: *id009
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Keep the corrected replacement draft until Stage 1 re-ingests its current head and required checks.
-  next_action: 'Stage 1: re-ingest corrected draft #2163; repository-format validation is restored, focused tests and linters pass, and current required checks must still be verified.'
-  evidence_urls: *id010
-  changed_paths: *id011
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: Do not reopen the merged routine replacement.
+  next_action: 'None. Stage 3 may reconcile original PR #2116 after its closure cooldown and canonical-evidence checks.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2163
+  - https://github.com/abhimehro/personal-config/pull/2116
+  - https://github.com/abhimehro/personal-config/pull/2163#discussion_r3944677324
+  - https://github.com/abhimehro/personal-config/commit/64d937b78e71cdeaf37b169dee8e06000142fd46
+  changed_paths: *id010
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 2
-    mutations: 3
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-09-06T17:25:00Z'
+    mutations: 5
+  handoffs:
+  - evt-s1-20260906-personal-con-2163-terminal
+  revision: 1
+  updated_at_utc: '2026-09-06T17:43:30Z'
+- key: abhimehro/personal-config#2164@37b4007a0c2dde8cbce09e45cb2386478cac8d57
+  repository: abhimehro/personal-config
+  pr: 2164
+  url: https://github.com/abhimehro/personal-config/pull/2164
+  base_sha: 64d937b78e71cdeaf37b169dee8e06000142fd46
+  head_sha: 37b4007a0c2dde8cbce09e45cb2386478cac8d57
+  author: *id011
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: Do not reopen the merged routine replacement.
+  next_action: 'None. Stage 3 may reconcile original PR #2054 after its closure cooldown and canonical-evidence checks.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2164
+  - https://github.com/abhimehro/personal-config/pull/2054
+  - https://github.com/abhimehro/personal-config/commit/37b4007a0c2dde8cbce09e45cb2386478cac8d57
+  - https://github.com/abhimehro/personal-config/commit/070a5d43eda15669ce0b48b400dbf34293532817
+  changed_paths:
+  - detect_duplicates.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260906-personal-con-2164-terminal
+  revision: 1
+  updated_at_utc: '2026-09-06T17:43:30Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -33633,6 +33674,82 @@ events:
   policy_revision: null
   successful: null
   reason: Preserve the immutable initial replacement head after review found a validation regression; current-head re-ingest uses the corrected commit.
+- event_id: evt-s1-20260906-personal-con-2163-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2163@dcded5c72e100984d0d138df2ec93fd688f42fe8
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2163@dcded5c72e100984d0d138df2ec93fd688f42fe8:evt-s1-20260906-personal-con-2163-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:43:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 re-ingested the corrected replacement head, verified routine predicates and green checks, and submitted it through the registered Trunk queue; PR #2163 merged as 64d937b78e71cdeaf37b169dee8e06000142fd46.'
+- event_id: evt-s1-20260906-personal-con-2164-trunk-head-drift
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
+  from_owner: stage1
+  to_owner: stage3
+  from_state: STAGE1_INTAKE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e:evt-s1-20260906-personal-con-2164-trunk-head-drift
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:43:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Preserve the immutable pre-queue replacement head after Trunk merged current main into the branch; the queue-generated current head is recorded separately.
+- event_id: evt-s1-20260906-personal-con-2164-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2164@37b4007a0c2dde8cbce09e45cb2386478cac8d57
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2164@37b4007a0c2dde8cbce09e45cb2386478cac8d57:evt-s1-20260906-personal-con-2164-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:43:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 re-ingested the Trunk queue-generated current head and verified the replacement merged as 070a5d43eda15669ce0b48b400dbf34293532817.
+- event_id: evt-s1-20260906-seatekanalys-809-platform-hold
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3
+  from_owner: stage1
+  to_owner: stage3
+  from_state: STAGE1_INTAKE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3:evt-s1-20260906-seatekanalys-809-platform-hold
+  status: PROJECTED
+  created_at_utc: '2026-09-06T17:43:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 re-ingested the replacement draft and retained HOLD_PLATFORM because the GitHub Advanced Security AI review failed before repository analysis on an unsupported model while all source tests and ordinary checks passed.
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
