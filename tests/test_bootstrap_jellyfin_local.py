@@ -57,12 +57,18 @@ class TestBootstrapJellyfinLocal(unittest.TestCase):
         ):
             result = bootstrap_jellyfin_local.main()
 
+        out = output.getvalue()
         self.assertEqual(result, 0)
-        self.assertIn("DONE items=3 url=", output.getvalue())
-        self.assertNotIn(username, output.getvalue())
-        self.assertNotIn(credential_path, output.getvalue())
-        self.assertNotIn("sensitive-password", output.getvalue())
-        self.assertNotIn("sensitive-token", output.getvalue())
+        self.assertIn("DONE items=3 url=", out)
+        for secret in (
+            " user=",
+            " creds=",
+            username,
+            credential_path,
+            "sensitive-password",
+            "sensitive-token",
+        ):
+            self.assertNotIn(secret, out)
 
 
 if __name__ == "__main__":
