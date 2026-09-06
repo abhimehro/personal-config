@@ -26,7 +26,7 @@ _SPEC.loader.exec_module(bootstrap_jellyfin_local)
 class TestBootstrapJellyfinLocal(unittest.TestCase):
     def test_completion_log_does_not_expose_credentials(self):
         username = "sensitive-user"
-        credential_path = "/private/credentials/local-admin.credentials"
+        credential_path = str(bootstrap_jellyfin_local.CREDS)
         output = io.StringIO()
 
         with (
