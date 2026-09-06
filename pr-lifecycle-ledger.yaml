@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 59
+ledger_revision: 60
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -4905,7 +4905,6 @@ items:
     mutations: 1
   handoffs:
   - evt-s1-20260822-seatekanalys-709-h
-  - evt-s3-20260903-seatekanalys-709-a
   - evt-s3-20260903-seatekanalys-709-t
   revision: 2
   updated_at_utc: '2026-09-03T22:43:30Z'
@@ -7777,7 +7776,6 @@ items:
   handoffs:
   - evt-s1-20260822b-seatekanalys-689-h
   - evt-s3-20260822-seatekanalys-689-h
-  - evt-s3-20260903-seatekanalys-689-a
   - evt-s3-20260903-seatekanalys-689-t
   revision: 3
   updated_at_utc: '2026-09-03T23:23:00Z'
@@ -7785,8 +7783,8 @@ items:
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 532
   url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/532
-  base_sha: a9cd1279ffdad5ad248d4043970456eb24e3c194
-  head_sha: 1354d2989161b032d9ce644e5de37079d9a8da9b
+  base_sha: a94d902c26131d2783acdc178a048008f42076be
+  head_sha: c27736512a03095b69e6f4e4fdc0885fc2394e06
   author:
     login: abhimehro
     identity_source: github_api
@@ -7817,7 +7815,6 @@ items:
   handoffs:
   - evt-s1-20260822b-hydrographve-532-h
   - evt-s3-20260822-hydrographve-532-h
-  - evt-s3-20260903-hydrographve-532-a
   - evt-s3-20260903-hydrographve-532-t
   revision: 3
   updated_at_utc: '2026-09-03T22:21:00Z'
@@ -8085,26 +8082,28 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge uv.lock bumps.
-  next_action: 'Stage 3: HOLD_CONTRACT pyproject+uv.lock. Do not merge this run (0fb). Expires 2026-08-30T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1210.'
+  next_action: None. Squash-merged at 5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1210
   - https://api.github.com/repos/abhimehro/ctrld-sync/rulesets/11617361
+  - https://github.com/abhimehro/ctrld-sync/commit/5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c
   changed_paths:
   - pyproject.toml
   - uv.lock
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260823-ctrldsync-1210-h
-  revision: 1
-  updated_at_utc: '2026-08-23T19:20:00Z'
+  - evt-s1-20260903-ctrld-sync-1210-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1209@7a80810d8d75fd0ff7135ce45d641781a25e5ae6
   repository: abhimehro/ctrld-sync
   pr: 1209
@@ -9687,25 +9686,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge workflow dependency PRs.
-  next_action: 'Human: review Dependabot Action bump in agentics-maintenance.yml. Safe default: leave open. Do not squash-merge. Expires 2026-09-01T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1215.'
+  next_action: None. Squash-merged at 0cba79d22e17bcbf8edcc0f0e425da1c22a14638.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1215
+  - https://github.com/abhimehro/ctrld-sync/commit/0cba79d22e17bcbf8edcc0f0e425da1c22a14638
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260825-ctrldsync-1215-h
   - evt-s3-20260825-ctrldsync-1215-h
-  revision: 2
-  updated_at_utc: '2026-08-25T19:20:00Z'
+  - evt-s1-20260904-ctrld-sync-1215-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1527@d056ab9caab4ca28cd202d26f2cfc2d3a00a0168
   repository: abhimehro/email-security-pipeline
   pr: 1527
@@ -10683,25 +10684,27 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge lockfile or major-dependency bumps without review.
-  next_action: 'Stage 3: HOLD_CONTRACT scipy lockfile. Do not squash-merge lockfiles_and_major_dependencies. Expires 2026-09-02T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #565.'
+  next_action: None. Squash-merged at 7bf40206794d79f60e807741e86e584ca9d0a8bf.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/7bf40206794d79f60e807741e86e584ca9d0a8bf
   changed_paths:
   - poetry.lock
   - pyproject.toml
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260826-hydrographve-565-h
-  revision: 1
-  updated_at_utc: '2026-08-26T19:20:00Z'
+  - evt-s1-20260904-hydrographve-565-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#747@53b0a61a98e6bf74cf6647a2cfe150afe6f49d32
   repository: abhimehro/Seatek_Analysis
   pr: 747
@@ -14281,62 +14284,72 @@ items:
   url: https://github.com/abhimehro/ctrld-sync/pull/1220
   base_sha: 1fc7d09acdd68de521497a5b978a2d53b550f5b0
   head_sha: 2449bfc3963916564b7aa3678c722aa1995bf952
-  author: *id003
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
   author_type: BOT
   classification: DEPENDENCY
   risk_class: SENSITIVE
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge lockfiles_and_major_dependencies autonomously.
-  next_action: 'Stage 3: do not merge lockfile bumps without human review (pytest-benchmark uv.lock). Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1220.'
+  next_action: None. Squash-merged at 5edc560098c16151a858c5ac48f5717a7b6513c6.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1220
+  - https://github.com/abhimehro/ctrld-sync/commit/5edc560098c16151a858c5ac48f5717a7b6513c6
   changed_paths:
   - uv.lock
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-ctrldsync-1220-h
-  revision: 1
-  updated_at_utc: '2026-08-30T15:35:00Z'
+  - evt-s1-20260903-ctrld-sync-1220-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1218@0d2770999e22867e967d6e8f2197e48411f1d257
   repository: abhimehro/ctrld-sync
   pr: 1218
   url: https://github.com/abhimehro/ctrld-sync/pull/1218
   base_sha: d6f985d8f24bf3c6e1519aee1fd46b93737056cb
   head_sha: 0d2770999e22867e967d6e8f2197e48411f1d257
-  author: *id003
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
   author_type: BOT
   classification: DEPENDENCY
   risk_class: SENSITIVE
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge workflow majors or pins autonomously.
-  next_action: 'Stage 3: do not merge Dependabot workflow pin without human review. Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #1218.'
+  next_action: None. Squash-merged at f74a1b518a5f6b4c33e926e7e6797e9b855ca333.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1218
+  - https://github.com/abhimehro/ctrld-sync/commit/f74a1b518a5f6b4c33e926e7e6797e9b855ca333
   changed_paths:
   - .github/workflows/refactoring-agent.yml
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-ctrldsync-1218-h
-  revision: 1
-  updated_at_utc: '2026-08-30T15:35:00Z'
+  - evt-s1-20260903-ctrld-sync-1218-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1541@0da98127c2c52a462022abf82370aedff1436ba7
   repository: abhimehro/email-security-pipeline
   pr: 1541
@@ -15179,15 +15192,16 @@ items:
   - docs/cursor-automations/prompts/daily-pr-completion.md
   - docs/cursor-automations/prompts/daily-pr-review.md
   - docs/cursor-automations/prompts/daily-pr-salvage.md
-- terminal_disposition: null
+- terminal_disposition: MERGED_ROUTINE
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260831-seriescorrec-425-h
-  revision: 1
-  updated_at_utc: '2026-08-31T05:20:00Z'
+  - evt-s1-20260903-seriescorrec-425-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
   key: abhimehro/series_correction_project_updated#425@104ffe14273d95a1186d4f96966d6bf59235d317
   repository: abhimehro/series_correction_project_updated
   pr: 425
@@ -15208,13 +15222,14 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not approve, merge, or close until Stage 3 or a human clears sticky risk.
-  next_action: 'Stage 3: sticky GitHub Actions pin. Do not merge. Expires 2026-09-07T05:20:00Z'
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged Dependabot PR #425.'
+  next_action: None. Squash-merged at 0a77f22713cde1b9668f74a495c1beac28d85967.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/425
+  - https://github.com/abhimehro/series_correction_project_updated/commit/0a77f22713cde1b9668f74a495c1beac28d85967
   changed_paths:
   - .github/workflows/refactoring-agent.yml
 - terminal_disposition: CLOSED_SUPERSEDED
@@ -15591,9 +15606,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260831-emailsecuri-1550-h-import
+  - evt-repair-s2-20260831-emailsecuri-1550-h-activate
   - evt-s2-20260831-emailsecuri-1550-h
   - evt-s1-20260903-emailsecuri-1550-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84
   repository: abhimehro/email-security-pipeline
@@ -15633,9 +15650,11 @@ items:
     recovery: 1
     mutations: 1
   handoffs:
+  - evt-repair-s2-20260831-emailsecuri-1551-h-import
+  - evt-repair-s2-20260831-emailsecuri-1551-h-activate
   - evt-s2-20260831-emailsecuri-1551-h
   - evt-s1-20260903-emailsecuri-1551-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/personal-config#2141@aec416aa82ad68859f98710bc2ae4ef1bbf03a94
   repository: abhimehro/personal-config
@@ -15723,9 +15742,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260903-seatekanalys-799-h-import
+  - evt-repair-s2-20260903-seatekanalys-799-h-activate
   - evt-s2-20260903-seatekanalys-799-h
   - evt-s1-20260903-seatekanalys-799-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9
   repository: abhimehro/Seatek_Analysis
@@ -15766,7 +15787,6 @@ items:
     mutations: 1
   handoffs:
   - evt-s1-20260903-seatekanalys-788-h
-  - evt-s3-20260903-seatekanalys-788-a
   - evt-s3-20260903-seatekanalys-788-t
   revision: 2
   updated_at_utc: '2026-09-03T22:35:00Z'
@@ -15815,9 +15835,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260903-seatekanalys-800-h-import
+  - evt-repair-s2-20260903-seatekanalys-800-h-activate
   - evt-s2-20260903-seatekanalys-800-h
   - evt-s1-20260903-seatekanalys-800-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc
   repository: abhimehro/personal-config
@@ -15857,9 +15879,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260903-personalconf-2148-h-import
+  - evt-repair-s2-20260903-personalconf-2148-h-activate
   - evt-s2-20260903-personalconf-2148-h
   - evt-s1-20260903-personalconf-2148-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/personal-config#2144@6c2606870c415b20282834975bae2939251e5abd
   repository: abhimehro/personal-config
@@ -15941,10 +15965,11 @@ items:
     recovery: 1
     mutations: 3
   handoffs:
+  - evt-repair-s2-20260903-seatekanalys-801-h-import
+  - evt-repair-s2-20260903-seatekanalys-801-h-activate
   - evt-s2-20260903-seatekanalys-801-h
-  - evt-s3-20260903-seatekanalys-801-a
   - evt-s3-20260903-seatekanalys-801-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T23:23:00Z'
 - key: abhimehro/email-security-pipeline#1562@c3bb32936e969feb85fabb9c9f0e7b0056ec46bb
   repository: abhimehro/email-security-pipeline
@@ -16112,41 +16137,6 @@ items:
   - evt-s1-20260903-hydrographve-596-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/series_correction_project_updated#425@104ffe14273d95a1186d4f96966d6bf59235d317
-  repository: abhimehro/series_correction_project_updated
-  pr: 425
-  url: https://github.com/abhimehro/series_correction_project_updated/pull/425
-  base_sha: 4dbc5924902c7a0deef95340af0d203cb171a058
-  head_sha: 104ffe14273d95a1186d4f96966d6bf59235d317
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: *id004
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #425.'
-  next_action: None. Squash-merged at 0a77f22713cde1b9668f74a495c1beac28d85967.
-  evidence_urls:
-  - https://github.com/abhimehro/series_correction_project_updated/pull/425
-  - https://github.com/abhimehro/series_correction_project_updated/commit/0a77f22713cde1b9668f74a495c1beac28d85967
-  changed_paths:
-  - .github/workflows/refactoring-agent.yml
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260903-seriescorrec-425-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1554@097298a4a7690800ae0423549e04c7474a1a1bc4
   repository: abhimehro/email-security-pipeline
   pr: 1554
@@ -16217,115 +16207,6 @@ items:
   - evt-s1-20260903-seatekanalys-786-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/ctrld-sync#1210@4d6f4e56ee7a830d68e8f4adf2f6090aa19db7c7
-  repository: abhimehro/ctrld-sync
-  pr: 1210
-  url: https://github.com/abhimehro/ctrld-sync/pull/1210
-  base_sha: e1105e03d332cfa17518e306859ab96196944f32
-  head_sha: 4d6f4e56ee7a830d68e8f4adf2f6090aa19db7c7
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: *id004
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #1210.'
-  next_action: None. Squash-merged at 5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c.
-  evidence_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1210
-  - https://github.com/abhimehro/ctrld-sync/commit/5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c
-  changed_paths:
-  - pyproject.toml
-  - uv.lock
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260903-ctrld-sync-1210-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/ctrld-sync#1220@2449bfc3963916564b7aa3678c722aa1995bf952
-  repository: abhimehro/ctrld-sync
-  pr: 1220
-  url: https://github.com/abhimehro/ctrld-sync/pull/1220
-  base_sha: 1fc7d09acdd68de521497a5b978a2d53b550f5b0
-  head_sha: 2449bfc3963916564b7aa3678c722aa1995bf952
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: &id005
-      method: allowlist_login
-      signals:
-      - allowlist_login
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #1220.'
-  next_action: None. Squash-merged at 5edc560098c16151a858c5ac48f5717a7b6513c6.
-  evidence_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1220
-  - https://github.com/abhimehro/ctrld-sync/commit/5edc560098c16151a858c5ac48f5717a7b6513c6
-  changed_paths:
-  - uv.lock
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260903-ctrld-sync-1220-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/ctrld-sync#1218@0d2770999e22867e967d6e8f2197e48411f1d257
-  repository: abhimehro/ctrld-sync
-  pr: 1218
-  url: https://github.com/abhimehro/ctrld-sync/pull/1218
-  base_sha: d6f985d8f24bf3c6e1519aee1fd46b93737056cb
-  head_sha: 0d2770999e22867e967d6e8f2197e48411f1d257
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: *id005
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #1218.'
-  next_action: None. Squash-merged at f74a1b518a5f6b4c33e926e7e6797e9b855ca333.
-  evidence_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1218
-  - https://github.com/abhimehro/ctrld-sync/commit/f74a1b518a5f6b4c33e926e7e6797e9b855ca333
-  changed_paths:
-  - .github/workflows/refactoring-agent.yml
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260903-ctrld-sync-1218-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1561@d30f562ed866df7cb989cc1cdf21ab56cc2d805a
   repository: abhimehro/email-security-pipeline
   pr: 1561
@@ -16336,7 +16217,10 @@ items:
     login: dependabot[bot]
     identity_source: github_api
     app_slug: dependabot
-    identity_provenance: *id005
+    identity_provenance: &id005
+      method: allowlist_login
+      signals:
+      - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
   risk_class: ROUTINE
@@ -16466,44 +16350,6 @@ items:
   - evt-s1-20260903-seatekanalys-784-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e
-  repository: abhimehro/ctrld-sync
-  pr: 1215
-  url: https://github.com/abhimehro/ctrld-sync/pull/1215
-  base_sha: e1105e03d332cfa17518e306859ab96196944f32
-  head_sha: 2f9751e1ce26d41c40903816d197e56e7a53ae3e
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: &id006
-      method: allowlist_login
-      signals:
-      - allowlist_login
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #1215.'
-  next_action: None. Squash-merged at 0cba79d22e17bcbf8edcc0f0e425da1c22a14638.
-  evidence_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1215
-  - https://github.com/abhimehro/ctrld-sync/commit/0cba79d22e17bcbf8edcc0f0e425da1c22a14638
-  changed_paths:
-  - .github/workflows/agentics-maintenance.yml
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260904-ctrld-sync-1215-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1221@33603a68051d6e93ea75330deb1574b0bc591fe8
   repository: abhimehro/ctrld-sync
   pr: 1221
@@ -16514,7 +16360,10 @@ items:
     login: dependabot[bot]
     identity_source: github_api
     app_slug: dependabot
-    identity_provenance: *id006
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
   risk_class: ROUTINE
@@ -16539,42 +16388,6 @@ items:
   - evt-s1-20260904-ctrld-sync-1221-t
   revision: 1
   updated_at_utc: '2026-09-03T22:00:00Z'
-- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
-  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
-  pr: 565
-  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
-  base_sha: cddb8a3ac786e184802629bda0adb3ec728338cb
-  head_sha: 69e6dd5d24d266d68bf88b53876c0c62d2139ebb
-  author:
-    login: dependabot[bot]
-    identity_source: github_api
-    app_slug: dependabot
-    identity_provenance: *id006
-  author_type: BOT
-  classification: DEPENDENCY
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: TERMINAL
-  terminal_disposition: MERGED_ROUTINE
-  current_owner: none
-  next_owner: none
-  safe_default: 'Do not reopen merged Dependabot PR #565.'
-  next_action: None. Squash-merged at 7bf40206794d79f60e807741e86e584ca9d0a8bf.
-  evidence_urls:
-  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
-  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/7bf40206794d79f60e807741e86e584ca9d0a8bf
-  changed_paths:
-  - poetry.lock
-  - pyproject.toml
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s1-20260904-hydrographve-565-t
-  revision: 1
-  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1209@653f95a310fe553884c17588a12c57f9d95684c2
   repository: abhimehro/ctrld-sync
   pr: 1209
@@ -16585,7 +16398,7 @@ items:
     login: dependabot[bot]
     identity_source: github_api
     app_slug: dependabot
-    identity_provenance: &id007
+    identity_provenance: &id006
       method: allowlist_login
       signals:
       - allowlist_login
@@ -16623,7 +16436,7 @@ items:
     login: dependabot[bot]
     identity_source: github_api
     app_slug: dependabot
-    identity_provenance: *id007
+    identity_provenance: *id006
   author_type: BOT
   classification: DEPENDENCY
   risk_class: ROUTINE
@@ -16685,9 +16498,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260904-seriescorrec-434-h-import
+  - evt-repair-s2-20260904-seriescorrec-434-h-activate
   - evt-s2-20260904-seriescorrec-434-h
   - evt-s1-20260904-seriescorre-434-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268
   repository: abhimehro/email-security-pipeline
@@ -16726,9 +16541,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260904-emailsecuri-1566-h-import
+  - evt-repair-s2-20260904-emailsecuri-1566-h-activate
   - evt-s2-20260904-emailsecuri-1566-h
   - evt-s1-20260904-emailsecuri-1566-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5
   repository: abhimehro/ctrld-sync
@@ -16770,9 +16587,11 @@ items:
     recovery: 1
     mutations: 2
   handoffs:
+  - evt-repair-s2-20260904-ctrldsync-1235-h-import
+  - evt-repair-s2-20260904-ctrldsync-1235-h-activate
   - evt-s2-20260904-ctrldsync-1235-h
   - evt-s1-20260904-ctrld-sync-1235-t
-  revision: 2
+  revision: 4
   updated_at_utc: '2026-09-03T22:00:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
@@ -30083,6 +29902,40 @@ events:
   created_at_utc: '2026-08-31T09:16:00Z'
   acknowledged_at_utc: null
   reason: 'STALE_ANCHOR: current JSON exports on main diverged after WI creation; wrap would overwrite newer content.'
+- event_id: evt-repair-s2-20260831-emailsecuri-1550-h-import
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea:evt-repair-s2-20260831-emailsecuri-1550-h-import
+  status: PROJECTED
+  created_at_utc: '2026-08-31T09:15:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260831-emailsecuri-1550-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea:evt-repair-s2-20260831-emailsecuri-1550-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-08-31T09:15:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260831-emailsecuri-1550-h
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea
@@ -30093,13 +29946,47 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea:evt-s2-20260831-emailsecuri-1550-h
   status: PROJECTED
   created_at_utc: '2026-08-31T09:16:00Z'
   acknowledged_at_utc: null
   reason: 'Stage 2 created routine salvage draft #1550 from work item s2-20260831-email-1497-setup-cancel-ux. pytest 754 passed.'
+- event_id: evt-repair-s2-20260831-emailsecuri-1551-h-import
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84:evt-repair-s2-20260831-emailsecuri-1551-h-import
+  status: PROJECTED
+  created_at_utc: '2026-08-31T09:15:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260831-emailsecuri-1551-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84:evt-repair-s2-20260831-emailsecuri-1551-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-08-31T09:15:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260831-emailsecuri-1551-h
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84
@@ -30110,8 +29997,8 @@ events:
   next_owner: stage3
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84:evt-s2-20260831-emailsecuri-1551-h
   status: PROJECTED
   created_at_utc: '2026-08-31T09:16:00Z'
@@ -30127,8 +30014,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/email-security-pipeline#1550@0cbd0baa47967e2694f509ac24c4ba6915758fea:evt-s1-20260903-emailsecuri-1550-t
   status: PROJECTED
   created_at_utc: '2026-09-03T22:00:00Z'
@@ -30144,8 +30031,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_BOUNDED_COMPLETION
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/email-security-pipeline#1551@881d634ede6c9aecac66347e22d7e171f82ecc84:evt-s1-20260903-emailsecuri-1551-t
   status: PROJECTED
   created_at_utc: '2026-09-03T22:00:00Z'
@@ -30273,11 +30160,11 @@ events:
 - event_id: evt-s2-20260903-seatekanalys-698-h
   kind: HANDOFF
   item_key: abhimehro/Seatek_Analysis#698@42cc4aa705ca1779f7388f15039f678a296208c5
-  from_owner: stage2
-  to_owner: stage1
+  from_owner: stage1
+  to_owner: stage3
   from_state: STAGE1_INTAKE
-  to_state: STAGE1_INTAKE
-  next_owner: stage1
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
   terminal_disposition: null
   parent_event_id: null
   expected_item_revision: 3
@@ -30286,7 +30173,41 @@ events:
   status: PROJECTED
   created_at_utc: '2026-09-03T22:09:00Z'
   acknowledged_at_utc: null
-  reason: 'Desk-assigned Stage 2 opened salvage draft #799 for unique remaining R wrap + tests; original stays open.'
+  reason: 'Desk-assigned Stage 2 opened salvage draft #799 for unique remaining R wrap + tests; original stays open. Ledger continuity repair routes the completed salvage result through Stage 3 reconciliation.'
+- event_id: evt-repair-s2-20260903-seatekanalys-799-h-import
+  kind: IMPORT
+  item_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645:evt-repair-s2-20260903-seatekanalys-799-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:08:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260903-seatekanalys-799-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645:evt-repair-s2-20260903-seatekanalys-799-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:08:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260903-seatekanalys-799-h
   kind: HANDOFF
   item_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645
@@ -30297,8 +30218,8 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645:evt-s2-20260903-seatekanalys-799-h
   status: PROJECTED
   created_at_utc: '2026-09-03T22:09:00Z'
@@ -30314,8 +30235,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/Seatek_Analysis#799@1a306ae318fffdf0be843e8d7b8ed5d49c310645:evt-s1-20260903-seatekanalys-799-t
   status: PROJECTED
   created_at_utc: '2026-09-03T22:16:00Z'
@@ -30324,9 +30245,9 @@ events:
 - event_id: evt-s1-20260903-seatekanalys-698-t
   kind: TERMINAL
   item_key: abhimehro/Seatek_Analysis#698@42cc4aa705ca1779f7388f15039f678a296208c5
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: CLOSED_SUPERSEDED
@@ -31222,6 +31143,40 @@ events:
   created_at_utc: '2026-09-03T22:21:00Z'
   acknowledged_at_utc: null
   reason: Abhi override Batch 4; squash-merged GITHUB_SQUASH to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Not a standing HUMAN merge rule. Did not merge
+- event_id: evt-repair-s2-20260903-seatekanalys-800-h-import
+  kind: IMPORT
+  item_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd:evt-repair-s2-20260903-seatekanalys-800-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:29:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260903-seatekanalys-800-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd:evt-repair-s2-20260903-seatekanalys-800-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:29:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260903-seatekanalys-800-h
   kind: HANDOFF
   item_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd
@@ -31232,8 +31187,8 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd:evt-s2-20260903-seatekanalys-800-h
   status: PROJECTED
   created_at_utc: '2026-09-03T22:30:00Z'
@@ -31249,8 +31204,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/Seatek_Analysis#800@bafce0b244c000c60ead2760b6c64f57ef0b55bd:evt-s1-20260903-seatekanalys-800-t
   status: PROJECTED
   created_at_utc: '2026-09-03T22:33:00Z'
@@ -31290,6 +31245,40 @@ events:
   created_at_utc: '2026-09-03T22:35:00Z'
   acknowledged_at_utc: null
   reason: Jules REVIEW_SECURITY exception Batch 5; squash-merged GITHUB_SQUASH to main at 3ceee784c01b2fad8cedb8fd18c24cd954d4e891. Not a standing merge rule. CLEAN after
+- event_id: evt-repair-s2-20260903-personalconf-2148-h-import
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc:evt-repair-s2-20260903-personalconf-2148-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:41:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260903-personalconf-2148-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc:evt-repair-s2-20260903-personalconf-2148-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:41:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260903-personalconf-2148-h
   kind: HANDOFF
   item_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc
@@ -31300,8 +31289,8 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc:evt-s2-20260903-personalconf-2148-h
   status: PROJECTED
   created_at_utc: '2026-09-03T22:42:00Z'
@@ -31351,8 +31340,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/personal-config#2148@51ffa4caa1632532d3e2a771e1423e1659b1a2fc:evt-s1-20260903-personalconf-2148-t
   status: PROJECTED
   created_at_utc: '2026-09-03T22:59:30Z'
@@ -31375,6 +31364,40 @@ events:
   created_at_utc: '2026-09-03T23:07:00Z'
   acknowledged_at_utc: null
   reason: 'Marked ready, update-branch succeeded (picked up #2148 on main), /trunk merge. MERGEABLE. Required check dependency-review green. Merge 26fcf82284b712dd360e3c1385fd9e29b2a1e9e6.'
+- event_id: evt-repair-s2-20260903-seatekanalys-801-h-import
+  kind: IMPORT
+  item_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-repair-s2-20260903-seatekanalys-801-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:13:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260903-seatekanalys-801-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-repair-s2-20260903-seatekanalys-801-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:13:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260903-seatekanalys-801-h
   kind: HANDOFF
   item_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf
@@ -31385,8 +31408,8 @@ events:
   next_owner: stage3
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-s2-20260903-seatekanalys-801-h
   status: PROJECTED
   created_at_utc: '2026-09-03T23:14:00Z'
@@ -31402,8 +31425,8 @@ events:
   next_owner: stage3
   terminal_disposition: null
   parent_event_id: evt-s2-20260903-seatekanalys-801-h
-  expected_item_revision: 1
-  resulting_item_revision: 1
+  expected_item_revision: 3
+  resulting_item_revision: 3
   idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-s3-20260903-seatekanalys-801-a
   status: ACKNOWLEDGED
   created_at_utc: '2026-09-03T23:23:00Z'
@@ -31419,8 +31442,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_BOUNDED_COMPLETION
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-s3-20260903-seatekanalys-801-t
   status: PROJECTED
   created_at_utc: '2026-09-03T23:23:00Z'
@@ -31531,20 +31554,20 @@ events:
 - event_id: evt-s1-20260903-seriescorrec-425-t
   kind: TERMINAL
   item_key: abhimehro/series_correction_project_updated#425@104ffe14273d95a1186d4f96966d6bf59235d317
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 1
+  resulting_item_revision: 2
   idempotency_key: abhimehro/series_correction_project_updated#425@104ffe14273d95a1186d4f96966d6bf59235d317:evt-s1-20260903-seriescorrec-425-t
   status: PROJECTED
   created_at_utc: '2026-09-03T23:36:50Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster: squash-merged codescene-oss/pr-refactoring-agent 1.0.8→1.1.1. MERGEABLE CLEAN. Merge 0a77f22713cde1b9668f74a495c1beac28d85967.'
+  reason: 'Desk Dependabot CLEAN cluster: squash-merged codescene-oss/pr-refactoring-agent 1.0.8→1.1.1. MERGEABLE CLEAN. Merge 0a77f22713cde1b9668f74a495c1beac28d85967. Ledger continuity repair preserves the prior REVIEW_SECURITY / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260903-emailsecuri-1554-t
   kind: TERMINAL
   item_key: abhimehro/email-security-pipeline#1554@097298a4a7690800ae0423549e04c7474a1a1bc4
@@ -31582,54 +31605,54 @@ events:
 - event_id: evt-s1-20260903-ctrld-sync-1210-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1210@4d6f4e56ee7a830d68e8f4adf2f6090aa19db7c7
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 1
+  resulting_item_revision: 2
   idempotency_key: abhimehro/ctrld-sync#1210@4d6f4e56ee7a830d68e8f4adf2f6090aa19db7c7:evt-s1-20260903-ctrld-sync-1210-t
   status: PROJECTED
   created_at_utc: '2026-09-03T23:36:50Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster: squash-merged python-dotenv 1.2.2→1.2.3 (uv.lock patch). MERGEABLE CLEAN. Merge 5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c.'
+  reason: 'Desk Dependabot CLEAN cluster: squash-merged python-dotenv 1.2.2→1.2.3 (uv.lock patch). MERGEABLE CLEAN. Merge 5cb4e5d8b7c63bc9cd020f9e49dfd2dd1e36cd8c. Ledger continuity repair preserves the prior HOLD_CONTRACT / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260903-ctrld-sync-1220-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1220@2449bfc3963916564b7aa3678c722aa1995bf952
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 1
+  resulting_item_revision: 2
   idempotency_key: abhimehro/ctrld-sync#1220@2449bfc3963916564b7aa3678c722aa1995bf952:evt-s1-20260903-ctrld-sync-1220-t
   status: PROJECTED
   created_at_utc: '2026-09-03T23:42:00Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster: squash-merged pytest-benchmark 5.2.3→5.3.0. MERGEABLE CLEAN. Merge 5edc560098c16151a858c5ac48f5717a7b6513c6.'
+  reason: 'Desk Dependabot CLEAN cluster: squash-merged pytest-benchmark 5.2.3→5.3.0. MERGEABLE CLEAN. Merge 5edc560098c16151a858c5ac48f5717a7b6513c6. Ledger continuity repair preserves the prior HOLD_CONTRACT / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260903-ctrld-sync-1218-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1218@0d2770999e22867e967d6e8f2197e48411f1d257
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 1
+  resulting_item_revision: 2
   idempotency_key: abhimehro/ctrld-sync#1218@0d2770999e22867e967d6e8f2197e48411f1d257:evt-s1-20260903-ctrld-sync-1218-t
   status: PROJECTED
   created_at_utc: '2026-09-03T23:42:00Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster: squash-merged codescene-oss/pr-refactoring-agent 1.0.8→1.1.0. MERGEABLE CLEAN. Merge f74a1b518a5f6b4c33e926e7e6797e9b855ca333.'
+  reason: 'Desk Dependabot CLEAN cluster: squash-merged codescene-oss/pr-refactoring-agent 1.0.8→1.1.0. MERGEABLE CLEAN. Merge f74a1b518a5f6b4c33e926e7e6797e9b855ca333. Ledger continuity repair preserves the prior REVIEW_SECURITY / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260903-emailsecuri-1561-t
   kind: TERMINAL
   item_key: abhimehro/email-security-pipeline#1561@d30f562ed866df7cb989cc1cdf21ab56cc2d805a
@@ -31701,20 +31724,20 @@ events:
 - event_id: evt-s1-20260904-ctrld-sync-1215-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e
-  from_owner: stage1
+  from_owner: human
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: WAITING_HUMAN
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e:evt-s1-20260904-ctrld-sync-1215-t
   status: PROJECTED
   created_at_utc: '2026-09-04T01:55:00Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged github/gh-aw/actions/setup 0.86.2→0.87.3. MERGEABLE CLEAN. Merge 0cba79d22e17bcbf8edcc0f0e425da1c22a14638.'
+  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged github/gh-aw/actions/setup 0.86.2→0.87.3. MERGEABLE CLEAN. Merge 0cba79d22e17bcbf8edcc0f0e425da1c22a14638. Ledger continuity repair preserves the prior REVIEW_SECURITY / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260904-ctrld-sync-1221-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1221@33603a68051d6e93ea75330deb1574b0bc591fe8
@@ -31735,20 +31758,20 @@ events:
 - event_id: evt-s1-20260904-hydrographve-565-t
   kind: TERMINAL
   item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
-  from_owner: stage1
+  from_owner: stage3
   to_owner: none
-  from_state: STAGE1_INTAKE
+  from_state: STAGE3_RECONCILIATION
   to_state: TERMINAL
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 1
+  resulting_item_revision: 2
   idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb:evt-s1-20260904-hydrographve-565-t
   status: PROJECTED
   created_at_utc: '2026-09-04T01:55:00Z'
   acknowledged_at_utc: null
-  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged scipy 1.18.0→1.18.1. MERGEABLE CLEAN. Merge 7bf40206794d79f60e807741e86e584ca9d0a8bf.'
+  reason: 'Desk Dependabot CLEAN cluster 13: squash-merged scipy 1.18.0→1.18.1. MERGEABLE CLEAN. Merge 7bf40206794d79f60e807741e86e584ca9d0a8bf. Ledger continuity repair preserves the prior HOLD_CONTRACT / SENSITIVE classification; the historical merge is not a standing routine-policy exception.'
 - event_id: evt-s1-20260904-ctrld-sync-1170-t
   kind: TERMINAL
   item_key: abhimehro/ctrld-sync#1170@c8d37ef3d58f80387399c6debf5742596c808319
@@ -31817,6 +31840,40 @@ events:
   created_at_utc: '2026-09-04T01:50:00Z'
   acknowledged_at_utc: null
   reason: 'Desk Dependabot CLEAN cluster 14: squash-merged pylint 4.0.7→4.0.8. MERGEABLE CLEAN. Merge 0f60813d101fe7327c46edff2f1b7b3ffc7380a7.'
+- event_id: evt-repair-s2-20260904-seriescorrec-434-h-import
+  kind: IMPORT
+  item_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d:evt-repair-s2-20260904-seriescorrec-434-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260904-seriescorrec-434-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d:evt-repair-s2-20260904-seriescorrec-434-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260904-seriescorrec-434-h
   kind: HANDOFF
   item_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d
@@ -31827,13 +31884,47 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d:evt-s2-20260904-seriescorrec-434-h
   status: PROJECTED
   created_at_utc: '2026-09-04T01:50:00Z'
   acknowledged_at_utc: null
   reason: 'Stage 2 Desk Batch 14 salvage draft #434 from #390 (spreadsheet_safety shallow-copy only; no .jules). Original left open.'
+- event_id: evt-repair-s2-20260904-emailsecuri-1566-h-import
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268:evt-repair-s2-20260904-emailsecuri-1566-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260904-emailsecuri-1566-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268:evt-repair-s2-20260904-emailsecuri-1566-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260904-emailsecuri-1566-h
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268
@@ -31844,13 +31935,47 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268:evt-s2-20260904-emailsecuri-1566-h
   status: PROJECTED
   created_at_utc: '2026-09-04T01:50:00Z'
   acknowledged_at_utc: null
   reason: 'Stage 2 Desk Batch 14 salvage draft #1566 from #1512 (nlp_analyzer Aho-Corasick only; no .jules). Original left open.'
+- event_id: evt-repair-s2-20260904-ctrldsync-1235-h-import
+  kind: IMPORT
+  item_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5:evt-repair-s2-20260904-ctrldsync-1235-h-import
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:58Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs ingestion of a Stage-2-created replacement from its recorded provenance.
+- event_id: evt-repair-s2-20260904-ctrldsync-1235-h-activate
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5:evt-repair-s2-20260904-ctrldsync-1235-h-activate
+  status: PROJECTED
+  created_at_utc: '2026-09-04T01:49:59Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs activation before the recorded Stage 2 handoff.
 - event_id: evt-s2-20260904-ctrldsync-1235-h
   kind: HANDOFF
   item_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5
@@ -31861,8 +31986,8 @@ events:
   next_owner: stage1
   terminal_disposition: null
   parent_event_id: null
-  expected_item_revision: 0
-  resulting_item_revision: 1
+  expected_item_revision: 2
+  resulting_item_revision: 3
   idempotency_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5:evt-s2-20260904-ctrldsync-1235-h
   status: PROJECTED
   created_at_utc: '2026-09-04T01:50:00Z'
@@ -31878,8 +32003,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/series_correction_project_updated#434@46ddf2ed4c01949ab30f44b87bfe34393be6243d:evt-s1-20260904-seriescorre-434-t
   status: PROJECTED
   created_at_utc: '2026-09-04T02:10:00Z'
@@ -31895,8 +32020,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/email-security-pipeline#1566@7a8d7120fa3ce6dec3d1ef141229947ff07f4268:evt-s1-20260904-emailsecuri-1566-t
   status: PROJECTED
   created_at_utc: '2026-09-04T02:10:00Z'
@@ -31912,8 +32037,8 @@ events:
   next_owner: none
   terminal_disposition: MERGED_ROUTINE
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
+  expected_item_revision: 3
+  resulting_item_revision: 4
   idempotency_key: abhimehro/ctrld-sync#1235@710bec65cf72bd070b04554f3dc0f10fd82834f5:evt-s1-20260904-ctrld-sync-1235-t
   status: PROJECTED
   created_at_utc: '2026-09-04T02:10:00Z'
@@ -32021,102 +32146,92 @@ events:
   created_at_utc: '2026-09-04T02:10:00Z'
   acknowledged_at_utc: null
   reason: 'Desk Batch 15: closed original as superseded by salvage #1235.'
-stage2_work_items:
-- work_item_id: s2-20260831-series-390-spreadsheet-safety
-  source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
-  repository: abhimehro/series_correction_project_updated
-  pr: 390
-  base_sha: 5b5a73485d56dbc0dbb34620ccc1af08f4c63419
-  head_sha: 0b132998f952c8aff357f2d709dbae79a9661679
-  allowed_paths:
-  - scripts/spreadsheet_safety.py
-  prohibited_paths:
-  - .jules/
-  - .Jules/
-  - .github/workflows
-  - uv.lock
-  - poetry.lock
-  - display.py
-  repair_description: Recover unique remaining source in scripts/spreadsheet_safety.py on a focused draft. Prohibit .jules/.Jules journals. Do not merge DIRTY parent.
-  required_test_command: python3 -m pytest scripts/tests/ -v
-  expected_test_result: pytest exit 0
-  acceptance_criteria:
-  - Only scripts/spreadsheet_safety.py plus necessary tests change.
-  - pytest passes.
-  - No .jules/ or workflow or lockfile edits.
-  provenance_urls:
-  - https://github.com/abhimehro/series_correction_project_updated/pull/390
-  expiry_utc: '2026-09-07T05:20:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260831-seriescorrec-390-h
-  history: []
-- work_item_id: s2-20260831-email-1512-nlp-aho
-  source_item_key: abhimehro/email-security-pipeline#1512@e8608c1b16278be17b965e1d003c6c9350ff399f
-  repository: abhimehro/email-security-pipeline
-  pr: 1512
-  base_sha: e009e5923860f5b504f6e179ad2380efe514bf4d
-  head_sha: e8608c1b16278be17b965e1d003c6c9350ff399f
-  allowed_paths:
-  - src/modules/nlp_analyzer.py
-  prohibited_paths:
-  - .jules/
-  - .Jules/
-  - .github/workflows
-  - uv.lock
-  - poetry.lock
-  - display.py
-  repair_description: Recover unique remaining source in src/modules/nlp_analyzer.py on a focused draft. Prohibit .jules/.Jules journals. Do not merge DIRTY parent.
-  required_test_command: python3 -m pytest
-  expected_test_result: pytest exit 0
-  acceptance_criteria:
-  - Only src/modules/nlp_analyzer.py plus necessary tests change.
-  - pytest passes.
-  - No .jules/ or workflow or lockfile edits.
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1512
-  expiry_utc: '2026-09-07T05:20:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260831-emailsecuri-1512-h
-  history: []
-- work_item_id: s2-20260831-ctrld-1207-prng-jitter
-  source_item_key: abhimehro/ctrld-sync#1207@f58cc4abfa9c1f1f66c94abdc34253434d64ad1f
-  repository: abhimehro/ctrld-sync
-  pr: 1207
-  base_sha: e7d0c8a559d80f6f3118345129e85b92e831c538
-  head_sha: f58cc4abfa9c1f1f66c94abdc34253434d64ad1f
-  allowed_paths:
-  - api_client.py
-  - benchmark_retry_jitter.py
-  - tests/test_dataclasses.py
-  - tests/test_folder_validation.py
-  - tests/test_gh_client.py
-  - tests/test_plan_json_write.py
-  - tests/test_rate_limit.py
-  - tests/test_retry_jitter.py
-  - tests/test_ux.py
-  prohibited_paths:
-  - .jules/
-  - .Jules/
-  - .github/workflows
-  - uv.lock
-  - poetry.lock
-  - display.py
-  repair_description: Recover unique remaining PRNG jitter source in api_client.py and benchmark_retry_jitter.py plus listed tests. Do not recreate deleted display.py (0gm). Prohibit .jules/. Do not merge DIRTY parent.
-  required_test_command: uv run pytest tests/ test_main.py -v
-  expected_test_result: pytest exit 0
-  acceptance_criteria:
-  - Unique remaining jitter source and listed tests only.
-  - uv pytest passes.
-  - display.py is not recreated. No .jules/ or lockfile edits.
-  provenance_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1207
-  expiry_utc: '2026-09-07T05:20:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260831-ctrldsync-1207-h
-  history: []
+- event_id: evt-s1-20260903-seatekanalys-680-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#680@7d418e08a990e4ac92475b06db2c843a24d3e22d
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#680@7d418e08a990e4ac92475b06db2c843a24d3e22d:evt-s1-20260903-seatekanalys-680-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:00:00Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs the omitted terminal event from the recorded terminal item projection and evidence.
+- event_id: evt-s1-20260903-seatekanalys-676-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#676@fc17929caa6b25c34f92d29b98ad41b1e5928793
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#676@fc17929caa6b25c34f92d29b98ad41b1e5928793:evt-s1-20260903-seatekanalys-676-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:00:00Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs the omitted terminal event from the recorded terminal item projection and evidence.
+- event_id: evt-s1-20260903-seatekanalys-665-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#665@b5b5ac923f37b7c44cbc07e8941743966b6f51d2
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#665@b5b5ac923f37b7c44cbc07e8941743966b6f51d2:evt-s1-20260903-seatekanalys-665-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:00:00Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs the omitted terminal event from the recorded terminal item projection and evidence.
+- event_id: evt-s1-20260903-seatekanalys-694-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#694@c980eef4ca96010bc47865a2b7738fb04c047d9f
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#694@c980eef4ca96010bc47865a2b7738fb04c047d9f:evt-s1-20260903-seatekanalys-694-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:00:00Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs the omitted terminal event from the recorded terminal item projection and evidence.
+- event_id: evt-s1-20260903-seatekanalys-688-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#688@eee2ed1597aed764cab67545f0ccda64a540749d
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#688@eee2ed1597aed764cab67545f0ccda64a540749d:evt-s1-20260903-seatekanalys-688-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:00:00Z'
+  acknowledged_at_utc: null
+  reason: Ledger continuity repair reconstructs the omitted terminal event from the recorded terminal item projection and evidence.
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
