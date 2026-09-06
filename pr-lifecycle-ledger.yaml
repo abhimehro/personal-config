@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 66
+ledger_revision: 67
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -86,12 +86,12 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 5511a2c69c7f23dd45cf4d0e25a96197b400ccea and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-22T09:28:08Z as 05e49833d0fffa9ed6f43fce0200e7cffa7fb0d4; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2016
   - https://github.com/abhimehro/personal-config/commit/05e49833d0fffa9ed6f43fce0200e7cffa7fb0d4
@@ -109,10 +109,11 @@ items:
   handoffs:
   - evt-s1-20260819-personal-con-2016-h
   - evt-s3-20260906-bhimehro-personal-config-2016-081eaa88-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2016-081eaa88-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1201@067bd6d8d6e1c8aaa6aa590e783857276ea8c02c
   repository: abhimehro/ctrld-sync
   pr: 1201
@@ -2413,12 +2414,12 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head b934f217c1d503988efbca66fb123d70edfabdf9 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-09-01T11:31:35Z as 2b91484d71308fb28b8101ab09ef756e2a3b98b8; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/2b91484d71308fb28b8101ab09ef756e2a3b98b8
@@ -2433,10 +2434,11 @@ items:
   handoffs:
   - evt-s1-20260820b-hydrographve-507-h
   - evt-s3-20260906-s-seatek-sensors-project-507-051322aa-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-s-seatek-sensors-project-507-051322aa-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#696@a9160c39eb03d8b5084ab7e4b57dc7ced5d2767a
   repository: abhimehro/Seatek_Analysis
   pr: 696
@@ -3411,12 +3413,12 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 2ccdf411c1424edcba962f12598432dc051814f9 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-22T09:25:44Z as 88c2df1af8e319775cc09d111014959ee7550cbb; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/1998
   - https://github.com/abhimehro/personal-config/commit/88c2df1af8e319775cc09d111014959ee7550cbb
@@ -3429,10 +3431,11 @@ items:
   handoffs:
   - evt-s1-20260820b-personalconf-1998-h
   - evt-s3-20260906-bhimehro-personal-config-1998-5ef99970-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-1998-5ef99970-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#1980@45af0d521acd200bc820f2feda3535ff71621823
   repository: abhimehro/personal-config
   pr: 1980
@@ -3888,12 +3891,12 @@ items:
   sensitive_paths:
   - shell_execution
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 9ac7d5a499f497d97947cd071834dad403f7b92f and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-22T09:32:04Z as d494d9715f3ac014ad6d0b8836562469778de251; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2037
   - https://github.com/abhimehro/personal-config/commit/d494d9715f3ac014ad6d0b8836562469778de251
@@ -3944,10 +3947,11 @@ items:
   handoffs:
   - evt-s1-20260820b-personalconf-2037-h
   - evt-s3-20260906-bhimehro-personal-config-2037-8ba1b469-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2037-8ba1b469-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#244@365f44d6a55d4dd689440af5700c5d50b1ad763e
   repository: abhimehro/repoprompt-ce
   pr: 244
@@ -4603,12 +4607,12 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head a6690a009681c39946d4d0d1d68c2ca550a40f96 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-31T05:08:25Z as e52093cb5da58989cf1fb8df5c086558808dcfcd; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1510
   - https://api.github.com/repos/abhimehro/email-security-pipeline/rulesets/9621487
@@ -4623,10 +4627,11 @@ items:
   handoffs:
   - evt-s1-20260822-emailsecuri-1510-h
   - evt-s3-20260906--email-security-pipeline-1510-0dd2a259-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1510-0dd2a259-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/email-security-pipeline#1509@f34f16790a4732b80ebb8bb6701f5cca2cc6bbc6
   repository: abhimehro/email-security-pipeline
   pr: 1509
@@ -7682,12 +7687,12 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 613dfa026c1f9eff555e0aeb53bff2d54ae154ab and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-09-01T12:48:16Z as 6662c020a4ef56e677cf738b5fd5cec7addbfbe0; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/711
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
@@ -7704,10 +7709,11 @@ items:
   handoffs:
   - evt-s1-20260822b-seatekanalys-711-h
   - evt-s3-20260906-bhimehro-seatek-analysis-711-416f52ee-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-711-416f52ee-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#549@9ff20d2bd32202ea401dbe33418af6107adc29cc
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 549
@@ -9165,12 +9171,12 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 7b19c8d88fbd9209be793025693fc7b6d8afd688 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-26T16:14:40Z as 592abda2448156e6da0da8249225bf2d812824f6; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2079
   - https://github.com/abhimehro/personal-config/commit/592abda2448156e6da0da8249225bf2d812824f6
@@ -9190,10 +9196,11 @@ items:
   handoffs:
   - evt-s1-20260824-personalconf-2079-h
   - evt-s3-20260906-bhimehro-personal-config-2079-15e7c3b7-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2079-15e7c3b7-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2077@f6cd91a57ba739461889772c13712cf8c0912cfd
   repository: abhimehro/personal-config
   pr: 2077
@@ -9761,12 +9768,12 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 4de44c0ad0df4e880ed8b5410cbf8750c1ab47c6 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-26T16:19:22Z as dbe165076fdd0963b276a28084dcda3a15443979; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2087
   - https://github.com/abhimehro/personal-config/commit/dbe165076fdd0963b276a28084dcda3a15443979
@@ -9786,10 +9793,11 @@ items:
   handoffs:
   - evt-s1-20260825-personalconf-2087-h
   - evt-s3-20260906-bhimehro-personal-config-2087-0f5aad7f-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2087-0f5aad7f-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2086@d20195d8e9a597cccb8c97ccfd2d297fdc7dd9a7
   repository: abhimehro/personal-config
   pr: 2086
@@ -14568,12 +14576,12 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 33603a68051d6e93ea75330deb1574b0bc591fe8 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-09-04T01:09:35Z as 54a5a66e681b9f557e9330e714c06d95da9888bb; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1221
   - https://github.com/abhimehro/ctrld-sync/commit/54a5a66e681b9f557e9330e714c06d95da9888bb
@@ -14586,10 +14594,11 @@ items:
   handoffs:
   - evt-s1-20260830-ctrldsync-1221-h
   - evt-s3-20260906-abhimehro-ctrld-sync-1221-23b2e2b0-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1221-23b2e2b0-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1220@2449bfc3963916564b7aa3678c722aa1995bf952
   repository: abhimehro/ctrld-sync
   pr: 1220
@@ -14713,12 +14722,12 @@ items:
   sensitive_paths:
   - shell_execution
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head bbf8c9ebbca7300d45e076332c99bdccbca81e6d and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-08-31T04:10:24Z as dd85a577070e3154aa75c8481d2d93af0bd2210f; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2123
   - https://github.com/abhimehro/personal-config/commit/dd85a577070e3154aa75c8481d2d93af0bd2210f
@@ -14756,10 +14765,11 @@ items:
   handoffs:
   - evt-s1-20260830-personalconf-2123-h
   - evt-s3-20260906-bhimehro-personal-config-2123-ff5685b1-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2123-ff5685b1-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2120@94700e70030933bf6cd6caa0787cd86bf1ed3eed
   repository: abhimehro/personal-config
   pr: 2120
@@ -17700,12 +17710,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: &id009 []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head dcded5c72e100984d0d138df2ec93fd688f42fe8 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-09-06T17:37:03Z as 64d937b78e71cdeaf37b169dee8e06000142fd46; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2163
   - https://github.com/abhimehro/personal-config/pull/2116
@@ -17720,10 +17730,11 @@ items:
   handoffs:
   - evt-s2-20260906-personal-con-2163-review-drift
   - evt-s3-20260906-bhimehro-personal-config-2163-512aaeb4-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2163-512aaeb4-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
   repository: abhimehro/personal-config
   pr: 2164
@@ -17746,12 +17757,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not act on this immutable stale-head record.
-  next_action: Stage 1 must re-ingest live head 37b4007a0c2dde8cbce09e45cb2386478cac8d57 and reconcile the current MERGED state.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified merged record and its immutable historical head.
+  next_action: 'Terminal: merged at 2026-09-06T17:41:53Z as 070a5d43eda15669ce0b48b400dbf34293532817; live head drift is post-merge evidence.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2164
   - https://github.com/abhimehro/personal-config/pull/2054
@@ -17766,10 +17777,11 @@ items:
   handoffs:
   - evt-s1-20260906-personal-con-2164-trunk-head-drift
   - evt-s3-20260906-bhimehro-personal-config-2164-73ebf209-handoff
-  revision: 2
-  updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2164-73ebf209-handoff
-  latest_transition_kind: HANDOFF
+  - evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
+  revision: 3
+  updated_at_utc: '2026-09-06T18:08:00Z'
+  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
+  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3
   repository: abhimehro/Seatek_Analysis
   pr: 809
@@ -38231,6 +38243,462 @@ events:
   policy_revision: null
   successful: null
   reason: 'Stage 3 route WAITING_HUMAN: Human: answer the Seatek performance replacement platform hold decision packet by 2026-09-13T18:00:00Z. Observed base/head 704586baefc4aee8eb3c1b0ed7165824ce11869b/328d14747329f266bd874f0d3cc1d30dea9e6cf3.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2016@081eaa88556cb37b9e5ac584b98027a208f8e491
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2016-081eaa88-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2016@081eaa88556cb37b9e5ac584b98027a208f8e491:evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2016@081eaa88556cb37b9e5ac584b98027a208f8e491
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2016@081eaa88556cb37b9e5ac584b98027a208f8e491:evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 5511a2c69c7f23dd45cf4d0e25a96197b400ccea; merge commit 05e49833d0fffa9ed6f43fce0200e7cffa7fb0d4.'
+- event_id: evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#507@051322aa2d6e862babea5a906d4bad4af1eeecd6
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-s-seatek-sensors-project-507-051322aa-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#507@051322aa2d6e862babea5a906d4bad4af1eeecd6:evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#507@051322aa2d6e862babea5a906d4bad4af1eeecd6
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#507@051322aa2d6e862babea5a906d4bad4af1eeecd6:evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to b934f217c1d503988efbca66fb123d70edfabdf9; merge commit 2b91484d71308fb28b8101ab09ef756e2a3b98b8.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#1998@5ef99970c68a6db9a8347e26900bcf2e7c1bc165
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-1998-5ef99970-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#1998@5ef99970c68a6db9a8347e26900bcf2e7c1bc165:evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#1998@5ef99970c68a6db9a8347e26900bcf2e7c1bc165
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#1998@5ef99970c68a6db9a8347e26900bcf2e7c1bc165:evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 2ccdf411c1424edcba962f12598432dc051814f9; merge commit 88c2df1af8e319775cc09d111014959ee7550cbb.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2037@8ba1b46969e14a87ad00ca98c7939e006cff9186
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2037-8ba1b469-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2037@8ba1b46969e14a87ad00ca98c7939e006cff9186:evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2037@8ba1b46969e14a87ad00ca98c7939e006cff9186
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2037@8ba1b46969e14a87ad00ca98c7939e006cff9186:evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 9ac7d5a499f497d97947cd071834dad403f7b92f; merge commit d494d9715f3ac014ad6d0b8836562469778de251.'
+- event_id: evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/email-security-pipeline#1510@0dd2a25986bad1d4420b6655d1b6c6a8cb949ad0
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906--email-security-pipeline-1510-0dd2a259-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1510@0dd2a25986bad1d4420b6655d1b6c6a8cb949ad0:evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1510@0dd2a25986bad1d4420b6655d1b6c6a8cb949ad0
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1510@0dd2a25986bad1d4420b6655d1b6c6a8cb949ad0:evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to a6690a009681c39946d4d0d1d68c2ca550a40f96; merge commit e52093cb5da58989cf1fb8df5c086558808dcfcd.'
+- event_id: evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#711@416f52eecf1a769cab347c244cc439fa08df7b72
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-seatek-analysis-711-416f52ee-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#711@416f52eecf1a769cab347c244cc439fa08df7b72:evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#711@416f52eecf1a769cab347c244cc439fa08df7b72
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#711@416f52eecf1a769cab347c244cc439fa08df7b72:evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 613dfa026c1f9eff555e0aeb53bff2d54ae154ab; merge commit 6662c020a4ef56e677cf738b5fd5cec7addbfbe0.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2079-15e7c3b7-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d:evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d:evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 7b19c8d88fbd9209be793025693fc7b6d8afd688; merge commit 592abda2448156e6da0da8249225bf2d812824f6.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2087@0f5aad7f42dcbd60fd7d6511ee1dab8d98aa3509
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2087-0f5aad7f-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2087@0f5aad7f42dcbd60fd7d6511ee1dab8d98aa3509:evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2087@0f5aad7f42dcbd60fd7d6511ee1dab8d98aa3509
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2087@0f5aad7f42dcbd60fd7d6511ee1dab8d98aa3509:evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 4de44c0ad0df4e880ed8b5410cbf8750c1ab47c6; merge commit dbe165076fdd0963b276a28084dcda3a15443979.'
+- event_id: evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/ctrld-sync#1221@23b2e2b0401ecd8fc9d13bb4359d7836fd245909
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-abhimehro-ctrld-sync-1221-23b2e2b0-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1221@23b2e2b0401ecd8fc9d13bb4359d7836fd245909:evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1221@23b2e2b0401ecd8fc9d13bb4359d7836fd245909
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/ctrld-sync#1221@23b2e2b0401ecd8fc9d13bb4359d7836fd245909:evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 33603a68051d6e93ea75330deb1574b0bc591fe8; merge commit 54a5a66e681b9f557e9330e714c06d95da9888bb.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2123@ff5685b15629c87e2815d66d7e8a6107c3536c80
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2123-ff5685b1-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2123@ff5685b15629c87e2815d66d7e8a6107c3536c80:evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2123@ff5685b15629c87e2815d66d7e8a6107c3536c80
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2123@ff5685b15629c87e2815d66d7e8a6107c3536c80:evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to bbf8c9ebbca7300d45e076332c99bdccbca81e6d; merge commit dd85a577070e3154aa75c8481d2d93af0bd2210f.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2163-512aaeb4-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7:evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7:evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to dcded5c72e100984d0d138df2ec93fd688f42fe8; merge commit 64d937b78e71cdeaf37b169dee8e06000142fd46.'
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-ack
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
+  from_owner: stage1
+  to_owner: stage1
+  from_state: STAGE1_INTAKE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260906-bhimehro-personal-config-2164-73ebf209-handoff
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e:evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-ack
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: '2026-09-06T18:08:00Z'
+  policy_revision: null
+  successful: null
+  reason: Stage 1 accepted the Stage 3 stale-anchor handoff, then applied lesson 0gp because the current PR is already merged.
+- event_id: evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e:evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
+  status: PROJECTED
+  created_at_utc: '2026-09-06T18:08:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp correction: GitHub reports this PR merged, so preserve the immutable key despite post-merge head drift to 37b4007a0c2dde8cbce09e45cb2386478cac8d57; merge commit 070a5d43eda15669ce0b48b400dbf34293532817.'
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
