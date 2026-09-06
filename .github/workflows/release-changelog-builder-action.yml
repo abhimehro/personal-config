@@ -1,7 +1,7 @@
 - name: Release Changelog Builder
   # You may pin to the exact commit or the version.
   # uses: mikepenz/release-changelog-builder-action@cb021f9b36a51a7c6f18e4679b6fa2cb77a1260c
-  uses: mikepenz/release-changelog-builder-action@v6.3.0
+  uses: mikepenz/release-changelog-builder-action@cb021f9b36a51a7c6f18e4679b6fa2cb77a1260c # v6.3.0
   with:
     # Defines the configuration json. If provided, will be prefered over `configuration`.
     configurationJson: # optional
