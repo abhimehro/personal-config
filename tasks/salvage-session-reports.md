@@ -154,6 +154,64 @@ Full record: `tasks/pr-salvage-2026-08-29-1700.md`.
 
 Full record: `tasks/pr-salvage-2026-08-30-1700.md`.
 
+## Run — 2026-09-08 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **67** (`github_contents_api`); blob
+  `e65a86935d8bc2567eda938c392d30948ddb01ee`; data-branch commit
+  `bcb21c46fc21b96714f949bbaea407b5c9d1a350` (Stage 1 restored the missing ref
+  this UTC day, lesson **0go**)
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable; unused — no salvage disposition)
+- Validator: `PR_LIFECYCLE_INVALID` extra item keys `latest_transition` /
+  `latest_transition_kind` (lesson **0ha**). Health script exit 1 (schema),
+  not starvation exit 2
+- Live (observational, unvalidated file): `stage2_work_items: []`;
+  `current_owner: stage2` **0**; `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**;
+  Stage 1 today queued **0**
+- Calibration: `APPROVED` 7/7 / `pr-lifecycle-v1.4` / completion live; **not**
+  reset to `REPORT_ONLY`
+
+### Outcomes
+
+| Repo   | Old PR | Disposition                         | New PR | Notes                                                                 |
+| ------ | -----: | ----------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | `ANALYSIS_ERROR` (no product draft) | —      | Invalid runtime ledger; no fourth-queue invent; not EMPTY_INTAKE    |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0** (0ha already on this lineage)
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (validator FAIL; rev stays **67**)
+- Cap 5; completed **0** eligible items. Remaining work items: unread-as-valid.
+
+### Verification
+
+- Raw GET 1 566 732 bytes via blob SHA (lesson **0gy**). Bootstrap pointer not
+  used as runtime.
+- Docs lineage [#2172](https://github.com/abhimehro/personal-config/pull/2172)
+  already open `draft=true` on `pr-lifecycle-docs-20260908`. Pushed onto it; did
+  not open a sibling; did not mark ready.
+- Last three Stage 2 records: 2026-09-06 one-time backlog (#2163/#2164/#809),
+  2026-08-30 17:00 EMPTY_INTAKE, 2026-08-29 17:00 EMPTY_INTAKE.
+- Did not invent salvage from expired 2026-09-03 drain hints (series #390,
+  email #1512, ctrld #1207), Stage 3 remainder, rpce Swift (0gi), or
+  `display.py` (0fv/0gm).
+
+### Handoff
+
+1. Stage 3: wait for a valid ledger before remainder/completion; never merge
+   salvage drafts (0gd); do not Trunk-merge #2097
+2. Reviewed writer: drop persisted projection fields or revise schema, then
+   re-validate
+3. Stage 1 later: `/trunk merge` this lineage only after the ledger validates
+   and routine predicates pass; do not GitHub-squash personal-config
+
+Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
+
 ## Run — 2026-08-28 17:00
 
 ### Input tail
