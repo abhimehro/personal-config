@@ -53,7 +53,7 @@ not proceed to inventory, merge, or close.
    executable remainder (elapsed close-candidates, MERGEABLE green BOT,
    canonical-pick clusters, Stage 3 bounce-backs, salvage-eligible
    CONFLICTING/DIRTY BOT) before spending the 80-item cap on NEW security twins.
-   Hold five of those 80 slots for salvage keepers. Queue up to five Stage 2
+   Hold five of those 80 slots for salvage keepers. Queue up to ten Stage 2
    work items from the fetched ledger even when MERGEABLE/canonical candidates
    filled the rest of the inventory.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR

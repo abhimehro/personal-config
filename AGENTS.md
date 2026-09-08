@@ -703,7 +703,7 @@ symlink destinations are never followed. To target one hash directory:
   BOT). Product-mutation cap is 40 so daily drain exceeds arrivals. Queuing a
   Stage 2 work item is ledger bookkeeping. Unchanged SHA with an unexpired
   non-executable next_action is skipped. A changed base/head SHA invalidates
-  prior evidence and returns the item to Stage 1. Stage 2 completes at most five
+  prior evidence and returns the item to Stage 1. Stage 2 completes at most ten
   work items per run; empty intake is a short record and stop unless
   salvage-eligible remainder exists (`EMPTY_INTAKE_STARVATION`, still no
   invented recoveries).

@@ -264,7 +264,7 @@ semantics.
 ## Cursor configuration
 
 The Stage 2 Cursor automation runs at `0 17 * * *` UTC with one concurrent run
-and a maximum of five recovery candidates. The live Dashboard exposes a shared
+and a maximum of ten recovery candidates. The live Dashboard exposes a shared
 MCP workspace inventory; the Dashboard-referenced MCP set for this stage is
 named in `prompts/daily-pr-salvage.md` (`gh` drafts, codescene, Context7,
 Sonatype pins). Tool visibility is not authority: Stage 2 remains draft-only and
