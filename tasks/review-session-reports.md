@@ -1,3 +1,35 @@
+# Stage 1 — 2026-09-08 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger ref **missing at start** (404 on
+`heads/automation/pr-lifecycle-ledger`). Restored per lesson **0go** to last
+known existing commit `bcb21c46fc21b96714f949bbaea407b5c9d1a350` (Stage 3
+2026-09-06 rev **67**, blob `e65a86935d8bc2567eda938c392d30948ddb01ee`). Raw
+GET succeeded (1 566 732 bytes). Validator **FAIL**
+`PR_LIFECYCLE_INVALID` extra item fields `latest_transition` /
+`latest_transition_kind` on 109/394 items. Guardrail **ANALYSIS_ERROR**.
+Product mutations **0/40**. No inventory, merge, close, Stage 2 WI, or ledger
+CAS. Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4` — **not** incremented
+and **not** reset. Observational open PRs **70** (not triaged). Docs lineage:
+`pr-lifecycle-docs-20260908` (this PR). Do **not** `/trunk merge` today's
+lineage in the opening run (**0gj**). Do **not** Trunk-merge conflicting draft
+sibling **#2097**. Full record: `tasks/pr-review-2026-09-08.md`. Lesson
+**0ha**.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (triage)        |     0 |
+| Product mutations           |     0 |
+| Merged                      |     0 |
+| Closed                      |     0 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |     0 |
+| GitHub PR mutations         |     0 |
+| Ledger file CAS writes      |     0 |
+| Analysis errors             |     1 |
+
+Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row
+only).
+
 # Stage 1 — 2026-08-29 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
