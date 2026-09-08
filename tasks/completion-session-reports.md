@@ -2186,3 +2186,38 @@ None. No salvage draft qualified. No recovery implementation. Cap not used.
 - The final remote file was re-read from `automation/pr-lifecycle-ledger`,
   matched the corrected bytes exactly, and passed schema/runtime validation with
   revision 67, 394 items, 1191 events, and zero Stage 2 work items.
+
+## Stage Run Record — 2026-09-08
+
+Preflight independent validator **FAIL**. Runtime ledger ref present (Stage 1
+restored it this UTC day, lesson **0go**) at commit
+`bcb21c46fc21b96714f949bbaea407b5c9d1a350`, blob
+`e65a86935d8bc2567eda938c392d30948ddb01ee` (1 566 732 bytes, rev **67**).
+`python3 scripts/validate_pr_lifecycle_artifacts.py` →
+`PR_LIFECYCLE_INVALID` extra item fields `latest_transition` /
+`latest_transition_kind` on 109/394 items. Guardrail **ANALYSIS_ERROR**.
+Product mutations **0/5**. Reconciliations **0/20**. Packets **0/5**. No
+inventory, bounce, merge, close, approve, comment, Stage 2 WI, or ledger CAS.
+Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4` — **not** incremented and
+**not** reset. GitHub identity REST login `abhimehro`. Docs lineage:
+[#2172](https://github.com/abhimehro/personal-config/pull/2172)
+(`pr-lifecycle-docs-20260908`). Do **not** `/trunk merge` today's lineage in
+the appending run (**0gj**). Do **not** Trunk-merge conflicting draft sibling
+**#2097**. Full record: `tasks/pr-completion-2026-09-08.md`. Lesson **0ha**
+already on this lineage; no new lesson.
+
+| Metric                         | Count |
+| ------------------------------ | ----: |
+| Reconciliations (live, acted)  |     0 |
+| Product mutations              |     0 |
+| Merged                         |     0 |
+| Closed                         |     0 |
+| Decision packets               |     0 |
+| Stage 2 work items             |     0 |
+| Ledger file CAS writes         |     0 |
+| Analysis errors                |     1 |
+| Calibration change             |  none |
+
+Per-item table: see `tasks/pr-completion-2026-09-08.md` (run-level ledger row
+only). Cloud run:
+https://cursor.com/agents/bc-32d4237b-49d0-4942-b186-b9c9a14e8e68
