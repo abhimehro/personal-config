@@ -9,8 +9,8 @@ Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
 - [x] Git Data API CAS + ref restore (Contents GET encoding=none above 1MB)
 - [x] Tests: schema still rejects extra keys; validate() sanitizes known pair
 - [x] Reassess salvage-5: raise Stage 2 to 10 and Stage 3 completions to 15
-- [ ] CAS-repair runtime ledger rev 67→68 (strip only; no item transitions)
-- [ ] Prove: validator PASS + health CLI + bounded green BOT drain
+- [x] CAS-repair runtime ledger rev 67→68 (strip only; no item transitions)
+- [x] Prove: validator PASS + health CLI + bounded green BOT drain
 - [ ] Commit, push designated branch, open product PR
 
 # PR backlog burndown + Stage 2 starvation (2026-08-30)

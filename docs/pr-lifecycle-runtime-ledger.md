@@ -72,7 +72,9 @@ runtime ledger file and records its blob `sha`. GitHub Contents GET returns
 must be fetched with `GET /git/blobs/<sha>`. Writes of a ledger that size must
 use the Git Data API fast-forward helper
 `scripts/pr_lifecycle_ledger_cas.py` (blob → tree → commit → ref update with
-`force=false`). Contents PUT is not the write path above 1 MB. A stale-SHA or
+`force=false`). GitHub GET uses singular `/git/ref/heads/<branch>`; PATCH uses
+plural `/git/refs/heads/<branch>`. Mixing them returns HTTP 404 after the blob
+and commit already exist. Contents PUT is not the write path above 1 MB. A stale-SHA or
 non-fast-forward conflict is a CAS loss. The stage re-reads, revalidates, and
 retries once at most. It never creates a working-tree merge, force-updates a
 ref, or bypasses the data branch. If `refs/heads/automation/pr-lifecycle-ledger`
