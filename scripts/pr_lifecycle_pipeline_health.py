@@ -43,6 +43,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from pr_lifecycle_config import validate_config  # noqa: E402
 from pr_lifecycle_ledger import validate_runtime_records  # noqa: E402
+from pr_lifecycle_persist import strip_in_memory_item_fields  # noqa: E402
 from pr_lifecycle_schema import validate_schema  # noqa: E402
 from pr_lifecycle_support import ROOT  # noqa: E402
 from pr_lifecycle_yaml import load_yaml  # noqa: E402
@@ -348,6 +349,7 @@ def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
 
 
 def _require_valid_runtime_ledger(ledger: dict[str, Any]) -> None:
+    strip_in_memory_item_fields(ledger)
     validate_schema(ledger)
     config = load_yaml(CONFIG_PATH)
     validate_config(config)

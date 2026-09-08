@@ -324,6 +324,9 @@ def validate_terminal_transition_kind(event: dict[str, Any]) -> None:
 
 
 def apply_transition(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    # latest_transition* exist only on the in-memory projection. Persisting them
+    # onto items fails JSON Schema (additionalProperties: false). Use
+    # persistable_item() / strip_in_memory_item_fields() before dump or CAS.
     projected.update(
         {
             "revision": event["resulting_item_revision"],

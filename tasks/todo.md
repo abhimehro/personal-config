@@ -1,3 +1,18 @@
+# Three-stage scheduled Cursor reliability (2026-09-08)
+
+T3+S — Diagnose then repair at the cause. Do not bump `policy_revision`.
+Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
+
+- [ ] Diagnose: Devin vs scheduled Cursor (schema extra keys + >1MB Contents GET)
+- [ ] Load-time strip of `latest_transition` / `latest_transition_kind` only
+- [ ] Persist helper so writers cannot dump in-memory projection fields
+- [ ] Git Data API CAS + ref restore (Contents GET encoding=none above 1MB)
+- [ ] Tests: schema still rejects extra keys; validate() sanitizes known pair
+- [ ] Reassess salvage-5: raise Stage 2 to 10 and Stage 3 completions to 15
+- [ ] CAS-repair runtime ledger rev 67→68 (strip only; no item transitions)
+- [ ] Prove: validator PASS + health CLI + bounded green BOT drain
+- [ ] Commit, push designated branch, open product PR
+
 # PR backlog burndown + Stage 2 starvation (2026-08-30)
 
 T5 — Orchestrate. 20 mutations/day equals arrivals; Stage 2 is idle. Do not bump
