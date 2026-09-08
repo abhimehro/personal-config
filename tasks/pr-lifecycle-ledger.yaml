@@ -10,4 +10,4 @@ runtime_ledger:
     - git_fast_forward
     - github_contents_api
   bootstrap_document: docs/pr-lifecycle-runtime-ledger.md
-  last_known_data_commit: bcb21c46fc21b96714f949bbaea407b5c9d1a350
+  last_known_data_commit: 300bf4fcc62532e35fac71fa588b2c4757827031
