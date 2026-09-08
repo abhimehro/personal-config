@@ -105,6 +105,14 @@ class TestPrLifecyclePersist(unittest.TestCase):
             "  revision: 2\n  updated_at_utc: '2026-09-06T18:00:00Z'\n",
         )
 
+    def test_git_ref_update_uses_plural_collection(self) -> None:
+        from pr_lifecycle_ledger_cas import ref_path, update_ref_path
+
+        branch = "automation/pr-lifecycle-ledger"
+        self.assertIn("/git/ref/heads/", ref_path(branch))
+        self.assertNotIn("/git/refs/heads/", ref_path(branch))
+        self.assertIn("/git/refs/heads/", update_ref_path(branch))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -92,7 +92,13 @@ def github_request(
 
 
 def ref_path(branch: str) -> str:
+    """GET a single ref. GitHub uses the singular `/git/ref/` collection here."""
     return f"/repos/{OWNER}/{REPO}/git/ref/heads/{branch}"
+
+
+def update_ref_path(branch: str) -> str:
+    """PATCH a ref. GitHub uses the plural `/git/refs/` collection here."""
+    return f"/repos/{OWNER}/{REPO}/git/refs/heads/{branch}"
 
 
 def read_ref(branch: str) -> dict[str, Any] | None:
@@ -240,7 +246,7 @@ def create_commit(message: str, tree_sha: str, parent_sha: str) -> str:
 def update_ref(branch: str, sha: str) -> dict[str, Any]:
     payload = github_request(
         "PATCH",
-        ref_path(branch),
+        update_ref_path(branch),
         {"sha": sha, "force": False},
     )
     if not isinstance(payload, dict):
