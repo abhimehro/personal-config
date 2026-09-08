@@ -1,5 +1,6 @@
 # Personal System Configuration
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/22fa2ae048ad409cae073f60ae5cec94)](https://app.codacy.com/gh/abhimehro/personal-config?utm_source=github.com&utm_medium=referral&utm_content=abhimehro/personal-config&utm_campaign=Badge_Grade)
 [![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/80825)
 [![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml)
 
