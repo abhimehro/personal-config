@@ -11,7 +11,7 @@ Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
 - [x] Reassess salvage-5: raise Stage 2 to 10 and Stage 3 completions to 15
 - [x] CAS-repair runtime ledger rev 67→68 (strip only; no item transitions)
 - [x] Prove: validator PASS + health CLI + bounded green BOT drain
-- [ ] Commit, push designated branch, open product PR
+- [x] Commit, push designated branch, open product PR
 
 # PR backlog burndown + Stage 2 starvation (2026-08-30)
 
