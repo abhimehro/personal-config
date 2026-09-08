@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 67
+ledger_revision: 68
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -68,8 +68,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2022-da1225e0-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2022-da1225e0-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2016@081eaa88556cb37b9e5ac584b98027a208f8e491
   repository: abhimehro/personal-config
   pr: 2016
@@ -112,8 +110,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2016-081eaa88-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1201@067bd6d8d6e1c8aaa6aa590e783857276ea8c02c
   repository: abhimehro/ctrld-sync
   pr: 1201
@@ -151,8 +147,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1201-067bd6d8-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1201-067bd6d8-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1195@a73521f1418c2c38275eb7d121ce2d560cec7d71
   repository: abhimehro/ctrld-sync
   pr: 1195
@@ -190,8 +184,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1195-a73521f1-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1195-a73521f1-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1170@c8d37ef3d58f80387399c6debf5742596c808319
   repository: abhimehro/ctrld-sync
   pr: 1170
@@ -266,8 +258,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1136-3c61628c-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1136-3c61628c-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/email-security-pipeline#1473@6f806b0333ac6243a00794bfde380ede27dcb625
   repository: abhimehro/email-security-pipeline
   pr: 1473
@@ -310,8 +300,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1473-6f806b03-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1473-6f806b03-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/email-security-pipeline#1444@572e41a9d961d822ef9ebb38496aa1ab8740e561
   repository: abhimehro/email-security-pipeline
   pr: 1444
@@ -349,8 +337,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1444-572e41a9-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1444-572e41a9-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#693@dd62586806b59c67ff51195db857b6587a27dd8f
   repository: abhimehro/Seatek_Analysis
   pr: 693
@@ -426,8 +412,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-661-eef87b88-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-661-eef87b88-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#643@00ff43e0996ef9406eb13c6a85151f970416bb2f
   repository: abhimehro/Seatek_Analysis
   pr: 643
@@ -503,8 +487,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-643-00ff43e0-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-643-00ff43e0-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 535
@@ -592,8 +574,6 @@ items:
   - evt-s3-20260906-s-seatek-sensors-project-498-0edc77bc-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-s-seatek-sensors-project-498-0edc77bc-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/series_correction_project_updated#393@9554d6fd27e4f79fa39d524a5905959c14371a06
   repository: abhimehro/series_correction_project_updated
   pr: 393
@@ -630,8 +610,6 @@ items:
   - evt-s3-20260906-rrection-project-updated-393-9554d6fd-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-rrection-project-updated-393-9554d6fd-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/series_correction_project_updated#386@712e0ba38754af500ecce4a7cff52a026502d3cf
   repository: abhimehro/series_correction_project_updated
   pr: 386
@@ -668,8 +646,6 @@ items:
   - evt-s3-20260906-rrection-project-updated-386-712e0ba3-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-rrection-project-updated-386-712e0ba3-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2034@e6670249c4996891c283e300d861a981e6283b90
   repository: abhimehro/personal-config
   pr: 2034
@@ -717,8 +693,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2034-e6670249-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2034-e6670249-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2025@9cf886c17a23478d63258dda032bacd45be59dc2
   repository: abhimehro/personal-config
   pr: 2025
@@ -761,8 +735,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2025-9cf886c1-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2025-9cf886c1-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2020@23577be3619cea5b408ab32c387f7180a997cb72
   repository: abhimehro/personal-config
   pr: 2020
@@ -807,8 +779,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2020-23577be3-handoff
   revision: 4
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2020-23577be3-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2017@bba66fcda4353b7773f0db52a4746f8f68f42f38
   repository: abhimehro/personal-config
   pr: 2017
@@ -851,8 +821,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2017-bba66fcd-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2017-bba66fcd-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6
   repository: abhimehro/ctrld-sync
   pr: 1161
@@ -1147,8 +1115,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-667-e74a37b5-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-667-e74a37b5-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#665@b5b5ac923f37b7c44cbc07e8941743966b6f51d2
   repository: abhimehro/Seatek_Analysis
   pr: 665
@@ -1498,8 +1464,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-261-39d62359-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-261-39d62359-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#258@308cf7fec8141cefd409a4156e1d831ad70f343f
   repository: abhimehro/repoprompt-ce
   pr: 258
@@ -1599,8 +1563,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-258-308cf7fe-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-258-308cf7fe-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
   repository: abhimehro/repoprompt-ce
   pr: 247
@@ -2437,8 +2399,6 @@ items:
   - evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-s-seatek-sensors-project-507-051322aa-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#696@a9160c39eb03d8b5084ab7e4b57dc7ced5d2767a
   repository: abhimehro/Seatek_Analysis
   pr: 696
@@ -2480,8 +2440,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-696-a9160c39-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-696-a9160c39-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#692@6bac9d59986c575f32575492f605efc8b8ac4cdb
   repository: abhimehro/Seatek_Analysis
   pr: 692
@@ -2566,8 +2524,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-686-d024721e-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-686-d024721e-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#685@7a3325f4c113d5054562ae6ceac3b5ce504f3673
   repository: abhimehro/Seatek_Analysis
   pr: 685
@@ -2651,8 +2607,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-684-469aa9d4-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-684-469aa9d4-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/email-security-pipeline#1500@28cbc110c3ed88d3a3cdc1cb84829a14b326a143
   repository: abhimehro/email-security-pipeline
   pr: 1500
@@ -2780,8 +2734,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2030-3a5b0213-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2030-3a5b0213-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2029@9f879d36123ab26b9bf4ddeeb08132d1b9254bdf
   repository: abhimehro/personal-config
   pr: 2029
@@ -2826,8 +2778,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2029-9f879d36-handoff
   revision: 6
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2029-9f879d36-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2021@d650ddb2ae511c91d1d17fe21bd0f59efd77bcea
   repository: abhimehro/personal-config
   pr: 2021
@@ -2869,8 +2819,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2021-d650ddb2-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2021-d650ddb2-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2018@1776b05120fb8a796f96fe2ea0f79ff581a1f3b1
   repository: abhimehro/personal-config
   pr: 2018
@@ -2914,8 +2862,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2018-1776b051-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2018-1776b051-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2014@1ea58aa37bb7f6bf0d079501607ac729cc634e0a
   repository: abhimehro/personal-config
   pr: 2014
@@ -2960,8 +2906,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2014-1ea58aa3-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2014-1ea58aa3-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#1996@bc1fdda9836110a52d634497e4e54678efe1f86d
   repository: abhimehro/personal-config
   pr: 1996
@@ -3082,8 +3026,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-272-5c13463c-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-272-5c13463c-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
   repository: abhimehro/series_correction_project_updated
   pr: 390
@@ -3255,8 +3197,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-662-ddeb06db-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-662-ddeb06db-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#657@c0307ccc8aa921dcc759515aba6f31392c48150e
   repository: abhimehro/Seatek_Analysis
   pr: 657
@@ -3299,8 +3239,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-657-c0307ccc-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-657-c0307ccc-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1156@6200834ff3cbd6cd1d6ea6183a076a25be153885
   repository: abhimehro/ctrld-sync
   pr: 1156
@@ -3345,8 +3283,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1156-6200834f-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1156-6200834f-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2007@aeceaa7666dd61692bca44753c93469d1ef38383
   repository: abhimehro/personal-config
   pr: 2007
@@ -3390,8 +3326,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2007-aeceaa76-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2007-aeceaa76-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#1998@5ef99970c68a6db9a8347e26900bcf2e7c1bc165
   repository: abhimehro/personal-config
   pr: 1998
@@ -3434,8 +3368,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-1998-5ef99970-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#1980@45af0d521acd200bc820f2feda3535ff71621823
   repository: abhimehro/personal-config
   pr: 1980
@@ -3478,8 +3410,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-1980-45af0d52-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-1980-45af0d52-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/repoprompt-ce#268@06fd2fac4da3c9a8e6438ad91e3c6448f8adbd83
   repository: abhimehro/repoprompt-ce
   pr: 268
@@ -3524,8 +3454,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-268-06fd2fac-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-268-06fd2fac-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#273@b293122dce04c53ecb921420a98bd7e2c871c0ba
   repository: abhimehro/repoprompt-ce
   pr: 273
@@ -3570,8 +3498,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-273-b293122d-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-273-b293122d-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#698@42cc4aa705ca1779f7388f15039f678a296208c5
   repository: abhimehro/Seatek_Analysis
   pr: 698
@@ -3675,8 +3601,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-1978-25944bf7-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-1978-25944bf7-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#688@eee2ed1597aed764cab67545f0ccda64a540749d
   repository: abhimehro/Seatek_Analysis
   pr: 688
@@ -3866,8 +3790,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-1907-76e20d56-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-1907-76e20d56-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2037@8ba1b46969e14a87ad00ca98c7939e006cff9186
   repository: abhimehro/personal-config
   pr: 2037
@@ -3950,8 +3872,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2037-8ba1b469-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#244@365f44d6a55d4dd689440af5700c5d50b1ad763e
   repository: abhimehro/repoprompt-ce
   pr: 244
@@ -4043,8 +3963,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-244-365f44d6-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-244-365f44d6-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#237@69d5aab485f98a60801bc8ed917dbec310f60b70
   repository: abhimehro/repoprompt-ce
   pr: 237
@@ -4135,8 +4053,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-237-69d5aab4-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-237-69d5aab4-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#543@2af2758598d89672d07af40fbc4927dee6bdc21e
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 543
@@ -4353,8 +4269,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2055-6af79b7b-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2055-6af79b7b-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2054@dc6f2dfb7024a5eadd746d4ba8c47ad5c3545345
   repository: abhimehro/personal-config
   pr: 2054
@@ -4396,8 +4310,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2054-dc6f2dfb-handoff
   revision: 4
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2054-dc6f2dfb-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2049@397543f912d672d99cfad0e7a51f9f56d9597aaf
   repository: abhimehro/personal-config
   pr: 2049
@@ -4489,8 +4401,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2046-eb9db60a-handoff
   revision: 6
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2046-eb9db60a-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1207@f58cc4abfa9c1f1f66c94abdc34253434d64ad1f
   repository: abhimehro/ctrld-sync
   pr: 1207
@@ -4585,8 +4495,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1204-7bf7e5df-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1204-7bf7e5df-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/email-security-pipeline#1510@0dd2a25986bad1d4420b6655d1b6c6a8cb949ad0
   repository: abhimehro/email-security-pipeline
   pr: 1510
@@ -4630,8 +4538,6 @@ items:
   - evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp--email-security-pipeline-1510-0dd2a259-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/email-security-pipeline#1509@f34f16790a4732b80ebb8bb6701f5cca2cc6bbc6
   repository: abhimehro/email-security-pipeline
   pr: 1509
@@ -4674,8 +4580,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1509-f34f1679-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1509-f34f1679-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/email-security-pipeline#1508@1ce6468711e26e238ccf6805fea604a48df35fe4
   repository: abhimehro/email-security-pipeline
   pr: 1508
@@ -4718,8 +4622,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1508-1ce64687-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1508-1ce64687-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/email-security-pipeline#1505@c0fbf56b9e86368f700aa8eb28f1be65768d082d
   repository: abhimehro/email-security-pipeline
   pr: 1505
@@ -5057,8 +4959,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-710-63fd183d-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-710-63fd183d-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#709@bdcc2af5cabdc06e4ddcba7dc0e70228a4c31b7e
   repository: abhimehro/Seatek_Analysis
   pr: 709
@@ -5143,8 +5043,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-707-a5aedcdf-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-707-a5aedcdf-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#548@ab8721071fa65eddb74edd57e47f3c48b4413c89
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 548
@@ -5409,8 +5307,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-278-60b4881c-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-278-60b4881c-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#277@6e0e973b41ddc722e531abc095f2287b6df9d156
   repository: abhimehro/repoprompt-ce
   pr: 277
@@ -5453,8 +5349,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-277-6e0e973b-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-277-6e0e973b-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#276@b3ad0b8e952f5e19645b45cb94dfa2a7f500f255
   repository: abhimehro/repoprompt-ce
   pr: 276
@@ -5544,8 +5438,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-274-8cafafc9-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-274-8cafafc9-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#267@a2ff7eb3b77d7b2b3c7a4b95898ba852777bf313
   repository: abhimehro/repoprompt-ce
   pr: 267
@@ -5646,8 +5538,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-267-a2ff7eb3-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-267-a2ff7eb3-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#266@6cc85b83681c62ec160a5b7ca2cdda2bc401a376
   repository: abhimehro/repoprompt-ce
   pr: 266
@@ -5855,8 +5745,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-265-a8c12172-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-265-a8c12172-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#264@8938ff296a241ab5baa4a0d3f6d5955841b8e8d4
   repository: abhimehro/repoprompt-ce
   pr: 264
@@ -5965,8 +5853,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-264-8938ff29-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-264-8938ff29-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#263@aab9052c0af5450f5e797cdbab41f3769dcb11e1
   repository: abhimehro/repoprompt-ce
   pr: 263
@@ -6173,8 +6059,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-262-6007af50-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-262-6007af50-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#257@b1b29b42a116f26f31e69aadb7754f0a7ac738aa
   repository: abhimehro/repoprompt-ce
   pr: 257
@@ -6270,8 +6154,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-257-b1b29b42-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-257-b1b29b42-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#254@c839a9157059b5d08480ac9b3f7707f4e35fd2ef
   repository: abhimehro/repoprompt-ce
   pr: 254
@@ -6368,8 +6250,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-254-c839a915-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-254-c839a915-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#253@a6257966bb1031967449c87008de8ced1ed5f542
   repository: abhimehro/repoprompt-ce
   pr: 253
@@ -6465,8 +6345,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-253-a6257966-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-253-a6257966-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#250@7160e050c7bfe4ba42725bf4dd4fd26b146a5ce2
   repository: abhimehro/repoprompt-ce
   pr: 250
@@ -6561,8 +6439,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-250-7160e050-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-250-7160e050-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#249@3a8e0e76372c3803a13c73b4f52ce2f21858ce90
   repository: abhimehro/repoprompt-ce
   pr: 249
@@ -6666,8 +6542,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-249-3a8e0e76-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-249-3a8e0e76-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#243@f5edd4c21f7677ec1f060f6d13bfbb03a8ca68a3
   repository: abhimehro/repoprompt-ce
   pr: 243
@@ -6762,8 +6636,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-243-f5edd4c2-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-243-f5edd4c2-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#241@22e4a92eef19b1f5aa9d52df03296d199cd13dcb
   repository: abhimehro/repoprompt-ce
   pr: 241
@@ -6860,8 +6732,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-241-22e4a92e-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-241-22e4a92e-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#239@be62c87b4748239dc0195bebc1d0b62130e9f06f
   repository: abhimehro/repoprompt-ce
   pr: 239
@@ -6956,8 +6826,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-239-be62c87b-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-239-be62c87b-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#236@1e7474e663392dbe20b5bf1cbb50d7a4b0d5e77a
   repository: abhimehro/repoprompt-ce
   pr: 236
@@ -7050,8 +6918,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-236-1e7474e6-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-236-1e7474e6-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2063@5999c6f8bb381cdfe1f35c83fd2b342029fb7606
   repository: abhimehro/personal-config
   pr: 2063
@@ -7426,8 +7292,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-1969-d5c71c38-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-1969-d5c71c38-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1206@7f3e8b2d4d7f2990b72ad1075deebe1d70645d49
   repository: abhimehro/ctrld-sync
   pr: 1206
@@ -7562,8 +7426,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1444-d287f604-handoff
   revision: 4
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1444-d287f604-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#721@38462a1b1b1610324b645783305bc039f308617a
   repository: abhimehro/Seatek_Analysis
   pr: 721
@@ -7606,8 +7468,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-721-38462a1b-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-721-38462a1b-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#717@2652a78133c9f649e2445a25d9009f398025c671
   repository: abhimehro/Seatek_Analysis
   pr: 717
@@ -7712,8 +7572,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-seatek-analysis-711-416f52ee-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#549@9ff20d2bd32202ea401dbe33418af6107adc29cc
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 549
@@ -8326,8 +8184,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1211-982c2ef9-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1211-982c2ef9-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1210@4d6f4e56ee7a830d68e8f4adf2f6090aa19db7c7
   repository: abhimehro/ctrld-sync
   pr: 1210
@@ -8900,8 +8756,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-284-4806a353-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-284-4806a353-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#283@c1662143af9ebd35c79c7d3efbc4ee3062ba2383
   repository: abhimehro/repoprompt-ce
   pr: 283
@@ -9114,8 +8968,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2082-2e273a0d-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2082-2e273a0d-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2081@71b8fdf6ba9851ecfc1c0166ed6f201505e67a90
   repository: abhimehro/personal-config
   pr: 2081
@@ -9149,8 +9001,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2081-71b8fdf6-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2081-71b8fdf6-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d
   repository: abhimehro/personal-config
   pr: 2079
@@ -9199,8 +9049,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2079-15e7c3b7-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2077@f6cd91a57ba739461889772c13712cf8c0912cfd
   repository: abhimehro/personal-config
   pr: 2077
@@ -9547,8 +9395,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-291-5debf802-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-291-5debf802-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#290@448cb77bcc784bb9d17a21a2ce09628f6bd8f542
   repository: abhimehro/repoprompt-ce
   pr: 290
@@ -9582,8 +9428,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-290-448cb77b-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-290-448cb77b-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#288@c83f245e0545d278953127eb81fec5b8d5d7e2bb
   repository: abhimehro/repoprompt-ce
   pr: 288
@@ -9796,8 +9640,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2087-0f5aad7f-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2086@d20195d8e9a597cccb8c97ccfd2d297fdc7dd9a7
   repository: abhimehro/personal-config
   pr: 2086
@@ -9963,8 +9805,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1216-72980127-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1216-72980127-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1215@2f9751e1ce26d41c40903816d197e56e7a53ae3e
   repository: abhimehro/ctrld-sync
   pr: 1215
@@ -11488,8 +11328,6 @@ items:
   - evt-s3-20260906-abhimehro-repoprompt-ce-298-e2bf8f76-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-298-e2bf8f76-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/repoprompt-ce#297@23d06aebe503d16da35532b325ef1e49dbcf78c5
   repository: abhimehro/repoprompt-ce
   pr: 297
@@ -13739,8 +13577,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2116-22c5c38b-handoff
   revision: 3
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2116-22c5c38b-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/repoprompt-ce#309@29807d3f3ef337966377ed4ddd3dd4cd2141d0de
   repository: abhimehro/repoprompt-ce
   pr: 309
@@ -14267,8 +14103,6 @@ items:
   - evt-s3-20260906-s-seatek-sensors-project-582-95f91513-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-s-seatek-sensors-project-582-95f91513-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#774@29066a9f08041b77fda91e54a9eb8ceba3b6b2a1
   repository: abhimehro/Seatek_Analysis
   pr: 774
@@ -14561,8 +14395,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-763-03095f2b-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-763-03095f2b-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1221@23b2e2b0401ecd8fc9d13bb4359d7836fd245909
   repository: abhimehro/ctrld-sync
   pr: 1221
@@ -14597,8 +14429,6 @@ items:
   - evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-abhimehro-ctrld-sync-1221-23b2e2b0-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/ctrld-sync#1220@2449bfc3963916564b7aa3678c722aa1995bf952
   repository: abhimehro/ctrld-sync
   pr: 1220
@@ -14704,8 +14534,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1541-0da98127-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1541-0da98127-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2123@ff5685b15629c87e2815d66d7e8a6107c3536c80
   repository: abhimehro/personal-config
   pr: 2123
@@ -14768,8 +14596,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2123-ff5685b1-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2120@94700e70030933bf6cd6caa0787cd86bf1ed3eed
   repository: abhimehro/personal-config
   pr: 2120
@@ -14812,8 +14638,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2120-94700e70-terminal
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2120-94700e70-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2119@27bf258c892a5e170e2559800a48c4faf8841bed
   repository: abhimehro/personal-config
   pr: 2119
@@ -14860,8 +14684,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2119-27bf258c-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2119-27bf258c-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2118@da01a208a2b5759741e8313b616865a1b59878dd
   repository: abhimehro/personal-config
   pr: 2118
@@ -15371,8 +15193,6 @@ items:
   - https://github.com/abhimehro/personal-config/pull/2130
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2130-f888a4ec-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
@@ -15413,8 +15233,6 @@ items:
   - https://github.com/abhimehro/personal-config/commit/7e2d9e88e8a3f34dca8a567dbe5d764816fe1b6b
   changed_paths:
   - .github/workflows/refactoring-agent.yml
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2129-e14422fb-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
@@ -15454,8 +15272,6 @@ items:
   - https://github.com/abhimehro/personal-config/pull/2128
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2128-f3e583a7-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
@@ -15496,8 +15312,6 @@ items:
   - https://github.com/abhimehro/personal-config/commit/1dcafdbbbc61dd490599e6c8d1b32979fb99eadb
   changed_paths:
   - .github/workflows/security-scan.yml
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2127-9af1675d-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
@@ -15795,8 +15609,6 @@ items:
   - Sources/RepoPrompt/Infrastructure/UI/Components/ScrollableCodeTextView.swift
   - Tests/RepoPromptTests/ContextBuilder/ContextBuilderRunLifecycleTests.swift
   - Tests/RepoPromptTests/MCP/MCPReadSearchLatencyDiagnosticsGuardTests.swift
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-316-12258aad-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
@@ -15840,8 +15652,6 @@ items:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/MCP/MCPConfigExportService.swift
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
-  latest_transition: evt-s3-20260906-abhimehro-repoprompt-ce-313-a3987387-terminal
-  latest_transition_kind: TERMINAL
 - terminal_disposition: MERGED_ROUTINE
   attempts:
     evidence: 2
@@ -16994,8 +16804,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2054-eba7c046-handoff
   revision: 3
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2054-eba7c046-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2046@e9c2f8cbb8d8826b7ad5aea4809ebb6e1cc15fac
   repository: abhimehro/personal-config
   pr: 2046
@@ -17196,8 +17004,6 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2159-d4e622e9-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-personal-config-2159-d4e622e9-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1239@5a63b5dc12d5f4d50675d08fdf3a3c457ad1d8d3
   repository: abhimehro/ctrld-sync
   pr: 1239
@@ -17234,8 +17040,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1239-5a63b5dc-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1239-5a63b5dc-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1238@36efd6fc6ad2d94521744f89db623423f6a9e9d4
   repository: abhimehro/ctrld-sync
   pr: 1238
@@ -17272,8 +17076,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1238-36efd6fc-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1238-36efd6fc-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1237@3473adf1c75317b22a028982db185b0113f76d6a
   repository: abhimehro/ctrld-sync
   pr: 1237
@@ -17311,8 +17113,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1237-3473adf1-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1237-3473adf1-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/ctrld-sync#1236@1dbcf54be4c6f4a8e9bec9c87711e9eb81fc3a50
   repository: abhimehro/ctrld-sync
   pr: 1236
@@ -17349,8 +17149,6 @@ items:
   - evt-s3-20260906-abhimehro-ctrld-sync-1236-1dbcf54b-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-abhimehro-ctrld-sync-1236-1dbcf54b-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/email-security-pipeline#1553@722169ddc2db700a54fc74e596ee4ceb37d420e6
   repository: abhimehro/email-security-pipeline
   pr: 1553
@@ -17388,8 +17186,6 @@ items:
   - evt-s3-20260906--email-security-pipeline-1553-722169dd-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906--email-security-pipeline-1553-722169dd-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f
   repository: abhimehro/Seatek_Analysis
   pr: 807
@@ -17437,8 +17233,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-807-5f8abfec-handoff
   revision: 3
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-807-5f8abfec-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#806@75ae88f07c48172009eb3bf99a9533d6e9eed122
   repository: abhimehro/Seatek_Analysis
   pr: 806
@@ -17483,8 +17277,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-806-75ae88f0-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-806-75ae88f0-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#615@b2cf4136b39a30e7f8d43d4da1dc3ccc7e1e5460
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 615
@@ -17528,8 +17320,6 @@ items:
   - evt-s3-20260906-s-seatek-sensors-project-615-b2cf4136-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-s-seatek-sensors-project-615-b2cf4136-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
   repository: abhimehro/personal-config
   pr: 2030
@@ -17652,8 +17442,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-657-853c034f-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-657-853c034f-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/Seatek_Analysis#643@613078797e39452e1f1223d5536d9398ba8b71a4
   repository: abhimehro/Seatek_Analysis
   pr: 643
@@ -17733,8 +17521,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2163-512aaeb4-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/personal-config#2164@73ebf209891b15f527b27a2deb8d962ea955576e
   repository: abhimehro/personal-config
   pr: 2164
@@ -17780,8 +17566,6 @@ items:
   - evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
   revision: 3
   updated_at_utc: '2026-09-06T18:08:00Z'
-  latest_transition: evt-s1-20260906-0gp-bhimehro-personal-config-2164-73ebf209-terminal
-  latest_transition_kind: TERMINAL
 - key: abhimehro/Seatek_Analysis#809@328d14747329f266bd874f0d3cc1d30dea9e6cf3
   repository: abhimehro/Seatek_Analysis
   pr: 809
@@ -17826,8 +17610,6 @@ items:
   - evt-s3-20260906-bhimehro-seatek-analysis-809-328d1474-handoff
   revision: 2
   updated_at_utc: '2026-09-06T18:00:00Z'
-  latest_transition: evt-s3-20260906-bhimehro-seatek-analysis-809-328d1474-handoff
-  latest_transition_kind: HANDOFF
 - key: abhimehro/personal-config#2163@dcded5c72e100984d0d138df2ec93fd688f42fe8
   repository: abhimehro/personal-config
   pr: 2163
