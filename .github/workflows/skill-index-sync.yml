@@ -1,0 +1,69 @@
+name: Refresh Skill Index source bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".agents/skills/**"
+      - ".claude/skills/**"
+      - ".cursor/skills/**"
+      - ".devin/skills/**"
+      - ".windsurf/skills/**"
+      - "tools/generate_skill_index_bundle.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-reviewable-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic generator dependency
+        run: python -m pip install --disable-pip-version-check "pyyaml==6.0.3"
+
+      - name: Generate public, non-executable source bundle
+        run: python tools/generate_skill_index_bundle.py
+
+      - name: Validate bundle structure
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          bundle = json.loads(Path("docs/skill-index/directory-data.json").read_text())
+          assert bundle["schemaVersion"] == "1.0"
+          assert bundle["packageCount"] == len(bundle["skills"])
+          assert all(isinstance(skill.get("instructions"), str) for skill in bundle["skills"])
+          assert all(isinstance(skill.get("resourceInventory"), list) for skill in bundle["skills"])
+          print(f"Validated {bundle['packageCount']} source skills.")
+          PY
+
+      - name: Create reviewable refresh pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- docs/skill-index/directory-data.json; then
+            echo "Bundle already reflects this source revision."
+            exit 0
+          fi
+          branch="automation/skill-index-sync-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add docs/skill-index/directory-data.json
+          git commit -m "chore(skill-index): refresh source bundle"
+          git push origin "$branch"
+          gh pr create --draft --base main --head "$branch" --title "chore(skill-index): refresh source bundle" --body "Generated from \`${GITHUB_SHA}\` after a skill-path change. This draft contains only the non-executable Skill Index data bundle. Review and merge to publish the new source revision to the directory."
