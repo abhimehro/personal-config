@@ -2211,3 +2211,62 @@ it from memory.
 
 Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
 
+## Run — 2026-09-09 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **69** (`github_contents_api`); blob
+  `33a3a0a177db14d74906da6738e90a7f85a6f713`; data-branch commit
+  `5829d853eb7303d87eb5323c13f27211e30fe530`
+- Preflight: `python3 scripts/pr_lifecycle_ledger_cas.py preflight` **PASS**
+  (`ok: true`, `ref_restored: false`, `sanitized_fields: 0`,
+  `validator_stripped_fields: 0`, size 1602518, `encoding: none`)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Health: `salvage_eligible=0` `starvation=false`
+  `reason=Stage 2 empty intake with zero salvage-eligible remainder`
+- Calibration: `APPROVED` count **7/7** / `pr-lifecycle-v1.4` (no stale reset)
+- CodeScene MCP `namespaceStatus=error` (unavailable; unused — no salvage
+  disposition)
+
+### Outcomes
+
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | Valid ledger; no complete unexpired Stage-2-owned work item; no invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **69**)
+- Cap 10; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only validate via CAS preflight **PASS** on rev 69. Bootstrap pointer
+  not used as runtime state.
+- Docs lineage [#2185](https://github.com/abhimehro/personal-config/pull/2185)
+  already open as draft on `pr-lifecycle-docs-20260909`. No sibling opened and
+  it was not marked ready.
+- Last three Stage 2 records: 2026-09-08 17:00 `ANALYSIS_ERROR` (invalid rev 67),
+  2026-09-06 one-time backlog cleanup (drafts #2163/#2164/#809), 2026-08-30 17:00
+  EMPTY_INTAKE.
+- Did not invent salvage from expired 2026-09-03 drain hints, Stage 3 remainder,
+  Palette/Bolt/Sentinel clusters, rpce Swift (0gi), or ctrld `display.py`
+  (0fv/0gm).
+
+### Handoff
+
+1. Stage 3: ACK Stage 1's 15:00 remainder (pc #2116 unresolved threads, sticky /
+   HUMAN handoffs). Never merge salvage drafts (0gd). Do not Trunk-merge leftover
+   [#2097](https://github.com/abhimehro/personal-config/pull/2097).
+2. Stage 1 later: `/trunk merge` this docs lineage when routine predicates pass;
+   do not GitHub-squash personal-config.
+3. Next Stage 2: process complete unexpired `stage2_work_items` first. Unused
+   cap with zero eligible remainder is not a failed run.
+
+Full record: `tasks/pr-salvage-2026-09-09-1700.md`.
+

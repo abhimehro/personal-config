@@ -2896,3 +2896,19 @@ state.
 **Detection cost:** Low — validator names the extra keys on `items.0`; a
 field-frequency count shows `latest_transition` / `latest_transition_kind`
 on a subset of items.
+
+## Lesson 0he: Unresolved review threads block Stage 1 CLOSED_SUPERSEDED (2026-09-09)
+
+**Pattern:** personal-config #2116 still had two unresolved Codacy review
+threads on the live head after replacement #2163 merged
+(`2026-09-06T17:37:03Z`). Stage 1 close predicates require no unresolved
+discussions. Sibling #2054 had **zero** unresolved threads and **was** closed
+as `CLOSED_SUPERSEDED` vs merged #2164.
+
+**Rule:** A merged replacement is not enough. Re-read unresolved review
+threads on the **current** head immediately before `CLOSED_SUPERSEDED`. If
+threads remain, HANDOFF to Stage 3 (`HOLD_EVIDENCE`) instead of closing.
+Do not treat GitHub `CONFLICTING` plus a merged sibling as an automatic close.
+
+**Detection cost:** Low — GraphQL/REST review threads on the live head SHA;
+replacement merge timestamp vs cooldown.
