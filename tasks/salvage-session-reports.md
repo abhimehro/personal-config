@@ -2178,3 +2178,36 @@ it from memory.
    `dcded5c72e100984d0d138df2ec93fd688f42fe8` is the current replacement head.
 4. Keep #809 held for the unsupported-model platform failure unless an
    authoritative rerun or configuration change clears that job.
+
+## Run — 2026-09-08 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **67**; blob `e65a86935d8bc2567eda938c392d30948ddb01ee`; missing ref restored under lesson **0go**.
+- Validator: `PR_LIFECYCLE_INVALID` extra item keys `latest_transition` /
+  `latest_transition_kind` (lesson **0ha**); health exit 1, not starvation.
+- Live: `stage2_work_items: []`; Stage 1 queued **0**; calibration `APPROVED` 7/7.
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | --- | --- |
+| (none) | — | `ANALYSIS_ERROR` | — | Invalid runtime ledger; no product draft |
+
+- Salvage drafts, infra-fix drafts, API closes, and autonomous merges: **0**
+- New lessons: **0**; `request_reviewers`: skipped
+- Ledger CAS: **none** (validator FAIL; rev stays **67**)
+
+### Verification
+
+- Raw GET via blob SHA; bootstrap pointer not used. Docs lineage #2172 was already
+  open as draft; no sibling opened and it was not marked ready.
+
+### Handoff
+
+1. Wait for a valid ledger before remainder/completion; never merge salvage drafts.
+2. Drop persisted projection fields or revise schema, then re-validate.
+3. Trunk-merge this lineage only after validation and routine predicates pass.
+
+Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
+

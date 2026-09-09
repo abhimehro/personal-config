@@ -2872,3 +2872,27 @@ rewrite 0gs.
 
 **Detection cost:** Low — GraphQL `errors[].extensions.code == undefinedField`
 naming `isLocked`.
+
+## Lesson 0hd: Persisted projection fields invalidate the runtime ledger (2026-09-08)
+
+**Pattern:** After the 2026-09-06 Stage 3 correction CAS (revision 67, commit
+`bcb21c46fc21b96714f949bbaea407b5c9d1a350`), `pr-lifecycle-ledger.yaml` stored
+`latest_transition` and `latest_transition_kind` on 109 of 394 items. Those
+keys are not in `schemas/pr-lifecycle-ledger.schema.json`
+(`additionalProperties: false`).
+`python3 scripts/validate_pr_lifecycle_artifacts.py` therefore returns
+`PR_LIFECYCLE_INVALID` on `items.0`. The data-branch **ref** had also been
+dropped (404) while the objects still existed. Restoring the ref (**0go**)
+does not make an invalid body legal intake.
+
+**Rule:** Never persist derived projection fields into the runtime ledger
+YAML. Unknown fields are `ANALYSIS_ERROR`, not a silent strip. Stage 1 must
+not CAS-write a cleaned copy, invent a schema expansion, or continue to
+inventory/merge/close until a reviewed writer removes the extra keys or a
+policy revision allows them. Restore a missing ref from the last known
+existing commit; do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime
+state.
+
+**Detection cost:** Low — validator names the extra keys on `items.0`; a
+field-frequency count shows `latest_transition` / `latest_transition_kind`
+on a subset of items.
