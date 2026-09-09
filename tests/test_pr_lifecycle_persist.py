@@ -194,8 +194,12 @@ class TestPrLifecyclePersist(unittest.TestCase):
         parent = {"object": {"sha": "a" * 40}}
         patches: list[str] = []
 
-        def fail_patch(_branch: str, sha: str) -> dict:
+        def fail_patch(
+            _branch: str, sha: str, expected_sha: str | None = None
+        ) -> dict:
             patches.append(sha)
+            if expected_sha != "a" * 40:
+                raise AssertionError(f"CAS expected_sha={expected_sha!r}")
             raise cas.CasError(http_code=422)
 
         with mock.patch.object(

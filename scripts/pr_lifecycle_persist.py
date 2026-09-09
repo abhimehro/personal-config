@@ -1,4 +1,5 @@
-"""Keep in-memory ledger projection fields off persisted YAML.
+"""
+Keep in-memory ledger projection fields off persisted YAML.
 
 `apply_transition()` records `latest_transition` and `latest_transition_kind` on
 the in-memory projection so receipt validation can see the latest handoff. Those
@@ -8,6 +9,8 @@ and fail Cursor's schema validator.
 
 This module strips only that known pair. Unknown extra fields still fail closed.
 """
+
+# pylint: disable=wrong-import-position
 
 from __future__ import annotations
 
@@ -23,7 +26,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml
+# pylint: disable=wrong-import-position
+from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml  # noqa: E402
 
 IN_MEMORY_ITEM_FIELDS = frozenset({"latest_transition", "latest_transition_kind"})
 DERIVED_ITEM_LINE = re.compile(
@@ -117,19 +121,12 @@ def _parse_ledger_mapping(text: str, path: Path) -> dict[str, Any]:
     except (yaml.YAMLError, ValueError) as exc:
         raise ValueError(f"{path}: invalid YAML after strip: {exc}") from exc
     if not isinstance(parsed, dict):
-        raise ValueError(f"{path}: root must be a mapping")
+        raise TypeError(f"{path}: root must be a mapping")
     return parsed
 
 
-def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> dict[str, int]:
-    """Strip derived item fields from a fetched runtime ledger file in place.
-
-    Happy path keeps line-stripping so the ~1.55 MB runtime YAML is not
-    rewritten by ``yaml.safe_dump``. After the strip, parse and count leftover
-    projection keys (flow-style maps the line regex misses). Only that miss
-    path dumps via the object model.
-    """
-    original = path.read_text(encoding="utf-8")
+def _sanitize_text(original: str, path: Path, bump_revision: bool) -> tuple[str, int, int]:
+    """Line-strip, fail closed on leftover projection keys, optionally bump."""
     sanitized, removed = strip_derived_item_lines(original)
     parsed = _parse_ledger_mapping(sanitized, path)
     leftover = count_in_memory_item_fields(parsed)
@@ -140,12 +137,20 @@ def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> dict[str, int]:
     new_revision = 0
     if bump_revision:
         sanitized, new_revision = increment_ledger_revision_line(sanitized)
+    return sanitized, removed, new_revision
+
+
+def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> dict[str, int]:
+    """Strip derived item fields from a fetched runtime ledger file in place."""
+    original = path.read_text(encoding="utf-8")
+    sanitized, removed, new_revision = _sanitize_text(original, path, bump_revision)
     if sanitized != original:
         path.write_text(sanitized, encoding="utf-8")
     return {"removed_fields": removed, "ledger_revision": new_revision}
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """CLI for counting or rewriting known in-memory item fields."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("runtime_ledger", type=Path)
     parser.add_argument(
@@ -158,19 +163,23 @@ def main() -> int:
         action="store_true",
         help="increment ledger_revision when rewriting in place",
     )
-    args = parser.parse_args()
-    ledger = load_yaml(args.runtime_ledger)
-    pending = count_in_memory_item_fields(ledger)
-    if args.in_place:
-        result = sanitize_ledger_file(args.runtime_ledger, bump_revision=args.bump_revision)
-        print(
-            "PR_LIFECYCLE_SANITIZED: "
-            f"removed_fields={result['removed_fields']} "
-            f"ledger_revision={result['ledger_revision'] or 'unchanged'}"
-        )
-        return 0
-    print(f"PR_LIFECYCLE_DERIVED_FIELDS: {pending}")
-    return 0 if pending == 0 else 2
+    return parser
+
+
+def main() -> int:
+    """Count or strip known in-memory item fields from a ledger file."""
+    args = build_parser().parse_args()
+    pending = count_in_memory_item_fields(load_yaml(args.runtime_ledger))
+    if not args.in_place:
+        print(f"PR_LIFECYCLE_DERIVED_FIELDS: {pending}")
+        return 0 if pending == 0 else 2
+    result = sanitize_ledger_file(args.runtime_ledger, bump_revision=args.bump_revision)
+    print(
+        "PR_LIFECYCLE_SANITIZED: "
+        f"removed_fields={result['removed_fields']} "
+        f"ledger_revision={result['ledger_revision'] or 'unchanged'}"
+    )
+    return 0
 
 
 if __name__ == "__main__":

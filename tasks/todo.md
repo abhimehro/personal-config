@@ -13,6 +13,7 @@ T3+S — Address review comments and failing checks. Do not bump
 - [x] Batch #2172/#2180 EOF-append + Codacy URL wraps
 - [x] CodeScene: split blob decode + flatten stale-CAS test; HTTPS-only opener
 - [x] Hybrid sanitize (line-strip + leftover dump); extract GitHub HTTP client
+- [x] Split Git Data helpers + clear Codacy notices (NLOC/D213/RUF022/S310)
 - [ ] `gh stack` sync product/docs/copilot layers; do not merge
 
 # Three-stage scheduled Cursor reliability (2026-09-08)

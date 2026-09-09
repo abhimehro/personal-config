@@ -1,9 +1,10 @@
-"""Fetch, restore, and CAS-write the runtime lifecycle ledger.
+"""
+Fetch, restore, and CAS-write the runtime lifecycle ledger.
 
-The selected primitive remains `github_contents_api`, but GitHub Contents GET
-returns `encoding: none` (empty body) for files larger than 1 MB. This helper
-reads via `GET /git/blobs/<sha>` and writes via Git Data API fast-forward
-(blob → tree → commit → ref update with `force=false`). That is the same CAS
+The selected primitive remains ``github_contents_api``, but GitHub Contents GET
+returns ``encoding: none`` (empty body) for files larger than 1 MB. This helper
+reads via ``GET /git/blobs/<sha>`` and writes via Git Data API fast-forward
+(blob → tree → commit → ref update with ``force=false``). That is the same CAS
 anchor (parent commit / blob SHA) without putting a 1.5 MB payload through
 Contents PUT.
 
@@ -13,13 +14,13 @@ Subcommands:
   commit     Replace the ledger file with --file and fast-forward the ref.
 """
 
+# pylint: disable=wrong-import-position
+
 from __future__ import annotations
 
 import argparse
-import base64
 import json
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -27,8 +28,25 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
-from pr_lifecycle_github_http import (
+# pylint: disable=wrong-import-position
+from pr_lifecycle_config import validate_bootstrap_pointer, validate_config  # noqa: E402
+from pr_lifecycle_github_git import (  # noqa: E402
+    contained_output_path,
+    create_blob as git_create_blob,
+    create_commit as git_create_commit,
+    create_tree as git_create_tree,
+    decode_github_blob,
+    ensure_data_ref as git_ensure_data_ref,
+    fetch_runtime_ledger as git_fetch_runtime_ledger,
+    is_stale_tip_error,
+    object_sha,
+    read_commit as git_read_commit,
+    ref_path,
+    tree_sha,
+    update_ref as git_update_ref,
+    update_ref_path,
+)
+from pr_lifecycle_github_http import (  # noqa: E402
     CasError,
     GITHUB_API_ORIGIN,
     OPERATOR_CONFLICT,
@@ -38,35 +56,41 @@ from pr_lifecycle_github_http import (
     github_request as github_http_request,
     github_token as lookup_github_token,
 )
-from pr_lifecycle_persist import sanitize_ledger_file
-from pr_lifecycle_support import ROOT, SHA_RE
-from pr_lifecycle_validation import validate
-from pr_lifecycle_yaml import load_yaml
+from pr_lifecycle_persist import sanitize_ledger_file  # noqa: E402
+from pr_lifecycle_support import ROOT  # noqa: E402
+from pr_lifecycle_validation import validate  # noqa: E402
+from pr_lifecycle_yaml import load_yaml  # noqa: E402
 
-OWNER = "abhimehro"
-REPO = "personal-config"
 DEFAULT_COMMIT_MESSAGE = "automated lifecycle ledger update"
 # Re-exports: tests patch cas._HTTPS_OPENER and call cas.github_api_url.
 __all__ = [
-    "CasError",
     "GITHUB_API_ORIGIN",
     "OPERATOR_CONFLICT",
     "OPERATOR_ERROR",
     "_HTTPS_OPENER",
+    "CasError",
+    "contained_output_path",
+    "decode_github_blob",
     "github_api_url",
     "github_request",
     "github_token",
+    "is_stale_tip_error",
+    "object_sha",
+    "ref_path",
+    "tree_sha",
+    "update_ref_path",
 ]
 
 
 def pointer_runtime() -> dict[str, Any]:
+    """Load and validate the bootstrap pointer's runtime_ledger mapping."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
     validate_bootstrap_pointer(pointer, config)
     runtime = pointer["runtime_ledger"]
     if not isinstance(runtime, dict):
-        raise ValueError("ledger pointer: runtime_ledger must be a mapping")
+        raise TypeError("ledger pointer: runtime_ledger must be a mapping")
     return runtime
 
 
@@ -84,213 +108,57 @@ def github_request(
     return github_http_request(method, path, body, token=github_token())
 
 
-def ref_path(branch: str) -> str:
-    """GET a single ref. GitHub uses the singular `/git/ref/` collection here."""
-    return f"/repos/{OWNER}/{REPO}/git/ref/heads/{branch}"
-
-
-def update_ref_path(branch: str) -> str:
-    """PATCH a ref. GitHub uses the plural `/git/refs/` collection here."""
-    return f"/repos/{OWNER}/{REPO}/git/refs/heads/{branch}"
-
-
-def require_sha(value: Any) -> str:
-    if not isinstance(value, str) or not SHA_RE.fullmatch(value):
-        raise CasError()
-    return value
-
-
-def object_sha(payload: dict[str, Any]) -> str:
-    object_payload = payload.get("object")
-    if not isinstance(object_payload, dict):
-        raise CasError()
-    return require_sha(object_payload.get("sha"))
-
-
-def tree_sha(commit: dict[str, Any]) -> str:
-    tree_payload = commit.get("tree")
-    if not isinstance(tree_payload, dict):
-        raise CasError()
-    return require_sha(tree_payload.get("sha"))
-
-
-def optional_object_sha(ref: Any) -> str:
-    if not isinstance(ref, dict):
-        return ""
-    object_payload = ref.get("object")
-    if not isinstance(object_payload, dict):
-        return ""
-    sha = object_payload.get("sha")
-    if isinstance(sha, str):
-        return sha
-    return ""
-
-
-def is_stale_tip_error(exc: CasError) -> bool:
-    return exc.http_code in {409, 422}
-
-
-def contained_output_path(raw: Path) -> Path:
-    """SECURITY: write only under the repo or the process temp workspace."""
-    expanded = raw.expanduser()
-    if not expanded.is_absolute():
-        expanded = Path.cwd() / expanded
-    if expanded.exists() and expanded.is_symlink():
-        raise CasError()
-    resolved = expanded.resolve()
-    allowed = (ROOT.resolve(), Path(tempfile.gettempdir()).resolve())
-    for root in allowed:
-        try:
-            resolved.relative_to(root)
-            return resolved
-        except ValueError:
-            continue
-    raise CasError()
-
-
-def read_ref(branch: str) -> dict[str, Any] | None:
-    try:
-        payload = github_request("GET", ref_path(branch))
-    except CasError as exc:
-        if exc.http_code == 404:
-            return None
-        raise
-    if not isinstance(payload, dict):
-        raise CasError()
-    return payload
-
-
-def restore_ref(branch: str, sha: str) -> dict[str, Any]:
-    require_sha(sha)
-    created = github_request(
-        "POST",
-        f"/repos/{OWNER}/{REPO}/git/refs",
-        {"ref": f"refs/heads/{branch}", "sha": sha},
-    )
-    if not isinstance(created, dict):
-        raise CasError()
-    return created
-
-
 def ensure_data_ref(runtime: dict[str, Any]) -> dict[str, Any]:
-    branch = str(runtime["data_branch"])
-    current = read_ref(branch)
-    if current is not None:
-        return {"restored": False, "ref": current}
-    sha = runtime.get("last_known_data_commit")
-    if not isinstance(sha, str) or not sha:
-        raise CasError()
-    restored = restore_ref(branch, sha)
-    return {"restored": True, "ref": restored}
-
-
-def contents_metadata(runtime: dict[str, Any], branch: str) -> dict[str, Any]:
-    path = str(runtime["data_path"])
-    payload = github_request(
-        "GET",
-        f"/repos/{OWNER}/{REPO}/contents/{path}?ref={branch}",
-    )
-    if not isinstance(payload, dict):
-        raise CasError()
-    require_sha(payload.get("sha"))
-    return payload
-
-
-def decode_github_blob(payload: dict[str, Any]) -> str:
-    encoding = payload.get("encoding")
-    content = payload.get("content")
-    if encoding != "base64":
-        raise CasError()
-    if not isinstance(content, str):
-        raise CasError()
-    if content == "":
-        raise CasError()
-    return base64.b64decode(content.encode("ascii")).decode("utf-8")
-
-
-def fetch_blob_text(blob_sha: str) -> str:
-    payload = github_request("GET", f"/repos/{OWNER}/{REPO}/git/blobs/{blob_sha}")
-    if not isinstance(payload, dict):
-        raise CasError()
-    return decode_github_blob(payload)
+    """Restore the data-branch ref from the pointer SHA when GitHub 404s."""
+    return git_ensure_data_ref(runtime, github_request)
 
 
 def fetch_runtime_ledger(runtime: dict[str, Any], dest: Path) -> dict[str, Any]:
-    dest = contained_output_path(dest)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    ensured = ensure_data_ref(runtime)
-    branch = str(runtime["data_branch"])
-    meta = contents_metadata(runtime, branch)
-    dest.write_text(fetch_blob_text(str(meta["sha"])), encoding="utf-8")
-    return {
-        "restored_ref": bool(ensured["restored"]),
-        "commit_sha": optional_object_sha(ensured["ref"]),
-        "blob_sha": meta["sha"],
-        "size": meta.get("size"),
-        "encoding": meta.get("encoding"),
-        "path": str(dest),
-    }
+    """Fetch the runtime ledger blob to a contained dest path."""
+    return git_fetch_runtime_ledger(runtime, dest, github_request)
 
 
 def create_blob(content: str) -> str:
-    payload = github_request(
-        "POST",
-        f"/repos/{OWNER}/{REPO}/git/blobs",
-        {"content": content, "encoding": "utf-8"},
-    )
-    if not isinstance(payload, dict):
-        raise CasError()
-    return require_sha(payload.get("sha"))
+    """POST a utf-8 Git blob through the patchable request wrapper."""
+    return git_create_blob(content, github_request)
 
 
 def read_commit(sha: str) -> dict[str, Any]:
-    payload = github_request("GET", f"/repos/{OWNER}/{REPO}/git/commits/{sha}")
-    if not isinstance(payload, dict):
-        raise CasError()
-    return payload
+    """GET a Git commit through the patchable request wrapper."""
+    return git_read_commit(sha, github_request)
 
 
 def create_tree(base_tree: str, path: str, blob_sha: str) -> str:
-    payload = github_request(
-        "POST",
-        f"/repos/{OWNER}/{REPO}/git/trees",
-        {
-            "base_tree": base_tree,
-            "tree": [
-                {
-                    "path": path,
-                    "mode": "100644",
-                    "type": "blob",
-                    "sha": blob_sha,
-                }
-            ],
-        },
-    )
-    if not isinstance(payload, dict):
-        raise CasError()
-    return require_sha(payload.get("sha"))
+    """POST a replacement tree through the patchable request wrapper."""
+    return git_create_tree(base_tree, path, blob_sha, github_request)
 
 
 def create_commit(message: str, tree_sha_value: str, parent_sha: str) -> str:
-    payload = github_request(
-        "POST",
-        f"/repos/{OWNER}/{REPO}/git/commits",
-        {"message": message, "tree": tree_sha_value, "parents": [parent_sha]},
-    )
-    if not isinstance(payload, dict):
-        raise CasError()
-    return require_sha(payload.get("sha"))
+    """POST a single-parent commit through the patchable request wrapper."""
+    return git_create_commit(message, tree_sha_value, parent_sha, github_request)
 
 
-def update_ref(branch: str, sha: str) -> dict[str, Any]:
-    payload = github_request(
-        "PATCH",
-        update_ref_path(branch),
-        {"sha": sha, "force": False},
-    )
-    if not isinstance(payload, dict):
-        raise CasError()
-    return payload
+def update_ref(
+    branch: str,
+    sha: str,
+    expected_sha: str | None = None,
+) -> dict[str, Any]:
+    """PATCH a branch ref through the patchable request wrapper."""
+    return git_update_ref(branch, sha, github_request, expected_sha)
+
+
+def _fast_forward_or_conflict(
+    branch: str,
+    commit_sha: str,
+    expected_sha: str,
+) -> None:
+    """PATCH the data-branch ref. Stale tips become OPERATOR_CONFLICT."""
+    try:
+        update_ref(branch, commit_sha, expected_sha)
+    except CasError as exc:
+        if is_stale_tip_error(exc):
+            raise CasError(OPERATOR_CONFLICT, http_code=exc.http_code) from None
+        raise
 
 
 def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str, Any]:
@@ -303,12 +171,7 @@ def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str,
     blob_sha = create_blob(content)
     new_tree = create_tree(tree_sha(parent), path, blob_sha)
     commit_sha = create_commit(message, new_tree, parent_sha)
-    try:
-        update_ref(branch, commit_sha)
-    except CasError as exc:
-        if is_stale_tip_error(exc):
-            raise CasError(OPERATOR_CONFLICT, http_code=exc.http_code) from None
-        raise
+    _fast_forward_or_conflict(branch, commit_sha, parent_sha)
     return {
         "commit_sha": commit_sha,
         "blob_sha": blob_sha,
@@ -319,6 +182,7 @@ def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str,
 
 
 def run_preflight(out: Path) -> dict[str, Any]:
+    """Fetch, sanitize, and validate the runtime ledger without writing GitHub."""
     runtime = pointer_runtime()
     fetch = fetch_runtime_ledger(runtime, out)
     sanitized = sanitize_ledger_file(Path(fetch["path"]), bump_revision=False)
@@ -337,18 +201,19 @@ def run_preflight(out: Path) -> dict[str, Any]:
 
 
 def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[str, Any]:
+    """Sanitize then CAS-write a local ledger file onto the data branch."""
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
     # Always line-strip before validate+upload so projection keys cannot re-persist.
     sanitize_ledger_file(contained, bump_revision=bump_revision)
     stripped = validate(contained)
-    content = contained.read_text(encoding="utf-8")
-    result = cas_commit(runtime, content, message)
+    result = cas_commit(runtime, contained.read_text(encoding="utf-8"), message)
     result["validator_stripped_fields"] = stripped
     return result
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """CLI for preflight fetch and CAS commit."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--debug",
@@ -366,6 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _print_operator_error(exc: BaseException, *, debug: bool) -> None:
+    """Print a stable operator code. Debug adds type and HTTP code only."""
     if isinstance(exc, CasError):
         print(exc.code, file=sys.stderr)
     else:
@@ -376,17 +242,17 @@ def _print_operator_error(exc: BaseException, *, debug: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run preflight or commit. Never print GitHub response bodies."""
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
         if args.command == "preflight":
-            status = run_preflight(args.out)
-            print(json.dumps(status, indent=2))
+            print(json.dumps(run_preflight(args.out), indent=2))
             return 0
         result = run_commit(args.file, args.message, bump_revision=args.bump_revision)
         print(json.dumps(result, indent=2))
         return 0
-    except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         _print_operator_error(exc, debug=args.debug)
         return 1
 
