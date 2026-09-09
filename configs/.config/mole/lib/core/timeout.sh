@@ -235,7 +235,7 @@ run_with_timeout() {
 	set -e
 
 	if [[ -n $previous_int_trap ]]; then
-		if [[ $previous_int_trap == "trap -- "* ]]; then eval "$previous_int_trap"; fi
+		if [[ $previous_int_trap == "trap -- "* ]]; then $previous_int_trap; fi
 	else
 		trap - INT
 	fi
