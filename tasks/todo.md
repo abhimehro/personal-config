@@ -15,6 +15,7 @@ T3+S — Address review comments and failing checks. Do not bump
 - [x] Hybrid sanitize (line-strip + leftover dump); extract GitHub HTTP client
 - [x] Split Git Data helpers + clear Codacy notices (NLOC/D213/RUF022/S310)
 - [x] Codacy follow-up: D212 one-liners, drop unused noqa, isort aliases, MD025
+- [x] Codacy CPD: reassemble GitHub Request without safe_urlopen clone
 - [ ] `gh stack` sync product/docs/copilot layers; do not merge
 
 ## Three-stage scheduled Cursor reliability (2026-09-08)

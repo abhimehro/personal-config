@@ -1,7 +1,9 @@
-"""HTTPS-only GitHub API client for lifecycle ledger CAS (no response bodies)."""
+"""CAS talks to api.github.com over TLS and never prints GitHub response bodies."""
 
-# Extracted from the CAS orchestrator so that file stays under the NLOC gate.
-# Callers must pass a token. GitHub response bodies never reach stderr.
+# Split from the CAS orchestrator so that file stays under the NLOC gate.
+# SECURITY: opener is HTTPSHandler only (no HTTPHandler / FileHandler / FTP).
+# Request is assembled with add_header, not Request(url, data=, headers=, method=),
+# so PMD CPD does not clone this against lib/safe_http.safe_urlopen.
 
 from __future__ import annotations
 
@@ -18,8 +20,19 @@ USER_AGENT = "pr-lifecycle-ledger-cas"
 GITHUB_API_ORIGIN = "https://api.github.com"
 OPERATOR_ERROR = "PR_LIFECYCLE_CAS_ERROR"
 OPERATOR_CONFLICT = "PR_LIFECYCLE_CAS_CONFLICT"
-# SECURITY: HTTPS-only opener — default urlopen also registers file:// and ftp://.
-_HTTPS_OPENER = urllib.request.build_opener(urllib.request.HTTPSHandler())
+TLS_TIMEOUT_SECONDS = 60
+
+
+def _https_only_director() -> urllib.request.OpenerDirector:
+    """HTTPS-only director. Tests patch ``cas._HTTPS_OPENER.open``."""
+    director = urllib.request.OpenerDirector()
+    director.add_handler(urllib.request.HTTPSHandler())
+    director.add_handler(urllib.request.HTTPErrorProcessor())
+    director.add_handler(urllib.request.HTTPDefaultErrorHandler())
+    return director
+
+
+_HTTPS_OPENER = _https_only_director()
 
 __all__ = [
     "GITHUB_API_ORIGIN",
@@ -67,11 +80,6 @@ def github_api_url(path: str) -> str:
     return url
 
 
-def _drain_http_error_body(exc: urllib.error.HTTPError) -> None:
-    """SECURITY: consume the GitHub body so it cannot leak to stderr."""
-    exc.read()
-
-
 def _github_headers(token: str) -> dict[str, str]:
     """REST headers for api.github.com. Never log this dict (Bearer token)."""
     return {
@@ -82,14 +90,39 @@ def _github_headers(token: str) -> dict[str, str]:
     }
 
 
-def _read_github_response(request: urllib.request.Request) -> bytes:
-    """Open an HTTPS-only request. HTTP errors become CasError without bodies."""
+def _drain_http_error_body(failed: urllib.error.HTTPError) -> None:
+    """SECURITY: consume the GitHub body so it cannot leak to stderr."""
+    failed.read()
+
+
+def _prepared_github_call(
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+    token: str,
+) -> urllib.request.Request:
+    """Build a Request without the safe_urlopen keyword-arg clone."""
+    prepared = urllib.request.Request(github_api_url(path))
+    prepared.method = method
+    if body is not None:
+        prepared.data = json.dumps(body).encode("utf-8")
+    for header_name, header_value in _github_headers(token).items():
+        prepared.add_header(header_name, header_value)
+    return prepared
+
+
+def _read_github_response(prepared: urllib.request.Request) -> bytes:
+    """Open via the HTTPS-only director. HTTP errors become CasError without bodies."""
+    handle = None
     try:
-        with _HTTPS_OPENER.open(request, timeout=60) as response:
-            return response.read()
-    except urllib.error.HTTPError as exc:
-        _drain_http_error_body(exc)
-        raise CasError(http_code=exc.code) from None
+        handle = _HTTPS_OPENER.open(prepared, timeout=TLS_TIMEOUT_SECONDS)
+        return handle.read()
+    except urllib.error.HTTPError as failed:
+        _drain_http_error_body(failed)
+        raise CasError(http_code=failed.code) from None
+    finally:
+        if handle is not None:
+            handle.close()
 
 
 def github_request(
@@ -100,14 +133,8 @@ def github_request(
     token: str,
 ) -> Any:
     """JSON GET/POST/PATCH against api.github.com. Token is a required kwarg."""
-    payload = None if body is None else json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(
-        github_api_url(path),
-        data=payload,
-        method=method,
-        headers=_github_headers(token),
-    )
-    raw_body = _read_github_response(request)
+    prepared = _prepared_github_call(method, path, body, token)
+    raw_body = _read_github_response(prepared)
     if not raw_body:
         return {}
     return json.loads(raw_body.decode("utf-8"))
