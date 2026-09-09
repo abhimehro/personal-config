@@ -1,9 +1,7 @@
-"""
-Git Data API helpers for lifecycle ledger CAS.
+"""Git Data API helpers for CAS; callers inject the HTTP request callable."""
 
-These functions talk to GitHub only through a caller-supplied ``request``
-callable so tests can patch ``pr_lifecycle_ledger_cas.github_request``.
-"""
+# Tests patch ``pr_lifecycle_ledger_cas.github_request``; these helpers never
+# import that module, so the callable is passed in.
 
 from __future__ import annotations
 

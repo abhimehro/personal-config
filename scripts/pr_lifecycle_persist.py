@@ -1,15 +1,8 @@
-"""
-Keep in-memory ledger projection fields off persisted YAML.
+"""Keep in-memory ledger projection fields off persisted YAML."""
 
-`apply_transition()` records `latest_transition` and `latest_transition_kind` on
-the in-memory projection so receipt validation can see the latest handoff. Those
-keys are not in `$defs.item` (`additionalProperties: false`). Dumping the
-projection onto `items` is what made Devin's 2026-09-06 CAS pass its own rewrite
-and fail Cursor's schema validator.
-
-This module strips only that known pair. Unknown extra fields still fail closed.
-"""
-
+# apply_transition() records latest_transition* on the in-memory projection.
+# Those keys are not in $defs.item (additionalProperties: false). Strip only
+# that known pair; unknown extra fields still fail closed.
 # pylint: disable=wrong-import-position
 
 from __future__ import annotations
@@ -27,7 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
-from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml  # noqa: E402
+from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml
 
 IN_MEMORY_ITEM_FIELDS = frozenset({"latest_transition", "latest_transition_kind"})
 DERIVED_ITEM_LINE = re.compile(
@@ -38,6 +31,17 @@ LEDGER_REVISION_LINE = re.compile(
     r"^(ledger_revision:)[ ]+(\d+)\s*$",
     re.MULTILINE,
 )
+__all__ = [
+    "DERIVED_ITEM_LINE",
+    "IN_MEMORY_ITEM_FIELDS",
+    "LEDGER_REVISION_LINE",
+    "count_in_memory_item_fields",
+    "dump_ledger",
+    "persistable_item",
+    "sanitize_ledger_file",
+    "strip_derived_item_lines",
+    "strip_in_memory_item_fields",
+]
 
 
 def persistable_item(item: dict[str, Any]) -> dict[str, Any]:
@@ -83,7 +87,7 @@ def count_in_memory_item_fields(ledger: dict[str, Any]) -> int:
 def strip_derived_item_lines(text: str) -> tuple[str, int]:
     """Drop derived item lines from dumped YAML without rewriting the document."""
     removed = len(DERIVED_ITEM_LINE.findall(text))
-    if removed == 0:
+    if not removed:
         return text, 0
     return DERIVED_ITEM_LINE.sub("", text), removed
 
@@ -106,7 +110,11 @@ def increment_ledger_revision_line(text: str) -> tuple[str, int]:
 
 def dump_ledger(ledger: dict[str, Any]) -> str:
     """Serialize a ledger after stripping known in-memory item fields."""
-    strip_in_memory_item_fields(ledger)
+    items = ledger.get("items")
+    if isinstance(items, list):
+        ledger["items"] = [
+            persistable_item(item) if isinstance(item, dict) else item for item in items
+        ]
     return yaml.safe_dump(ledger, sort_keys=False, allow_unicode=True)
 
 
@@ -172,7 +180,7 @@ def main() -> int:
     pending = count_in_memory_item_fields(load_yaml(args.runtime_ledger))
     if not args.in_place:
         print(f"PR_LIFECYCLE_DERIVED_FIELDS: {pending}")
-        return 0 if pending == 0 else 2
+        return 0 if not pending else 2
     result = sanitize_ledger_file(args.runtime_ledger, bump_revision=args.bump_revision)
     print(
         "PR_LIFECYCLE_SANITIZED: "

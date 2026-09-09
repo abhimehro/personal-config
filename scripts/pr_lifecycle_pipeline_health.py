@@ -41,12 +41,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pr_lifecycle_config import validate_config  # noqa: E402
-from pr_lifecycle_ledger import validate_runtime_records  # noqa: E402
-from pr_lifecycle_persist import strip_in_memory_item_fields  # noqa: E402
-from pr_lifecycle_schema import validate_schema  # noqa: E402
-from pr_lifecycle_support import ROOT  # noqa: E402
-from pr_lifecycle_yaml import load_yaml  # noqa: E402
+# pylint: disable=wrong-import-position
+from pr_lifecycle_config import validate_config
+from pr_lifecycle_ledger import validate_runtime_records
+from pr_lifecycle_persist import strip_in_memory_item_fields
+from pr_lifecycle_schema import validate_schema
+from pr_lifecycle_support import ROOT
+from pr_lifecycle_yaml import load_yaml
 
 NON_SALVAGE_OUTCOMES = frozenset(
     {

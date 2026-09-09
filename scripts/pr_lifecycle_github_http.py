@@ -1,10 +1,7 @@
-"""
-HTTPS-only GitHub API client for lifecycle ledger CAS.
+"""HTTPS-only GitHub API client for lifecycle ledger CAS (no response bodies)."""
 
-Extracted from ``pr_lifecycle_ledger_cas.py`` so the orchestrator stays below
-the file-level complexity gate. Callers must pass a token; this module never
-prints GitHub response bodies.
-"""
+# Extracted from the CAS orchestrator so that file stays under the NLOC gate.
+# Callers must pass a token. GitHub response bodies never reach stderr.
 
 from __future__ import annotations
 
@@ -104,7 +101,7 @@ def github_request(
 ) -> Any:
     """JSON GET/POST/PATCH against api.github.com. Token is a required kwarg."""
     payload = None if body is None else json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(  # noqa: S310 — opened only via _HTTPS_OPENER
+    request = urllib.request.Request(
         github_api_url(path),
         data=payload,
         method=method,

@@ -15,14 +15,11 @@ from pr_lifecycle_schema import validate_schema
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
 
+__all__ = ["validate"]
+
 
 def validate(runtime_ledger: Path) -> int:
-    """Validate source policy plus one fetched runtime ledger before an action.
-
-    Known in-memory projection fields on items are stripped before JSON Schema
-    so a Devin-style dump cannot halt the scheduled Cursor path. Unknown extra
-    fields still fail closed. Returns the number of stripped fields.
-    """
+    """Validate policy plus one fetched runtime ledger; strip known projection keys."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")

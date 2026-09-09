@@ -1,19 +1,7 @@
-"""
-Fetch, restore, and CAS-write the runtime lifecycle ledger.
+"""Fetch, restore, and CAS-write the runtime lifecycle ledger via Git Data."""
 
-The selected primitive remains ``github_contents_api``, but GitHub Contents GET
-returns ``encoding: none`` (empty body) for files larger than 1 MB. This helper
-reads via ``GET /git/blobs/<sha>`` and writes via Git Data API fast-forward
-(blob → tree → commit → ref update with ``force=false``). That is the same CAS
-anchor (parent commit / blob SHA) without putting a 1.5 MB payload through
-Contents PUT.
-
-Subcommands:
-  preflight  Ensure the data-branch ref exists, fetch the blob, sanitize known
-             derived item fields, validate, print JSON status.
-  commit     Replace the ledger file with --file and fast-forward the ref.
-"""
-
+# Contents GET returns encoding=none above 1 MB. Reads use /git/blobs/<sha>;
+# writes fast-forward blob → tree → commit → ref (force=false).
 # pylint: disable=wrong-import-position
 
 from __future__ import annotations
@@ -29,37 +17,37 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
-from pr_lifecycle_config import validate_bootstrap_pointer, validate_config  # noqa: E402
-from pr_lifecycle_github_git import (  # noqa: E402
+from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
+from pr_lifecycle_github_git import (
     contained_output_path,
-    create_blob as git_create_blob,
-    create_commit as git_create_commit,
-    create_tree as git_create_tree,
     decode_github_blob,
-    ensure_data_ref as git_ensure_data_ref,
-    fetch_runtime_ledger as git_fetch_runtime_ledger,
     is_stale_tip_error,
     object_sha,
-    read_commit as git_read_commit,
     ref_path,
     tree_sha,
-    update_ref as git_update_ref,
     update_ref_path,
 )
-from pr_lifecycle_github_http import (  # noqa: E402
-    CasError,
+from pr_lifecycle_github_git import create_blob as git_create_blob
+from pr_lifecycle_github_git import create_commit as git_create_commit
+from pr_lifecycle_github_git import create_tree as git_create_tree
+from pr_lifecycle_github_git import ensure_data_ref as git_ensure_data_ref
+from pr_lifecycle_github_git import fetch_runtime_ledger as git_fetch_runtime_ledger
+from pr_lifecycle_github_git import read_commit as git_read_commit
+from pr_lifecycle_github_git import update_ref as git_update_ref
+from pr_lifecycle_github_http import (
+    _HTTPS_OPENER,
     GITHUB_API_ORIGIN,
     OPERATOR_CONFLICT,
     OPERATOR_ERROR,
-    _HTTPS_OPENER,
+    CasError,
     github_api_url,
-    github_request as github_http_request,
-    github_token as lookup_github_token,
 )
-from pr_lifecycle_persist import sanitize_ledger_file  # noqa: E402
-from pr_lifecycle_support import ROOT  # noqa: E402
-from pr_lifecycle_validation import validate  # noqa: E402
-from pr_lifecycle_yaml import load_yaml  # noqa: E402
+from pr_lifecycle_github_http import github_request as github_http_request
+from pr_lifecycle_github_http import github_token as lookup_github_token
+from pr_lifecycle_persist import sanitize_ledger_file
+from pr_lifecycle_support import ROOT
+from pr_lifecycle_validation import validate
+from pr_lifecycle_yaml import load_yaml
 
 DEFAULT_COMMIT_MESSAGE = "automated lifecycle ledger update"
 # Re-exports: tests patch cas._HTTPS_OPENER and call cas.github_api_url.

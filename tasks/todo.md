@@ -14,9 +14,10 @@ T3+S — Address review comments and failing checks. Do not bump
 - [x] CodeScene: split blob decode + flatten stale-CAS test; HTTPS-only opener
 - [x] Hybrid sanitize (line-strip + leftover dump); extract GitHub HTTP client
 - [x] Split Git Data helpers + clear Codacy notices (NLOC/D213/RUF022/S310)
+- [x] Codacy follow-up: D212 one-liners, drop unused noqa, isort aliases, MD025
 - [ ] `gh stack` sync product/docs/copilot layers; do not merge
 
-# Three-stage scheduled Cursor reliability (2026-09-08)
+## Three-stage scheduled Cursor reliability (2026-09-08)
 
 T3+S — Diagnose then repair at the cause. Do not bump `policy_revision`.
 Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
@@ -31,7 +32,7 @@ Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
 - [x] Prove: validator PASS + health CLI + bounded green BOT drain
 - [x] Commit, push designated branch, open product PR
 
-# PR backlog burndown + Stage 2 starvation (2026-08-30)
+## PR backlog burndown + Stage 2 starvation (2026-08-30)
 
 T5 — Orchestrate. 20 mutations/day equals arrivals; Stage 2 is idle. Do not bump
 `policy_revision`. Stage 2 still never merges. PR Desk stays read-only.
@@ -47,7 +48,7 @@ T5 — Orchestrate. 20 mutations/day equals arrivals; Stage 2 is idle. Do not bu
 - [x] Commit, push, open PR (not Trunk-merged unless asked)
 - [ ] HITL: paste Stage 1/2/3 completion prompts; keep calibration disabled
 
-# Grok Bot PR Desk (filter, not a fourth stage) — 2026-08-27
+## Grok Bot PR Desk (filter, not a fourth stage) — 2026-08-27
 
 Paste-ready files: `docs/grok-bot/`. Do not give this Bot merge/issue/CAS
 authority. Dashboard Automations stay the only PR actors.
@@ -59,7 +60,7 @@ authority. Dashboard Automations stay the only PR actors.
       `docs/grok-bot/pr-desk.skill-digest.md` after the format is good
 - [ ] Do not add a GitHub-notification listener in v1
 
-# PR pipeline throughput + Stage 3 approval (2026-08-26)
+## PR pipeline throughput + Stage 3 approval (2026-08-26)
 
 T5 — Orchestrate. Drain the ~200-PR backlog. Do not bump `policy_revision`.
 Stage 2 still never merges.
@@ -78,7 +79,7 @@ Stage 2 still never merges.
 - [x] Tests + `sync_cursor_export_prompts.py --write/--check`
 - [x] Commit, push, open PR (not Trunk-merged unless asked)
 
-# Phase 1 PR Review — 2026-08-17
+## Phase 1 PR Review — 2026-08-17
 
 Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge. Stale:
 30 days. Auto-fix: safe routine only. Merge: squash.
@@ -106,7 +107,7 @@ Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge. Stale:
 - DIRTY ctrld#1188 uv-only → draft salvage
 - Do not merge salvage drafts or auth/payment/schema PRs
 
-# Stage 2 salvage 2026-08-20
+## Stage 2 salvage 2026-08-20
 
 - [x] Fetch/validate runtime ledger (`github_contents_api`, rev 5,
       PR_LIFECYCLE_VALID)
@@ -120,7 +121,7 @@ Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge. Stale:
       (rev 5→6)
 - [x] Append salvage-session-reports.md; open personal-config docs draft
 
-# PR lifecycle first-live-run retrospective (2026-08-20)
+## PR lifecycle first-live-run retrospective (2026-08-20)
 
 Rigorous audit of Stage 1/2/3 first live cron run. Evidence-first. No merges. No
 Endor fleet scans. Do not rewrite AGENTS.md Learned* sections.
@@ -147,7 +148,7 @@ Endor fleet scans. Do not rewrite AGENTS.md Learned* sections.
 - Stage 2 never merges; salvage never autonomously merges
 - Record Endor skill as out_of_scope unless verified pipeline usage exists
 
-# Daily agent-docs lineage (2026-08-21)
+## Daily agent-docs lineage (2026-08-21)
 
 Stop Stage 1/2/3 from each opening a personal-config docs PR that rewrites the
 same `tasks/*` files. Git run records are for agents; Notion stays the human

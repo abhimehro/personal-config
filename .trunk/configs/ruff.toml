@@ -7,6 +7,11 @@ ignore = ["E501"]
 [per-file-ignores]
 # urllib.urlopen is intentionally wrapped inside safe_http; direct use elsewhere is forbidden.
 "lib/safe_http.py" = ["S310"]
+# HTTPS-only opener.open is the CAS client; default urlopen is not used.
+"scripts/pr_lifecycle_github_http.py" = ["S310"]
 # Scripts add the repo root to sys.path before importing the shared lib helper.
 "scripts/morning-brief/morning-brief.py" = ["E402"]
 "media-streaming/scripts/bootstrap-jellyfin-local.py" = ["E402"]
+"scripts/pr_lifecycle_ledger_cas.py" = ["E402"]
+"scripts/pr_lifecycle_persist.py" = ["E402"]
+"scripts/pr_lifecycle_pipeline_health.py" = ["E402"]
