@@ -1,3 +1,35 @@
+# Stage 1 — 2026-09-09 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **77**; BOT **58**; HUMAN **19**. SHA_MATCH **61**; STALE **1**
+(Seatek #744 HUMAN, not stolen); NEW **15**. Product mutations **1/40**:
+CLOSED_SUPERSEDED pc #2054 vs merged #2164 (comment `5604227083`,
+`2026-09-09T15:15:29Z`). Did **not** close pc #2116 (unresolved Codacy threads;
+lesson **0he**). Ledger CAS **68 → 69** (blob
+`33a3a0a177db14d74906da6738e90a7f85a6f713`, data-branch commit
+`5829d853eb7303d87eb5323c13f27211e30fe530`). Stage 2 queued **0**
+(salvage_eligible=0). Stage 3 **16** handoffs (15 NEW + #2116). Throughput
+**PASS** (unused slots were sticky/HUMAN/red-check/unresolved-threads; no
+salvage remainder). Docs lineage: `pr-lifecycle-docs-20260909` (this PR). Do
+**not** `/trunk merge` today's lineage in the opening run (**0gj**). Full
+record: `tasks/pr-review-2026-09-09.md`. Lesson **0he**.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |    77 |
+| Product mutations           |     1 |
+| Merged                      |     0 |
+| Closed superseded           |     1 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |    16 |
+| GitHub PR mutations         |     1 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-09-09.md` (mandatory Stage 1 columns).
+
 # Stage 1 — 2026-08-29 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
