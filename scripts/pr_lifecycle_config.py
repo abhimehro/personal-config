@@ -141,7 +141,7 @@ def require_exact_stage_caps(value: Any) -> None:
     expected = {
         "stage1_inventory": 80,
         "stage1_actions": 40,
-        "stage2_salvage_candidates": 10,
+        "stage2_salvage_candidates": 5,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
         "stage3_completion_actions": 15,

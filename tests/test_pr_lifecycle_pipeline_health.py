@@ -425,7 +425,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         caps = config["lifecycle"]["stage_caps"]
         self.assertEqual(caps["stage1_inventory"], 80)
         self.assertEqual(caps["stage1_actions"], 40)
-        self.assertEqual(caps["stage2_salvage_candidates"], 10)
+        self.assertEqual(caps["stage2_salvage_candidates"], 5)
         self.assertEqual(caps["stage3_completion_actions"], 15)
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
 
