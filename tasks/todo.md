@@ -10,9 +10,10 @@ T3+S — Address review comments and failing checks. Do not bump
 - [x] Prompts: `--message`; CLI default message
 - [x] Revise #2176: drop salvage-5 revert; closed empty stacked follow-up
 - [x] Fold #2179 assertion onto #2177 (`7cc5c0e2`); close #2179
-- [ ] Batch #2172/#2180 EOF-append + Codacy URL wraps
-- [ ] CodeScene: split blob decode + flatten stale-CAS test; HTTPS-only opener
-- [ ] `gh stack link` / rebase / push; do not merge
+- [x] Batch #2172/#2180 EOF-append + Codacy URL wraps
+- [x] CodeScene: split blob decode + flatten stale-CAS test; HTTPS-only opener
+- [x] Hybrid sanitize (line-strip + leftover dump); extract GitHub HTTP client
+- [ ] `gh stack` sync product/docs/copilot layers; do not merge
 
 # Three-stage scheduled Cursor reliability (2026-09-08)
 

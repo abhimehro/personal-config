@@ -23,7 +23,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pr_lifecycle_yaml import load_yaml
+from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml
 
 IN_MEMORY_ITEM_FIELDS = frozenset({"latest_transition", "latest_transition_kind"})
 DERIVED_ITEM_LINE = re.compile(
@@ -106,10 +106,37 @@ def dump_ledger(ledger: dict[str, Any]) -> str:
     return yaml.safe_dump(ledger, sort_keys=False, allow_unicode=True)
 
 
+def _parse_ledger_mapping(text: str, path: Path) -> dict[str, Any]:
+    """Parse stripped YAML with duplicate-key rejection. Fail closed on junk."""
+    try:
+        loader = UniqueKeyLoader(text)
+        try:
+            parsed = loader.get_single_data()
+        finally:
+            loader.dispose()
+    except (yaml.YAMLError, ValueError) as exc:
+        raise ValueError(f"{path}: invalid YAML after strip: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError(f"{path}: root must be a mapping")
+    return parsed
+
+
 def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> dict[str, int]:
-    """Strip derived item lines from a fetched runtime ledger file in place."""
+    """Strip derived item fields from a fetched runtime ledger file in place.
+
+    Happy path keeps line-stripping so the ~1.55 MB runtime YAML is not
+    rewritten by ``yaml.safe_dump``. After the strip, parse and count leftover
+    projection keys (flow-style maps the line regex misses). Only that miss
+    path dumps via the object model.
+    """
     original = path.read_text(encoding="utf-8")
     sanitized, removed = strip_derived_item_lines(original)
+    parsed = _parse_ledger_mapping(sanitized, path)
+    leftover = count_in_memory_item_fields(parsed)
+    if leftover:
+        # CAUTION: regex miss (flow-style `{latest_transition: evt-x, ...}`).
+        removed += leftover
+        sanitized = dump_ledger(parsed)
     new_revision = 0
     if bump_revision:
         sanitized, new_revision = increment_ledger_revision_line(sanitized)

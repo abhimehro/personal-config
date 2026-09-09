@@ -18,11 +18,8 @@ from __future__ import annotations
 import argparse
 import base64
 import json
-import os
 import sys
 import tempfile
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -31,35 +28,35 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
+from pr_lifecycle_github_http import (
+    CasError,
+    GITHUB_API_ORIGIN,
+    OPERATOR_CONFLICT,
+    OPERATOR_ERROR,
+    _HTTPS_OPENER,
+    github_api_url,
+    github_request as github_http_request,
+    github_token as lookup_github_token,
+)
 from pr_lifecycle_persist import sanitize_ledger_file
-from pr_lifecycle_support import ROOT, SHA_RE, require_https_url
+from pr_lifecycle_support import ROOT, SHA_RE
 from pr_lifecycle_validation import validate
 from pr_lifecycle_yaml import load_yaml
 
 OWNER = "abhimehro"
 REPO = "personal-config"
-API_VERSION = "2022-11-28"
-USER_AGENT = "pr-lifecycle-ledger-cas"
-GITHUB_API_ORIGIN = "https://api.github.com"
 DEFAULT_COMMIT_MESSAGE = "automated lifecycle ledger update"
-OPERATOR_ERROR = "PR_LIFECYCLE_CAS_ERROR"
-OPERATOR_CONFLICT = "PR_LIFECYCLE_CAS_CONFLICT"
-# SECURITY: HTTPS-only opener — default urlopen also registers file:// and ftp://.
-_HTTPS_OPENER = urllib.request.build_opener(urllib.request.HTTPSHandler())
-
-
-class CasError(ValueError):
-    """Operator-safe CAS failure. GitHub response bodies stay off stderr."""
-
-    def __init__(
-        self,
-        code: str = OPERATOR_ERROR,
-        *,
-        http_code: int | None = None,
-    ) -> None:
-        super().__init__(code)
-        self.code = code
-        self.http_code = http_code
+# Re-exports: tests patch cas._HTTPS_OPENER and call cas.github_api_url.
+__all__ = [
+    "CasError",
+    "GITHUB_API_ORIGIN",
+    "OPERATOR_CONFLICT",
+    "OPERATOR_ERROR",
+    "_HTTPS_OPENER",
+    "github_api_url",
+    "github_request",
+    "github_token",
+]
 
 
 def pointer_runtime() -> dict[str, Any]:
@@ -74,26 +71,8 @@ def pointer_runtime() -> dict[str, Any]:
 
 
 def github_token() -> str:
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
-    if not token:
-        raise CasError()
-    return token
-
-
-def github_api_url(path: str) -> str:
-    """SECURITY: only the GitHub API origin; path must be a rooted API route."""
-    if not path.startswith("/"):
-        raise CasError()
-    url = f"{GITHUB_API_ORIGIN}{path}"
-    require_https_url(url, "github_api")
-    if not url.startswith(f"{GITHUB_API_ORIGIN}/"):
-        raise CasError()
-    return url
-
-
-def _drain_http_error_body(exc: urllib.error.HTTPError) -> None:
-    """SECURITY: consume the GitHub body so it cannot leak to stderr."""
-    exc.read()
+    """Look up GH_TOKEN here so tests can patch ``cas.github_token``."""
+    return lookup_github_token()
 
 
 def github_request(
@@ -101,28 +80,8 @@ def github_request(
     path: str,
     body: dict[str, Any] | None = None,
 ) -> Any:
-    payload = None if body is None else json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(
-        github_api_url(path),
-        data=payload,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {github_token()}",
-            "X-GitHub-Api-Version": API_VERSION,
-            "User-Agent": USER_AGENT,
-        },
-    )
-    try:
-        with _HTTPS_OPENER.open(request, timeout=60) as response:
-            raw_body = response.read()
-    except urllib.error.HTTPError as exc:
-        _drain_http_error_body(exc)
-        raise CasError(http_code=exc.code) from None
-    if not raw_body:
-        return {}
-    parsed: Any = json.loads(raw_body.decode("utf-8"))
-    return parsed
+    """Thin wrapper so token lookup and opener patches stay on this module."""
+    return github_http_request(method, path, body, token=github_token())
 
 
 def ref_path(branch: str) -> str:

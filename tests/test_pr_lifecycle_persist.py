@@ -112,6 +112,50 @@ class TestPrLifecyclePersist(unittest.TestCase):
             "  revision: 2\n  updated_at_utc: '2026-09-06T18:00:00Z'\n",
         )
 
+    def test_sanitize_file_keeps_block_yaml_formatting(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        path = Path(temporary.name) / "block.yaml"
+        path.write_text(
+            "ledger_revision: 3\n"
+            "items:\n"
+            "  - id: item-1\n"
+            "    revision: 2\n"
+            "    latest_transition: evt-x\n"
+            "    latest_transition_kind: HANDOFF\n"
+            "    updated_at_utc: '2026-09-06T18:00:00Z'\n",
+            encoding="utf-8",
+        )
+        result = persist.sanitize_ledger_file(path, bump_revision=False)
+        self.assertEqual(result["removed_fields"], 2)
+        self.assertEqual(
+            path.read_text(encoding="utf-8"),
+            "ledger_revision: 3\n"
+            "items:\n"
+            "  - id: item-1\n"
+            "    revision: 2\n"
+            "    updated_at_utc: '2026-09-06T18:00:00Z'\n",
+        )
+
+    def test_sanitize_file_rewrites_flow_style_leftovers(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        path = Path(temporary.name) / "flow.yaml"
+        path.write_text(
+            "ledger_revision: 3\n"
+            "items:\n"
+            "  - {revision: 1, latest_transition: evt-x,"
+            " latest_transition_kind: HANDOFF}\n",
+            encoding="utf-8",
+        )
+        result = persist.sanitize_ledger_file(path, bump_revision=False)
+        self.assertGreaterEqual(result["removed_fields"], 2)
+        text = path.read_text(encoding="utf-8")
+        self.assertNotIn("latest_transition:", text)
+        self.assertNotIn("latest_transition_kind:", text)
+        self.assertIn("ledger_revision: 3", text)
+        self.assertIn("revision: 1", text)
+
     def test_git_ref_update_uses_plural_collection(self) -> None:
         from pr_lifecycle_ledger_cas import ref_path, update_ref_path
 
