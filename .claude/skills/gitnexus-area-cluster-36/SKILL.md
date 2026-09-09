@@ -28,13 +28,6 @@ description: "Skill for the Cluster_36 area of personal-config. 4 symbols across
 | `_check_ip_set`      | Function | `lib/safe_http.py` | 245  |
 | `_is_cgnat`          | Function | `lib/safe_http.py` | 209  |
 
-## Execution Flows
-
-| Flow                                 | Type            | Steps |
-| ------------------------------------ | --------------- | ----- |
-| `_check_ip_set → _check_ip_category` | intra_community | 3     |
-| `_check_ip_set → _is_cgnat`          | intra_community | 3     |
-
 ## How to Explore
 
 1. `context({name: "_check_ip_category"})` — see callers and callees
