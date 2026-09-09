@@ -35,6 +35,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
         steps_by_name = {step["name"]: step for step in steps if "name" in step}
 
+        self.assertEqual(steps_by_id["refactor-attempt-1"]["with"]["version"], "v1.1.1")
         self.assertTrue(steps_by_id["refactor-attempt-1"]["continue-on-error"] is True)
         self.assertTrue(
             steps_by_name["Wait before retrying failed refactor"]["if"]
@@ -52,6 +53,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             steps_by_id["refactor-attempt-2"]["if"]
             == "steps.refactor-attempt-1.outcome == 'failure'"
         )
+        self.assertEqual(steps_by_id["refactor-attempt-2"]["with"]["version"], "v1.1.1")
         self.assertTrue(steps_by_id["refactor-attempt-2"]["continue-on-error"] is True)
         self.assertTrue(
             steps_by_name["Fail if both refactor attempts fail"]["if"]
