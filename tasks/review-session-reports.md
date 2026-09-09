@@ -1023,7 +1023,7 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   pre-queue #2164 head remains an immutable `HOLD_EVIDENCE` record rather than
   being rewritten to the queue-generated head.
 
-# Stage 1 — 2026-09-08 (cron 15:00 UTC)
+## Stage 1 — 2026-09-08 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger ref **missing at start**; restored per lesson **0go** to `bcb21c46fc21b96714f949bbaea407b5c9d1a350`. Validator **FAIL** `PR_LIFECYCLE_INVALID` due to extra item fields `latest_transition` / `latest_transition_kind` on 109/394 items. Guardrail **ANALYSIS_ERROR**. Product mutations **0/40**; no inventory, merge, close, Stage 2 WI, or ledger CAS. Calibration **APPROVED** 7/7; observational open PRs **70**. Docs lineage: `pr-lifecycle-docs-20260908`. Full record: `tasks/pr-review-2026-09-08.md`. Lesson **0ha**.
 
