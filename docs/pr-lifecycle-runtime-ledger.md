@@ -67,11 +67,19 @@ silently defeat the ledger's stale-revision guarantee.
 ## Contents API Transaction
 
 When the selected primitive is the Contents API, the stage reads the current
-runtime ledger file and records its blob `sha`. It validates and rebuilds the
-same bounded projection, then writes using that exact blob SHA precondition. A
-stale-SHA conflict is a CAS loss. The stage re-reads, revalidates, and retries
-once at most. It never creates a working-tree merge, force-updates a ref, or
-bypasses the data branch.
+runtime ledger file and records its blob `sha`. GitHub Contents GET returns
+`encoding: none` (empty `content`) when the file is larger than 1 MB; the body
+must be fetched with `GET /git/blobs/<sha>`. Writes of a ledger that size must
+use the Git Data API fast-forward helper
+`scripts/pr_lifecycle_ledger_cas.py` (blob → tree → commit → ref update with
+`force=false`). GitHub GET uses singular `/git/ref/heads/<branch>`; PATCH uses
+plural `/git/refs/heads/<branch>`. Mixing them returns HTTP 404 after the blob
+and commit already exist. Contents PUT is not the write path above 1 MB. A stale-SHA or
+non-fast-forward conflict is a CAS loss. The stage re-reads, revalidates, and
+retries once at most. It never creates a working-tree merge, force-updates a
+ref, or bypasses the data branch. If `refs/heads/automation/pr-lifecycle-ledger`
+is missing, recreate it at `last_known_data_commit` from the main-branch
+pointer; never invent ledger bytes.
 
 ## Stage Eligibility, Inventory Exclusion, and Recovery
 

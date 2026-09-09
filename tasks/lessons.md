@@ -1,5 +1,33 @@
 # Lessons Learned
 
+## Lesson 0hb: Persisted projection fields halt scheduled Cursor (2026-09-08)
+
+**Pattern:** `apply_transition()` writes `latest_transition` /
+`latest_transition_kind` onto the in-memory item so receipt validation can see
+the latest handoff. Those keys are not in `$defs.item` (`additionalProperties:
+false`). Devin's 2026-09-06 CAS dumped the projection (rev 67, commit
+`bcb21c46`, blob `e65a8693`, 218 extra keys). Devin still "succeeded" because
+it did not fail-close on schema. Scheduled Cursor Stage 1/2/3 all
+`ANALYSIS_ERROR` on
+`PR_LIFECYCLE_INVALID: Additional properties are not allowed ('latest_transition',
+'latest_transition_kind')`. Contents GET of the >1 MB file returns
+`encoding: none`; body is `GET /git/blobs/<sha>`. Git Data API PATCH of the ref
+is plural `/git/refs/heads/…`; GET is singular `/git/ref/heads/…`. A mixed PATCH
+404s after blob/commit create. **Rule:** (1) Persist through
+`persistable_item()` / `scripts/pr_lifecycle_persist.py`. (2) Load-time strip of
+that known pair only; unknown extras still fail closed. (3) CAS via
+`scripts/pr_lifecycle_ledger_cas.py` (Git Data API FF). (4) Keep
+`last_known_data_commit` on the **cleaned** tip so 0go restore cannot revive
+rev 67. Salvage-cap 5 did **not** halt 2026-09-08 (zero work items because the
+ledger was unread). **Detection cost:** Low —
+`python3 scripts/validate_pr_lifecycle_artifacts.py --strict-persisted` on the
+fetched blob. (5) `run_commit` always line-strips before
+validate+upload, not only with `--bump-revision`. (6) A stale Git Data tip
+returns `PR_LIFECYCLE_CAS_CONFLICT`; do not retry the same bytes onto a new
+parent. (7) Do not restore salvage-cap 5 — that did not cause the halt.
+(8) Keep stdlib `urllib` on `https://api.github.com` via an HTTPS-only opener;
+do not add `requests`. Do not `yaml.safe_dump` the 1.5 MB ledger.
+
 ## Lesson 0ft: `role="status"` on `<li>` overrides listitem (2026-08-17)
 
 **Pattern:** Palette a11y PRs add `role="status"` to empty-state containers so

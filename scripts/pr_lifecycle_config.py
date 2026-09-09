@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Any
 
 from pr_identity import identity_policy_from_config
-from pr_lifecycle_support import ROOT, require_fields, require_list, require_mapping
+from pr_lifecycle_support import (
+    ROOT,
+    SHA_RE,
+    require_fields,
+    require_list,
+    require_mapping,
+)
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -135,10 +141,12 @@ def require_exact_stage_caps(value: Any) -> None:
     expected = {
         "stage1_inventory": 80,
         "stage1_actions": 40,
-        "stage2_salvage_candidates": 5,
+        # NOTE: keep 10. The 2026-09-08 halt was an unread invalid ledger
+        # (EMPTY_INTAKE), not salvage-cap starvation. Do not restore 5.
+        "stage2_salvage_candidates": 10,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
-        "stage3_completion_actions": 5,
+        "stage3_completion_actions": 15,
     }
     if caps != expected:
         raise ValueError("config.lifecycle.stage_caps: differs from approved contract")
@@ -189,7 +197,7 @@ def validate_pointer_identity(pointer: dict[str, Any]) -> None:
 
 
 def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
-    fields = {
+    required = {
         "data_branch",
         "data_path",
         "schema_path",
@@ -198,7 +206,16 @@ def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
         "allowed_write_primitives",
         "bootstrap_document",
     }
-    require_fields(runtime, fields, fields, "ledger pointer.runtime_ledger")
+    allowed = set(required)
+    allowed.add("last_known_data_commit")
+    require_fields(runtime, allowed, required, "ledger pointer.runtime_ledger")
+    commit = runtime.get("last_known_data_commit")
+    if commit is None:
+        return
+    if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
+        raise ValueError(
+            "ledger pointer: last_known_data_commit must be a 40-char SHA"
+        )
 
 
 def validate_pointer_location(

@@ -326,6 +326,7 @@ class TestStage1ThroughputGate(unittest.TestCase):
         self.assertIn("FAIL", review)
         self.assertIn("product mutations", review)
         self.assertIn("bookkeeping", review)
+        self.assertIn("pr_lifecycle_ledger_cas.py", review)
 
     def test_salvage_prompt_empty_intake_stop(self):
         salvage = self._prompt("daily-pr-salvage.md")
