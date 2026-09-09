@@ -25,9 +25,10 @@ ssh/
 │   ├── diagnose_vpn.sh      # VPN troubleshooting
 │   └── setup_aliases.sh     # Shell aliases
 ├── docs/ssh/                 # Documentation
-│   ├── ssh_configuration_guide.md # Complete guide
-│   ├── iTerm2_setup_guide.md      # iTerm2 integration
-│   └── README.md                  # This file
+│   ├── ssh_configuration_guide.md # Complete guide (includes iTerm2 notes)
+│   ├── ssh_readme.md              # This file
+│   ├── SSH_FIX_SUMMARY.md
+│   └── SSH_CHANGELOG.md
 └── tests/                    # Testing
     └── test_ssh_config.sh   # Configuration validation
 ```
@@ -63,7 +64,8 @@ ssh/
 
 **For iTerm2:**
 
-- See [iTerm2 Setup Guide](iTerm2_setup_guide.md)
+- Use the same hosts as Cursor (`cursor-mdns` / `cursor-auto`). See
+  [ssh_configuration_guide.md](ssh_configuration_guide.md#iterm2).
 
 ## 📋 Features
 
@@ -93,8 +95,8 @@ ssh/
 ## 📚 Documentation
 
 - **[Complete Guide](ssh_configuration_guide.md)** - Comprehensive documentation
-- **[iTerm2 Setup](iTerm2_setup_guide.md)** - Terminal integration
-- **[Original README](README.md)** - Setup session notes
+- **[SSH Fix Summary](SSH_FIX_SUMMARY.md)** - Historical repair notes
+- **[SSH Changelog](SSH_CHANGELOG.md)** - Change history
 
 ---
 

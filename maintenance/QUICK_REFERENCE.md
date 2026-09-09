@@ -51,8 +51,8 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 
 ```bash
 # Restart health check
-launchctl unload ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.plist
-launchctl load ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.plist
+launchctl unload ~/Library/LaunchAgents/com.abhimehrotra.maint.healthcheck.plist
+launchctl load ~/Library/LaunchAgents/com.abhimehrotra.maint.healthcheck.plist
 ```
 
 ### Fix Permissions

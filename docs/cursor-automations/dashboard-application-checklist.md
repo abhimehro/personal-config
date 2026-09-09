@@ -34,14 +34,44 @@ enforcement primitive.
 
 Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
 (lifecycle contract). Stage 3 still uses Notion only for one-question packets;
-do not paste run records into Notion as git continuity.
+do not paste run records into Notion as git continuity. Grok Bot is not a
+Dashboard automation; human-facing digest setup is
+[`docs/grok-bot/README.md`](../grok-bot/README.md).
 
-The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**.
-Before enabling completion, disable or delete the calibration automation, verify
-it cannot run again, and record its dashboard fingerprint, disable/delete time,
-and the new completion fingerprint in the runtime ledger. Only then may the
-human-approved completion export be enabled. The inverse rollback is equally
-strict: disable completion first, set calibration to `REVOKED` through the
-runtime ledger, record the reason and fingerprint, then create or re-enable the
-report-only calibration variant. Never leave both variants enabled. Both Stage 3
-variants are currently disabled for the maintainer's controlled manual test.
+Live Dashboard IDs (confirmed 2026-08-31; Grok Bot retrieved the completion
+UUID). Enablement is already correct; do not toggle it as part of paste.
+
+| Stage               | Automation ID                          | Enablement | Schedule                     |
+| ------------------- | -------------------------------------- | ---------- | ---------------------------- |
+| Stage 1             | `77c168e0-7f6b-42de-bad6-da4e4e640b79` | enabled    | `0 15 * * *` UTC             |
+| Stage 2             | `3e537981-04a6-456f-89a3-272d9d5fddd7` | enabled    | `0 17 * * *` UTC             |
+| Stage 3 calibration | `d9d2c058-9c42-11f1-ba66-0e7d0216e441` | disabled   | do not enable                |
+| Stage 3 completion  | `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` | enabled    | `0 19 * * *` UTC / 12:00 PDT |
+
+**HITL after this burndown PR lands (required or cron keeps the old prompts and
+the 20-slot cap):**
+
+1. Paste `prompts/daily-pr-review.md` into Stage 1
+   `77c168e0-7f6b-42de-bad6-da4e4e640b79` (80 inventory / 40 product mutations).
+2. Paste `prompts/daily-pr-salvage.md` into Stage 2
+   `3e537981-04a6-456f-89a3-272d9d5fddd7`.
+3. Leave calibration `d9d2c058-9c42-11f1-ba66-0e7d0216e441` **disabled**.
+4. Paste `prompts/daily-pr-completion.md` into Stage 3 completion
+   `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`. It is already enabled on `0 19 * * *`
+   (12:00 PDT). Do not create a second completion automation.
+5. Record the new dashboard fingerprints in the next runtime-ledger event. Do
+   **not** reset calibration to `REPORT_ONLY` for this volume change.
+
+- After the 2026-09-03 drain: paste prompts that include the 2026-09-03 drain
+  lessons addendum; never reset calibration to REPORT_ONLY while completion is
+  live.
+
+Monitor: `python3 scripts/pr_lifecycle_pipeline_health.py <fetched-ledger>`
+(schema + runtime records; `stage2_work_item_count` is complete unexpired WIs;
+empty required strings and owned items without a usable WI do not suppress
+starvation; exit 2 = starvation). PR Desk Health must surface that line.
+
+The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**. Never
+leave both variants enabled. Calibration reached 7/7 on 2026-08-26; the
+maintainer approved bounded completion. Completion is the live Stage 3 variant
+once the ledger `calibration.status` is `APPROVED` and this paste is done.

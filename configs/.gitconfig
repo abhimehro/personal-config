@@ -1,7 +1,7 @@
 [user]
 	name = abhimehro
-	email = abhimehro@pm.me
-	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILs85wxLcdzIE5jk4eXRWLEOyYEUPp0FYRKOnO+gQIK6 Personal SSH Key
+	email = 84992105+abhimehro@users.noreply.github.com
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoWdkOM4r8DcuM2m0Q5bCYamjwJHVw7gm98v5liGpvr GitHub SSH Key
 [commit]
 	gpgsign = true
 	template = /Users/speedybee/.config/git/commit-template.personal-config.txt

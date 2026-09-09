@@ -238,6 +238,10 @@ patch.sh
 # Tracked helpers for safe GH_TOKEN loading (no secret values in repo)
 !gh_token_env.py
 !scripts/ensure_gh_token.sh
+
+# Browserless + 1Password integration (op:// refs only, no secret values)
+!browserless/templates/browserless-1password-login.mjs
+!scripts/browserless-register-1password.sh
 !scripts/verify_gh_auth.sh
 !tests/test_gh_token_env.py
 
@@ -335,3 +339,8 @@ venv/
 
 # Local diagnostic incident reports
 /docs/RAYCAST_AUDIO_CPU_INCIDENT_2026-08-10.md
+
+# Browserless + 1Password (browserless/browserless.env holds live secrets)
+browserless/browserless.env
+# Keep browserless lockfile for reproducible installs (matches copilot-demo)
+!browserless/package-lock.json

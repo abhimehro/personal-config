@@ -1,6 +1,8 @@
 ---
 name: Development Partner
 description: The Development Partner Protocol
+applyTo: "**"
+excludeAgent: "code-review"
 ---
 
 # Development Partner

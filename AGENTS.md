@@ -599,8 +599,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`)                                                                                 |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`) for the full suite                                                                                                     |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`)                                                           |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`) for the full suite                                                                               |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
@@ -615,8 +615,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`,
-  which is needed by the full test suite (e.g.,
+- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3` and
+  `jsonschema==4.26.0`, which are needed by the full test suite (e.g.,
   `tests/test_repository_automation_common.py` exercises
   `.github/scripts/repository_automation_common.py`). The Devin environment
   blueprint installs this dependency automatically; otherwise run
@@ -665,11 +665,19 @@ symlink destinations are never followed. To target one hash directory:
 - Security, auth, secrets, and trust-boundary PRs stay escalated for human
   review even when CI is green.
 - Ordinary human-authored PRs stay untouched by the three-stage pipeline. Stage
-  3 files a one-question packet only when policy or security judgment is
-  irreducible.
-- Stage 3 stays `REPORT_ONLY` until seven successful calibrated runs and a dated
-  human `APPROVED` record; bounded completion stays off until then. Resetting
+  3 files a one-question packet only when sticky security, HUMAN, or real
+  platform judgment is irreducible. Jules/Bolt/Palette file-overlap clusters are
+  Stage 1 canonical-pick, not packets.
+- Stage 3 calibration reached seven successful runs on 2026-08-26. Human
+  `APPROVED` is recorded in the runtime ledger (`approved_by: abhimehro`).
+  Bounded completion is on. Disable the calibration Dashboard automation and
+  enable the completion variant after pasting the updated prompts. Resetting
   stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
+- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a fourth
+  lifecycle stage. It must not merge, approve, close, comment, create GitHub
+  issues, CAS-write the ledger, launch Cloud Agents, or write
+  `tasks/*-session-reports.md`. Digests cap at five human items. Health must
+  flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
 
 ## Learned Workspace Facts
 
@@ -689,13 +697,22 @@ symlink destinations are never followed. To target one hash directory:
   `email-security-pipeline`, `Seatek_Analysis`,
   `Hydrograph_Versus_Seatek_Sensors_Project`,
   `series_correction_project_updated`, `repoprompt-ce`). Stage 1 inventories at
-  most 50 items and skips SHA-unchanged work; a changed base/head SHA
-  invalidates prior evidence and returns the item to Stage 1. Stage 2 completes
-  at most five work items per run.
+  most 80 items and **reselects** SHA-unchanged items that are still
+  Stage-1-executable (MERGEABLE green BOT, canonical-pick clusters, elapsed
+  close-candidates, Stage 3 bounce-backs, salvage-eligible CONFLICTING/DIRTY
+  BOT). Product-mutation cap is 40 so daily drain exceeds arrivals. Queuing a
+  Stage 2 work item is ledger bookkeeping. Unchanged SHA with an unexpired
+  non-executable next_action is skipped. A changed base/head SHA invalidates
+  prior evidence and returns the item to Stage 1. Stage 2 completes at most five
+  work items per run; empty intake is a short record and stop unless
+  salvage-eligible remainder exists (`EMPTY_INTAKE_STARVATION`, still no
+  invented recoveries).
 - Stage 2 work-item IDs use `s2-YYYYMMDD-...`; Stage 3 ledger events use
   `evt-s3-YYYYMMDD-...` (`ACKNOWLEDGEMENT`, `HANDOFF`, `CALIBRATION`).
 - RepoPrompt CE salvage that needs Swift or `make guardrails` cannot complete on
   Linux cloud agents; leave `HOLD_PLATFORM` rather than retrying on Linux.
+  `HOLD_PLATFORM` does **not** block Stage 1 from squash-merging a BOT PR whose
+  required GitHub checks are already green.
 - `personal-config` routine merges use the Trunk queue, not a raw GitHub squash.
 
 ## Agent shell (POSIX for coding agents)
@@ -741,3 +758,90 @@ Mac). Profiles: `configs/.config/agent-shell/`. Prefer non-interactive-safe env:
 - Launcher details:
   [`configs/.config/agent-shell/README.md`](configs/.config/agent-shell/README.md)
 - Raycast: [`docs/RAYCAST_AGENT_SHELL.md`](docs/RAYCAST_AGENT_SHELL.md)
+
+<!-- gitnexus:start -->
+
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **personal-config** (8854 symbols, 11895
+relationships, 298 execution flows).
+
+> Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the
+> project root — it auto-selects an available runner. No `.gitnexus/run.cjs`
+> yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g.
+> `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
+
+## Always Do
+
+- **MUST run impact before editing.** Use
+  `impact({target: "symbolName", direction: "upstream"})` or
+  `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`;
+  report callers, processes, and risk. Never substitute grep for graph analysis.
+- **MUST analyze graph changes before committing.** Use
+  `detect_changes({scope: "all"})` (MCP) or
+  `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback).
+  `partial: true` or `truncated: true` is not a clean check — a zero means
+  unseen, not unaffected; re-run it. For regression review:
+  `detect_changes({scope: "compare", base_ref: "main"})` or
+  `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
+- MUST warn on HIGH/CRITICAL `risk` pre-edit; never use `riskSharedAxes` to
+  waive a HIGH/CRITICAL `risk` warning. Compare File/symbol: MCP File omits
+  axes; Graph-RAG expands File.
+- **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set
+  is not evidence the symbol is unused — it can also mean the callers are not
+  resolvable by the index (plain-object property access, dynamic dispatch,
+  cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so.
+  Confirm with a text search before treating the symbol as safe to change or
+  delete; do not proceed on the strength of a zero.
+- **MUST use `query({search_query: "concept"})` for concepts/flows,
+  `context({name: "symbolName"})` for a named symbol, or `impact` for blast
+  radius, on read-only callers, dependencies, imports, or execution flow.**
+  Graph first; text search only for empty/`UNKNOWN`/literals.
+- For security review, `explain({target: "fileOrSymbol"})` lists taint findings
+  (source→sink flows; needs `analyze --pdg`).
+
+## Never Do
+
+- NEVER edit a function, class, or method before MCP/CLI impact analysis.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis, and never
+  read `UNKNOWN` as an all-clear — it means the walk could not answer, which is
+  the one verdict that requires confirming by other means.
+- NEVER rename symbols with find-and-replace — use `rename` which understands
+  the call graph.
+- NEVER commit before MCP/CLI graph change analysis.
+
+## Resources
+
+| Resource                                         | Use for                                  |
+| ------------------------------------------------ | ---------------------------------------- |
+| `gitnexus://repo/personal-config/context`        | Codebase overview, check index freshness |
+| `gitnexus://repo/personal-config/clusters`       | All functional areas                     |
+| `gitnexus://repo/personal-config/processes`      | All execution flows                      |
+| `gitnexus://repo/personal-config/process/{name}` | Step-by-step execution trace             |
+
+## CLI
+
+| Task                                         | Read this skill file                                  |
+| -------------------------------------------- | ----------------------------------------------------- |
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus-exploring/SKILL.md`          |
+| Blast radius / "What breaks if I change X?"  | `.claude/skills/gitnexus-impact-analysis/SKILL.md`    |
+| Trace bugs / "Why is X failing?"             | `.claude/skills/gitnexus-debugging/SKILL.md`          |
+| Rename / extract / split / refactor          | `.claude/skills/gitnexus-refactoring/SKILL.md`        |
+| Tools, resources, schema reference           | `.claude/skills/gitnexus-guide/SKILL.md`              |
+| Index, status, clean, wiki CLI commands      | `.claude/skills/gitnexus-cli/SKILL.md`                |
+| Work in the Tests area (479 symbols)         | `.claude/skills/gitnexus-area-tests/SKILL.md`         |
+| Work in the Scripts area (266 symbols)       | `.claude/skills/gitnexus-area-scripts/SKILL.md`       |
+| Work in the Morning-brief area (64 symbols)  | `.claude/skills/gitnexus-area-morning-brief/SKILL.md` |
+| Work in the Benchmarks area (14 symbols)     | `.claude/skills/gitnexus-area-benchmarks/SKILL.md`    |
+| Work in the Copilot-demo area (8 symbols)    | `.claude/skills/gitnexus-area-copilot-demo/SKILL.md`  |
+| Work in the Cluster_32 area (6 symbols)      | `.claude/skills/gitnexus-area-cluster-32/SKILL.md`    |
+| Work in the Cluster_35 area (6 symbols)      | `.claude/skills/gitnexus-area-cluster-35/SKILL.md`    |
+| Work in the Cluster_34 area (5 symbols)      | `.claude/skills/gitnexus-area-cluster-34/SKILL.md`    |
+| Work in the Cluster_54 area (5 symbols)      | `.claude/skills/gitnexus-area-cluster-54/SKILL.md`    |
+| Work in the Cluster_36 area (4 symbols)      | `.claude/skills/gitnexus-area-cluster-36/SKILL.md`    |
+| Work in the Cluster_38 area (4 symbols)      | `.claude/skills/gitnexus-area-cluster-38/SKILL.md`    |
+| Work in the Cluster_73 area (4 symbols)      | `.claude/skills/gitnexus-area-cluster-73/SKILL.md`    |
+| Work in the Cluster_74 area (4 symbols)      | `.claude/skills/gitnexus-area-cluster-74/SKILL.md`    |
+| Work in the Cluster_0 area (3 symbols)       | `.claude/skills/gitnexus-area-cluster-0/SKILL.md`     |
+
+<!-- gitnexus:end -->
