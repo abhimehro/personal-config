@@ -530,3 +530,7 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+
+## 2026-08-26 - ARIA role status in static HTML
+**Learning:** Adding role='status' to empty states in static HTML outputs (like generated reports) is improper because role='status' implicitly creates an ARIA live region (aria-live='polite') meant for dynamic DOM updates, providing no accessibility benefit in static flow.
+**Action:** Do not use ARIA live region roles like role='status' for empty states in static HTML.
