@@ -22,7 +22,7 @@ item to Stage 1 intake.
 
 | Stage | Name       | Owns                                                                                                     | May do                                                                                                                                                                                                                                                                                                 | Must hand off                                                                                                                                                                            |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to five complete Stage 2 work items as ledger bookkeeping.              | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
+| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to ten complete Stage 2 work items as ledger bookkeeping.               | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
 | 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop.                                                                                       | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
 | 3     | Completion | Remainder that Stage 1 cannot execute this run                                                           | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                              |
 
@@ -351,7 +351,7 @@ current policy revision, and `invalidated_by_revision` equal to the current
 policy, then CAS-write before other lifecycle work. That reset is not a
 successful calibration run. A human may set `REVOKED` at any time; a revoked or
 invalidated record permits no bounded state change. Only an `APPROVED` record
-with the current policy revision authorizes Stage 3’s five-action non-security
+with the current policy revision authorizes Stage 3’s fifteen-action non-security
 completion cap.
 
 ## Repository merge methods and required checks
@@ -368,7 +368,7 @@ authoritative source explicitly requires zero checks.
 
 For `abhimehro/personal-config`, the current method is `TRUNK_QUEUE`. Approval
 and queue submission are separate audited actions and both count toward Stage
-3’s five-action cap. The second action may occur only after re-reading every
+3’s fifteen-action cap. The second action may occur only after re-reading every
 completion predicate. Approval-success/queue-failure stops the item with an
 error record. Merge-success/branch-delete-failure is a non-blocking follow-up.
 Failed attempts and retries count against the cap.
@@ -386,13 +386,13 @@ approval, merge authorization, or substitute for a defined policy.
 The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
 and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
 default per-run caps match `tasks/pr-review-agent.config.yaml`: 80 Stage 1
-inventory items and 40 Stage 1 **product** mutations, five Stage 2 recovery
+inventory items and 40 Stage 1 **product** mutations, ten Stage 2 recovery
 candidates, 20 Stage 3 reconciliations, five human decision cards, and, after
-explicit calibration approval, five Stage 3 completion or closure actions.
+explicit calibration approval, fifteen Stage 3 completion or closure actions.
 Ledger CAS, queuing a complete Stage 2 work item, and the daily
 `pr-lifecycle-docs-YYYYMMDD` lineage (create, push, Trunk-merge) are bookkeeping
 and **do not** consume the Stage 1 product-mutation cap. Spend product merges
-and closes first, then queue up to five salvage-eligible work items from the
+and closes first, then queue up to ten salvage-eligible work items from the
 fetched ledger in the same run, even when the 80-item inventory is full of
 MERGEABLE/canonical candidates. Hold five inventory slots for salvage keepers.
 Salvage feed is not inventory-capped. Raising 50/20 to 80/40 is a volume change
@@ -414,7 +414,7 @@ zero-diff closes is not a passing drain while MERGEABLE green BOT PRs sit
 skipped. A 40/40 PASS that leaves salvage-eligible CONFLICTING stock with no
 work items is a failed feed.
 
-Stage 3 must spend its five completion actions on MERGEABLE green BOT that Stage
+Stage 3 must spend its fifteen completion actions on MERGEABLE green BOT that Stage
 1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.
 
 ## Historical import procedure

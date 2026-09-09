@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-
 _SCRIPT = (
     pathlib.Path(__file__).resolve().parents[1]
     / "media-streaming"
@@ -53,7 +52,9 @@ class TestBootstrapJellyfinLocal(unittest.TestCase):
                     return_value="sensitive-token",
                 ),
                 patch.object(bootstrap_jellyfin_local, "ensure_library"),
-                patch.object(bootstrap_jellyfin_local, "wait_for_items", return_value=3),
+                patch.object(
+                    bootstrap_jellyfin_local, "wait_for_items", return_value=3
+                ),
                 patch.object(bootstrap_jellyfin_local, "http"),
                 contextlib.redirect_stdout(output),
             ):

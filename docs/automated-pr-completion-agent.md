@@ -86,7 +86,7 @@ salvage run without adding manual workload. Mechanical `HOLD_CONTRACT` /
 must become a complete work item. Do not send “recover via Stage 2 draft” to a
 human inbox without queuing that work item.
 
-After `APPROVED`, spend the five completion actions on MERGEABLE green BOT that
+After `APPROVED`, spend the fifteen completion actions on MERGEABLE green BOT that
 Stage 1 overflowed. Do not bounce that overflow back to Stage 1. Bounce remains
 for BOT `HOLD_CANONICAL` clusters that Stage 1 should canonical-pick.
 
@@ -126,7 +126,7 @@ recalibration result is merge permission without a dated approval.
 
 Bounded completion becomes available only after a dated, written calibration
 approval is recorded in the validated lifecycle ledger. It may perform at most
-five state-changing actions per run. Approval, merge or queue submission,
+fifteen state-changing actions per run. Approval, merge or queue submission,
 closure, comment, branch creation/deletion, failed mutation, and retry are each
 one action. The agent stops before exceeding the cap.
 
@@ -205,7 +205,7 @@ smallest next action rather than retrying indefinitely.
 ## Scheduling and resources
 
 Run after the existing review and salvage stages at `0 19 * * *`, with one
-concurrent run, a maximum of 20 reconciliations, five decision packets, and five
+concurrent run, a maximum of 20 reconciliations, five decision packets, and fifteen
 post-calibration actions. Use the paste-ready calibration or completion export
 in `docs/cursor-automations/exports/`; the live Cursor Dashboard is canonical
 for current trigger, connection, and enablement state. The Dashboard-referenced

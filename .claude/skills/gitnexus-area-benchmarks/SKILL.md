@@ -55,15 +55,6 @@ Start here when exploring this area:
 | `_print_metrics`             | Function | `tests/benchmarks/benchmark_infuse_auth.py`     | 141  |
 | `_run_benchmark`             | Function | `tests/benchmarks/benchmark_infuse_auth.py`     | 161  |
 
-## Execution Flows
-
-| Flow                                | Type            | Steps |
-| ----------------------------------- | --------------- | ----- |
-| `Run_benchmark → _print_metrics`    | intra_community | 5     |
-| `Run_benchmark → _execute_requests` | intra_community | 4     |
-| `Main → Generate_test_data`         | intra_community | 3     |
-| `Run_benchmark → Wait_for_port`     | intra_community | 3     |
-
 ## How to Explore
 
 1. `context({name: "run_benchmark"})` — see callers and callees

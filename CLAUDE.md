@@ -2,8 +2,8 @@
 
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **personal-config** (8429 symbols, 11258
-relationships, 286 execution flows).
+This project is indexed by GitNexus as **personal-config** (8854 symbols, 11895
+relationships, 298 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the
 > project root — it auto-selects an available runner. No `.gitnexus/run.cjs`
@@ -12,11 +12,10 @@ relationships, 286 execution flows).
 
 ## Always Do
 
-- **MUST run impact analysis before editing.** Use
-  `impact({target: "symbolName", direction: "upstream"})` (MCP) or
-  `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`
-  (CLI fallback); report callers, processes, and risk. Never substitute grep for
-  graph analysis.
+- **MUST run impact before editing.** Use
+  `impact({target: "symbolName", direction: "upstream"})` or
+  `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`;
+  report callers, processes, and risk. Never substitute grep for graph analysis.
 - **MUST analyze graph changes before committing.** Use
   `detect_changes({scope: "all"})` (MCP) or
   `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback).
@@ -24,19 +23,19 @@ relationships, 286 execution flows).
   unseen, not unaffected; re-run it. For regression review:
   `detect_changes({scope: "compare", base_ref: "main"})` or
   `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before
-  proceeding with edits.
+- MUST warn on HIGH/CRITICAL `risk` pre-edit; never use `riskSharedAxes` to
+  waive a HIGH/CRITICAL `risk` warning. Compare File/symbol: MCP File omits
+  axes; Graph-RAG expands File.
 - **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set
   is not evidence the symbol is unused — it can also mean the callers are not
   resolvable by the index (plain-object property access, dynamic dispatch,
   cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so.
   Confirm with a text search before treating the symbol as safe to change or
   delete; do not proceed on the strength of a zero.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find
-  execution flows instead of grepping. It returns process-grouped results ranked
-  by relevance.
-- When you need full context on a specific symbol — callers, callees, which
-  execution flows it participates in — use `context({name: "symbolName"})`.
+- **MUST use `query({search_query: "concept"})` for concepts/flows,
+  `context({name: "symbolName"})` for a named symbol, or `impact` for blast
+  radius, on read-only callers, dependencies, imports, or execution flow.**
+  Graph first; text search only for empty/`UNKNOWN`/literals.
 - For security review, `explain({target: "fileOrSymbol"})` lists taint findings
   (source→sink flows; needs `analyze --pdg`).
 
@@ -69,8 +68,8 @@ relationships, 286 execution flows).
 | Rename / extract / split / refactor          | `.claude/skills/gitnexus-refactoring/SKILL.md`        |
 | Tools, resources, schema reference           | `.claude/skills/gitnexus-guide/SKILL.md`              |
 | Index, status, clean, wiki CLI commands      | `.claude/skills/gitnexus-cli/SKILL.md`                |
-| Work in the Tests area (451 symbols)         | `.claude/skills/gitnexus-area-tests/SKILL.md`         |
-| Work in the Scripts area (230 symbols)       | `.claude/skills/gitnexus-area-scripts/SKILL.md`       |
+| Work in the Tests area (479 symbols)         | `.claude/skills/gitnexus-area-tests/SKILL.md`         |
+| Work in the Scripts area (266 symbols)       | `.claude/skills/gitnexus-area-scripts/SKILL.md`       |
 | Work in the Morning-brief area (64 symbols)  | `.claude/skills/gitnexus-area-morning-brief/SKILL.md` |
 | Work in the Benchmarks area (14 symbols)     | `.claude/skills/gitnexus-area-benchmarks/SKILL.md`    |
 | Work in the Copilot-demo area (8 symbols)    | `.claude/skills/gitnexus-area-copilot-demo/SKILL.md`  |

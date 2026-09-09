@@ -343,6 +343,15 @@ class TestPipelineHealthCli(unittest.TestCase):
         self.assertEqual(proc.returncode, 2, proc.stderr)
         self.assertIn("starvation=true", proc.stdout)
 
+    def test_cli_sanitizes_persisted_projection_fields(self) -> None:
+        ledger = _schema_valid_starved_ledger()
+        ledger["items"][0]["latest_transition"] = "evt-2026-stage1-stage2-001"
+        ledger["items"][0]["latest_transition_kind"] = "HANDOFF"
+        path = self._write(ledger)
+        proc = _run_cli(str(path))
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("starvation=true", proc.stdout)
+
     def test_cli_json_and_exit_0_when_clear(self) -> None:
         proc = _run_cli("--json", str(EXAMPLE_LEDGER))
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -411,10 +420,24 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
-    def test_stage_caps_are_80_and_40(self) -> None:
+    def test_stage_prompts_pass_commit_message(self) -> None:
+        needle = '--message "automated lifecycle ledger update"'
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
+        ):
+            with self.subTest(name):
+                self.assertIn(needle, self._prompt(name))
+
+    def test_stage_caps_are_80_40_10_and_15(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
-        self.assertEqual(config["lifecycle"]["stage_caps"]["stage1_inventory"], 80)
-        self.assertEqual(config["lifecycle"]["stage_caps"]["stage1_actions"], 40)
+        caps = config["lifecycle"]["stage_caps"]
+        self.assertEqual(caps["stage1_inventory"], 80)
+        self.assertEqual(caps["stage1_actions"], 40)
+        self.assertEqual(caps["stage2_salvage_candidates"], 10)
+        self.assertEqual(caps["stage3_completion_actions"], 15)
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
 
 
