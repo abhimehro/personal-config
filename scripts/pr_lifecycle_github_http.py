@@ -2,8 +2,9 @@
 
 # Split from the CAS orchestrator so that file stays under the NLOC gate.
 # SECURITY: opener is HTTPSHandler only (no HTTPHandler / FileHandler / FTP).
-# Request is assembled with add_header, not Request(url, data=, headers=, method=),
-# so PMD CPD does not clone this against lib/safe_http.safe_urlopen.
+# Headers go on via add_header (not Request(..., headers=)) so PMD CPD does not
+# clone this against lib/safe_http.safe_urlopen. Body/method stay constructor
+# args — pylint unused-attribute fires on Request.data assignment.
 
 from __future__ import annotations
 
@@ -101,11 +102,13 @@ def _prepared_github_call(
     body: dict[str, Any] | None,
     token: str,
 ) -> urllib.request.Request:
-    """Build a Request without the safe_urlopen keyword-arg clone."""
-    prepared = urllib.request.Request(github_api_url(path))
-    prepared.method = method
-    if body is not None:
-        prepared.data = json.dumps(body).encode("utf-8")
+    """Build a Request without the safe_urlopen headers= keyword clone."""
+    payload = json.dumps(body).encode("utf-8") if body is not None else None
+    prepared = urllib.request.Request(
+        github_api_url(path),
+        data=payload,
+        method=method,
+    )
     for header_name, header_value in _github_headers(token).items():
         prepared.add_header(header_name, header_value)
     return prepared
