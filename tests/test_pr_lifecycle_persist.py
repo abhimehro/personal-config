@@ -1,8 +1,10 @@
+import io
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -97,7 +99,12 @@ class TestPrLifecyclePersist(unittest.TestCase):
         self.assertIn("persisted projection fields", strict.stderr)
 
     def test_line_strip_preserves_surrounding_yaml(self) -> None:
-        original = "  revision: 2\n  latest_transition: evt-x\n  latest_transition_kind: HANDOFF\n  updated_at_utc: '2026-09-06T18:00:00Z'\n"
+        original = (
+            "  revision: 2\n"
+            "  latest_transition: evt-x\n"
+            "  latest_transition_kind: HANDOFF\n"
+            "  updated_at_utc: '2026-09-06T18:00:00Z'\n"
+        )
         stripped, removed = persist.strip_derived_item_lines(original)
         self.assertEqual(removed, 2)
         self.assertEqual(
@@ -112,6 +119,130 @@ class TestPrLifecyclePersist(unittest.TestCase):
         self.assertIn("/git/ref/heads/", ref_path(branch))
         self.assertNotIn("/git/refs/heads/", ref_path(branch))
         self.assertIn("/git/refs/heads/", update_ref_path(branch))
+
+    def test_run_commit_sanitizes_without_revision_bump(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        ledger = self.example()
+        ledger["items"][0]["latest_transition"] = "evt-2026-stage1-stage2-001"
+        ledger["items"][0]["latest_transition_kind"] = "HANDOFF"
+        path = self.write_ledger(ledger)
+        with mock.patch.object(cas, "pointer_runtime", return_value={}):
+            with mock.patch.object(
+                cas, "cas_commit", return_value={"commit_sha": "a" * 40}
+            ) as commit:
+                result = cas.run_commit(
+                    path, cas.DEFAULT_COMMIT_MESSAGE, bump_revision=False
+                )
+        uploaded = commit.call_args.args[1]
+        self.assertNotIn("latest_transition:", uploaded)
+        self.assertNotIn("latest_transition_kind:", uploaded)
+        self.assertEqual(result["validator_stripped_fields"], 0)
+        self.assertNotIn("latest_transition:", path.read_text(encoding="utf-8"))
+
+    def test_cas_commit_does_not_retry_stale_bytes(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        calls: list[tuple[str, str]] = []
+
+        def fake_request(method: str, path: str, body=None):
+            calls.append((method, path))
+            if method == "GET" and "/git/ref/" in path:
+                return {"object": {"sha": "a" * 40}}
+            if method == "GET" and "/git/commits/" in path:
+                return {"tree": {"sha": "b" * 40}}
+            if method == "POST" and path.endswith("/git/blobs"):
+                return {"sha": "c" * 40}
+            if method == "POST" and path.endswith("/git/trees"):
+                return {"sha": "d" * 40}
+            if method == "POST" and path.endswith("/git/commits"):
+                return {"sha": "e" * 40}
+            if method == "PATCH":
+                raise cas.CasError(http_code=422)
+            raise AssertionError((method, path))
+
+        runtime = {
+            "data_branch": "automation/pr-lifecycle-ledger",
+            "data_path": "pr-lifecycle-ledger.yaml",
+        }
+        with mock.patch.object(cas, "github_request", fake_request):
+            with self.assertRaisesRegex(cas.CasError, cas.OPERATOR_CONFLICT):
+                cas.cas_commit(runtime, "stale-bytes", "msg")
+        self.assertEqual(sum(1 for method, _ in calls if method == "PATCH"), 1)
+        self.assertEqual(
+            sum(
+                1
+                for method, path in calls
+                if method == "POST" and path.endswith("/git/blobs")
+            ),
+            1,
+        )
+
+    def test_contained_output_rejects_symlink_and_escape(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        nested = tempfile.TemporaryDirectory()
+        self.addCleanup(nested.cleanup)
+        real = Path(nested.name) / "real.yaml"
+        real.write_text("ok\n", encoding="utf-8")
+        link = Path(nested.name) / "link.yaml"
+        link.symlink_to(real)
+        with self.assertRaises(cas.CasError):
+            cas.contained_output_path(link)
+        with self.assertRaises(cas.CasError):
+            cas.contained_output_path(Path("/etc/passwd"))
+
+    def test_commit_parser_defaults_message(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        args = cas.build_parser().parse_args(["commit", "--file", "ledger.yaml"])
+        self.assertEqual(args.message, cas.DEFAULT_COMMIT_MESSAGE)
+
+    def test_github_errors_omit_response_body(self) -> None:
+        import urllib.error
+
+        import pr_lifecycle_ledger_cas as cas
+
+        leak = b'{"message":"secret-token-should-not-leak"}'
+        error = urllib.error.HTTPError(
+            "https://api.github.com/repos/x",
+            500,
+            "boom",
+            hdrs={},
+            fp=io.BytesIO(leak),
+        )
+        with mock.patch.object(cas.urllib.request, "urlopen", side_effect=error):
+            with mock.patch.object(cas, "github_token", return_value="token"):
+                with self.assertRaises(cas.CasError) as raised:
+                    cas.github_request(
+                        "GET",
+                        "/repos/abhimehro/personal-config/git/ref/heads/x",
+                    )
+        self.assertEqual(str(raised.exception), cas.OPERATOR_ERROR)
+        self.assertNotIn("secret-token", str(raised.exception))
+
+    def test_missing_ref_restore_uses_recorded_sha(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        restored_sha = "3" * 40
+        created = {"object": {"sha": restored_sha}}
+
+        def fake_request(method: str, path: str, body=None):
+            if method == "GET" and "/git/ref/" in path:
+                raise cas.CasError(http_code=404)
+            if method == "POST" and path.endswith("/git/refs"):
+                self.assertEqual(body["sha"], restored_sha)
+                return created
+            raise AssertionError((method, path, body))
+
+        runtime = {
+            "data_branch": "automation/pr-lifecycle-ledger",
+            "last_known_data_commit": restored_sha,
+        }
+        with mock.patch.object(cas, "github_request", fake_request):
+            result = cas.ensure_data_ref(runtime)
+        self.assertTrue(result["restored"])
+        self.assertEqual(result["ref"], created)
 
 
 if __name__ == "__main__":

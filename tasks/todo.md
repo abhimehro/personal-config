@@ -1,3 +1,17 @@
+# PR #2175 stack resolution — 2026-09-09
+
+T3+S — Address review comments and failing checks. Do not bump
+`policy_revision`. Salvage cap stays 10 (EMPTY_INTAKE was unread ledger).
+
+- [x] Inventory PR comments + failing CodeScene/Codacy checks
+- [x] Always sanitize ledger file before validate+upload
+- [x] CAS: no stale-content retry; split helpers for CodeScene
+- [x] `--out` path containment; sanitized GitHub errors
+- [x] Prompts: `--message`; CLI default message
+- [ ] Revise #2176: drop salvage-5 revert
+- [ ] Batch #2177/#2179 pin and #2172/#2180 EOF-append
+- [ ] `gh stack link` / rebase / push; do not merge
+
 # Three-stage scheduled Cursor reliability (2026-09-08)
 
 T3+S — Diagnose then repair at the cause. Do not bump `policy_revision`.

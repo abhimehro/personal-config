@@ -41,20 +41,25 @@ def persistable_item(item: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in item.items() if key not in IN_MEMORY_ITEM_FIELDS}
 
 
+def _remove_known_item_fields(item: Any) -> int:
+    """Drop the known projection pair from one item. Return fields removed."""
+    if not isinstance(item, dict):
+        return 0
+    removed = 0
+    for field in IN_MEMORY_ITEM_FIELDS:
+        if field not in item:
+            continue
+        del item[field]
+        removed += 1
+    return removed
+
+
 def strip_in_memory_item_fields(ledger: dict[str, Any]) -> int:
     """Remove known derived keys from `items` in place. Return fields removed."""
     items = ledger.get("items")
     if not isinstance(items, list):
         return 0
-    removed = 0
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        for field in IN_MEMORY_ITEM_FIELDS:
-            if field in item:
-                del item[field]
-                removed += 1
-    return removed
+    return sum(_remove_known_item_fields(item) for item in items)
 
 
 def count_in_memory_item_fields(ledger: dict[str, Any]) -> int:

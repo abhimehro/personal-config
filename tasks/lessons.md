@@ -21,7 +21,10 @@ that known pair only; unknown extras still fail closed. (3) CAS via
 rev 67. Salvage-cap 5 did **not** halt 2026-09-08 (zero work items because the
 ledger was unread). **Detection cost:** Low —
 `python3 scripts/validate_pr_lifecycle_artifacts.py --strict-persisted` on the
-fetched blob.
+fetched blob. (5) `run_commit` always line-strips before
+validate+upload, not only with `--bump-revision`. (6) A stale Git Data tip
+returns `PR_LIFECYCLE_CAS_CONFLICT`; do not retry the same bytes onto a new
+parent. (7) Do not restore salvage-cap 5 — that did not cause the halt.
 
 ## Lesson 0ft: `role="status"` on `<li>` overrides listitem (2026-08-17)
 

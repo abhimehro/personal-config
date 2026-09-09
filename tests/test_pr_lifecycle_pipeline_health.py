@@ -420,6 +420,17 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
+    def test_stage_prompts_pass_commit_message(self) -> None:
+        needle = '--message "automated lifecycle ledger update"'
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
+        ):
+            with self.subTest(name):
+                self.assertIn(needle, self._prompt(name))
+
     def test_stage_caps_are_80_40_10_and_15(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         caps = config["lifecycle"]["stage_caps"]

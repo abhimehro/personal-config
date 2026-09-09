@@ -141,6 +141,8 @@ def require_exact_stage_caps(value: Any) -> None:
     expected = {
         "stage1_inventory": 80,
         "stage1_actions": 40,
+        # NOTE: keep 10. The 2026-09-08 halt was an unread invalid ledger
+        # (EMPTY_INTAKE), not salvage-cap starvation. Do not restore 5.
         "stage2_salvage_candidates": 10,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
