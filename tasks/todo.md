@@ -8,8 +8,10 @@ T3+S — Address review comments and failing checks. Do not bump
 - [x] CAS: no stale-content retry; split helpers for CodeScene
 - [x] `--out` path containment; sanitized GitHub errors
 - [x] Prompts: `--message`; CLI default message
-- [ ] Revise #2176: drop salvage-5 revert
-- [ ] Batch #2177/#2179 pin and #2172/#2180 EOF-append
+- [x] Revise #2176: drop salvage-5 revert; closed empty stacked follow-up
+- [x] Fold #2179 assertion onto #2177 (`7cc5c0e2`); close #2179
+- [ ] Batch #2172/#2180 EOF-append + Codacy URL wraps
+- [ ] CodeScene: split blob decode + flatten stale-CAS test; HTTPS-only opener
 - [ ] `gh stack link` / rebase / push; do not merge
 
 # Three-stage scheduled Cursor reliability (2026-09-08)

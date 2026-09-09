@@ -143,40 +143,37 @@ class TestPrLifecyclePersist(unittest.TestCase):
     def test_cas_commit_does_not_retry_stale_bytes(self) -> None:
         import pr_lifecycle_ledger_cas as cas
 
-        calls: list[tuple[str, str]] = []
-
-        def fake_request(method: str, path: str, body=None):
-            calls.append((method, path))
-            if method == "GET" and "/git/ref/" in path:
-                return {"object": {"sha": "a" * 40}}
-            if method == "GET" and "/git/commits/" in path:
-                return {"tree": {"sha": "b" * 40}}
-            if method == "POST" and path.endswith("/git/blobs"):
-                return {"sha": "c" * 40}
-            if method == "POST" and path.endswith("/git/trees"):
-                return {"sha": "d" * 40}
-            if method == "POST" and path.endswith("/git/commits"):
-                return {"sha": "e" * 40}
-            if method == "PATCH":
-                raise cas.CasError(http_code=422)
-            raise AssertionError((method, path))
-
         runtime = {
             "data_branch": "automation/pr-lifecycle-ledger",
             "data_path": "pr-lifecycle-ledger.yaml",
         }
-        with mock.patch.object(cas, "github_request", fake_request):
-            with self.assertRaisesRegex(cas.CasError, cas.OPERATOR_CONFLICT):
-                cas.cas_commit(runtime, "stale-bytes", "msg")
-        self.assertEqual(sum(1 for method, _ in calls if method == "PATCH"), 1)
-        self.assertEqual(
-            sum(
-                1
-                for method, path in calls
-                if method == "POST" and path.endswith("/git/blobs")
-            ),
-            1,
-        )
+        parent = {"object": {"sha": "a" * 40}}
+        patches: list[str] = []
+
+        def fail_patch(_branch: str, sha: str) -> dict:
+            patches.append(sha)
+            raise cas.CasError(http_code=422)
+
+        with mock.patch.object(
+            cas, "ensure_data_ref", return_value={"restored": False, "ref": parent}
+        ):
+            with mock.patch.object(
+                cas, "read_commit", return_value={"tree": {"sha": "b" * 40}}
+            ):
+                with mock.patch.object(cas, "create_blob", return_value="c" * 40):
+                    with mock.patch.object(cas, "create_tree", return_value="d" * 40):
+                        with mock.patch.object(
+                            cas, "create_commit", return_value="e" * 40
+                        ) as created:
+                            with mock.patch.object(
+                                cas, "update_ref", side_effect=fail_patch
+                            ):
+                                with self.assertRaisesRegex(
+                                    cas.CasError, cas.OPERATOR_CONFLICT
+                                ):
+                                    cas.cas_commit(runtime, "stale-bytes", "msg")
+        self.assertEqual(patches, ["e" * 40])
+        created.assert_called_once()
 
     def test_contained_output_rejects_symlink_and_escape(self) -> None:
         import pr_lifecycle_ledger_cas as cas
@@ -211,7 +208,7 @@ class TestPrLifecyclePersist(unittest.TestCase):
             hdrs={},
             fp=io.BytesIO(leak),
         )
-        with mock.patch.object(cas.urllib.request, "urlopen", side_effect=error):
+        with mock.patch.object(cas._HTTPS_OPENER, "open", side_effect=error):
             with mock.patch.object(cas, "github_token", return_value="token"):
                 with self.assertRaises(cas.CasError) as raised:
                     cas.github_request(
@@ -220,6 +217,16 @@ class TestPrLifecyclePersist(unittest.TestCase):
                     )
         self.assertEqual(str(raised.exception), cas.OPERATOR_ERROR)
         self.assertNotIn("secret-token", str(raised.exception))
+
+    def test_github_api_url_rejects_non_https_and_off_origin(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        url = cas.github_api_url("/repos/abhimehro/personal-config/git/ref/heads/x")
+        self.assertTrue(url.startswith("https://api.github.com/"))
+        with self.assertRaises(cas.CasError):
+            cas.github_api_url("https://evil.example/steal")
+        with self.assertRaises(cas.CasError):
+            cas.github_api_url("file:///etc/passwd")
 
     def test_missing_ref_restore_uses_recorded_sha(self) -> None:
         import pr_lifecycle_ledger_cas as cas

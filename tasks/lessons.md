@@ -25,6 +25,8 @@ fetched blob. (5) `run_commit` always line-strips before
 validate+upload, not only with `--bump-revision`. (6) A stale Git Data tip
 returns `PR_LIFECYCLE_CAS_CONFLICT`; do not retry the same bytes onto a new
 parent. (7) Do not restore salvage-cap 5 — that did not cause the halt.
+(8) Keep stdlib `urllib` on `https://api.github.com` via an HTTPS-only opener;
+do not add `requests`. Do not `yaml.safe_dump` the 1.5 MB ledger.
 
 ## Lesson 0ft: `role="status"` on `<li>` overrides listitem (2026-08-17)
 

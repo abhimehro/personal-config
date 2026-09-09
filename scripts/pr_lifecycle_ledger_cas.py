@@ -32,7 +32,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
 from pr_lifecycle_persist import sanitize_ledger_file
-from pr_lifecycle_support import ROOT, SHA_RE
+from pr_lifecycle_support import ROOT, SHA_RE, require_https_url
 from pr_lifecycle_validation import validate
 from pr_lifecycle_yaml import load_yaml
 
@@ -44,6 +44,8 @@ GITHUB_API_ORIGIN = "https://api.github.com"
 DEFAULT_COMMIT_MESSAGE = "automated lifecycle ledger update"
 OPERATOR_ERROR = "PR_LIFECYCLE_CAS_ERROR"
 OPERATOR_CONFLICT = "PR_LIFECYCLE_CAS_CONFLICT"
+# SECURITY: HTTPS-only opener — default urlopen also registers file:// and ftp://.
+_HTTPS_OPENER = urllib.request.build_opener(urllib.request.HTTPSHandler())
 
 
 class CasError(ValueError):
@@ -82,7 +84,16 @@ def github_api_url(path: str) -> str:
     """SECURITY: only the GitHub API origin; path must be a rooted API route."""
     if not path.startswith("/"):
         raise CasError()
-    return f"{GITHUB_API_ORIGIN}{path}"
+    url = f"{GITHUB_API_ORIGIN}{path}"
+    require_https_url(url, "github_api")
+    if not url.startswith(f"{GITHUB_API_ORIGIN}/"):
+        raise CasError()
+    return url
+
+
+def _drain_http_error_body(exc: urllib.error.HTTPError) -> None:
+    """SECURITY: consume the GitHub body so it cannot leak to stderr."""
+    exc.read()
 
 
 def github_request(
@@ -103,10 +114,10 @@ def github_request(
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
+        with _HTTPS_OPENER.open(request, timeout=60) as response:
             raw_body = response.read()
     except urllib.error.HTTPError as exc:
-        exc.read()
+        _drain_http_error_body(exc)
         raise CasError(http_code=exc.code) from None
     if not raw_body:
         return {}
@@ -229,7 +240,11 @@ def contents_metadata(runtime: dict[str, Any], branch: str) -> dict[str, Any]:
 def decode_github_blob(payload: dict[str, Any]) -> str:
     encoding = payload.get("encoding")
     content = payload.get("content")
-    if encoding != "base64" or not isinstance(content, str) or not content:
+    if encoding != "base64":
+        raise CasError()
+    if not isinstance(content, str):
+        raise CasError()
+    if content == "":
         raise CasError()
     return base64.b64decode(content.encode("ascii")).decode("utf-8")
 
