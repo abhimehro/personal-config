@@ -34,8 +34,21 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         steps = load_workflow()["jobs"]["refactor"]["steps"]
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
         steps_by_name = {step["name"]: step for step in steps if "name" in step}
+        approved_refactor_action = {
+            "uses": "codescene-oss/pr-refactoring-agent@870500474c49aff3b0578cd53cce0759f5360dea",
+            "version": "v1.1.1",
+        }
 
-        self.assertEqual(steps_by_id["refactor-attempt-1"]["with"]["version"], "v1.1.1")
+        for attempt_id in ("refactor-attempt-1", "refactor-attempt-2"):
+            with self.subTest(attempt_id=attempt_id):
+                self.assertEqual(
+                    steps_by_id[attempt_id]["uses"], approved_refactor_action["uses"]
+                )
+                self.assertEqual(
+                    steps_by_id[attempt_id]["with"]["version"],
+                    approved_refactor_action["version"],
+                )
+
         self.assertTrue(steps_by_id["refactor-attempt-1"]["continue-on-error"] is True)
         self.assertTrue(
             steps_by_name["Wait before retrying failed refactor"]["if"]
@@ -53,7 +66,6 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             steps_by_id["refactor-attempt-2"]["if"]
             == "steps.refactor-attempt-1.outcome == 'failure'"
         )
-        self.assertEqual(steps_by_id["refactor-attempt-2"]["with"]["version"], "v1.1.1")
         self.assertTrue(steps_by_id["refactor-attempt-2"]["continue-on-error"] is True)
         self.assertTrue(
             steps_by_name["Fail if both refactor attempts fail"]["if"]
