@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Advanced System Metrics Collector & Performance Monitor
 # Collects detailed system performance data and trends
 set -euo pipefail

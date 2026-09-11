@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained quick cleanup script
 # Note: Using -o pipefail but NOT -e to allow graceful permission handling
 set -o pipefail

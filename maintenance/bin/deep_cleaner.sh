@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained deep system cleaner - MONTHLY VERSION with incremental state tracking
 set -euo pipefail
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained system cleanup script - DAILY VERSION
 set -euo pipefail
 

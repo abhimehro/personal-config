@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained editor cache cleanup script - MONTHLY VERSION
 set -euo pipefail
 
