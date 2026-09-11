@@ -2,6 +2,8 @@
 
 # Self-contained Homebrew maintenance script with comprehensive cask updates
 set -euo pipefail
+# Ensure HOME is set in launchd environment (which lacks login shell context)
+export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

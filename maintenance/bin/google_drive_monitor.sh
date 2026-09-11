@@ -2,6 +2,8 @@
 
 # Google Drive monitoring and health check script
 set -euo pipefail
+# Ensure HOME is set in launchd environment (which lacks login shell context)
+export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

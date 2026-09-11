@@ -3,6 +3,8 @@
 # Service Monitor - Check disabled background services stay disabled
 # Part of the macOS maintenance system
 set -euo pipefail
+# Ensure HOME is set in launchd environment (which lacks login shell context)
+export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
