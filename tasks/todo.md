@@ -24,7 +24,8 @@ T3+S — Address review comments and failing checks. Do not bump
 T3+S — Diagnose then repair at the cause. Do not bump `policy_revision`.
 Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
 
-- [x] Diagnose: Devin vs scheduled Cursor (schema extra keys + >1MB Contents GET)
+- [x] Diagnose: Devin vs scheduled Cursor (schema extra keys + >1MB Contents
+      GET)
 - [x] Load-time strip of `latest_transition` / `latest_transition_kind` only
 - [x] Persist helper so writers cannot dump in-memory projection fields
 - [x] Git Data API CAS + ref restore (Contents GET encoding=none above 1MB)

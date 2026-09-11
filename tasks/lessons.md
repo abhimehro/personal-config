@@ -4,29 +4,31 @@
 
 **Pattern:** `apply_transition()` writes `latest_transition` /
 `latest_transition_kind` onto the in-memory item so receipt validation can see
-the latest handoff. Those keys are not in `$defs.item` (`additionalProperties:
-false`). Devin's 2026-09-06 CAS dumped the projection (rev 67, commit
-`bcb21c46`, blob `e65a8693`, 218 extra keys). Devin still "succeeded" because
-it did not fail-close on schema. Scheduled Cursor Stage 1/2/3 all
-`ANALYSIS_ERROR` on
+the latest handoff. Those keys are not in `$defs.item`
+(`additionalProperties:
+false`). Devin's 2026-09-06 CAS dumped the projection
+(rev 67, commit `bcb21c46`, blob `e65a8693`, 218 extra keys). Devin still
+"succeeded" because it did not fail-close on schema. Scheduled Cursor Stage
+1/2/3 all `ANALYSIS_ERROR` on
 `PR_LIFECYCLE_INVALID: Additional properties are not allowed ('latest_transition',
-'latest_transition_kind')`. Contents GET of the >1 MB file returns
-`encoding: none`; body is `GET /git/blobs/<sha>`. Git Data API PATCH of the ref
-is plural `/git/refs/heads/…`; GET is singular `/git/ref/heads/…`. A mixed PATCH
-404s after blob/commit create. **Rule:** (1) Persist through
-`persistable_item()` / `scripts/pr_lifecycle_persist.py`. (2) Load-time strip of
-that known pair only; unknown extras still fail closed. (3) CAS via
+'latest_transition_kind')`.
+Contents GET of the >1 MB file returns `encoding: none`; body is
+`GET /git/blobs/<sha>`. Git Data API PATCH of the ref is plural
+`/git/refs/heads/…`; GET is singular `/git/ref/heads/…`. A mixed PATCH 404s
+after blob/commit create. **Rule:** (1) Persist through `persistable_item()` /
+`scripts/pr_lifecycle_persist.py`. (2) Load-time strip of that known pair only;
+unknown extras still fail closed. (3) CAS via
 `scripts/pr_lifecycle_ledger_cas.py` (Git Data API FF). (4) Keep
 `last_known_data_commit` on the **cleaned** tip so 0go restore cannot revive
 rev 67. Salvage-cap 5 did **not** halt 2026-09-08 (zero work items because the
 ledger was unread). **Detection cost:** Low —
 `python3 scripts/validate_pr_lifecycle_artifacts.py --strict-persisted` on the
-fetched blob. (5) `run_commit` always line-strips before
-validate+upload, not only with `--bump-revision`. (6) A stale Git Data tip
-returns `PR_LIFECYCLE_CAS_CONFLICT`; do not retry the same bytes onto a new
-parent. (7) Do not restore salvage-cap 5 — that did not cause the halt.
-(8) Keep stdlib `urllib` on `https://api.github.com` via an HTTPS-only opener;
-do not add `requests`. Do not `yaml.safe_dump` the 1.5 MB ledger.
+fetched blob. (5) `run_commit` always line-strips before validate+upload, not
+only with `--bump-revision`. (6) A stale Git Data tip returns
+`PR_LIFECYCLE_CAS_CONFLICT`; do not retry the same bytes onto a new parent. (7)
+Do not restore salvage-cap 5 — that did not cause the halt. (8) Keep stdlib
+`urllib` on `https://api.github.com` via an HTTPS-only opener; do not add
+`requests`. Do not `yaml.safe_dump` the 1.5 MB ledger.
 
 ## Lesson 0ft: `role="status"` on `<li>` overrides listitem (2026-08-17)
 
@@ -2826,43 +2828,42 @@ GitHub deleted the head branch. Stage 2 therefore had no open lineage to push
 onto.
 
 **Rule:** If the UTC-day docs PR is already merged and
-`pr-lifecycle-docs-YYYYMMDD` is gone, Stage 2 creates that branch **once**
-from current `main` (which already contains Stage 1's records) and opens a
-new PR with the same branch name and `docs(pr-lifecycle): YYYY-MM-DD run
-records` title. Do not open a sibling with a different branch. Do not amend
-the merged PR. Stage 3 then pushes onto this replacement lineage if it is
-still open at 19:00.
+`pr-lifecycle-docs-YYYYMMDD` is gone, Stage 2 creates that branch **once** from
+current `main` (which already contains Stage 1's records) and opens a new PR
+with the same branch name and `docs(pr-lifecycle): YYYY-MM-DD run
+records`
+title. Do not open a sibling with a different branch. Do not amend the merged
+PR. Stage 3 then pushes onto this replacement lineage if it is still open at
+19:00.
 
 **Detection cost:** Low — `gh pr view` on today's docs PR is `MERGED` and
 `git/ref/heads/pr-lifecycle-docs-YYYYMMDD` is 404.
 
 ## Lesson 0hb: Restore a dropped ledger ref to Stage 1's recorded CAS commit (2026-08-26)
 
-**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` 404'd
-again. Walking commits from the **previous Stage 2 memory tip** (`f05d593`,
-rev 18) only listed ancestors. Stage 1's 15:00 run record on `main` already
-named the later CAS tip: rev **21**, commit
-`47435b29bad53a5e8001a24c419e0aca6408843c`, blob
-`cd158499096d2bb4b94594a733888563d50fd733`. That object still existed;
+**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` 404'd again.
+Walking commits from the **previous Stage 2 memory tip** (`f05d593`, rev 18)
+only listed ancestors. Stage 1's 15:00 run record on `main` already named the
+later CAS tip: rev **21**, commit `47435b29bad53a5e8001a24c419e0aca6408843c`,
+blob `cd158499096d2bb4b94594a733888563d50fd733`. That object still existed;
 Contents GET by commit SHA succeeded.
 
-**Rule:** A 404 data-branch ref is still `HOLD_PLATFORM` until restored
-(0go). Restore with `POST .../git/refs` pointing at the latest **existing**
-CAS commit recorded in today's Stage 1 run record (or Stage 3's, if later),
-not the last Stage 2 memory tip. Do not force-push. Do not create a new
-orphan from `main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime
-state. After restore, re-GET `?ref=automation/pr-lifecycle-ledger` and
-continue. Walking an old tip cannot see descendant CAS commits once the ref
-is gone.
+**Rule:** A 404 data-branch ref is still `HOLD_PLATFORM` until restored (0go).
+Restore with `POST .../git/refs` pointing at the latest **existing** CAS commit
+recorded in today's Stage 1 run record (or Stage 3's, if later), not the last
+Stage 2 memory tip. Do not force-push. Do not create a new orphan from `main`.
+Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state. After restore,
+re-GET `?ref=automation/pr-lifecycle-ledger` and continue. Walking an old tip
+cannot see descendant CAS commits once the ref is gone.
 
-**Detection cost:** Low — ref 404; Stage 1 report lists a newer commit SHA
-that `GET .../git/commits/<sha>` still returns.
+**Detection cost:** Low — ref 404; Stage 1 report lists a newer commit SHA that
+`GET .../git/commits/<sha>` still returns.
 
 ## Lesson 0hc: Omit `isLocked` from PullRequest GraphQL (2026-08-26)
 
 **Pattern:** Stage 3 live-reconcile GraphQL requested `isLocked` on
-`PullRequest`. GitHub's schema returns `undefinedField` for that name, so
-the whole selection fails and rollup/`contexts` never arrive. REST
+`PullRequest`. GitHub's schema returns `undefinedField` for that name, so the
+whole selection fails and rollup/`contexts` never arrive. REST
 `GET /repos/{owner}/{repo}/pulls/{n}` already exposes `locked` and `draft`.
 
 **Rule:** Do not query `PullRequest.isLocked` in GraphQL. Omit it. Use REST
@@ -2877,22 +2878,21 @@ naming `isLocked`.
 
 **Pattern:** After the 2026-09-06 Stage 3 correction CAS (revision 67, commit
 `bcb21c46fc21b96714f949bbaea407b5c9d1a350`), `pr-lifecycle-ledger.yaml` stored
-`latest_transition` and `latest_transition_kind` on 109 of 394 items. Those
-keys are not in `schemas/pr-lifecycle-ledger.schema.json`
+`latest_transition` and `latest_transition_kind` on 109 of 394 items. Those keys
+are not in `schemas/pr-lifecycle-ledger.schema.json`
 (`additionalProperties: false`).
 `python3 scripts/validate_pr_lifecycle_artifacts.py` therefore returns
 `PR_LIFECYCLE_INVALID` on `items.0`. The data-branch **ref** had also been
-dropped (404) while the objects still existed. Restoring the ref (**0go**)
-does not make an invalid body legal intake.
+dropped (404) while the objects still existed. Restoring the ref (**0go**) does
+not make an invalid body legal intake.
 
-**Rule:** Never persist derived projection fields into the runtime ledger
-YAML. Unknown fields are `ANALYSIS_ERROR`, not a silent strip. Stage 1 must
-not CAS-write a cleaned copy, invent a schema expansion, or continue to
-inventory/merge/close until a reviewed writer removes the extra keys or a
-policy revision allows them. Restore a missing ref from the last known
-existing commit; do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime
-state.
+**Rule:** Never persist derived projection fields into the runtime ledger YAML.
+Unknown fields are `ANALYSIS_ERROR`, not a silent strip. Stage 1 must not
+CAS-write a cleaned copy, invent a schema expansion, or continue to
+inventory/merge/close until a reviewed writer removes the extra keys or a policy
+revision allows them. Restore a missing ref from the last known existing commit;
+do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state.
 
 **Detection cost:** Low — validator names the extra keys on `items.0`; a
-field-frequency count shows `latest_transition` / `latest_transition_kind`
-on a subset of items.
+field-frequency count shows `latest_transition` / `latest_transition_kind` on a
+subset of items.

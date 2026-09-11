@@ -16,11 +16,11 @@ visibly available.
 
 ## Automation order
 
-| Cursor automation   | Repository specification                | Schedule     | Concurrency | Run cap                                                    | Write authority                                                                         |
+| Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                    Run cap | Write authority                                                                         |
 | ------------------- | --------------------------------------- | -----------: | ----------: | ---------------------------------------------------------: | --------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` | 1           | 80 inventory items / 40 product mutations                  | Routine approve, squash merge, close, and queue salvage work items when predicates pass |
-| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` | 1           | 10 recovery candidates                                     | Focused draft recovery only; no approval, merge, or original-security closure           |
-| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` | 1           | 20 reconciliations, 5 packets, 15 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                  80 inventory items / 40 product mutations | Routine approve, squash merge, close, and queue salvage work items when predicates pass |
+| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     10 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure           |
+| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 15 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure |
 
 The schedules are UTC. Each stage must finish or record `ANALYSIS_ERROR` before
 the next one starts. If the Cursor dashboard offers no explicit concurrency
@@ -117,8 +117,8 @@ Stage 3 **completes** MERGEABLE green BOT that Stage 1 overflowed (do not bounce
 that overflow). It **bounces** canonical-pick clusters back to Stage 1. It
 **creates Stage 2 work items** for mechanical `HOLD_CONTRACT` / `HOLD_EVIDENCE`.
 During `REPORT_ONLY` it does not merge. After `APPROVED` it may complete
-qualified non-security work under a fifteen-action cap. Human packets are reserved
-for irreducible sticky security, HUMAN, or real platform judgment.
+qualified non-security work under a fifteen-action cap. Human packets are
+reserved for irreducible sticky security, HUMAN, or real platform judgment.
 Jules/Bolt/Palette file-collision clusters are not packets.
 
 Grok Bot **PR Desk** digests after Stage 3. It is read-only: observe, verify,

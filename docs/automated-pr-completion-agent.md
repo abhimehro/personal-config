@@ -86,9 +86,9 @@ salvage run without adding manual workload. Mechanical `HOLD_CONTRACT` /
 must become a complete work item. Do not send “recover via Stage 2 draft” to a
 human inbox without queuing that work item.
 
-After `APPROVED`, spend the fifteen completion actions on MERGEABLE green BOT that
-Stage 1 overflowed. Do not bounce that overflow back to Stage 1. Bounce remains
-for BOT `HOLD_CANONICAL` clusters that Stage 1 should canonical-pick.
+After `APPROVED`, spend the fifteen completion actions on MERGEABLE green BOT
+that Stage 1 overflowed. Do not bounce that overflow back to Stage 1. Bounce
+remains for BOT `HOLD_CANONICAL` clusters that Stage 1 should canonical-pick.
 
 ## Calibration mode
 
@@ -205,17 +205,18 @@ smallest next action rather than retrying indefinitely.
 ## Scheduling and resources
 
 Run after the existing review and salvage stages at `0 19 * * *`, with one
-concurrent run, a maximum of 20 reconciliations, five decision packets, and fifteen
-post-calibration actions. Use the paste-ready calibration or completion export
-in `docs/cursor-automations/exports/`; the live Cursor Dashboard is canonical
-for current trigger, connection, and enablement state. The Dashboard-referenced
-MCP set for this stage is named in the calibration and completion prompts (`gh`
-reads, Notion packets, scanners as hold evidence; `gh` mutations only after
-ledger `APPROVED`). A wider connected workspace inventory is not an additional
-action authority. During calibration, the report-only prohibitions control even
-when a visible integration is connected. The bounded-completion variant may use
-`prComment.allowApprove` only after validated ledger approval. Shared memory is
-enabled as a namespaced cache and is never continuity authority.
+concurrent run, a maximum of 20 reconciliations, five decision packets, and
+fifteen post-calibration actions. Use the paste-ready calibration or completion
+export in `docs/cursor-automations/exports/`; the live Cursor Dashboard is
+canonical for current trigger, connection, and enablement state. The
+Dashboard-referenced MCP set for this stage is named in the calibration and
+completion prompts (`gh` reads, Notion packets, scanners as hold evidence; `gh`
+mutations only after ledger `APPROVED`). A wider connected workspace inventory
+is not an additional action authority. During calibration, the report-only
+prohibitions control even when a visible integration is connected. The
+bounded-completion variant may use `prComment.allowApprove` only after validated
+ledger approval. Shared memory is enabled as a namespaced cache and is never
+continuity authority.
 
 ## Related specifications
 

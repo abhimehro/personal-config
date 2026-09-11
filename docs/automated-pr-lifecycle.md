@@ -351,8 +351,8 @@ current policy revision, and `invalidated_by_revision` equal to the current
 policy, then CAS-write before other lifecycle work. That reset is not a
 successful calibration run. A human may set `REVOKED` at any time; a revoked or
 invalidated record permits no bounded state change. Only an `APPROVED` record
-with the current policy revision authorizes Stage 3’s fifteen-action non-security
-completion cap.
+with the current policy revision authorizes Stage 3’s fifteen-action
+non-security completion cap.
 
 ## Repository merge methods and required checks
 
@@ -414,8 +414,8 @@ zero-diff closes is not a passing drain while MERGEABLE green BOT PRs sit
 skipped. A 40/40 PASS that leaves salvage-eligible CONFLICTING stock with no
 work items is a failed feed.
 
-Stage 3 must spend its fifteen completion actions on MERGEABLE green BOT that Stage
-1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.
+Stage 3 must spend its fifteen completion actions on MERGEABLE green BOT that
+Stage 1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.
 
 ## Historical import procedure
 
