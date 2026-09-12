@@ -26,7 +26,7 @@
 
 ```bash
 # Run automation script
-bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh
+bash ~/dev/personal-config/scripts/macos/controld-ensure.sh
 
 # Test DNS resolution
 dig +short verify.controld.com
@@ -82,7 +82,7 @@ Final Response (Filtered & Private)
 **Quick Fixes**:
 
 1. Run automation script:
-   `bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh`
+   `bash ~/dev/personal-config/scripts/macos/controld-ensure.sh`
 2. Check Control D is running: `sudo lsof -i :53`
 3. Verify AdGuard DNS setting: Should be "System default"
 4. Test resolution: `dig +short verify.controld.com`
