@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Fail-closed Stage 1→2→3 feed cascade decisions.
+"""Fail-closed Stage 1→2→3 feed cascade decisions (no CAS / Dashboard I/O)."""
 
-Encodes the prompt/spec contract: Stage 1 feed fingerprints, Stage 2 FEED_FAIL
-short-circuit, and Stage 3 upstream-pause. Pure functions over already-fetched
-ledger summaries and run-record fields — no CAS, no Dashboard calls.
-"""
+# Encodes Stage 1 fingerprints, Stage 2 FEED_FAIL short-circuit, and Stage 3
+# upstream-pause over already-fetched ledger summaries and run-record fields.
 
 from __future__ import annotations
 

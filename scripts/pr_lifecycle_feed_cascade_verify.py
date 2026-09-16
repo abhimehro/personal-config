@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-r"""Verify Stage 1→2 handoff: sample WI emission + Stage 2 claim path.
+"""Verify Stage 1→2 handoff via sample WI emission and Stage 2 claim path."""
 
-Read-only against a fetched runtime ledger by default. With --inject-sample,
-writes a temporary copy that appends one complete stage2_work_item so health
-and claim logic can be proven without CAS-writing the live automation branch.
-
-  python3 scripts/pr_lifecycle_feed_cascade_verify.py \
-    --ledger /tmp/pr-lifecycle-ledger.yaml
-
-  python3 scripts/pr_lifecycle_feed_cascade_verify.py \
-    --ledger /tmp/pr-lifecycle-ledger.yaml --inject-sample
-"""
+# Read-only against a fetched runtime ledger by default. With --inject-sample,
+# writes a temporary copy that appends one complete stage2_work_item so health
+# and claim logic can be proven without CAS-writing the live automation branch.
+#
+#   python3 scripts/pr_lifecycle_feed_cascade_verify.py \
+#     --ledger /tmp/pr-lifecycle-ledger.yaml
+#
+#   python3 scripts/pr_lifecycle_feed_cascade_verify.py \
+#     --ledger /tmp/pr-lifecycle-ledger.yaml --inject-sample
 
 from __future__ import annotations
 
