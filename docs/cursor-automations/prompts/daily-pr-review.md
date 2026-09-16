@@ -126,6 +126,23 @@ product-mutation slots remained. It is also **FAIL** if salvage-eligible BOT
 items exist and this run queued zero Stage 2 work items while Stage 2 would
 empty-intake. Do not mark PASS for one docs Trunk merge.
 
+**Feed fingerprint (mandatory in every Stage 1 run record).** Record these
+exact fields so Stage 2/3 can fail-closed without re-inventing intake:
+
+| Field | Meaning |
+| ----- | ------- |
+| `stage2_queued_count` | Complete unexpired `stage2_work_items` CAS-written this run |
+| `salvage_eligible_count` | Count matching the lifecycle salvage-eligible contract at end of run |
+| `throughput_grade` | `PASS` or `FAIL` |
+
+`throughput_grade` is **FAIL** when salvage-eligible > 0 and
+`stage2_queued_count` is 0 (failed feed), or when product-mutation slots were
+left unused while net open BOT grew, or when the run was docs-only bookkeeping.
+After a FAIL feed, leave Stage 2/3 Dashboard automations **disabled** until a
+later Stage 1 run records `stage2_queued_count >= 1` or
+`throughput_grade=PASS` with health-monitor `starvation=false`. Do not treat
+Stage 3 handoffs or TERMINAL ledger closes as Stage 2 readiness.
+
 **Salvage-eligible / bounded mechanical repair** (see the lifecycle contract):
 BOT, not HUMAN, not `REVIEW_SECURITY`, sticky paths empty or only
 `generated_output`, not Linux Swift `HOLD_PLATFORM`, and live evidence is
@@ -136,12 +153,14 @@ permissions, auth, secrets, schema, and public-API `HOLD_CONTRACT` stay Stage 3
 then human. Do not queue a work item for a non-keeper overlap twin.
 
 If a routine merge predicate is false because the change is salvage-eligible,
-create exactly one complete Stage 2 work item. Route sticky security, HUMAN,
-sticky `HOLD_CONTRACT`, unreadable merge-method, or irreducible policy to Stage
-3. Do **not** dump BOT file-overlap clusters on Stage 3. Re-ingest Stage 2
-salvage replacement PRs (ledger item or salvage/provenance labels) as inventory;
-you may routine-merge them when every routine predicate passes. Draft status is
-not a shortcut around a failed predicate and is not a reason to skip a salvage
+create exactly one complete Stage 2 work item. After product merges/closes,
+queue up to five **complete** work items for remaining salvage-eligible BOT
+(still capped at ten for the run). Route sticky security, HUMAN, sticky
+`HOLD_CONTRACT`, unreadable merge-method, or irreducible policy to Stage 3. Do
+**not** dump BOT file-overlap clusters on Stage 3. Re-ingest Stage 2 salvage
+replacement PRs (ledger item or salvage/provenance labels) as inventory; you
+may routine-merge them when every routine predicate passes. Draft status is not
+a shortcut around a failed predicate and is not a reason to skip a salvage
 replacement. Record in-scope BOT PRs skipped only because the inventory cap
 filled as overflow, not as unowned. Stage 1 never auto-acts on
 security-sensitive or ordinary human-authored work. A docs-only session with
