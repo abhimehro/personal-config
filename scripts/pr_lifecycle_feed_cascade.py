@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Fail-closed Stage 1→2→3 feed cascade decisions.
+"""Fail-closed Stage 1→2→3 feed cascade decisions.
 
 Encodes the prompt/spec contract: Stage 1 feed fingerprints, Stage 2 FEED_FAIL
 short-circuit, and Stage 3 upstream-pause. Pure functions over already-fetched

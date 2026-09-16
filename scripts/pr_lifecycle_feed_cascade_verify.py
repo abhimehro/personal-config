@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-r"""
-Verify Stage 1→2 handoff: sample WI emission + Stage 2 claim path.
+r"""Verify Stage 1→2 handoff: sample WI emission + Stage 2 claim path.
 
 Read-only against a fetched runtime ledger by default. With --inject-sample,
 writes a temporary copy that appends one complete stage2_work_item so health
