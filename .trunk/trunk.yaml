@@ -16,7 +16,9 @@ lint:
     - prettier
   enabled:
     - grype@0.118.0
-    - pinact@5.0.0
+    # pinact v5 rejects single-dash -format; trunk plugins v1.11.0 still pass
+    # -format via pinact_run.py. Stay on 4.1.1 until plugins emit --format.
+    - pinact@4.1.1
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.5.1
