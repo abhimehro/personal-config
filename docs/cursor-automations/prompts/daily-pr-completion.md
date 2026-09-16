@@ -52,11 +52,14 @@ action. Stop before exceeding the cap.
 **Fail-closed cascade.** Before spending completion actions or deep reconcile:
 fetch the runtime ledger; run
 `python3 scripts/pr_lifecycle_pipeline_health.py "$RUNTIME_LEDGER_PATH"`; read
-today's Stage 1 feed fingerprint and Stage 2 record. If Stage 1
+today's Stage 1 feed fingerprint and Stage 2 record. First check that today's
+Stage 1 feed fingerprint exists. If it is missing, write the same one short
+record — “upstream feed failed; paused.” — on today's
+`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, and **stop** without spending
+completion actions. Only when the fingerprint exists, evaluate whether Stage 1
 `throughput_grade` is `FAIL` (failed feed), **or** health `starvation=true`,
 **or** Stage 2 stopped on `FEED_FAIL` / `EMPTY_INTAKE_STARVATION` the same UTC
-day: write one short record — “upstream feed failed; paused.” — on today's
-`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, and **stop**. Do not spend
+day. If so, write that upstream-feed pause record and **stop**. Do not spend
 completion actions, deep remainder reconcile, or packet theater. Optional cheap
 exception only: ACK irreversible TERMINAL already projected. **Dashboard operating rule:** keep this automation **disabled** after FAIL-feed
 days until Stage 1 records `throughput_grade=PASS` **and** health-monitor
