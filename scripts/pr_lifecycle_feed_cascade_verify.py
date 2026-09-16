@@ -6,10 +6,12 @@
 # and claim logic can be proven without CAS-writing the live automation branch.
 #
 #   python3 scripts/pr_lifecycle_feed_cascade_verify.py \
-#     --ledger /tmp/pr-lifecycle-ledger.yaml
+#     --ledger /tmp/pr-lifecycle-ledger.yaml \
+#     --stage2-queued-count 0 --salvage-eligible-count 1
 #
 #   python3 scripts/pr_lifecycle_feed_cascade_verify.py \
-#     --ledger /tmp/pr-lifecycle-ledger.yaml --inject-sample
+#     --ledger /tmp/pr-lifecycle-ledger.yaml --inject-sample \
+#     --stage2-queued-count 1 --salvage-eligible-count 1
 
 from __future__ import annotations
 
@@ -174,14 +176,15 @@ def _stage_decisions(
     return stage2_decision, stage3_decision
 
 
-def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapshot:
-    """Compute health, fingerprint, and Stage 2/3 decisions for one ledger."""
+def _build_snapshot(
+    ledger: dict[str, Any],
+    fingerprint: FeedFingerprint,
+    *,
+    now: datetime,
+) -> DecisionSnapshot:
+    """Compute health and decisions using the recorded Stage 1 fingerprint."""
     health = summarize(ledger, now=now)
     claimable = claimable_work_items(ledger, now=now)
-    fingerprint = grade_stage1_feed(
-        stage2_queued_count=health.stage2_work_item_count,
-        salvage_eligible_count=health.salvage_eligible_count,
-    )
     stage2_decision, stage3_decision = _stage_decisions(
         health, fingerprint, claimable
     )
@@ -203,9 +206,14 @@ def _verify_exit_code(snapshot: DecisionSnapshot) -> int:
     return 0
 
 
-def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
+def verify_ledger(
+    ledger: dict[str, Any],
+    fingerprint: FeedFingerprint,
+    *,
+    now: datetime,
+) -> int:
     """Print cascade decisions and return the verify exit code."""
-    snapshot = _build_snapshot(ledger, now=now)
+    snapshot = _build_snapshot(ledger, fingerprint, now=now)
     _print_decision_reports(snapshot)
     return _verify_exit_code(snapshot)
 
@@ -299,7 +307,26 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Temp-copy + append one complete WI; prove claim path",
     )
+    parser.add_argument("--stage2-queued-count", type=int, required=True)
+    parser.add_argument("--salvage-eligible-count", type=int, required=True)
+    parser.add_argument(
+        "--product-slots-unused-while-bot-grew",
+        action="store_true",
+    )
+    parser.add_argument("--docs-only-bookkeeping", action="store_true")
     return parser.parse_args(argv)
+
+
+def _fingerprint_from_args(args: argparse.Namespace) -> FeedFingerprint:
+    """Build the fingerprint from recorded Stage 1 fields and signals."""
+    return grade_stage1_feed(
+        stage2_queued_count=args.stage2_queued_count,
+        salvage_eligible_count=args.salvage_eligible_count,
+        product_slots_unused_while_bot_grew=(
+            args.product_slots_unused_while_bot_grew
+        ),
+        docs_only_bookkeeping=args.docs_only_bookkeeping,
+    )
 
 
 def _maybe_inject(
@@ -309,10 +336,12 @@ def _maybe_inject(
     if not inject:
         return ledger
     temp_path = _write_injected_ledger(ledger, _sample_work_item(now))
-    print(f"injected_sample_path={temp_path}")
+    print(f"injected_sample_temporary_path={temp_path}")
     # Inject path skips full schema re-validate: sample WI is synthetic and
     # health summarize()/claimable_work_items already gate usability.
-    return _reload_injected(temp_path)
+    reloaded = _reload_injected(temp_path)
+    print(f"injected_sample_removed={not temp_path.exists()}")
+    return reloaded
 
 
 def main() -> int:
@@ -328,7 +357,8 @@ def main() -> int:
     ledger = _maybe_inject(ledger, inject=args.inject_sample, now=now)
     if ledger is None:
         return 1
-    return verify_ledger(ledger, now=now)
+    fingerprint = _fingerprint_from_args(args)
+    return verify_ledger(ledger, fingerprint, now=now)
 
 
 if __name__ == "__main__":

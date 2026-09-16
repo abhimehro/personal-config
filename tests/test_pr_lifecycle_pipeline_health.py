@@ -418,6 +418,23 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("stage2_queued_count", review)
         self.assertIn("throughput_grade", review)
 
+    def test_downstream_enablement_requires_recovered_feed(self) -> None:
+        review = self._prompt("daily-pr-review.md")
+        dashboard = (
+            ROOT / "docs/cursor-automations/dashboard-application-checklist.md"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("`stage2_queued_count >= 1` or", review)
+        self.assertIn("`throughput_grade=PASS` **and** health-monitor", review)
+        self.assertIn("`throughput_grade=FAIL` for any cause", dashboard)
+        self.assertIn("Re-enable Stage 2 and Stage 3 completion only", dashboard)
+        self.assertIn("`throughput_grade=PASS` **and** health reports", dashboard)
+
+    def test_feed_cascade_lesson_has_unique_identifier(self) -> None:
+        lessons = (ROOT / "tasks/lessons.md").read_text(encoding="utf-8")
+        heading = "## Lesson 0he: Stage 1→2 fail-closed cascade"
+        self.assertEqual(lessons.count(heading), 1)
+        self.assertNotIn("## Lesson 0hb: Stage 1→2 fail-closed cascade", lessons)
+
     def test_completion_prompt_upstream_pause(self) -> None:
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("Fail-closed cascade", completion)

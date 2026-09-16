@@ -58,18 +58,17 @@ while completion exists.
 
 ### Fail-closed enablement rule
 
-After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
-`salvage_eligible_count > 0`, or health-monitor `starvation=true`):
+After a Stage 1 **FAIL** feed (`throughput_grade=FAIL` for any cause, or
+health-monitor `starvation=true`):
 
 1. Keep Stage 2 and Stage 3 completion **disabled**.
 2. Re-enable Stage 1 only to paste the updated prompt and run a sample that
    CAS-writes ≥1 complete `stage2_work_item`.
-3. Re-enable Stage 2 only after that sample WI exists and health reports
-   `starvation=false` (or eligible drained).
-4. Re-enable Stage 3 completion only when Stage 1
-   `throughput_grade=PASS` **and** health `starvation=false` (and Stage 2 has
-   claimed a WI without `FEED_FAIL` theater on the same UTC day). A queued WI
-   alone does not clear a FAIL grade or active starvation.
+3. Re-enable Stage 2 and Stage 3 completion only after a later Stage 1 run
+   records `throughput_grade=PASS` **and** health reports `starvation=false`.
+4. Before enabling Stage 3 completion, also confirm Stage 2 claimed a WI without
+   `FEED_FAIL` theater on the same UTC day. A queued WI alone does not clear a
+   FAIL grade or active starvation.
 
 Do not re-enable Stage 2/3 while Stage 1 still queues 0 WIs and dumps remainder
 to Stage 3.
@@ -105,8 +104,16 @@ python scripts/pr_lifecycle_pipeline_health.py /tmp/pr-lifecycle-ledger.yaml
 
 (`stage2_work_item_count` is complete unexpired WIs; empty required strings and
 owned items without a usable WI do not suppress starvation; exit 2 =
-starvation). PR Desk Health must surface that line. Local verify without cron:
-`python scripts/pr_lifecycle_feed_cascade_verify.py --ledger /tmp/pr-lifecycle-ledger.yaml`.
+starvation). PR Desk Health must surface that line. Local verify without cron,
+using the recorded Stage 1 counts:
+
+```bash
+python scripts/pr_lifecycle_feed_cascade_verify.py \
+  --ledger /tmp/pr-lifecycle-ledger.yaml \
+  --stage2-queued-count 0 --salvage-eligible-count 1
+```
+
+Add `--docs-only-bookkeeping` when that recorded Stage 1 failure signal applies.
 
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**. Never
 leave both variants enabled. Calibration reached 7/7 on 2026-08-26; the

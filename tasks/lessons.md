@@ -2897,7 +2897,7 @@ do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state.
 field-frequency count shows `latest_transition` / `latest_transition_kind` on a
 subset of items.
 
-## Lesson 0hb: Stage 1→2 fail-closed cascade after starved feed (2026-09-16)
+## Lesson 0he: Stage 1→2 fail-closed cascade after starved feed (2026-09-16)
 
 **Pattern:** Stage 1 can look busy (TERMINAL closes + Stage 3 handoffs) while
 `stage2_work_items` stays empty. Stage 2 then spends tokens on EMPTY_INTAKE
@@ -2910,9 +2910,10 @@ theater, and Stage 3 still deep-reconciles. The 2026-09-09 “16 ready” were S
 `throughput_grade`. Stage 2’s first action is health + fingerprint; on
 `starvation=true` or queued=0 with eligible>0 write one-paragraph
 `FEED_FAIL`/`EMPTY_INTAKE_STARVATION` and stop. Stage 3 pauses on upstream FAIL
-the same UTC day. Keep Stage 2/3 Dashboard automations disabled until a sample
-complete WI lands. Always fetch the runtime ledger before the health monitor;
-never `--break-system-packages` on Homebrew Python — use `.venv`.
+the same UTC day. Keep Stage 2/3 Dashboard automations disabled until a later
+Stage 1 run records `throughput_grade=PASS` and health `starvation=false`.
+Always fetch the runtime ledger before the health monitor; never
+`--break-system-packages` on Homebrew Python — use `.venv`.
 
 **Detection cost:** Low — health CLI exit 2 / `starvation=true`, or Stage 1
 record with `Stage 2 queued: 0` while eligible > 0; missing `/tmp` ledger is a

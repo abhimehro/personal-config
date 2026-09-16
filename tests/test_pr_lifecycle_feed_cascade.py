@@ -27,6 +27,12 @@ import yaml  # noqa: E402
 NOW = datetime(2026, 9, 16, 12, 0, tzinfo=timezone.utc)
 VERIFY = SCRIPTS / "pr_lifecycle_feed_cascade_verify.py"
 EXAMPLE = ROOT / "tasks/pr-lifecycle-ledger.example.yaml"
+RECORDED_FINGERPRINT_ARGS = (
+    "--stage2-queued-count",
+    "0",
+    "--salvage-eligible-count",
+    "1",
+)
 
 
 def _item(**overrides: object) -> dict[str, object]:
@@ -86,7 +92,7 @@ def _ledger(
 
 def _run_verify_cli(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(VERIFY), *args],
+        [sys.executable, str(VERIFY), *RECORDED_FINGERPRINT_ARGS, *args],
         check=False,
         capture_output=True,
         text=True,
@@ -355,6 +361,12 @@ class TestClaimableWorkItems(unittest.TestCase):
                     [],
                 )
 
+    def test_default_clock_uses_current_utc_time(self) -> None:
+        future = _work_item(expiry_utc="2999-01-01T00:00:00Z")
+        expired = _work_item(expiry_utc="2000-01-01T00:00:00Z")
+        ledger = _ledger([], [future, expired])
+        self.assertEqual(cascade.claimable_work_items(ledger), [future])
+
 
 class TestSampleEmissionAndClaim(unittest.TestCase):
     """Sample Stage 1 WI emission → Stage 2 claim without live CAS."""
@@ -412,14 +424,17 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         )
         self.assertIn('"action": "PROCEED"', injected.stdout)
         self.assertIn("s2-sample-feed-cascade", injected.stdout)
+        self.assertIn('"stage2_queued_count": 0', injected.stdout)
+        self.assertIn('"throughput_grade": "FAIL"', injected.stdout)
         injected_path = Path(
             next(
                 line.split("=", 1)[1]
                 for line in injected.stdout.splitlines()
-                if line.startswith("injected_sample_path=")
+                if line.startswith("injected_sample_temporary_path=")
             )
         )
         self.assertFalse(injected_path.exists())
+        self.assertIn("injected_sample_removed=True", injected.stdout)
 
 
 class TestVerifierHelpers(unittest.TestCase):
@@ -450,8 +465,10 @@ class TestVerifierHelpers(unittest.TestCase):
         self.assertEqual(source["stage2_work_items"], [])
         self.assertIsNotNone(injected)
         self.assertEqual(len(injected["stage2_work_items"]), 1)
-        temp_path = Path(stdout.getvalue().strip().split("=", 1)[1])
+        lines = stdout.getvalue().splitlines()
+        temp_path = Path(lines[0].split("=", 1)[1])
         self.assertFalse(temp_path.exists())
+        self.assertEqual(lines[1], "injected_sample_removed=True")
 
     def test_maybe_inject_false_returns_original_mapping(self) -> None:
         source = _ledger([], [])
@@ -486,19 +503,48 @@ class TestVerifierHelpers(unittest.TestCase):
 
     def test_build_snapshot_maps_starved_and_claimable_ledgers(self) -> None:
         cases = (
-            ("starved", _ledger([_item()], []), "FEED_FAIL", "UPSTREAM_PAUSE"),
             (
-                "claimable",
+                "starved",
+                _ledger([_item()], []),
+                cascade.grade_stage1_feed(
+                    stage2_queued_count=0,
+                    salvage_eligible_count=1,
+                ),
+                "FEED_FAIL",
+                "UPSTREAM_PAUSE",
+            ),
+            (
+                "leftover claim with failed current feed",
                 _ledger([_item()], [_work_item()]),
+                cascade.grade_stage1_feed(
+                    stage2_queued_count=0,
+                    salvage_eligible_count=1,
+                ),
                 "PROCEED",
-                "PROCEED",
+                "UPSTREAM_PAUSE",
             ),
         )
-        for label, ledger, stage2_action, stage3_action in cases:
+        for label, ledger, fingerprint, stage2_action, stage3_action in cases:
             with self.subTest(label):
-                snapshot = verifier._build_snapshot(ledger, now=NOW)
+                snapshot = verifier._build_snapshot(ledger, fingerprint, now=NOW)
                 self.assertEqual(snapshot.stage2_decision.action, stage2_action)
                 self.assertEqual(snapshot.stage3_decision.action, stage3_action)
+
+    def test_fingerprint_args_include_docs_only_signal(self) -> None:
+        args = verifier._parse_args(
+            [
+                "--ledger",
+                "/tmp/ledger.yaml",
+                "--stage2-queued-count",
+                "2",
+                "--salvage-eligible-count",
+                "1",
+                "--docs-only-bookkeeping",
+            ]
+        )
+        fingerprint = verifier._fingerprint_from_args(args)
+        self.assertEqual(fingerprint.stage2_queued_count, 2)
+        self.assertEqual(fingerprint.throughput_grade, "FAIL")
 
     def test_verify_exit_code_matrix(self) -> None:
         starved = health.summarize(_ledger([_item()], []), now=NOW)
@@ -521,9 +567,15 @@ class TestVerifierHelpers(unittest.TestCase):
                 self.assertEqual(verifier._verify_exit_code(snapshot), expected)
 
     def test_verify_ledger_prints_all_sections(self) -> None:
+        fingerprint = cascade.grade_stage1_feed(
+            stage2_queued_count=0,
+            salvage_eligible_count=0,
+        )
         stdout = io.StringIO()
         with redirect_stdout(stdout):
-            status = verifier.verify_ledger(_ledger([], []), now=NOW)
+            status = verifier.verify_ledger(
+                _ledger([], []), fingerprint, now=NOW
+            )
         self.assertEqual(status, 0)
         for label in ("health", "fingerprint", "stage2", "stage3", "claimable"):
             self.assertIn(f"== {label} ==", stdout.getvalue())

@@ -139,9 +139,9 @@ exact fields so Stage 2/3 can fail-closed without re-inventing intake:
 `stage2_queued_count` is 0 (failed feed), or when product-mutation slots were
 left unused while net open BOT grew, or when the run was docs-only bookkeeping.
 After a FAIL feed, leave Stage 2/3 Dashboard automations **disabled** until a
-later Stage 1 run records `stage2_queued_count >= 1` or
-`throughput_grade=PASS` with health-monitor `starvation=false`. Do not treat
-Stage 3 handoffs or TERMINAL ledger closes as Stage 2 readiness.
+later Stage 1 run records `throughput_grade=PASS` **and** health-monitor
+`starvation=false`. Do not treat Stage 3 handoffs or TERMINAL ledger closes as
+Stage 2 readiness.
 
 **Salvage-eligible / bounded mechanical repair** (see the lifecycle contract):
 BOT, not HUMAN, not `REVIEW_SECURITY`, sticky paths empty or only
