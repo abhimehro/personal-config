@@ -28,14 +28,14 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
-from pr_lifecycle_feed_cascade import (  # noqa: E402
+from pr_lifecycle_feed_cascade import (
     claimable_work_items,
     grade_stage1_feed,
     stage2_cascade_decision,
     stage3_cascade_decision,
 )
-from pr_lifecycle_pipeline_health import summarize  # noqa: E402
-from pr_lifecycle_yaml import load_yaml  # noqa: E402
+from pr_lifecycle_pipeline_health import _load_runtime_ledger, summarize
+from pr_lifecycle_yaml import load_yaml
 
 
 def _sample_work_item(now: datetime) -> dict[str, Any]:
@@ -51,7 +51,9 @@ def _sample_work_item(now: datetime) -> dict[str, Any]:
         "allowed_paths": ["scripts/pr_lifecycle_feed_cascade.py"],
         "prohibited_paths": [".github/workflows/"],
         "repair_description": "Sample complete WI for feed-cascade verify.",
-        "required_test_command": "python3 -m unittest tests.test_pr_lifecycle_feed_cascade",
+        "required_test_command": (
+            "python3 -m unittest tests.test_pr_lifecycle_feed_cascade"
+        ),
         "expected_test_result": "ok",
         "acceptance_criteria": ["Health starvation=false after inject."],
         "provenance_urls": [
@@ -67,26 +69,16 @@ def _sample_work_item(now: datetime) -> dict[str, Any]:
 
 def _print_report(label: str, payload: dict[str, Any]) -> None:
     print(f"== {label} ==")
-    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(json.dumps(payload, indent=2, sort_keys=True, default=str))
 
 
-def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
-    health = summarize(ledger, now=now)
-    claimable = claimable_work_items(ledger, now=now)
-    fingerprint = grade_stage1_feed(
-        stage2_queued_count=health.stage2_work_item_count,
-        salvage_eligible_count=health.salvage_eligible_count,
-    )
-    s2 = stage2_cascade_decision(
-        health,
-        fingerprint,
-        usable_work_item_count=len(claimable),
-    )
-    s3 = stage3_cascade_decision(
-        health,
-        fingerprint,
-        stage2_feed_fail_same_utc_day=s2.action == "FEED_FAIL",
-    )
+def _print_decision_reports(
+    health: Any,
+    fingerprint: Any,
+    s2: Any,
+    s3: Any,
+    claimable: list[dict[str, Any]],
+) -> None:
     _print_report(
         "health",
         {
@@ -115,13 +107,75 @@ def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
     )
     _print_report(
         "claimable",
-        {"count": len(claimable), "ids": [w["work_item_id"] for w in claimable]},
+        {
+            "count": len(claimable),
+            "ids": [w["work_item_id"] for w in claimable],
+        },
     )
+
+
+def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
+    health = summarize(ledger, now=now)
+    claimable = claimable_work_items(ledger, now=now)
+    fingerprint = grade_stage1_feed(
+        stage2_queued_count=health.stage2_work_item_count,
+        salvage_eligible_count=health.salvage_eligible_count,
+    )
+    s2 = stage2_cascade_decision(
+        health,
+        fingerprint,
+        usable_work_item_count=len(claimable),
+    )
+    s3 = stage3_cascade_decision(
+        health,
+        fingerprint,
+        stage2_feed_fail_same_utc_day=s2.action == "FEED_FAIL",
+    )
+    _print_decision_reports(health, fingerprint, s2, s3, claimable)
     if health.starvation:
         return 2
     if s2.action == "PROCEED" and len(claimable) < 1:
         return 1
     return 0
+
+
+def _load_validated_ledger(path: Path) -> dict[str, Any] | None:
+    """Load YAML and apply the same runtime-ledger gates as the health CLI."""
+    ledger, status = _load_runtime_ledger(path)
+    if ledger is None:
+        print(
+            "PR_LIFECYCLE_FEED_VERIFY_ERROR: "
+            f"ledger validation failed for {path} (exit {status})",
+            file=sys.stderr,
+        )
+        return None
+    return ledger
+
+
+def _write_injected_ledger(
+    ledger: dict[str, Any], sample: dict[str, Any]
+) -> Path:
+    mutated = copy.deepcopy(ledger)
+    items = mutated.get("stage2_work_items")
+    if not isinstance(items, list):
+        items = []
+        mutated["stage2_work_items"] = items
+    items.append(sample)
+    # Write then close before any reload (Codacy race / flush).
+    handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        delete=False,
+        encoding="utf-8",
+    )
+    try:
+        handle.write("# sample inject (json-as-yaml subset)\n")
+        json.dump(mutated, handle, default=str)
+        handle.flush()
+        temp_path = Path(handle.name)
+    finally:
+        handle.close()
+    return temp_path
 
 
 def main() -> int:
@@ -150,27 +204,29 @@ def main() -> int:
         )
         return 1
     now = datetime.now(timezone.utc)
-    ledger = load_yaml(args.ledger)
+    ledger = _load_validated_ledger(args.ledger)
+    if ledger is None:
+        return 1
     if args.inject_sample:
-        mutated = copy.deepcopy(ledger)
-        items = mutated.get("stage2_work_items")
-        if not isinstance(items, list):
-            items = []
-            mutated["stage2_work_items"] = items
-        items.append(_sample_work_item(now))
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".yaml",
-            delete=False,
-            encoding="utf-8",
-        ) as handle:
-            # Keep verify self-contained: dump via json for stable structure.
-            handle.write("# sample inject (json-as-yaml subset)\n")
-            json.dump(mutated, handle)
-            temp_path = Path(handle.name)
+        temp_path = _write_injected_ledger(ledger, _sample_work_item(now))
         print(f"injected_sample_path={temp_path}")
-        # Re-load through yaml loader for parity with health CLI.
-        ledger = load_yaml(temp_path)
+        # Inject path skips full schema re-validate: sample WI is synthetic and
+        # health summarize()/claimable_work_items already gate usability.
+        try:
+            reloaded = load_yaml(temp_path)
+        except (OSError, ValueError, KeyError) as exc:
+            print(
+                f"PR_LIFECYCLE_FEED_VERIFY_ERROR: inject reload: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        if reloaded is None or not isinstance(reloaded, dict):
+            print(
+                "PR_LIFECYCLE_FEED_VERIFY_ERROR: inject reload empty",
+                file=sys.stderr,
+            )
+            return 1
+        ledger = reloaded
     return verify_ledger(ledger, now=now)
 
 

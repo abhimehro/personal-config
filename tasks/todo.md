@@ -11,7 +11,7 @@ T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
 - [x] Health verify: tip `starvation=false` (eligible drained); inject proves CLAIM
 - [ ] HITL: paste updated prompts into UUID automations; sample live Stage 1 CAS
 
-# PR #2175 stack resolution — 2026-09-09
+## PR #2175 stack resolution — 2026-09-09
 
 T3+S — Address review comments and failing checks. Do not bump
 `policy_revision`. Salvage cap stays 10 (EMPTY_INTAKE was unread ledger).

@@ -58,10 +58,11 @@ today's Stage 1 feed fingerprint and Stage 2 record. If Stage 1
 day: write one short record — “upstream feed failed; paused.” — on today's
 `pr-lifecycle-docs-YYYYMMDD` lineage if it exists, and **stop**. Do not spend
 completion actions, deep remainder reconcile, or packet theater. Optional cheap
-exception only: ACK irreversible TERMINAL already projected. Dashboard rule:
-keep this automation **disabled** after FAIL-feed days until Stage 1 records
-`stage2_queued_count >= 1` or `throughput_grade=PASS` with
-`starvation=false`.
+exception only: ACK irreversible TERMINAL already projected. **Dashboard operating rule:** keep this automation **disabled** after FAIL-feed
+days until Stage 1 records `throughput_grade=PASS` **and** health-monitor
+`starvation=false` (ideally with `stage2_queued_count >= 1` when salvage-eligible
+stock remains). A queued sample WI alone is not enough if
+`throughput_grade=FAIL` or `starvation=true`.
 
 Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to
 Stage 1** with an executable `next_action`. Do **not** bounce MERGEABLE green

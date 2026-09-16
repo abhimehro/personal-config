@@ -154,8 +154,8 @@ then human. Do not queue a work item for a non-keeper overlap twin.
 
 If a routine merge predicate is false because the change is salvage-eligible,
 create exactly one complete Stage 2 work item. After product merges/closes,
-queue up to five **complete** work items for remaining salvage-eligible BOT
-(still capped at ten for the run). Route sticky security, HUMAN, sticky
+queue up to ten **complete** work items for remaining salvage-eligible BOT
+(salvage feed is not inventory-capped). Route sticky security, HUMAN, sticky
 `HOLD_CONTRACT`, unreadable merge-method, or irreducible policy to Stage 3. Do
 **not** dump BOT file-overlap clusters on Stage 3. Re-ingest Stage 2 salvage
 replacement PRs (ledger item or salvage/provenance labels) as inventory; you

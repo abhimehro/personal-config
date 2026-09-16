@@ -35,6 +35,11 @@ class CascadeDecision:
     reason: str
 
 
+def _feed_is_starved(queued: int, eligible: int) -> bool:
+    """True when salvage-eligible stock remains and nothing was queued."""
+    return eligible > 0 and queued == 0
+
+
 def grade_stage1_feed(
     *,
     stage2_queued_count: int,
@@ -43,13 +48,14 @@ def grade_stage1_feed(
     docs_only_bookkeeping: bool = False,
 ) -> FeedFingerprint:
     """Compute Stage 1 throughput_grade from feed counts and drain signals."""
-    failed_feed = salvage_eligible_count > 0 and stage2_queued_count == 0
-    grade: ThroughputGrade = "FAIL"
-    if (
-        not failed_feed
-        and not product_slots_unused_while_bot_grew
-        and not docs_only_bookkeeping
-    ):
+    # Early exits keep CodeScene Complex Conditional under threshold.
+    if _feed_is_starved(stage2_queued_count, salvage_eligible_count):
+        grade: ThroughputGrade = "FAIL"
+    elif product_slots_unused_while_bot_grew:
+        grade = "FAIL"
+    elif docs_only_bookkeeping:
+        grade = "FAIL"
+    else:
         grade = "PASS"
     return FeedFingerprint(
         stage2_queued_count=stage2_queued_count,
@@ -66,6 +72,14 @@ def stage2_cascade_decision(
     stage2_owned_materializable: int = 0,
 ) -> CascadeDecision:
     """Decide whether Stage 2 proceeds or stops after the first ~30 seconds."""
+    # SECURITY: claim already-queued complete WIs before grading today's feed.
+    # A zero-queue fingerprint must not skip leftovers from an earlier Stage 1.
+    if usable_work_item_count > 0 or stage2_owned_materializable > 0:
+        return CascadeDecision(
+            action="PROCEED",
+            label="CLAIM",
+            reason="Complete unexpired Stage 2 work item available",
+        )
     if health.starvation:
         return CascadeDecision(
             action="FEED_FAIL",
@@ -74,26 +88,18 @@ def stage2_cascade_decision(
         )
     # ASSUMES: Stage 2 short-circuits only on starved feed, not every Stage 1
     # FAIL (e.g. docs-only bookkeeping with eligible==0 is EMPTY_INTAKE).
-    if fingerprint is not None:
-        failed_feed = (
-            fingerprint.salvage_eligible_count > 0
-            and fingerprint.stage2_queued_count == 0
-        )
-        if failed_feed:
-            return CascadeDecision(
-                action="FEED_FAIL",
-                label="FEED_FAIL",
-                reason=(
-                    "Stage 1 queued 0 while salvage-eligible > 0 "
-                    f"(queued={fingerprint.stage2_queued_count}, "
-                    f"eligible={fingerprint.salvage_eligible_count})"
-                ),
-            )
-    if usable_work_item_count > 0 or stage2_owned_materializable > 0:
+    if fingerprint is not None and _feed_is_starved(
+        fingerprint.stage2_queued_count,
+        fingerprint.salvage_eligible_count,
+    ):
         return CascadeDecision(
-            action="PROCEED",
-            label="CLAIM",
-            reason="Complete unexpired Stage 2 work item available",
+            action="FEED_FAIL",
+            label="FEED_FAIL",
+            reason=(
+                "Stage 1 queued 0 while salvage-eligible > 0 "
+                f"(queued={fingerprint.stage2_queued_count}, "
+                f"eligible={fingerprint.salvage_eligible_count})"
+            ),
         )
     return CascadeDecision(
         action="EMPTY_INTAKE",
@@ -121,7 +127,14 @@ def stage3_cascade_decision(
             label="UPSTREAM_PAUSE",
             reason=health.reason,
         )
-    if fingerprint is not None and fingerprint.throughput_grade == "FAIL":
+    # Fail closed: missing same-day Stage 1 fingerprint is not "healthy".
+    if fingerprint is None:
+        return CascadeDecision(
+            action="UPSTREAM_PAUSE",
+            label="UPSTREAM_PAUSE",
+            reason="Missing same-day Stage 1 feed fingerprint",
+        )
+    if fingerprint.throughput_grade == "FAIL":
         return CascadeDecision(
             action="UPSTREAM_PAUSE",
             label="UPSTREAM_PAUSE",

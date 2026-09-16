@@ -424,20 +424,24 @@ not Stage 2 readiness.
 When the feed is broken, downstream stages **must not** do useful-looking work:
 
 1. **Stage 2 (first ~30 seconds):** fetch the runtime ledger; run
-   `scripts/pr_lifecycle_pipeline_health.py`. If `starvation=true`, or today's
-   Stage 1 recorded `stage2_queued_count: 0` while `salvage_eligible_count > 0`,
-   write a one-paragraph `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record and
-   **stop**. No inventory theater, no live-verify of Stage 3 remainder, no
-   heavy docs-lineage churn.
-2. **Stage 3:** if Stage 1 `throughput_grade` is FAIL, or health starvation is
-   true, or Stage 2 stopped on `FEED_FAIL` the same UTC day, write one short
-   “upstream feed failed; paused” record and **stop**. Do not spend completion
-   actions or deep reconcile. Optional cheap ACK of irreversible TERMINAL
-   already projected is allowed.
+   `scripts/pr_lifecycle_pipeline_health.py`. **Claim complete unexpired
+   `stage2_work_items` first** (including leftovers from an earlier Stage 1).
+   Only when none are usable: if `starvation=true`, or today's Stage 1 recorded
+   `stage2_queued_count: 0` while `salvage_eligible_count > 0`, write a
+   one-paragraph `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record and **stop**. No
+   inventory theater, no live-verify of Stage 3 remainder, no heavy docs-lineage
+   churn.
+2. **Stage 3:** if today's Stage 1 fingerprint is **missing**, or Stage 1
+   `throughput_grade` is FAIL, or health starvation is true, or Stage 2 stopped
+   on `FEED_FAIL` the same UTC day, write one short “upstream feed failed;
+   paused” record and **stop**. Do not spend completion actions or deep
+   reconcile. Optional cheap ACK of irreversible TERMINAL already projected is
+   allowed.
 3. **Dashboard operating rule:** keep Stage 2/3 **disabled** until Stage 1
-   produces `stage2_queued_count >= 1` or `throughput_grade=PASS` with
-   `starvation=false`. Paste targets remain the UUID automations below; agent
-   run URLs (`bc-*`) are session evidence, not paste IDs.
+   `throughput_grade=PASS` **and** `starvation=false` (and ideally
+   `stage2_queued_count >= 1` when eligible stock remains). A queued sample WI
+   alone does not clear a FAIL grade. Paste targets remain the UUID automations;
+   agent run URLs (`bc-*`) are session evidence, not paste IDs.
 
 Stage 2 still claims only complete unexpired `stage2_work_items` (or
 materializes from already Stage-2-owned items). Stage 3 remainder markdown is

@@ -143,6 +143,22 @@ class TestStage2Cascade(unittest.TestCase):
         self.assertEqual(len(claimable), 1)
         self.assertEqual(claimable[0]["work_item_id"], "s2-20260916-demo")
 
+    def test_claim_prior_wi_before_zero_queue_fingerprint(self) -> None:
+        """Leftover complete WIs must be claimed even if today's feed queued 0."""
+        report = health.summarize(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+        )
+        fp = cascade.grade_stage1_feed(
+            stage2_queued_count=0,
+            salvage_eligible_count=1,
+        )
+        decision = cascade.stage2_cascade_decision(
+            report, fp, usable_work_item_count=1
+        )
+        self.assertEqual(decision.action, "PROCEED")
+        self.assertEqual(decision.label, "CLAIM")
+
     def test_empty_intake_when_nothing_eligible(self) -> None:
         blocked = _item(guardrail_outcome="REVIEW_SECURITY")
         report = health.summarize(_ledger([blocked], []), now=NOW)
@@ -157,42 +173,63 @@ class TestStage2Cascade(unittest.TestCase):
 
 
 class TestStage3Cascade(unittest.TestCase):
-    def test_pause_on_stage1_fail(self) -> None:
-        report = health.summarize(_ledger([], []), now=NOW)
-        fp = cascade.grade_stage1_feed(
-            stage2_queued_count=0,
-            salvage_eligible_count=0,
-            docs_only_bookkeeping=True,
-        )
-        decision = cascade.stage3_cascade_decision(
-            report, fp, stage2_feed_fail_same_utc_day=False
-        )
-        self.assertEqual(decision.action, "UPSTREAM_PAUSE")
+    """Single matrix avoids CodeScene Code Duplication across pause/proceed."""
 
-    def test_pause_when_stage2_feed_fail(self) -> None:
-        report = health.summarize(_ledger([_item()], []), now=NOW)
-        fp = cascade.grade_stage1_feed(
-            stage2_queued_count=0,
-            salvage_eligible_count=1,
-        )
-        decision = cascade.stage3_cascade_decision(
-            report, fp, stage2_feed_fail_same_utc_day=True
-        )
-        self.assertEqual(decision.action, "UPSTREAM_PAUSE")
-
-    def test_proceed_when_healthy(self) -> None:
-        report = health.summarize(
+    def test_stage3_decision_matrix(self) -> None:
+        healthy = health.summarize(
             _ledger([_item()], [_work_item()]),
             now=NOW,
         )
-        fp = cascade.grade_stage1_feed(
-            stage2_queued_count=1,
-            salvage_eligible_count=1,
+        starved = health.summarize(_ledger([_item()], []), now=NOW)
+        empty = health.summarize(_ledger([], []), now=NOW)
+        cases = (
+            (
+                "pause on stage1 fail",
+                empty,
+                cascade.grade_stage1_feed(
+                    stage2_queued_count=0,
+                    salvage_eligible_count=0,
+                    docs_only_bookkeeping=True,
+                ),
+                False,
+                "UPSTREAM_PAUSE",
+            ),
+            (
+                "pause when stage2 feed fail",
+                starved,
+                cascade.grade_stage1_feed(
+                    stage2_queued_count=0,
+                    salvage_eligible_count=1,
+                ),
+                True,
+                "UPSTREAM_PAUSE",
+            ),
+            (
+                "pause when fingerprint missing",
+                healthy,
+                None,
+                False,
+                "UPSTREAM_PAUSE",
+            ),
+            (
+                "proceed when healthy",
+                healthy,
+                cascade.grade_stage1_feed(
+                    stage2_queued_count=1,
+                    salvage_eligible_count=1,
+                ),
+                False,
+                "PROCEED",
+            ),
         )
-        decision = cascade.stage3_cascade_decision(
-            report, fp, stage2_feed_fail_same_utc_day=False
-        )
-        self.assertEqual(decision.action, "PROCEED")
+        for label, report, fingerprint, s2_fail, expected in cases:
+            with self.subTest(label):
+                decision = cascade.stage3_cascade_decision(
+                    report,
+                    fingerprint,
+                    stage2_feed_fail_same_utc_day=s2_fail,
+                )
+                self.assertEqual(decision.action, expected)
 
 
 class TestSampleEmissionAndClaim(unittest.TestCase):
@@ -221,29 +258,16 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
     def test_verify_cli_inject_sample(self) -> None:
         if not EXAMPLE.is_file():
             self.skipTest("example ledger missing")
+        # Reuse the health-suite starved fixture (event↔item integrity).
+        sys.path.insert(0, str(ROOT / "tests"))
+        from test_pr_lifecycle_pipeline_health import (  # noqa: E402
+            _schema_valid_starved_ledger,
+        )
+
         with tempfile.TemporaryDirectory() as tmp:
             ledger_path = Path(tmp) / "ledger.yaml"
-            # Minimal mapping is enough for summarize() unit path; CLI loads
-            # YAML and may need a fuller document — use example when present.
-            data = yaml.safe_load(EXAMPLE.read_text(encoding="utf-8"))
-            # Force a starved baseline: eligible item, empty WI list.
-            data["stage2_work_items"] = []
-            data["items"] = [
-                {
-                    **item,
-                    "author_type": "BOT",
-                    "lifecycle_state": "STAGE3_RECONCILIATION",
-                    "current_owner": "stage3",
-                    "guardrail_outcome": "HOLD_CONTRACT",
-                    "sensitive_paths": ["generated_output"],
-                    "next_action": (
-                        "Recover unique source only on a new focused draft"
-                    ),
-                }
-                for item in (data.get("items") or [])[:1]
-            ] or [_item()]
             ledger_path.write_text(
-                yaml.safe_dump(data, sort_keys=False),
+                yaml.safe_dump(_schema_valid_starved_ledger(), sort_keys=False),
                 encoding="utf-8",
             )
             baseline = subprocess.run(
@@ -264,8 +288,16 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-        self.assertIn(baseline.returncode, {0, 2})
-        self.assertEqual(injected.returncode, 0, msg=injected.stderr + injected.stdout)
+        self.assertEqual(
+            baseline.returncode,
+            2,
+            msg=baseline.stderr + baseline.stdout,
+        )
+        self.assertEqual(
+            injected.returncode,
+            0,
+            msg=injected.stderr + injected.stdout,
+        )
         self.assertIn('"action": "PROCEED"', injected.stdout)
         self.assertIn("s2-sample-feed-cascade", injected.stdout)
 

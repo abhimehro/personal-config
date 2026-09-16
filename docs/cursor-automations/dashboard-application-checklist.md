@@ -66,8 +66,10 @@ After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
    CAS-writes ≥1 complete `stage2_work_item`.
 3. Re-enable Stage 2 only after that sample WI exists and health reports
    `starvation=false` (or eligible drained).
-4. Re-enable Stage 3 completion only after Stage 2 has claimed a WI without
-   `FEED_FAIL` theater on the same UTC day.
+4. Re-enable Stage 3 completion only when Stage 1
+   `throughput_grade=PASS` **and** health `starvation=false` (and Stage 2 has
+   claimed a WI without `FEED_FAIL` theater on the same UTC day). A queued WI
+   alone does not clear a FAIL grade or active starvation.
 
 Do not re-enable Stage 2/3 while Stage 1 still queues 0 WIs and dumps remainder
 to Stage 3.
