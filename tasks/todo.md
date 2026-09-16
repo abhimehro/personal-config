@@ -9,6 +9,7 @@ T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
 - [x] `.venv/` gitignore; sync Cursor export prompts
 - [x] Sample WI emission/claim via `pr_lifecycle_feed_cascade_verify.py` + tests
 - [x] Health verify: tip `starvation=false` (eligible drained); inject proves CLAIM
+- [x] CI: CodeScene Excess Args + Codacy ≤0 new issues on cascade/verify
 - [ ] HITL: paste updated prompts into UUID automations; sample live Stage 1 CAS
 
 ## PR #2175 stack resolution — 2026-09-09
