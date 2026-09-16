@@ -407,6 +407,10 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("FEED_FAIL", salvage)
         self.assertIn("Fail-closed cascade", salvage)
         self.assertIn("Do not invent recoveries", salvage)
+        self.assertLess(
+            salvage.index("claim a usable complete unexpired"),
+            salvage.index("health reports `starvation=true`"),
+        )
 
     def test_review_prompt_feed_fingerprint(self) -> None:
         review = self._prompt("daily-pr-review.md")
@@ -418,6 +422,10 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("Fail-closed cascade", completion)
         self.assertIn("upstream feed failed", completion)
+        self.assertLess(
+            completion.index("If it is missing"),
+            completion.index("`throughput_grade` is `FAIL`"),
+        )
 
     def test_completion_prompt_overflow_complete_and_stage2_wi(self) -> None:
         completion = self._prompt("daily-pr-completion.md")

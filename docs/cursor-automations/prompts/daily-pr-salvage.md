@@ -50,14 +50,18 @@ attempt count, owner, creation event, and history all validate. Prefer complete
 unexpired work items. Unused salvage capacity while complete unexpired work
 items exist is a failed run.
 
-**Fail-closed cascade (first ~30 seconds).** Before any salvage work: (1) fetch
+**Fail-closed cascade (first ~30 seconds).** Before any recovery work: (1) fetch
 the runtime ledger via the recorded CAS primitive; (2) run
 `python3 scripts/pr_lifecycle_pipeline_health.py "$RUNTIME_LEDGER_PATH"` (venv
 ok; never `--break-system-packages`); (3) read today's Stage 1 run-record feed
 fingerprint (`stage2_queued_count`, `salvage_eligible_count`,
-`throughput_grade`). If health reports `starvation=true`, **or** today's Stage 1
-recorded `stage2_queued_count: 0` while `salvage_eligible_count > 0`, **or**
-Stage 1 `throughput_grade` is `FAIL` for a failed feed: write a **one-paragraph**
+`throughput_grade`); (4) claim a usable complete unexpired
+`stage2_work_item`, or, when none is usable, materialize and claim one from a
+`current_owner: stage2` ledger item. Only when neither usable nor materializable
+work can be claimed, evaluate whether health reports `starvation=true`, **or**
+today's Stage 1 recorded `stage2_queued_count: 0` while
+`salvage_eligible_count > 0`, **or** Stage 1 `throughput_grade` is `FAIL` for a
+failed feed. If so, write a **one-paragraph**
 `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record on today's
 `pr-lifecycle-docs-YYYYMMDD` lineage if it exists, push nothing heavy, and
 **stop**. No inventory theater, no live-verify of Stage 3 remainder, no
