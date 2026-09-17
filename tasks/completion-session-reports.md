@@ -2416,4 +2416,39 @@ already on this lineage; no new lesson.
 
 Per-item table: see `tasks/pr-completion-2026-09-08.md` (run-level ledger row
 only). Cloud run:
-https://cursor.com/agents/bc-32d4237b-49d0-4942-b186-b9c9a14e8e68
+<https://cursor.com/agents/bc-32d4237b-49d0-4942-b186-b9c9a14e8e68>
+
+## Stage Run Record — 2026-09-17
+
+Upstream feed failed; paused. Same-day Stage 1 fingerprint **missing** (no
+`pr-lifecycle-docs-20260917`, no 15:00 Stage 1 agent, no 2026-09-17 ledger
+events). Runtime ledger **VALID** rev **69** (`github_contents_api`, blob
+`33a3a0a177db14d74906da6738e90a7f85a6f713`, commit
+`5829d853eb7303d87eb5323c13f27211e30fe530`). Health exit 0
+(`starvation=false`, `salvage_eligible=0`). Cascade
+`UPSTREAM_PAUSE` / `Missing same-day Stage 1 feed fingerprint`. Product
+mutations **0/15**. Reconciliations **0/20**. Packets **0/5**. No inventory,
+bounce, merge, close, approve, comment, Stage 2 WI, or ledger CAS. Calibration
+**APPROVED** 7/7 `pr-lifecycle-v1.4` — **not** incremented and **not** reset.
+GitHub identity REST login `abhimehro`. Docs lineage created this run:
+`pr-lifecycle-docs-20260917` (Stage 1 and Stage 2 both missed). Do **not**
+`/trunk merge` today's lineage in the opening run (**0gj**). Do **not** push
+onto CONFLICTING prior-day [#2185](https://github.com/abhimehro/personal-config/pull/2185).
+Do **not** Trunk-merge draft sibling **#2097**. Full record:
+`tasks/pr-completion-2026-09-17.md`. No new lesson.
+
+| Metric                        | Count |
+| ----------------------------- | ----: |
+| Reconciliations (live, acted) |     0 |
+| Product mutations             |     0 |
+| Merged                        |     0 |
+| Closed                        |     0 |
+| Decision packets              |     0 |
+| Stage 2 work items            |     0 |
+| Ledger file CAS writes        |     0 |
+| Analysis errors               |     0 |
+| Calibration change            |  none |
+
+Per-item table: see `tasks/pr-completion-2026-09-17.md` (run-level feed-pause
+row only). Cloud run:
+<https://cursor.com/agents/bc-9c92caf1-d534-4f26-881b-e9837083583f>
