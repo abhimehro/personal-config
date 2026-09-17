@@ -182,9 +182,7 @@ def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapsho
         stage2_queued_count=health.stage2_work_item_count,
         salvage_eligible_count=health.salvage_eligible_count,
     )
-    stage2_decision, stage3_decision = _stage_decisions(
-        health, fingerprint, claimable
-    )
+    stage2_decision, stage3_decision = _stage_decisions(health, fingerprint, claimable)
     return DecisionSnapshot(
         health=health,
         fingerprint=fingerprint,
@@ -223,9 +221,7 @@ def _load_validated_ledger(path: Path) -> dict[str, Any] | None:
     return ledger
 
 
-def _append_sample(
-    ledger: dict[str, Any], sample: dict[str, Any]
-) -> dict[str, Any]:
+def _append_sample(ledger: dict[str, Any], sample: dict[str, Any]) -> dict[str, Any]:
     """Deep-copy ledger and append one Stage 2 work item."""
     mutated = copy.deepcopy(ledger)
     items = mutated.get("stage2_work_items")
@@ -236,9 +232,7 @@ def _append_sample(
     return mutated
 
 
-def _write_injected_ledger(
-    ledger: dict[str, Any], sample: dict[str, Any]
-) -> Path:
+def _write_injected_ledger(ledger: dict[str, Any], sample: dict[str, Any]) -> Path:
     """Write mutated ledger to a temp file; caller owns deletion."""
     mutated = _append_sample(ledger, sample)
     with tempfile.NamedTemporaryFile(

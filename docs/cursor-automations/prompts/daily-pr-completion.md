@@ -61,10 +61,11 @@ completion actions. Only when the fingerprint exists, evaluate whether Stage 1
 **or** Stage 2 stopped on `FEED_FAIL` / `EMPTY_INTAKE_STARVATION` the same UTC
 day. If so, write that upstream-feed pause record and **stop**. Do not spend
 completion actions, deep remainder reconcile, or packet theater. Optional cheap
-exception only: ACK irreversible TERMINAL already projected. **Dashboard operating rule:** keep this automation **disabled** after FAIL-feed
-days until Stage 1 records `throughput_grade=PASS` **and** health-monitor
-`starvation=false` (ideally with `stage2_queued_count >= 1` when salvage-eligible
-stock remains). A queued sample WI alone is not enough if
+exception only: ACK irreversible TERMINAL already projected. **Dashboard
+operating rule:** keep this automation **disabled** after FAIL-feed days until
+Stage 1 records `throughput_grade=PASS` **and** health-monitor
+`starvation=false` (ideally with `stage2_queued_count >= 1` when
+salvage-eligible stock remains). A queued sample WI alone is not enough if
 `throughput_grade=FAIL` or `starvation=true`.
 
 Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to

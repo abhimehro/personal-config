@@ -2902,9 +2902,11 @@ subset of items.
 **Pattern:** Stage 1 can look busy (TERMINAL closes + Stage 3 handoffs) while
 `stage2_work_items` stays empty. Stage 2 then spends tokens on EMPTY_INTAKE
 theater, and Stage 3 still deep-reconciles. The 2026-09-09 “16 ready” were Stage
-3 handoffs, not Stage 2 WIs. Separately, `pr_lifecycle_pipeline_health.py
-/tmp/pr-lifecycle-ledger.yaml` fails with `No such file or directory` when the
-`gh api … raw+json` fetch step is skipped after a venv install.
+3 handoffs, not Stage 2 WIs. Separately,
+`pr_lifecycle_pipeline_health.py
+/tmp/pr-lifecycle-ledger.yaml` fails with
+`No such file or directory` when the `gh api … raw+json` fetch step is skipped
+after a venv install.
 
 **Rule:** Stage 1 records `stage2_queued_count`, `salvage_eligible_count`, and
 `throughput_grade`. Stage 2’s first action is health + fingerprint; on
