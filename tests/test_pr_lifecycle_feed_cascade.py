@@ -1,4 +1,4 @@
-"""Fail-closed feed cascade: Stage 1 fingerprint + Stage 2/3 short-circuit."""
+"""Heal-forward feed cascade: Stage 1 fingerprint + Stage 2/3 continue."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_feed_cascade as cascade  # noqa: E402
+import pr_lifecycle_feed_cascade_verify as verify_mod  # noqa: E402
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import yaml  # noqa: E402
 
@@ -111,16 +112,19 @@ class TestStage1FeedFingerprint(unittest.TestCase):
 
 class TestStage2Cascade(unittest.TestCase):
     def test_starvation_is_feed_fail(self) -> None:
+        """Starved Stage 2 feeds must heal and continue."""
         report = health.summarize(_ledger([_item()], []), now=NOW)
         fp = cascade.grade_stage1_feed(
             stage2_queued_count=0,
             salvage_eligible_count=report.salvage_eligible_count,
         )
         decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
-        self.assertEqual(decision.action, "FEED_FAIL")
+        self.assertEqual(decision.action, "HEAL_THEN_PROCEED")
         self.assertIn(decision.label, {"EMPTY_INTAKE_STARVATION", "FEED_FAIL"})
+        self.assertTrue(cascade.unhealthy_stage2_feed(decision))
 
     def test_claim_when_complete_wi_present(self) -> None:
+        """A complete work item must remain immediately claimable."""
         report = health.summarize(
             _ledger([_item()], [_work_item()]),
             now=NOW,
@@ -155,7 +159,34 @@ class TestStage2Cascade(unittest.TestCase):
         self.assertEqual(decision.action, "PROCEED")
         self.assertEqual(decision.label, "CLAIM")
 
+    def test_claim_when_owned_without_wi(self) -> None:
+        """Owned Stage-2 items CLAIM even when starvation is still true."""
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        report = health.summarize(
+            _ledger([owned, remainder], []),
+            now=NOW,
+        )
+        self.assertTrue(report.starvation)
+        self.assertEqual(report.stage2_owned_item_count, 1)
+        fp = cascade.grade_stage1_feed(
+            stage2_queued_count=0,
+            salvage_eligible_count=report.salvage_eligible_count,
+        )
+        decision = cascade.stage2_cascade_decision(
+            report,
+            fp,
+            usable_work_item_count=0,
+            stage2_owned_materializable=report.stage2_owned_item_count,
+        )
+        self.assertEqual(decision.action, "PROCEED")
+        self.assertEqual(decision.label, "CLAIM")
+
     def test_empty_intake_when_nothing_eligible(self) -> None:
+        """No eligible remainder must produce an empty-intake decision."""
         blocked = _item(guardrail_outcome="REVIEW_SECURITY")
         report = health.summarize(_ledger([blocked], []), now=NOW)
         fp = cascade.grade_stage1_feed(
@@ -165,11 +196,27 @@ class TestStage2Cascade(unittest.TestCase):
         decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
         self.assertEqual(decision.action, "EMPTY_INTAKE")
 
+    def test_unhealthy_feed_requires_stage2_failure_label(self) -> None:
+        cases = (
+            ("FEED_FAIL", "HEAL_THEN_PROCEED", True),
+            ("EMPTY_INTAKE_STARVATION", "HEAL_THEN_PROCEED", True),
+            ("UPSTREAM_HEAL", "HEAL_THEN_PROCEED", False),
+            ("CLAIM", "PROCEED", False),
+            ("EMPTY_INTAKE", "EMPTY_INTAKE", False),
+        )
+        for label, action, expected in cases:
+            with self.subTest(label):
+                decision = cascade.CascadeDecision(action, label, "test")
+                self.assertEqual(
+                    cascade.unhealthy_stage2_feed(decision), expected
+                )
+
 
 class TestStage3Cascade(unittest.TestCase):
     """Single matrix avoids CodeScene Code Duplication across pause/proceed."""
 
     def test_stage3_decision_matrix(self) -> None:
+        """Stage 3 must heal unhealthy feeds and proceed on healthy ones."""
         healthy = health.summarize(
             _ledger([_item()], [_work_item()]),
             now=NOW,
@@ -178,7 +225,7 @@ class TestStage3Cascade(unittest.TestCase):
         empty = health.summarize(_ledger([], []), now=NOW)
         cases = (
             (
-                "pause on stage1 fail",
+                "heal on stage1 fail",
                 empty,
                 cascade.grade_stage1_feed(
                     stage2_queued_count=0,
@@ -186,24 +233,24 @@ class TestStage3Cascade(unittest.TestCase):
                     docs_only_bookkeeping=True,
                 ),
                 False,
-                "UPSTREAM_PAUSE",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
-                "pause when stage2 feed fail",
+                "heal when stage2 feed fail",
                 starved,
                 cascade.grade_stage1_feed(
                     stage2_queued_count=0,
                     salvage_eligible_count=1,
                 ),
                 True,
-                "UPSTREAM_PAUSE",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
-                "pause when fingerprint missing",
+                "heal when fingerprint missing",
                 healthy,
                 None,
                 False,
-                "UPSTREAM_PAUSE",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
                 "proceed when healthy",
@@ -213,7 +260,7 @@ class TestStage3Cascade(unittest.TestCase):
                     salvage_eligible_count=1,
                 ),
                 False,
-                "PROCEED",
+                ("PROCEED", "COMPLETE"),
             ),
         )
         for label, report, fingerprint, s2_fail, expected in cases:
@@ -223,13 +270,14 @@ class TestStage3Cascade(unittest.TestCase):
                     fingerprint,
                     stage2_feed_fail_same_utc_day=s2_fail,
                 )
-                self.assertEqual(decision.action, expected)
+                self.assertEqual((decision.action, decision.label), expected)
 
 
 class TestSampleEmissionAndClaim(unittest.TestCase):
     """Sample Stage 1 WI emission → Stage 2 claim without live CAS."""
 
     def test_inject_sample_clears_starvation_and_is_claimable(self) -> None:
+        """Injecting a valid work item must clear starvation for claiming."""
         starved = _ledger([_item()], [])
         before = health.summarize(starved, now=NOW)
         self.assertTrue(before.starvation)
@@ -249,7 +297,75 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertEqual(s2.action, "PROCEED")
         self.assertNotEqual(s2.label, "EMPTY_INTAKE")
 
+    def test_verify_exit_claim_beats_starvation(self) -> None:
+        """A materializable Stage 2 claim must yield a successful exit."""
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        snapshot = verify_mod._build_snapshot(
+            _ledger([owned, remainder], []),
+            now=NOW,
+        )
+        self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
+        self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
+
+    def test_verify_owned_item_claims_without_salvage_remainder(self) -> None:
+        """Stage-2-owned stock is work even when health is not starved."""
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+
+        snapshot = verify_mod._build_snapshot(_ledger([owned], []), now=NOW)
+
+        self.assertFalse(snapshot.health.starvation)
+        self.assertEqual(snapshot.claimable, [])
+        self.assertEqual(
+            (snapshot.stage2_decision.action, snapshot.stage2_decision.label),
+            ("PROCEED", "CLAIM"),
+        )
+        self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
+
+    def test_verify_leftover_stock_is_not_todays_queue(self) -> None:
+        """Leftover WIs CLAIM without minting a Stage 1 PASS queue count."""
+        snapshot = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+        )
+        self.assertEqual(snapshot.fingerprint.stage2_queued_count, 0)
+        self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
+        self.assertEqual(snapshot.stage2_decision.label, "CLAIM")
+        self.assertGreater(snapshot.health.stage2_work_item_count, 0)
+        self.assertGreater(
+            snapshot.health.stage2_work_item_count,
+            snapshot.fingerprint.stage2_queued_count,
+        )
+
+    def test_verify_session_queue_counts_injected_sample(self) -> None:
+        """Newly added session WIs grade today's queue, leftover does not."""
+        leftover = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+            session_queued_count=0,
+        )
+        injected = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+            session_queued_count=1,
+        )
+        self.assertEqual(leftover.fingerprint.stage2_queued_count, 0)
+        self.assertEqual(injected.fingerprint.stage2_queued_count, 1)
+        self.assertEqual(leftover.stage2_decision.label, "CLAIM")
+        self.assertEqual(injected.stage2_decision.label, "CLAIM")
+        self.assertNotEqual(
+            leftover.fingerprint.stage2_queued_count,
+            leftover.health.stage2_work_item_count,
+        )
+
     def test_verify_cli_inject_sample(self) -> None:
+        """The verifier CLI must accept an injected sample work item."""
         if not EXAMPLE.is_file():
             self.skipTest("example ledger missing")
         # Reuse the health-suite starved fixture (event↔item integrity).
@@ -294,6 +410,7 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         )
         self.assertIn('"action": "PROCEED"', injected.stdout)
         self.assertIn("s2-sample-feed-cascade", injected.stdout)
+        self.assertIn('"stage2_queued_count": 1', injected.stdout)
 
 
 if __name__ == "__main__":

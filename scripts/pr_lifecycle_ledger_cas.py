@@ -168,7 +168,7 @@ def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str,
 
 
 def run_preflight(out: Path) -> dict[str, Any]:
-    """Fetch, sanitize, and validate the runtime ledger without writing GitHub."""
+    """Fetch, sanitize, and schema-validate the runtime ledger (no export gate)."""
     runtime = pointer_runtime()
     fetch = fetch_runtime_ledger(runtime, out)
     sanitized = sanitize_ledger_file(Path(fetch["path"]), bump_revision=False)
@@ -190,6 +190,7 @@ def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[st
     """Sanitize then CAS-write a local ledger file onto the data branch."""
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
+    # NOTE: export/prompt equality is CI `--check`, not this CAS write.
     # Always line-strip before validate+upload so projection keys cannot re-persist.
     sanitize_ledger_file(contained, bump_revision=bump_revision)
     stripped = validate(contained)
