@@ -293,9 +293,19 @@ gitnexus_wrap_with_image_node() {
 	local node_bin="/usr/local/bin/node"
 	local dest="${HOME}/.local/bin/gitnexus"
 	if [[ -f ${js} && -x ${node_bin} ]]; then
+		# CAUTION: npm --prefix installs dest as a symlink into dist/cli/index.js.
+		# Writing through that symlink overwrites the CLI JS (build log:
+		# gitnexus version '' does not match 1.6.12). Replace the link first.
+		rm -f "${dest}"
 		printf '%s\n' '#!/usr/bin/env bash' "exec '${node_bin}' '${js}' \"\$@\"" >"${dest}"
 		chmod +x "${dest}"
+		# Fail closed if writing somehow still followed a symlink into the CLI.
+		if head -n1 "${js}" | grep -Eq '^#!/usr/bin/env bash'; then
+			return 1
+		fi
+		return 0
 	fi
+	return 0
 }
 
 # Add the user CLI directory to PATH and install or verify the pinned GitNexus CLI.
@@ -321,7 +331,10 @@ ensure_gitnexus() {
 		return 1
 	fi
 	export PATH="${HOME}/.local/bin:${PATH}"
-	gitnexus_wrap_with_image_node
+	if ! gitnexus_wrap_with_image_node; then
+		log "gitnexus image-Node wrapper failed (CLI entrypoint may be corrupted)"
+		return 1
+	fi
 	if ! command -v gitnexus >/dev/null 2>&1; then
 		log "gitnexus installed but not on PATH"
 		return 1

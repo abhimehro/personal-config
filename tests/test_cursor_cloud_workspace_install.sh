@@ -197,6 +197,22 @@ grep -qxF 'arg=two words' "${TEST_DIR}/node-args.log" || fail "wrapper split a s
 pass "wrapper forces image Node and preserves arguments"
 
 echo ""
+echo "Test 10b: wrapper replaces an npm symlink without clobbering the CLI JS"
+echo "---"
+# Reproduce npm global layout: bin/gitnexus -> ../lib/node_modules/gitnexus/dist/cli/index.js
+rm -f "${HOME}/.local/bin/gitnexus"
+printf '%s\n' '#!/usr/bin/env node' '// npm-installed CLI fixture' >"${gitnexus_js}"
+ln -s "${gitnexus_js}" "${HOME}/.local/bin/gitnexus"
+[[ -L ${HOME}/.local/bin/gitnexus ]] || fail "test setup did not create an npm-style symlink"
+gitnexus_wrap_with_image_node || fail "wrapper should succeed when dest is a symlink"
+[[ ! -L ${HOME}/.local/bin/gitnexus ]] || fail "wrapper left a symlink in place"
+[[ -x ${HOME}/.local/bin/gitnexus ]] || fail "wrapper was not a regular executable"
+head -n1 "${gitnexus_js}" | grep -Eq 'node' || fail "wrapper clobbered the CLI entrypoint through the symlink"
+grep -q "exec '${MOCK_BIN}/node' '${gitnexus_js}'" "${HOME}/.local/bin/gitnexus" ||
+	fail "wrapper body does not exec image Node against the intact CLI"
+pass "npm symlink destinations are replaced safely"
+
+echo ""
 echo "Test 11: wrapper is a no-op when either prerequisite is absent"
 echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${gitnexus_js}"
