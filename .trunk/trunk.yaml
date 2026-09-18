@@ -11,6 +11,13 @@ runtimes:
     - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  ignore:
+    # dotenv-linter assumes plain KEY=value syntax; config.env contains POSIX
+    # shell (if/fi guards, command substitution, exports) that it corrupts
+    # under trunk fmt, re-breaking launchd HOME/USER guards.
+    - linters: [dotenv-linter]
+      paths:
+        - maintenance/conf/config.env
   disabled:
     - markdownlint
     - prettier
