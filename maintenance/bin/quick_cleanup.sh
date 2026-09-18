@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-export HOME="/Users/speedybee"
+# Prefer caller/test HOME; default only when unset (Linux CI must not mkdir /Users).
+export HOME="${HOME:-/Users/speedybee}"
 
 # Self-contained quick cleanup script
 # Note: Using -o pipefail but NOT -e to allow graceful permission handling
@@ -165,6 +166,253 @@ if command -v npm >/dev/null 2>&1; then
 	((CLEANED++))
 fi
 
+# 9) Trunk.io cache
+# Trunk caches a full toolchain per tool VERSION under tools/<tool>/<version>.
+# This cache was the largest single contributor to the 2026-09 disk-pressure
+# incident, so it is pruned weekly rather than monthly.
+#
+# Why this is version-based and not age-based: an earlier revision used
+# `find -atime +14`, which can never fire. Trunk rewrites the access time of
+# every cached file on each run, so nothing ever looks old -- measured on
+# 2026-09-18, all 71,292 files in tools/ had an atime within 7 days while the
+# directory still held 2.3 GB across 9 stale checkov versions. Age is therefore
+# not a usable signal here; version count is.
+#
+# Safety: the version pinned in .trunk/trunk.yaml is always retained, so a
+# deliberate pin (for example pinact@4.1.1, held back because plugins v1.11.0
+# still emit single-dash -format) is never reaped. Only versions beyond the
+# pinned one and the newest TRUNK_KEEP_VERSIONS are removed, and Trunk
+# re-downloads anything it still needs.
+TRUNK_CACHE_DIR="$HOME/.cache/trunk"
+TRUNK_KEEP_VERSIONS="${TRUNK_KEEP_VERSIONS:-2}"
+if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
+	log_info "Cleaning Trunk cache..."
+	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+
+	# Collect pinned versions from any trunk.yaml in the repo, so an explicit
+	# pin is never treated as stale. Format: "- tool@1.2.3".
+	TRUNK_PINS=""
+	if [[ -f "$HOME/dev/personal-config/.trunk/trunk.yaml" ]]; then
+		TRUNK_PINS=$(grep -oE '[a-z0-9-]+@[0-9][0-9a-zA-Z.-]*' \
+			"$HOME/dev/personal-config/.trunk/trunk.yaml" 2>/dev/null | sort -u || true)
+	fi
+
+	TRUNK_REMOVED=0
+	for tool_dir in "$TRUNK_CACHE_DIR"/tools/*/; do
+		[[ -d $tool_dir ]] || continue
+		tool_name=$(basename "$tool_dir")
+
+		# Version directories only; .lock and .marker siblings are left alone.
+		# bash 3.2 compatible: no mapfile/readarray (macOS /bin/bash is 3.2, and
+		# launchd invokes this script as /bin/bash).
+		versions=()
+		while IFS= read -r v; do
+			[[ -n $v ]] && versions+=("$v")
+		done < <(find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+
+		[[ ${#versions[@]} -gt $TRUNK_KEEP_VERSIONS ]] || continue
+
+		# Newest N by mtime, computed over the version directories.
+		keep=()
+		while IFS= read -r v; do
+			[[ -n $v ]] && keep+=("$v")
+		done < <(
+			find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec stat -f "%m %N" {} + 2>/dev/null 				| sort -rn | head -n "$TRUNK_KEEP_VERSIONS" 				| while read -r _ p; do basename "$p"; done
+		)
+
+		for v in "${versions[@]}"; do
+			# Retain if it is one of the newest N.
+			retain=0
+			for k in "${keep[@]}"; do
+				[[ $v == "$k" ]] && retain=1 && break
+			done
+
+			# Retain if explicitly pinned in trunk.yaml.
+			if [[ $retain -eq 0 && -n $TRUNK_PINS ]]; then
+				while IFS= read -r pin; do
+					[[ -z $pin ]] && continue
+					pin_tool="${pin%@*}"
+					pin_ver="${pin##*@}"
+					if [[ $pin_tool == "$tool_name" && $v == "$pin_ver"* ]]; then
+						retain=1
+						break
+					fi
+				done <<< "$TRUNK_PINS"
+			fi
+
+			[[ $retain -eq 1 ]] && continue
+
+			if rm -rf "$tool_dir$v" "$tool_dir$v.lock" "$tool_dir$v.marker" 2>/dev/null; then
+				TRUNK_REMOVED=$((TRUNK_REMOVED + 1))
+			fi
+		done
+	done
+
+	# Repo clones are cheap to recreate and Trunk re-clones on demand.
+	if [[ -d $TRUNK_CACHE_DIR/repos ]]; then
+		find "$TRUNK_CACHE_DIR/repos" -mindepth 1 -maxdepth 1 -type d -mtime +7 			-exec rm -rf {} + 2>/dev/null || true
+	fi
+
+	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
+	if [[ $TRUNK_FREED -gt 0 ]]; then
+		log_info "Trunk cache: removed ${TRUNK_REMOVED} stale tool version(s), freed $((TRUNK_FREED / 1024)) MB"
+		((CLEANED++))
+	else
+		log_info "Trunk cache: clean (${TRUNK_REMOVED} stale version(s) removed)"
+	fi
+fi
+
+# 10) Fish shell: orphaned Tide prompt cache entries
+# Tide caches a fully rendered ANSI prompt string per shell PID as the universal
+# variable _tide_prompt_<PID>, and drops it on fish_exit. Terminals that are
+# killed rather than closed never fire fish_exit, so the entries leak. Observed
+# 151 orphans holding 130 KB, about 86% of fish_variables, which every new shell
+# then parses before its prompt appears.
+#
+# The filter is deliberately exact: only lines whose variable name matches
+# _tide_prompt_<digits> are candidates, and an entry is dropped only when that
+# PID is not a live process. All tide_* settings, _fisher_* records, and every
+# other variable are preserved byte for byte. This mirrors the interactive
+# reaper in configs/.config/fish/conf.d/zzz_tide_prompt_reap.fish so the file
+# stays clean even if a shell never starts up to run it.
+FISH_VARS="$HOME/.config/fish/fish_variables"
+if [[ -f $FISH_VARS ]]; then
+	TIDE_ORPHANS=0
+	TIDE_TOTAL=0
+	while IFS= read -r name; do
+		pid="${name#_tide_prompt_}"
+		TIDE_TOTAL=$((TIDE_TOTAL + 1))
+		if ! ps -p "$pid" -o comm= >/dev/null 2>&1; then
+			TIDE_ORPHANS=$((TIDE_ORPHANS + 1))
+		fi
+	done < <(grep -o '^SETUVAR _tide_prompt_[0-9]*' "$FISH_VARS" 2>/dev/null | sed 's/^SETUVAR //' | sort -u)
+
+	if [[ $TIDE_ORPHANS -gt 0 ]]; then
+		FISH_BEFORE=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		cp -p "$FISH_VARS" "$FISH_VARS.maintenance.bak"
+
+		# Keep only entries whose PID is still alive. A PID that has been reused
+		# by an unrelated live process is kept, which is the safe failure mode:
+		# a stale entry costs bytes, a deleted live entry costs a repaint.
+		TMP_VARS=$(mktemp)
+		while IFS= read -r line; do
+			if [[ $line =~ ^SETUVAR[[:space:]]_tide_prompt_([0-9]+): ]]; then
+				pid="${BASH_REMATCH[1]}"
+				if ps -p "$pid" -o comm= >/dev/null 2>&1; then
+					printf '%s
+' "$line" >> "$TMP_VARS"
+				fi
+			else
+				printf '%s
+' "$line" >> "$TMP_VARS"
+			fi
+		done < "$FISH_VARS"
+
+		cat "$TMP_VARS" > "$FISH_VARS"
+		rm -f "$TMP_VARS"
+		chmod 600 "$FISH_VARS" 2>/dev/null || true
+
+		FISH_AFTER=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		log_info "Reaped ${TIDE_ORPHANS} of ${TIDE_TOTAL} stale Tide prompt entries (fish_variables: ${FISH_BEFORE} -> ${FISH_AFTER} bytes)"
+		((CLEANED++))
+	else
+		log_info "Tide prompt cache clean (${TIDE_TOTAL} entries, all live)"
+	fi
+fi
+
+# =============================================================================
+# RECURRING BLOAT CLEANUP
+# =============================================================================
+# Paths that drift back to multi-GB within weeks and are missed by the generic
+# ~/Library/Caches sweep. All three are regenerable caches, not user data.
+# Diagnosed 2026-09-17 during a disk-pressure investigation.
+# -----------------------------------------------------------------------------
+
+# 1) Wallper lock-screen render cache
+# Wallper rewrites the entire cache continuously: every file was under 3 days
+# old while the directory still held 80 renders / 1.9GB. An age-based rule can
+# therefore never fire, so retention is by count instead -- keep the newest N
+# renders (the active wallpaper plus a few recent ones) and drop the rest.
+# Videos/ is the wallpaper library and is NEVER touched here.
+WALLPER_CACHE="$HOME/Library/Application Support/Wallper/LockScreenCache"
+if [[ -d $WALLPER_CACHE ]]; then
+	log_info "Cleaning Wallper lock-screen cache..."
+	WALLPER_BEFORE=$(du -sk "$WALLPER_CACHE" 2>/dev/null | cut -f1 || echo "0")
+
+	# Newest-first listing; everything past the retention count is stale.
+	WALLPER_KEEP="${WALLPER_CACHE_KEEP_COUNT:-5}"
+	WALLPER_TOTAL=$(find "$WALLPER_CACHE" -type f 2>/dev/null | wc -l | tr -d " ")
+	if [[ $WALLPER_TOTAL -gt $WALLPER_KEEP ]]; then
+		find "$WALLPER_CACHE" -type f -print0 2>/dev/null | xargs -0 stat -f "%m %N" 2>/dev/null | sort -rn | tail -n +"$((WALLPER_KEEP + 1))" | cut -d" " -f2- | while IFS= read -r stale; do
+			rm -f "$stale" 2>/dev/null || true
+		done
+		((CLEANED++))
+	fi
+
+	WALLPER_AFTER=$(du -sk "$WALLPER_CACHE" 2>/dev/null | cut -f1 || echo "0")
+	WALLPER_FREED=$((WALLPER_BEFORE - WALLPER_AFTER))
+	if [[ $WALLPER_FREED -gt 0 ]]; then
+		log_info "Wallper cache: freed ${WALLPER_FREED} KB (kept newest $WALLPER_KEEP of $WALLPER_TOTAL)"
+	else
+		log_info "Wallper cache: nothing to trim ($WALLPER_TOTAL files, keeping $WALLPER_KEEP)"
+	fi
+fi
+
+# 2) Raycast extension source maps
+# Every command ships a .js.map debug artifact that is never loaded at runtime.
+# 2,312 maps made up 2.56GB of a 3.5GB extensions directory. Deleting them does
+# not affect extension behaviour; Raycast does not checksum installed files.
+if [[ ${RAYCAST_STRIP_SOURCEMAPS:-1} -eq 1 ]]; then
+	RAYCAST_EXT="$HOME/.config/raycast/extensions"
+	if [[ -d $RAYCAST_EXT ]] && command -v fd >/dev/null 2>&1; then
+		MAP_BEFORE=$(du -sk "$RAYCAST_EXT" 2>/dev/null | cut -f1 || echo "0")
+		log_info "Stripping Raycast extension source maps..."
+
+		# Only remove maps for extensions untouched in 7 days, so an extension
+		# actively being developed or reinstalled is left alone.
+		# NOTE: fd defaults to the working directory -- the search path is required.
+		fd -e map -t f --changed-before "7d" . "$RAYCAST_EXT" -x rm 2>/dev/null || true
+
+		MAP_AFTER=$(du -sk "$RAYCAST_EXT" 2>/dev/null | cut -f1 || echo "0")
+		MAP_FREED=$((MAP_BEFORE - MAP_AFTER))
+		if [[ $MAP_FREED -gt 0 ]]; then
+			log_info "Raycast source maps: freed ${MAP_FREED} KB"
+		else
+			log_info "Raycast source maps: none older than 7 days"
+		fi
+	fi
+fi
+
+# 3) Orphaned agent/server data directories
+# Removal is gated on the owning app being absent. Devin - Next and Nimbus are
+# installed and their directories are deliberately left in place -- a shared
+# dataFolderName between forks makes name-based inference unsafe.
+if [[ -n ${ORPHAN_AGENT_APPS:-} ]]; then
+	ORPHAN_TARGETS=(
+		"$HOME/.windsurf-server-next:Windsurf"
+		"$HOME/.windsurf-next:Windsurf"
+	)
+	for entry in "${ORPHAN_TARGETS[@]}"; do
+		dir="${entry%%:*}"
+		app="${entry##*:}"
+
+		[[ -d $dir ]] || continue
+
+		# Skip unless the app is confirmed absent from /Applications and ~/Applications.
+		if [[ -d "/Applications/$app.app" ]] || [[ -d "$HOME/Applications/$app.app" ]]; then
+			log_info "Keeping $(basename "$dir"): $app is still installed"
+			continue
+		fi
+
+		ORPHAN_SIZE=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo "0")
+		log_info "Removing orphaned agent data: $(basename "$dir") (${ORPHAN_SIZE} KB)"
+		if rm -rf "$dir" 2>/dev/null; then
+			((CLEANED++))
+		fi
+	done
+fi
+
 # Notification
 if command -v terminal-notifier >/dev/null 2>&1; then
 	# Always provide actionable notification to view cleanup logs
@@ -180,26 +428,3 @@ fi
 
 log_info "Quick cleanup completed: ${CLEANED} items cleaned"
 echo "Quick cleanup completed successfully!"
-
-# Clean up Trunk cache (weekly to prevent rapid accumulation)
-log_info "Starting Trunk cache cleanup..."
-TRUNK_CACHE_DIR="$HOME/.cache/trunk"
-if [[ -d $TRUNK_CACHE_DIR ]]; then
-	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
-
-	# Remove old tool binaries (safe, auto-redownloads when needed)
-	find "$TRUNK_CACHE_DIR/tools" -type f -atime +14 -delete 2>/dev/null || true
-
-	# Remove old repo caches (safe, clones fresh when needed)
-	find "$TRUNK_CACHE_DIR/repos" -type d -atime +3 -exec rm -rf {} \; 2>/dev/null || true
-
-	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
-	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
-
-	if [[ $TRUNK_FREED -gt 0 ]]; then
-		TRUNK_FREED_MB=$((TRUNK_FREED / 1024))
-		log_info "Trunk cleanup: freed ${TRUNK_FREED_MB} MB (before: ${TRUNK_BEFORE} KB, after: ${TRUNK_AFTER} KB)"
-	else
-		log_info "Trunk cache: no old files to clean"
-	fi
-fi

@@ -1,0 +1,102 @@
+# ~/.config/starship.toml
+#
+# Dracula palette (community preset from https://github.com/dracula/starship).
+#
+# The preset ships as a bare palette plus a few semantic style rules. The
+# prompt layout below is this machine own (directory / git_branch / python /
+# conda / package / character) and is preserved from the previous config, so
+# the shape of the prompt is unchanged. Only the colour layer comes from
+# Dracula.
+#
+# Merged in rather than replacing the file, per the Dracula INSTALL.md guidance:
+# append the palette content and reference the colours by semantic name.
+
+
+add_newline = false
+command_timeout = 10000
+format = "$directory$git_branch$python$conda$package$character"
+palette = "dracula"
+
+[directory]
+truncate_to_repo = true
+truncation_length = 2
+style = "bold green"
+format = "[$path]($style)[$read_only]($read_only_style)"
+
+[character]
+success_symbol = " "
+error_symbol = " "
+format = "$symbol"
+
+# Git branch: shows the current branch name with a Nerd Font branch icon.
+# Modification status is intentionally omitted because the default ASCII
+# indicators (e.g. [!?], (*)) look noisy in a clean prompt. If you want
+# them back, add "$git_status" into `format` above and uncomment the
+# [git_status] block at the bottom of this file.
+[git_branch]
+symbol = " "
+style = "bold pink"
+format = " [$symbol$branch]($style)"
+truncation_length = 24
+truncation_symbol = "…"
+
+[python]
+format = ' [\($virtualenv\)]($style)'
+style = 'bold cyan'
+python_binary = ['python3', 'python']
+detect_extensions = []
+detect_files = []
+detect_folders = []
+detect_env_vars = ['VIRTUAL_ENV']
+
+[conda]
+format = ' [\($environment\)]($style)'
+style = 'bold purple'
+ignore_base = false
+
+[package]
+format = " is [$symbol$version]($style)"
+
+# Avoid prompt width issues caused by emoji variation selectors (e.g. ☁️)
+# in some shell/font/wcwidth combinations.
+[aws]
+disabled = true
+
+# Optional: pretty git status indicators. To enable, add "$git_status" to
+# `format` at the top of this file (e.g. "$directory$git_branch$git_status…")
+# and remove the leading "#" from each line below.
+#
+# Symbols use single-character Nerd Font glyphs grouped together with no
+# brackets, and counts only appear when greater than one. Result looks like:
+#   main  ↑2  ?3
+#
+# [git_status]
+# format = ' [$ahead_behind$conflicted$staged$modified$untracked$stashed]($style)'
+# style = "bold yellow"
+# ahead = " ↑${count}"
+# behind = " ↓${count}"
+# diverged = " ⇕"
+# conflicted = "  "
+# staged = "  "
+# modified = "  "
+# untracked = " ?${count}"
+# stashed = "  "
+
+# ---------------------------------------------------------------------------
+# DRACULA PALETTE
+# ---------------------------------------------------------------------------
+# Named colours let the styles above reference Dracula by semantic name
+# (for example "bold purple") instead of a raw hex literal.
+
+[palettes.dracula]
+background = "#282a36"
+current_line = "#44475a"
+foreground = "#f8f8f2"
+comment = "#6272a4"
+cyan = "#8be9fd"
+green = "#50fa7b"
+orange = "#ffb86c"
+pink = "#ff79c6"
+purple = "#bd93f9"
+red = "#ff5555"
+yellow = "#f1fa8c"
