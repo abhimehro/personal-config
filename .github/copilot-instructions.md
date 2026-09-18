@@ -223,12 +223,12 @@ Git & Code Review
 - Suggest branch protection for security-critical paths
 - personal-config merges via the Trunk queue, not GitHub squash. A
   `trunk-failed` label or "GitHub blocked Trunk from preparing the test
-  branch" after `main` moved is **stale-vs-main**: update the PR from
-  `main`, wait until it is up to date, then comment `/trunk merge` on the
-  **new** head SHA. Do not treat it as a GitHub App or ruleset
-  misconfiguration. Do not re-comment `/trunk merge` on an unchanged SHA.
-  HOLD_PLATFORM App/ruleset HITL only after the PR is already up to date
-  with `main`.
+  branch" is **stale-vs-main** only when the PR base is behind
+  `origin/main` or GitHub reports that the branch is out of date: update the
+  PR from `main`, wait until it is up to date, then comment `/trunk merge` on
+  the **new** head SHA. Do not treat a failure on an already-up-to-date branch
+  as stale; escalate it to the GitHub App or ruleset HITL. Do not re-comment
+  `/trunk merge` on an unchanged SHA.
 
 CI/CD Awareness
 
@@ -325,8 +325,9 @@ Swap this block per project or repo.
 - Services: launchd for macOS daemons.
 - Repos:
   - `personal-config` — Shell/Python macOS configs, VPN/DNS, 1Password SSH.
-    Merges via Trunk (`/trunk merge`). `trunk-failed` after `main` moved is
-    stale-vs-main: update from `main`, then `/trunk merge` on the new SHA.
+    Merges via Trunk (`/trunk merge`). `trunk-failed` is stale-vs-main only
+    when the PR base is behind `origin/main` or GitHub reports it out of date;
+    otherwise escalate the failure to the GitHub App or ruleset HITL.
   - `email-security-pipeline` — Python IMAP threat detection
   - `ctrld-sync` — Control D blocklist syncing
   - `series_correction_project_updated` — Python Seatek sensor time-series

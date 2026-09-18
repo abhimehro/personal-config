@@ -193,8 +193,9 @@ section; delete sections that genuinely do not apply.
 This repository merges through the Trunk merge queue, not GitHub squash.
 
 If Trunk fails with `trunk-failed` or "GitHub blocked Trunk from preparing the
-test branch" after `main` has moved, the PR is **stale-vs-main**, not a Trunk
-GitHub App or ruleset misconfiguration:
+test branch", treat the PR as **stale-vs-main** only when its base is behind
+`origin/main` or GitHub reports that the branch is out of date. Otherwise,
+escalate the failure to the Trunk GitHub App or ruleset owners:
 
 1. Pull the latest `main` into the PR branch.
 2. Wait until GitHub shows the PR up to date (the head SHA changes).
