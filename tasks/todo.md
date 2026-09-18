@@ -1,4 +1,15 @@
-# Stage 1→2 fail-closed cascade (2026-09-16)
+# CAS/export decoupling (2026-09-18)
+
+T3+S — Wrap-only Cursor export drift must not halt the daily drain.
+
+- [x] Decouple ledger CAS `validate()` from export/prompt byte-equality
+- [x] `sync_cursor_export_prompts.py --write` so CI `--check` is green
+- [x] Stage 1/2/3 prompts: repair wrap-only; ANALYSIS_ERROR is ledger-only
+- [x] Stage 2/3 fail-closed after ledger preflight, no ANALYSIS_ERROR theater
+- [x] Tests + `make test-quick` includes `--check`
+- [ ] Product PR (not exclusive docs lineage); subscribe CI + review
+
+## Stage 1→2 fail-closed cascade (2026-09-16)
 
 T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
 

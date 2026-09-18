@@ -168,7 +168,7 @@ def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str,
 
 
 def run_preflight(out: Path) -> dict[str, Any]:
-    """Fetch, sanitize, and validate the runtime ledger without writing GitHub."""
+    """Fetch, sanitize, and schema-validate the runtime ledger (no export gate)."""
     runtime = pointer_runtime()
     fetch = fetch_runtime_ledger(runtime, out)
     sanitized = sanitize_ledger_file(Path(fetch["path"]), bump_revision=False)
@@ -187,7 +187,11 @@ def run_preflight(out: Path) -> dict[str, Any]:
 
 
 def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[str, Any]:
-    """Sanitize then CAS-write a local ledger file onto the data branch."""
+    """Sanitize then CAS-write a local ledger file onto the data branch.
+
+    Does not require Cursor export JSON to match prompt markdown. That gate
+    is CI ``sync_cursor_export_prompts.py --check``, not ledger CAS.
+    """
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
     # Always line-strip before validate+upload so projection keys cannot re-persist.

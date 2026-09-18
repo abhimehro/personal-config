@@ -418,6 +418,19 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("stage2_queued_count", review)
         self.assertIn("throughput_grade", review)
 
+    def test_review_prompt_export_drift_is_not_cas_failure(self) -> None:
+        review = self._prompt("daily-pr-review.md")
+        self.assertIn("sync_cursor_export_prompts.py --check", review)
+        self.assertIn("non-lineage product PR", review)
+
+    def test_salvage_prompt_stops_without_export_theater(self) -> None:
+        salvage = self._prompt("daily-pr-salvage.md")
+        self.assertIn("export-wrap theater", salvage)
+
+    def test_completion_prompt_stops_without_export_theater(self) -> None:
+        completion = self._prompt("daily-pr-completion.md")
+        self.assertIn("export-wrap theater", completion)
+
     def test_completion_prompt_upstream_pause(self) -> None:
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("Fail-closed cascade", completion)

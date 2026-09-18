@@ -421,7 +421,12 @@ Stage 1 must record an explicit **feed fingerprint** in every run record:
 `throughput_grade: PASS|FAIL`. Stage 3 handoffs and TERMINAL ledger closes are
 not Stage 2 readiness.
 
-When the feed is broken, downstream stages **must not** do useful-looking work:
+Cursor export JSON vs prompt markdown is a CI /
+`sync_cursor_export_prompts.py --check` merge gate, **not** ledger CAS
+preflight. Wrap-only Dashboard export drift must not halt Stage 1 drain or
+force Stage 2/3 into `ANALYSIS_ERROR` theater. Repair it with `--write` on a
+non-lineage product PR, then continue. Downstream stages still **must not**
+do useful-looking work when the feed itself is broken:
 
 1. **Stage 2 (first ~30 seconds):** fetch the runtime ledger; run
    `scripts/pr_lifecycle_pipeline_health.py`. **Claim complete unexpired

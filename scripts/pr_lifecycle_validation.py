@@ -18,8 +18,12 @@ from pr_lifecycle_yaml import load_yaml
 __all__ = ["validate"]
 
 
-def validate(runtime_ledger: Path) -> int:
-    """Validate policy plus one fetched runtime ledger; strip known projection keys."""
+def validate(runtime_ledger: Path, *, include_exports: bool = False) -> int:
+    """Validate policy plus one fetched runtime ledger; strip known projection keys.
+
+    Ledger CAS must stay runnable when Dashboard JSON wrap-drifts. Cursor
+    export/prompt byte-equality is opt-in (CI `--check` / `--include-exports`).
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
@@ -28,5 +32,9 @@ def validate(runtime_ledger: Path) -> int:
     stripped = strip_in_memory_item_fields(ledger)
     validate_schema(ledger)
     validate_runtime_records(ledger, config)
-    validate_exports_and_prompts(config)
+    # SECURITY: export/prompt bytes are a CI merge gate, not a ledger
+    # integrity check. Bundling them into CAS halted the daily drain on
+    # wrap-only markdown fmt (2026-09-18).
+    if include_exports:
+        validate_exports_and_prompts(config)
     return stripped
