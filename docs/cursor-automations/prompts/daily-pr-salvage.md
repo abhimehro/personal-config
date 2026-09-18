@@ -108,9 +108,9 @@ or, when none is usable, materialize and claim one from a
 `current_owner: stage2` ledger item. Only when neither usable nor materializable
 work can be claimed, evaluate whether health reports `starvation=true`, **or**
 today's Stage 1 recorded `stage2_queued_count: 0` while
-`salvage_eligible_count > 0`, **or** Stage 1 `throughput_grade` is `FAIL` for a
-failed feed. If so, write a **one-paragraph** `EMPTY_INTAKE_STARVATION` /
-`FEED_FAIL` record labeled `HEAL_THEN_PROCEED` on today's
+`salvage_eligible_count > 0`. If so, write a **one-paragraph**
+`EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record labeled
+`HEAL_THEN_PROCEED` on today's
 `pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then **heal and
 continue** on work this stage owns: materialize complete WIs from
 `current_owner: stage2` items; open an explicit **draft** wrap-only
