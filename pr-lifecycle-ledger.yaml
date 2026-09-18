@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 71
+ledger_revision: 72
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -2274,8 +2274,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge or mark ready a draft repo-health PR.
-  next_action: Leave draft; never mark ready. Human/Stage 3 decides after unique docs-only
-    re-read vs main.
+  next_action: HOLD_CONTRACT CONFLICTING docs/relocated-script PR; not a draft. Do
+    not merge. Unique docs-only remainder vs main by 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1502
   changed_paths:
@@ -2291,13 +2291,13 @@ items:
   - requirements.txt
   - scripts/diagnose_docker_connectivity.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260820b-emailsecuri-1502-h
   revision: 1
-  updated_at_utc: '2026-08-20T15:30:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Seatek_Analysis#695@a0c620406ee0ab45aac821663305c7ef7a648a08
   repository: abhimehro/Seatek_Analysis
   pr: 695
@@ -8162,8 +8162,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not Trunk-queue Palette PRs that rewrite lifecycle export JSON.
-  next_action: 'Stage 3: HOLD_CONTRACT wrap source plus analytics_dashboard.sh. Do
-    not Trunk-queue. Expires 2026-08-30T19:20:00Z'
+  next_action: HOLD_CONTRACT Palette wrap + analytics_dashboard.sh CONFLICTING. Do
+    not Trunk-queue. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2069
   - https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
@@ -8178,13 +8178,13 @@ items:
   - docs/cursor-automations/prompts/daily-pr-salvage.md
   - maintenance/bin/analytics_dashboard.sh
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260823-personalconf-2069-h
   revision: 1
-  updated_at_utc: '2026-08-23T19:20:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2067@5093a4fa6fd9817accf82331bac37d9b772c5998
   repository: abhimehro/personal-config
   pr: 2067
@@ -9486,9 +9486,9 @@ items:
   next_owner: stage3
   safe_default: 'Do not merge, approve, or close original #409 because a replacement
     draft exists. Keep the journal on the original (lesson 0cs).'
-  next_action: 'Stage 3 reconciles CONFLICTING original #409 against tested draft
-    #460 unique remainder (tests only; processor.py already stronger on main). Twin
-    #405 MERGED. Do not close #409. Expires with the consumed work item 2026-09-25T15:30:00Z.'
+  next_action: 'Keep original #409 OPEN CONFLICTING. Draft #460 is tests-only unique
+    remainder (0gd draft; Stage 1 re-ingests). Do not merge, approve, or close #409.
+    Re-read anchors 15621ef6 / d5f92cf0 by 2026-09-25T19:36:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
@@ -9497,7 +9497,7 @@ items:
   - scripts/processor.py
   - scripts/tests/test_processor.py
   attempts:
-    evidence: 4
+    evidence: 5
     recovery: 2
     mutations: 0
   handoffs:
@@ -9506,7 +9506,7 @@ items:
   - evt-s2-20260918-seriescorre-409-q
   - evt-s2-20260918-seriescorre-409-h
   revision: 4
-  updated_at_utc: '2026-09-18T17:20:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -9678,8 +9678,8 @@ items:
   next_owner: stage3
   safe_default: Do not merge or salvage across scripts/pr_lifecycle_config.py or stale
     Cursor exports.
-  next_action: 'Stage 3: decide whether the isolated benchmark change is worth a new
-    bounded recovery; otherwise close as stale by 2026-09-13T17:00:00Z.'
+  next_action: HOLD_CONTRACT CONFLICTING (journal + exports + pr_lifecycle_config.py
+    + benchmark). Isolated benchmark is not a unique mechanical salvage. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2090
   changed_paths:
@@ -9691,7 +9691,7 @@ items:
   - scripts/pr_lifecycle_config.py
   - tests/benchmarks/benchmark_infuse_auth.py
   attempts:
-    evidence: 5
+    evidence: 6
     recovery: 0
     mutations: 0
   handoffs:
@@ -9700,7 +9700,7 @@ items:
   - evt-s2-20260831-personalconf-2090-h
   - evt-s1-20260906-personal-con-2090-stale
   revision: 4
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2088@e1cc0bd810346ca8c6324ce15bcb4acc8090236d
   repository: abhimehro/personal-config
   pr: 2088
@@ -9813,14 +9813,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not overwrite current lifecycle prompts with stale formatting-only
-    content.
-  next_action: 'Stage 3: reconcile against current prompt sources and close if zero-value
-    or superseded by 2026-09-13T17:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal reconciliation complete: CLOSED_SUPERSEDED without merge
+    at 2026-09-18T09:57:31Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2086
   changed_paths:
@@ -9829,7 +9829,7 @@ items:
   - docs/cursor-automations/prompts/daily-pr-review.md
   - docs/cursor-automations/prompts/daily-pr-salvage.md
   attempts:
-    evidence: 5
+    evidence: 6
     recovery: 0
     mutations: 0
   handoffs:
@@ -9837,8 +9837,9 @@ items:
   - evt-s1-20260831c-personalconf-2086-h
   - evt-s2-20260831-personalconf-2086-h
   - evt-s1-20260906-personal-con-2086-stale
-  revision: 4
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  - evt-s3-20260918-pc-2086-t
+  revision: 5
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2085@0eba850153eb68d757ee6b26f275de9906745dad
   repository: abhimehro/personal-config
   pr: 2085
@@ -11396,9 +11397,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not Trunk-queue Palette wrap-source or shell-execution PRs.
-  next_action: 'Stage 3: HOLD_CONTRACT Palette plus wrap exports, analytics_dashboard.sh,
-    pr_lifecycle_config.py. SBOM FAILURE and CONFLICTING; not a unique mechanical
-    repair. Expires 2026-09-02T19:20:00Z'
+  next_action: HOLD_CONTRACT Palette wrap + shell-execution CONFLICTING. Do not Trunk-queue.
+    Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2092
   changed_paths:
@@ -11410,13 +11410,13 @@ items:
   - maintenance/bin/analytics_dashboard.sh
   - scripts/pr_lifecycle_config.py
   attempts:
-    evidence: 3
+    evidence: 4
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-personalconf-2092-h
   revision: 1
-  updated_at_utc: '2026-08-26T19:20:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2091@26a3b301885a7dd19c9b150e2a4c31c219f0bf4e
   repository: abhimehro/personal-config
   pr: 2091
@@ -12352,16 +12352,17 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge, close, or Trunk-merge this conflicting draft sibling.
-  next_action: 'Stage 3: keep HOLD_EVIDENCE. pc #2097 is a draft CONFLICTING docs
-    sibling of today''s lineage #2106 / yesterday #2096. Do not Trunk-merge, close,
-    or open a third docs PR (0gj). Expires 2026-09-03T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-09T06:47:27Z as 04e22598169b4013eac1ffe05f54b40cecaa2442;
+    live head drift is post-merge evidence (0gp).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2097
+  - https://github.com/abhimehro/personal-config/commit/04e22598169b4013eac1ffe05f54b40cecaa2442
   changed_paths:
   - tasks/completion-session-reports.md
   - tasks/lessons.md
@@ -12369,13 +12370,14 @@ items:
   - tasks/pr-salvage-2026-08-26-1700.md
   - tasks/salvage-session-reports.md
   attempts:
-    evidence: 3
+    evidence: 4
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260827-personalconf-2097-h
-  revision: 1
-  updated_at_utc: '2026-08-27T19:20:00Z'
+  - evt-s3-20260918-pc-2097-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/repoprompt-ce#302@1694b9218cdf8199c8e96323f4f87902e66a97d7
   repository: abhimehro/repoprompt-ce
   pr: 302
@@ -13757,8 +13759,8 @@ items:
   next_owner: stage3
   safe_default: Do not close while Codacy threads are unresolved; do not merge CONFLICTING
     source.
-  next_action: 'Stage 3: decide close-as-superseded vs thread resolution for #2116
-    vs merged #2163 by 2026-09-16T15:00:00Z.'
+  next_action: 'HOLD_EVIDENCE CONFLICTING vs merged #2163. Do not close while threads/canonical
+    overlap remain. Expires 2026-09-25T19:36:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2116
   - https://github.com/abhimehro/personal-config/pull/2163
@@ -13769,7 +13771,7 @@ items:
   - docs/cursor-automations/exports/daily-pr-salvage.json
   - run_merges.py
   attempts:
-    evidence: 4
+    evidence: 5
     recovery: 1
     mutations: 2
   handoffs:
@@ -13778,7 +13780,7 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2116-22c5c38b-handoff
   - evt-s1-20260909-personalconf-2116-h
   revision: 4
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/repoprompt-ce#309@29807d3f3ef337966377ed4ddd3dd4cd2141d0de
   repository: abhimehro/repoprompt-ce
   pr: 309
@@ -15007,17 +15009,17 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not GitHub-squash personal-config docs lineage; TRUNK_QUEUE only.
-    Do not Trunk #2097.'
-  next_action: Stay STAGE3 HOLD_EVIDENCE. Head MATCH 94be35476e66. Trunk FAILURE on
-    yesterday docs lineage. Do not retry Trunk this run. Bounce to Stage 1 when GitHub
-    shows MERGED. Expires 2026-09-06T19:20:00Z
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-06T19:17:32Z as 46465a5741977e1f089892471827b31d4f645653;
+    live head drift is post-merge evidence (0gp).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2117
+  - https://github.com/abhimehro/personal-config/commit/46465a5741977e1f089892471827b31d4f645653
   changed_paths:
   - tasks/completion-session-reports.md
   - tasks/pr-completion-2026-08-29.md
@@ -15026,13 +15028,14 @@ items:
   - tasks/review-session-reports.md
   - tasks/salvage-session-reports.md
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260830-personalconf-2117-h
-  revision: 1
-  updated_at_utc: '2026-08-30T19:20:00Z'
+  - evt-s3-20260918-pc-2117-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/repoprompt-ce#312@7b018458bca1563d602913f82757057ab469dfb8
   repository: abhimehro/repoprompt-ce
   pr: 312
@@ -17102,21 +17105,21 @@ items:
   next_owner: stage3
   safe_default: Do not merge a stale scratch inventory optimization with generated
     journal output.
-  next_action: 'Stage 3: determine whether scratch_inventory.py is still canonical;
-    otherwise close stale by 2026-09-13T17:00:00Z.'
+  next_action: HOLD_CONTRACT MERGEABLE UNSTABLE (scratch_inventory.py + Jules journal).
+    Do not merge. Close-stale only with cooldown evidence by 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2020
   changed_paths:
   - .jules/bolt.md
   - scratch_inventory.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260906-personal-con-2020-reingest
   revision: 1
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2158@5cca02052794a6930cfa8db5321c73b562cc962b
   repository: abhimehro/personal-config
   pr: 2158
@@ -17592,27 +17595,30 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: STAGE1_INTAKE
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: stage1
+  next_owner: stage1
   safe_default: Do not merge generated Jules output or overlapping parser changes.
-  next_action: 'Stage 3: canonical-pick against #2029 and #2116; recover only unique
-    tested source by 2026-09-13T17:20:00Z.'
+  next_action: 'Stage 1 canonical-pick HOLD_CANONICAL cluster personal-config#2030@48de37d8
+    vs open #2116. Recover unique tested source only; do not merge generated Jules
+    output. Expires 2026-09-25T19:36:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2030
+  - https://github.com/abhimehro/personal-config/pull/2116
   changed_paths:
   - .jules/bolt.md
   - pr_reference.py
   - run_merges.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260906b-personal-con-2030-reingest
-  revision: 1
-  updated_at_utc: '2026-09-06T17:20:00Z'
+  - evt-s3-20260918-pc-2030-h
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
   repository: abhimehro/personal-config
   pr: 2029
@@ -17720,19 +17726,19 @@ items:
   next_owner: stage3
   safe_default: Do not merge or close a mega-diff deleting tracked virtualenv and
     backup artifacts from Stage 1.
-  next_action: 'Stage 3/human: decide repository-history cleanup separately from docs/template
-    changes by 2026-09-13T17:20:00Z.'
+  next_action: Parked mega venv/backups PR remains OPEN CONFLICTING. Human history
+    cleanup; do not merge or close from Stage 3. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/643
   changed_paths: *id007
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260906b-seatekanalys-643-reingest
   revision: 1
-  updated_at_utc: '2026-09-06T17:20:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7
   repository: abhimehro/personal-config
   pr: 2163
@@ -17961,26 +17967,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge workflow-touching BOT PRs as routine.
-  next_action: 'Stage 3: review workflow consolidation pc #2183 (CLEAN checks, sticky
-    workflows) by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_STALE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal reconciliation complete: CLOSED_STALE without merge at 2026-09-10T08:37:12Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2183
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/refactoring-agent.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-personalconf-2183-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-pc-2183-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/email-security-pipeline#1579@0ee974bfc2cc51ccd06ad8a7533df267b8b61a5a
   repository: abhimehro/email-security-pipeline
   pr: 1579
@@ -18001,24 +18008,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review pnpm/action-setup bump email #1579 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-18T04:00:04Z as 90c64d0878ddae884516d30d8a7336cbfdb31af5.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1579
+  - https://github.com/abhimehro/email-security-pipeline/commit/90c64d0878ddae884516d30d8a7336cbfdb31af5
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-emailsecur-1579-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-email-1579-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/email-security-pipeline#1576@3f8aec43af17876d8b955c9d41e2a76b7c08a1f7
   repository: abhimehro/email-security-pipeline
   pr: 1576
@@ -18039,24 +18049,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review gh-aw setup bump email #1576 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal reconciliation complete: CLOSED_SUPERSEDED without merge
+    at 2026-09-11T21:21:55Z.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1576
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-emailsecur-1576-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-email-1576-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/email-security-pipeline#1575@7ac2708f03995835fe499dc366d5a232a08f8968
   repository: abhimehro/email-security-pipeline
   pr: 1575
@@ -18077,24 +18090,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review gh-aw setup-cli bump email #1575 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal reconciliation complete: CLOSED_SUPERSEDED without merge
+    at 2026-09-11T21:20:03Z.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1575
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-emailsecur-1575-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-email-1575-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Seatek_Analysis#821@3d38d50bf8c91a7bba5f504cebec135e65aca166
   repository: abhimehro/Seatek_Analysis
   pr: 821
@@ -18117,20 +18133,20 @@ items:
   next_owner: stage3
   safe_default: HUMAN cannot be ROUTINE. Do not merge qodo cherry-pick PRs as bot
     work.
-  next_action: 'Stage 3: HUMAN qodo #821 (repository_automation_tasks.py) by 2026-09-16T15:00:00Z.
-    Not in bot_authors.'
+  next_action: HUMAN_REVIEW qodo cherry-pick MERGEABLE UNSTABLE. Not bot identity.
+    Do not merge. Packet/human only. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/821
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seatekanalys-821-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Seatek_Analysis#819@bf04caa0624f2f987a47d4c959cb2eba23212412
   repository: abhimehro/Seatek_Analysis
   pr: 819
@@ -18156,7 +18172,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge UNKNOWN-merge-state workflow PRs or failing CodeQL.
-  next_action: 'Stage 3: Copilot CI/docs #819 (workflows + failing Analyze) by 2026-09-16T15:00:00Z.'
+  next_action: HOLD_EVIDENCE Copilot CI/docs (workflows). Mergeable UNKNOWN. Do not
+    merge workflow PRs. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/819
   changed_paths:
@@ -18166,13 +18183,13 @@ items:
   - .github/workflows/r-testthat.yml
   - AGENTS.md
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seatekanalys-819-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Seatek_Analysis#816@f5ea3a68b27df3ce4e1e0b13b1bc913b3e20c944
   repository: abhimehro/Seatek_Analysis
   pr: 816
@@ -18193,24 +18210,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review pnpm/action-setup bump Seatek #816 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-18T04:00:07Z as 36f82f3a1972e3cc5e28674a7b31ea02f3325a90.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/816
+  - https://github.com/abhimehro/Seatek_Analysis/commit/36f82f3a1972e3cc5e28674a7b31ea02f3325a90
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seatekanalys-816-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-seatek-816-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Seatek_Analysis#812@648cb374a4865b9797699630854e072177536b76
   repository: abhimehro/Seatek_Analysis
   pr: 812
@@ -18238,8 +18258,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge venv-untrack PRs with failing CodeQL/Codacy.
-  next_action: 'Stage 3: Seatek #812 untrack venv/backups + PR template; GHAS/Codacy
-    fail. Expires 2026-09-16T15:00:00Z.'
+  next_action: HOLD_EVIDENCE MERGEABLE UNSTABLE (venv untrack + template; GHAS/Codacy).
+    Do not merge. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/812
   changed_paths:
@@ -18251,13 +18271,13 @@ items:
   - Series_27/Analysis/processing_log.txt
   - Series_27/Analysis/venv/bin/activate
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seatekanalys-812-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#631@5fcab2c417e2861312be3bf07d51cc18ffbf6223
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 631
@@ -18279,20 +18299,21 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: HUMAN cannot be ROUTINE. Do not merge qodo security.py edits.
-  next_action: 'Stage 3: HUMAN qodo #631 (filename sanitization) CONFLICTING by 2026-09-16T15:00:00Z.'
+  next_action: REVIEW_SECURITY HUMAN qodo filename sanitization CONFLICTING. Do not
+    merge. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/631
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-hydrographve-631-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#630@b9e2340010c78bf48ce003dd1221489f5a040661
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 630
@@ -18315,7 +18336,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: HUMAN cannot be ROUTINE. Do not merge CONFLICTING qodo PRs.
-  next_action: 'Stage 3: HUMAN qodo #630 (gitignore/sqlite/docs) CONFLICTING by 2026-09-16T15:00:00Z.'
+  next_action: HOLD_CONTRACT HUMAN qodo gitignore/sqlite/docs CONFLICTING. Do not
+    merge. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/630
   changed_paths:
@@ -18327,13 +18349,13 @@ items:
   - docs/technical/installation.md
   - src/hydrograph_seatek_analysis/app.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-hydrographve-630-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#629@b1653d57f6c9e7636fc29670e5e86062feb205f1
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 629
@@ -18361,8 +18383,8 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge Sentinel security PRs with failing Codacy.
-  next_action: 'Stage 3: Sentinel #629 Unicode filename sanitization; Codacy ACTION_REQUIRED.
-    Expires 2026-09-16T15:00:00Z.'
+  next_action: REVIEW_SECURITY Sentinel Unicode sanitization MERGEABLE UNSTABLE. Do
+    not merge sticky security. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/629
   changed_paths:
@@ -18370,13 +18392,13 @@ items:
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-hydrographve-629-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#626@923e9a7c659c779f2a829d2c4dbd9c2d3c4ac784
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 626
@@ -18397,24 +18419,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review pnpm/action-setup bump Hydro #626 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-18T04:00:14Z as 511ae8f427f13fff0bec34b88eb688da70381216.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/626
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/511ae8f427f13fff0bec34b88eb688da70381216
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-hydrographve-626-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-hydro-626-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#621@21190299ebf5cab8578a9da3ef0e9386d6ff5762
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 621
@@ -18441,21 +18466,21 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge Sentinel security PRs with failing Codacy.
-  next_action: 'Stage 3: Sentinel #621 filename sanitization; Codacy ACTION_REQUIRED.
-    Expires 2026-09-16T15:00:00Z.'
+  next_action: REVIEW_SECURITY Sentinel filename sanitization MERGEABLE UNSTABLE.
+    Do not merge sticky security. Expires 2026-09-25T19:36:00Z.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/621
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-hydrographve-621-h
   revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/series_correction_project_updated#440@949f8808f4c79b2839ad441e19931aad2f4a6fe6
   repository: abhimehro/series_correction_project_updated
   pr: 440
@@ -18476,24 +18501,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Dependabot workflow bumps as routine.
-  next_action: 'Stage 3: review pnpm/action-setup bump series #440 by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-18T04:00:17Z as d7566804ce1851f6bfe3eb34a5b1e52ca4e71406.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/440
+  - https://github.com/abhimehro/series_correction_project_updated/commit/d7566804ce1851f6bfe3eb34a5b1e52ca4e71406
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seriescorre-440-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-series-440-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/series_correction_project_updated#438@8837f3980e28dcd8dcc4188e928a45354eae9f1f
   repository: abhimehro/series_correction_project_updated
   pr: 438
@@ -18514,15 +18542,17 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge AGENTS.md-steering BOT PRs with failing Codacy.
-  next_action: 'Stage 3: series #438 repo-health (AGENTS.md + scripts, Codacy fail)
-    by 2026-09-16T15:00:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record and its immutable
+    historical head.
+  next_action: 'Terminal: merged at 2026-09-18T05:07:56Z as ca623f9e9725a61bc3eb47d4b369d71a3969857a;
+    live head drift is post-merge evidence (0gp).'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/438
+  - https://github.com/abhimehro/series_correction_project_updated/commit/ca623f9e9725a61bc3eb47d4b369d71a3969857a
   changed_paths:
   - .github/PULL_REQUEST_TEMPLATE.md
   - AGENTS.md
@@ -18537,13 +18567,14 @@ items:
   - setup.py
   - updated_processor.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260909-seriescorre-438-h
-  revision: 1
-  updated_at_utc: '2026-09-09T15:16:00Z'
+  - evt-s3-20260918-series-438-t
+  revision: 2
+  updated_at_utc: '2026-09-18T19:36:30Z'
 - key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
   repository: abhimehro/series_correction_project_updated
   pr: 460
@@ -41264,6 +41295,268 @@ events:
   successful: null
   reason: 'Routine BOT tests-only salvage complete. Stage 1 re-ingests draft #460.
     Merge authority is never Stage 2.'
+- event_id: evt-s3-20260918-seriescorre-409-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s2-20260918-seriescorre-409-h
+  expected_item_revision: 4
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s3-20260918-seriescorre-409-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: '2026-09-18T19:36:30Z'
+  policy_revision: null
+  successful: null
+  reason: 'ACK evt-s2-20260918-seriescorre-409-h. Keep CONFLICTING original #409 open
+    against tested draft #460 (0gd). Do not close because a replacement exists. Twin
+    #405 MERGED. Journal stays on #409 (0cs).'
+- event_id: evt-s3-20260918-email-1579-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1579@0ee974bfc2cc51ccd06ad8a7533df267b8b61a5a
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1579@0ee974bfc2cc51ccd06ad8a7533df267b8b61a5a:evt-s3-20260918-email-1579-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub MERGED 2026-09-18T04:00:04Z commit 90c64d0878ddae884516d30d8a7336cbfdb31af5.
+    Historical head 0ee974bf unchanged (overnight Dependabot workflow squash).
+- event_id: evt-s3-20260918-seatek-816-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#816@f5ea3a68b27df3ce4e1e0b13b1bc913b3e20c944
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#816@f5ea3a68b27df3ce4e1e0b13b1bc913b3e20c944:evt-s3-20260918-seatek-816-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub MERGED 2026-09-18T04:00:07Z commit 36f82f3a1972e3cc5e28674a7b31ea02f3325a90.
+    Historical head f5ea3a68 unchanged.
+- event_id: evt-s3-20260918-hydro-626-t
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#626@923e9a7c659c779f2a829d2c4dbd9c2d3c4ac784
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#626@923e9a7c659c779f2a829d2c4dbd9c2d3c4ac784:evt-s3-20260918-hydro-626-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub MERGED 2026-09-18T04:00:14Z commit 511ae8f427f13fff0bec34b88eb688da70381216.
+    Historical head 923e9a7c unchanged.
+- event_id: evt-s3-20260918-series-440-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#440@949f8808f4c79b2839ad441e19931aad2f4a6fe6
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#440@949f8808f4c79b2839ad441e19931aad2f4a6fe6:evt-s3-20260918-series-440-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub MERGED 2026-09-18T04:00:17Z commit d7566804ce1851f6bfe3eb34a5b1e52ca4e71406.
+    Historical head 949f8808 unchanged.
+- event_id: evt-s3-20260918-series-438-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#438@8837f3980e28dcd8dcc4188e928a45354eae9f1f
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#438@8837f3980e28dcd8dcc4188e928a45354eae9f1f:evt-s3-20260918-series-438-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp: GitHub MERGED 2026-09-18T05:07:56Z commit ca623f9e9725a61bc3eb47d4b369d71a3969857a.
+    Preserve immutable key despite post-merge head drift to ec11ac1573b669027c69c7bc2c6a7f05ae99e025.'
+- event_id: evt-s3-20260918-pc-2097-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2097@a07e025ccccb0ae95f91b09a8a010131242a21b4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2097@a07e025ccccb0ae95f91b09a8a010131242a21b4:evt-s3-20260918-pc-2097-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp: GitHub MERGED 2026-09-09T06:47:27Z commit 04e22598169b4013eac1ffe05f54b40cecaa2442.
+    Preserve immutable key despite post-merge head drift to 3bd98a2ba744d81ef8bbc8747f2171f9f93a9aca.'
+- event_id: evt-s3-20260918-pc-2117-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2117@94be35476e665a2fe7d923bd95c56b4e6e0ef7e4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2117@94be35476e665a2fe7d923bd95c56b4e6e0ef7e4:evt-s3-20260918-pc-2117-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Lesson 0gp: GitHub MERGED 2026-09-06T19:17:32Z commit 46465a5741977e1f089892471827b31d4f645653.
+    Preserve immutable key despite post-merge head drift to 8fa13abd8b22d3c91f339eb38e2a0ba6ad19292d.'
+- event_id: evt-s3-20260918-pc-2086-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2086@d20195d8e9a597cccb8c97ccfd2d297fdc7dd9a7
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2086@d20195d8e9a597cccb8c97ccfd2d297fdc7dd9a7:evt-s3-20260918-pc-2086-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub CLOSED unmerged 2026-09-18T09:57:31Z. Historical head d20195d8 unchanged.
+    Not a Stage 3 close mutation.
+- event_id: evt-s3-20260918-pc-2183-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2183@005afc0791be7293990a1a29df4a57a5ff40d145
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_STALE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2183@005afc0791be7293990a1a29df4a57a5ff40d145:evt-s3-20260918-pc-2183-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub CLOSED unmerged 2026-09-10T08:37:12Z. Historical head 005afc07 unchanged.
+    Not a Stage 3 close mutation.
+- event_id: evt-s3-20260918-email-1576-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1576@3f8aec43af17876d8b955c9d41e2a76b7c08a1f7
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1576@3f8aec43af17876d8b955c9d41e2a76b7c08a1f7:evt-s3-20260918-email-1576-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub CLOSED unmerged 2026-09-11T21:21:55Z. Historical head 3f8aec43 unchanged.
+    Not a Stage 3 close mutation.
+- event_id: evt-s3-20260918-email-1575-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1575@7ac2708f03995835fe499dc366d5a232a08f8968
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1575@7ac2708f03995835fe499dc366d5a232a08f8968:evt-s3-20260918-email-1575-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: GitHub CLOSED unmerged 2026-09-11T21:20:03Z. Historical head 7ac2708f unchanged.
+    Not a Stage 3 close mutation.
+- event_id: evt-s3-20260918-pc-2030-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage3
+  to_owner: stage1
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-s3-20260918-pc-2030-h
+  status: PROJECTED
+  created_at_utc: '2026-09-18T19:36:30Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Bounce HOLD_CANONICAL CONFLICTING #2030 to Stage 1 canonical-pick vs open
+    #2116 (generated Jules overlap on run_merges.py / pr_reference.py). Do not packet
+    Jules/Bolt clusters.'
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
