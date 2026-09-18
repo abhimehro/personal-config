@@ -5,6 +5,10 @@ set -euo pipefail
 
 export PATH="${HOME}/.local/bin:${PATH}"
 
+# Pin matches the in-session CLI that indexed this workspace. Engines: Node
+# ^22.18.0 (see .cursor/Dockerfile). Do not float to @latest.
+GITNEXUS_PINNED_VERSION="1.6.12"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PC_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -264,13 +268,109 @@ install_repoprompt_ce() {
 	log "repoprompt-ce: macOS Swift project — no Linux dependency install (see AGENTS.md / make dev-* on macOS)"
 }
 
-log "repos root: ${REPOS_ROOT}"
-install_personal_config
-install_anthropies
-install_ctrld_sync
-install_email_security_pipeline
-install_hydrograph
-install_series_correction
-install_seatek_analysis
-install_repoprompt_ce
-log "done"
+gitnexus_version_matches() {
+	local reported="$1"
+	[[ "${reported}" == *"${GITNEXUS_PINNED_VERSION}"* ]]
+}
+
+ensure_gitnexus() {
+	export PATH="${HOME}/.local/bin:${PATH}"
+	local reported=""
+	if command -v gitnexus >/dev/null 2>&1; then
+		reported="$(gitnexus --version 2>/dev/null || true)"
+		if gitnexus_version_matches "${reported}"; then
+			log "gitnexus ${GITNEXUS_PINNED_VERSION} already present"
+			return 0
+		fi
+		log "gitnexus present but version '${reported}' != ${GITNEXUS_PINNED_VERSION}; reinstalling"
+	fi
+	if ! command -v npm >/dev/null 2>&1; then
+		log "skip gitnexus (npm not on PATH; needs Node 22.18+ from .cursor/Dockerfile)"
+		return 0
+	fi
+	log "installing gitnexus@${GITNEXUS_PINNED_VERSION} under ${HOME}/.local"
+	# SECURITY: pin exact CLI version; --prefix keeps the install in $HOME.
+	if ! npm install --global --prefix "${HOME}/.local" "gitnexus@${GITNEXUS_PINNED_VERSION}"; then
+		log "gitnexus npm install failed (non-fatal)"
+		return 0
+	fi
+	export PATH="${HOME}/.local/bin:${PATH}"
+	if command -v gitnexus >/dev/null 2>&1; then
+		gitnexus --version || true
+	else
+		log "gitnexus installed but not on PATH"
+	fi
+}
+
+exclude_gitnexus_index() {
+	local repo="$1"
+	local exclude_dir exclude_file
+	if [[ ! -d "${repo}/.git" ]]; then
+		return 0
+	fi
+	exclude_dir="${repo}/.git/info"
+	exclude_file="${exclude_dir}/exclude"
+	mkdir -p "${exclude_dir}"
+	if [[ -f ${exclude_file} ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
+		return 0
+	fi
+	printf '%s\n' '.gitnexus/' >>"${exclude_file}"
+}
+
+should_skip_gitnexus_index() {
+	local name="$1"
+	# HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
+	[[ "${name}" == "repoprompt-ce" ]]
+}
+
+index_gitnexus_repos() {
+	if ! command -v gitnexus >/dev/null 2>&1; then
+		log "skip gitnexus index (cli missing)"
+		return 0
+	fi
+	local repo name
+	for repo in \
+		"${REPOS_ROOT}/personal-config" \
+		"${REPOS_ROOT}/ctrld-sync" \
+		"${REPOS_ROOT}/email-security-pipeline" \
+		"${REPOS_ROOT}/Hydrograph_Versus_Seatek_Sensors_Project" \
+		"${REPOS_ROOT}/Seatek_Analysis" \
+		"${REPOS_ROOT}/series_correction_project_updated" \
+		"${REPOS_ROOT}/repoprompt-ce"; do
+		name="${repo##*/}"
+		if [[ ! -d ${repo} ]]; then
+			log "gitnexus: skip ${name} (missing)"
+			continue
+		fi
+		if should_skip_gitnexus_index "${name}"; then
+			log "gitnexus: skip ${name} (OOM on Linux cloud VMs; HOLD_PLATFORM)"
+			continue
+		fi
+		exclude_gitnexus_index "${repo}"
+		log "gitnexus: analyze --index-only --skip-fts ${name}"
+		# --index-only: do not rewrite AGENTS.md / skills. --skip-fts: Ladybug
+		# FTS is optional and not installed in the snapshot.
+		if ! run_in_repo "${repo}" gitnexus analyze --index-only --skip-fts; then
+			log "gitnexus: analyze failed for ${name} (non-fatal)"
+		fi
+	done
+}
+
+cursor_cloud_workspace_install_main() {
+	log "repos root: ${REPOS_ROOT}"
+	install_personal_config
+	install_anthropies
+	install_ctrld_sync
+	install_email_security_pipeline
+	install_hydrograph
+	install_series_correction
+	install_seatek_analysis
+	install_repoprompt_ce
+	ensure_gitnexus
+	index_gitnexus_repos
+	log "done"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	cursor_cloud_workspace_install_main "$@"
+fi

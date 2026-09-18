@@ -49,6 +49,26 @@ RUN set -eux; \
     > /opt/cloud-agent/bin/plantuml; \
   chmod +x /opt/cloud-agent/bin/plantuml
 
+# Node 22.18.0 (official tarball, SHA-pinned) so GitNexus 1.6.12 engines
+# (^22.18.0 || >=24.11.0) are satisfied at snapshot install time. The live
+# agent exec-daemon may still inject an older Node; this is the image toolchain.
+# Re-verify node_sha when bumping the version. tar.gz avoids an xz-utils dep.
+RUN set -eux; \
+  arch="$(dpkg --print-architecture)"; \
+  node_version="22.18.0"; \
+  case "${arch}" in \
+    amd64) node_dist="linux-x64"; node_sha="a2e703725d8683be86bb5da967bf8272f4518bdaf10f21389e2b2c9eaeae8c8a" ;; \
+    arm64) node_dist="linux-arm64"; node_sha="d415eeea90a2fdb60c66dd386b258acbfc4d1fa4720a8df5dea7369fbdbcddee" ;; \
+    *) echo "Skipping Node ${node_version} on ${arch}; GitNexus install is optional"; exit 0 ;; \
+  esac; \
+  curl -fsSL -o /tmp/node.tar.gz \
+    "https://nodejs.org/dist/v${node_version}/node-v${node_version}-${node_dist}.tar.gz"; \
+  printf "%s  /tmp/node.tar.gz\n" "${node_sha}" | sha256sum -c -; \
+  tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1; \
+  rm -f /tmp/node.tar.gz; \
+  node --version; \
+  npm --version
+
 # ubuntu:24.04 ships the ubuntu user; only ensure sudo and home layout.
 RUN if ! id ubuntu >/dev/null 2>&1; then useradd -m -s /bin/bash -u 1000 ubuntu; fi \
   && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ubuntu \
