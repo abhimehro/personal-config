@@ -402,6 +402,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("Hold five inventory slots", review)
 
     def test_salvage_prompt_starvation_label_without_inventing(self) -> None:
+        """The salvage prompt must heal starvation without invented work."""
         salvage = self._prompt("daily-pr-salvage.md")
         self.assertIn("EMPTY_INTAKE_STARVATION", salvage)
         self.assertIn("FEED_FAIL", salvage)
@@ -433,6 +434,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("export-wrap theater", completion)
 
     def test_completion_prompt_upstream_pause(self) -> None:
+        """The completion prompt must heal an unhealthy upstream feed."""
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("Heal-forward cascade", completion)
         self.assertIn("upstream feed failed", completion)
@@ -448,6 +450,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("complete Stage 2 work item", completion)
 
     def test_pr_desk_flags_starvation(self) -> None:
+        """The PR Desk profile must expose starvation indicators."""
         profile = (ROOT / "docs/grok-bot/pr-desk.profile.md").read_text(
             encoding="utf-8"
         )
@@ -457,6 +460,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
     def test_stage_prompts_shared_ownership(self) -> None:
+        """All stage prompts must bind the shared-ownership contract."""
         needle = "own their health and continuous improvement"
         for name in (
             "daily-pr-review.md",
@@ -500,6 +504,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("Citing those files is not enough", contract)
 
     def test_stage_prompts_pass_commit_message(self) -> None:
+        """All stage prompts must provide the lifecycle commit message."""
         needle = '--message "automated lifecycle ledger update"'
         for name in (
             "daily-pr-review.md",

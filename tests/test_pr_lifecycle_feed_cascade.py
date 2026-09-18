@@ -112,6 +112,7 @@ class TestStage1FeedFingerprint(unittest.TestCase):
 
 class TestStage2Cascade(unittest.TestCase):
     def test_starvation_is_feed_fail(self) -> None:
+        """Starved Stage 2 feeds must heal and continue."""
         report = health.summarize(_ledger([_item()], []), now=NOW)
         fp = cascade.grade_stage1_feed(
             stage2_queued_count=0,
@@ -123,6 +124,7 @@ class TestStage2Cascade(unittest.TestCase):
         self.assertTrue(cascade.unhealthy_stage2_feed(decision))
 
     def test_claim_when_complete_wi_present(self) -> None:
+        """A complete work item must remain immediately claimable."""
         report = health.summarize(
             _ledger([_item()], [_work_item()]),
             now=NOW,
@@ -184,6 +186,7 @@ class TestStage2Cascade(unittest.TestCase):
         self.assertEqual(decision.label, "CLAIM")
 
     def test_empty_intake_when_nothing_eligible(self) -> None:
+        """No eligible remainder must produce an empty-intake decision."""
         blocked = _item(guardrail_outcome="REVIEW_SECURITY")
         report = health.summarize(_ledger([blocked], []), now=NOW)
         fp = cascade.grade_stage1_feed(
@@ -198,6 +201,7 @@ class TestStage3Cascade(unittest.TestCase):
     """Single matrix avoids CodeScene Code Duplication across pause/proceed."""
 
     def test_stage3_decision_matrix(self) -> None:
+        """Stage 3 must heal unhealthy feeds and proceed on healthy ones."""
         healthy = health.summarize(
             _ledger([_item()], [_work_item()]),
             now=NOW,
@@ -258,6 +262,7 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
     """Sample Stage 1 WI emission → Stage 2 claim without live CAS."""
 
     def test_inject_sample_clears_starvation_and_is_claimable(self) -> None:
+        """Injecting a valid work item must clear starvation for claiming."""
         starved = _ledger([_item()], [])
         before = health.summarize(starved, now=NOW)
         self.assertTrue(before.starvation)
@@ -278,6 +283,7 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertNotEqual(s2.label, "EMPTY_INTAKE")
 
     def test_verify_exit_claim_beats_starvation(self) -> None:
+        """A materializable Stage 2 claim must yield a successful exit."""
         owned = _item(
             current_owner="stage2",
             lifecycle_state="STAGE2_QUEUED",
@@ -291,6 +297,7 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
 
     def test_verify_cli_inject_sample(self) -> None:
+        """The verifier CLI must accept an injected sample work item."""
         if not EXAMPLE.is_file():
             self.skipTest("example ledger missing")
         # Reuse the health-suite starved fixture (event↔item integrity).
