@@ -20,20 +20,18 @@ if str(SCRIPT_DIR) not in sys.path:
 from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
 from pr_lifecycle_github_git import (
     contained_output_path,
-    decode_github_blob,
-    is_stale_tip_error,
-    object_sha,
-    ref_path,
-    tree_sha,
-    update_ref_path,
 )
 from pr_lifecycle_github_git import create_blob as git_create_blob
 from pr_lifecycle_github_git import create_commit as git_create_commit
 from pr_lifecycle_github_git import create_tree as git_create_tree
+from pr_lifecycle_github_git import decode_github_blob
 from pr_lifecycle_github_git import ensure_data_ref as git_ensure_data_ref
 from pr_lifecycle_github_git import fetch_runtime_ledger as git_fetch_runtime_ledger
+from pr_lifecycle_github_git import is_stale_tip_error, object_sha
 from pr_lifecycle_github_git import read_commit as git_read_commit
+from pr_lifecycle_github_git import ref_path, tree_sha
 from pr_lifecycle_github_git import update_ref as git_update_ref
+from pr_lifecycle_github_git import update_ref_path
 from pr_lifecycle_github_http import (
     _HTTPS_OPENER,
     GITHUB_API_ORIGIN,

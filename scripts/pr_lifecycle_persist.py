@@ -46,7 +46,9 @@ __all__ = [
 
 def persistable_item(item: dict[str, Any]) -> dict[str, Any]:
     """Return a schema-legal item copy without in-memory projection keys."""
-    return {key: value for key, value in item.items() if key not in IN_MEMORY_ITEM_FIELDS}
+    return {
+        key: value for key, value in item.items() if key not in IN_MEMORY_ITEM_FIELDS
+    }
 
 
 def _remove_known_item_fields(item: Any) -> int:
@@ -133,7 +135,9 @@ def _parse_ledger_mapping(text: str, path: Path) -> dict[str, Any]:
     return parsed
 
 
-def _sanitize_text(original: str, path: Path, bump_revision: bool) -> tuple[str, int, int]:
+def _sanitize_text(
+    original: str, path: Path, bump_revision: bool
+) -> tuple[str, int, int]:
     """Line-strip, fail closed on leftover projection keys, optionally bump."""
     sanitized, removed = strip_derived_item_lines(original)
     parsed = _parse_ledger_mapping(sanitized, path)

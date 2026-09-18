@@ -1,4 +1,19 @@
-# PR #2175 stack resolution — 2026-09-09
+# Stage 1→2 fail-closed cascade (2026-09-16)
+
+T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
+
+- [x] venv + health monitor baseline on fetched ledger
+- [x] Stage 1/2/3 prompts: feed fingerprint + FEED_FAIL short-circuit
+- [x] `docs/automated-pr-lifecycle.md` cascade paragraph
+- [x] Dashboard checklist: live UUID enablement + fetch-before-health
+- [x] `.venv/` gitignore; sync Cursor export prompts
+- [x] Sample WI emission/claim via `pr_lifecycle_feed_cascade_verify.py` + tests
+- [x] Health verify: tip `starvation=false` (eligible drained); inject proves
+      CLAIM
+- [x] CI: CodeScene Excess Args + Codacy ≤0 new issues on cascade/verify
+- [ ] HITL: paste updated prompts into UUID automations; sample live Stage 1 CAS
+
+## PR #2175 stack resolution — 2026-09-09
 
 T3+S — Address review comments and failing checks. Do not bump
 `policy_revision`. Salvage cap stays 10 (EMPTY_INTAKE was unread ledger).
@@ -24,7 +39,8 @@ T3+S — Address review comments and failing checks. Do not bump
 T3+S — Diagnose then repair at the cause. Do not bump `policy_revision`.
 Calibration stays APPROVED 7/7. Do not reset to REPORT_ONLY.
 
-- [x] Diagnose: Devin vs scheduled Cursor (schema extra keys + >1MB Contents GET)
+- [x] Diagnose: Devin vs scheduled Cursor (schema extra keys + >1MB Contents
+      GET)
 - [x] Load-time strip of `latest_transition` / `latest_transition_kind` only
 - [x] Persist helper so writers cannot dump in-memory projection fields
 - [x] Git Data API CAS + ref restore (Contents GET encoding=none above 1MB)

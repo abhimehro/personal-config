@@ -290,22 +290,21 @@ Full record: `tasks/pr-salvage-2026-08-27-1700.md`.
 
 - Source: Stage 1 15:00 ledger rev **21** (`github_contents_api`); blob
   `cd158499096d2bb4b94594a733888563d50fd733`; data-branch commit
-  `47435b29bad53a5e8001a24c419e0aca6408843c`. Data-branch ref was 404;
-  restored to that existing commit (0go / 0hb).
+  `47435b29bad53a5e8001a24c419e0aca6408843c`. Data-branch ref was 404; restored
+  to that existing commit (0go / 0hb).
 - Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
   `namespaceStatus=error` (unavailable)
 - Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
   `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
 - Prior remainder live-verify: seatek #736 / series #410 / rpce #293 closed
-  `CLOSED_NOOP` at 2026-08-26T15:22:28Z / 15:22:30Z / 15:22:32Z. series
-  #412 still OPEN, Stage-1-owned close-candidate. Do not recreate
-  `display.py` (0gm)
+  `CLOSED_NOOP` at 2026-08-26T15:22:28Z / 15:22:30Z / 15:22:32Z. series #412
+  still OPEN, Stage-1-owned close-candidate. Do not recreate `display.py` (0gm)
 
 ### Outcomes
 
-| Repo       | Old PR | Disposition                           | New PR | Notes                                                                 |
-| ---------- | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
-| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
 
 - Salvage drafts opened: **0**
 - Infra-fix drafts: **0**
@@ -320,18 +319,17 @@ Full record: `tasks/pr-salvage-2026-08-27-1700.md`.
 
 - Full wrap `validate_pr_lifecycle_artifacts.py` **PASS** on origin/main +
   rev 21. Ledger-only `validate_schema` + `validate_runtime_records` **PASS**.
-- Calibration: `REPORT_ONLY` count **6** / `pr-lifecycle-v1.4` (no stale
-  reset).
+- Calibration: `REPORT_ONLY` count **6** / `pr-lifecycle-v1.4` (no stale reset).
 - Live GitHub: seatek #736 `state=CLOSED` `merged=false`
-  `closed_at=2026-08-26T15:22:28Z` head `564a162abfd5…`; series #410
-  `CLOSED` `2026-08-26T15:22:30Z` head `31614bd111ca…`; rpce #293 `CLOSED`
-  `2026-08-26T15:22:32Z` head `3ef4c8ce7659…`; series #412 `OPEN` 0 files
-  head `5b78f9e0c096…`. Stage 1 docs lineage
+  `closed_at=2026-08-26T15:22:28Z` head `564a162abfd5…`; series #410 `CLOSED`
+  `2026-08-26T15:22:30Z` head `31614bd111ca…`; rpce #293 `CLOSED`
+  `2026-08-26T15:22:32Z` head `3ef4c8ce7659…`; series #412 `OPEN` 0 files head
+  `5b78f9e0c096…`. Stage 1 docs lineage
   [#2096](https://github.com/abhimehro/personal-config/pull/2096) already
-  merged; this run recreates `pr-lifecycle-docs-20260826` from current
-  `main` (0ha).
-- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
-  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+  merged; this run recreates `pr-lifecycle-docs-20260826` from current `main`
+  (0ha).
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel clusters,
+  rpce Swift (0gi), or workflow Dependabot bumps.
 
 ### Handoff
 
@@ -2183,16 +2181,19 @@ it from memory.
 
 ### Input tail
 
-- Source: Stage 1 15:00 ledger rev **67**; blob `e65a86935d8bc2567eda938c392d30948ddb01ee`; missing ref restored under lesson **0go**.
+- Source: Stage 1 15:00 ledger rev **67**; blob
+  `e65a86935d8bc2567eda938c392d30948ddb01ee`; missing ref restored under lesson
+  **0go**.
 - Validator: `PR_LIFECYCLE_INVALID` extra item keys `latest_transition` /
   `latest_transition_kind` (lesson **0ha**); health exit 1, not starvation.
-- Live: `stage2_work_items: []`; Stage 1 queued **0**; calibration `APPROVED` 7/7.
+- Live: `stage2_work_items: []`; Stage 1 queued **0**; calibration `APPROVED`
+  7/7.
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-| --- | ---: | --- | --- | --- |
-| (none) | — | `ANALYSIS_ERROR` | — | Invalid runtime ledger; no product draft |
+| Repo   | Old PR | Disposition      | New PR | Notes                                    |
+| ------ | -----: | ---------------- | ------ | ---------------------------------------- |
+| (none) |      — | `ANALYSIS_ERROR` | —      | Invalid runtime ledger; no product draft |
 
 - Salvage drafts, infra-fix drafts, API closes, and autonomous merges: **0**
 - New lessons: **0**; `request_reviewers`: skipped
@@ -2200,14 +2201,14 @@ it from memory.
 
 ### Verification
 
-- Raw GET via blob SHA; bootstrap pointer not used. Docs lineage #2172 was already
-  open as draft; no sibling opened and it was not marked ready.
+- Raw GET via blob SHA; bootstrap pointer not used. Docs lineage #2172 was
+  already open as draft; no sibling opened and it was not marked ready.
 
 ### Handoff
 
-1. Wait for a valid ledger before remainder/completion; never merge salvage drafts.
+1. Wait for a valid ledger before remainder/completion; never merge salvage
+   drafts.
 2. Drop persisted projection fields or revise schema, then re-validate.
 3. Trunk-merge this lineage only after validation and routine predicates pass.
 
 Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
-

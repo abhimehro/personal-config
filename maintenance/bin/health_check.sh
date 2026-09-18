@@ -3,6 +3,8 @@
 # Self-contained health check script with enhanced panic diagnostics
 # Added timeouts to prevent hanging on slow log commands
 set -euo pipefail
+# Ensure HOME is set in launchd environment (which lacks login shell context)
+export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

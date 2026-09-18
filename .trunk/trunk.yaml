@@ -15,25 +15,27 @@ lint:
     - markdownlint
     - prettier
   enabled:
-    - grype@0.118.0
-    - pinact@4.1.1
+    - grype@0.119.0
+    # pinact v5 rejects single-dash -format; trunk plugins v1.11.0 still pass
+    # -format via pinact_run.py. Stay on 4.1.1 until plugins emit --format.
+    - pinact@5.0.0
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.5.1
-    - checkov@3.3.16
-    - deno@2.9.5
+    - checkov@3.3.19
+    - deno@2.9.6
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.15.1
     - isort@9.0.1
-    - osv-scanner@2.5.1
-    - ruff@0.16.6
+    - osv-scanner@2.6.0
+    - ruff@0.16.8
     - shellcheck@0.11.0
-    - shfmt@3.14.0
+    - shfmt@3.14.1
     - taplo@0.10.0
     - terrascan@1.19.9
     - trivy@0.74.0
-    - trufflehog@3.97.4
+    - trufflehog@3.97.5
     - yamllint@1.38.0
 actions:
   disabled:
@@ -57,4 +59,4 @@ tools:
   enabled:
     - snyk@1.1295.0
     - trivy@0.74.0
-    - trufflehog@3.97.4
+    - trufflehog@3.97.5

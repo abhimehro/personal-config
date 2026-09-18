@@ -213,9 +213,7 @@ def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
     if commit is None:
         return
     if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
-        raise ValueError(
-            "ledger pointer: last_known_data_commit must be a 40-char SHA"
-        )
+        raise ValueError("ledger pointer: last_known_data_commit must be a 40-char SHA")
 
 
 def validate_pointer_location(
