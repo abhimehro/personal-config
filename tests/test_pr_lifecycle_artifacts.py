@@ -91,6 +91,9 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             validator.validate(self.write_ledger(self.example()))
 
     def test_validate_include_exports_invokes_prompt_gate(self):
+        # fmt: off
+        # Keep the `as gate` line wrapped under 79 chars: the export-authority
+        # merge gate patches this exact line, so black must not rejoin it.
         with mock.patch.object(
             validator, "validate_exports_and_prompts"
         ) as gate:
@@ -98,6 +101,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                 self.write_ledger(self.example()), include_exports=True
             )
             gate.assert_called_once()
+        # fmt: on
 
     def test_export_validation_reports_prompt_include_errors(self):
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
