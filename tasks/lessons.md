@@ -2912,8 +2912,6 @@ Do not treat GitHub `CONFLICTING` plus a merged sibling as an automatic close.
 
 **Detection cost:** Low — GraphQL/REST review threads on the live head SHA;
 replacement merge timestamp vs cooldown.
-field-frequency count shows `latest_transition` / `latest_transition_kind` on a
-subset of items.
 
 ## Lesson 0hb: Stage 1→2 fail-closed cascade after starved feed (2026-09-16)
 
