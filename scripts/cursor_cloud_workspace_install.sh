@@ -331,12 +331,12 @@ index_gitnexus_repos() {
 	local repo name
 	for repo in \
 		"${REPOS_ROOT}/personal-config" \
+		"${REPOS_ROOT}/anthropies" \
 		"${REPOS_ROOT}/ctrld-sync" \
 		"${REPOS_ROOT}/email-security-pipeline" \
 		"${REPOS_ROOT}/Hydrograph_Versus_Seatek_Sensors_Project" \
 		"${REPOS_ROOT}/Seatek_Analysis" \
-		"${REPOS_ROOT}/series_correction_project_updated" \
-		"${REPOS_ROOT}/repoprompt-ce"; do
+		"${REPOS_ROOT}/series_correction_project_updated"; do
 		name="${repo##*/}"
 		if [[ ! -d ${repo} ]]; then
 			log "gitnexus: skip ${name} (missing)"
