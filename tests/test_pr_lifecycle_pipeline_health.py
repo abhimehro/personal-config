@@ -23,6 +23,7 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import pr_lifecycle_validation as validator  # noqa: E402
+from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 import yaml  # noqa: E402
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
@@ -388,8 +389,8 @@ class TestPipelineHealthCli(unittest.TestCase):
 
 class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return (ROOT / "docs/cursor-automations/prompts" / name).read_text(
-            encoding="utf-8"
+        return expand_prompt_source(
+            ROOT / "docs/cursor-automations/prompts" / name
         )
 
     def test_review_prompt_raised_caps_and_salvage_queue(self) -> None:
@@ -488,6 +489,26 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
                 self.assertIn("Fail secure", text)
                 self.assertIn("never weaken existing", text)
                 self.assertIn("mechanism or silence", text)
+        frame = (
+            ROOT / "docs/cursor-automations/prompts/_shared-partner-frame.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("security-first development partner", frame)
+        self.assertNotIn("{{include:", frame)
+        include = "{{include:_shared-partner-frame.md}}"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+        ):
+            raw = (
+                ROOT / "docs/cursor-automations/prompts" / name
+            ).read_text(encoding="utf-8")
+            self.assertEqual(raw.count(include), 1, name)
+        calibration = (
+            ROOT / "docs/cursor-automations/prompts"
+            / "daily-pr-completion.calibration.md"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn(include, calibration)
         salvage = self._prompt("daily-pr-salvage.md")
         self.assertIn("infra-fix", salvage)
         self.assertIn("Do not rewrite Stage-1-owned inventory", salvage)

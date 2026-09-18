@@ -10,10 +10,10 @@ runtime-ledger event.
 
 | Stage               | Export                                         | Prompt to paste                              | Schedule     | Dashboard authority                                     | MCP/action allowlist                                               | Memory                   |
 | ------------------- | ---------------------------------------------- | -------------------------------------------- | ------------ | ------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------ |
-| Stage 1             | `exports/daily-pr-review.json`                 | `prompts/daily-pr-review.md`                 | `0 15 * * *` | `prComment.allowApprove: true`; routine only            | Dashboard-referenced MCP set; prompt and routine predicates govern | Enabled namespaced cache |
-| Stage 2             | `exports/daily-pr-salvage.json`                | `prompts/daily-pr-salvage.md`                | `0 17 * * *` | No approval, reviewer request, merge, or close          | Dashboard-referenced MCP set; draft-only contract governs          | Enabled namespaced cache |
+| Stage 1             | `exports/daily-pr-review.json`                 | expanded JSON `prompts[0].prompt`            | `0 15 * * *` | `prComment.allowApprove: true`; routine only            | Dashboard-referenced MCP set; prompt and routine predicates govern | Enabled namespaced cache |
+| Stage 2             | `exports/daily-pr-salvage.json`                | expanded JSON `prompts[0].prompt`            | `0 17 * * *` | No approval, reviewer request, merge, or close          | Dashboard-referenced MCP set; draft-only contract governs          | Enabled namespaced cache |
 | Stage 3 calibration | `exports/daily-pr-completion.calibration.json` | `prompts/daily-pr-completion.calibration.md` | `0 19 * * *` | Report-only, no GitHub mutation                         | Dashboard-referenced MCP set; report-only prohibitions govern      | Enabled namespaced cache |
-| Stage 3 completion  | `exports/daily-pr-completion.json`             | `prompts/daily-pr-completion.md`             | `0 19 * * *` | `prComment.allowApprove: true`; bounded completion only | Dashboard-referenced MCP set; approval gate and cap govern         | Enabled namespaced cache |
+| Stage 3 completion  | `exports/daily-pr-completion.json`             | expanded JSON `prompts[0].prompt`            | `0 19 * * *` | `prComment.allowApprove: true`; bounded completion only | Dashboard-referenced MCP set; approval gate and cap govern         | Enabled namespaced cache |
 
 All schedules are **UTC**. In America/Chicago, the displayed local hour changes
 with daylight-saving time. The shared environment ID is
@@ -79,15 +79,19 @@ condition that requires heal-forward, not a pause.
 
 **HITL paste after this cascade PR lands:**
 
-1. Paste `prompts/daily-pr-review.md` into Stage 1
+Paste the **expanded** JSON `prompts[0].prompt` field from each export —
+never paste markdown that still contains `{{include:...}}`. The four UUIDs
+below are unchanged; do not create a fifth automation.
+
+1. Paste `exports/daily-pr-review.json` `prompts[0].prompt` into Stage 1
    `77c168e0-7f6b-42de-bad6-da4e4e640b79` (shared ownership + fingerprint).
-2. Paste `prompts/daily-pr-salvage.md` into Stage 2
+2. Paste `exports/daily-pr-salvage.json` `prompts[0].prompt` into Stage 2
    `3e537981-04a6-456f-89a3-272d9d5fddd7`
    (shared ownership + HEAL_THEN_PROCEED).
 3. Leave calibration `d9d2c058-9c42-11f1-ba66-0e7d0216e441` **disabled**.
-4. Paste `prompts/daily-pr-completion.md` into Stage 3 completion
-   `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` (shared ownership + leftover drain).
-   Keep it **enabled**.
+4. Paste `exports/daily-pr-completion.json` `prompts[0].prompt` into Stage 3
+   completion `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` (shared ownership +
+   leftover drain). Keep it **enabled**.
 5. Record the new dashboard fingerprints in the next runtime-ledger event. Do
    **not** reset calibration to `REPORT_ONLY` for this change.
 

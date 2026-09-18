@@ -16,6 +16,7 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_validation as validator  # noqa: E402
 from pr_lifecycle_ledger import validate_transition_table  # noqa: E402
+from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 
 
 class TestPrLifecycleArtifacts(unittest.TestCase):
@@ -327,8 +328,8 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
 
 class TestStage1ThroughputGate(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return (ROOT / "docs/cursor-automations/prompts" / name).read_text(
-            encoding="utf-8"
+        return expand_prompt_source(
+            ROOT / "docs/cursor-automations/prompts" / name
         )
 
     def test_review_prompt_sha_match_reselect(self):

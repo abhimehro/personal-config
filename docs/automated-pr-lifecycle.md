@@ -33,6 +33,14 @@ Optional; mechanism or silence), Trunk-queue personal-config merges,
 never merge drafts unattended, never self-approve under maintainer
 login. Citing those files is not enough; the stage must apply them.
 
+Stage prompts include
+`docs/cursor-automations/prompts/_shared-partner-frame.md` via a
+whole-line `{{include:_shared-partner-frame.md}}` directive.
+`sync_cursor_export_prompts.py` expands that include into export JSON.
+Paste the JSON `prompts[0].prompt` field into the existing Stage 1/2/3
+Dashboard UUIDs; never paste a raw `{{include}}` line. Do not add a
+fourth UUID, a weekly-health coordinator, or a second Grok Bot.
+
 ## Lifecycle principle
 
 Every in-scope PR must have either a terminal disposition or a single current
@@ -49,7 +57,7 @@ item to Stage 1 intake.
 | Stage | Name       | Owns                                                                                                     | May do                                                                                                                                                                                                                                                                                                 | Must hand off                                                                                                                                                                            |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to ten complete Stage 2 work items as ledger bookkeeping.               | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
- 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** (`salvage`/`infra-fix`) with tests and provenance. CAS-write a **new ledger item**. Never approve, merge, or close. Empty remainder: stop. Starved: `HEAL_THEN_PROCEED` on owned work.                 | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
+| 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** (`salvage`/`infra-fix`) with tests and provenance. CAS-write a **new ledger item**. Never approve, merge, or close. Empty remainder: stop. Starved: `HEAL_THEN_PROCEED` on owned work.                 | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
 | 3     | Completion | Remainder that Stage 1 cannot execute this run                                                           | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                              |
 
 Automated routine approval is a policy-authorized throughput control, not an
@@ -456,7 +464,8 @@ not Stage 2 readiness.
 
 Cursor export JSON vs prompt markdown is a CI /
 `sync_cursor_export_prompts.py --check` merge gate, **not** ledger CAS
-preflight. Wrap-only Dashboard export drift must not halt Stage 1 drain or
+preflight. `--check` compares export JSON to **expanded** markdown
+(includes resolved). Wrap-only Dashboard export drift must not halt Stage 1 drain or
 force Stage 2/3 into `ANALYSIS_ERROR` theater. Repair it with `--write` on a
 non-lineage product PR, then continue. A broken feed is a **heal** signal, not
 a license to idle while the backlog grows:

@@ -1,0 +1,80 @@
+"""Prompt include expansion for Cursor export sync."""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from sync_cursor_export_prompts import (  # noqa: E402
+    PromptIncludeError,
+    expand_prompt_includes,
+    expand_prompt_source,
+)
+
+PROMPTS = ROOT / "docs/cursor-automations/prompts"
+EXPORTS = ROOT / "docs/cursor-automations/exports"
+
+
+class TestPromptIncludeExpansion(unittest.TestCase):
+    def test_stage_prompts_expand_shared_frame(self) -> None:
+        include = "{{include:_shared-partner-frame.md}}"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+        ):
+            with self.subTest(name):
+                raw = (PROMPTS / name).read_text(encoding="utf-8")
+                expanded = expand_prompt_source(PROMPTS / name)
+                self.assertIn(include, raw)
+                self.assertNotIn("{{include:", expanded)
+                self.assertIn("security-first development partner", expanded)
+                self.assertIn("This stage (Stage", expanded)
+
+    def test_exports_store_expanded_prompt(self) -> None:
+        for export_name in (
+            "daily-pr-review.json",
+            "daily-pr-salvage.json",
+            "daily-pr-completion.json",
+        ):
+            with self.subTest(export_name):
+                data = json.loads(
+                    (EXPORTS / export_name).read_text(encoding="utf-8")
+                )
+                prompt = data["prompts"][0]["prompt"]
+                self.assertNotIn("{{include:", prompt)
+                self.assertIn("security-first development partner", prompt)
+
+    def test_rejects_path_traversal(self) -> None:
+        with self.assertRaises(PromptIncludeError):
+            expand_prompt_includes(
+                "{{include:_../secrets.md}}\n", PROMPTS
+            )
+
+    def test_rejects_nested_include(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            prompts_dir = Path(tmp)
+            nested = prompts_dir / "_nested.md"
+            nested.write_text("{{include:_other.md}}\n", encoding="utf-8")
+            with self.assertRaises(PromptIncludeError):
+                expand_prompt_includes(
+                    "{{include:_nested.md}}\n", prompts_dir
+                )
+
+    def test_rejects_malformed_include(self) -> None:
+        with self.assertRaises(PromptIncludeError):
+            expand_prompt_includes(
+                "see {{include:_shared-partner-frame.md}}", PROMPTS
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -3,12 +3,17 @@
 Run with --write to update the checked-in exports, or --check to fail if the
 runtime-copy source would drift. The script uses only the observed Cursor export
 schema and does not call Cursor or mutate any dashboard automation.
+
+Markdown sources may include a whole-line
+``{{include:_allowlisted.md}}`` directive. Exports store the expanded prompt
+so Dashboard paste is a complete body, never a raw include token.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +26,17 @@ MAPPINGS = {
     "daily-pr-completion.json": "daily-pr-completion.md",
 }
 
+# SECURITY: only underscore-prefixed files in the prompts directory.
+INCLUDE_NAME_RE = re.compile(r"^_[A-Za-z0-9][A-Za-z0-9_.-]{0,62}\.md$")
+INCLUDE_LINE_RE = re.compile(
+    r"^\{\{include:(_[A-Za-z0-9][A-Za-z0-9_.-]{0,62}\.md)\}\}\s*$",
+    re.MULTILINE,
+)
+
+
+class PromptIncludeError(ValueError):
+    """Raised when a prompt include is missing, nested, or not allowlisted."""
+
 
 @dataclass
 class PromptReconciliation:
@@ -29,6 +45,49 @@ class PromptReconciliation:
     export_path: Path
     prompt_name: str
     prompt: str
+
+
+def expand_prompt_includes(text: str, prompts_dir: Path) -> str:
+    """Replace allowlisted whole-line include directives with file contents.
+
+    SECURITY: reject ``..``, absolute paths, nested includes, and any name
+    outside the prompts directory allowlist. Fail closed on malformed tokens.
+    """
+    prompts_dir = prompts_dir.resolve()
+    if "{{include:" in text and INCLUDE_LINE_RE.search(text) is None:
+        raise PromptIncludeError("malformed include; must be a whole line")
+
+    def _replace(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if not INCLUDE_NAME_RE.fullmatch(name):
+            raise PromptIncludeError(f"include not allowlisted: {name}")
+        if ".." in name or "/" in name or "\\" in name:
+            raise PromptIncludeError(f"include path rejected: {name}")
+        target = (prompts_dir / name).resolve()
+        try:
+            target.relative_to(prompts_dir)
+        except ValueError as exc:
+            raise PromptIncludeError(
+                f"include escaped prompts dir: {name}"
+            ) from exc
+        if not target.is_file():
+            raise PromptIncludeError(f"include missing: {name}")
+        included = target.read_text(encoding="utf-8")
+        if "{{include:" in included:
+            raise PromptIncludeError(f"nested include forbidden: {name}")
+        return included.strip()
+
+    expanded = INCLUDE_LINE_RE.sub(_replace, text)
+    if "{{include:" in expanded:
+        raise PromptIncludeError("unexpanded include remains")
+    return expanded
+
+
+def expand_prompt_source(prompt_path: Path) -> str:
+    """Read a prompt markdown file and expand allowlisted includes."""
+    return expand_prompt_includes(
+        prompt_path.read_text(encoding="utf-8"), prompt_path.parent
+    )
 
 
 def sync(write: bool) -> list[str]:
@@ -56,13 +115,15 @@ def load_prompt_reconciliation(
 ) -> PromptReconciliation | str:
     try:
         export = json.loads(export_path.read_text(encoding="utf-8"))
-        prompt = prompt_path.read_text(encoding="utf-8").strip() + "\n"
-    except (OSError, json.JSONDecodeError) as exc:
+        prompt = expand_prompt_source(prompt_path).strip() + "\n"
+    except (OSError, json.JSONDecodeError, PromptIncludeError) as exc:
         return f"{export_path.name}: {exc}"
     entry = get_single_prompt_entry(export, export_path.name)
     if isinstance(entry, str):
         return entry
-    return PromptReconciliation(export, entry, export_path, prompt_path.name, prompt)
+    return PromptReconciliation(
+        export, entry, export_path, prompt_path.name, prompt
+    )
 
 
 def get_single_prompt_entry(
