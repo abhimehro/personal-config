@@ -1,12 +1,12 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 # Add scripts directory to path to import the module
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from unittest.mock import patch
 from get_prs_summarize import automation_hints, check_summary, fetch_details
 
 
@@ -172,7 +172,9 @@ class TestCheckSummary(unittest.TestCase):
 
 class TestFetchDetails(unittest.TestCase):
     @patch("subprocess.run")
-    def test_invalid_repo_rejected(self, mock_run):
+    def test_invalid_repo_rejected(
+        self: unittest.TestCase, mock_run: Mock
+    ) -> None:
         invalid_repos = [
             "-Rother/repo",
             "--config=/tmp/bad",
