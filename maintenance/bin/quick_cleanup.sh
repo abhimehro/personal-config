@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-export HOME="/Users/speedybee"
+# Prefer caller/test HOME; default only when unset (Linux CI must not mkdir /Users).
+export HOME="${HOME:-/Users/speedybee}"
 
 # Self-contained quick cleanup script
 # Note: Using -o pipefail but NOT -e to allow graceful permission handling
@@ -202,4 +203,96 @@ if [[ -d $TRUNK_CACHE_DIR ]]; then
 	else
 		log_info "Trunk cache: no old files to clean"
 	fi
+fi
+
+# =============================================================================
+# RECURRING BLOAT CLEANUP
+# =============================================================================
+# Paths that drift back to multi-GB within weeks and are missed by the generic
+# ~/Library/Caches sweep. All three are regenerable caches, not user data.
+# Diagnosed 2026-09-17 during a disk-pressure investigation.
+# -----------------------------------------------------------------------------
+
+# 1) Wallper lock-screen render cache
+# Wallper rewrites the entire cache continuously: every file was under 3 days
+# old while the directory still held 80 renders / 1.9GB. An age-based rule can
+# therefore never fire, so retention is by count instead -- keep the newest N
+# renders (the active wallpaper plus a few recent ones) and drop the rest.
+# Videos/ is the wallpaper library and is NEVER touched here.
+WALLPER_CACHE="$HOME/Library/Application Support/Wallper/LockScreenCache"
+if [[ -d $WALLPER_CACHE ]]; then
+	log_info "Cleaning Wallper lock-screen cache..."
+	WALLPER_BEFORE=$(du -sk "$WALLPER_CACHE" 2>/dev/null | cut -f1 || echo "0")
+
+	# Newest-first listing; everything past the retention count is stale.
+	WALLPER_KEEP="${WALLPER_CACHE_KEEP_COUNT:-5}"
+	WALLPER_TOTAL=$(find "$WALLPER_CACHE" -type f 2>/dev/null | wc -l | tr -d " ")
+	if [[ $WALLPER_TOTAL -gt $WALLPER_KEEP ]]; then
+		find "$WALLPER_CACHE" -type f -print0 2>/dev/null | xargs -0 stat -f "%m %N" 2>/dev/null | sort -rn | tail -n +"$((WALLPER_KEEP + 1))" | cut -d" " -f2- | while IFS= read -r stale; do
+			rm -f "$stale" 2>/dev/null || true
+		done
+		((CLEANED++))
+	fi
+
+	WALLPER_AFTER=$(du -sk "$WALLPER_CACHE" 2>/dev/null | cut -f1 || echo "0")
+	WALLPER_FREED=$((WALLPER_BEFORE - WALLPER_AFTER))
+	if [[ $WALLPER_FREED -gt 0 ]]; then
+		log_info "Wallper cache: freed ${WALLPER_FREED} KB (kept newest $WALLPER_KEEP of $WALLPER_TOTAL)"
+	else
+		log_info "Wallper cache: nothing to trim ($WALLPER_TOTAL files, keeping $WALLPER_KEEP)"
+	fi
+fi
+
+# 2) Raycast extension source maps
+# Every command ships a .js.map debug artifact that is never loaded at runtime.
+# 2,312 maps made up 2.56GB of a 3.5GB extensions directory. Deleting them does
+# not affect extension behaviour; Raycast does not checksum installed files.
+if [[ ${RAYCAST_STRIP_SOURCEMAPS:-1} -eq 1 ]]; then
+	RAYCAST_EXT="$HOME/.config/raycast/extensions"
+	if [[ -d $RAYCAST_EXT ]] && command -v fd >/dev/null 2>&1; then
+		MAP_BEFORE=$(du -sk "$RAYCAST_EXT" 2>/dev/null | cut -f1 || echo "0")
+		log_info "Stripping Raycast extension source maps..."
+
+		# Only remove maps for extensions untouched in 7 days, so an extension
+		# actively being developed or reinstalled is left alone.
+		# NOTE: fd defaults to the working directory -- the search path is required.
+		fd -e map -t f --changed-before "7d" . "$RAYCAST_EXT" -x rm 2>/dev/null || true
+
+		MAP_AFTER=$(du -sk "$RAYCAST_EXT" 2>/dev/null | cut -f1 || echo "0")
+		MAP_FREED=$((MAP_BEFORE - MAP_AFTER))
+		if [[ $MAP_FREED -gt 0 ]]; then
+			log_info "Raycast source maps: freed ${MAP_FREED} KB"
+		else
+			log_info "Raycast source maps: none older than 7 days"
+		fi
+	fi
+fi
+
+# 3) Orphaned agent/server data directories
+# Removal is gated on the owning app being absent. Devin - Next and Nimbus are
+# installed and their directories are deliberately left in place -- a shared
+# dataFolderName between forks makes name-based inference unsafe.
+if [[ -n ${ORPHAN_AGENT_APPS:-} ]]; then
+	ORPHAN_TARGETS=(
+		"$HOME/.windsurf-server-next:Windsurf"
+		"$HOME/.windsurf-next:Windsurf"
+	)
+	for entry in "${ORPHAN_TARGETS[@]}"; do
+		dir="${entry%%:*}"
+		app="${entry##*:}"
+
+		[[ -d $dir ]] || continue
+
+		# Skip unless the app is confirmed absent from /Applications and ~/Applications.
+		if [[ -d "/Applications/$app.app" ]] || [[ -d "$HOME/Applications/$app.app" ]]; then
+			log_info "Keeping $(basename "$dir"): $app is still installed"
+			continue
+		fi
+
+		ORPHAN_SIZE=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo "0")
+		log_info "Removing orphaned agent data: $(basename "$dir") (${ORPHAN_SIZE} KB)"
+		if rm -rf "$dir" 2>/dev/null; then
+			((CLEANED++))
+		fi
+	done
 fi
