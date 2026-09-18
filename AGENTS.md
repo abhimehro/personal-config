@@ -596,7 +596,7 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | What                       | Command                                          | Notes                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
+| Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
 | Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                         |
@@ -630,6 +630,14 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
+- **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus
+  CLI (Node came only from the live exec-daemon). `.cursor/Dockerfile` now pins
+  Node 22.18.0, and `scripts/cursor_cloud_workspace_install.sh` installs
+  `gitnexus@1.6.12` then indexes sibling repos with
+  `analyze --index-only --skip-fts`. Indexes stay local (`.gitnexus/` is
+  gitignored). Skip `repoprompt-ce` — 16GB Linux VMs OOM (~12GB heap). A new
+  **environment build** after merge is required before later agents inherit
+  this; warm-forks of the old snapshot will not rerun install.
 - **Trunk merge-queue failures vs stale `main`**: personal-config routine
   merges use `/trunk merge`, not GitHub squash. If Trunk fails after `main`
   moved, sync the PR with `main` first, then comment `/trunk merge` again on
