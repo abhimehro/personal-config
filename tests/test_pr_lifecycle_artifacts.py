@@ -14,8 +14,13 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+import pr_lifecycle_config as config_validator  # noqa: E402
 import pr_lifecycle_validation as validator  # noqa: E402
 from pr_lifecycle_ledger import validate_transition_table  # noqa: E402
+from sync_cursor_export_prompts import (  # noqa: E402
+    PromptIncludeError,
+    expand_prompt_source,
+)
 
 
 class TestPrLifecycleArtifacts(unittest.TestCase):
@@ -93,6 +98,19 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                 self.write_ledger(self.example()), include_exports=True
             )
             gate.assert_called_once()
+
+    def test_export_validation_reports_prompt_include_errors(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        with mock.patch.object(
+            config_validator,
+            "expand_prompt_includes",
+            side_effect=PromptIncludeError("include missing: _shared.md"),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"daily-pr-review\.json: include missing: _shared\.md",
+            ):
+                config_validator.validate_exports_and_prompts(config)
 
     def test_main_pointer_cannot_be_used_as_runtime_ledger(self):
         with self.assertRaisesRegex(ValueError, "schema root"):
@@ -327,8 +345,8 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
 
 class TestStage1ThroughputGate(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return (ROOT / "docs/cursor-automations/prompts" / name).read_text(
-            encoding="utf-8"
+        return expand_prompt_source(
+            ROOT / "docs/cursor-automations/prompts" / name
         )
 
     def test_review_prompt_sha_match_reselect(self):

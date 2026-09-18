@@ -14,6 +14,10 @@ from pr_lifecycle_support import (
     require_list,
     require_mapping,
 )
+from sync_cursor_export_prompts import (
+    PromptIncludeError,
+    expand_prompt_includes,
+)
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -273,7 +277,16 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
         path = directory / export_name
         data = json.loads(path.read_text(encoding="utf-8"))
         validate_export_shape(data, path, stages[stage]["schedule"], allow_approve)
-        source = (prompt_dir / prompt_name).read_text(encoding="utf-8").strip() + "\n"
+        try:
+            source = (
+                expand_prompt_includes(
+                    (prompt_dir / prompt_name).read_text(encoding="utf-8"),
+                    prompt_dir,
+                ).strip()
+                + "\n"
+            )
+        except PromptIncludeError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
         if data["prompts"][0].get("prompt") != source:
             raise ValueError(f"{path}: prompt differs from source")
         validate_prompt(source, prompt_name)
