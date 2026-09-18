@@ -176,15 +176,27 @@ def _stage_decisions(
     return stage2_decision, stage3_decision
 
 
-def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapshot:
-    """Compute health, fingerprint, and Stage 2/3 decisions for one ledger."""
+def _build_snapshot(
+    ledger: dict[str, Any],
+    *,
+    now: datetime,
+    session_queued_count: int = 0,
+) -> DecisionSnapshot:
+    """Compute health, fingerprint, and Stage 2/3 decisions for one ledger.
+
+    Leftover complete WIs are CLAIM stock, not today's Stage 1 queue.
+    Grade throughput from ``session_queued_count`` (inject-sample or an
+    explicit run-record). Default 0 so leftover stock cannot mint a PASS.
+    """
     health = summarize(ledger, now=now)
     claimable = claimable_work_items(ledger, now=now)
     fingerprint = grade_stage1_feed(
-        stage2_queued_count=health.stage2_work_item_count,
+        stage2_queued_count=session_queued_count,
         salvage_eligible_count=health.salvage_eligible_count,
     )
-    stage2_decision, stage3_decision = _stage_decisions(health, fingerprint, claimable)
+    stage2_decision, stage3_decision = _stage_decisions(
+        health, fingerprint, claimable
+    )
     return DecisionSnapshot(
         health=health,
         fingerprint=fingerprint,
@@ -212,9 +224,16 @@ def _verify_exit_code(snapshot: DecisionSnapshot) -> int:
     return 0
 
 
-def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
+def verify_ledger(
+    ledger: dict[str, Any],
+    *,
+    now: datetime,
+    session_queued_count: int = 0,
+) -> int:
     """Print cascade decisions and return the verify exit code."""
-    snapshot = _build_snapshot(ledger, now=now)
+    snapshot = _build_snapshot(
+        ledger, now=now, session_queued_count=session_queued_count
+    )
     _print_decision_reports(snapshot)
     return _verify_exit_code(snapshot)
 
@@ -333,7 +352,8 @@ def main() -> int:
     ledger = _maybe_inject(ledger, inject=args.inject_sample, now=now)
     if ledger is None:
         return 1
-    return verify_ledger(ledger, now=now)
+    queued = 1 if args.inject_sample else 0
+    return verify_ledger(ledger, now=now, session_queued_count=queued)
 
 
 if __name__ == "__main__":

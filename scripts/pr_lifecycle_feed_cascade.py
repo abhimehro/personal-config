@@ -102,15 +102,11 @@ def _stage2_feed_or_empty(
     )
 
 
-def stage2_cascade_decision(
-    health: PipelineHealth,
-    fingerprint: FeedFingerprint | None,
-    *,
+def _find_claimable_stage2_work(
     usable_work_item_count: int,
-    stage2_owned_materializable: int = 0,
-) -> CascadeDecision:
-    """Decide Stage 2 proceed, heal a broken feed, or empty-intake."""
-    # SECURITY: claim queued complete WIs before grading today's feed.
+    stage2_owned_materializable: int,
+) -> CascadeDecision | None:
+    """Return CLAIM when usable or materializable Stage 2 work exists."""
     if usable_work_item_count > 0:
         return _decision(
             "PROCEED",
@@ -123,6 +119,23 @@ def stage2_cascade_decision(
             "CLAIM",
             "Stage-2-owned ledger item can materialize a work item",
         )
+    return None
+
+
+def stage2_cascade_decision(
+    health: PipelineHealth,
+    fingerprint: FeedFingerprint | None,
+    *,
+    usable_work_item_count: int,
+    stage2_owned_materializable: int = 0,
+) -> CascadeDecision:
+    """Decide Stage 2 proceed, heal a broken feed, or empty-intake."""
+    # SECURITY: claim queued complete WIs before grading today's feed.
+    claimed = _find_claimable_stage2_work(
+        usable_work_item_count, stage2_owned_materializable
+    )
+    if claimed is not None:
+        return claimed
     if health.starvation:
         return _decision(
             "HEAL_THEN_PROCEED",

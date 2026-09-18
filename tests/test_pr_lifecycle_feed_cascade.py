@@ -296,6 +296,34 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
         self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
 
+    def test_verify_leftover_stock_is_not_todays_queue(self) -> None:
+        """Leftover WIs CLAIM without minting a Stage 1 PASS queue count."""
+        snapshot = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+        )
+        self.assertEqual(snapshot.fingerprint.stage2_queued_count, 0)
+        self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
+        self.assertEqual(snapshot.stage2_decision.label, "CLAIM")
+        self.assertGreater(snapshot.health.stage2_work_item_count, 0)
+
+    def test_verify_session_queue_counts_injected_sample(self) -> None:
+        """Newly added session WIs grade today's queue, leftover does not."""
+        leftover = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+            session_queued_count=0,
+        )
+        injected = verify_mod._build_snapshot(
+            _ledger([_item()], [_work_item()]),
+            now=NOW,
+            session_queued_count=1,
+        )
+        self.assertEqual(leftover.fingerprint.stage2_queued_count, 0)
+        self.assertEqual(injected.fingerprint.stage2_queued_count, 1)
+        self.assertEqual(leftover.stage2_decision.label, "CLAIM")
+        self.assertEqual(injected.stage2_decision.label, "CLAIM")
+
     def test_verify_cli_inject_sample(self) -> None:
         """The verifier CLI must accept an injected sample work item."""
         if not EXAMPLE.is_file():
@@ -342,6 +370,7 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         )
         self.assertIn('"action": "PROCEED"', injected.stdout)
         self.assertIn("s2-sample-feed-cascade", injected.stdout)
+        self.assertIn('"stage2_queued_count": 1', injected.stdout)
 
 
 if __name__ == "__main__":
