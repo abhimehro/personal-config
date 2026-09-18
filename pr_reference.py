@@ -57,7 +57,7 @@ def _split_repo(repo: str) -> tuple[str, str]:
         )
     owner, name = repo.split("/", 1)
     _validate_component(owner, "owner", _OWNER_NAME_RE)
-    _validate_component(name, "repo name", _REPO_NAME_RE)
+    _validate_component(name, "repo name", _OWNER_NAME_RE)
     return owner, name
 
 
@@ -144,10 +144,6 @@ def parse_pr_reference(
     if owner_name is None:
         return None
     number = _run_parser(_parse_pr_number, pr, loc=loc, strict=strict)
-    if number is None:
-        return None
-    return PRReference(owner_name[0], owner_name[1], number)
-   number = _run_parser(_parse_pr_number, pr, loc=loc, strict=strict)
     if number is None:
         return None
     return PRReference(owner_name[0], owner_name[1], number)

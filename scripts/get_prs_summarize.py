@@ -169,7 +169,6 @@ def _format_details(data: dict) -> str:
 
 
 def fetch_details(repo: str, num: int) -> str:
-    # SECURITY: reject option-like or malformed repository references before invoking gh.
     validated_repo = parse_repo_name(repo)
     if not validated_repo:
         return "_Could not load details_"
@@ -181,7 +180,8 @@ def fetch_details(repo: str, num: int) -> str:
                 "pr",
                 "view",
                 str(num),
-                f"--repo={validated_repo}",
+                "--repo",
+                validated_repo,
                 "--json",
                 "reviews,comments,latestReviews,reviewDecision",
             ],
