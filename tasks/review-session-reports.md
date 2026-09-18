@@ -1064,8 +1064,9 @@ Product mutations **21/40** (17 GitHub squash of MERGEABLE CLEAN Dependabot
 patch/minor + 4 personal-config `/trunk merge` comments). Feed fingerprint:
 `stage2_queued_count=0`, `salvage_eligible_count=0`,
 `throughput_grade=PASS`. Docs lineage: `pr-lifecycle-docs-20260918`. Full
-record: `tasks/pr-review-2026-09-18.md`. Lesson **0hf**. Lesson **0hi**. Do **not**
-`/trunk merge` this lineage in the opening run (**0gj**).
+record: `tasks/pr-review-2026-09-18.md`. Lesson **0hf**. Lesson **0hi**.
+Lesson **0hk**. Do **not** `/trunk merge` this lineage in the opening run
+(**0gj**).
 
 | Metric                      | Count |
 | --------------------------- | ----: |
@@ -1085,9 +1086,9 @@ Downstream: Stage 2/3 must **not** treat the opening FAIL fingerprint as a
 stop. Empty salvage intake with zero eligible remainder is the honest short
 stop for salvage WIs; leftover MERGEABLE is Stage 3 overflow-complete under
 APPROVED `pr-lifecycle-v1.4`. Product
-[#2224](https://github.com/abhimehro/personal-config/pull/2224) binds
-`HEAL_THEN_PROCEED` and the Copilot/`AGENTS.md`/`REVIEW.md` partner profile
-(apply, do not merely cite). Trunk GitHub App permission/ruleset still
-blocks the merge-queue test branch on #2224 after `/trunk merge`; do not
-squash personal-config. HITL paste of updated prompts remains. Lesson
-**0hi**.
+[#2224](https://github.com/abhimehro/personal-config/pull/2224) (`0cf4928e`)
+already landed `HEAL_THEN_PROCEED` on `main` — it is **not** Trunk-queued.
+Do **not** disable Stage 1 so Stage 2 can take over; Stage 2 is `0 17 * * *`
+UTC independently (**0hk**). Keep Stage 1/2/3 completion enabled; leave
+calibration disabled. HITL paste of expanded JSON prompt bodies remains.
+Lesson **0hi**. Lesson **0hk**.

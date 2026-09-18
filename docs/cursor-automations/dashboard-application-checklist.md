@@ -38,23 +38,30 @@ do not paste run records into Notion as git continuity. Grok Bot is not a
 Dashboard automation; human-facing digest setup is
 [`docs/grok-bot/README.md`](../grok-bot/README.md).
 
-## Live Dashboard IDs (verified 2026-09-16)
+## Live Dashboard IDs (verified 2026-09-18)
 
 Paste targets are **UUID automations**. Agent run URLs (`bc-*`, e.g.
 `https://cursor.com/agents/bc-…`) are session evidence only — never paste
 prompts into a `bc-*` URL and never treat a cloud-agent session id as an
 automation id.
 
-| Stage               | Automation ID                          | Enablement (2026-09-16) | Schedule                     |
-| ------------------- | -------------------------------------- | ----------------------- | ---------------------------- |
-| Stage 1             | `77c168e0-7f6b-42de-bad6-da4e4e640b79` | **disabled**            | `0 15 * * *` UTC             |
-| Stage 2             | `3e537981-04a6-456f-89a3-272d9d5fddd7` | **disabled**            | `0 17 * * *` UTC             |
-| Stage 3 calibration | `d9d2c058-9c42-11f1-ba66-0e7d0216e441` | **disabled**            | do not enable                |
-| Stage 3 completion  | `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` | **disabled**            | `0 19 * * *` UTC / 12:00 PDT |
+| Stage               | Automation ID                          | Enablement (live GetAutomation) | Schedule                     |
+| ------------------- | -------------------------------------- | ------------------------------- | ---------------------------- |
+| Stage 1             | `77c168e0-7f6b-42de-bad6-da4e4e640b79` | **enabled**                     | `0 15 * * *` UTC             |
+| Stage 2             | `3e537981-04a6-456f-89a3-272d9d5fddd7` | **enabled**                     | `0 17 * * *` UTC             |
+| Stage 3 calibration | `d9d2c058-9c42-11f1-ba66-0e7d0216e441` | **disabled**                    | do not enable                |
+| Stage 3 completion  | `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` | **enabled**                     | `0 19 * * *` UTC / 12:00 PDT |
 
 These four UUIDs are the only paste targets. Disable any orphan duplicate
 automation that is not in this table. Leave calibration permanently disabled
-while completion exists.
+while completion exists. Do **not** disable Stage 1 so Stage 2 can take over:
+Stage 2 is an independent `0 17 * * *` UTC cron (lesson **0hk**).
+
+A 2026-09-16 snapshot of this table listed all four as **disabled**. That
+column is historical and must not be applied. Live GetAutomation on
+2026-09-18 is Stage 1/2/3 completion **enabled**, calibration **disabled**.
+Follow this table and the heal-forward section, not the dated disabled
+column.
 
 ### Heal-forward enablement rule
 
@@ -74,8 +81,9 @@ After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
    enough. A growing backlog is a failed run, not a reason to stop. Doing
    no work is a failed run. Do not claim problems resolved and then leave.
 
-Do not disable Stage 2/3 while Stage 1 still queues 0 WIs; that is the
-condition that requires heal-forward, not a pause.
+Do not disable Stage 1 so Stage 2 can “take over”; Stage 2 is an independent
+`0 17 * * *` UTC cron. Do not disable Stage 2/3 while Stage 1 still queues
+0 WIs; that is the condition that requires heal-forward, not a pause.
 
 **HITL paste after this cascade PR lands:**
 

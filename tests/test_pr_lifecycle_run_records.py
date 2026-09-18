@@ -133,6 +133,55 @@ class TestStage1RunRecord20260918(unittest.TestCase):
         )
         self.assertIn("**not** reset to `REPORT_ONLY`", normalized_record)
 
+    def test_downstream_unblock_does_not_claim_2224_is_still_queued(self) -> None:
+        downstream = _section(self.run_record, "## Downstream unblock")
+        self.assertIn("0cf4928e", downstream)
+        self.assertIn("merged, not queued", downstream)
+        self.assertNotIn("Queued on Trunk:", downstream)
+        self.assertIn("Do **not** disable Stage 1", downstream)
+        self.assertIn("0 17 * * *", downstream)
+        self.assertIn("Lesson **0hk**", self.session_report)
+        self.assertIn("already landed", self.session_report)
+        self.assertIn("**not** Trunk-queued", self.session_report)
+
+    def test_lesson_0hk_keeps_stage1_enabled(self) -> None:
+        lessons = LESSONS.read_text(encoding="utf-8")
+        lesson = _section(lessons, "## Lesson 0hk:")
+        self.assertIn("Do not disable Stage 1", lesson)
+        self.assertIn("0 17 * * *", lesson)
+        self.assertIn("GetAutomation", lesson)
+        self.assertIn("verified 2026-09-16", lesson)
+        self.assertIn("#2224/#2225/#2226", lesson)
+        self.assertIn("not a fourth", lesson)
+
+    def test_live_dashboard_enablement_is_not_the_2026_09_16_disabled_snapshot(
+        self,
+    ) -> None:
+        checklist = ROOT / "docs/cursor-automations/dashboard-application-checklist.md"
+        live = _section(checklist.read_text(encoding="utf-8"), "## Live Dashboard IDs")
+        self.assertIn("verified 2026-09-18", live)
+        self.assertNotIn("Enablement (2026-09-16)", live)
+        self.assertIn("Do **not** disable Stage 1", live)
+        self.assertIn("historical and must not be applied", live)
+        stage1_line = next(
+            line
+            for line in live.splitlines()
+            if "`77c168e0-7f6b-42de-bad6-da4e4e640b79`" in line
+        )
+        self.assertIn("**enabled**", stage1_line)
+        completion_line = next(
+            line
+            for line in live.splitlines()
+            if "`66a8e7a8-9c42-11f1-ba66-0e7d0216e441`" in line
+        )
+        self.assertIn("**enabled**", completion_line)
+        cal_line = next(
+            line
+            for line in live.splitlines()
+            if "`d9d2c058-9c42-11f1-ba66-0e7d0216e441`" in line
+        )
+        self.assertIn("**disabled**", cal_line)
+
 
 if __name__ == "__main__":
     unittest.main()

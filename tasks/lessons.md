@@ -3049,3 +3049,32 @@ last diagnosis, not the first.
 **Detection cost:** Low — `baseRefOid` vs `git rev-parse origin/main`; GitHub
 "branch is out of date"; trunk-io blocked comment while the base SHA lags
 `main`.
+
+## Lesson 0hk: Do not disable Stage 1 to hand off to Stage 2 (2026-09-18)
+
+**Pattern:** After heal-forward landed, a maintainer asked whether to disable
+Stage 1 because a delayed Stage 1 session was still running, so Stage 2 could
+“take over.” Independently,
+`docs/cursor-automations/dashboard-application-checklist.md` still titled its
+UUID table “verified 2026-09-16” with all four automations **disabled**, while
+live GetAutomation and the heal-forward section say keep Stage 1/2/3 completion
+enabled. A paste helper (including Grok Bot) that applies the 2026-09-16 column
+would turn the pipeline off. The same-day Stage 1 run record also still said
+[#2224](https://github.com/abhimehro/personal-config/pull/2224) was Trunk-queued
+after it had already merged.
+
+**Rule:** (1) Stage 2 is its own `0 17 * * *` UTC cron. Disabling Stage 1 does
+not stop an in-flight Stage 1 run and would skip the next `0 15 * * *` UTC
+fire — the first one that should use the pasted prompt. (2) Keep Stage 1,
+Stage 2, and Stage 3 completion **enabled**; leave calibration **disabled**.
+Heal FAIL feeds with `HEAL_THEN_PROCEED`; do not pause crons. (3) Live
+GetAutomation enablement is canonical. Ignore a checklist enablement column
+that contradicts live toggles. (4) Grok Bot may paste expanded JSON into the
+three existing completion UUIDs as a signed-in helper. It is not a fourth
+lifecycle stage: no merge/approve/close, no ledger CAS, no Cloud Agent launch,
+no fifth UUID, no `tasks/*-session-reports.md`. (5) Product PRs #2224/#2225/#2226
+are on `main`; do not tell Stage 2 that heal-forward is still Trunk-queued.
+
+**Detection cost:** Low — `cursor-cloud get-automation` on the four UUIDs;
+compare to the checklist table date; Stage 2 schedule `0 17 * * *`; #2224 merge
+commit `0cf4928e` on `origin/main`.
