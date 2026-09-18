@@ -299,7 +299,7 @@ gitnexus_wrap_with_image_node() {
 		# gitnexus version '' does not match 1.6.12). Replace the link first.
 		log "replacing GitNexus wrapper at ${dest} with image-Node wrapper"
 		rm -f "${dest}" || return 1
-		printf '%s\n' '#!/usr/bin/env bash' "exec '${node_bin}' '${js}' \"\$@\"" >"${dest}" || return 1
+		printf '#!/usr/bin/env bash\nexec %q %q "$@"\n' "${node_bin}" "${js}" >"${dest}" || return 1
 		chmod +x "${dest}" || return 1
 		# Fail closed if writing somehow still followed a symlink into the CLI.
 		if head -n1 "${js}" | grep -Eq '^#!/usr/bin/env bash'; then
