@@ -45,27 +45,23 @@ class TestStage1RunRecord20260918(unittest.TestCase):
         lessons = LESSONS.read_text(encoding="utf-8")
         cls.lesson = _section(lessons, "## Lesson 0hf:")
 
-    def test_analysis_error_is_fail_closed_without_mutations(self) -> None:
+    def test_opening_analysis_error_then_drain_metrics(self) -> None:
         metrics = _two_column_table(_section(self.run_record, "## Metrics"))
+        self.assertEqual(metrics["Inventoried (triage)"], "147")
+        self.assertEqual(metrics["Product mutations"], "21")
+        self.assertEqual(metrics["Merged"], "17")
+        self.assertEqual(metrics["Closed"], "0")
+        self.assertEqual(metrics["Stage 2 queued (this run)"], "0")
+        self.assertEqual(metrics["Stage 3 handoffs (this run)"], "0")
+        self.assertEqual(metrics["GitHub PR mutations"], "21")
+        self.assertEqual(metrics["Ledger file CAS writes"], "0")
         self.assertEqual(metrics["Analysis errors"], "1")
-        for metric in (
-            "Inventoried (triage)",
-            "Product mutations",
-            "Merged",
-            "Closed",
-            "Stage 2 queued (this run)",
-            "Stage 3 handoffs (this run)",
-            "GitHub PR mutations",
-            "Ledger file CAS writes",
-        ):
-            with self.subTest(metric=metric):
-                self.assertEqual(metrics[metric], "0")
 
         self.assertIn("Guardrail outcome for this run: `ANALYSIS_ERROR`", self.run_record)
         self.assertIn("69 / unchanged", self.run_record)
         self.assertIn("This run **did not** `commit`", self.run_record)
 
-    def test_feed_fingerprint_matches_the_failed_run(self) -> None:
+    def test_feed_fingerprint_matches_the_utc_day_run(self) -> None:
         metrics_section = _section(self.run_record, "## Metrics")
         fingerprint = _two_column_table(
             _section(metrics_section, "### Feed fingerprint (mandatory)")
@@ -75,16 +71,17 @@ class TestStage1RunRecord20260918(unittest.TestCase):
             {
                 "stage2_queued_count": "0",
                 "salvage_eligible_count": "0",
-                "throughput_grade": "FAIL",
+                "throughput_grade": "PASS",
             },
         )
-        self.assertIn("Throughput self-grade is **FAIL**", metrics_section)
+        self.assertIn("Throughput self-grade is **PASS**", metrics_section)
         self.assertIn("starvation=false", metrics_section)
 
     def test_session_summary_agrees_with_the_full_record(self) -> None:
         summary_metrics = _two_column_table(self.session_report)
         full_metrics = _two_column_table(_section(self.run_record, "## Metrics"))
         for metric in (
+            "Inventoried (triage)",
             "Product mutations",
             "Merged",
             "Closed",
@@ -98,8 +95,9 @@ class TestStage1RunRecord20260918(unittest.TestCase):
                 self.assertEqual(summary_metrics[metric], full_metrics[metric])
 
         self.assertIn("`tasks/pr-review-2026-09-18.md`", self.session_report)
-        self.assertIn("`throughput_grade=FAIL`", self.session_report)
+        self.assertIn("`throughput_grade=PASS`", self.session_report)
         self.assertIn("Lesson **0hf**", self.session_report)
+        self.assertIn("Lesson **0hi**", self.session_report)
 
     def test_preflight_examples_always_include_the_required_output(self) -> None:
         for name, document in (

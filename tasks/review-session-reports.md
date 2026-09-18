@@ -1051,42 +1051,43 @@ Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row only).
 ## Stage 1 — 2026-09-18
 
 Delayed cron invocation (scheduled `2026-09-17T15:00Z`, started
-`2026-09-18T02:21:32Z`; lineage uses the scheduled fire date).
-
-Combined preflight **FAIL** `PR_LIFECYCLE_CAS_ERROR`:
-`docs/cursor-automations/exports/daily-pr-review.json: prompt differs from source`
-(markdown wrap / table padding vs checked-in JSON). Isolated runtime
-ledger schema **PASS** at revision **69**, commit
+`2026-09-18T02:21:32Z`; lineage uses the scheduled fire date). Two-phase
+UTC-day: opening combined preflight **FAIL** (`prompt differs from source`)
+held intake (`ANALYSIS_ERROR`, 0 mutations); then
+[#2223](https://github.com/abhimehro/personal-config/pull/2223) Trunk-merged
+(`d3853989`) and CAS became ledger-only. Isolated runtime ledger schema
+**PASS** at revision **69**, commit
 `5829d853eb7303d87eb5323c13f27211e30fe530`, blob
-`33a3a0a177db14d74906da6738e90a7f85a6f713`. Guardrail **ANALYSIS_ERROR**.
-Product mutations **0/40**; no inventory, merge, close, Stage 2 WI, or ledger
-CAS. Calibration **APPROVED** 7/7. Observational open PRs **147**. Feed
-fingerprint: `stage2_queued_count=0`, `salvage_eligible_count=0`,
-`throughput_grade=FAIL`. Docs lineage: `pr-lifecycle-docs-20260918`. Full
-record: `tasks/pr-review-2026-09-18.md`. Lesson **0hf**. Last Stage 1 product
-run remains 2026-09-09 on still-open draft
-[#2185](https://github.com/abhimehro/personal-config/pull/2185).
+`33a3a0a177db14d74906da6738e90a7f85a6f713` — **unchanged** (no WI CAS).
+Calibration **APPROVED** 7/7, **not** reset. Observational open PRs **147**.
+Product mutations **21/40** (17 GitHub squash of MERGEABLE CLEAN Dependabot
+patch/minor + 4 personal-config `/trunk merge` comments). Feed fingerprint:
+`stage2_queued_count=0`, `salvage_eligible_count=0`,
+`throughput_grade=PASS`. Docs lineage: `pr-lifecycle-docs-20260918`. Full
+record: `tasks/pr-review-2026-09-18.md`. Lesson **0hf**. Lesson **0hi**. Do **not**
+`/trunk merge` this lineage in the opening run (**0gj**).
 
 | Metric                      | Count |
 | --------------------------- | ----: |
-| Inventoried (triage)        |     0 |
-| Product mutations           |     0 |
-| Merged                      |     0 |
+| Inventoried (triage)        |   147 |
+| Product mutations           |    21 |
+| Merged                      |    17 |
 | Closed                      |     0 |
 | Stage 2 queued (this run)   |     0 |
 | Stage 3 handoffs (this run) |     0 |
-| GitHub PR mutations         |     0 |
+| GitHub PR mutations         |    21 |
 | Ledger file CAS writes      |     0 |
 | Analysis errors             |     1 |
 
-Per-item table: see `tasks/pr-review-2026-09-18.md` (run-level ledger row only).
+Per-item table: see `tasks/pr-review-2026-09-18.md`.
 
-Downstream (same UTC day): product unblock is
-[#2223](https://github.com/abhimehro/personal-config/pull/2223)
-(`fix/pr-lifecycle-cas-export-decouple`; CAS ledger-only; export/prompt is CI).
-Stage 2 must `FEED_FAIL` and Stage 3 must `UPSTREAM_PAUSE` on this
-`throughput_grade=FAIL` fingerprint — do not repeat combined-preflight death
-and do not invent salvage/completion work. Cursor Stage 2/3 crons cannot be
-disabled from this checkout; the fingerprint is the stop signal. Do not
-`/trunk merge` this docs lineage in the opening run (**0gj**). Lesson
-**0hg**.
+Downstream: Stage 2/3 must **not** treat the opening FAIL fingerprint as a
+stop. Empty salvage intake with zero eligible remainder is the honest short
+stop for salvage WIs; leftover MERGEABLE is Stage 3 overflow-complete under
+APPROVED `pr-lifecycle-v1.4`. Product
+[#2224](https://github.com/abhimehro/personal-config/pull/2224) binds
+`HEAL_THEN_PROCEED` and the Copilot/`AGENTS.md`/`REVIEW.md` partner profile
+(apply, do not merely cite). Trunk GitHub App permission/ruleset still
+blocks the merge-queue test branch on #2224 after `/trunk merge`; do not
+squash personal-config. HITL paste of updated prompts remains. Lesson
+**0hi**.
