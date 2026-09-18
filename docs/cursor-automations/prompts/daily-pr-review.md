@@ -80,7 +80,14 @@ matching SHA anchors; required checks read from the configured source; clean
 merge state; no unresolved discussion, alert, static-analysis hold, overlap, or
 canonical conflict; documented routine class; and the registered merge method is
 known. For `abhimehro/personal-config`, use the Trunk queue method, not a raw
-GitHub squash assumption. You may also close a bot-authored non-security
+GitHub squash assumption. A `trunk-failed` label or "GitHub blocked Trunk from
+preparing the test branch" after `main` moved is **stale-vs-main**, not a
+GitHub App or ruleset misconfiguration. Update the PR from `main`
+(`update_pull_request_branch`), wait until it is up to date, then comment
+`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
+unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
+only if Trunk still cannot enqueue after the PR is already up to date with
+`main`. You may also close a bot-authored non-security
 duplicate, superseded, zero-diff, or stale PR when deterministic evidence and
 the required cooldown are complete. Do not wait for Stage 3 to execute those
 closes.

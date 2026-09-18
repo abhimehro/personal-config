@@ -138,9 +138,28 @@ BOT work when every existing routine predicate passes (readable required checks,
 MERGEABLE, no sticky sensitive paths, no unresolved hold). It submits
 `/trunk merge` **after** product merges and closes; docs-lineage Trunk is
 bookkeeping and does not consume the product-mutation cap. Stage 2 and Stage 3
-never merge this PR. During `REPORT_ONLY`, Stage 3 still only appends. If Trunk
-cannot prepare a test branch (GitHub App or ruleset), record `HOLD_PLATFORM` and
-do not fall back to raw GitHub squash.
+never merge this PR. During `REPORT_ONLY`, Stage 3 still only appends. Follow
+[Trunk queue: stale vs main](#trunk-queue-stale-vs-main) before treating a
+Trunk failure as App/ruleset HITL. Do not fall back to raw GitHub squash.
+
+### Trunk queue: stale vs main
+
+A `trunk-failed` label or a trunk-io comment such as "GitHub blocked Trunk from
+preparing the test branch" after `main` has moved is **stale-vs-main**, not a
+GitHub App or ruleset misconfiguration. Recognize it when the PR base SHA is
+behind `origin/main` (or GitHub reports the branch is out of date). Then:
+
+1. Pull the latest `main` into the PR branch (`update_pull_request_branch`, or
+   merge `origin/main` into the PR head).
+2. Wait until GitHub shows the PR up to date (head SHA changed; base SHA
+   matches `origin/main`).
+3. Reinitiate Trunk by commenting `/trunk merge` on the **new** head SHA.
+
+Do not re-comment `/trunk merge` on an unchanged head SHA. After the branch
+update, the head SHA changes, so a new `/trunk merge` is the intended next
+step, not a same-SHA retry. Record `HOLD_PLATFORM` App/ruleset HITL only if
+Trunk still cannot enqueue **after** the PR is already up to date with `main`.
+Never GitHub-squash `personal-config` as a bypass.
 
 ### Continuity read
 

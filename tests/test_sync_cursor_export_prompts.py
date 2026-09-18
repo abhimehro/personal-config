@@ -67,6 +67,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 self.assertEqual(raw.count(cas), 1)
                 self.assertNotIn("{{include:", expanded)
                 self.assertIn("security-first development partner", expanded)
+                self.assertIn("stale-vs-main", expanded)
                 self.assertIn("This stage (Stage", expanded)
                 self.assertIn("pr_lifecycle_ledger_cas.py preflight", expanded)
 
@@ -83,6 +84,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
                 self.assertIn("security-first development partner", prompt)
+                self.assertIn("stale-vs-main", prompt)
                 self.assertIn("pr_lifecycle_ledger_cas.py preflight", prompt)
 
     def test_rejects_path_traversal(self) -> None:
