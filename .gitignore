@@ -323,6 +323,7 @@ GH_TOKEN.env
 patch_*.sh
 resolve_*.sh
 venv/
+.venv/
 
 # =============================================================================
 # TERRAFORM - Provider binaries and state

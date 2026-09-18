@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained Node.js maintenance script
 set -euo pipefail
 

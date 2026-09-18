@@ -20,20 +20,18 @@ if str(SCRIPT_DIR) not in sys.path:
 from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
 from pr_lifecycle_github_git import (
     contained_output_path,
-    decode_github_blob,
-    is_stale_tip_error,
-    object_sha,
-    ref_path,
-    tree_sha,
-    update_ref_path,
 )
 from pr_lifecycle_github_git import create_blob as git_create_blob
 from pr_lifecycle_github_git import create_commit as git_create_commit
 from pr_lifecycle_github_git import create_tree as git_create_tree
+from pr_lifecycle_github_git import decode_github_blob
 from pr_lifecycle_github_git import ensure_data_ref as git_ensure_data_ref
 from pr_lifecycle_github_git import fetch_runtime_ledger as git_fetch_runtime_ledger
+from pr_lifecycle_github_git import is_stale_tip_error, object_sha
 from pr_lifecycle_github_git import read_commit as git_read_commit
+from pr_lifecycle_github_git import ref_path, tree_sha
 from pr_lifecycle_github_git import update_ref as git_update_ref
+from pr_lifecycle_github_git import update_ref_path
 from pr_lifecycle_github_http import (
     _HTTPS_OPENER,
     GITHUB_API_ORIGIN,
@@ -170,7 +168,7 @@ def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str,
 
 
 def run_preflight(out: Path) -> dict[str, Any]:
-    """Fetch, sanitize, and validate the runtime ledger without writing GitHub."""
+    """Fetch, sanitize, and schema-validate the runtime ledger (no export gate)."""
     runtime = pointer_runtime()
     fetch = fetch_runtime_ledger(runtime, out)
     sanitized = sanitize_ledger_file(Path(fetch["path"]), bump_revision=False)
@@ -192,6 +190,7 @@ def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[st
     """Sanitize then CAS-write a local ledger file onto the data branch."""
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
+    # NOTE: export/prompt equality is CI `--check`, not this CAS write.
     # Always line-strip before validate+upload so projection keys cannot re-persist.
     sanitize_ledger_file(contained, bump_revision=bump_revision)
     stripped = validate(contained)
