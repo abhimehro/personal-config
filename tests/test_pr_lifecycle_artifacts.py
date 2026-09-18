@@ -415,6 +415,14 @@ class TestStage1ThroughputGate(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("stale-vs-main", completion_spec)
+        copilot = (ROOT / ".github/copilot-instructions.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("stale-vs-main", copilot)
+        cursor_rules = (ROOT / ".cursorrules").read_text(encoding="utf-8")
+        self.assertIn("stale-vs-main", cursor_rules)
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertIn("stale-vs-main", contributing)
 
     def test_policy_revision_stays_v14(self):
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
