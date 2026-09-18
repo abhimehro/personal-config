@@ -94,6 +94,7 @@ to Stage 3.
 | Competing source overlap among BOT non-sensitive PRs                                                      | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                                                 |
 | Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved | `HOLD_CONTRACT` or `REVIEW_SECURITY`                    | Stage 3, then human packet if still irreducible                         |
 | Live checks/evidence cannot be obtained                                                                   | `HOLD_EVIDENCE`, one deterministic retry                | Stage 3 after retry failure                                             |
+| personal-config `trunk-failed` while the PR is behind `main` (or "blocked Trunk from preparing the test branch" after `main` moved) | Bounce to Stage 1 stale-vs-main retry                   | Stage 1. Not a salvage of Trunk App/ruleset config. Update from `main`, then `/trunk merge` on the new SHA. |
 
 ## Draft recovery procedure
 

@@ -29,6 +29,10 @@ development partner in `.github/copilot-instructions.md` and
 - `AGENTS.md`: personal-config merges via Trunk queue; never merge
   drafts unattended; never self-approve under maintainer login;
   RepoPrompt CE Swift salvage is `HOLD_PLATFORM` on Linux;
-  security/auth/secrets PRs stay escalated.
+  security/auth/secrets PRs stay escalated. A behind-`main`
+  `trunk-failed` / "blocked Trunk from preparing the test branch"
+  result is stale-vs-main: update from `main`, then `/trunk merge` on
+  the new SHA. Do not treat it as App/ruleset config. Do not
+  squash-bypass. Do not re-comment `/trunk merge` on an unchanged SHA.
 - Prove work with tests before claiming complete. A growing backlog is
   failed work this partner owns.

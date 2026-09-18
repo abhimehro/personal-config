@@ -599,8 +599,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`)                                                           |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`) for the full suite                                                                               |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                         |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`) for the full suite                                                             |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
@@ -615,9 +615,9 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3` and
-  `jsonschema==4.26.0`, which are needed by the full test suite (e.g.,
-  `tests/test_repository_automation_common.py` exercises
+- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`,
+  `jsonschema==4.26.0`, and `requests==2.34.2`, which are needed by the full
+  test suite (e.g., `tests/test_repository_automation_common.py` exercises
   `.github/scripts/repository_automation_common.py`). The Devin environment
   blueprint installs this dependency automatically; otherwise run
   `python3 -m pip install -r requirements.txt`.
@@ -630,6 +630,10 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
+- **Trunk merge-queue failures vs stale `main`**: personal-config routine
+  merges use `/trunk merge`, not GitHub squash. If Trunk fails after `main`
+  moved, sync the PR with `main` first, then comment `/trunk merge` again on
+  the new SHA. That is not a Trunk App/ruleset configuration issue.
 
 ### Cursor Cloud pre-commit secret scan
 
@@ -683,7 +687,9 @@ symlink destinations are never followed. To target one hash directory:
   `.github/copilot-instructions.md`, this file, `REVIEW.md`, and
   `.cursorrules`). They must **apply** those files, not merely cite them:
   fail secure, least privilege, root causes only, never weaken controls,
-  `REVIEW.md` severity calibration, Trunk-queue personal-config merges.
+  `REVIEW.md` severity calibration, Trunk-queue personal-config merges
+  (stale-vs-main first: update from `main`, then `/trunk merge` on the new
+  SHA; do not treat a behind-main Trunk failure as App/ruleset config).
   They own repo health as much as the maintainer. A growing PR backlog is
   failed work, not a stop signal. Doing no work is a failed run. Do not
   claim problems resolved and then stop. Heal leftover prior-stage work
@@ -726,6 +732,13 @@ symlink destinations are never followed. To target one hash directory:
   `HOLD_PLATFORM` does **not** block Stage 1 from squash-merging a BOT PR whose
   required GitHub checks are already green.
 - `personal-config` routine merges use the Trunk queue, not a raw GitHub squash.
+  A `trunk-failed` label or "GitHub blocked Trunk from preparing the test
+  branch" after `main` moved is **stale-vs-main**, not a GitHub App or ruleset
+  misconfiguration. Update the PR from `main` (`update_pull_request_branch`),
+  wait until it is up to date, then comment `/trunk merge` on the **new** head
+  SHA. Do not re-comment `/trunk merge` on an unchanged SHA. Do not
+  squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL only if Trunk still
+  cannot enqueue **after** the PR is up to date with `main` (lesson 0hj).
 
 ## Agent shell (POSIX for coding agents)
 
