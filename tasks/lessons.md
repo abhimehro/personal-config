@@ -3100,3 +3100,24 @@ do not queue N salvage WIs for non-keepers.
 
 **Detection cost:** Low — `gh pr view` on the named twin; `lifecycle_state:
 STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
+
+## Lesson 0hm: Do not replay a weaker source processor over a stronger main (2026-09-18)
+
+**Pattern:** Work item `s2-20260918-seriescorre-409` allowed
+`scripts/processor.py` and `scripts/tests/test_processor.py`. Live `main`
+already used `copy(deep=False)` plus per-column copies / `new_col.loc` /
+`to_numpy(copy=True)`. The CONFLICTING #409 processor was the older unique
+remainder, not a strict upgrade. Wholesale-copying it would have regressed
+isolation. The unique remainder that still failed-closed on current main was
+the three shallow-copy tests.
+
+**Rule:** (1) Diff allowed paths against **current main**, not only against the
+source head. (2) If main already contains a stronger contract, salvage the
+unique tests (or the still-missing hunks) only. (3) Do not wholesale-checkout
+the source processor, journal, workflow, or lockfile. (4) Adapt tests to
+current `main`; do not copy an obsolete test that asserts the weaker API.
+(5) Record the live replacement head after review-bot follow-ons (**0gx**).
+
+**Detection cost:** Low — `git diff origin/main...source -- allowed_paths`;
+search current main for `copy(deep=False)` / column-copy; pytest the named
+file.
