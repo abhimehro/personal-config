@@ -1047,3 +1047,33 @@ Lesson **0ha**.
 | Analysis errors             |     1 |
 
 Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row only).
+
+## Stage 1 — 2026-09-18 (cron `0 15 * * *`, fired 02:21Z)
+
+Combined preflight **FAIL** `PR_LIFECYCLE_CAS_ERROR`:
+`docs/cursor-automations/exports/daily-pr-review.json: prompt differs from
+source` (markdown wrap / table padding vs checked-in JSON). Isolated runtime
+ledger schema **PASS** at revision **69**, commit
+`5829d853eb7303d87eb5323c13f27211e30fe530`, blob
+`33a3a0a177db14d74906da6738e90a7f85a6f713`. Guardrail **ANALYSIS_ERROR**.
+Product mutations **0/40**; no inventory, merge, close, Stage 2 WI, or ledger
+CAS. Calibration **APPROVED** 7/7. Observational open PRs **147**. Feed
+fingerprint: `stage2_queued_count=0`, `salvage_eligible_count=0`,
+`throughput_grade=FAIL`. Docs lineage: `pr-lifecycle-docs-20260918`. Full
+record: `tasks/pr-review-2026-09-18.md`. Lesson **0hf**. Last Stage 1 product
+run remains 2026-09-09 on still-open draft
+[#2185](https://github.com/abhimehro/personal-config/pull/2185).
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (triage)        |     0 |
+| Product mutations           |     0 |
+| Merged                      |     0 |
+| Closed                      |     0 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |     0 |
+| GitHub PR mutations         |     0 |
+| Ledger file CAS writes      |     0 |
+| Analysis errors             |     1 |
+
+Per-item table: see `tasks/pr-review-2026-09-18.md` (run-level ledger row only).

@@ -2919,3 +2919,30 @@ never `--break-system-packages` on Homebrew Python — use `.venv`.
 **Detection cost:** Low — health CLI exit 2 / `starvation=true`, or Stage 1
 record with `Stage 2 queued: 0` while eligible > 0; missing `/tmp` ledger is a
 fetch omission, not a monitor bug.
+
+## Lesson 0hf: Export/prompt wrap drift fails Stage 1 preflight (2026-09-18)
+
+**Pattern:** `python3 scripts/pr_lifecycle_ledger_cas.py preflight` always
+calls `validate_exports_and_prompts()`. That check is **byte-exact** between
+`docs/cursor-automations/exports/*.json` `prompts[0].prompt` and
+`docs/cursor-automations/prompts/*.md`. After `main` `a19a9d93` reformatted
+Stage 1/2/3 prompt markdown (feed-fingerprint table padding and line wrap),
+the JSON exports were left stale. Isolated ledger schema on
+`automation/pr-lifecycle-ledger` rev **69** still passed; combined preflight
+returned `PR_LIFECYCLE_CAS_ERROR` /
+`daily-pr-review.json: prompt differs from source`. Scheduled Stage 1
+therefore could not inventory, merge, close, or CAS.
+
+**Rule:** (1) After any edit to `docs/cursor-automations/prompts/*.md`, run
+`python3 scripts/sync_cursor_export_prompts.py --write` (or `--check` in CI)
+on a **reviewed non-lineage** change. (2) Do not treat isolated
+`validate_schema` / `validate_runtime_records` PASS as intake permission.
+(3) Stage 1 cron must **not** silently sync exports onto
+`pr-lifecycle-docs-YYYYMMDD` (exclusive files). (4) Wrap-only drift is not a
+`policy_revision` bump and must not reset `calibration` to `REPORT_ONLY`.
+(5) Unblock the next Stage 1 run by landing the export sync (or reverting the
+wrap-only markdown) before expecting drain.
+
+**Detection cost:** Low —
+`python3 scripts/sync_cursor_export_prompts.py --check` or the preflight
+`prompt differs from source` path.
