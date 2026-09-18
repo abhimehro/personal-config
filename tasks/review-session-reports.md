@@ -1048,7 +1048,7 @@ Lesson **0ha**.
 
 Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row only).
 
-## Stage 1 — 2026-09-18 (delayed cron invocation; scheduled `2026-09-17T15:00Z`,
+## Stage 1 — 2026-09-18 (delayed cron invocation; scheduled `2026-09-17T15:00Z`
 
 started `2026-09-18T02:21:32Z`; lineage uses the scheduled fire date)
 
