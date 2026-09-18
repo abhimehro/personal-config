@@ -110,10 +110,16 @@ requires deterministic no-op, duplicate, supersession, or stale evidence plus
 the required cooldown and canonical relationship where applicable. For
 `abhimehro/personal-config`, the merge method is `TRUNK_QUEUE`: approve and then
 submit via the documented Trunk path, not raw GitHub squash. Recheck every
-predicate after approval and before queue submission. If approval succeeds and
-queue submission fails, record the failure and stop. If merge succeeds but
-branch deletion fails, record a non-blocking follow-up and stop. If
-required-check configuration cannot be read, hold rather than act.
+predicate after approval and before queue submission. If queue submission
+fails because the PR is behind `main` (`trunk-failed`, or "GitHub blocked
+Trunk from preparing the test branch"), that is stale-vs-main, not App/ruleset
+config: update the PR from `main`, wait until it is up to date, then comment
+`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
+unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
+only if Trunk still cannot enqueue after the PR is already up to date with
+`main`. If merge succeeds but branch deletion fails, record a non-blocking
+follow-up and stop. If required-check configuration cannot be read, hold
+rather than act.
 
 Write the mandatory per-item completion record before each action and update it
 with the observed outcome afterwards. Never force-push, change rulesets or

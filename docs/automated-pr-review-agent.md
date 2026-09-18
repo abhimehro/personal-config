@@ -126,6 +126,16 @@ test/format work follows the current repository merge method. Security-sensitive
 work is never automatically merged and is routed to Stage 3/human decision.
 After each completion, re-check remaining PRs for new conflicts.
 
+**Trunk stale-vs-main (personal-config):** A `trunk-failed` label or "GitHub
+blocked Trunk from preparing the test branch" after `main` moved is the PR
+being behind `main`, not a GitHub App or ruleset misconfiguration. Update the
+PR from `main` (`update_pull_request_branch`), wait until it is up to date,
+then comment `/trunk merge` on the **new** head SHA. Do not re-comment
+`/trunk merge` on an unchanged SHA. Do not squash-bypass. Record
+`HOLD_PLATFORM` App/ruleset HITL only if Trunk still cannot enqueue after the
+PR is already up to date with `main`. See the lifecycle contract section
+"Trunk queue: stale vs main".
+
 ## Phase 4 — Reporting & Learning
 
 - Write the session report on the **daily documentation lineage**
