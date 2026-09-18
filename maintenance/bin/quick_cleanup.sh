@@ -166,24 +166,11 @@ if command -v npm >/dev/null 2>&1; then
 	((CLEANED++))
 fi
 
-# Notification
-if command -v terminal-notifier >/dev/null 2>&1; then
-	# Always provide actionable notification to view cleanup logs
-	terminal-notifier -title "Quick Cleanup" \
-		-subtitle "${CLEANED_COUNT} items cleaned" \
-		-message "Click for details" \
-		-group "maintenance" \
-		-execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
-elif command -v osascript >/dev/null 2>&1; then
-	# Fallback to osascript
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Cleaned ${CLEANED} items | Disk: ${DISK_USE}%" "Quick Cleanup" 2>/dev/null || true
-fi
-
-log_info "Quick cleanup completed: ${CLEANED} items cleaned"
-echo "Quick cleanup completed successfully!"
-
-# Clean up Trunk cache (weekly to prevent rapid accumulation)
-log_info "Starting Trunk cache cleanup..."
+# 9) Trunk.io cache
+# Trunk caches toolchain binaries and per-repo clones. Both are regenerated on
+# demand, and this cache was the single largest contributor (~10 GB) to the
+# 2026-09 disk-pressure incident, so it is pruned weekly rather than monthly.
+log_info "Cleaning Trunk cache..."
 TRUNK_CACHE_DIR="$HOME/.cache/trunk"
 if [[ -d $TRUNK_CACHE_DIR ]]; then
 	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
@@ -202,6 +189,64 @@ if [[ -d $TRUNK_CACHE_DIR ]]; then
 		log_info "Trunk cleanup: freed ${TRUNK_FREED_MB} MB (before: ${TRUNK_BEFORE} KB, after: ${TRUNK_AFTER} KB)"
 	else
 		log_info "Trunk cache: no old files to clean"
+	fi
+fi
+
+# 10) Fish shell: orphaned Tide prompt cache entries
+# Tide caches a fully rendered ANSI prompt string per shell PID as the universal
+# variable _tide_prompt_<PID>, and drops it on fish_exit. Terminals that are
+# killed rather than closed never fire fish_exit, so the entries leak. Observed
+# 151 orphans holding 130 KB, about 86% of fish_variables, which every new shell
+# then parses before its prompt appears.
+#
+# The filter is deliberately exact: only lines whose variable name matches
+# _tide_prompt_<digits> are candidates, and an entry is dropped only when that
+# PID is not a live process. All tide_* settings, _fisher_* records, and every
+# other variable are preserved byte for byte. This mirrors the interactive
+# reaper in configs/.config/fish/conf.d/zzz_tide_prompt_reap.fish so the file
+# stays clean even if a shell never starts up to run it.
+FISH_VARS="$HOME/.config/fish/fish_variables"
+if [[ -f $FISH_VARS ]]; then
+	TIDE_ORPHANS=0
+	TIDE_TOTAL=0
+	while IFS= read -r name; do
+		pid="${name#_tide_prompt_}"
+		TIDE_TOTAL=$((TIDE_TOTAL + 1))
+		if ! ps -p "$pid" -o comm= >/dev/null 2>&1; then
+			TIDE_ORPHANS=$((TIDE_ORPHANS + 1))
+		fi
+	done < <(grep -o '^SETUVAR _tide_prompt_[0-9]*' "$FISH_VARS" 2>/dev/null | sed 's/^SETUVAR //' | sort -u)
+
+	if [[ $TIDE_ORPHANS -gt 0 ]]; then
+		FISH_BEFORE=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		cp -p "$FISH_VARS" "$FISH_VARS.maintenance.bak"
+
+		# Keep only entries whose PID is still alive. A PID that has been reused
+		# by an unrelated live process is kept, which is the safe failure mode:
+		# a stale entry costs bytes, a deleted live entry costs a repaint.
+		TMP_VARS=$(mktemp)
+		while IFS= read -r line; do
+			if [[ $line =~ ^SETUVAR[[:space:]]_tide_prompt_([0-9]+): ]]; then
+				pid="${BASH_REMATCH[1]}"
+				if ps -p "$pid" -o comm= >/dev/null 2>&1; then
+					printf '%s
+' "$line" >> "$TMP_VARS"
+				fi
+			else
+				printf '%s
+' "$line" >> "$TMP_VARS"
+			fi
+		done < "$FISH_VARS"
+
+		cat "$TMP_VARS" > "$FISH_VARS"
+		rm -f "$TMP_VARS"
+		chmod 600 "$FISH_VARS" 2>/dev/null || true
+
+		FISH_AFTER=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		log_info "Reaped ${TIDE_ORPHANS} of ${TIDE_TOTAL} stale Tide prompt entries (fish_variables: ${FISH_BEFORE} -> ${FISH_AFTER} bytes)"
+		((CLEANED++))
+	else
+		log_info "Tide prompt cache clean (${TIDE_TOTAL} entries, all live)"
 	fi
 fi
 
@@ -296,3 +341,19 @@ if [[ -n ${ORPHAN_AGENT_APPS:-} ]]; then
 		fi
 	done
 fi
+
+# Notification
+if command -v terminal-notifier >/dev/null 2>&1; then
+	# Always provide actionable notification to view cleanup logs
+	terminal-notifier -title "Quick Cleanup" \
+		-subtitle "${CLEANED_COUNT} items cleaned" \
+		-message "Click for details" \
+		-group "maintenance" \
+		-execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
+elif command -v osascript >/dev/null 2>&1; then
+	# Fallback to osascript
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Cleaned ${CLEANED} items | Disk: ${DISK_USE}%" "Quick Cleanup" 2>/dev/null || true
+fi
+
+log_info "Quick cleanup completed: ${CLEANED} items cleaned"
+echo "Quick cleanup completed successfully!"
