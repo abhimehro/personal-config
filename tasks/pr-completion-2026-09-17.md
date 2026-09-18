@@ -45,18 +45,19 @@ Continuity sources read before acting:
 - `docs/automated-pr-lifecycle.md`, `docs/pr-lifecycle-runtime-ledger.md`,
   `docs/automated-pr-completion-agent.md`
 - Last three Stage 3 records: `tasks/pr-completion-2026-09-08.md`
-  (`ANALYSIS_ERROR` on invalid rev 67), rolling
-  `tasks/completion-session-reports.md` 2026-08-30 and 2026-08-29. No Stage 3
-  record exists for 2026-09-09.
-- Last three Stage 1 records: still-open lineage
-  `pr-lifecycle-docs-20260909` [#2185](https://github.com/abhimehro/personal-config/pull/2185)
-  (`tasks/pr-review-2026-09-09.md`, throughput **PASS**, Stage 2 queued **0**,
-  salvage_eligible=0), plus `tasks/review-session-reports.md` 2026-08-31 and
-  2026-08-29. **No 2026-09-17 Stage 1 feed fingerprint.**
-- Last three Stage 2 records: lineage
-  `tasks/pr-salvage-2026-09-09-1700.md` (`EMPTY_INTAKE`, health
-  `starvation=false`), 2026-09-08 `ANALYSIS_ERROR`, 2026-08-30 `EMPTY_INTAKE`.
-  **No 2026-09-17 Stage 2 run.**
+  (`ANALYSIS_ERROR` on invalid rev 67), `tasks/pr-completion-2026-09-06.md`
+  (one-time backlog cleanup; 122 owned records reconciled), and rolling
+  `tasks/completion-session-reports.md` 2026-08-30. No Stage 3 record exists for
+  2026-09-09.
+- Last three Stage 1 records: `tasks/pr-review-2026-09-08.md` (run-level ledger
+  row only), `tasks/pr-review-2026-09-06.md` (one-time backlog cleanup), and
+  `tasks/review-session-reports.md` 2026-08-31. **No 2026-09-17 Stage 1 feed
+  fingerprint.**
+- Last three Stage 2 records: `tasks/pr-salvage-2026-09-08-1700.md`
+  (`EMPTY_INTAKE`, health `starvation=false`),
+  `tasks/salvage-session-reports.md` 2026-09-06 (one-time backlog cleanup), and
+  `tasks/pr-salvage-2026-08-30-1700.md` (`EMPTY_INTAKE`). **No 2026-09-17
+  Stage 2 run.**
 - `tasks/lessons.md` through **0hb** (fail-closed cascade) / **0gy** / **0ha** /
   **0gd** / **0gj**
 - Same-UTC-day Cursor automations (`createdAfter=2026-09-17T00:00:00Z`): this
