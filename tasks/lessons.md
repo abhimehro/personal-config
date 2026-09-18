@@ -2949,3 +2949,34 @@ wrap-only markdown) before expecting drain.
 **Detection cost:** Low —
 `python3 scripts/sync_cursor_export_prompts.py --check` or the preflight
 `prompt differs from source` path.
+
+## Lesson 0hg: Wrap-only must not burn Stage 2/3; communicate the FAIL feed (2026-09-18)
+
+**Pattern:** Stage 1 combined preflight treated Cursor export wrap-drift as
+`ANALYSIS_ERROR`, so the 2026-09-18 drain never started. Stage 2 (`0 17`) and
+Stage 3 (`0 19`) still fire on the same UTC day because Cursor Dashboard crons
+cannot be disabled from a Stage 1 checkout. If those later stages repeat the
+same combined-preflight death, they burn a full run and produce no salvage or
+completion. Product PR
+[#2223](https://github.com/abhimehro/personal-config/pull/2223) decouples
+ledger CAS from export bytes (`validate(..., include_exports=False)` default;
+`--include-exports` + `sync_cursor_export_prompts.py --check` stay merge CI).
+Until that lands, docs lineage
+[#2222](https://github.com/abhimehro/personal-config/pull/2222) also fails
+Workflow Integrity (`pinact@5` vs plugins `-format`) and the test job (main's
+bundled export gate vs wrap-drift). Codacy D213 then D212 on the same
+docstrings is a ping-pong; one-liners skip both.
+
+**Rule:** (1) After a valid ledger fetch, Stage 2/3 must read today's Stage 1
+fingerprint first. `throughput_grade=FAIL` with `stage2_queued_count=0` is
+`FEED_FAIL` / `UPSTREAM_PAUSE` — one short record and stop; no salvage theater
+and no completion drain. (2) Export wrap is not a reason to invent recoveries
+or reset calibration. (3) Do not `/trunk merge` the opening-run docs lineage
+(**0gj**). Land the CAS/export split (#2223) via Trunk when required GitHub
+checks are green; do not self-approve (**0gv**). (4) pinact stays **4.1.1**
+until trunk plugins emit `--format`. (5) Dashboard UUID automations still need
+a HITL paste of the updated prompts; checkout-based CAS follows git after
+#2223 is on `main`.
+
+**Detection cost:** Low — Stage 1 record
+`throughput_grade=FAIL`; health `starvation=false`; #2223 merge state.

@@ -1080,3 +1080,13 @@ run remains 2026-09-09 on still-open draft
 | Analysis errors             |     1 |
 
 Per-item table: see `tasks/pr-review-2026-09-18.md` (run-level ledger row only).
+
+Downstream (same UTC day): product unblock is
+[#2223](https://github.com/abhimehro/personal-config/pull/2223)
+(`fix/pr-lifecycle-cas-export-decouple`; CAS ledger-only; export/prompt is CI).
+Stage 2 must `FEED_FAIL` and Stage 3 must `UPSTREAM_PAUSE` on this
+`throughput_grade=FAIL` fingerprint — do not repeat combined-preflight death
+and do not invent salvage/completion work. Cursor Stage 2/3 crons cannot be
+disabled from this checkout; the fingerprint is the stop signal. Do not
+`/trunk merge` this docs lineage in the opening run (**0gj**). Lesson
+**0hg**.
