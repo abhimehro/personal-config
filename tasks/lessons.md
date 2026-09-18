@@ -3075,3 +3075,28 @@ do not tell Stage 2 that heal-forward is still Trunk-queued.
 **Detection cost:** Low — `cursor-cloud get-automation` on the four UUIDs;
 compare to the checklist table date; Stage 2 schedule `0 17 * * *`; #2224 merge
 commit `0cf4928e` on `origin/main`.
+
+## Lesson 0hl: HOLD_CANONICAL vs an already-MERGED twin is unique-source salvage (2026-09-18)
+
+**Pattern:** series_correction [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+stayed `HOLD_CANONICAL` / Stage 3 because ledger evidence still named open twin
+[#405](https://github.com/abhimehro/series_correction_project_updated/pull/405).
+Live GitHub showed #405 **MERGED** and #409 still CONFLICTING/DIRTY with unique
+remaining source (`scripts/processor.py`, `scripts/tests/test_processor.py`)
+plus a `.jules/bolt.md` journal. Health `salvage_eligible=0` while that stale
+canonical hold sat idle. Stage 1 would have failed the feed if it left salvage
+unqueued and called the remainder empty.
+
+**Rule:** (1) SHA_MATCH a Stage 3 `HOLD_CANONICAL` item against **live** twin
+state. If every overlap twin is MERGED/CLOSED and unique source remains, that
+is Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
+complete work item. (2) `.jules/` / `.Jules/` journal path alone is not sticky
+`generated_output` (**0cs**); prohibit copying the journal into the replacement
+draft. (3) Do not invent a work item without a matching ledger key and live
+CONFLICTING/DIRTY unique source. (4) Do not leave the item on Stage 3 for
+another packet when the canonical reason is gone. (5) Keeper of an still-open
+overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins;
+do not queue N salvage WIs for non-keepers.
+
+**Detection cost:** Low — `gh pr view` on the named twin; `lifecycle_state:
+STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
