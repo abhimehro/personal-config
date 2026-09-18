@@ -394,8 +394,12 @@ class TestStage1ThroughputGate(unittest.TestCase):
         self.assertIn("product-mutation", contract)
         self.assertIn("salvage only", contract)
 
-    def test_lifecycle_contract_trunk_stale_vs_main(self):
-        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
+    def test_lifecycle_contract_trunk_stale_vs_main(
+        self: "TestPrLifecycleArtifacts",
+    ) -> None:
+        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("Trunk queue: stale vs main", contract)
         self.assertIn("stale-vs-main", contract)
         self.assertIn("update_pull_request_branch", contract)
@@ -411,9 +415,9 @@ class TestStage1ThroughputGate(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("stale-vs-main", review_spec)
-        completion_spec = (ROOT / "docs/automated-pr-completion-agent.md").read_text(
-            encoding="utf-8"
-        )
+        completion_spec = (
+            ROOT / "docs/automated-pr-completion-agent.md"
+        ).read_text(encoding="utf-8")
         self.assertIn("stale-vs-main", completion_spec)
 
     def test_policy_revision_stays_v14(self):
