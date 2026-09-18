@@ -9,6 +9,7 @@ T3+S — Wrap-only Cursor export drift must not halt the daily drain.
 - [x] Tests + `make test-quick` includes `--check`
 - [x] Product PR #2223; subscribed GitHub PR + CI
 - [x] Qodo: wrap 79-char patch line; merge CI `--include-exports` + paths
+- [x] Codacy: one-line docstrings (D212 vs D213 ping-pong on the same pair)
 - [ ] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
 
 ## Stage 1→2 fail-closed cascade (2026-09-16)

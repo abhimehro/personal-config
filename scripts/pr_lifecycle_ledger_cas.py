@@ -187,14 +187,10 @@ def run_preflight(out: Path) -> dict[str, Any]:
 
 
 def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[str, Any]:
-    """
-    Sanitize then CAS-write a local ledger file onto the data branch.
-
-    Does not require Cursor export JSON to match prompt markdown. That gate
-    is CI ``sync_cursor_export_prompts.py --check``, not ledger CAS.
-    """
+    """Sanitize then CAS-write a local ledger file onto the data branch."""
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
+    # NOTE: export/prompt equality is CI `--check`, not this CAS write.
     # Always line-strip before validate+upload so projection keys cannot re-persist.
     sanitize_ledger_file(contained, bump_revision=bump_revision)
     stripped = validate(contained)
