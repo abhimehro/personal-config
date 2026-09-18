@@ -23,6 +23,7 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import pr_lifecycle_validation as validator  # noqa: E402
+from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 import yaml  # noqa: E402
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
@@ -388,8 +389,8 @@ class TestPipelineHealthCli(unittest.TestCase):
 
 class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return (ROOT / "docs/cursor-automations/prompts" / name).read_text(
-            encoding="utf-8"
+        return expand_prompt_source(
+            ROOT / "docs/cursor-automations/prompts" / name
         )
 
     def test_review_prompt_raised_caps_and_salvage_queue(self) -> None:
@@ -402,10 +403,12 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("Hold five inventory slots", review)
 
     def test_salvage_prompt_starvation_label_without_inventing(self) -> None:
+        """The salvage prompt must heal starvation without invented work."""
         salvage = self._prompt("daily-pr-salvage.md")
         self.assertIn("EMPTY_INTAKE_STARVATION", salvage)
         self.assertIn("FEED_FAIL", salvage)
-        self.assertIn("Fail-closed cascade", salvage)
+        self.assertIn("HEAL_THEN_PROCEED", salvage)
+        self.assertIn("Heal-forward cascade", salvage)
         self.assertIn("Do not invent recoveries", salvage)
         self.assertLess(
             salvage.index("claim a usable complete unexpired"),
@@ -432,9 +435,11 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("export-wrap theater", completion)
 
     def test_completion_prompt_upstream_pause(self) -> None:
+        """The completion prompt must heal an unhealthy upstream feed."""
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("Fail-closed cascade", completion)
+        self.assertIn("Heal-forward cascade", completion)
         self.assertIn("upstream feed failed", completion)
+        self.assertIn("HEAL_THEN_PROCEED", completion)
         self.assertLess(
             completion.index("If it is missing"),
             completion.index("`throughput_grade` is `FAIL`"),
@@ -446,6 +451,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("complete Stage 2 work item", completion)
 
     def test_pr_desk_flags_starvation(self) -> None:
+        """The PR Desk profile must expose starvation indicators."""
         profile = (ROOT / "docs/grok-bot/pr-desk.profile.md").read_text(
             encoding="utf-8"
         )
@@ -454,7 +460,75 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
+    def test_stage_prompts_shared_ownership(self) -> None:
+        """All stage prompts must bind the shared-ownership contract."""
+        needle = "own their health and continuous improvement"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+        ):
+            with self.subTest(name):
+                text = self._prompt(name)
+                self.assertIn("**Shared ownership.**", text)
+                self.assertIn("security-first development partner", text)
+                self.assertIn("security-focused", text)
+                self.assertIn("development partner", text)
+                self.assertIn(needle, text)
+                self.assertIn("growing PR backlog", text)
+                self.assertIn("Do not claim", text)
+                self.assertIn("Doing no work is a failed run", text)
+                self.assertIn("`AGENTS.md`", text)
+                self.assertIn("`REVIEW.md`", text)
+                self.assertIn("copilot-instructions.md", text)
+                self.assertIn(".cursorrules", text)
+                self.assertIn(
+                    "Partner profile (apply, do not merely cite).",
+                    text,
+                )
+                self.assertIn("Fail secure", text)
+                self.assertIn("never weaken existing", text)
+                self.assertIn("mechanism or silence", text)
+        prompts = ROOT / "docs/cursor-automations/prompts"
+        frame = (prompts / "_shared-partner-frame.md").read_text(encoding="utf-8")
+        cas = (prompts / "_shared-cas-bootstrap.md").read_text(encoding="utf-8")
+        self.assertIn("security-first development partner", frame)
+        self.assertNotIn("{{include:", frame)
+        self.assertNotIn("{{include:", cas)
+        self.assertIn("pr_lifecycle_ledger_cas.py preflight", cas)
+        partner_include = "{{include:_shared-partner-frame.md}}"
+        cas_include = "{{include:_shared-cas-bootstrap.md}}"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+        ):
+            raw = (prompts / name).read_text(encoding="utf-8")
+            self.assertEqual(raw.count(partner_include), 1, name)
+            self.assertEqual(raw.count(cas_include), 1, name)
+        calibration = (
+            ROOT / "docs/cursor-automations/prompts"
+            / "daily-pr-completion.calibration.md"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn(partner_include, calibration)
+        self.assertNotIn(cas_include, calibration)
+        salvage = self._prompt("daily-pr-salvage.md")
+        self.assertIn("infra-fix", salvage)
+        self.assertIn("Do not rewrite Stage-1-owned inventory", salvage)
+        completion = self._prompt("daily-pr-completion.md")
+        self.assertIn("do **not** reset calibration", completion)
+        self.assertIn("not a new action surface", completion)
+        contract = (
+            ROOT / "docs" / "automated-pr-lifecycle.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("## Shared ownership", contract)
+        self.assertIn("development partners", contract)
+        self.assertIn("security-first development partners", contract)
+        self.assertIn("`REVIEW.md`", contract)
+        self.assertIn("Citing those files is not enough", contract)
+
     def test_stage_prompts_pass_commit_message(self) -> None:
+        """All stage prompts must provide the lifecycle commit message."""
         needle = '--message "automated lifecycle ledger update"'
         for name in (
             "daily-pr-review.md",
