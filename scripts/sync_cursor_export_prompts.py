@@ -47,6 +47,33 @@ class PromptReconciliation:
     prompt: str
 
 
+def _resolved_include_path(prompts_dir: Path, name: str) -> Path:
+    """SECURITY: allowlisted relative markdown only; reject traversal."""
+    if not INCLUDE_NAME_RE.fullmatch(name):
+        raise PromptIncludeError(f"include not allowlisted: {name}")
+    if ".." in name or "/" in name or "\\" in name:
+        raise PromptIncludeError(f"include path rejected: {name}")
+    target = (prompts_dir / name).resolve()
+    try:
+        target.relative_to(prompts_dir)
+    except ValueError as exc:
+        raise PromptIncludeError(
+            f"include escaped prompts dir: {name}"
+        ) from exc
+    return target
+
+
+def _read_include(prompts_dir: Path, name: str) -> str:
+    """Read one allowlisted include; nested tokens are forbidden."""
+    target = _resolved_include_path(prompts_dir, name)
+    if not target.is_file():
+        raise PromptIncludeError(f"include missing: {name}")
+    included = target.read_text(encoding="utf-8")
+    if "{{include:" in included:
+        raise PromptIncludeError(f"nested include forbidden: {name}")
+    return included.strip()
+
+
 def expand_prompt_includes(text: str, prompts_dir: Path) -> str:
     """Replace allowlisted whole-line include directives with file contents.
 
@@ -56,28 +83,9 @@ def expand_prompt_includes(text: str, prompts_dir: Path) -> str:
     prompts_dir = prompts_dir.resolve()
     if "{{include:" in text and INCLUDE_LINE_RE.search(text) is None:
         raise PromptIncludeError("malformed include; must be a whole line")
-
-    def _replace(match: re.Match[str]) -> str:
-        name = match.group(1)
-        if not INCLUDE_NAME_RE.fullmatch(name):
-            raise PromptIncludeError(f"include not allowlisted: {name}")
-        if ".." in name or "/" in name or "\\" in name:
-            raise PromptIncludeError(f"include path rejected: {name}")
-        target = (prompts_dir / name).resolve()
-        try:
-            target.relative_to(prompts_dir)
-        except ValueError as exc:
-            raise PromptIncludeError(
-                f"include escaped prompts dir: {name}"
-            ) from exc
-        if not target.is_file():
-            raise PromptIncludeError(f"include missing: {name}")
-        included = target.read_text(encoding="utf-8")
-        if "{{include:" in included:
-            raise PromptIncludeError(f"nested include forbidden: {name}")
-        return included.strip()
-
-    expanded = INCLUDE_LINE_RE.sub(_replace, text)
+    expanded = INCLUDE_LINE_RE.sub(
+        lambda match: _read_include(prompts_dir, match.group(1)), text
+    )
     if "{{include:" in expanded:
         raise PromptIncludeError("unexpanded include remains")
     return expanded

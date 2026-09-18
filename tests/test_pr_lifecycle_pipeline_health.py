@@ -489,26 +489,29 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
                 self.assertIn("Fail secure", text)
                 self.assertIn("never weaken existing", text)
                 self.assertIn("mechanism or silence", text)
-        frame = (
-            ROOT / "docs/cursor-automations/prompts/_shared-partner-frame.md"
-        ).read_text(encoding="utf-8")
+        prompts = ROOT / "docs/cursor-automations/prompts"
+        frame = (prompts / "_shared-partner-frame.md").read_text(encoding="utf-8")
+        cas = (prompts / "_shared-cas-bootstrap.md").read_text(encoding="utf-8")
         self.assertIn("security-first development partner", frame)
         self.assertNotIn("{{include:", frame)
-        include = "{{include:_shared-partner-frame.md}}"
+        self.assertNotIn("{{include:", cas)
+        self.assertIn("pr_lifecycle_ledger_cas.py preflight", cas)
+        partner_include = "{{include:_shared-partner-frame.md}}"
+        cas_include = "{{include:_shared-cas-bootstrap.md}}"
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
             "daily-pr-completion.md",
         ):
-            raw = (
-                ROOT / "docs/cursor-automations/prompts" / name
-            ).read_text(encoding="utf-8")
-            self.assertEqual(raw.count(include), 1, name)
+            raw = (prompts / name).read_text(encoding="utf-8")
+            self.assertEqual(raw.count(partner_include), 1, name)
+            self.assertEqual(raw.count(cas_include), 1, name)
         calibration = (
             ROOT / "docs/cursor-automations/prompts"
             / "daily-pr-completion.calibration.md"
         ).read_text(encoding="utf-8")
-        self.assertNotIn(include, calibration)
+        self.assertNotIn(partner_include, calibration)
+        self.assertNotIn(cas_include, calibration)
         salvage = self._prompt("daily-pr-salvage.md")
         self.assertIn("infra-fix", salvage)
         self.assertIn("Do not rewrite Stage-1-owned inventory", salvage)

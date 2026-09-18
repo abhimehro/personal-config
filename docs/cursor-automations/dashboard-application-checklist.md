@@ -80,8 +80,10 @@ condition that requires heal-forward, not a pause.
 **HITL paste after this cascade PR lands:**
 
 Paste the **expanded** JSON `prompts[0].prompt` field from each export —
-never paste markdown that still contains `{{include:...}}`. The four UUIDs
-below are unchanged; do not create a fifth automation.
+never paste markdown that still contains `{{include:...}}`. Sibling
+includes (`_shared-cas-bootstrap.md`, `_shared-partner-frame.md`) are
+already expanded in the JSON. The four UUIDs below are unchanged; do
+not create a fifth automation.
 
 1. Paste `exports/daily-pr-review.json` `prompts[0].prompt` into Stage 1
    `77c168e0-7f6b-42de-bad6-da4e4e640b79` (shared ownership + fingerprint).

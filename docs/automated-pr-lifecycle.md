@@ -33,13 +33,18 @@ Optional; mechanism or silence), Trunk-queue personal-config merges,
 never merge drafts unattended, never self-approve under maintainer
 login. Citing those files is not enough; the stage must apply them.
 
-Stage prompts include
-`docs/cursor-automations/prompts/_shared-partner-frame.md` via a
-whole-line `{{include:_shared-partner-frame.md}}` directive.
-`sync_cursor_export_prompts.py` expands that include into export JSON.
+Stage prompts include two sibling fragments (not nested):
+`docs/cursor-automations/prompts/_shared-cas-bootstrap.md` (ledger CAS
+mechanics) and
+`docs/cursor-automations/prompts/_shared-partner-frame.md` (elevated
+security-first partner line). Each is a whole-line
+`{{include:_….md}}` directive.
+`sync_cursor_export_prompts.py` expands those includes into export JSON.
 Paste the JSON `prompts[0].prompt` field into the existing Stage 1/2/3
 Dashboard UUIDs; never paste a raw `{{include}}` line. Do not add a
 fourth UUID, a weekly-health coordinator, or a second Grok Bot.
+Calibration stays self-contained (no includes). Stage-specific MCP
+lists and heal-forward cascade text stay in each stage file.
 
 ## Lifecycle principle
 

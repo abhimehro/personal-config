@@ -25,7 +25,8 @@ EXPORTS = ROOT / "docs/cursor-automations/exports"
 
 class TestPromptIncludeExpansion(unittest.TestCase):
     def test_stage_prompts_expand_shared_frame(self) -> None:
-        include = "{{include:_shared-partner-frame.md}}"
+        partner = "{{include:_shared-partner-frame.md}}"
+        cas = "{{include:_shared-cas-bootstrap.md}}"
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
@@ -34,10 +35,12 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             with self.subTest(name):
                 raw = (PROMPTS / name).read_text(encoding="utf-8")
                 expanded = expand_prompt_source(PROMPTS / name)
-                self.assertIn(include, raw)
+                self.assertEqual(raw.count(partner), 1)
+                self.assertEqual(raw.count(cas), 1)
                 self.assertNotIn("{{include:", expanded)
                 self.assertIn("security-first development partner", expanded)
                 self.assertIn("This stage (Stage", expanded)
+                self.assertIn("pr_lifecycle_ledger_cas.py preflight", expanded)
 
     def test_exports_store_expanded_prompt(self) -> None:
         for export_name in (
@@ -52,6 +55,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
                 self.assertIn("security-first development partner", prompt)
+                self.assertIn("pr_lifecycle_ledger_cas.py preflight", prompt)
 
     def test_rejects_path_traversal(self) -> None:
         with self.assertRaises(PromptIncludeError):
