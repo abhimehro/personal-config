@@ -1048,13 +1048,14 @@ Lesson **0ha**.
 
 Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row only).
 
-## Stage 1 — 2026-09-18 (delayed cron invocation; scheduled `2026-09-17T15:00Z`
+## Stage 1 — 2026-09-18
 
-started `2026-09-18T02:21:32Z`; lineage uses the scheduled fire date)
+Delayed cron invocation (scheduled `2026-09-17T15:00Z`, started
+`2026-09-18T02:21:32Z`; lineage uses the scheduled fire date).
 
 Combined preflight **FAIL** `PR_LIFECYCLE_CAS_ERROR`:
-`docs/cursor-automations/exports/daily-pr-review.json: prompt differs from
-source` (markdown wrap / table padding vs checked-in JSON). Isolated runtime
+`docs/cursor-automations/exports/daily-pr-review.json: prompt differs from source`
+(markdown wrap / table padding vs checked-in JSON). Isolated runtime
 ledger schema **PASS** at revision **69**, commit
 `5829d853eb7303d87eb5323c13f27211e30fe530`, blob
 `33a3a0a177db14d74906da6738e90a7f85a6f713`. Guardrail **ANALYSIS_ERROR**.
