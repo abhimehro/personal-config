@@ -21,6 +21,7 @@ fi
 
 INSTALL_LOG="${HOME}/.local/state/cursor-cloud-workspace-install.log"
 
+# Write a UTC-timestamped message to stdout and the persistent installer log.
 log() {
 	local message
 	message="$(date -u '+%Y-%m-%dT%H:%M:%SZ') cursor_cloud_workspace_install: $*"
@@ -274,12 +275,14 @@ install_repoprompt_ce() {
 	log "repoprompt-ce: macOS Swift project — no Linux dependency install (see AGENTS.md / make dev-* on macOS)"
 }
 
+# Return success when the first three-component version in output matches the pin.
 gitnexus_version_matches() {
 	local reported="$1" version
 	version="$(printf '%s\n' "${reported}" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
 	[[ "${version}" == "${GITNEXUS_PINNED_VERSION}" ]]
 }
 
+# Add the user CLI directory to PATH and verify the pinned GitNexus is available.
 ensure_gitnexus() {
 	export PATH="${HOME}/.local/bin:${PATH}"
 	local reported=""
@@ -307,6 +310,7 @@ ensure_gitnexus() {
 	fi
 }
 
+# Append the GitNexus index path once to a Git repository's local exclusions.
 exclude_gitnexus_index() {
 	local repo="$1"
 	local exclude_dir exclude_file
@@ -322,12 +326,14 @@ exclude_gitnexus_index() {
 	printf '%s\n' '.gitnexus/' >>"${exclude_file}"
 }
 
+# Return success only for repository names excluded from cloud indexing.
 should_skip_gitnexus_index() {
 	local name="$1"
 	# NOTE: HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
 	[[ "${name}" == "repoprompt-ce" ]]
 }
 
+# Best-effort index available sibling repositories without generated docs or FTS.
 index_gitnexus_repos() {
 	if ! command -v gitnexus >/dev/null 2>&1; then
 		log "skip gitnexus index (cli missing)"
@@ -364,6 +370,7 @@ index_gitnexus_repos() {
 	done
 }
 
+# Install supported sibling dependencies, require GitNexus, and index repositories.
 cursor_cloud_workspace_install_main() {
 	log "repos root: ${REPOS_ROOT}"
 	install_personal_config
