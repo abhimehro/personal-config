@@ -147,9 +147,13 @@ automation reads or writes the runtime ledger. The validator rejects duplicate
 YAML mapping keys, unknown fields, duplicate item/event/idempotency keys,
 invalid anchors, invalid URLs/timestamps, invalid transition state/owner pairs,
 illegal transitions, projection disagreement, invalid terminal ownership,
-missing calibration fields, invalid Stage 2 work items, and an export whose
-authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action
-may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
+missing calibration fields, and invalid Stage 2 work items. Ledger schema and
+record failures, including an export whose authority does not match its stage
+when validating exports, are `ANALYSIS_ERROR`; no lifecycle action may follow.
+Cursor export JSON versus prompt markdown validation is a separate CI merge gate,
+not a CAS failure: repair a mismatch with `--write` on a non-lineage product PR
+while lifecycle draining continues. A main-branch bootstrap pointer is not a
+valid runtime-ledger input.
 
 The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer
 `revision`; a state transition increments it by exactly one. Nonterminal legal
@@ -413,6 +417,44 @@ while Stage 2 would empty-intake. One docs-lineage Trunk merge plus a handful of
 zero-diff closes is not a passing drain while MERGEABLE green BOT PRs sit
 skipped. A 40/40 PASS that leaves salvage-eligible CONFLICTING stock with no
 work items is a failed feed.
+
+### Fail-closed cascade (feed fingerprint)
+
+Stage 1 must record an explicit **feed fingerprint** in every run record:
+`stage2_queued_count`, `salvage_eligible_count`, and
+`throughput_grade: PASS|FAIL`. Stage 3 handoffs and TERMINAL ledger closes are
+not Stage 2 readiness.
+
+Cursor export JSON vs prompt markdown is a CI /
+`sync_cursor_export_prompts.py --check` merge gate, **not** ledger CAS
+preflight. Wrap-only Dashboard export drift must not halt Stage 1 drain or
+force Stage 2/3 into `ANALYSIS_ERROR` theater. Repair it with `--write` on a
+non-lineage product PR, then continue. Downstream stages still **must not**
+do useful-looking work when the feed itself is broken:
+
+1. **Stage 2 (first ~30 seconds):** fetch the runtime ledger; run
+   `scripts/pr_lifecycle_pipeline_health.py`. **Claim complete unexpired
+   `stage2_work_items` first** (including leftovers from an earlier Stage 1).
+   Only when none are usable: if `starvation=true`, or today's Stage 1 recorded
+   `stage2_queued_count: 0` while `salvage_eligible_count > 0`, write a
+   one-paragraph `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record and **stop**. No
+   inventory theater, no live-verify of Stage 3 remainder, no heavy docs-lineage
+   churn.
+2. **Stage 3:** if today's Stage 1 fingerprint is **missing**, or Stage 1
+   `throughput_grade` is FAIL, or health starvation is true, or Stage 2 stopped
+   on `FEED_FAIL` the same UTC day, write one short “upstream feed failed;
+   paused” record and **stop**. Do not spend completion actions or deep
+   reconcile. Optional cheap ACK of irreversible TERMINAL already projected is
+   allowed.
+3. **Dashboard operating rule:** keep Stage 2/3 **disabled** until Stage 1
+   `throughput_grade=PASS` **and** `starvation=false` (and ideally
+   `stage2_queued_count >= 1` when eligible stock remains). A queued sample WI
+   alone does not clear a FAIL grade. Paste targets remain the UUID automations;
+   agent run URLs (`bc-*`) are session evidence, not paste IDs.
+
+Stage 2 still claims only complete unexpired `stage2_work_items` (or
+materializes from already Stage-2-owned items). Stage 3 remainder markdown is
+never Stage 2 intake.
 
 Stage 3 must spend its fifteen completion actions on MERGEABLE green BOT that
 Stage 1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.

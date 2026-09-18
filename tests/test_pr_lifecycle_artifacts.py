@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -71,7 +72,27 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             validator.validate(self.write_ledger(ledger))
 
     def test_nonempty_example_and_source_exports_validate(self):
-        validator.validate(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
+        validator.validate(
+            ROOT / "tasks/pr-lifecycle-ledger.example.yaml",
+            include_exports=True,
+        )
+
+    def test_validate_does_not_run_export_prompt_gate(self):
+        with mock.patch.object(
+            validator,
+            "validate_exports_and_prompts",
+            side_effect=AssertionError("export gate must not run during CAS"),
+        ):
+            validator.validate(self.write_ledger(self.example()))
+
+    def test_validate_include_exports_invokes_prompt_gate(self):
+        with mock.patch.object(
+            validator, "validate_exports_and_prompts"
+        ) as gate:
+            validator.validate(
+                self.write_ledger(self.example()), include_exports=True
+            )
+            gate.assert_called_once()
 
     def test_main_pointer_cannot_be_used_as_runtime_ledger(self):
         with self.assertRaisesRegex(ValueError, "schema root"):
