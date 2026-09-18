@@ -4,9 +4,13 @@ Stage-2-owned runtime-ledger entries, and `tasks/lessons.md` before acting.
 Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` using its
 recorded write primitive; `tasks/pr-lifecycle-ledger.yaml` is a
 non-authoritative bootstrap pointer and must never be used as runtime state. If
-the runtime ledger cannot be read, validated, or written through its selected
-CAS path, record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle
-action or calibration step. If the fetched ledger’s only validation failure is a
+the runtime ledger YAML cannot be read, schema-validated, or CAS-written,
+record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle action.
+Cursor export JSON vs prompt markdown is CI /
+`python3 scripts/sync_cursor_export_prompts.py --check`, not a CAS failure.
+After a valid ledger fetch, apply the fail-closed cascade in the first ~30
+seconds and **stop** on `FEED_FAIL` / empty intake — do not spend salvage
+tokens on export-wrap theater. If the fetched ledger’s only validation failure is a
 stale calibration policy, rewrite `calibration` to `REPORT_ONLY`,
 `successful_run_count` 0, the current `policy_revision`, and
 `invalidated_by_revision` equal to the current policy, CAS-write that reset, and
@@ -14,7 +18,8 @@ continue. That reset is not a successful calibration run. Contents GET of the
 runtime ledger returns `encoding: none` above 1 MB; fetch bytes with
 `GET /git/blobs/<sha>` (lesson 0gy). Run
 `python3 scripts/pr_lifecycle_ledger_cas.py preflight --out "$RUNTIME_LEDGER_PATH"`
-before inventory. The validator strips in-memory-only item fields
+before inventory. CAS preflight validates ledger schema and records only.
+The validator strips in-memory-only item fields
 `latest_transition` and `latest_transition_kind` so a projection dump cannot
 halt the schedule; unknown extra fields still fail closed. CAS-write with
 `python3 scripts/pr_lifecycle_ledger_cas.py commit --file "$RUNTIME_LEDGER_PATH" --message "automated lifecycle ledger update"`
@@ -48,18 +53,33 @@ source key, repository, PR, base/head SHA, allowed and prohibited paths, repair
 description, test command/result, acceptance criteria, provenance, expiry,
 attempt count, owner, creation event, and history all validate. Prefer complete
 unexpired work items. Unused salvage capacity while complete unexpired work
-items exist is a failed run. If the ledger has **zero** `current_owner: stage2`
-items and Stage 1 queued none, this is **empty intake**: write a short
-empty-intake record, push onto today's `pr-lifecycle-docs-YYYYMMDD` lineage if
-it exists, and **stop**. Do not invent recoveries. Do not open a sibling docs
-PR. If salvage-eligible BOT items exist (lifecycle contract: unique-source
-draft, wrap, lint/import, conflict markers; not sticky lockfile/workflow/auth
-and not Linux Swift `HOLD_PLATFORM`), label the record `EMPTY_INTAKE_STARVATION`
-so PR Desk flags it, then still stop. Empty intake with zero salvage-eligible
-remainder is not a failed run. If a Stage-2-owned ledger item lacks a complete
-work item, materialize one from that item’s `changed_paths`, `next_action`, and
-live GitHub evidence, then recover. Remainder markdown is a hint requiring live
-verify, never a work item by itself.
+items exist is a failed run.
+
+**Fail-closed cascade (first ~30 seconds).** Before any recovery work: (1) fetch
+the runtime ledger via the recorded CAS primitive; (2) run
+`python3 scripts/pr_lifecycle_pipeline_health.py "$RUNTIME_LEDGER_PATH"` (venv
+ok; never `--break-system-packages`); (3) read today's Stage 1 run-record feed
+fingerprint (`stage2_queued_count`, `salvage_eligible_count`,
+`throughput_grade`); (4) claim a usable complete unexpired `stage2_work_item`,
+or, when none is usable, materialize and claim one from a
+`current_owner: stage2` ledger item. Only when neither usable nor materializable
+work can be claimed, evaluate whether health reports `starvation=true`, **or**
+today's Stage 1 recorded `stage2_queued_count: 0` while
+`salvage_eligible_count > 0`, **or** Stage 1 `throughput_grade` is `FAIL` for a
+failed feed. If so, write a **one-paragraph** `EMPTY_INTAKE_STARVATION` /
+`FEED_FAIL` record on today's `pr-lifecycle-docs-YYYYMMDD` lineage if it exists,
+push nothing heavy, and **stop**. No inventory theater, no live-verify of Stage
+3 remainder, no docs-lineage churn beyond that single short append. Do not
+invent recoveries from Stage 3 remainder markdown.
+
+If the ledger has **zero** usable complete unexpired `stage2_work_items`, zero
+`current_owner: stage2` items that can materialize a WI, and Stage 1 queued
+none, this is **empty intake**: write a short empty-intake record, push onto
+today's lineage if it exists, and **stop**. Empty intake with zero
+salvage-eligible remainder is not a failed run. If a Stage-2-owned ledger item
+lacks a complete work item, materialize one from that item’s `changed_paths`,
+`next_action`, and live GitHub evidence, then recover. Remainder markdown is a
+hint requiring live verify, never a work item by itself.
 
 Create at most one focused **draft** recovery branch per work item from the
 trusted current base. Recheck base SHA immediately before creation. Abort on

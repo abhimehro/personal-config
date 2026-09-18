@@ -4,9 +4,13 @@ stage, all Stage-3-owned runtime-ledger entries, and `tasks/lessons.md` before
 acting. Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` using
 its recorded write primitive; `tasks/pr-lifecycle-ledger.yaml` is a
 non-authoritative bootstrap pointer and must never be used as runtime state. If
-the runtime ledger cannot be read, validated, or written through its selected
-CAS path, record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle
-action or calibration step. If the fetched ledger’s only validation failure is a
+the runtime ledger YAML cannot be read, schema-validated, or CAS-written,
+record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle action.
+Cursor export JSON vs prompt markdown is CI /
+`python3 scripts/sync_cursor_export_prompts.py --check`, not a CAS failure.
+After a valid ledger fetch, apply the fail-closed cascade and **stop** on
+`UPSTREAM_PAUSE` — do not spend completion tokens on export-wrap theater.
+If the fetched ledger’s only validation failure is a
 stale calibration policy, rewrite `calibration` to `REPORT_ONLY`,
 `successful_run_count` 0, the current `policy_revision`, and
 `invalidated_by_revision` equal to the current policy, CAS-write that reset, and
@@ -14,7 +18,8 @@ continue. That reset is not a successful calibration run. Contents GET of the
 runtime ledger returns `encoding: none` above 1 MB; fetch bytes with
 `GET /git/blobs/<sha>` (lesson 0gy). Run
 `python3 scripts/pr_lifecycle_ledger_cas.py preflight --out "$RUNTIME_LEDGER_PATH"`
-before inventory. The validator strips in-memory-only item fields
+before inventory. CAS preflight validates ledger schema and records only.
+The validator strips in-memory-only item fields
 `latest_transition` and `latest_transition_kind` so a projection dump cannot
 halt the schedule; unknown extra fields still fail closed. CAS-write with
 `python3 scripts/pr_lifecycle_ledger_cas.py commit --file "$RUNTIME_LEDGER_PATH" --message "automated lifecycle ledger update"`
@@ -48,6 +53,25 @@ day. Process at most 20 reconciliations, five decision packets, and fifteen
 state-changing actions. An approval, merge submission, closure, comment, branch
 create/delete, failed mutation, and retry each count as one state-changing
 action. Stop before exceeding the cap.
+
+**Fail-closed cascade.** Before spending completion actions or deep reconcile:
+fetch the runtime ledger; run
+`python3 scripts/pr_lifecycle_pipeline_health.py "$RUNTIME_LEDGER_PATH"`; read
+today's Stage 1 feed fingerprint and Stage 2 record. First check that today's
+Stage 1 feed fingerprint exists. If it is missing, write the same one short
+record — “upstream feed failed; paused.” — on today's
+`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, and **stop** without spending
+completion actions. Only when the fingerprint exists, evaluate whether Stage 1
+`throughput_grade` is `FAIL` (failed feed), **or** health `starvation=true`,
+**or** Stage 2 stopped on `FEED_FAIL` / `EMPTY_INTAKE_STARVATION` the same UTC
+day. If so, write that upstream-feed pause record and **stop**. Do not spend
+completion actions, deep remainder reconcile, or packet theater. Optional cheap
+exception only: ACK irreversible TERMINAL already projected. **Dashboard
+operating rule:** keep this automation **disabled** after FAIL-feed days until
+Stage 1 records `throughput_grade=PASS` **and** health-monitor
+`starvation=false` (ideally with `stage2_queued_count >= 1` when
+salvage-eligible stock remains). A queued sample WI alone is not enough if
+`throughput_grade=FAIL` or `starvation=true`.
 
 Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick **back to
 Stage 1** with an executable `next_action`. Do **not** bounce MERGEABLE green
