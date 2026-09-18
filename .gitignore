@@ -97,6 +97,7 @@ yarn-error.log*
 package-lock.json
 !copilot-demo/package-lock.json
 yarn.lock
+.gitnexus/
 
 # Ruby
 .bundle/
