@@ -1,4 +1,18 @@
-# Stage 1→2 fail-closed cascade (2026-09-16)
+# CAS/export decoupling (2026-09-18)
+
+T3+S — Wrap-only Cursor export drift must not halt the daily drain.
+
+- [x] Decouple ledger CAS `validate()` from export/prompt byte-equality
+- [x] `sync_cursor_export_prompts.py --write` so CI `--check` is green
+- [x] Stage 1/2/3 prompts: repair wrap-only; ANALYSIS_ERROR is ledger-only
+- [x] Stage 2/3 fail-closed after ledger preflight, no ANALYSIS_ERROR theater
+- [x] Tests + `make test-quick` includes `--check`
+- [x] Product PR #2223; subscribed GitHub PR + CI
+- [x] Qodo: wrap 79-char patch line; merge CI `--include-exports` + paths
+- [x] Codacy: one-line docstrings (D212 vs D213 ping-pong on the same pair)
+- [ ] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
+
+## Stage 1→2 fail-closed cascade (2026-09-16)
 
 T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
 
@@ -8,7 +22,8 @@ T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
 - [x] Dashboard checklist: live UUID enablement + fetch-before-health
 - [x] `.venv/` gitignore; sync Cursor export prompts
 - [x] Sample WI emission/claim via `pr_lifecycle_feed_cascade_verify.py` + tests
-- [x] Health verify: tip `starvation=false` (eligible drained); inject proves CLAIM
+- [x] Health verify: tip `starvation=false` (eligible drained); inject proves
+      CLAIM
 - [x] CI: CodeScene Excess Args + Codacy ≤0 new issues on cascade/verify
 - [ ] HITL: paste updated prompts into UUID automations; sample live Stage 1 CAS
 

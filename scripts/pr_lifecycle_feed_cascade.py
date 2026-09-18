@@ -38,9 +38,7 @@ def _feed_is_starved(queued: int, eligible: int) -> bool:
     return eligible > 0 and not queued
 
 
-def _decision(
-    action: CascadeAction, label: str, reason: str
-) -> CascadeDecision:
+def _decision(action: CascadeAction, label: str, reason: str) -> CascadeDecision:
     """Build a cascade decision record."""
     return CascadeDecision(action=action, label=label, reason=reason)
 
