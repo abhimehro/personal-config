@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 70
+ledger_revision: 71
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -9480,30 +9480,33 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge CONFLICTING source. Stage 2 opens a draft only; take
-    main's .jules/bolt.md (0cs).
-  next_action: 'Recover unique source excluding .jules/ journals into a focused draft
-    (scripts/processor.py and scripts/tests/test_processor.py). Twin #405 is MERGED.
-    Expires 2026-09-25T15:30:00Z.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not merge, approve, or close original #409 because a replacement
+    draft exists. Keep the journal on the original (lesson 0cs).'
+  next_action: 'Stage 3 reconciles CONFLICTING original #409 against tested draft
+    #460 unique remainder (tests only; processor.py already stronger on main). Twin
+    #405 MERGED. Do not close #409. Expires with the consumed work item 2026-09-25T15:30:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
+  - https://github.com/abhimehro/series_correction_project_updated/pull/460
   changed_paths:
   - .jules/bolt.md
   - scripts/processor.py
   - scripts/tests/test_processor.py
   attempts:
-    evidence: 3
-    recovery: 1
+    evidence: 4
+    recovery: 2
     mutations: 0
   handoffs:
   - evt-s1-20260824-seriescorrec-409-h
   - evt-s1-20260918-seriescorre-409-h
-  revision: 2
-  updated_at_utc: '2026-09-18T15:30:00Z'
+  - evt-s2-20260918-seriescorre-409-q
+  - evt-s2-20260918-seriescorre-409-h
+  revision: 4
+  updated_at_utc: '2026-09-18T17:20:00Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -18541,6 +18544,54 @@ items:
   - evt-s1-20260909-seriescorre-438-h
   revision: 1
   updated_at_utc: '2026-09-09T15:16:00Z'
+- key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  repository: abhimehro/series_correction_project_updated
+  pr: 460
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/460
+  base_sha: 519c67b3169e686ad0ab5b8642b6364868a8a51f
+  head_sha: e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests.
+  next_action: 'Stage 1 re-ingest draft #460 head e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+    (isDraft true after 0gd). Tests-only unique remainder from #409; pytest scripts/tests/test_processor.py
+    20 passed. Do not replay processor.py. Initial salvage commit 4cf8bab; live head
+    includes Qodo follow-on e5af43e4.'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/460
+  - https://github.com/abhimehro/series_correction_project_updated/pull/409
+  - https://github.com/abhimehro/series_correction_project_updated/commit/e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  changed_paths:
+  - scripts/tests/test_processor.py
+  attempts:
+    evidence: 2
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260918-seriescorre-460-i
+  - evt-s2-20260918-seriescorre-460-q
+  - evt-s2-20260918-seriescorre-460-h
+  revision: 3
+  updated_at_utc: '2026-09-18T17:20:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -41095,37 +41146,125 @@ events:
   successful: null
   reason: 'HOLD_CANONICAL vs #405 is stale (#405 MERGED). Queue unique-source salvage
     of processor.py+tests.'
-stage2_work_items:
-- work_item_id: s2-20260918-seriescorre-409
-  source_item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
-  repository: abhimehro/series_correction_project_updated
-  pr: 409
-  base_sha: d5f92cf071029273c81c257301308821006bf31a
-  head_sha: 15621ef64d18af14d82cec0ea9d3e004313ce736
-  allowed_paths:
-  - scripts/processor.py
-  - scripts/tests/test_processor.py
-  prohibited_paths:
-  - .jules/bolt.md
-  - .github/workflows
-  - scripts/requirements.txt
-  repair_description: 'Recover unique remaining source from CONFLICTING Bolt #409
-    after #405 merged: shallow-copy changes in scripts/processor.py plus scripts/tests/test_processor.py.
-    Take main''s .jules/bolt.md (lesson 0cs). Do not touch lockfiles or workflows.'
-  required_test_command: python3 -m pytest scripts/tests/test_processor.py -q
-  expected_test_result: pytest exit 0
-  acceptance_criteria:
-  - Replacement draft contains only allowed_paths.
-  - scripts/tests/test_processor.py passes.
-  - .jules/bolt.md is not copied from the source PR.
-  provenance_urls:
-  - https://github.com/abhimehro/series_correction_project_updated/pull/409
-  - https://github.com/abhimehro/series_correction_project_updated/pull/405
-  expiry_utc: '2026-09-25T15:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260918-seriescorre-409-h
-  history: []
+- event_id: evt-s2-20260918-seriescorre-409-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260918-seriescorre-409-h
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s2-20260918-seriescorre-409-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: '2026-09-18T17:20:00Z'
+  policy_revision: null
+  successful: null
+  reason: 'ACK Stage 1 unique-source salvage queue after #405 MERGED. Work item s2-20260918-seriescorre-409
+    claimed.'
+- event_id: evt-s2-20260918-seriescorre-409-q
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s2-20260918-seriescorre-409-q
+  status: PROJECTED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate unique-source salvage of #409 tests remainder.'
+- event_id: evt-s2-20260918-seriescorre-409-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s2-20260918-seriescorre-409-h
+  status: PROJECTED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Tested draft #460 recovered unique remainder. Original stays open; Stage
+    3 reconciles canonical relationship. Do not close.'
+- event_id: evt-s2-20260918-seriescorre-460-i
+  kind: IMPORT
+  item_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e:evt-s2-20260918-seriescorre-460-i
+  status: PROJECTED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #460 provenance to #409. Live head e5af43e4 after
+    Qodo follow-on; 0gd draft restored.'
+- event_id: evt-s2-20260918-seriescorre-460-q
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e:evt-s2-20260918-seriescorre-460-q
+  status: PROJECTED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #460 before Stage 1 re-ingest.'
+- event_id: evt-s2-20260918-seriescorre-460-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/series_correction_project_updated#460@e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e:evt-s2-20260918-seriescorre-460-h
+  status: PROJECTED
+  created_at_utc: '2026-09-18T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT tests-only salvage complete. Stage 1 re-ingests draft #460.
+    Merge authority is never Stage 2.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
