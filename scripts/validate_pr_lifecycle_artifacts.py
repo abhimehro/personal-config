@@ -28,7 +28,10 @@ def main() -> int:
     parser.add_argument(
         "--include-exports",
         action="store_true",
-        help="also require Cursor export JSON to match prompt markdown",
+        help=(
+            "also validate Cursor export shape, schedule, memory, "
+            "approval, actions, and prompt source"
+        ),
     )
     args = parser.parse_args()
     try:
