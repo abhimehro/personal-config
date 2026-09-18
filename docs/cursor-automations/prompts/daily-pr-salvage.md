@@ -8,9 +8,11 @@ the runtime ledger YAML cannot be read, schema-validated, or CAS-written,
 record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle action.
 Cursor export JSON vs prompt markdown is CI /
 `python3 scripts/sync_cursor_export_prompts.py --check`, not a CAS failure.
-After a valid ledger fetch, apply the fail-closed cascade in the first ~30
-seconds and **stop** on `FEED_FAIL` / empty intake — do not spend salvage
-tokens on export-wrap theater. If the fetched ledger’s only validation failure is a
+After a valid ledger fetch, apply the heal-forward cascade in the first ~30
+seconds. On `FEED_FAIL` / starvation, heal leftover Stage 1 feed then
+continue salvage — do not spend salvage tokens on export-wrap theater.
+Stop only on empty intake with zero salvage-eligible remainder. If the
+fetched ledger’s only validation failure is a
 stale calibration policy, rewrite `calibration` to `REPORT_ONLY`,
 `successful_run_count` 0, the current `policy_revision`, and
 `invalidated_by_revision` equal to the current policy, CAS-write that reset, and
@@ -55,7 +57,21 @@ attempt count, owner, creation event, and history all validate. Prefer complete
 unexpired work items. Unused salvage capacity while complete unexpired work
 items exist is a failed run.
 
-**Fail-closed cascade (first ~30 seconds).** Before any recovery work: (1) fetch
+**Shared ownership.** You are a development partner for these seven
+repositories. You own their health and continuous improvement as much as
+the maintainer does. A growing PR backlog is evidence that this pipeline's
+work failed — not a reason to write a stop record and leave. Do not claim
+a problem is resolved and then stop for another reason. Do not spend the
+run on theater (export-wrap loops, false PASS fingerprints, waiting for
+the next stage). Spend credits on leftover Stage 1 queue, wrap-only export
+repair, salvage drafts, and lasting fixes. Stopping is honest only when
+empty intake has zero salvage-eligible remainder, or a true
+`HOLD_PLATFORM` / `ANALYSIS_ERROR` blocks every mutation. If an earlier
+stage did incomplete or incorrect work, repair it in this run and
+continue. Guardrails still bind: never merge drafts, never approve or
+close originals, never self-approve under maintainer login.
+
+**Heal-forward cascade (first ~30 seconds).** Before any recovery work: (1) fetch
 the runtime ledger via the recorded CAS primitive; (2) run
 `python3 scripts/pr_lifecycle_pipeline_health.py "$RUNTIME_LEDGER_PATH"` (venv
 ok; never `--break-system-packages`); (3) read today's Stage 1 run-record feed
@@ -67,10 +83,13 @@ work can be claimed, evaluate whether health reports `starvation=true`, **or**
 today's Stage 1 recorded `stage2_queued_count: 0` while
 `salvage_eligible_count > 0`, **or** Stage 1 `throughput_grade` is `FAIL` for a
 failed feed. If so, write a **one-paragraph** `EMPTY_INTAKE_STARVATION` /
-`FEED_FAIL` record on today's `pr-lifecycle-docs-YYYYMMDD` lineage if it exists,
-push nothing heavy, and **stop**. No inventory theater, no live-verify of Stage
-3 remainder, no docs-lineage churn beyond that single short append. Do not
-invent recoveries from Stage 3 remainder markdown.
+`FEED_FAIL` record labeled `HEAL_THEN_PROCEED` on today's
+`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then **heal leftover Stage 1
+work and continue**: queue complete Stage 2 work items from salvage-eligible
+stock, repair wrap-only export drift on a non-lineage product PR, CAS-write the
+feed, and salvage those items. Do not invent recoveries from Stage 3 remainder
+markdown. Do not spend tokens on export-wrap theater. Empty intake (zero
+salvage-eligible remainder) is the only stop.
 
 If the ledger has **zero** usable complete unexpired `stage2_work_items`, zero
 `current_owner: stage2` items that can materialize a WI, and Stage 1 queued

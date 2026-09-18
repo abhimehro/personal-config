@@ -56,34 +56,36 @@ These four UUIDs are the only paste targets. Disable any orphan duplicate
 automation that is not in this table. Leave calibration permanently disabled
 while completion exists.
 
-### Fail-closed enablement rule
+### Heal-forward enablement rule
 
 After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
 `salvage_eligible_count > 0`, or health-monitor `starvation=true`):
 
-1. Keep Stage 2 and Stage 3 completion **disabled**.
-2. Re-enable Stage 1 only to paste the updated prompt and run a sample that
-   CAS-writes ≥1 complete `stage2_work_item`.
-3. Re-enable Stage 2 only after that sample WI exists and health reports
-   `starvation=false` (or eligible drained).
-4. Re-enable Stage 3 completion only when Stage 1 `throughput_grade=PASS`
-   **and** health `starvation=false` (and Stage 2 has claimed a WI without
-   `FEED_FAIL` theater on the same UTC day). A queued WI alone does not clear a
-   FAIL grade or active starvation.
+1. Keep Stage 1, Stage 2, and Stage 3 completion **enabled**.
+2. The next stage **heals leftover work** (`HEAL_THEN_PROCEED`): queue complete
+   `stage2_work_item`s, repair wrap-only export drift, then continue its own
+   job. Do not wait for a human to disable/enable crons.
+3. Empty intake with zero salvage-eligible remainder is the only short stop.
+4. A queued sample WI alone does not clear a FAIL grade or active starvation;
+   healing must produce a real feed or leftover Stage 1 drain.
+5. Shared ownership: each stage is a development partner. A growing backlog
+   is a failed run, not a reason to stop. Do not claim problems resolved
+   and then leave.
 
-Do not re-enable Stage 2/3 while Stage 1 still queues 0 WIs and dumps remainder
-to Stage 3.
+Do not disable Stage 2/3 while Stage 1 still queues 0 WIs; that is the
+condition that requires heal-forward, not a pause.
 
 **HITL paste after this cascade PR lands:**
 
 1. Paste `prompts/daily-pr-review.md` into Stage 1
-   `77c168e0-7f6b-42de-bad6-da4e4e640b79` (feed fingerprint + salvage feed).
+   `77c168e0-7f6b-42de-bad6-da4e4e640b79` (shared ownership + fingerprint).
 2. Paste `prompts/daily-pr-salvage.md` into Stage 2
-   `3e537981-04a6-456f-89a3-272d9d5fddd7` (FEED_FAIL short-circuit).
+   `3e537981-04a6-456f-89a3-272d9d5fddd7`
+   (shared ownership + HEAL_THEN_PROCEED).
 3. Leave calibration `d9d2c058-9c42-11f1-ba66-0e7d0216e441` **disabled**.
 4. Paste `prompts/daily-pr-completion.md` into Stage 3 completion
-   `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` (upstream-feed pause). Keep it
-   **disabled** until the sample handoff proves green.
+   `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` (shared ownership + leftover drain).
+   Keep it **enabled**.
 5. Record the new dashboard fingerprints in the next runtime-ledger event. Do
    **not** reset calibration to `REPORT_ONLY` for this change.
 

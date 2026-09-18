@@ -405,7 +405,8 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         salvage = self._prompt("daily-pr-salvage.md")
         self.assertIn("EMPTY_INTAKE_STARVATION", salvage)
         self.assertIn("FEED_FAIL", salvage)
-        self.assertIn("Fail-closed cascade", salvage)
+        self.assertIn("HEAL_THEN_PROCEED", salvage)
+        self.assertIn("Heal-forward cascade", salvage)
         self.assertIn("Do not invent recoveries", salvage)
         self.assertLess(
             salvage.index("claim a usable complete unexpired"),
@@ -433,8 +434,9 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
 
     def test_completion_prompt_upstream_pause(self) -> None:
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("Fail-closed cascade", completion)
+        self.assertIn("Heal-forward cascade", completion)
         self.assertIn("upstream feed failed", completion)
+        self.assertIn("HEAL_THEN_PROCEED", completion)
         self.assertLess(
             completion.index("If it is missing"),
             completion.index("`throughput_grade` is `FAIL`"),
@@ -453,6 +455,26 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("Write Nothing", profile)
         self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
+
+    def test_stage_prompts_shared_ownership(self) -> None:
+        needle = "You own their health and continuous improvement"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+        ):
+            with self.subTest(name):
+                text = self._prompt(name)
+                self.assertIn("**Shared ownership.**", text)
+                self.assertIn("development partner", text)
+                self.assertIn(needle, text)
+                self.assertIn("growing PR backlog", text)
+                self.assertIn("Do not claim", text)
+        contract = (
+            ROOT / "docs" / "automated-pr-lifecycle.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("## Shared ownership", contract)
+        self.assertIn("development partners", contract)
 
     def test_stage_prompts_pass_commit_message(self) -> None:
         needle = '--message "automated lifecycle ledger update"'

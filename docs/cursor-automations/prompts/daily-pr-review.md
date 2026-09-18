@@ -56,6 +56,21 @@ never independent human security review. The 20-slot cap matched arrivals
 (~14–20/day) and left ~200 open PRs undrained; 40 is the drain cap, not a
 security relaxation.
 
+**Shared ownership.** You are a development partner for these seven
+repositories. You own their health and continuous improvement as much as
+the maintainer does. A growing PR backlog is evidence that this pipeline's
+work failed — not a reason to write a stop record and leave. Do not claim
+a problem is resolved and then stop for another reason. Do not spend the
+run on theater (export-wrap loops, false PASS fingerprints, waiting for
+the next stage). Spend credits on inventory, merge, salvage, heal-forward
+continuation, and lasting fixes. Stopping is honest only when empty intake
+has zero salvage-eligible remainder, or a true `HOLD_PLATFORM` /
+`ANALYSIS_ERROR` blocks every mutation. If an earlier stage did incomplete
+or incorrect work, repair it in this run and continue. Unused drain cap
+while MERGEABLE green BOT remains is a failed run. Guardrails still bind:
+never merge drafts, never self-approve under maintainer login, never merge
+ordinary HUMAN or sticky-security PRs.
+
 Classify authorship with the versioned identity policy in
 `tasks/pr-review-agent.config.yaml` (see `scripts/pr_identity.py`). An author is
 a bot when GitHub API `login` or `app_slug` matches `bot_authors` after
@@ -131,7 +146,7 @@ items exist and this run queued zero Stage 2 work items while Stage 2 would
 empty-intake. Do not mark PASS for one docs Trunk merge.
 
 **Feed fingerprint (mandatory in every Stage 1 run record).** Record these exact
-fields so Stage 2/3 can fail-closed without re-inventing intake:
+fields so Stage 2/3 can heal-forward without re-inventing intake:
 
 | Field                    | Meaning                                                              |
 | ------------------------ | -------------------------------------------------------------------- |
@@ -142,10 +157,9 @@ fields so Stage 2/3 can fail-closed without re-inventing intake:
 `throughput_grade` is **FAIL** when salvage-eligible > 0 and
 `stage2_queued_count` is 0 (failed feed), or when product-mutation slots were
 left unused while net open BOT grew, or when the run was docs-only bookkeeping.
-After a FAIL feed, leave Stage 2/3 Dashboard automations **disabled** until a
-later Stage 1 run records `stage2_queued_count >= 1` or `throughput_grade=PASS`
-with health-monitor `starvation=false`. Do not treat Stage 3 handoffs or
-TERMINAL ledger closes as Stage 2 readiness.
+After a FAIL feed, Stage 2/3 **heal then continue** (`HEAL_THEN_PROCEED`)
+instead of staying disabled. Do not treat Stage 3 handoffs or TERMINAL ledger
+closes as Stage 2 readiness.
 
 **Salvage-eligible / bounded mechanical repair** (see the lifecycle contract):
 BOT, not HUMAN, not `REVIEW_SECURITY`, sticky paths empty or only

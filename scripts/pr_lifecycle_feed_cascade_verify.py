@@ -35,6 +35,7 @@ from pr_lifecycle_feed_cascade import (
     grade_stage1_feed,
     stage2_cascade_decision,
     stage3_cascade_decision,
+    unhealthy_stage2_feed,
 )
 from pr_lifecycle_pipeline_health import (
     PipelineHealth,
@@ -169,7 +170,7 @@ def _stage_decisions(
     stage3_decision = stage3_cascade_decision(
         health,
         fingerprint,
-        stage2_feed_fail_same_utc_day=stage2_decision.action == "FEED_FAIL",
+        stage2_feed_fail_same_utc_day=unhealthy_stage2_feed(stage2_decision),
     )
     return stage2_decision, stage3_decision
 

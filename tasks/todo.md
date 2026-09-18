@@ -1,4 +1,15 @@
-# CAS/export decoupling (2026-09-18)
+# Heal-forward cascade (2026-09-18)
+
+T2 — Stage 2/3 heal leftover Stage 1 work instead of hard-stopping.
+
+- [x] `HEAL_THEN_PROCEED` replaces `FEED_FAIL` / `UPSTREAM_PAUSE` stop actions
+- [x] Stage 1/2/3 prompts + lifecycle contract + dashboard checklist
+- [x] Shared-ownership / development-partner language in all three prompts
+- [x] Tests + export `--write`
+- [ ] Product PR; subscribe GitHub PR + CI
+- [ ] HITL: paste updated prompts into UUID automations (keep Stage 2/3 enabled)
+
+## CAS/export decoupling (2026-09-18)
 
 T3+S — Wrap-only Cursor export drift must not halt the daily drain.
 
@@ -10,7 +21,7 @@ T3+S — Wrap-only Cursor export drift must not halt the daily drain.
 - [x] Product PR #2223; subscribed GitHub PR + CI
 - [x] Qodo: wrap 79-char patch line; merge CI `--include-exports` + paths
 - [x] Codacy: one-line docstrings (D212 vs D213 ping-pong on the same pair)
-- [ ] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
+- [x] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
 
 ## Stage 1→2 fail-closed cascade (2026-09-16)
 

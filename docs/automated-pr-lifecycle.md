@@ -7,6 +7,20 @@ Automated PR Salvage & Recovery Agent, and Automated PR Completion Agent. The
 three agents are complementary. They must not repeat an unchanged analysis or
 leave an item without an owner.
 
+## Shared ownership
+
+The three stage agents are **development partners**, not sequential
+ticket-takers. Each stage owns the health and continuous improvement of the
+seven repositories as much as the maintainer does. A growing PR backlog is a
+real failure of the work being done. A stage that does no work, or that
+reports problems resolved and then stops for another reason, has failed.
+Heal leftover work from prior stages (`HEAL_THEN_PROCEED`) and continue.
+Theater (credits spent without drain) is not completion. Honest stops are
+empty intake with zero salvage-eligible remainder, or a true
+`HOLD_PLATFORM` / `ANALYSIS_ERROR` that blocks every mutation. Guardrails
+still bind: never merge drafts unattended, never self-approve under
+maintainer login, never merge ordinary HUMAN or sticky-security PRs.
+
 ## Lifecycle principle
 
 Every in-scope PR must have either a terminal disposition or a single current
@@ -23,7 +37,7 @@ item to Stage 1 intake.
 | Stage | Name       | Owns                                                                                                     | May do                                                                                                                                                                                                                                                                                                 | Must hand off                                                                                                                                                                            |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to ten complete Stage 2 work items as ledger bookkeeping.               | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
-| 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop.                                                                                       | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
+| 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake with zero salvage-eligible remainder: short record and stop. Starved feed: `HEAL_THEN_PROCEED`.                                                                                       | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
 | 3     | Completion | Remainder that Stage 1 cannot execute this run                                                           | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                              |
 
 Automated routine approval is a policy-authorized throughput control, not an
@@ -418,7 +432,7 @@ zero-diff closes is not a passing drain while MERGEABLE green BOT PRs sit
 skipped. A 40/40 PASS that leaves salvage-eligible CONFLICTING stock with no
 work items is a failed feed.
 
-### Fail-closed cascade (feed fingerprint)
+### Heal-forward cascade (feed fingerprint)
 
 Stage 1 must record an explicit **feed fingerprint** in every run record:
 `stage2_queued_count`, `salvage_eligible_count`, and
@@ -429,32 +443,36 @@ Cursor export JSON vs prompt markdown is a CI /
 `sync_cursor_export_prompts.py --check` merge gate, **not** ledger CAS
 preflight. Wrap-only Dashboard export drift must not halt Stage 1 drain or
 force Stage 2/3 into `ANALYSIS_ERROR` theater. Repair it with `--write` on a
-non-lineage product PR, then continue. Downstream stages still **must not**
-do useful-looking work when the feed itself is broken:
+non-lineage product PR, then continue. A broken feed is a **heal** signal, not
+a license to idle while the backlog grows:
 
 1. **Stage 2 (first ~30 seconds):** fetch the runtime ledger; run
    `scripts/pr_lifecycle_pipeline_health.py`. **Claim complete unexpired
    `stage2_work_items` first** (including leftovers from an earlier Stage 1).
    Only when none are usable: if `starvation=true`, or today's Stage 1 recorded
    `stage2_queued_count: 0` while `salvage_eligible_count > 0`, write a
-   one-paragraph `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record and **stop**. No
-   inventory theater, no live-verify of Stage 3 remainder, no heavy docs-lineage
-   churn.
+   one-paragraph `EMPTY_INTAKE_STARVATION` / `FEED_FAIL` record labeled
+   `HEAL_THEN_PROCEED`, then **heal leftover Stage 1 feed and continue**
+   (queue complete work items, repair wrap-only export drift, salvage those
+   items). Do not invent recoveries from Stage 3 remainder markdown. Stop only
+   on empty intake with zero salvage-eligible remainder.
 2. **Stage 3:** if today's Stage 1 fingerprint is **missing**, or Stage 1
-   `throughput_grade` is FAIL, or health starvation is true, or Stage 2 stopped
-   on `FEED_FAIL` the same UTC day, write one short “upstream feed failed;
-   paused” record and **stop**. Do not spend completion actions or deep
-   reconcile. Optional cheap ACK of irreversible TERMINAL already projected is
-   allowed.
-3. **Dashboard operating rule:** keep Stage 2/3 **disabled** until Stage 1
-   `throughput_grade=PASS` **and** `starvation=false` (and ideally
-   `stage2_queued_count >= 1` when eligible stock remains). A queued sample WI
-   alone does not clear a FAIL grade. Paste targets remain the UUID automations;
+   `throughput_grade` is FAIL, or health starvation is true, or Stage 2
+   recorded `FEED_FAIL` the same UTC day, write one short “upstream feed
+   failed; heal then continue” record labeled `HEAL_THEN_PROCEED` and **complete
+   leftover Stage 1 drain / Stage 2 queue before your own completions**. Do not
+   spend tokens on export-wrap theater. Optional cheap ACK of irreversible
+   TERMINAL already projected is allowed.
+3. **Dashboard operating rule:** keep Stage 1/2/3 **enabled**. Heal a FAIL feed
+   in the next stage rather than disabling crons. A queued sample WI alone
+   does not clear a FAIL grade. Paste targets remain the UUID automations;
    agent run URLs (`bc-*`) are session evidence, not paste IDs.
 
 Stage 2 still claims only complete unexpired `stage2_work_items` (or
 materializes from already Stage-2-owned items). Stage 3 remainder markdown is
-never Stage 2 intake.
+never Stage 2 intake. Stage 2 still never merges drafts or original PRs;
+Stage 3 heal may perform leftover Stage 1 MERGEABLE green BOT merges under
+existing bounded-completion authority.
 
 Stage 3 must spend its fifteen completion actions on MERGEABLE green BOT that
 Stage 1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.

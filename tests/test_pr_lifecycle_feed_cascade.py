@@ -1,4 +1,4 @@
-"""Fail-closed feed cascade: Stage 1 fingerprint + Stage 2/3 short-circuit."""
+"""Heal-forward feed cascade: Stage 1 fingerprint + Stage 2/3 continue."""
 
 from __future__ import annotations
 
@@ -117,8 +117,9 @@ class TestStage2Cascade(unittest.TestCase):
             salvage_eligible_count=report.salvage_eligible_count,
         )
         decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
-        self.assertEqual(decision.action, "FEED_FAIL")
+        self.assertEqual(decision.action, "HEAL_THEN_PROCEED")
         self.assertIn(decision.label, {"EMPTY_INTAKE_STARVATION", "FEED_FAIL"})
+        self.assertTrue(cascade.unhealthy_stage2_feed(decision))
 
     def test_claim_when_complete_wi_present(self) -> None:
         report = health.summarize(
@@ -178,7 +179,7 @@ class TestStage3Cascade(unittest.TestCase):
         empty = health.summarize(_ledger([], []), now=NOW)
         cases = (
             (
-                "pause on stage1 fail",
+                "heal on stage1 fail",
                 empty,
                 cascade.grade_stage1_feed(
                     stage2_queued_count=0,
@@ -186,24 +187,24 @@ class TestStage3Cascade(unittest.TestCase):
                     docs_only_bookkeeping=True,
                 ),
                 False,
-                "UPSTREAM_PAUSE",
+                "HEAL_THEN_PROCEED",
             ),
             (
-                "pause when stage2 feed fail",
+                "heal when stage2 feed fail",
                 starved,
                 cascade.grade_stage1_feed(
                     stage2_queued_count=0,
                     salvage_eligible_count=1,
                 ),
                 True,
-                "UPSTREAM_PAUSE",
+                "HEAL_THEN_PROCEED",
             ),
             (
-                "pause when fingerprint missing",
+                "heal when fingerprint missing",
                 healthy,
                 None,
                 False,
-                "UPSTREAM_PAUSE",
+                "HEAL_THEN_PROCEED",
             ),
             (
                 "proceed when healthy",
