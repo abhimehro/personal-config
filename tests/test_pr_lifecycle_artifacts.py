@@ -403,6 +403,18 @@ class TestStage1ThroughputGate(unittest.TestCase):
             "cannot prepare a test branch (GitHub App or ruleset)",
             contract,
         )
+        salvage_spec = (ROOT / "docs/automated-pr-salvage-agent.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("stale-vs-main", salvage_spec)
+        review_spec = (ROOT / "docs/automated-pr-review-agent.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("stale-vs-main", review_spec)
+        completion_spec = (ROOT / "docs/automated-pr-completion-agent.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("stale-vs-main", completion_spec)
 
     def test_policy_revision_stays_v14(self):
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
