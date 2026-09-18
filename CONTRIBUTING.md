@@ -188,6 +188,21 @@ section; delete sections that genuinely do not apply.
 - [ ] Documentation updated if behaviour changed
 - [ ] PR description filled out completely
 
+### Merging (Trunk queue)
+
+This repository merges through the Trunk merge queue, not GitHub squash.
+
+If Trunk fails with `trunk-failed` or "GitHub blocked Trunk from preparing the
+test branch" after `main` has moved, the PR is **stale-vs-main**, not a Trunk
+GitHub App or ruleset misconfiguration:
+
+1. Pull the latest `main` into the PR branch.
+2. Wait until GitHub shows the PR up to date (the head SHA changes).
+3. Comment `/trunk merge` again on the **new** head SHA.
+
+Do not re-comment `/trunk merge` on an unchanged SHA. Do not GitHub-squash as a
+bypass.
+
 ---
 
 ## Secrets Policy
