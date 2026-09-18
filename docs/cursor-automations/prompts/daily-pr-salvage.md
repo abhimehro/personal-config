@@ -84,10 +84,12 @@ today's Stage 1 recorded `stage2_queued_count: 0` while
 `salvage_eligible_count > 0`, **or** Stage 1 `throughput_grade` is `FAIL` for a
 failed feed. If so, write a **one-paragraph** `EMPTY_INTAKE_STARVATION` /
 `FEED_FAIL` record labeled `HEAL_THEN_PROCEED` on today's
-`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then **heal leftover Stage 1
-work and continue**: queue complete Stage 2 work items from salvage-eligible
-stock, repair wrap-only export drift on a non-lineage product PR, CAS-write the
-feed, and salvage those items. Do not invent recoveries from Stage 3 remainder
+`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then **request a revision-checked Stage 1 recovery handoff**: the Stage 1
+owner must queue complete Stage 2 work items from salvage-eligible stock and
+CAS-write the feed; continue only after that feed appears. Stage 2 must not
+mutate Stage-1-owned inventory. Any export-drift repair PR created by Stage 2
+must be a draft and carry an explicit `salvage` or `infra-fix` title or label.
+Do not invent recoveries from Stage 3 remainder
 markdown. Do not spend tokens on export-wrap theater. Empty intake (zero
 salvage-eligible remainder) is the only stop.
 

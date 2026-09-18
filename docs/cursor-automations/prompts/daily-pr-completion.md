@@ -79,15 +79,16 @@ fetch the runtime ledger; run
 today's Stage 1 feed fingerprint and Stage 2 record. First check that today's
 Stage 1 feed fingerprint exists. If it is missing, write the same one short
 record — “upstream feed failed; heal then continue.” — on today's
-`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then complete leftover
-Stage 1 inventory/queue and Stage 2 salvage feed before spending completion
-actions. Only when the fingerprint exists, evaluate whether Stage 1
+`pr-lifecycle-docs-YYYYMMDD` lineage if it exists, then request a revision-checked Stage 1 recovery handoff and continue only
+when its CAS-written feed appears; do not mutate Stage-1-owned inventory from
+Stage 3. Keep all heal-forward activity report-only until calibration is
+re-approved for the revised policy. Only when the fingerprint exists, evaluate whether Stage 1
 `throughput_grade` is `FAIL` (failed feed), **or** health `starvation=true`,
 **or** Stage 2 recorded `FEED_FAIL` / `EMPTY_INTAKE_STARVATION` the same UTC
-day. If so, write that heal record labeled `HEAL_THEN_PROCEED` and **heal then
-continue**: leftover Stage 1 MERGEABLE green BOT merges/closes (Trunk queue on
-personal-config), queue missing Stage 2 work items, then spend remaining
-completion actions. Do not spend tokens on export-wrap theater or packet
+day. If so, write that heal record labeled `HEAL_THEN_PROCEED`, but remain
+**REPORT_ONLY**: do not merge, close, or queue anything until a new dated
+calibration approval for the revised policy is recorded. The Stage 1 recovery
+handoff remains revision-checked and Stage 3 must not mutate its inventory. Do not spend tokens on export-wrap theater or packet
 theater. Optional cheap exception only: ACK irreversible TERMINAL already
 projected. **Dashboard operating rule:** keep this automation **enabled**. Heal
 a FAIL feed rather than waiting for a human to disable the next stage. A queued
