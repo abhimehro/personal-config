@@ -195,7 +195,11 @@ def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapsho
 
 
 def _verify_exit_code(snapshot: DecisionSnapshot) -> int:
-    """Map snapshot to process exit: 0 claim, 1 claimless PROCEED, 2 starved."""
+    """Map a snapshot to the verify process exit code.
+
+    Return 0 for a claimed proceed or non-starved stop, 1 for a claimless
+    proceed, and 2 for a starved stop.
+    """
     # CLAIM (usable WI or Stage-2-owned materializable) beats observational
     # starvation so verify does not idle-fail a heal-forward run.
     if snapshot.stage2_decision.action == "PROCEED":
