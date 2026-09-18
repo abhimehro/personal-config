@@ -35,9 +35,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     try:
-        stripped = validate(
-            args.runtime_ledger, include_exports=args.include_exports
-        )
+        stripped = validate(args.runtime_ledger, include_exports=args.include_exports)
     except (OSError, ValueError, KeyError, IndexError) as exc:
         print(f"PR_LIFECYCLE_INVALID: {exc}", file=sys.stderr)
         return 1
