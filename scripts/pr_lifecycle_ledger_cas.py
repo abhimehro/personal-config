@@ -187,7 +187,8 @@ def run_preflight(out: Path) -> dict[str, Any]:
 
 
 def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[str, Any]:
-    """Sanitize then CAS-write a local ledger file onto the data branch.
+    """
+    Sanitize then CAS-write a local ledger file onto the data branch.
 
     Does not require Cursor export JSON to match prompt markdown. That gate
     is CI ``sync_cursor_export_prompts.py --check``, not ledger CAS.

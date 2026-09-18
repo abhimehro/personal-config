@@ -19,7 +19,8 @@ __all__ = ["validate"]
 
 
 def validate(runtime_ledger: Path, *, include_exports: bool = False) -> int:
-    """Validate policy plus one fetched runtime ledger; strip known projection keys.
+    """
+    Validate policy plus one fetched runtime ledger; strip known projection keys.
 
     Ledger CAS must stay runnable when Dashboard JSON wrap-drifts. Cursor
     export/prompt byte-equality is opt-in (CI `--check` / `--include-exports`).
