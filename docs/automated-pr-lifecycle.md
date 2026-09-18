@@ -147,9 +147,13 @@ automation reads or writes the runtime ledger. The validator rejects duplicate
 YAML mapping keys, unknown fields, duplicate item/event/idempotency keys,
 invalid anchors, invalid URLs/timestamps, invalid transition state/owner pairs,
 illegal transitions, projection disagreement, invalid terminal ownership,
-missing calibration fields, invalid Stage 2 work items, and an export whose
-authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action
-may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
+missing calibration fields, and invalid Stage 2 work items. Ledger schema and
+record failures, including an export whose authority does not match its stage
+when validating exports, are `ANALYSIS_ERROR`; no lifecycle action may follow.
+Cursor export JSON versus prompt markdown validation is a separate CI merge gate,
+not a CAS failure: repair a mismatch with `--write` on a non-lineage product PR
+while lifecycle draining continues. A main-branch bootstrap pointer is not a
+valid runtime-ledger input.
 
 The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer
 `revision`; a state transition increments it by exactly one. Nonterminal legal
