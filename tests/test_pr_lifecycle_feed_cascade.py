@@ -116,9 +116,7 @@ class TestStage2Cascade(unittest.TestCase):
             stage2_queued_count=0,
             salvage_eligible_count=report.salvage_eligible_count,
         )
-        decision = cascade.stage2_cascade_decision(
-            report, fp, usable_work_item_count=0
-        )
+        decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
         self.assertEqual(decision.action, "FEED_FAIL")
         self.assertIn(decision.label, {"EMPTY_INTAKE_STARVATION", "FEED_FAIL"})
 
@@ -153,9 +151,7 @@ class TestStage2Cascade(unittest.TestCase):
             stage2_queued_count=0,
             salvage_eligible_count=1,
         )
-        decision = cascade.stage2_cascade_decision(
-            report, fp, usable_work_item_count=1
-        )
+        decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=1)
         self.assertEqual(decision.action, "PROCEED")
         self.assertEqual(decision.label, "CLAIM")
 
@@ -166,9 +162,7 @@ class TestStage2Cascade(unittest.TestCase):
             stage2_queued_count=0,
             salvage_eligible_count=0,
         )
-        decision = cascade.stage2_cascade_decision(
-            report, fp, usable_work_item_count=0
-        )
+        decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
         self.assertEqual(decision.action, "EMPTY_INTAKE")
 
 
