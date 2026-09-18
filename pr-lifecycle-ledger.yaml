@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 69
+ledger_revision: 70
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -9479,14 +9479,16 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
-  guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge Bolt journal+processor twins while #405 is open.'
-  next_action: 'Stage 3: HOLD_CANONICAL Bolt vs open #405. Unresolved threads. Do
-    not merge generated_output cluster. Expires 2026-08-31T19:20:00Z'
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: Do not merge CONFLICTING source. Stage 2 opens a draft only; take
+    main's .jules/bolt.md (0cs).
+  next_action: 'Recover unique source excluding .jules/ journals into a focused draft
+    (scripts/processor.py and scripts/tests/test_processor.py). Twin #405 is MERGED.
+    Expires 2026-09-25T15:30:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
   changed_paths:
@@ -9494,13 +9496,14 @@ items:
   - scripts/processor.py
   - scripts/tests/test_processor.py
   attempts:
-    evidence: 2
-    recovery: 0
+    evidence: 3
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260824-seriescorrec-409-h
-  revision: 1
-  updated_at_utc: '2026-08-24T19:20:00Z'
+  - evt-s1-20260918-seriescorre-409-h
+  revision: 2
+  updated_at_utc: '2026-09-18T15:30:00Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -17047,28 +17050,28 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
-  guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge generated journal output or a public HTML change without
-    current accessibility evidence.
-  next_action: 'Stage 3: decide whether to recover only the meter markup and require
-    accessibility verification by 2026-09-13T17:00:00Z.'
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further automated action.
+  next_action: 'Retain as audit: closed CLOSED_SUPERSEDED of morning-brief keeper
+    https://github.com/abhimehro/personal-config/pull/2059.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2046
   changed_paths:
   - .jules/palette.md
   - scripts/morning-brief/morning-brief.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260906-personal-con-2046-reingest
-  revision: 1
-  updated_at_utc: '2026-09-06T17:00:00Z'
+  - evt-s1-20260918-personalconf-2046-t
+  revision: 2
+  updated_at_utc: '2026-09-18T15:30:00Z'
 - key: abhimehro/personal-config#2020@938b98783b9f55533b01e81f4ebb6505a393b0ad
   repository: abhimehro/personal-config
   pr: 2020
@@ -17626,28 +17629,27 @@ items:
   classification: PERFORMANCE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge overlapping parser changes or generated optimization
-    comments.
-  next_action: 'Stage 3: canonical-pick against #2030 and #2116; close duplicate or
-    recover unique tested source by 2026-09-13T17:20:00Z.'
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further automated action.
+  next_action: 'Retain as audit: closed CLOSED_SUPERSEDED of partition() keeper https://github.com/abhimehro/personal-config/pull/2030.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2029
   changed_paths:
   - pr_reference.py
   - run_merges.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260906b-personal-con-2029-reingest
-  revision: 1
-  updated_at_utc: '2026-09-06T17:20:00Z'
+  - evt-s1-20260918-personalconf-2029-t
+  revision: 2
+  updated_at_utc: '2026-09-18T15:30:00Z'
 - key: abhimehro/Seatek_Analysis#657@853c034f4c0545b0b8f7e00922a77897bff2c698
   repository: abhimehro/Seatek_Analysis
   pr: 657
@@ -41035,7 +41037,95 @@ events:
   policy_revision: null
   successful: null
   reason: NEW cursor repo-health. UNSTABLE Codacy. Touches AGENTS.md (agent steering).
-stage2_work_items: []
+- event_id: evt-s1-20260918-personalconf-2046-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2046@e9c2f8cbb8d8826b7ad5aea4809ebb6e1cc15fac
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2046@e9c2f8cbb8d8826b7ad5aea4809ebb6e1cc15fac:evt-s1-20260918-personalconf-2046-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T15:30:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 canonical-pick closed the live PR as CLOSED_SUPERSEDED.
+- event_id: evt-s1-20260918-personalconf-2029-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c:evt-s1-20260918-personalconf-2029-t
+  status: PROJECTED
+  created_at_utc: '2026-09-18T15:30:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 canonical-pick closed the live PR as CLOSED_SUPERSEDED.
+- event_id: evt-s1-20260918-seriescorre-409-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage3
+  to_owner: stage2
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s1-20260918-seriescorre-409-h
+  status: PROJECTED
+  created_at_utc: '2026-09-18T15:30:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'HOLD_CANONICAL vs #405 is stale (#405 MERGED). Queue unique-source salvage
+    of processor.py+tests.'
+stage2_work_items:
+- work_item_id: s2-20260918-seriescorre-409
+  source_item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  repository: abhimehro/series_correction_project_updated
+  pr: 409
+  base_sha: d5f92cf071029273c81c257301308821006bf31a
+  head_sha: 15621ef64d18af14d82cec0ea9d3e004313ce736
+  allowed_paths:
+  - scripts/processor.py
+  - scripts/tests/test_processor.py
+  prohibited_paths:
+  - .jules/bolt.md
+  - .github/workflows
+  - scripts/requirements.txt
+  repair_description: 'Recover unique remaining source from CONFLICTING Bolt #409
+    after #405 merged: shallow-copy changes in scripts/processor.py plus scripts/tests/test_processor.py.
+    Take main''s .jules/bolt.md (lesson 0cs). Do not touch lockfiles or workflows.'
+  required_test_command: python3 -m pytest scripts/tests/test_processor.py -q
+  expected_test_result: pytest exit 0
+  acceptance_criteria:
+  - Replacement draft contains only allowed_paths.
+  - scripts/tests/test_processor.py passes.
+  - .jules/bolt.md is not copied from the source PR.
+  provenance_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/409
+  - https://github.com/abhimehro/series_correction_project_updated/pull/405
+  expiry_utc: '2026-09-25T15:30:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20260918-seriescorre-409-h
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
