@@ -23,8 +23,8 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import pr_lifecycle_validation as validator  # noqa: E402
-from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 import yaml  # noqa: E402
+from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -389,9 +389,7 @@ class TestPipelineHealthCli(unittest.TestCase):
 
 class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return expand_prompt_source(
-            ROOT / "docs/cursor-automations/prompts" / name
-        )
+        return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
 
     def test_review_prompt_raised_caps_and_salvage_queue(self) -> None:
         review = self._prompt("daily-pr-review.md")
@@ -469,7 +467,9 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
             "daily-pr-completion.md",
         ):
             with self.subTest(name):
-                text = self._prompt(name)
+                # Markdown rewrapping may split any phrase across lines, so
+                # match on whitespace-normalized text.
+                text = " ".join(self._prompt(name).split())
                 self.assertIn("**Shared ownership.**", text)
                 self.assertIn("security-first development partner", text)
                 self.assertIn("security-focused", text)
@@ -507,20 +507,24 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
             self.assertEqual(raw.count(partner_include), 1, name)
             self.assertEqual(raw.count(cas_include), 1, name)
         calibration = (
-            ROOT / "docs/cursor-automations/prompts"
+            ROOT
+            / "docs/cursor-automations/prompts"
             / "daily-pr-completion.calibration.md"
         ).read_text(encoding="utf-8")
         self.assertNotIn(partner_include, calibration)
         self.assertNotIn(cas_include, calibration)
         salvage = self._prompt("daily-pr-salvage.md")
+        # Whitespace-normalized: markdown rewrapping may split phrases
+        # across lines.
+        salvage = " ".join(salvage.split())
         self.assertIn("infra-fix", salvage)
         self.assertIn("Do not rewrite Stage-1-owned inventory", salvage)
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("do **not** reset calibration", completion)
         self.assertIn("not a new action surface", completion)
-        contract = (
-            ROOT / "docs" / "automated-pr-lifecycle.md"
-        ).read_text(encoding="utf-8")
+        contract = (ROOT / "docs" / "automated-pr-lifecycle.md").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("## Shared ownership", contract)
         self.assertIn("development partners", contract)
         self.assertIn("security-first development partners", contract)

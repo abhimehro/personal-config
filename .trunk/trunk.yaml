@@ -18,6 +18,11 @@ lint:
     - linters: [dotenv-linter]
       paths:
         - maintenance/conf/config.env
+    # Test suites intentionally invoke the scripts under test via
+    # subprocess; inputs are repo-local fixtures, not untrusted data.
+    - linters: [bandit]
+      paths:
+        - tests/**
   disabled:
     - markdownlint
     - prettier

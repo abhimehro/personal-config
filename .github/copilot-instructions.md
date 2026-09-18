@@ -222,13 +222,12 @@ Git & Code Review
 - Review diffs for accidentally committed secrets before suggesting push
 - Suggest branch protection for security-critical paths
 - personal-config merges via the Trunk queue, not GitHub squash. A
-  `trunk-failed` label or "GitHub blocked Trunk from preparing the test
-  branch" after `main` moved is **stale-vs-main**: update the PR from
-  `main`, wait until it is up to date, then comment `/trunk merge` on the
-  **new** head SHA. Do not treat it as a GitHub App or ruleset
-  misconfiguration. Do not re-comment `/trunk merge` on an unchanged SHA.
-  HOLD_PLATFORM App/ruleset HITL only after the PR is already up to date
-  with `main`.
+  `trunk-failed` label or "GitHub blocked Trunk from preparing the test branch"
+  after `main` moved is **stale-vs-main**: update the PR from `main`, wait until
+  it is up to date, then comment `/trunk merge` on the **new** head SHA. Do not
+  treat it as a GitHub App or ruleset misconfiguration. Do not re-comment
+  `/trunk merge` on an unchanged SHA. HOLD_PLATFORM App/ruleset HITL only after
+  the PR is already up to date with `main`.
 
 CI/CD Awareness
 

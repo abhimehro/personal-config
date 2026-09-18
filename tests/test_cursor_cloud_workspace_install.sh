@@ -65,6 +65,9 @@ mkdir -p "${HOME}/.local/bin" "${MOCK_BIN}"
 # The production path is intentionally absolute. Patch only the disposable copy
 # so wrapper behavior can be exercised without touching /usr/local/bin.
 TEST_SCRIPT="${TEST_DIR}/cursor_cloud_workspace_install.sh"
+# Replacement text must stay literal: GITNEXUS_TEST_NODE_BIN expands at
+# runtime when the patched copy is sourced, not during this sed.
+# shellcheck disable=SC2016
 sed 's|local node_bin="/usr/local/bin/node"|local node_bin="${GITNEXUS_TEST_NODE_BIN:-/usr/local/bin/node}"|' \
 	"${SCRIPT}" >"${TEST_SCRIPT}"
 # shellcheck source=scripts/cursor_cloud_workspace_install.sh
@@ -96,7 +99,7 @@ rm -f "${HOME}/.local/bin/gitnexus"
 write_mock gitnexus 'printf "%s\n" "GitNexus 1.6.12"'
 write_mock npm "printf '%s\n' called >>'${TEST_DIR}/npm-unexpected.log'"
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t3.out" 2>&1 || \
+PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t3.out" 2>&1 ||
 	fail "matching CLI should satisfy ensure_gitnexus: $(cat "${TEST_DIR}/t3.out")"
 assert_grep 'gitnexus 1\.6\.12 already present' "${TEST_DIR}/t3.out" "missing already-present log"
 [[ ! -e ${TEST_DIR}/npm-unexpected.log ]] || fail "npm should not run for an already matching CLI"
@@ -107,7 +110,7 @@ echo "Test 4: missing npm is a non-fatal skip"
 echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t4.out" 2>&1 || \
+PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t4.out" 2>&1 ||
 	fail "missing npm should skip GitNexus installation"
 assert_grep 'skip gitnexus \(npm not on PATH' "${TEST_DIR}/t4.out" "missing npm skip log"
 pass "workspace setup tolerates images without npm"
@@ -119,7 +122,7 @@ write_mock npm "printf '%s\\n' \"\$*\" >>'${TEST_DIR}/npm-install.log'
 printf '%s\\n' '#!/usr/bin/env bash' 'printf \"%s\\n\" \"GitNexus 1.6.12\"' >'${HOME}/.local/bin/gitnexus'
 chmod +x '${HOME}/.local/bin/gitnexus'"
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t5.out" 2>&1 || \
+PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t5.out" 2>&1 ||
 	fail "pinned install path failed: $(cat "${TEST_DIR}/t5.out")"
 assert_grep 'install --global --prefix .*/home/\.local gitnexus@1\.6\.12' "${TEST_DIR}/npm-install.log" \
 	"npm command did not pin GitNexus under HOME"
@@ -132,7 +135,7 @@ rm -f "${HOME}/.local/bin/gitnexus"
 write_mock gitnexus 'printf "%s\n" "GitNexus 9.9.9"'
 : >"${TEST_DIR}/npm-install.log"
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t6.out" 2>&1 || \
+PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t6.out" 2>&1 ||
 	fail "mismatch reinstall path failed: $(cat "${TEST_DIR}/t6.out")"
 assert_grep "present but version 'GitNexus 9\.9\.9' != 1\.6\.12; reinstalling" "${TEST_DIR}/t6.out" \
 	"missing mismatch log"
@@ -210,7 +213,7 @@ echo "Test 12: indexing gracefully skips when the CLI is unavailable"
 echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus"
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" index_gitnexus_repos >"${TEST_DIR}/t12.out" 2>&1 || \
+PATH="${MOCK_BIN}:/usr/bin:/bin" index_gitnexus_repos >"${TEST_DIR}/t12.out" 2>&1 ||
 	fail "indexing without a CLI should be a non-fatal skip"
 assert_grep 'skip gitnexus index \(cli missing\)' "${TEST_DIR}/t12.out" "missing CLI skip log"
 pass "indexing is optional when called independently"
@@ -281,7 +284,7 @@ write_mock gitnexus "printf '%s|%s\\n' \"\${PWD}\" \"\$*\" >>'${TEST_DIR}/gitnex
 hash -r
 (
 	exclude_gitnexus_index() {
-		[[ "$1" != "${REPOS_ROOT}/personal-config" ]]
+		[[ $1 != "${REPOS_ROOT}/personal-config" ]]
 	}
 	PATH="${MOCK_BIN}:/usr/bin:/bin" REPOS_ROOT="${REPOS_ROOT}" \
 		index_gitnexus_repos >"${TEST_DIR}/t16.out" 2>&1
@@ -310,10 +313,10 @@ echo "Test 18: sourcing the production script has no installer side effects"
 echo "---"
 source_home="${TEST_DIR}/source-home"
 mkdir -p "${source_home}"
-HOME="${source_home}" bash -c 'source "$1"' _ "${SCRIPT}" >"${TEST_DIR}/t18.out" 2>&1 || \
+HOME="${source_home}" bash -c 'source "$1"' _ "${SCRIPT}" >"${TEST_DIR}/t18.out" 2>&1 ||
 	fail "production script should be sourceable"
 [[ ! -s ${TEST_DIR}/t18.out ]] || fail "sourcing unexpectedly printed output: $(cat "${TEST_DIR}/t18.out")"
-[[ ! -e ${source_home}/.local/state/cursor-cloud-workspace-install.log ]] || \
+[[ ! -e ${source_home}/.local/state/cursor-cloud-workspace-install.log ]] ||
 	fail "sourcing unexpectedly created an install log"
 pass "source guard prevents main from running"
 

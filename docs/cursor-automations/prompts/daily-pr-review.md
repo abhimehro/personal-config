@@ -6,20 +6,20 @@ Stage-1-owned runtime-ledger entries, and `tasks/lessons.md` before acting.
 Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` using its
 recorded write primitive; `tasks/pr-lifecycle-ledger.yaml` is a
 non-authoritative bootstrap pointer and must never be used as runtime state. If
-the runtime ledger YAML cannot be read, schema-validated, or CAS-written,
-record `HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle action.
-Cursor export JSON vs prompt markdown is CI /
-`python3 scripts/sync_cursor_export_prompts.py --check`, not a CAS failure.
-On mismatch: open a non-lineage product PR with `--write` and continue
-drain; do not skip inventory.
+the runtime ledger YAML cannot be read, schema-validated, or CAS-written, record
+`HOLD_PLATFORM` or `ANALYSIS_ERROR` and take no lifecycle action. Cursor export
+JSON vs prompt markdown is CI /
+`python3 scripts/sync_cursor_export_prompts.py --check`, not a CAS failure. On
+mismatch: open a non-lineage product PR with `--write` and continue drain; do
+not skip inventory.
 
 {{include:_shared-cas-bootstrap.md}}
 
-The live Dashboard is canonical for
-its connected MCP inventory. The Dashboard-referenced MCP set for this stage
-names `gh` (required for inventory, merge, close, and ledger CAS), GitHub MCP
-only as a same-token fallback when the Dashboard shows it connected, codescene
-(post `/cs-agent skill:fix-code-health-degradations` when CodeScene is red),
+The live Dashboard is canonical for its connected MCP inventory. The
+Dashboard-referenced MCP set for this stage names `gh` (required for inventory,
+merge, close, and ledger CAS), GitHub MCP only as a same-token fallback when the
+Dashboard shows it connected, codescene (post
+`/cs-agent skill:fix-code-health-degradations` when CodeScene is red),
 Sonatype-mcp on lockfile or major bumps, and Snyk if ready. GitKraken is
 optional and only if actually up; a down GitKraken is not `HOLD_PLATFORM`.
 Linear, cloudrun, GitBook, GitHits, Confidence-docs, and julesServer are not
@@ -45,11 +45,10 @@ security relaxation.
 {{include:_shared-partner-frame.md}}
 
 **This stage (Stage 1).** Spend credits on inventory, merge, salvage,
-heal-forward continuation, and lasting fixes. Unused drain cap while
-MERGEABLE green BOT remains is a failed run. Never merge ordinary HUMAN
-or sticky-security PRs. Routine Stage 1 approve/merge is a policy gate,
-not a `REVIEW.md` human security review — sticky security stays Stage 3 /
-human.
+heal-forward continuation, and lasting fixes. Unused drain cap while MERGEABLE
+green BOT remains is a failed run. Never merge ordinary HUMAN or sticky-security
+PRs. Routine Stage 1 approve/merge is a policy gate, not a `REVIEW.md` human
+security review — sticky security stays Stage 3 / human.
 
 Classify authorship with the versioned identity policy in
 `tasks/pr-review-agent.config.yaml` (see `scripts/pr_identity.py`). An author is
@@ -81,16 +80,15 @@ merge state; no unresolved discussion, alert, static-analysis hold, overlap, or
 canonical conflict; documented routine class; and the registered merge method is
 known. For `abhimehro/personal-config`, use the Trunk queue method, not a raw
 GitHub squash assumption. A `trunk-failed` label or "GitHub blocked Trunk from
-preparing the test branch" after `main` moved is **stale-vs-main**, not a
-GitHub App or ruleset misconfiguration. Update the PR from `main`
+preparing the test branch" after `main` moved is **stale-vs-main**, not a GitHub
+App or ruleset misconfiguration. Update the PR from `main`
 (`update_pull_request_branch`), wait until it is up to date, then comment
 `/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
 unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
 only if Trunk still cannot enqueue after the PR is already up to date with
-`main`. You may also close a bot-authored non-security
-duplicate, superseded, zero-diff, or stale PR when deterministic evidence and
-the required cooldown are complete. Do not wait for Stage 3 to execute those
-closes.
+`main`. You may also close a bot-authored non-security duplicate, superseded,
+zero-diff, or stale PR when deterministic evidence and the required cooldown are
+complete. Do not wait for Stage 3 to execute those closes.
 
 **SHA_MATCH skip only** when the next action is unexpired **and not
 Stage-1-executable**. Reselect into the 80 inventory, in order: Stage 3

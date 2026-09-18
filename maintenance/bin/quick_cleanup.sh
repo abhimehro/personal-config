@@ -217,7 +217,7 @@ if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
 		while IFS= read -r v; do
 			[[ -n $v ]] && keep+=("$v")
 		done < <(
-			find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec stat -f "%m %N" {} + 2>/dev/null 				| sort -rn | head -n "$TRUNK_KEEP_VERSIONS" 				| while read -r _ p; do basename "$p"; done
+			find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec stat -f "%m %N" {} + 2>/dev/null | sort -rn | head -n "$TRUNK_KEEP_VERSIONS" | while read -r _ p; do basename "$p"; done
 		)
 
 		for v in "${versions[@]}"; do
@@ -237,7 +237,7 @@ if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
 						retain=1
 						break
 					fi
-				done <<< "$TRUNK_PINS"
+				done <<<"$TRUNK_PINS"
 			fi
 
 			[[ $retain -eq 1 ]] && continue
@@ -250,7 +250,7 @@ if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
 
 	# Repo clones are cheap to recreate and Trunk re-clones on demand.
 	if [[ -d $TRUNK_CACHE_DIR/repos ]]; then
-		find "$TRUNK_CACHE_DIR/repos" -mindepth 1 -maxdepth 1 -type d -mtime +7 			-exec rm -rf {} + 2>/dev/null || true
+		find "$TRUNK_CACHE_DIR/repos" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
 	fi
 
 	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
@@ -289,7 +289,7 @@ if [[ -f $FISH_VARS ]]; then
 	done < <(grep -o '^SETUVAR _tide_prompt_[0-9]*' "$FISH_VARS" 2>/dev/null | sed 's/^SETUVAR //' | sort -u)
 
 	if [[ $TIDE_ORPHANS -gt 0 ]]; then
-		FISH_BEFORE=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		FISH_BEFORE=$(wc -c <"$FISH_VARS" | tr -d ' ')
 		cp -p "$FISH_VARS" "$FISH_VARS.maintenance.bak"
 
 		# Keep only entries whose PID is still alive. A PID that has been reused
@@ -301,19 +301,19 @@ if [[ -f $FISH_VARS ]]; then
 				pid="${BASH_REMATCH[1]}"
 				if ps -p "$pid" -o comm= >/dev/null 2>&1; then
 					printf '%s
-' "$line" >> "$TMP_VARS"
+' "$line" >>"$TMP_VARS"
 				fi
 			else
 				printf '%s
-' "$line" >> "$TMP_VARS"
+' "$line" >>"$TMP_VARS"
 			fi
-		done < "$FISH_VARS"
+		done <"$FISH_VARS"
 
-		cat "$TMP_VARS" > "$FISH_VARS"
+		cat "$TMP_VARS" >"$FISH_VARS"
 		rm -f "$TMP_VARS"
 		chmod 600 "$FISH_VARS" 2>/dev/null || true
 
-		FISH_AFTER=$(wc -c < "$FISH_VARS" | tr -d ' ')
+		FISH_AFTER=$(wc -c <"$FISH_VARS" | tr -d ' ')
 		log_info "Reaped ${TIDE_ORPHANS} of ${TIDE_TOTAL} stale Tide prompt entries (fish_variables: ${FISH_BEFORE} -> ${FISH_AFTER} bytes)"
 		((CLEANED++))
 	else

@@ -349,9 +349,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
 
 class TestStage1ThroughputGate(unittest.TestCase):
     def _prompt(self, name: str) -> str:
-        return expand_prompt_source(
-            ROOT / "docs/cursor-automations/prompts" / name
-        )
+        return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
 
     def test_review_prompt_sha_match_reselect(self):
         review = self._prompt("daily-pr-review.md")
@@ -415,9 +413,7 @@ class TestStage1ThroughputGate(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("stale-vs-main", completion_spec)
-        copilot = (ROOT / ".github/copilot-instructions.md").read_text(
-            encoding="utf-8"
-        )
+        copilot = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
         self.assertIn("stale-vs-main", copilot)
         cursor_rules = (ROOT / ".cursorrules").read_text(encoding="utf-8")
         self.assertIn("stale-vs-main", cursor_rules)

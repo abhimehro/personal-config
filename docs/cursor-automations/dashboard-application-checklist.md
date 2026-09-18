@@ -57,11 +57,10 @@ automation that is not in this table. Leave calibration permanently disabled
 while completion exists. Do **not** disable Stage 1 so Stage 2 can take over:
 Stage 2 is an independent `0 17 * * *` UTC cron (lesson **0hk**).
 
-A 2026-09-16 snapshot of this table listed all four as **disabled**. That
-column is historical and must not be applied. Live GetAutomation on
-2026-09-18 is Stage 1/2/3 completion **enabled**, calibration **disabled**.
-Follow this table and the heal-forward section, not the dated disabled
-column.
+A 2026-09-16 snapshot of this table listed all four as **disabled**. That column
+is historical and must not be applied. Live GetAutomation on 2026-09-18 is Stage
+1/2/3 completion **enabled**, calibration **disabled**. Follow this table and
+the heal-forward section, not the dated disabled column.
 
 ### Heal-forward enablement rule
 
@@ -77,27 +76,26 @@ After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
    healing must produce a real feed or leftover Stage 1 drain.
 5. Shared ownership: each stage is a **security-first / security-focused
    development partner** (Copilot Development Partner profile, `AGENTS.md`,
-   `REVIEW.md`, `.cursorrules`). Apply those files; citing them is not
-   enough. A growing backlog is a failed run, not a reason to stop. Doing
-   no work is a failed run. Do not claim problems resolved and then leave.
+   `REVIEW.md`, `.cursorrules`). Apply those files; citing them is not enough. A
+   growing backlog is a failed run, not a reason to stop. Doing no work is a
+   failed run. Do not claim problems resolved and then leave.
 
 Do not disable Stage 1 so Stage 2 can “take over”; Stage 2 is an independent
-`0 17 * * *` UTC cron. Do not disable Stage 2/3 while Stage 1 still queues
-0 WIs; that is the condition that requires heal-forward, not a pause.
+`0 17 * * *` UTC cron. Do not disable Stage 2/3 while Stage 1 still queues 0
+WIs; that is the condition that requires heal-forward, not a pause.
 
 **HITL paste after this cascade PR lands:**
 
-Paste the **expanded** JSON `prompts[0].prompt` field from each export —
-never paste markdown that still contains `{{include:...}}`. Sibling
-includes (`_shared-cas-bootstrap.md`, `_shared-partner-frame.md`) are
-already expanded in the JSON. The four UUIDs below are unchanged; do
-not create a fifth automation.
+Paste the **expanded** JSON `prompts[0].prompt` field from each export — never
+paste markdown that still contains `{{include:...}}`. Sibling includes
+(`_shared-cas-bootstrap.md`, `_shared-partner-frame.md`) are already expanded in
+the JSON. The four UUIDs below are unchanged; do not create a fifth automation.
 
 1. Paste `exports/daily-pr-review.json` `prompts[0].prompt` into Stage 1
    `77c168e0-7f6b-42de-bad6-da4e4e640b79` (shared ownership + fingerprint).
 2. Paste `exports/daily-pr-salvage.json` `prompts[0].prompt` into Stage 2
-   `3e537981-04a6-456f-89a3-272d9d5fddd7`
-   (shared ownership + HEAL_THEN_PROCEED).
+   `3e537981-04a6-456f-89a3-272d9d5fddd7` (shared ownership +
+   HEAL_THEN_PROCEED).
 3. Leave calibration `d9d2c058-9c42-11f1-ba66-0e7d0216e441` **disabled**.
 4. Paste `exports/daily-pr-completion.json` `prompts[0].prompt` into Stage 3
    completion `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` (shared ownership +

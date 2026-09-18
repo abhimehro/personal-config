@@ -16,8 +16,8 @@ tests/
 
 ## Running Tests
 
-Prefer the Makefile targets (from repo root). They match CI and skip
-macOS-only scripts with `SKIP:` / exit 77 on Linux:
+Prefer the Makefile targets (from repo root). They match CI and skip macOS-only
+scripts with `SKIP:` / exit 77 on Linux:
 
 ```bash
 # Smoke tests (pre-commit)

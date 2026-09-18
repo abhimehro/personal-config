@@ -78,9 +78,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             "daily-pr-completion.json",
         ):
             with self.subTest(export_name):
-                data = json.loads(
-                    (EXPORTS / export_name).read_text(encoding="utf-8")
-                )
+                data = json.loads((EXPORTS / export_name).read_text(encoding="utf-8"))
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
                 self.assertIn("security-first development partner", prompt)
@@ -89,16 +87,12 @@ class TestPromptIncludeExpansion(unittest.TestCase):
 
     def test_rejects_path_traversal(self) -> None:
         with self.assertRaises(PromptIncludeError):
-            expand_prompt_includes(
-                "{{include:_../secrets.md}}\n", PROMPTS
-            )
+            expand_prompt_includes("{{include:_../secrets.md}}\n", PROMPTS)
 
     def test_rejects_dotdot_in_allowlisted_charset(self) -> None:
         """``..`` inside an otherwise allowlisted name is still traversal."""
         with self.assertRaises(PromptIncludeError):
-            expand_prompt_includes(
-                "{{include:_foo..bar.md}}\n", PROMPTS
-            )
+            expand_prompt_includes("{{include:_foo..bar.md}}\n", PROMPTS)
 
     def test_rejects_nested_include(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -106,16 +100,12 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             nested = prompts_dir / "_nested.md"
             nested.write_text("{{include:_other.md}}\n", encoding="utf-8")
             with self.assertRaises(PromptIncludeError):
-                expand_prompt_includes(
-                    "{{include:_nested.md}}\n", prompts_dir
-                )
+                expand_prompt_includes("{{include:_nested.md}}\n", prompts_dir)
 
     def test_rejects_missing_include(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(PromptIncludeError, "include missing"):
-                expand_prompt_includes(
-                    "{{include:_missing.md}}\n", Path(tmp)
-                )
+                expand_prompt_includes("{{include:_missing.md}}\n", Path(tmp))
 
     def test_rejects_symlink_that_escapes_prompts_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -129,15 +119,11 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             with self.assertRaisesRegex(
                 PromptIncludeError, "include escaped prompts dir"
             ):
-                expand_prompt_includes(
-                    "{{include:_escape.md}}\n", prompts_dir
-                )
+                expand_prompt_includes("{{include:_escape.md}}\n", prompts_dir)
 
     def test_rejects_malformed_include(self) -> None:
         with self.assertRaises(PromptIncludeError):
-            expand_prompt_includes(
-                "see {{include:_shared-partner-frame.md}}", PROMPTS
-            )
+            expand_prompt_includes("see {{include:_shared-partner-frame.md}}", PROMPTS)
 
 
 if __name__ == "__main__":

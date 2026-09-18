@@ -6,7 +6,6 @@ import re
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 RUN_RECORD = ROOT / "tasks/pr-review-2026-09-18.md"
 SESSION_REPORTS = ROOT / "tasks/review-session-reports.md"
@@ -18,9 +17,7 @@ def _section(document: str, heading: str) -> str:
     level = len(heading) - len(heading.lstrip("#"))
     start = document.index(heading)
     search_start = start + len(heading)
-    next_heading = re.search(
-        rf"^#{{1,{level}}} (?!#)", document[search_start:], re.M
-    )
+    next_heading = re.search(rf"^#{{1,{level}}} (?!#)", document[search_start:], re.M)
     if next_heading is None:
         return document[start:]
     return document[start : search_start + next_heading.start()]
@@ -57,7 +54,9 @@ class TestStage1RunRecord20260918(unittest.TestCase):
         self.assertEqual(metrics["Ledger file CAS writes"], "0")
         self.assertEqual(metrics["Analysis errors"], "1")
 
-        self.assertIn("Guardrail outcome for this run: `ANALYSIS_ERROR`", self.run_record)
+        self.assertIn(
+            "Guardrail outcome for this run: `ANALYSIS_ERROR`", self.run_record
+        )
         self.assertIn("69 / unchanged", self.run_record)
         self.assertIn("This run **did not** `commit`", self.run_record)
 

@@ -34,13 +34,11 @@ class CascadeDecision:
 
 
 def _feed_is_starved(queued: int, eligible: int) -> bool:
-    """True when salvage-eligible stock remains and nothing was queued."""
+    """Return True when salvage-eligible stock remains and nothing was queued."""
     return eligible > 0 and not queued
 
 
-def _decision(
-    action: CascadeAction, label: str, reason: str
-) -> CascadeDecision:
+def _decision(action: CascadeAction, label: str, reason: str) -> CascadeDecision:
     """Build a cascade decision record."""
     return CascadeDecision(action=action, label=label, reason=reason)
 
@@ -64,7 +62,7 @@ def grade_stage1_feed(
 
 
 def unhealthy_stage2_feed(decision: CascadeDecision) -> bool:
-    """True when Stage 2 is healing a starved or failed feed."""
+    """Return True when Stage 2 is healing a starved or failed feed."""
     return decision.action == "HEAL_THEN_PROCEED" and decision.label in {
         "FEED_FAIL",
         "EMPTY_INTAKE_STARVATION",
@@ -137,9 +135,7 @@ def stage2_cascade_decision(
     if claimed is not None:
         return claimed
     if health.starvation:
-        return _decision(
-            "HEAL_THEN_PROCEED", "EMPTY_INTAKE_STARVATION", health.reason
-        )
+        return _decision("HEAL_THEN_PROCEED", "EMPTY_INTAKE_STARVATION", health.reason)
     return _stage2_feed_or_empty(fingerprint)
 
 

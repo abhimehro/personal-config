@@ -212,7 +212,11 @@ install_seatek_analysis() {
 		cd "${repo}"
 		# Bootstrap renv into the project library layout renv/activate.R expects; verify with
 		# requireNamespace (install.packages returns invisible NULL on success).
+		# ${ppm_repo} is intentionally spliced into the single-quoted R code.
+		# shellcheck disable=SC2016
 		Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib); if (!requireNamespace("renv", lib.loc = lib, quietly = TRUE)) quit(status = 1)'
+		# ${ppm_repo} is intentionally spliced into the single-quoted R code.
+		# shellcheck disable=SC2016
 		Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); .libPaths(unique(c(lib, .libPaths()))); options(renv.config.repos.override = c(CRAN = "'"${ppm_repo}"'")); renv::restore()'
 	); then
 		# SECURITY: renv failure must not skip Series 27 — that path is Python-only
@@ -279,7 +283,7 @@ install_repoprompt_ce() {
 gitnexus_version_matches() {
 	local reported="$1" version
 	version="$(printf '%s\n' "${reported}" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
-	[[ "${version}" == "${GITNEXUS_PINNED_VERSION}" ]]
+	[[ ${version} == "${GITNEXUS_PINNED_VERSION}" ]]
 }
 
 # SECURITY: launch the pinned CLI with the snapshot Node, not `env node`
@@ -288,7 +292,7 @@ gitnexus_wrap_with_image_node() {
 	local js="${HOME}/.local/lib/node_modules/gitnexus/dist/cli/index.js"
 	local node_bin="/usr/local/bin/node"
 	local dest="${HOME}/.local/bin/gitnexus"
-	if [[ -f "${js}" && -x "${node_bin}" ]]; then
+	if [[ -f ${js} && -x ${node_bin} ]]; then
 		printf '%s\n' '#!/usr/bin/env bash' "exec '${node_bin}' '${js}' \"\$@\"" >"${dest}"
 		chmod +x "${dest}"
 	fi
@@ -340,7 +344,7 @@ exclude_gitnexus_index() {
 	exclude_dir="${repo}/.git/info"
 	exclude_file="${exclude_dir}/exclude"
 	mkdir -p "${exclude_dir}"
-	if [[ -f "${exclude_file}" ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
+	if [[ -f ${exclude_file} ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
 		return 0
 	fi
 	printf '%s\n' '.gitnexus/' >>"${exclude_file}"
@@ -350,7 +354,7 @@ exclude_gitnexus_index() {
 should_skip_gitnexus_index() {
 	local name="$1"
 	# NOTE: HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
-	[[ "${name}" == "repoprompt-ce" ]]
+	[[ ${name} == "repoprompt-ce" ]]
 }
 
 # Best-effort index available sibling repositories without generated docs or FTS.
@@ -369,7 +373,7 @@ index_gitnexus_repos() {
 		"${REPOS_ROOT}/series_correction_project_updated" \
 		"${REPOS_ROOT}/repoprompt-ce"; do
 		name="${repo##*/}"
-		if [[ ! -d "${repo}" ]]; then
+		if [[ ! -d ${repo} ]]; then
 			log "gitnexus: skip ${name} (missing)"
 			continue
 		fi
@@ -406,6 +410,6 @@ cursor_cloud_workspace_install_main() {
 	log "done"
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
 	cursor_cloud_workspace_install_main "$@"
 fi

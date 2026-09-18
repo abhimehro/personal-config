@@ -51,17 +51,17 @@ _TRAVERSAL_MARKERS = ("..", "/", "\\")
 
 
 def _include_name_allowed(name: str) -> bool:
-    """True when the include name matches the prompts-dir allowlist."""
+    """Return True when the include name matches the prompts-dir allowlist."""
     return INCLUDE_NAME_RE.fullmatch(name) is not None
 
 
 def _include_name_has_traversal(name: str) -> bool:
-    """True when the include name contains a separator or parent token."""
+    """Return True when the include name contains a separator or parent token."""
     return any(marker in name for marker in _TRAVERSAL_MARKERS)
 
 
 def _path_stays_in_prompts(prompts_dir: Path, target: Path) -> bool:
-    """True when resolved target stays inside the prompts directory."""
+    """Return True when resolved target stays inside the prompts directory."""
     try:
         target.relative_to(prompts_dir)
     except ValueError:
@@ -147,9 +147,7 @@ def load_prompt_reconciliation(
     entry = get_single_prompt_entry(export, export_path.name)
     if isinstance(entry, str):
         return entry
-    return PromptReconciliation(
-        export, entry, export_path, prompt_path.name, prompt
-    )
+    return PromptReconciliation(export, entry, export_path, prompt_path.name, prompt)
 
 
 def get_single_prompt_entry(

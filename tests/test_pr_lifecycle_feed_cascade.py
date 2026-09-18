@@ -9,7 +9,6 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -207,9 +206,7 @@ class TestStage2Cascade(unittest.TestCase):
         for label, action, expected in cases:
             with self.subTest(label):
                 decision = cascade.CascadeDecision(action, label, "test")
-                self.assertEqual(
-                    cascade.unhealthy_stage2_feed(decision), expected
-                )
+                self.assertEqual(cascade.unhealthy_stage2_feed(decision), expected)
 
 
 class TestStage3Cascade(unittest.TestCase):

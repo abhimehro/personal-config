@@ -599,8 +599,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                         |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`) for the full suite                                                             |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                       |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`) for the full suite                                                           |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
@@ -630,18 +630,18 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
-- **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus
-  CLI (Node came only from the live exec-daemon). `.cursor/Dockerfile` now pins
-  Node 22.18.0, and `scripts/cursor_cloud_workspace_install.sh` installs
+- **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus CLI
+  (Node came only from the live exec-daemon). `.cursor/Dockerfile` now pins Node
+  22.18.0, and `scripts/cursor_cloud_workspace_install.sh` installs
   `gitnexus@1.6.12` then indexes sibling repos with
   `analyze --index-only --skip-fts`. Indexes stay local (`.gitnexus/` is
   gitignored). Skip `repoprompt-ce` — 16GB Linux VMs OOM (~12GB heap). A new
   **environment build** after merge is required before later agents inherit
   this; warm-forks of the old snapshot will not rerun install.
-- **Trunk merge-queue failures vs stale `main`**: personal-config routine
-  merges use `/trunk merge`, not GitHub squash. If Trunk fails after `main`
-  moved, sync the PR with `main` first, then comment `/trunk merge` again on
-  the new SHA. That is not a Trunk App/ruleset configuration issue.
+- **Trunk merge-queue failures vs stale `main`**: personal-config routine merges
+  use `/trunk merge`, not GitHub squash. If Trunk fails after `main` moved, sync
+  the PR with `main` first, then comment `/trunk merge` again on the new SHA.
+  That is not a Trunk App/ruleset configuration issue.
 
 ### Cursor Cloud pre-commit secret scan
 
@@ -691,18 +691,17 @@ symlink destinations are never followed. To target one hash directory:
   `tasks/*-session-reports.md`. Digests cap at five human items. Health must
   flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
 - Stage 1/2/3 agents are **security-first / security-focused development
-  partners** (same profile as GitHub Copilot
-  `.github/copilot-instructions.md`, this file, `REVIEW.md`, and
-  `.cursorrules`). They must **apply** those files, not merely cite them:
-  fail secure, least privilege, root causes only, never weaken controls,
-  `REVIEW.md` severity calibration, Trunk-queue personal-config merges
-  (stale-vs-main first: update from `main`, then `/trunk merge` on the new
-  SHA; do not treat a behind-main Trunk failure as App/ruleset config).
-  They own repo health as much as the maintainer. A growing PR backlog is
-  failed work, not a stop signal. Doing no work is a failed run. Do not
-  claim problems resolved and then stop. Heal leftover prior-stage work
-  and continue. Honest stops: empty intake with zero salvage-eligible
-  remainder, or `HOLD_PLATFORM` / `ANALYSIS_ERROR` blocking every mutation.
+  partners** (same profile as GitHub Copilot `.github/copilot-instructions.md`,
+  this file, `REVIEW.md`, and `.cursorrules`). They must **apply** those files,
+  not merely cite them: fail secure, least privilege, root causes only, never
+  weaken controls, `REVIEW.md` severity calibration, Trunk-queue personal-config
+  merges (stale-vs-main first: update from `main`, then `/trunk merge` on the
+  new SHA; do not treat a behind-main Trunk failure as App/ruleset config). They
+  own repo health as much as the maintainer. A growing PR backlog is failed
+  work, not a stop signal. Doing no work is a failed run. Do not claim problems
+  resolved and then stop. Heal leftover prior-stage work and continue. Honest
+  stops: empty intake with zero salvage-eligible remainder, or `HOLD_PLATFORM` /
+  `ANALYSIS_ERROR` blocking every mutation.
 
 ## Learned Workspace Facts
 

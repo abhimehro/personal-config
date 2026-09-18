@@ -28,7 +28,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
-from pr_lifecycle_feed_cascade import (
+from pr_lifecycle_feed_cascade import (  # noqa: E402
     CascadeDecision,
     FeedFingerprint,
     claimable_work_items,
@@ -37,12 +37,12 @@ from pr_lifecycle_feed_cascade import (
     stage3_cascade_decision,
     unhealthy_stage2_feed,
 )
-from pr_lifecycle_pipeline_health import (
+from pr_lifecycle_pipeline_health import (  # noqa: E402
     PipelineHealth,
     _load_runtime_ledger,
     summarize,
 )
-from pr_lifecycle_yaml import load_yaml
+from pr_lifecycle_yaml import load_yaml  # noqa: E402
 
 _SAMPLE_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
@@ -194,9 +194,7 @@ def _build_snapshot(
         stage2_queued_count=session_queued_count,
         salvage_eligible_count=health.salvage_eligible_count,
     )
-    stage2_decision, stage3_decision = _stage_decisions(
-        health, fingerprint, claimable
-    )
+    stage2_decision, stage3_decision = _stage_decisions(health, fingerprint, claimable)
     return DecisionSnapshot(
         health=health,
         fingerprint=fingerprint,

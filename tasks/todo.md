@@ -1,7 +1,7 @@
 # Exclusive docs lineage 0hk (2026-09-18, this Stage 1 session)
 
-T5 — Stage 2/3 must not think heal-forward is still Trunk-queued, and must
-not disable Stage 1 to “hand off” to Stage 2.
+T5 — Stage 2/3 must not think heal-forward is still Trunk-queued, and must not
+disable Stage 1 to “hand off” to Stage 2.
 
 - [x] Confirm live GetAutomation: Stage 1/2/3 completion on, calibration off
 - [x] Rewrite Downstream unblock: #2224/#2225/#2226 on `main`
@@ -17,8 +17,8 @@ T2 — Stage 2/3 heal leftover Stage 1 work instead of hard-stopping.
 
 - [x] `HEAL_THEN_PROCEED` replaces `FEED_FAIL` / `UPSTREAM_PAUSE` stop actions
 - [x] Stage 1/2/3 prompts + lifecycle contract + dashboard checklist
-- [x] Shared-ownership / security-first development-partner language
-      (Copilot profile, `AGENTS.md`, `REVIEW.md`) in all three prompts
+- [x] Shared-ownership / security-first development-partner language (Copilot
+      profile, `AGENTS.md`, `REVIEW.md`) in all three prompts
 - [x] Partner profile apply-not-cite bindings (Copilot + `AGENTS.md` +
       `REVIEW.md` + `.cursorrules`) in prompts, contract, and tests
 - [x] Tests + export `--write`
@@ -39,7 +39,8 @@ T3+S — Wrap-only Cursor export drift must not halt the daily drain.
 - [x] Product PR #2223; subscribed GitHub PR + CI
 - [x] Qodo: wrap 79-char patch line; merge CI `--include-exports` + paths
 - [x] Codacy: one-line docstrings (D212 vs D213 ping-pong on the same pair)
-- [x] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
+- [x] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no
+      self-approve)
 
 ## Stage 1→2 fail-closed cascade (2026-09-16)
 
