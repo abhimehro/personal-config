@@ -3023,3 +3023,29 @@ non-lineage change. Stage 1 cron must **not** silently sync exports. Example:
 **Detection cost:** Low — compare the Stage 1 metrics table to live MERGED PRs;
 `python3 scripts/sync_cursor_export_prompts.py --check`; Trunk “could not start
 testing” comment vs `dependency-review` SUCCESS.
+
+## Lesson 0hj: Trunk "blocked test branch" is stale-vs-main first (2026-09-18)
+
+**Pattern:** After `main` moved, routine personal-config PRs (`#2217`, and
+`#2224` before it merged) received `trunk-failed` plus trunk-io "GitHub blocked
+Trunk from preparing the test branch". Agents diagnosed GitHub App/ruleset
+`HOLD_PLATFORM` and stopped, or considered a squash bypass. The PRs were
+behind `main` (example: `#2217` base `a19a9d93` vs `origin/main` `0cf4928e`).
+The maintainer restated: this is not a Trunk configuration issue. Update from
+`main`, then comment `/trunk merge` again.
+
+**Rule:** (1) Compare the PR base SHA to `origin/main` before diagnosing Trunk.
+If behind, `update_pull_request_branch` (or merge `origin/main` into the PR
+head), wait until GitHub shows the PR up to date, then `/trunk merge` on the
+**new** head SHA. (2) Do not re-comment `/trunk merge` on an unchanged SHA.
+After a branch update the SHA changes, so a new comment is the intended retry,
+not a same-SHA retry. (3) Do not GitHub-squash `personal-config` as a bypass.
+(4) Record App/ruleset `HOLD_PLATFORM` only if Trunk still cannot enqueue
+**after** the PR is already up to date with `main`. (5) Codacy
+`ACTION_REQUIRED` is advisory; the ruleset required check is
+`dependency-review`. Lesson 0hi rule (5) is narrowed: App/ruleset HITL is the
+last diagnosis, not the first.
+
+**Detection cost:** Low — `baseRefOid` vs `git rev-parse origin/main`; GitHub
+"branch is out of date"; trunk-io blocked comment while the base SHA lags
+`main`.
