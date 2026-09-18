@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Prefer caller/test HOME; default only when unset (Linux CI must not mkdir /Users).
+export HOME="${HOME:-/Users/speedybee}"
+
 # Self-contained deep system cleaner - MONTHLY VERSION with incremental state tracking
 set -euo pipefail
 
@@ -433,6 +436,25 @@ append "# Clear Font caches (requires restart)"
 append "sudo atsutil databases -remove"
 append ""
 append "# Clear DNS cache"
+
+# Clean up Trunk cache (aggressive caching can accumulate 2+ GB)
+TRUNK_CACHE_DIR="$HOME/.cache/trunk"
+if [[ -d $TRUNK_CACHE_DIR ]]; then
+	log_info "Cleaning Trunk cache..."
+	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+
+	# Keep only recent tool binaries; clean out old/unused repos cache
+	find "$TRUNK_CACHE_DIR/tools" -type f -atime +30 -delete 2>/dev/null || true
+	find "$TRUNK_CACHE_DIR/repos" -type d -atime +7 -exec rm -rf {} \; 2>/dev/null || true
+
+	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
+
+	if [[ $TRUNK_FREED -gt 1024 ]]; then
+		log_info "Trunk cache cleaned: freed $((TRUNK_FREED / 1024)) MB"
+		TOTAL_FREED=$((TOTAL_FREED + TRUNK_FREED))
+	fi
+fi
 append "sudo dscacheutil -flushcache"
 
 # Save comprehensive report
