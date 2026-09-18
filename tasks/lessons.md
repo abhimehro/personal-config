@@ -2922,10 +2922,13 @@ fetch omission, not a monitor bug.
 
 ## Lesson 0hf: Export/prompt wrap drift fails Stage 1 preflight (2026-09-18)
 
-**Pattern:** `python3 scripts/pr_lifecycle_ledger_cas.py preflight` always
-calls `validate_exports_and_prompts()`. That check is **byte-exact** between
+**Pattern:** `python3 scripts/pr_lifecycle_ledger_cas.py preflight --out /tmp/pr-lifecycle/pr-lifecycle-ledger.yaml`
+always calls `validate_exports_and_prompts()`. That check requires the decoded
+export prompt to equal the Markdown prompt after trimming boundary whitespace
+and restoring one final newline between
 `docs/cursor-automations/exports/*.json` `prompts[0].prompt` and
-`docs/cursor-automations/prompts/*.md`. After `main` `a19a9d93` reformatted
+`docs/cursor-automations/prompts/*.md`. Internal wrapping and table-padding
+differences remain significant. After `main` `a19a9d93` reformatted
 Stage 1/2/3 prompt markdown (feed-fingerprint table padding and line wrap),
 the JSON exports were left stale. Isolated ledger schema on
 `automation/pr-lifecycle-ledger` rev **69** still passed; combined preflight

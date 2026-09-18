@@ -1048,7 +1048,8 @@ Lesson **0ha**.
 
 Per-item table: see `tasks/pr-review-2026-09-08.md` (run-level ledger row only).
 
-## Stage 1 — 2026-09-18 (cron `0 15 * * *`, fired 02:21Z)
+## Stage 1 — 2026-09-18 (delayed cron invocation; scheduled `2026-09-17T15:00Z`,
+started `2026-09-18T02:21:32Z`; lineage uses the scheduled fire date)
 
 Combined preflight **FAIL** `PR_LIFECYCLE_CAS_ERROR`:
 `docs/cursor-automations/exports/daily-pr-review.json: prompt differs from
