@@ -197,6 +197,43 @@ grep -qxF 'arg=two words' "${TEST_DIR}/node-args.log" || fail "wrapper split a s
 pass "wrapper forces image Node and preserves arguments"
 
 echo ""
+echo "Test 10b: wrapper replaces an npm symlink without clobbering the CLI JS"
+echo "---"
+# Reproduce npm global layout: bin/gitnexus -> ../lib/node_modules/gitnexus/dist/cli/index.js
+rm -f "${HOME}/.local/bin/gitnexus"
+printf '%s\n' '#!/usr/bin/env node' '// npm-installed CLI fixture' >"${gitnexus_js}"
+ln -s "${gitnexus_js}" "${HOME}/.local/bin/gitnexus"
+[[ -L "${HOME}/.local/bin/gitnexus" ]] || fail "test setup did not create an npm-style symlink"
+gitnexus_wrap_with_image_node || fail "wrapper should succeed when dest is a symlink"
+[[ ! -L "${HOME}/.local/bin/gitnexus" ]] || fail "wrapper left a symlink in place"
+[[ -x "${HOME}/.local/bin/gitnexus" ]] || fail "wrapper was not a regular executable"
+head -n1 "${gitnexus_js}" | grep -Eq 'node' || fail "wrapper clobbered the CLI entrypoint through the symlink"
+grep -qF "exec ${MOCK_BIN}/node ${gitnexus_js} \"\$@\"" "${HOME}/.local/bin/gitnexus" ||
+	fail "wrapper body does not exec image Node against the intact CLI"
+pass "npm symlink destinations are replaced safely"
+
+echo ""
+echo "Test 10c: wrapper source safely quotes special-character paths"
+echo "---"
+special_home="${TEST_DIR}/home with space'quote\$dollar"
+special_node_name="node with space'quote\$dollar"
+special_node="${MOCK_BIN}/${special_node_name}"
+special_js="${special_home}/.local/lib/node_modules/gitnexus/dist/cli/index.js"
+mkdir -p "$(dirname "${special_js}")" "${special_home}/.local/bin"
+printf '%s\n' '// test fixture' >"${special_js}"
+write_mock "${special_node_name}" "printf 'arg=%s\\n' \"\$@\" >'${TEST_DIR}/special-node-args.log'"
+HOME="${special_home}" GITNEXUS_TEST_NODE_BIN="${special_node}" gitnexus_wrap_with_image_node ||
+	fail "wrapper creation should support special-character paths"
+special_wrapper="${special_home}/.local/bin/gitnexus"
+bash -n "${special_wrapper}" || fail "wrapper with special-character paths is not valid shell source"
+"${special_wrapper}" 'forwarded;argument'
+grep -qxF "arg=${special_js}" "${TEST_DIR}/special-node-args.log" ||
+	fail "wrapper changed the special-character CLI path"
+grep -qxF 'arg=forwarded;argument' "${TEST_DIR}/special-node-args.log" ||
+	fail "wrapper did not preserve forwarded arguments with special characters"
+pass "wrapper safely quotes Node and CLI paths"
+
+echo ""
 echo "Test 11: wrapper is a no-op when either prerequisite is absent"
 echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${gitnexus_js}"
