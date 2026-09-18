@@ -7,7 +7,8 @@ T3+S — Wrap-only Cursor export drift must not halt the daily drain.
 - [x] Stage 1/2/3 prompts: repair wrap-only; ANALYSIS_ERROR is ledger-only
 - [x] Stage 2/3 fail-closed after ledger preflight, no ANALYSIS_ERROR theater
 - [x] Tests + `make test-quick` includes `--check`
-- [ ] Product PR (not exclusive docs lineage); subscribe CI + review
+- [x] Product PR #2223; subscribed GitHub PR + CI
+- [ ] Land #2223 (D213 + pinact 4.1.1 merge gates; Trunk queue, no self-approve)
 
 ## Stage 1→2 fail-closed cascade (2026-09-16)
 
