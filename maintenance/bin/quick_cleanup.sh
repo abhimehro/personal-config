@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME="/Users/speedybee"
+
 # Self-contained quick cleanup script
 # Note: Using -o pipefail but NOT -e to allow graceful permission handling
 set -o pipefail
@@ -178,3 +180,26 @@ fi
 
 log_info "Quick cleanup completed: ${CLEANED} items cleaned"
 echo "Quick cleanup completed successfully!"
+
+# Clean up Trunk cache (weekly to prevent rapid accumulation)
+log_info "Starting Trunk cache cleanup..."
+TRUNK_CACHE_DIR="$HOME/.cache/trunk"
+if [[ -d $TRUNK_CACHE_DIR ]]; then
+	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+
+	# Remove old tool binaries (safe, auto-redownloads when needed)
+	find "$TRUNK_CACHE_DIR/tools" -type f -atime +14 -delete 2>/dev/null || true
+
+	# Remove old repo caches (safe, clones fresh when needed)
+	find "$TRUNK_CACHE_DIR/repos" -type d -atime +3 -exec rm -rf {} \; 2>/dev/null || true
+
+	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
+	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
+
+	if [[ $TRUNK_FREED -gt 0 ]]; then
+		TRUNK_FREED_MB=$((TRUNK_FREED / 1024))
+		log_info "Trunk cleanup: freed ${TRUNK_FREED_MB} MB (before: ${TRUNK_BEFORE} KB, after: ${TRUNK_AFTER} KB)"
+	else
+		log_info "Trunk cache: no old files to clean"
+	fi
+fi
