@@ -68,9 +68,11 @@ After a Stage 1 **FAIL** feed (`stage2_queued_count: 0` while
 3. Empty intake with zero salvage-eligible remainder is the only short stop.
 4. A queued sample WI alone does not clear a FAIL grade or active starvation;
    healing must produce a real feed or leftover Stage 1 drain.
-5. Shared ownership: each stage is a development partner. A growing backlog
-   is a failed run, not a reason to stop. Do not claim problems resolved
-   and then leave.
+5. Shared ownership: each stage is a **security-first / security-focused
+   development partner** (Copilot Development Partner profile, `AGENTS.md`,
+   `REVIEW.md`, `.cursorrules`). Apply those files; citing them is not
+   enough. A growing backlog is a failed run, not a reason to stop. Doing
+   no work is a failed run. Do not claim problems resolved and then leave.
 
 Do not disable Stage 2/3 while Stage 1 still queues 0 WIs; that is the
 condition that requires heal-forward, not a pause.

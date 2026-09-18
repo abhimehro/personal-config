@@ -457,7 +457,7 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
     def test_stage_prompts_shared_ownership(self) -> None:
-        needle = "You own their health and continuous improvement"
+        needle = "own their health and continuous improvement"
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
@@ -466,15 +466,38 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
             with self.subTest(name):
                 text = self._prompt(name)
                 self.assertIn("**Shared ownership.**", text)
+                self.assertIn("security-first development partner", text)
+                self.assertIn("security-focused", text)
                 self.assertIn("development partner", text)
                 self.assertIn(needle, text)
                 self.assertIn("growing PR backlog", text)
                 self.assertIn("Do not claim", text)
+                self.assertIn("Doing no work is a failed run", text)
+                self.assertIn("`AGENTS.md`", text)
+                self.assertIn("`REVIEW.md`", text)
+                self.assertIn("copilot-instructions.md", text)
+                self.assertIn(".cursorrules", text)
+                self.assertIn(
+                    "Partner profile (apply, do not merely cite).",
+                    text,
+                )
+                self.assertIn("Fail secure", text)
+                self.assertIn("never weaken existing", text)
+                self.assertIn("mechanism or silence", text)
+        salvage = self._prompt("daily-pr-salvage.md")
+        self.assertIn("infra-fix", salvage)
+        self.assertIn("Do not rewrite Stage-1-owned inventory", salvage)
+        completion = self._prompt("daily-pr-completion.md")
+        self.assertIn("do **not** reset calibration", completion)
+        self.assertIn("not a new action surface", completion)
         contract = (
             ROOT / "docs" / "automated-pr-lifecycle.md"
         ).read_text(encoding="utf-8")
         self.assertIn("## Shared ownership", contract)
         self.assertIn("development partners", contract)
+        self.assertIn("security-first development partners", contract)
+        self.assertIn("`REVIEW.md`", contract)
+        self.assertIn("Citing those files is not enough", contract)
 
     def test_stage_prompts_pass_commit_message(self) -> None:
         needle = '--message "automated lifecycle ledger update"'

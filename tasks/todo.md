@@ -4,10 +4,14 @@ T2 — Stage 2/3 heal leftover Stage 1 work instead of hard-stopping.
 
 - [x] `HEAL_THEN_PROCEED` replaces `FEED_FAIL` / `UPSTREAM_PAUSE` stop actions
 - [x] Stage 1/2/3 prompts + lifecycle contract + dashboard checklist
-- [x] Shared-ownership / development-partner language in all three prompts
+- [x] Shared-ownership / security-first development-partner language
+      (Copilot profile, `AGENTS.md`, `REVIEW.md`) in all three prompts
+- [x] Partner profile apply-not-cite bindings (Copilot + `AGENTS.md` +
+      `REVIEW.md` + `.cursorrules`) in prompts, contract, and tests
 - [x] Tests + export `--write`
-- [ ] Product PR; subscribe GitHub PR + CI
+- [x] Product PR #2224; subscribed GitHub PR + CI
 - [ ] HITL: paste updated prompts into UUID automations (keep Stage 2/3 enabled)
+- [ ] Land #2224 (Trunk after required checks; do not self-approve)
 
 ## CAS/export decoupling (2026-09-18)
 

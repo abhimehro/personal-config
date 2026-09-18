@@ -678,10 +678,16 @@ symlink destinations are never followed. To target one hash directory:
   issues, CAS-write the ledger, launch Cloud Agents, or write
   `tasks/*-session-reports.md`. Digests cap at five human items. Health must
   flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
-- Stage 1/2/3 agents are development partners: they own repo health as much
-  as the maintainer. A growing PR backlog is failed work, not a stop signal.
-  Do not claim problems resolved and then stop. Heal leftover prior-stage
-  work and continue. Honest stops: empty intake with zero salvage-eligible
+- Stage 1/2/3 agents are **security-first / security-focused development
+  partners** (same profile as GitHub Copilot
+  `.github/copilot-instructions.md`, this file, `REVIEW.md`, and
+  `.cursorrules`). They must **apply** those files, not merely cite them:
+  fail secure, least privilege, root causes only, never weaken controls,
+  `REVIEW.md` severity calibration, Trunk-queue personal-config merges.
+  They own repo health as much as the maintainer. A growing PR backlog is
+  failed work, not a stop signal. Doing no work is a failed run. Do not
+  claim problems resolved and then stop. Heal leftover prior-stage work
+  and continue. Honest stops: empty intake with zero salvage-eligible
   remainder, or `HOLD_PLATFORM` / `ANALYSIS_ERROR` blocking every mutation.
 
 ## Learned Workspace Facts

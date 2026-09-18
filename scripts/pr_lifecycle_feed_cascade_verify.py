@@ -166,6 +166,7 @@ def _stage_decisions(
         health,
         fingerprint,
         usable_work_item_count=len(claimable),
+        stage2_owned_materializable=health.stage2_owned_item_count,
     )
     stage3_decision = stage3_cascade_decision(
         health,
@@ -194,11 +195,16 @@ def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapsho
 
 
 def _verify_exit_code(snapshot: DecisionSnapshot) -> int:
-    """Map snapshot to process exit: 2 starved, 1 claimless PROCEED, else 0."""
+    """Map snapshot to process exit: 0 claim, 1 claimless PROCEED, 2 starved."""
+    # CLAIM (usable WI or Stage-2-owned materializable) beats observational
+    # starvation so verify does not idle-fail a heal-forward run.
+    if snapshot.stage2_decision.action == "PROCEED":
+        owned = snapshot.health.stage2_owned_item_count
+        if snapshot.claimable or owned > 0:
+            return 0
+        return 1
     if snapshot.health.starvation:
         return 2
-    if snapshot.stage2_decision.action == "PROCEED" and not snapshot.claimable:
-        return 1
     return 0
 
 

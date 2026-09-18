@@ -111,12 +111,17 @@ def stage2_cascade_decision(
 ) -> CascadeDecision:
     """Decide Stage 2 proceed, heal a broken feed, or empty-intake."""
     # SECURITY: claim queued complete WIs before grading today's feed.
-    claimed = usable_work_item_count > 0 or stage2_owned_materializable > 0
-    if claimed:
+    if usable_work_item_count > 0:
         return _decision(
             "PROCEED",
             "CLAIM",
             "Complete unexpired Stage 2 work item available",
+        )
+    if stage2_owned_materializable > 0:
+        return _decision(
+            "PROCEED",
+            "CLAIM",
+            "Stage-2-owned ledger item can materialize a work item",
         )
     if health.starvation:
         return _decision(

@@ -17,6 +17,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_feed_cascade as cascade  # noqa: E402
+import pr_lifecycle_feed_cascade_verify as verify_mod  # noqa: E402
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import yaml  # noqa: E402
 
@@ -156,6 +157,32 @@ class TestStage2Cascade(unittest.TestCase):
         self.assertEqual(decision.action, "PROCEED")
         self.assertEqual(decision.label, "CLAIM")
 
+    def test_claim_when_owned_without_wi(self) -> None:
+        """Owned Stage-2 items CLAIM even when starvation is still true."""
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        report = health.summarize(
+            _ledger([owned, remainder], []),
+            now=NOW,
+        )
+        self.assertTrue(report.starvation)
+        self.assertEqual(report.stage2_owned_item_count, 1)
+        fp = cascade.grade_stage1_feed(
+            stage2_queued_count=0,
+            salvage_eligible_count=report.salvage_eligible_count,
+        )
+        decision = cascade.stage2_cascade_decision(
+            report,
+            fp,
+            usable_work_item_count=0,
+            stage2_owned_materializable=report.stage2_owned_item_count,
+        )
+        self.assertEqual(decision.action, "PROCEED")
+        self.assertEqual(decision.label, "CLAIM")
+
     def test_empty_intake_when_nothing_eligible(self) -> None:
         blocked = _item(guardrail_outcome="REVIEW_SECURITY")
         report = health.summarize(_ledger([blocked], []), now=NOW)
@@ -249,6 +276,19 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         )
         self.assertEqual(s2.action, "PROCEED")
         self.assertNotEqual(s2.label, "EMPTY_INTAKE")
+
+    def test_verify_exit_claim_beats_starvation(self) -> None:
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        snapshot = verify_mod._build_snapshot(
+            _ledger([owned, remainder], []),
+            now=NOW,
+        )
+        self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
+        self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
 
     def test_verify_cli_inject_sample(self) -> None:
         if not EXAMPLE.is_file():

@@ -94,7 +94,7 @@ remains for BOT `HOLD_CANONICAL` clusters that Stage 1 should canonical-pick.
 
 Stage 3 begins **report-only** and remains so until `calibration.status` in the
 validated ledger is `APPROVED` for the same configured-repository scope and
-policy revision. Seven successful calibration runs for `pr-lifecycle-v1.5` (REPORT_ONLY pending new dated approval)
+policy revision. Seven successful calibration runs for `pr-lifecycle-v1.4`
 completed on 2026-08-26. The maintainer approved bounded completion the same
 day. During `REPORT_ONLY` it may reconcile, bounce executable items to Stage 1,
 create a complete Stage 2 work item, create a one-question decision packet, and
