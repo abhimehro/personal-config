@@ -78,15 +78,16 @@ bash tests/test_lib_dns_utils.sh
 ### Python tests
 
 ```bash
-# All Python tests (mostly stdlib; install pyyaml for the full suite)
-#   pip install pyyaml
+# All Python tests (mostly stdlib; install pinned deps for the full suite)
+#   python3 -m pip install -r requirements.txt
 make test-python
 
 # All tests (shell + Python)
 make test-all
 
-# All Python tests directly (alternative)
-python3 -m unittest -v discover -s tests -p 'test_*.py'
+# All Python tests directly (alternative). `discover` must come before -s/-p;
+# `-v discover` is parsed as a test name and fails with unrecognized arguments.
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 # Single module
 python3 -m unittest tests.test_path_validation -v
