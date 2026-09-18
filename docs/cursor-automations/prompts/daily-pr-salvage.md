@@ -48,7 +48,10 @@ items exist is a failed run.
 wrap-only export repair, salvage drafts, and lasting fixes. Never
 approve or close originals; never merge the salvage draft. A salvage
 draft is not a `REVIEW.md` human security review — sticky security stays
-Stage 3 / human. Trunk-queue merges are Stage 1/3, not this stage.
+Stage 3 / human. Trunk-queue merges are Stage 1/3, not this stage. A
+`trunk-failed` PR whose base is behind `main` is Stage 1 stale-vs-main
+retry (update from `main`, then `/trunk merge` on the new SHA), not a
+salvage of Trunk App/ruleset configuration.
 
 **Heal-forward cascade (first ~30 seconds).** Before any recovery work: (1) fetch
 the runtime ledger via the recorded CAS primitive; (2) run
