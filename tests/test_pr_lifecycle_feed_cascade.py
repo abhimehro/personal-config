@@ -338,6 +338,10 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
         self.assertEqual(snapshot.stage2_decision.label, "CLAIM")
         self.assertGreater(snapshot.health.stage2_work_item_count, 0)
+        self.assertGreater(
+            snapshot.health.stage2_work_item_count,
+            snapshot.fingerprint.stage2_queued_count,
+        )
 
     def test_verify_session_queue_counts_injected_sample(self) -> None:
         """Newly added session WIs grade today's queue, leftover does not."""
@@ -355,6 +359,10 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
         self.assertEqual(injected.fingerprint.stage2_queued_count, 1)
         self.assertEqual(leftover.stage2_decision.label, "CLAIM")
         self.assertEqual(injected.stage2_decision.label, "CLAIM")
+        self.assertNotEqual(
+            leftover.fingerprint.stage2_queued_count,
+            leftover.health.stage2_work_item_count,
+        )
 
     def test_verify_cli_inject_sample(self) -> None:
         """The verifier CLI must accept an injected sample work item."""

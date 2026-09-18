@@ -130,7 +130,7 @@ def stage2_cascade_decision(
     stage2_owned_materializable: int = 0,
 ) -> CascadeDecision:
     """Decide Stage 2 proceed, heal a broken feed, or empty-intake."""
-    # SECURITY: claim queued complete WIs before grading today's feed.
+    # SECURITY: claim leftover complete WIs before grading today's feed.
     claimed = _find_claimable_stage2_work(
         usable_work_item_count, stage2_owned_materializable
     )
@@ -138,9 +138,7 @@ def stage2_cascade_decision(
         return claimed
     if health.starvation:
         return _decision(
-            "HEAL_THEN_PROCEED",
-            "EMPTY_INTAKE_STARVATION",
-            health.reason,
+            "HEAL_THEN_PROCEED", "EMPTY_INTAKE_STARVATION", health.reason
         )
     return _stage2_feed_or_empty(fingerprint)
 

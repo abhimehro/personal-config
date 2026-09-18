@@ -47,19 +47,37 @@ class PromptReconciliation:
     prompt: str
 
 
-def _resolved_include_path(prompts_dir: Path, name: str) -> Path:
-    """SECURITY: allowlisted relative markdown only; reject traversal."""
-    if not INCLUDE_NAME_RE.fullmatch(name):
-        raise PromptIncludeError(f"include not allowlisted: {name}")
-    if ".." in name or "/" in name or "\\" in name:
-        raise PromptIncludeError(f"include path rejected: {name}")
-    target = (prompts_dir / name).resolve()
+_TRAVERSAL_MARKERS = ("..", "/", "\\")
+
+
+def _include_name_allowed(name: str) -> bool:
+    """True when the include name matches the prompts-dir allowlist."""
+    return INCLUDE_NAME_RE.fullmatch(name) is not None
+
+
+def _include_name_has_traversal(name: str) -> bool:
+    """True when the include name contains a separator or parent token."""
+    return any(marker in name for marker in _TRAVERSAL_MARKERS)
+
+
+def _path_stays_in_prompts(prompts_dir: Path, target: Path) -> bool:
+    """True when resolved target stays inside the prompts directory."""
     try:
         target.relative_to(prompts_dir)
-    except ValueError as exc:
-        raise PromptIncludeError(
-            f"include escaped prompts dir: {name}"
-        ) from exc
+    except ValueError:
+        return False
+    return True
+
+
+def _resolved_include_path(prompts_dir: Path, name: str) -> Path:
+    """SECURITY: allowlisted relative markdown only; reject traversal."""
+    if not _include_name_allowed(name):
+        raise PromptIncludeError(f"include not allowlisted: {name}")
+    if _include_name_has_traversal(name):
+        raise PromptIncludeError(f"include path rejected: {name}")
+    target = (prompts_dir / name).resolve()
+    if not _path_stays_in_prompts(prompts_dir, target):
+        raise PromptIncludeError(f"include escaped prompts dir: {name}")
     return target
 
 

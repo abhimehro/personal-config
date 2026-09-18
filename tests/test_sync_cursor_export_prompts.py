@@ -91,6 +91,13 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 "{{include:_../secrets.md}}\n", PROMPTS
             )
 
+    def test_rejects_dotdot_in_allowlisted_charset(self) -> None:
+        """``..`` inside an otherwise allowlisted name is still traversal."""
+        with self.assertRaises(PromptIncludeError):
+            expand_prompt_includes(
+                "{{include:_foo..bar.md}}\n", PROMPTS
+            )
+
     def test_rejects_nested_include(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             prompts_dir = Path(tmp)
