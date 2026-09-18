@@ -145,12 +145,15 @@ submission.
 
 For `abhimehro/personal-config`, use the registered `TRUNK_QUEUE` submission
 path, not a raw GitHub squash assumption. Approval and queue submission are
-separate audited actions. A queue failure while the PR base SHA is behind
-`origin/main` (or GitHub reports the branch out of date) is stale-vs-main, not
-App/ruleset HITL: update from `main`, wait until up to date, then `/trunk merge`
-on the new head SHA. Do not re-comment `/trunk merge` on an unchanged SHA. Do
-not squash-bypass. Record App/ruleset `HOLD_PLATFORM` only if Trunk still cannot
-enqueue after the PR is already up to date with `main`. A merge-success /
+separate audited actions. A queue failure is stale-vs-main only when GitHub reports the branch out of
+date or live `main` is verified as an ancestor of the PR head; a differing
+stored base SHA is anchor drift, not proof. After updating from `main`, record
+`STALE_ANCHOR`, invalidate prior evidence, re-ingest under the new head-derived
+item key, and return ownership to Stage 1. Stage 1 must verify the new head and
+ancestry before `/trunk merge` on that new SHA. Do not re-comment on an
+unchanged SHA or squash-bypass. Record App/ruleset `HOLD_PLATFORM` only if
+Trunk still cannot enqueue after fresh evidence confirms the PR is up to date.
+A merge-success /
 branch-delete-failure is a non-blocking follow-up; do not retry the merge.
 
 ### Eligible closure

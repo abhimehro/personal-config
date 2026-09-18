@@ -111,13 +111,14 @@ the required cooldown and canonical relationship where applicable. For
 `abhimehro/personal-config`, the merge method is `TRUNK_QUEUE`: approve and then
 submit via the documented Trunk path, not raw GitHub squash. Recheck every
 predicate after approval and before queue submission. If queue submission
-fails because the PR is behind `main` (`trunk-failed`, or "GitHub blocked
-Trunk from preparing the test branch"), that is stale-vs-main, not App/ruleset
-config: update the PR from `main`, wait until it is up to date, then comment
-`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
-unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
-only if Trunk still cannot enqueue after the PR is already up to date with
-`main`. If merge succeeds but branch deletion fails, record a non-blocking
+fails, classify it as stale-vs-main only when GitHub reports the branch out of
+date or live `main` is verified as an ancestor of the PR head; base-anchor drift
+alone is not proof. After updating, record `STALE_ANCHOR`, invalidate prior
+evidence, re-ingest under the new head-derived item key, and return ownership to
+Stage 1. Stage 1 must verify the new head and ancestry before commenting
+`/trunk merge` on it. Do not re-comment on an unchanged SHA or squash-bypass.
+Record `HOLD_PLATFORM` App/ruleset HITL only if Trunk still cannot enqueue after
+fresh evidence confirms the PR is up to date with `main`. If merge succeeds but branch deletion fails, record a non-blocking
 follow-up and stop. If required-check configuration cannot be read, hold
 rather than act.
 

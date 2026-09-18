@@ -81,13 +81,16 @@ merge state; no unresolved discussion, alert, static-analysis hold, overlap, or
 canonical conflict; documented routine class; and the registered merge method is
 known. For `abhimehro/personal-config`, use the Trunk queue method, not a raw
 GitHub squash assumption. A `trunk-failed` label or "GitHub blocked Trunk from
-preparing the test branch" after `main` moved is **stale-vs-main**, not a
-GitHub App or ruleset misconfiguration. Update the PR from `main`
-(`update_pull_request_branch`), wait until it is up to date, then comment
-`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
-unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
-only if Trunk still cannot enqueue after the PR is already up to date with
-`main`. You may also close a bot-authored non-security
+preparing the test branch" is **stale-vs-main** only when GitHub reports the
+branch out of date or live `main` is verified as an ancestor of the PR head.
+A differing stored base SHA is anchor drift, not proof. Count every attempted
+`update_pull_request_branch` toward the 40 product-mutation cap, including
+failures. After updating, record `STALE_ANCHOR`, invalidate prior evidence,
+re-ingest under the new head-derived item key, and return ownership to Stage 1.
+Only after fresh head and ancestry checks may Stage 1 comment `/trunk merge` on
+the new head SHA. Do not re-comment on an unchanged SHA or squash-bypass.
+Record `HOLD_PLATFORM` only after those checks still show a queue failure. You
+may also close a bot-authored non-security
 duplicate, superseded, zero-diff, or stale PR when deterministic evidence and
 the required cooldown are complete. Do not wait for Stage 3 to execute those
 closes.

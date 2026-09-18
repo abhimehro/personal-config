@@ -71,10 +71,13 @@ and returns the item to Stage 1. Agent-facing run records share one
 `/trunk merge`s it; Stage 2/3 only push). Notion is the human plane.
 ```
 
-personal-config `/trunk merge` failures after `main` moved are stale-vs-main:
-update the PR from `main`, then comment `/trunk merge` on the new SHA. That is
-not a Trunk App/ruleset configuration issue. See the lifecycle contract
-section "Trunk queue: stale vs main".
+For `personal-config`, a `/trunk merge` failure is stale-vs-main only when
+GitHub reports the branch out of date or live `main` is verified as an ancestor
+of the PR head; base-anchor drift alone is not evidence. An update must be
+counted toward the 40-mutation cap, then recorded as `STALE_ANCHOR`; invalidate
+old evidence, re-ingest under the new head-derived key, and return ownership to
+Stage 1. Stage 1 verifies the new head and ancestry before commenting on it.
+See the lifecycle contract section "Trunk queue: stale vs main".
 
 ## Approval and connector settings
 

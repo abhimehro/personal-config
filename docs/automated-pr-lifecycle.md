@@ -145,21 +145,24 @@ Trunk failure as App/ruleset HITL. Do not fall back to raw GitHub squash.
 ### Trunk queue: stale vs main
 
 A `trunk-failed` label or a trunk-io comment such as "GitHub blocked Trunk from
-preparing the test branch" after `main` has moved is **stale-vs-main**, not a
-GitHub App or ruleset misconfiguration. Recognize it when the PR base SHA is
-behind `origin/main` (or GitHub reports the branch is out of date). Then:
+preparing the test branch" is **stale-vs-main** only when GitHub explicitly
+reports the branch out of date, or when the live `main` tip is verified as an
+ancestor of the PR head. A stored `base_sha` that differs from live `main` is
+only anchor drift and requires fresh evidence; it does not establish ancestry.
+Then:
 
 1. Pull the latest `main` into the PR branch (`update_pull_request_branch`, or
-   merge `origin/main` into the PR head).
-2. Wait until GitHub shows the PR up to date (head SHA changed; base SHA
-   matches `origin/main`).
-3. Reinitiate Trunk by commenting `/trunk merge` on the **new** head SHA.
+   merge `origin/main` into the PR head), counting the attempted update.
+2. Re-ingest the PR under its new head-derived item key, record `STALE_ANCHOR`,
+   and invalidate all prior identity, path, check, approval, and mergeability
+   evidence. Return ownership to Stage 1.
+3. Stage 1 must verify the new head and that live `main` is an ancestor before
+   commenting `/trunk merge` on the **new** head SHA.
 
-Do not re-comment `/trunk merge` on an unchanged head SHA. After the branch
-update, the head SHA changes, so a new `/trunk merge` is the intended next
-step, not a same-SHA retry. Record `HOLD_PLATFORM` App/ruleset HITL only if
-Trunk still cannot enqueue **after** the PR is already up to date with `main`.
-Never GitHub-squash `personal-config` as a bypass.
+Do not re-comment `/trunk merge` on an unchanged head SHA. Record
+`HOLD_PLATFORM` App/ruleset HITL only if Trunk still cannot enqueue after
+fresh evidence confirms the PR is up to date with `main`. Never GitHub-squash
+`personal-config` as a bypass.
 
 ### Continuity read
 
