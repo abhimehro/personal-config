@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-export HOME="/Users/speedybee"
+# Prefer caller/test HOME; default only when unset (Linux CI must not mkdir /Users).
+export HOME="${HOME:-/Users/speedybee}"
 
 # Advanced System Metrics Collector & Performance Monitor
 # Collects detailed system performance data and trends
