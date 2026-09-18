@@ -678,6 +678,17 @@ symlink destinations are never followed. To target one hash directory:
   issues, CAS-write the ledger, launch Cloud Agents, or write
   `tasks/*-session-reports.md`. Digests cap at five human items. Health must
   flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
+- Stage 1/2/3 agents are **security-first / security-focused development
+  partners** (same profile as GitHub Copilot
+  `.github/copilot-instructions.md`, this file, `REVIEW.md`, and
+  `.cursorrules`). They must **apply** those files, not merely cite them:
+  fail secure, least privilege, root causes only, never weaken controls,
+  `REVIEW.md` severity calibration, Trunk-queue personal-config merges.
+  They own repo health as much as the maintainer. A growing PR backlog is
+  failed work, not a stop signal. Doing no work is a failed run. Do not
+  claim problems resolved and then stop. Heal leftover prior-stage work
+  and continue. Honest stops: empty intake with zero salvage-eligible
+  remainder, or `HOLD_PLATFORM` / `ANALYSIS_ERROR` blocking every mutation.
 
 ## Learned Workspace Facts
 
@@ -704,9 +715,10 @@ symlink destinations are never followed. To target one hash directory:
   Stage 2 work item is ledger bookkeeping. Unchanged SHA with an unexpired
   non-executable next_action is skipped. A changed base/head SHA invalidates
   prior evidence and returns the item to Stage 1. Stage 2 completes at most ten
-  work items per run; empty intake is a short record and stop unless
-  salvage-eligible remainder exists (`EMPTY_INTAKE_STARVATION`, still no
-  invented recoveries).
+  work items per run; empty intake is a short record and stop only when
+  salvage-eligible remainder is zero. A starved feed (`EMPTY_INTAKE_STARVATION`
+  or `FEED_FAIL`) is `HEAL_THEN_PROCEED`: complete leftover Stage 1 queue/drain
+  then continue (still no invented recoveries).
 - Stage 2 work-item IDs use `s2-YYYYMMDD-...`; Stage 3 ledger events use
   `evt-s3-YYYYMMDD-...` (`ACKNOWLEDGEMENT`, `HANDOFF`, `CALIBRATION`).
 - RepoPrompt CE salvage that needs Swift or `make guardrails` cannot complete on
@@ -758,6 +770,26 @@ Mac). Profiles: `configs/.config/agent-shell/`. Prefer non-interactive-safe env:
 - Launcher details:
   [`configs/.config/agent-shell/README.md`](configs/.config/agent-shell/README.md)
 - Raycast: [`docs/RAYCAST_AGENT_SHELL.md`](docs/RAYCAST_AGENT_SHELL.md)
+
+# Codacy Skills
+
+You have access to Codacy skills. Read the relevant `SKILL.md` whenever the
+user's request matches a skill description below.
+
+| Skill                    | When to use                                                                                                                        | Instructions                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `codacy-cloud-cli`       | User mentions Codacy, asks about code quality metrics, issues, findings, pull request analysis, tools or patterns                  | [SKILL.md](skills/codacy-cloud-cli/SKILL.md)       |
+| `codacy-code-review`     | User asks to review a PR, check what a pull request introduced, verify coverage, or find new issues                                | [SKILL.md](skills/codacy-code-review/SKILL.md)     |
+| `configure-codacy`       | User wants to configure Codacy, reduce noise, fix false positives, or enable/disable tools                                         | [SKILL.md](skills/configure-codacy/SKILL.md)       |
+| `configure-codacy-cloud` | User wants to tune or configure Codacy directly on the cloud, or reduce noise on a repo already on Codacy with a finished analysis | [SKILL.md](skills/configure-codacy-cloud/SKILL.md) |
+| `setup-coverage`         | User wants to set up coverage, add coverage reporting, or fix missing coverage uploads                                             | [SKILL.md](skills/setup-coverage/SKILL.md)         |
+| `codacy-analysis-cli`    | User wants to run static analysis locally, scan files, or analyze staged changes without pushing to Codacy                         | [SKILL.md](skills/codacy-analysis-cli/SKILL.md)    |
+
+## Requirements
+
+- Codacy CLI: `npm install -g @codacy/codacy-cloud-cli`
+- Codacy Analysis CLI: `npm install -g @codacy/analysis-cli`
+- `CODACY_API_TOKEN` environment variable, or run `codacy login`
 
 <!-- gitnexus:start -->
 

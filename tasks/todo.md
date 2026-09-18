@@ -1,4 +1,48 @@
-# PR #2175 stack resolution — 2026-09-09
+# Heal-forward cascade (2026-09-18)
+
+T2 — Stage 2/3 heal leftover Stage 1 work instead of hard-stopping.
+
+- [x] `HEAL_THEN_PROCEED` replaces `FEED_FAIL` / `UPSTREAM_PAUSE` stop actions
+- [x] Stage 1/2/3 prompts + lifecycle contract + dashboard checklist
+- [x] Shared-ownership / security-first development-partner language
+      (Copilot profile, `AGENTS.md`, `REVIEW.md`) in all three prompts
+- [x] Partner profile apply-not-cite bindings (Copilot + `AGENTS.md` +
+      `REVIEW.md` + `.cursorrules`) in prompts, contract, and tests
+- [x] Tests + export `--write`
+- [x] Product PR #2224; subscribed GitHub PR + CI
+- [ ] HITL: paste updated prompts into UUID automations (keep Stage 2/3 enabled)
+- [ ] Land #2224 (Trunk after required checks; do not self-approve)
+
+## CAS/export decoupling (2026-09-18)
+
+T3+S — Wrap-only Cursor export drift must not halt the daily drain.
+
+- [x] Decouple ledger CAS `validate()` from export/prompt byte-equality
+- [x] `sync_cursor_export_prompts.py --write` so CI `--check` is green
+- [x] Stage 1/2/3 prompts: repair wrap-only; ANALYSIS_ERROR is ledger-only
+- [x] Stage 2/3 fail-closed after ledger preflight, no ANALYSIS_ERROR theater
+- [x] Tests + `make test-quick` includes `--check`
+- [x] Product PR #2223; subscribed GitHub PR + CI
+- [x] Qodo: wrap 79-char patch line; merge CI `--include-exports` + paths
+- [x] Codacy: one-line docstrings (D212 vs D213 ping-pong on the same pair)
+- [x] Land #2223 (export-authority CI + pinact 4.1.1; Trunk queue, no self-approve)
+
+## Stage 1→2 fail-closed cascade (2026-09-16)
+
+T1+S — Prompt/spec fail-closed cascade + Dashboard ID align + sample verify.
+
+- [x] venv + health monitor baseline on fetched ledger
+- [x] Stage 1/2/3 prompts: feed fingerprint + FEED_FAIL short-circuit
+- [x] `docs/automated-pr-lifecycle.md` cascade paragraph
+- [x] Dashboard checklist: live UUID enablement + fetch-before-health
+- [x] `.venv/` gitignore; sync Cursor export prompts
+- [x] Sample WI emission/claim via `pr_lifecycle_feed_cascade_verify.py` + tests
+- [x] Health verify: tip `starvation=false` (eligible drained); inject proves
+      CLAIM
+- [x] CI: CodeScene Excess Args + Codacy ≤0 new issues on cascade/verify
+- [ ] HITL: paste updated prompts into UUID automations; sample live Stage 1 CAS
+
+## PR #2175 stack resolution — 2026-09-09
 
 T3+S — Address review comments and failing checks. Do not bump
 `policy_revision`. Salvage cap stays 10 (EMPTY_INTAKE was unread ledger).
