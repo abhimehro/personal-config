@@ -167,28 +167,99 @@ if command -v npm >/dev/null 2>&1; then
 fi
 
 # 9) Trunk.io cache
-# Trunk caches toolchain binaries and per-repo clones. Both are regenerated on
-# demand, and this cache was the single largest contributor (~10 GB) to the
-# 2026-09 disk-pressure incident, so it is pruned weekly rather than monthly.
-log_info "Cleaning Trunk cache..."
+# Trunk caches a full toolchain per tool VERSION under tools/<tool>/<version>.
+# This cache was the largest single contributor to the 2026-09 disk-pressure
+# incident, so it is pruned weekly rather than monthly.
+#
+# Why this is version-based and not age-based: an earlier revision used
+# `find -atime +14`, which can never fire. Trunk rewrites the access time of
+# every cached file on each run, so nothing ever looks old -- measured on
+# 2026-09-18, all 71,292 files in tools/ had an atime within 7 days while the
+# directory still held 2.3 GB across 9 stale checkov versions. Age is therefore
+# not a usable signal here; version count is.
+#
+# Safety: the version pinned in .trunk/trunk.yaml is always retained, so a
+# deliberate pin (for example pinact@4.1.1, held back because plugins v1.11.0
+# still emit single-dash -format) is never reaped. Only versions beyond the
+# pinned one and the newest TRUNK_KEEP_VERSIONS are removed, and Trunk
+# re-downloads anything it still needs.
 TRUNK_CACHE_DIR="$HOME/.cache/trunk"
-if [[ -d $TRUNK_CACHE_DIR ]]; then
+TRUNK_KEEP_VERSIONS="${TRUNK_KEEP_VERSIONS:-2}"
+if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
+	log_info "Cleaning Trunk cache..."
 	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
 
-	# Remove old tool binaries (safe, auto-redownloads when needed)
-	find "$TRUNK_CACHE_DIR/tools" -type f -atime +14 -delete 2>/dev/null || true
+	# Collect pinned versions from any trunk.yaml in the repo, so an explicit
+	# pin is never treated as stale. Format: "- tool@1.2.3".
+	TRUNK_PINS=""
+	if [[ -f "$HOME/dev/personal-config/.trunk/trunk.yaml" ]]; then
+		TRUNK_PINS=$(grep -oE '[a-z0-9-]+@[0-9][0-9a-zA-Z.-]*' \
+			"$HOME/dev/personal-config/.trunk/trunk.yaml" 2>/dev/null | sort -u || true)
+	fi
 
-	# Remove old repo caches (safe, clones fresh when needed)
-	find "$TRUNK_CACHE_DIR/repos" -type d -atime +3 -exec rm -rf {} \; 2>/dev/null || true
+	TRUNK_REMOVED=0
+	for tool_dir in "$TRUNK_CACHE_DIR"/tools/*/; do
+		[[ -d $tool_dir ]] || continue
+		tool_name=$(basename "$tool_dir")
+
+		# Version directories only; .lock and .marker siblings are left alone.
+		# bash 3.2 compatible: no mapfile/readarray (macOS /bin/bash is 3.2, and
+		# launchd invokes this script as /bin/bash).
+		versions=()
+		while IFS= read -r v; do
+			[[ -n $v ]] && versions+=("$v")
+		done < <(find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+
+		[[ ${#versions[@]} -gt $TRUNK_KEEP_VERSIONS ]] || continue
+
+		# Newest N by mtime, computed over the version directories.
+		keep=()
+		while IFS= read -r v; do
+			[[ -n $v ]] && keep+=("$v")
+		done < <(
+			find "$tool_dir" -maxdepth 1 -mindepth 1 -type d -exec stat -f "%m %N" {} + 2>/dev/null 				| sort -rn | head -n "$TRUNK_KEEP_VERSIONS" 				| while read -r _ p; do basename "$p"; done
+		)
+
+		for v in "${versions[@]}"; do
+			# Retain if it is one of the newest N.
+			retain=0
+			for k in "${keep[@]}"; do
+				[[ $v == "$k" ]] && retain=1 && break
+			done
+
+			# Retain if explicitly pinned in trunk.yaml.
+			if [[ $retain -eq 0 && -n $TRUNK_PINS ]]; then
+				while IFS= read -r pin; do
+					[[ -z $pin ]] && continue
+					pin_tool="${pin%@*}"
+					pin_ver="${pin##*@}"
+					if [[ $pin_tool == "$tool_name" && $v == "$pin_ver"* ]]; then
+						retain=1
+						break
+					fi
+				done <<< "$TRUNK_PINS"
+			fi
+
+			[[ $retain -eq 1 ]] && continue
+
+			if rm -rf "$tool_dir$v" "$tool_dir$v.lock" "$tool_dir$v.marker" 2>/dev/null; then
+				TRUNK_REMOVED=$((TRUNK_REMOVED + 1))
+			fi
+		done
+	done
+
+	# Repo clones are cheap to recreate and Trunk re-clones on demand.
+	if [[ -d $TRUNK_CACHE_DIR/repos ]]; then
+		find "$TRUNK_CACHE_DIR/repos" -mindepth 1 -maxdepth 1 -type d -mtime +7 			-exec rm -rf {} + 2>/dev/null || true
+	fi
 
 	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
 	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
-
 	if [[ $TRUNK_FREED -gt 0 ]]; then
-		TRUNK_FREED_MB=$((TRUNK_FREED / 1024))
-		log_info "Trunk cleanup: freed ${TRUNK_FREED_MB} MB (before: ${TRUNK_BEFORE} KB, after: ${TRUNK_AFTER} KB)"
+		log_info "Trunk cache: removed ${TRUNK_REMOVED} stale tool version(s), freed $((TRUNK_FREED / 1024)) MB"
+		((CLEANED++))
 	else
-		log_info "Trunk cache: no old files to clean"
+		log_info "Trunk cache: clean (${TRUNK_REMOVED} stale version(s) removed)"
 	fi
 fi
 
