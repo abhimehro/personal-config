@@ -147,9 +147,13 @@ automation reads or writes the runtime ledger. The validator rejects duplicate
 YAML mapping keys, unknown fields, duplicate item/event/idempotency keys,
 invalid anchors, invalid URLs/timestamps, invalid transition state/owner pairs,
 illegal transitions, projection disagreement, invalid terminal ownership,
-missing calibration fields, invalid Stage 2 work items, and an export whose
-authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action
-may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
+missing calibration fields, and invalid Stage 2 work items. Ledger schema and
+record failures, including an export whose authority does not match its stage
+when validating exports, are `ANALYSIS_ERROR`; no lifecycle action may follow.
+Cursor export JSON versus prompt markdown validation is a separate CI merge gate,
+not a CAS failure: repair a mismatch with `--write` on a non-lineage product PR
+while lifecycle draining continues. A main-branch bootstrap pointer is not a
+valid runtime-ledger input.
 
 The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer
 `revision`; a state transition increments it by exactly one. Nonterminal legal
@@ -421,7 +425,12 @@ Stage 1 must record an explicit **feed fingerprint** in every run record:
 `throughput_grade: PASS|FAIL`. Stage 3 handoffs and TERMINAL ledger closes are
 not Stage 2 readiness.
 
-When the feed is broken, downstream stages **must not** do useful-looking work:
+Cursor export JSON vs prompt markdown is a CI /
+`sync_cursor_export_prompts.py --check` merge gate, **not** ledger CAS
+preflight. Wrap-only Dashboard export drift must not halt Stage 1 drain or
+force Stage 2/3 into `ANALYSIS_ERROR` theater. Repair it with `--write` on a
+non-lineage product PR, then continue. Downstream stages still **must not**
+do useful-looking work when the feed itself is broken:
 
 1. **Stage 2 (first ~30 seconds):** fetch the runtime ledger; run
    `scripts/pr_lifecycle_pipeline_health.py`. **Claim complete unexpired

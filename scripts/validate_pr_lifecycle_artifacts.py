@@ -25,9 +25,19 @@ def main() -> int:
         action="store_true",
         help="fail if items still contain in-memory projection fields",
     )
+    parser.add_argument(
+        "--include-exports",
+        action="store_true",
+        help=(
+            "also validate Cursor export shape, schedule, memory, "
+            "approval, actions, and prompt source"
+        ),
+    )
     args = parser.parse_args()
     try:
-        stripped = validate(args.runtime_ledger)
+        stripped = validate(
+            args.runtime_ledger, include_exports=args.include_exports
+        )
     except (OSError, ValueError, KeyError, IndexError) as exc:
         print(f"PR_LIFECYCLE_INVALID: {exc}", file=sys.stderr)
         return 1
