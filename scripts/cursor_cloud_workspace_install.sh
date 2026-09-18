@@ -19,8 +19,14 @@ else
 	REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 fi
 
+INSTALL_LOG="${HOME}/.local/state/cursor-cloud-workspace-install.log"
+
 log() {
-	printf 'cursor_cloud_workspace_install: %s\n' "$*"
+	local message
+	message="$(date -u '+%Y-%m-%dT%H:%M:%SZ') cursor_cloud_workspace_install: $*"
+	printf '%s\n' "${message}"
+	mkdir -p "$(dirname "${INSTALL_LOG}")"
+	printf '%s\n' "${message}" >>"${INSTALL_LOG}"
 }
 
 pip_user() {
@@ -269,8 +275,9 @@ install_repoprompt_ce() {
 }
 
 gitnexus_version_matches() {
-	local reported="$1"
-	[[ "${reported}" == *"${GITNEXUS_PINNED_VERSION}"* ]]
+	local reported="$1" version
+	version="$(printf '%s\n' "${reported}" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+	[[ "${version}" == "${GITNEXUS_PINNED_VERSION}" ]]
 }
 
 ensure_gitnexus() {
@@ -284,21 +291,19 @@ ensure_gitnexus() {
 		fi
 		log "gitnexus present but version '${reported}' != ${GITNEXUS_PINNED_VERSION}; reinstalling"
 	fi
-	if ! command -v npm >/dev/null 2>&1; then
-		log "skip gitnexus (npm not on PATH; needs Node 22.18+ from .cursor/Dockerfile)"
-		return 0
+	local node_bin="/usr/local/bin/node"
+	if [[ ! -x "${node_bin}" ]] || ! "${node_bin}" --version | grep -Eq '^v(22\.18\.0|2[4-9])\.'; then
+		log "gitnexus requires the pinned Node runtime at ${node_bin}"
+		return 1
 	fi
-	log "installing gitnexus@${GITNEXUS_PINNED_VERSION} under ${HOME}/.local"
-	# SECURITY: pin exact CLI version; --prefix keeps the install in $HOME.
-	if ! npm install --global --prefix "${HOME}/.local" "gitnexus@${GITNEXUS_PINNED_VERSION}"; then
-		log "gitnexus npm install failed (non-fatal)"
-		return 0
+	if ! command -v gitnexus >/dev/null 2>&1; then
+		log "gitnexus ${GITNEXUS_PINNED_VERSION} is missing from the snapshot"
+		return 1
 	fi
-	export PATH="${HOME}/.local/bin:${PATH}"
-	if command -v gitnexus >/dev/null 2>&1; then
-		gitnexus --version || true
-	else
-		log "gitnexus installed but not on PATH"
+	reported="$(gitnexus --version 2>/dev/null || true)"
+	if ! gitnexus_version_matches "${reported}"; then
+		log "gitnexus version '${reported}' does not match ${GITNEXUS_PINNED_VERSION}"
+		return 1
 	fi
 }
 
@@ -311,7 +316,7 @@ exclude_gitnexus_index() {
 	exclude_dir="${repo}/.git/info"
 	exclude_file="${exclude_dir}/exclude"
 	mkdir -p "${exclude_dir}"
-	if [[ -f ${exclude_file} ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
+	if [[ -f "${exclude_file}" ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
 		return 0
 	fi
 	printf '%s\n' '.gitnexus/' >>"${exclude_file}"
@@ -319,7 +324,7 @@ exclude_gitnexus_index() {
 
 should_skip_gitnexus_index() {
 	local name="$1"
-	# HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
+	# NOTE: HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
 	[[ "${name}" == "repoprompt-ce" ]]
 }
 
@@ -331,12 +336,12 @@ index_gitnexus_repos() {
 	local repo name
 	for repo in \
 		"${REPOS_ROOT}/personal-config" \
-		"${REPOS_ROOT}/anthropies" \
 		"${REPOS_ROOT}/ctrld-sync" \
 		"${REPOS_ROOT}/email-security-pipeline" \
 		"${REPOS_ROOT}/Hydrograph_Versus_Seatek_Sensors_Project" \
 		"${REPOS_ROOT}/Seatek_Analysis" \
-		"${REPOS_ROOT}/series_correction_project_updated"; do
+		"${REPOS_ROOT}/series_correction_project_updated" \
+		"${REPOS_ROOT}/repoprompt-ce"; do
 		name="${repo##*/}"
 		if [[ ! -d ${repo} ]]; then
 			log "gitnexus: skip ${name} (missing)"
@@ -346,7 +351,10 @@ index_gitnexus_repos() {
 			log "gitnexus: skip ${name} (OOM on Linux cloud VMs; HOLD_PLATFORM)"
 			continue
 		fi
-		exclude_gitnexus_index "${repo}"
+		if ! exclude_gitnexus_index "${repo}"; then
+			log "gitnexus: skip ${name} (cannot update Git exclusion)"
+			continue
+		fi
 		log "gitnexus: analyze --index-only --skip-fts ${name}"
 		# --index-only: do not rewrite AGENTS.md / skills. --skip-fts: Ladybug
 		# FTS is optional and not installed in the snapshot.

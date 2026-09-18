@@ -52,7 +52,8 @@ RUN set -eux; \
 # Node 22.18.0 (official tarball, SHA-pinned) so GitNexus 1.6.12 engines
 # (^22.18.0 || >=24.11.0) are satisfied at snapshot install time. The live
 # agent exec-daemon may still inject an older Node; this is the image toolchain.
-# Re-verify node_sha when bumping the version. tar.gz avoids an xz-utils dep.
+# CAUTION: changing node_version without replacing both architecture digests invalidates the snapshot build.
+# SECURITY: the pinned digest prevents unverified executable content from entering the snapshot.
 RUN set -eux; \
   arch="$(dpkg --print-architecture)"; \
   node_version="22.18.0"; \
@@ -67,7 +68,11 @@ RUN set -eux; \
   tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1; \
   rm -f /tmp/node.tar.gz; \
   node --version; \
-  npm --version
+  npm --version; \
+  npm install --global --prefix /opt/gitnexus "gitnexus@1.6.12"; \
+  printf '%s\n' '#!/usr/bin/env bash' 'exec /usr/local/bin/node /opt/gitnexus/lib/node_modules/gitnexus/bin/gitnexus.js "$@"' \
+    > /usr/local/bin/gitnexus; \
+  chmod +x /usr/local/bin/gitnexus
 
 # ubuntu:24.04 ships the ubuntu user; only ensure sudo and home layout.
 RUN if ! id ubuntu >/dev/null 2>&1; then useradd -m -s /bin/bash -u 1000 ubuntu; fi \
