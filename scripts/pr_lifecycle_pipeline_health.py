@@ -22,8 +22,10 @@ non-executable work.
 
 `PipelineHealth.stage2_work_item_count` is complete unexpired work items, not
 `len(stage2_work_items)`. Expired, malformed, or empty-required-string records
-do not suppress starvation. `stage2_owned_item_count` is observational: a
-Stage 2-owned ledger item without a usable work item does not hide EMPTY_INTAKE.
+do not suppress starvation. `stage2_owned_item_count` is observational for
+the health flag: a Stage 2-owned ledger item without a usable work item
+does not hide EMPTY_INTAKE. Cascade CLAIM still passes that count as
+`stage2_owned_materializable` so Stage 2 proceeds to materialize.
 """
 
 from __future__ import annotations
