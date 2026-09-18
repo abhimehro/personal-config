@@ -196,6 +196,21 @@ class TestStage2Cascade(unittest.TestCase):
         decision = cascade.stage2_cascade_decision(report, fp, usable_work_item_count=0)
         self.assertEqual(decision.action, "EMPTY_INTAKE")
 
+    def test_unhealthy_feed_requires_stage2_failure_label(self) -> None:
+        cases = (
+            ("FEED_FAIL", "HEAL_THEN_PROCEED", True),
+            ("EMPTY_INTAKE_STARVATION", "HEAL_THEN_PROCEED", True),
+            ("UPSTREAM_HEAL", "HEAL_THEN_PROCEED", False),
+            ("CLAIM", "PROCEED", False),
+            ("EMPTY_INTAKE", "EMPTY_INTAKE", False),
+        )
+        for label, action, expected in cases:
+            with self.subTest(label):
+                decision = cascade.CascadeDecision(action, label, "test")
+                self.assertEqual(
+                    cascade.unhealthy_stage2_feed(decision), expected
+                )
+
 
 class TestStage3Cascade(unittest.TestCase):
     """Single matrix avoids CodeScene Code Duplication across pause/proceed."""
@@ -218,7 +233,7 @@ class TestStage3Cascade(unittest.TestCase):
                     docs_only_bookkeeping=True,
                 ),
                 False,
-                "HEAL_THEN_PROCEED",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
                 "heal when stage2 feed fail",
@@ -228,14 +243,14 @@ class TestStage3Cascade(unittest.TestCase):
                     salvage_eligible_count=1,
                 ),
                 True,
-                "HEAL_THEN_PROCEED",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
                 "heal when fingerprint missing",
                 healthy,
                 None,
                 False,
-                "HEAL_THEN_PROCEED",
+                ("HEAL_THEN_PROCEED", "UPSTREAM_HEAL"),
             ),
             (
                 "proceed when healthy",
@@ -245,7 +260,7 @@ class TestStage3Cascade(unittest.TestCase):
                     salvage_eligible_count=1,
                 ),
                 False,
-                "PROCEED",
+                ("PROCEED", "COMPLETE"),
             ),
         )
         for label, report, fingerprint, s2_fail, expected in cases:
@@ -255,7 +270,7 @@ class TestStage3Cascade(unittest.TestCase):
                     fingerprint,
                     stage2_feed_fail_same_utc_day=s2_fail,
                 )
-                self.assertEqual(decision.action, expected)
+                self.assertEqual((decision.action, decision.label), expected)
 
 
 class TestSampleEmissionAndClaim(unittest.TestCase):
@@ -294,6 +309,23 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
             now=NOW,
         )
         self.assertEqual(snapshot.stage2_decision.action, "PROCEED")
+        self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
+
+    def test_verify_owned_item_claims_without_salvage_remainder(self) -> None:
+        """Stage-2-owned stock is work even when health is not starved."""
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+
+        snapshot = verify_mod._build_snapshot(_ledger([owned], []), now=NOW)
+
+        self.assertFalse(snapshot.health.starvation)
+        self.assertEqual(snapshot.claimable, [])
+        self.assertEqual(
+            (snapshot.stage2_decision.action, snapshot.stage2_decision.label),
+            ("PROCEED", "CLAIM"),
+        )
         self.assertEqual(verify_mod._verify_exit_code(snapshot), 0)
 
     def test_verify_leftover_stock_is_not_todays_queue(self) -> None:

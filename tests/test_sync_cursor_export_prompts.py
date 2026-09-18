@@ -24,6 +24,34 @@ EXPORTS = ROOT / "docs/cursor-automations/exports"
 
 
 class TestPromptIncludeExpansion(unittest.TestCase):
+    def test_plain_text_is_unchanged(self) -> None:
+        text = "No include directive here.\n"
+        self.assertEqual(expand_prompt_includes(text, PROMPTS), text)
+
+    def test_expands_multiple_includes_and_preserves_surrounding_text(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            prompts_dir = Path(tmp)
+            (prompts_dir / "_first.md").write_text(
+                "\nfirst shared block\n", encoding="utf-8"
+            )
+            (prompts_dir / "_second.md").write_text(
+                "second shared block\n\n", encoding="utf-8"
+            )
+            source = (
+                "before\n"
+                "{{include:_first.md}}\n"
+                "between\n"
+                "{{include:_second.md}}   \n"
+                "after\n"
+            )
+
+            expanded = expand_prompt_includes(source, prompts_dir)
+
+            self.assertEqual(
+                expanded,
+                "before\nfirst shared block\nbetween\nsecond shared block\nafter\n",
+            )
+
     def test_stage_prompts_expand_shared_frame(self) -> None:
         partner = "{{include:_shared-partner-frame.md}}"
         cas = "{{include:_shared-cas-bootstrap.md}}"
@@ -71,6 +99,29 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             with self.assertRaises(PromptIncludeError):
                 expand_prompt_includes(
                     "{{include:_nested.md}}\n", prompts_dir
+                )
+
+    def test_rejects_missing_include(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(PromptIncludeError, "include missing"):
+                expand_prompt_includes(
+                    "{{include:_missing.md}}\n", Path(tmp)
+                )
+
+    def test_rejects_symlink_that_escapes_prompts_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            prompts_dir = root / "prompts"
+            prompts_dir.mkdir()
+            outside = root / "outside.md"
+            outside.write_text("must not be included\n", encoding="utf-8")
+            (prompts_dir / "_escape.md").symlink_to(outside)
+
+            with self.assertRaisesRegex(
+                PromptIncludeError, "include escaped prompts dir"
+            ):
+                expand_prompt_includes(
+                    "{{include:_escape.md}}\n", prompts_dir
                 )
 
     def test_rejects_malformed_include(self) -> None:
