@@ -3121,3 +3121,22 @@ current `main`; do not copy an obsolete test that asserts the weaker API.
 **Detection cost:** Low — `git diff origin/main...source -- allowed_paths`;
 search current main for `copy(deep=False)` / column-copy; pytest the named
 file.
+
+## Lesson 0hn: Re-poll UNKNOWN mergeable after a sibling squash (2026-09-18)
+
+**Pattern:** Hydro Dependabot #670 squash-merged first. Immediate re-read of
+siblings #671 and #669 returned `mergeable=UNKNOWN` (GitHub GraphQL lag), not
+CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine
+patch PRs that became CLEAN within ~8–12s and merged with the original head
+SHAs.
+
+**Rule:** (1) After a sibling merge in the same repo, `mergeable=UNKNOWN` is
+transient evidence, not `CONFLICTING`. (2) Re-poll for a bounded window before
+recording HOLD or skipping. (3) Only act when the re-read is OPEN, non-draft,
+CLEAN/MERGEABLE, required checks readable, and `expectedHeadSha` still matches.
+(4) If the re-read becomes CONFLICTING or UNSTABLE, stop; do not squash-bypass.
+(5) Each re-poll that then mutates still counts toward the state-changing
+action cap.
+
+**Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
+twice ~10s apart after a sibling squash.
