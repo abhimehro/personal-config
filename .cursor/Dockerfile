@@ -68,11 +68,7 @@ RUN set -eux; \
   tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1; \
   rm -f /tmp/node.tar.gz; \
   node --version; \
-  npm --version; \
-  npm install --global --prefix /opt/gitnexus "gitnexus@1.6.12"; \
-  printf '%s\n' '#!/usr/bin/env bash' 'exec /usr/local/bin/node /opt/gitnexus/lib/node_modules/gitnexus/bin/gitnexus.js "$@"' \
-    > /usr/local/bin/gitnexus; \
-  chmod +x /usr/local/bin/gitnexus
+  npm --version
 
 # ubuntu:24.04 ships the ubuntu user; only ensure sudo and home layout.
 RUN if ! id ubuntu >/dev/null 2>&1; then useradd -m -s /bin/bash -u 1000 ubuntu; fi \

@@ -19,15 +19,15 @@ else
 	REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 fi
 
-INSTALL_LOG="${HOME}/.local/state/cursor-cloud-workspace-install.log"
-
 # Write a UTC-timestamped message to stdout and the persistent installer log.
+# Resolve the log path at call time so sourced tests can isolate HOME.
 log() {
-	local message
+	local message logfile
+	logfile="${HOME}/.local/state/cursor-cloud-workspace-install.log"
 	message="$(date -u '+%Y-%m-%dT%H:%M:%SZ') cursor_cloud_workspace_install: $*"
 	printf '%s\n' "${message}"
-	mkdir -p "$(dirname "${INSTALL_LOG}")"
-	printf '%s\n' "${message}" >>"${INSTALL_LOG}"
+	mkdir -p "$(dirname "${logfile}")"
+	printf '%s\n' "${message}" >>"${logfile}"
 }
 
 pip_user() {
@@ -282,7 +282,19 @@ gitnexus_version_matches() {
 	[[ "${version}" == "${GITNEXUS_PINNED_VERSION}" ]]
 }
 
-# Add the user CLI directory to PATH and verify the pinned GitNexus is available.
+# SECURITY: launch the pinned CLI with the snapshot Node, not `env node`
+# (the live exec-daemon may inject Node 22.14 ahead of /usr/local).
+gitnexus_wrap_with_image_node() {
+	local js="${HOME}/.local/lib/node_modules/gitnexus/dist/cli/index.js"
+	local node_bin="/usr/local/bin/node"
+	local dest="${HOME}/.local/bin/gitnexus"
+	if [[ -f "${js}" && -x "${node_bin}" ]]; then
+		printf '%s\n' '#!/usr/bin/env bash' "exec '${node_bin}' '${js}' \"\$@\"" >"${dest}"
+		chmod +x "${dest}"
+	fi
+}
+
+# Add the user CLI directory to PATH and install or verify the pinned GitNexus CLI.
 ensure_gitnexus() {
 	export PATH="${HOME}/.local/bin:${PATH}"
 	local reported=""
@@ -294,13 +306,20 @@ ensure_gitnexus() {
 		fi
 		log "gitnexus present but version '${reported}' != ${GITNEXUS_PINNED_VERSION}; reinstalling"
 	fi
-	local node_bin="/usr/local/bin/node"
-	if [[ ! -x "${node_bin}" ]] || ! "${node_bin}" --version | grep -Eq '^v(22\.18\.0|2[4-9])\.'; then
-		log "gitnexus requires the pinned Node runtime at ${node_bin}"
+	if ! command -v npm >/dev/null 2>&1; then
+		log "skip gitnexus (npm not on PATH; needs Node 22.18+ from .cursor/Dockerfile)"
+		return 0
+	fi
+	log "installing gitnexus@${GITNEXUS_PINNED_VERSION} under ${HOME}/.local"
+	# SECURITY: pin exact CLI version; --prefix keeps the install in $HOME.
+	if ! npm install --global --prefix "${HOME}/.local" "gitnexus@${GITNEXUS_PINNED_VERSION}"; then
+		log "gitnexus npm install failed"
 		return 1
 	fi
+	export PATH="${HOME}/.local/bin:${PATH}"
+	gitnexus_wrap_with_image_node
 	if ! command -v gitnexus >/dev/null 2>&1; then
-		log "gitnexus ${GITNEXUS_PINNED_VERSION} is missing from the snapshot"
+		log "gitnexus installed but not on PATH"
 		return 1
 	fi
 	reported="$(gitnexus --version 2>/dev/null || true)"
@@ -308,6 +327,7 @@ ensure_gitnexus() {
 		log "gitnexus version '${reported}' does not match ${GITNEXUS_PINNED_VERSION}"
 		return 1
 	fi
+	gitnexus --version || true
 }
 
 # Append the GitNexus index path once to a Git repository's local exclusions.
@@ -349,7 +369,7 @@ index_gitnexus_repos() {
 		"${REPOS_ROOT}/series_correction_project_updated" \
 		"${REPOS_ROOT}/repoprompt-ce"; do
 		name="${repo##*/}"
-		if [[ ! -d ${repo} ]]; then
+		if [[ ! -d "${repo}" ]]; then
 			log "gitnexus: skip ${name} (missing)"
 			continue
 		fi

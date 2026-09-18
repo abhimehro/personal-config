@@ -27,7 +27,7 @@ pass() {
 	PASS=$((PASS + 1))
 }
 
-[[ -x ${SCRIPT} ]] || fail "script missing or not executable"
+[[ -x "${SCRIPT}" ]] || fail "script missing or not executable"
 
 # Source functions without running the installer (BASH_SOURCE != $0).
 # shellcheck source=scripts/cursor_cloud_workspace_install.sh
@@ -86,7 +86,7 @@ chmod +x \"${HOME}/.local/bin/gitnexus\""
 hash -r
 PATH="${MOCK_BIN}:/usr/bin:/bin" HOME="${HOME}" \
 	ensure_gitnexus >"${TEST_DIR}/t3.out" 2>&1 || fail "ensure_gitnexus install path failed: $(cat "${TEST_DIR}/t3.out")"
-[[ -f ${TEST_DIR}/npm.log ]] || fail "npm was not invoked; installer said: $(cat "${TEST_DIR}/t3.out")"
+[[ -f "${TEST_DIR}/npm.log" ]] || fail "npm was not invoked; installer said: $(cat "${TEST_DIR}/t3.out")"
 grep -q "gitnexus@1.6.12" "${TEST_DIR}/npm.log" || fail "npm was not asked for gitnexus@1.6.12: $(cat "${TEST_DIR}/npm.log")"
 grep -q -- "--prefix ${HOME}/.local" "${TEST_DIR}/npm.log" || fail "npm missing --prefix HOME/.local"
 grep -q -- "--global" "${TEST_DIR}/npm.log" || fail "npm missing --global"
@@ -121,7 +121,7 @@ PATH="${MOCK_BIN}:/usr/bin:/bin" HOME="${HOME}" REPOS_ROOT="${REPOS_ROOT}" \
 grep -q "analyze --index-only --skip-fts" "${TEST_DIR}/gitnexus.log" || fail "missing analyze flags: $(cat "${TEST_DIR}/gitnexus.log")"
 # Two indexable git repos (personal-config, ctrld-sync); Swift repo must not be analyzed.
 count="$(grep -c "analyze --index-only --skip-fts" "${TEST_DIR}/gitnexus.log" || true)"
-[[ ${count} -eq 2 ]] || fail "expected 2 analyze calls, got ${count}: $(cat "${TEST_DIR}/gitnexus.log")"
+[[ "${count}" -eq 2 ]] || fail "expected 2 analyze calls, got ${count}: $(cat "${TEST_DIR}/gitnexus.log")"
 grep -q "skip repoprompt-ce" "${TEST_DIR}/t5.out" || fail "expected HOLD_PLATFORM skip for repoprompt-ce"
 pass "index flags and repoprompt-ce skip"
 
@@ -131,7 +131,7 @@ echo "---"
 exclude_gitnexus_index "${REPOS_ROOT}/personal-config" || fail "exclude first call"
 exclude_gitnexus_index "${REPOS_ROOT}/personal-config" || fail "exclude second call"
 hits="$(grep -cFx '.gitnexus/' "${REPOS_ROOT}/personal-config/.git/info/exclude")"
-[[ ${hits} -eq 1 ]] || fail "expected one .gitnexus/ exclude line, got ${hits}"
+[[ "${hits}" -eq 1 ]] || fail "expected one .gitnexus/ exclude line, got ${hits}"
 pass "exclude file is idempotent"
 
 echo ""
@@ -142,6 +142,32 @@ if grep -q "cursor_cloud_workspace_install: done" "${TEST_DIR}/t1.out" 2>/dev/nu
 	fail "main ran during ensure_gitnexus"
 fi
 pass "functions are sourceable without running main"
+
+echo ""
+echo "Test 8: substring versions do not satisfy the pin"
+echo "---"
+gitnexus_version_matches "1.6.12" || fail "exact 1.6.12 should match"
+gitnexus_version_matches "gitnexus 1.6.12" || fail "prefixed 1.6.12 should match"
+if gitnexus_version_matches "1.6.120"; then
+	fail "1.6.120 must not match 1.6.12"
+fi
+if gitnexus_version_matches "9.1.6.12"; then
+	fail "9.1.6.12 must not match 1.6.12"
+fi
+pass "version compare is an exact token, not a substring"
+
+echo ""
+echo "Test 9: npm install failure fails the snapshot helper"
+echo "---"
+rm -f "${MOCK_BIN}/gitnexus"
+write_mock npm "echo npm-fail >>\"${TEST_DIR}/npm.log\"; exit 1"
+hash -r
+if PATH="${MOCK_BIN}:/usr/bin:/bin" HOME="${HOME}" \
+	ensure_gitnexus >"${TEST_DIR}/t9.out" 2>&1; then
+	fail "ensure_gitnexus should fail when npm install fails: $(cat "${TEST_DIR}/t9.out")"
+fi
+grep -q "npm install failed" "${TEST_DIR}/t9.out" || fail "expected npm-failure log: $(cat "${TEST_DIR}/t9.out")"
+pass "npm install failure is fatal"
 
 echo ""
 echo "All cursor_cloud_workspace_install tests passed (${PASS})."
