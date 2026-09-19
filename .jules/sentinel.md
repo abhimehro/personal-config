@@ -824,3 +824,16 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-08-20 - Option Injection Risk via pgrep
+
+**Vulnerability:** Option Injection (CWE-88 variant). Found a script
+(scripts/report-daemons-watchdog.sh) using `pgrep -x` without the `--`
+delimiter. If an attacker controls the variable and starts it with a hyphen,
+`pgrep` may interpret the variable as a command-line flag rather than a
+positional argument, leading to option injection or unintended execution.
+**Learning:** When invoking `pgrep` (or `pkill`) with dynamic variables, you
+must explicitly separate options from arguments using the `--` delimiter to
+prevent them from being parsed as flags. **Prevention:** Always use the `--`
+argument delimiter before positional arguments when using `pgrep` or `pkill`
+(e.g., `pgrep -x -- "$name"`).
