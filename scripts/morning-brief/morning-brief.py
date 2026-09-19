@@ -618,7 +618,7 @@ def html_li(content: str) -> str:
 def html_ul(items: Iterable[str]) -> str:
     item_list = list(items)
     if not item_list:
-        return '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
+        return '<ul><li class="empty-state" style="color: #6c757d; font-style: italic; padding: 8px 0;"><span aria-hidden="true" style="opacity: 0.7; margin-right: 6px;">📭</span> No items to display. You\'re all caught up!</li></ul>'
     return f"<ul>{''.join(item_list)}</ul>"
 
 

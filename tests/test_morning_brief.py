@@ -165,7 +165,7 @@ class TestHtmlHelpers(unittest.TestCase):
     def test_html_ul_empty(self):
         assert (
             mb.html_ul([])
-            == '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
+            == '<ul><li class="empty-state" style="color: #6c757d; font-style: italic; padding: 8px 0;"><span aria-hidden="true" style="opacity: 0.7; margin-right: 6px;">📭</span> No items to display. You\'re all caught up!</li></ul>'
         )
 
     def test_html_section(self):
