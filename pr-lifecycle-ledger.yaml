@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 72
+ledger_revision: 73
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -9480,15 +9480,15 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: STAGE2_QUEUED
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not merge, approve, or close original #409 because a replacement
-    draft exists. Keep the journal on the original (lesson 0cs).'
-  next_action: 'Keep original #409 OPEN CONFLICTING. Draft #460 is tests-only unique
-    remainder (0gd draft; Stage 1 re-ingests). Do not merge, approve, or close #409.
-    Re-read anchors 15621ef6 / d5f92cf0 by 2026-09-25T19:36:00Z.'
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Do not merge, approve, or close original #409. Keep the journal on
+    the original (lesson 0cs). Draft #460 stays tests-only (0gd).'
+  next_action: 'Recover unique remaining source scripts/processor.py into a focused
+    draft. Keep .jules/bolt.md on original #409 (0cs). Do not replay scripts/tests/test_processor.py
+    (owned by draft #460). Do not merge, approve, or close #409. Expires 2026-09-26T16:30:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
@@ -9497,7 +9497,7 @@ items:
   - scripts/processor.py
   - scripts/tests/test_processor.py
   attempts:
-    evidence: 5
+    evidence: 6
     recovery: 2
     mutations: 0
   handoffs:
@@ -9505,8 +9505,9 @@ items:
   - evt-s1-20260918-seriescorre-409-h
   - evt-s2-20260918-seriescorre-409-q
   - evt-s2-20260918-seriescorre-409-h
-  revision: 4
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-s1-20260919-seriescorre-409-h
+  revision: 5
+  updated_at_utc: '2026-09-19T15:40:05Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -18623,6 +18624,378 @@ items:
   - evt-s2-20260918-seriescorre-460-h
   revision: 3
   updated_at_utc: '2026-09-18T17:20:00Z'
+- key: abhimehro/ctrld-sync#1264@d6aae6637c718adc3b47253fe5ddf73346253c48
+  repository: abhimehro/ctrld-sync
+  pr: 1264
+  url: https://github.com/abhimehro/ctrld-sync/pull/1264
+  base_sha: cb073c0898106f30c7ac9d61299aeca191b0aae6
+  head_sha: d6aae6637c718adc3b47253fe5ddf73346253c48
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch/minor gh-aw/setup 0.87.10 to 0.89.14.'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1264
+  - https://github.com/abhimehro/ctrld-sync/commit/08137d15438c0bbe9b0f685b0fe779e1408dc1bd
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-ctrldsync-1264-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/ctrld-sync#1263@0c79ac56ca485661a2426e3c0e4aaaf0028f01de
+  repository: abhimehro/ctrld-sync
+  pr: 1263
+  url: https://github.com/abhimehro/ctrld-sync/pull/1263
+  base_sha: 08137d15438c0bbe9b0f685b0fe779e1408dc1bd
+  head_sha: 0c79ac56ca485661a2426e3c0e4aaaf0028f01de
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch upload-sarif 4.37.9 to 4.38.0 (not 3 to 4).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1263
+  - https://github.com/abhimehro/ctrld-sync/commit/6099ec72aa04cec14b72acc2b3713ccb51535694
+  changed_paths:
+  - .github/workflows/bandit.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-ctrldsync-1263-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/ctrld-sync#1262@c99c2424ae3b3f2bdeaeaa11a62136a0fe3d80bd
+  repository: abhimehro/ctrld-sync
+  pr: 1262
+  url: https://github.com/abhimehro/ctrld-sync/pull/1262
+  base_sha: 6099ec72aa04cec14b72acc2b3713ccb51535694
+  head_sha: c99c2424ae3b3f2bdeaeaa11a62136a0fe3d80bd
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot minor pnpm/action-setup 6.0.10 to 6.1.0.'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1262
+  - https://github.com/abhimehro/ctrld-sync/commit/92f3ca4ec4d10885b3dec098413f6ffed1322563
+  changed_paths:
+  - .github/workflows/pr-visual-recap.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-ctrldsync-1262-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/ctrld-sync#1261@583df4e4aa6bc74ba1a5524289a1c626a7fdb0b4
+  repository: abhimehro/ctrld-sync
+  pr: 1261
+  url: https://github.com/abhimehro/ctrld-sync/pull/1261
+  base_sha: 92f3ca4ec4d10885b3dec098413f6ffed1322563
+  head_sha: 583df4e4aa6bc74ba1a5524289a1c626a7fdb0b4
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch codescene pr-refactoring-agent 1.1.1 to 1.1.3.'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1261
+  - https://github.com/abhimehro/ctrld-sync/commit/2dae4dafd0b377ca423cdc8f28a98dc954338d3f
+  changed_paths:
+  - .github/workflows/refactoring-agent.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-ctrldsync-1261-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/email-security-pipeline#1614@e4d4e6240ee1b3c637af5a69d9de0248281d9f71
+  repository: abhimehro/email-security-pipeline
+  pr: 1614
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1614
+  base_sha: 0635e7df874f15b9aec8971601c43bdb726217d8
+  head_sha: e4d4e6240ee1b3c637af5a69d9de0248281d9f71
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch ruby/setup-ruby 1.321.0 to 1.323.0.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1614
+  - https://github.com/abhimehro/email-security-pipeline/commit/7d71961d4e4ef3ea603b1a3229574564d1438e29
+  changed_paths:
+  - .github/workflows/changelog.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-email-1614-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/email-security-pipeline#1613@2e3ca8e4dbb3dcd213573bb928764d8d237be6c3
+  repository: abhimehro/email-security-pipeline
+  pr: 1613
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1613
+  base_sha: 7d71961d4e4ef3ea603b1a3229574564d1438e29
+  head_sha: 2e3ca8e4dbb3dcd213573bb928764d8d237be6c3
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch/minor gh-aw setup-cli 0.88.7 to 0.89.14.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1613
+  - https://github.com/abhimehro/email-security-pipeline/commit/8a73f6d0b7a2b92ea1179addb01f47dbfda2ee17
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-email-1613-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/email-security-pipeline#1612@8a3af26b2b354237c8bfb4d3ea28cb74dddf107e
+  repository: abhimehro/email-security-pipeline
+  pr: 1612
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1612
+  base_sha: 8a73f6d0b7a2b92ea1179addb01f47dbfda2ee17
+  head_sha: 8a3af26b2b354237c8bfb4d3ea28cb74dddf107e
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch/minor gh-aw/setup 0.88.7 to 0.89.14.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1612
+  - https://github.com/abhimehro/email-security-pipeline/commit/ba848d6b6310664a2a3f7c536a114a85e082ed97
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-email-1612-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#668@0741ff3cbb0396757c50697aae268333ee170fc7
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 668
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/668
+  base_sha: 6f53be91c0d3dd61819664b9a30cb49e0683393e
+  head_sha: 0741ff3cbb0396757c50697aae268333ee170fc7
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch ruby/setup-ruby 1.322.0 to 1.323.0.'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/668
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/25057dac0e6b6c6a705c88fbdd670d9207c90138
+  changed_paths:
+  - .github/workflows/changelog.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-hydro-668-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/Seatek_Analysis#863@318f94c148f537e31a8293060313e6af9d8a7efd
+  repository: abhimehro/Seatek_Analysis
+  pr: 863
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/863
+  base_sha: 5765d6476ccd2eaeb62c1e2524ebb4304e673462
+  head_sha: 318f94c148f537e31a8293060313e6af9d8a7efd
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-19T15:40:05Z.
+    Dependabot patch ruby/setup-ruby 1.322.0 to 1.323.0.'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/863
+  - https://github.com/abhimehro/Seatek_Analysis/commit/a090ec84042e8512b44945deba1dfbd05fb5b52f
+  changed_paths:
+  - .github/workflows/changelog.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-seatek-863-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/repoprompt-ce#337@09b636f289d99b774615d25bc852cd141af1cd5a
+  repository: abhimehro/repoprompt-ce
+  pr: 337
+  url: https://github.com/abhimehro/repoprompt-ce/pull/337
+  base_sha: 084799b61d3c4ce28b270450b9b66f7b9778fbe6
+  head_sha: 09b636f289d99b774615d25bc852cd141af1cd5a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: CLOSED_NOOP zero-diff at 2026-09-19T15:27:00Z
+    after 24h cooldown.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/337
+  - https://github.com/abhimehro/repoprompt-ce/pull/337#issuecomment-5743060792
+  changed_paths: []
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260919-repopromptce-337-t
+  revision: 1
+  updated_at_utc: '2026-09-19T15:40:05Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -41557,7 +41930,256 @@ events:
   reason: 'Bounce HOLD_CANONICAL CONFLICTING #2030 to Stage 1 canonical-pick vs open
     #2116 (generated Jules overlap on run_merges.py / pr_reference.py). Do not packet
     Jules/Bolt clusters.'
-stage2_work_items: []
+- event_id: evt-s1-20260919-ctrldsync-1264-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1264@d6aae6637c718adc3b47253fe5ddf73346253c48
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1264@d6aae6637c718adc3b47253fe5ddf73346253c48:evt-s1-20260919-ctrldsync-1264-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch/minor gh-aw/setup 0.87.10 to 0.89.14.
+- event_id: evt-s1-20260919-ctrldsync-1263-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1263@0c79ac56ca485661a2426e3c0e4aaaf0028f01de
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1263@0c79ac56ca485661a2426e3c0e4aaaf0028f01de:evt-s1-20260919-ctrldsync-1263-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch upload-sarif 4.37.9 to 4.38.0 (not 3 to 4).
+- event_id: evt-s1-20260919-ctrldsync-1262-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1262@c99c2424ae3b3f2bdeaeaa11a62136a0fe3d80bd
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1262@c99c2424ae3b3f2bdeaeaa11a62136a0fe3d80bd:evt-s1-20260919-ctrldsync-1262-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot minor pnpm/action-setup 6.0.10 to 6.1.0.
+- event_id: evt-s1-20260919-ctrldsync-1261-t
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1261@583df4e4aa6bc74ba1a5524289a1c626a7fdb0b4
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1261@583df4e4aa6bc74ba1a5524289a1c626a7fdb0b4:evt-s1-20260919-ctrldsync-1261-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch codescene pr-refactoring-agent 1.1.1 to 1.1.3.
+- event_id: evt-s1-20260919-email-1614-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1614@e4d4e6240ee1b3c637af5a69d9de0248281d9f71
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1614@e4d4e6240ee1b3c637af5a69d9de0248281d9f71:evt-s1-20260919-email-1614-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch ruby/setup-ruby 1.321.0 to 1.323.0.
+- event_id: evt-s1-20260919-email-1613-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1613@2e3ca8e4dbb3dcd213573bb928764d8d237be6c3
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1613@2e3ca8e4dbb3dcd213573bb928764d8d237be6c3:evt-s1-20260919-email-1613-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch/minor gh-aw setup-cli 0.88.7 to 0.89.14.
+- event_id: evt-s1-20260919-email-1612-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1612@8a3af26b2b354237c8bfb4d3ea28cb74dddf107e
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1612@8a3af26b2b354237c8bfb4d3ea28cb74dddf107e:evt-s1-20260919-email-1612-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch/minor gh-aw/setup 0.88.7 to 0.89.14.
+- event_id: evt-s1-20260919-hydro-668-t
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#668@0741ff3cbb0396757c50697aae268333ee170fc7
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#668@0741ff3cbb0396757c50697aae268333ee170fc7:evt-s1-20260919-hydro-668-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch ruby/setup-ruby 1.322.0 to 1.323.0.
+- event_id: evt-s1-20260919-seatek-863-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#863@318f94c148f537e31a8293060313e6af9d8a7efd
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#863@318f94c148f537e31a8293060313e6af9d8a7efd:evt-s1-20260919-seatek-863-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch ruby/setup-ruby 1.322.0 to 1.323.0.
+- event_id: evt-s1-20260919-repopromptce-337-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#337@09b636f289d99b774615d25bc852cd141af1cd5a
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#337@09b636f289d99b774615d25bc852cd141af1cd5a:evt-s1-20260919-repopromptce-337-t
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 closed zero-diff BOT daily-QA PR after required no-op cooldown.
+    Live files empty; not merged.
+- event_id: evt-s1-20260919-seriescorre-409-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage3
+  to_owner: stage2
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s1-20260919-seriescorre-409-h
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:40:05Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'HOLD_EVIDENCE unique remaining after 0cs journal and after tests-only draft
+    #460. Queue focused salvage of scripts/processor.py only.'
+stage2_work_items:
+- work_item_id: s2-20260919-seriescorre-409-processor
+  source_item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  repository: abhimehro/series_correction_project_updated
+  pr: 409
+  base_sha: d5f92cf071029273c81c257301308821006bf31a
+  head_sha: 15621ef64d18af14d82cec0ea9d3e004313ce736
+  allowed_paths:
+  - scripts/processor.py
+  prohibited_paths:
+  - .jules/bolt.md
+  - scripts/tests/test_processor.py
+  repair_description: 'Recover unique remaining scripts/processor.py from CONFLICTING
+    #409 (shallow-copy isolation). Exclude the Jules journal (lesson 0cs). Do not
+    rewrite tests; draft #460 already owns scripts/tests/test_processor.py.'
+  required_test_command: python3 -m pytest scripts/tests/test_processor.py -v
+  expected_test_result: pytest exit 0; processor tests pass
+  acceptance_criteria:
+  - Only scripts/processor.py changes on the replacement draft.
+  - pytest scripts/tests/test_processor.py passes.
+  - 'Original #409 stays OPEN; journal stays on #409.'
+  - 'Do not merge, approve, or close #409 or draft #460.'
+  provenance_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/409
+  - https://github.com/abhimehro/series_correction_project_updated/pull/460
+  expiry_utc: '2026-09-26T16:30:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20260919-seriescorre-409-h
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
