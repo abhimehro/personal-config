@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 74
+ledger_revision: 75
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -42174,6 +42174,27 @@ events:
   reason: 'Retract s2-20260919-seriescorre-409-processor. Live main already has the
     stronger copy(deep=False) processor (0hm). Unique tests already live on draft
     #460. Do not invent a weaker processor copy.'
+- event_id: evt-s3-20260919-seriescorre-409-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260919-seriescorre-409-b
+  expected_item_revision: 6
+  resulting_item_revision: 6
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s3-20260919-seriescorre-409-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-19T19:29:00Z'
+  acknowledged_at_utc: '2026-09-19T19:29:00Z'
+  policy_revision: null
+  successful: null
+  reason: 'ACK evt-s1-20260919-seriescorre-409-b. Keep CONFLICTING original #409 open.
+    Unique tests live on draft #460 (0gd). Do not salvage weaker processor.py (0hm).
+    Journal stays on #409 (0cs). Do not merge, approve, or close #409 or draft #460.'
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
