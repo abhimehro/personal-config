@@ -530,3 +530,8 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+
+## 2026-08-17 - Add <meter> element for numeric counts
+
+**Learning:** When generating HTML reports with numeric metrics like total warnings, using a native `<meter>` element is visually more informative than displaying a plain text number. It also improves accessibility by using proper semantic `aria-label`, `min`, `max`, `low`, `high`, and `optimum` tags.
+**Action:** Use a native HTML5 `<meter>` element when visualizing numeric scalar data, like total warnings counts, in generated HTML reports.
