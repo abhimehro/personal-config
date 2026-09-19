@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 73
+ledger_revision: 74
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -9480,15 +9480,17 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
+  current_owner: stage3
+  next_owner: stage3
   safe_default: 'Do not merge, approve, or close original #409. Keep the journal on
-    the original (lesson 0cs). Draft #460 stays tests-only (0gd).'
-  next_action: 'Recover unique remaining source scripts/processor.py into a focused
-    draft. Keep .jules/bolt.md on original #409 (0cs). Do not replay scripts/tests/test_processor.py
-    (owned by draft #460). Do not merge, approve, or close #409. Expires 2026-09-26T16:30:00Z.'
+    the original (lesson 0cs). Do not wholesale-replay scripts/processor.py (lesson
+    0hm). Draft #460 stays tests-only (0gd).'
+  next_action: 'Keep original #409 OPEN CONFLICTING. Unique tests live on draft #460.
+    Do not salvage weaker processor.py (0hm). Journal stays on #409 (0cs). Do not
+    merge, approve, or close #409 or draft #460. Re-read anchors 15621ef6 / d5f92cf0
+    by 2026-09-26T16:30:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
@@ -9497,7 +9499,7 @@ items:
   - scripts/processor.py
   - scripts/tests/test_processor.py
   attempts:
-    evidence: 6
+    evidence: 7
     recovery: 2
     mutations: 0
   handoffs:
@@ -9506,8 +9508,9 @@ items:
   - evt-s2-20260918-seriescorre-409-q
   - evt-s2-20260918-seriescorre-409-h
   - evt-s1-20260919-seriescorre-409-h
-  revision: 5
-  updated_at_utc: '2026-09-19T15:40:05Z'
+  - evt-s1-20260919-seriescorre-409-b
+  revision: 6
+  updated_at_utc: '2026-09-19T15:45:00Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -42150,36 +42153,28 @@ events:
   successful: null
   reason: 'HOLD_EVIDENCE unique remaining after 0cs journal and after tests-only draft
     #460. Queue focused salvage of scripts/processor.py only.'
-stage2_work_items:
-- work_item_id: s2-20260919-seriescorre-409-processor
-  source_item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
-  repository: abhimehro/series_correction_project_updated
-  pr: 409
-  base_sha: d5f92cf071029273c81c257301308821006bf31a
-  head_sha: 15621ef64d18af14d82cec0ea9d3e004313ce736
-  allowed_paths:
-  - scripts/processor.py
-  prohibited_paths:
-  - .jules/bolt.md
-  - scripts/tests/test_processor.py
-  repair_description: 'Recover unique remaining scripts/processor.py from CONFLICTING
-    #409 (shallow-copy isolation). Exclude the Jules journal (lesson 0cs). Do not
-    rewrite tests; draft #460 already owns scripts/tests/test_processor.py.'
-  required_test_command: python3 -m pytest scripts/tests/test_processor.py -v
-  expected_test_result: pytest exit 0; processor tests pass
-  acceptance_criteria:
-  - Only scripts/processor.py changes on the replacement draft.
-  - pytest scripts/tests/test_processor.py passes.
-  - 'Original #409 stays OPEN; journal stays on #409.'
-  - 'Do not merge, approve, or close #409 or draft #460.'
-  provenance_urls:
-  - https://github.com/abhimehro/series_correction_project_updated/pull/409
-  - https://github.com/abhimehro/series_correction_project_updated/pull/460
-  expiry_utc: '2026-09-26T16:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260919-seriescorre-409-h
-  history: []
+- event_id: evt-s1-20260919-seriescorre-409-b
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 5
+  resulting_item_revision: 6
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-s1-20260919-seriescorre-409-b
+  status: PROJECTED
+  created_at_utc: '2026-09-19T15:45:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Retract s2-20260919-seriescorre-409-processor. Live main already has the
+    stronger copy(deep=False) processor (0hm). Unique tests already live on draft
+    #460. Do not invent a weaker processor copy.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
