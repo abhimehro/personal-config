@@ -3140,3 +3140,25 @@ action cap.
 
 **Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
 twice ~10s apart after a sibling squash.
+
+## Lesson 0ho: Do not re-queue a weaker processor after tests-only salvage (2026-09-19)
+
+**Pattern:** Stage 1 CAS-wrote work item `s2-20260919-seriescorre-409-processor`
+for CONFLICTING series_correction #409 after Stage 2 already opened tests-only
+draft [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460).
+Live diff versus current `main` showed `#409`'s `scripts/processor.py` was the
+older unique remainder (weaker than `main`'s `copy(deep=False)`). Lesson **0hm**
+already forbade wholesale processor replay. The unique tests already lived on
+#460. The WI was retracted the same run (ledger rev 73 → 74) before Stage 2.
+
+**Rule:** (1) After a tests-only salvage draft exists, do not queue a second
+work item for leftover `processor.py` unless current `main` is missing that
+hunk and the source is strictly stronger. (2) Diff allowed paths against
+**current main**, not only the source head (**0hm**). (3) Retract a mistaken
+Stage 2 work item in the same Stage 1 run before `0 17 * * *` UTC. (4) Leave
+#409 OPEN CONFLICTING for the `.jules/` journal (**0cs**); do not merge draft
+#460 (**0gd**). (5) **0hn** on `main` is sibling `UNKNOWN` re-poll; this
+processor-retract pattern is **0ho**.
+
+**Detection cost:** Low — `gh pr view` on #460 plus
+`git diff origin/main...source -- scripts/processor.py` size/contract.
