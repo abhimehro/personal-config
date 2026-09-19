@@ -1,6 +1,16 @@
 #!/bin/bash
 # User Data Cleanup Module
 set -euo pipefail
+
+_restore_shopt_state() {
+	local state="$1"
+	local expected_option="$2"
+	local -a parts=()
+	read -r -a parts <<<"$state"
+	if [[ ${#parts[@]} -eq 3 && ${parts[0]} == "shopt" && ( ${parts[1]} == "-s" || ${parts[1]} == "-u" ) && ${parts[2]} == "$expected_option" ]]; then
+		shopt "${parts[1]}" "${parts[2]}"
+	fi
+}
 clean_user_essentials() {
 	start_section_spinner "Scanning caches..."
 	safe_clean ~/Library/Caches/* "User app cache"
@@ -787,8 +797,8 @@ cache_top_level_entry_count_capped() {
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+	_restore_shopt_state "$_nullglob_state" nullglob
+	_restore_shopt_state "$_dotglob_state" dotglob
 
 	[[ $count =~ ^[0-9]+$ ]] || count=0
 	printf '%s\n' "$count"
@@ -807,14 +817,14 @@ directory_has_entries() {
 	local item
 	for item in "$dir"/*; do
 		if [[ -e $item ]]; then
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+			_restore_shopt_state "$_nullglob_state" nullglob
+			_restore_shopt_state "$_dotglob_state" dotglob
 			return 0
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+	_restore_shopt_state "$_nullglob_state" nullglob
+	_restore_shopt_state "$_dotglob_state" dotglob
 	return 1
 }
 
@@ -882,7 +892,7 @@ clean_app_caches() {
 		[[ -d "$container_dir/Data/Library/Caches" ]] || continue
 		process_container_cache "$container_dir"
 	done
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
+	_restore_shopt_state "$_ng_state" nullglob
 	stop_section_spinner
 
 	if [[ $found_any == "true" ]]; then
@@ -957,8 +967,8 @@ process_container_cache() {
 			[[ -e $item ]] || continue
 			safe_remove "$item" true || true
 		done
-		if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-		if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+		_restore_shopt_state "$_nullglob_state" nullglob
+		_restore_shopt_state "$_dotglob_state" dotglob
 	fi
 }
 
@@ -1088,8 +1098,8 @@ clean_group_container_caches() {
 					fi
 				done
 			fi
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+			_restore_shopt_state "$_nullglob_state" nullglob
+			_restore_shopt_state "$_dotglob_state" dotglob
 
 			if [[ $candidate_changed == "true" ]]; then
 				total_size=$((total_size + candidate_size_kb))
@@ -1098,7 +1108,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+	_restore_shopt_state "$_nullglob_state" nullglob
 
 	stop_section_spinner
 
@@ -1795,7 +1805,7 @@ clean_application_support_logs() {
 	if [[ $pipefail_was_set == "true" ]]; then
 		set -o pipefail
 	fi
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
+	_restore_shopt_state "$_ng_state" nullglob
 	stop_section_spinner
 	if [[ $found_any == "true" ]]; then
 		local size_human
