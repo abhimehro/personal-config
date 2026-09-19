@@ -1090,3 +1090,37 @@ already landed `HEAL_THEN_PROCEED` on `main` — it is **not** Trunk-queued. Do
 independently (**0hk**). Keep Stage 1/2/3 completion enabled; leave calibration
 disabled. HITL paste of expanded JSON prompt bodies remains. Lesson **0hi**.
 Lesson **0hk**.
+
+## Stage 1 — 2026-09-18 (cron 15:00 UTC)
+
+Scheduled fire `2026-09-18T15:03:35Z` (automation `77c168e0`, run
+<https://cursor.com/agents/bc-e0cd2fa0-6f4f-48be-965c-b80e9cd17d9e>). Isolated
+runtime ledger schema **PASS** at revision **69**, then CAS **70** (commit
+`4eae60147d1560031a01a3332473f09b95499764`, blob
+`5f9fa9b993dfe0529c726d8d6cd2630ae02bc94e`). Calibration **APPROVED** 7/7, **not**
+reset. Export `--check` **MATCHES**. Observational open PRs **91**. Product
+mutations **10/40** (canonical-pick closes; no routine Dependabot patch/minor
+remained MERGEABLE CLEAN). Feed fingerprint: `stage2_queued_count=1`,
+`salvage_eligible_count=0`, `throughput_grade=PASS`. Docs lineage:
+`pr-lifecycle-docs-20260918` (recreated from `main` after prior same-day lineage
+#2222 merged). Full record: `tasks/pr-review-2026-09-18-1500.md`. Lesson **0hl**.
+Do **not** `/trunk merge` this lineage in the opening run (**0gj**).
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (triage)        |    91 |
+| Product mutations           |    10 |
+| Merged                      |     0 |
+| Closed                      |    10 |
+| Stage 2 queued (this run)   |     1 |
+| Stage 3 handoffs (this run) |     0 |
+| GitHub PR mutations         |    10 |
+| Ledger file CAS writes      |     1 |
+| Analysis errors             |     0 |
+
+Per-item table: see `tasks/pr-review-2026-09-18-1500.md`.
+
+Downstream: Stage 2 executes `s2-20260918-seriescorre-409` (series_correction
+#409 unique `processor.py` + tests; take `main`'s `.jules/bolt.md`). Keep Stage
+1/2/3 completion enabled; leave calibration disabled. HITL paste already done;
+do not re-paste; do not disable Stage 1 (**0hk**).

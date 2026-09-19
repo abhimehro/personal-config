@@ -3075,3 +3075,68 @@ do not tell Stage 2 that heal-forward is still Trunk-queued.
 **Detection cost:** Low — `cursor-cloud get-automation` on the four UUIDs;
 compare to the checklist table date; Stage 2 schedule `0 17 * * *`; #2224 merge
 commit `0cf4928e` on `origin/main`.
+
+## Lesson 0hl: HOLD_CANONICAL vs an already-MERGED twin is unique-source salvage (2026-09-18)
+
+**Pattern:** series_correction [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+stayed `HOLD_CANONICAL` / Stage 3 because ledger evidence still named open twin
+[#405](https://github.com/abhimehro/series_correction_project_updated/pull/405).
+Live GitHub showed #405 **MERGED** and #409 still CONFLICTING/DIRTY with unique
+remaining source (`scripts/processor.py`, `scripts/tests/test_processor.py`)
+plus a `.jules/bolt.md` journal. Health `salvage_eligible=0` while that stale
+canonical hold sat idle. Stage 1 would have failed the feed if it left salvage
+unqueued and called the remainder empty.
+
+**Rule:** (1) SHA_MATCH a Stage 3 `HOLD_CANONICAL` item against **live** twin
+state. If every overlap twin is MERGED/CLOSED and unique source remains, that
+is Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
+complete work item. (2) `.jules/` / `.Jules/` journal path alone is not sticky
+`generated_output` (**0cs**); prohibit copying the journal into the replacement
+draft. (3) Do not invent a work item without a matching ledger key and live
+CONFLICTING/DIRTY unique source. (4) Do not leave the item on Stage 3 for
+another packet when the canonical reason is gone. (5) Keeper of an still-open
+overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins;
+do not queue N salvage WIs for non-keepers.
+
+**Detection cost:** Low — `gh pr view` on the named twin; `lifecycle_state:
+STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
+
+## Lesson 0hm: Do not replay a weaker source processor over a stronger main (2026-09-18)
+
+**Pattern:** Work item `s2-20260918-seriescorre-409` allowed
+`scripts/processor.py` and `scripts/tests/test_processor.py`. Live `main`
+already used `copy(deep=False)` plus per-column copies / `new_col.loc` /
+`to_numpy(copy=True)`. The CONFLICTING #409 processor was the older unique
+remainder, not a strict upgrade. Wholesale-copying it would have regressed
+isolation. The unique remainder that still failed-closed on current main was
+the three shallow-copy tests.
+
+**Rule:** (1) Diff allowed paths against **current main**, not only against the
+source head. (2) If main already contains a stronger contract, salvage the
+unique tests (or the still-missing hunks) only. (3) Do not wholesale-checkout
+the source processor, journal, workflow, or lockfile. (4) Adapt tests to
+current `main`; do not copy an obsolete test that asserts the weaker API.
+(5) Record the live replacement head after review-bot follow-ons (**0gx**).
+
+**Detection cost:** Low — `git diff origin/main...source -- allowed_paths`;
+search current main for `copy(deep=False)` / column-copy; pytest the named
+file.
+
+## Lesson 0hn: Re-poll UNKNOWN mergeable after a sibling squash (2026-09-18)
+
+**Pattern:** Hydro Dependabot #670 squash-merged first. Immediate re-read of
+siblings #671 and #669 returned `mergeable=UNKNOWN` (GitHub GraphQL lag), not
+CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine
+patch PRs that became CLEAN within ~8–12s and merged with the original head
+SHAs.
+
+**Rule:** (1) After a sibling merge in the same repo, `mergeable=UNKNOWN` is
+transient evidence, not `CONFLICTING`. (2) Re-poll for a bounded window before
+recording HOLD or skipping. (3) Only act when the re-read is OPEN, non-draft,
+CLEAN/MERGEABLE, required checks readable, and `expectedHeadSha` still matches.
+(4) If the re-read becomes CONFLICTING or UNSTABLE, stop; do not squash-bypass.
+(5) Each re-poll that then mutates still counts toward the state-changing
+action cap.
+
+**Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
+twice ~10s apart after a sibling squash.
