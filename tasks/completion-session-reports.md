@@ -2456,3 +2456,41 @@ Per-item table: see `tasks/pr-completion-2026-09-18.md`. Downstream: Stage 1
 canonical-pick #2030 vs #2116 and re-ingest draft #460; Stage 2 empty remainder;
 keep completion enabled and calibration disabled.
 
+## Stage Run Record — 2026-09-19
+
+Scheduled fire `2026-09-19T19:15:09Z` (automation `66a8e7a8`, run
+<https://cursor.com/agents/bc-f06568d9-8bb6-4f17-bd5e-6abb56a60dd7>). Runtime
+ledger CAS preflight **PASS** at revision **74** (commit
+`14850777671becf5987ca81b582946ddcd2fb570`, blob
+`9475321cb5a586ce7df37832baaa4120567b2cee`), then Git Data API FF **75**
+(commit `0a297d60a81671aee45edcea842c1bb6083fc3bf`, blob
+`c850267f4d2c3e0313a1f58fbe54f4c38104dfa1`). Remote re-preflight **PASS**.
+Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4`, **not** reset. GitHub identity
+REST login `abhimehro`. Heal-forward: Stage 1 15:00 fingerprint **EXISTS**
+`stage2_queued_count=0` / `salvage_eligible_count=0` / `throughput_grade=PASS`;
+health `starvation=false`; Stage 2 `EMPTY_INTAKE` (not starvation) → **PROCEED
+COMPLETE**. Closed overflow Jules zero-diff
+[repoprompt-ce #342](https://github.com/abhimehro/repoprompt-ce/pull/342)
+(1/15). ACK series #409 vs draft #460 (do not merge). Packets **0**. Stage 2 WI
+**0**. Docs lineage
+[#2237](https://github.com/abhimehro/personal-config/pull/2237)
+(`pr-lifecycle-docs-20260919`). Do **not** `/trunk merge` this lineage in the
+appending run (**0gj**). Never merge drafts #460/#2237. Full record:
+`tasks/pr-completion-2026-09-19.md`. No new lesson.
+
+| Metric                        | Count |
+| ----------------------------- | ----: |
+| Reconciliations (live, acted) |    16 |
+| Product mutations             |     1 |
+| Merged                        |     0 |
+| Closed                        |     1 |
+| Decision packets              |     0 |
+| Stage 2 work items            |     0 |
+| Ledger file CAS writes        |     1 |
+| Analysis errors               |     0 |
+| Calibration change            |  none |
+
+Per-item table: see `tasks/pr-completion-2026-09-19.md`. Downstream: Stage 1
+canonical-pick #2030 and re-ingest draft #460; Stage 2 empty remainder; keep
+completion enabled and calibration disabled.
+
