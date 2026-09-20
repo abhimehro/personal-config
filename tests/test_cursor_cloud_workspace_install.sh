@@ -111,7 +111,6 @@ echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
 hash -r
 (
-	log() { printf '%s\n' "$*"; }
 	PATH="${MOCK_BIN}"
 	ensure_gitnexus
 ) >"${TEST_DIR}/t4.out" 2>&1 ||
