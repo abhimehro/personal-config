@@ -126,7 +126,7 @@ handle_error() {
 		log_debug "Failed command: ${BASH_COMMAND}"
 	fi
 
-	exit ${exit_code}
+	exit "${exit_code}"
 }
 
 # Global cleanup handler - called on script exit
@@ -141,7 +141,7 @@ handle_cleanup() {
 		log_err "Script exited with errors (code: ${exit_code})"
 	fi
 
-	exit ${exit_code}
+	exit "${exit_code}"
 }
 
 # Setup error trapping

@@ -1,0 +1,14 @@
+{
+  "comment": "Official Devin standalone hook file is hooks.v1.json. Existing .devin/hooks.json uses a legacy pre_run_command shape. Copy this next to it only after `devin doctor` / docs confirm the schema. Do not delete the legacy file in this change.",
+  "PreToolUse": [
+    {
+      "matcher": "exec",
+      "hooks": [
+        {
+          "type": "command",
+          "command": ".windsurf/windsurf-1password-hooks-bundle/bin/run-hook.sh 1password-validate-mounted-env-files"
+        }
+      ]
+    }
+  ]
+}

@@ -526,6 +526,23 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<E
 </plist>
 EOF
 
+# Keep checked-in launchd sources aligned with the generated agents.
+# install.sh is authoritative; maintenance/launchd/ is a snapshot.
+REPO_LAUNCHD="$SCRIPT_DIR/launchd"
+mkdir -p "$REPO_LAUNCHD/archive"
+echo "📂 Syncing generated plists into $REPO_LAUNCHD..."
+shopt -s nullglob
+for old in "$REPO_LAUNCHD"/com.abhimehrotra.maintenance.*.plist; do
+	echo "  archiving stale $(basename "$old")"
+	mv "$old" "$REPO_LAUNCHD/archive/"
+done
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist; do
+	[ -f "$plist" ] || continue
+	install -m 644 "$plist" "$REPO_LAUNCHD/"
+	echo "  synced $(basename "$plist")"
+done
+shopt -u nullglob
+
 # Load new agents
 echo "✅ Loading new agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist; do

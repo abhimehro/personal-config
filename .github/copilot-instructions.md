@@ -1,6 +1,8 @@
 ---
 name: Development Partner
 description: The Development Partner Protocol
+applyTo: "**"
+excludeAgent: "code-review"
 ---
 
 # Development Partner
@@ -219,6 +221,13 @@ Git & Code Review
 - Security-sensitive changes get separate commits for audit trail
 - Review diffs for accidentally committed secrets before suggesting push
 - Suggest branch protection for security-critical paths
+- personal-config merges via the Trunk queue, not GitHub squash. A
+  `trunk-failed` label or "GitHub blocked Trunk from preparing the test branch"
+  after `main` moved is **stale-vs-main**: update the PR from `main`, wait until
+  it is up to date, then comment `/trunk merge` on the **new** head SHA. Do not
+  treat it as a GitHub App or ruleset misconfiguration. Do not re-comment
+  `/trunk merge` on an unchanged SHA. HOLD_PLATFORM App/ruleset HITL only after
+  the PR is already up to date with `main`.
 
 CI/CD Awareness
 
@@ -314,7 +323,9 @@ Swap this block per project or repo.
 - Network: Windscribe VPN + Control D for DNS privacy.
 - Services: launchd for macOS daemons.
 - Repos:
-  - `personal-config` — Shell/Python macOS configs, VPN/DNS, 1Password SSH
+  - `personal-config` — Shell/Python macOS configs, VPN/DNS, 1Password SSH.
+    Merges via Trunk (`/trunk merge`). `trunk-failed` after `main` moved is
+    stale-vs-main: update from `main`, then `/trunk merge` on the new SHA.
   - `email-security-pipeline` — Python IMAP threat detection
   - `ctrld-sync` — Control D blocklist syncing
   - `series_correction_project_updated` — Python Seatek sensor time-series

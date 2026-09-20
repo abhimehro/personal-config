@@ -13,7 +13,10 @@ function git-mirror-clean --description 'Switch to main, prune remotes, and dele
     git fetch --prune
     or return 1
 
-    set -l branches (git for-each-ref --format='%(refname:short)' refs/heads | string match -v main)
+    # Prefer lstrip=2 over :short. Git shortens refs/heads/origin/HEAD to
+    # heads/origin/HEAD to avoid colliding with refs/remotes/origin/HEAD,
+    # and `git branch -D -- heads/origin/HEAD` then fails with "not found".
+    set -l branches (git for-each-ref --format='%(refname:lstrip=2)' refs/heads | string match -v -- main)
     if test (count $branches) -gt 0
         echo 'Deleting local branches: '(string join ', ' $branches)
         for branch in $branches

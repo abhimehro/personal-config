@@ -78,7 +78,7 @@ EOF
 	# shellcheck disable=SC2086  # intentional dynamic args
 	# Process metrics files
 	local start_date
-	start_date=$(date -j -v-${days_back}d "+%Y%m%d" 2>/dev/null || date -d "-${days_back} days" "+%Y%m%d")
+	start_date=$(date -j -v-"${days_back}"d "+%Y%m%d" 2>/dev/null || date -d "-${days_back} days" "+%Y%m%d")
 	local end_date
 	end_date=$(date "+%Y%m%d")
 

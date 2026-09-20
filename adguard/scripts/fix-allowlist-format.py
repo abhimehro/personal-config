@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fix Allowlist Format for AdGuard
+Fix Allowlist Format for AdGuard.
 
 This script converts the allowlist from filter rule format (@@domain.com)
 to AdGuard allowlist format (plain domain names).
@@ -86,10 +86,10 @@ def main():
     print("❌ Old format: @@domain.com (filter rule format)")
     print("✅ New format: domain.com (allowlist format)")
 
-    print(f"\n🚀 Next steps:")
-    print(f"  1. Delete the old allowlist from AdGuard")
-    print(f"  2. Import Consolidated-Allowlist-Fixed.txt")
-    print(f"  3. Verify all domains are accepted")
+    print("\n🚀 Next steps:")
+    print("  1. Delete the old allowlist from AdGuard")
+    print("  2. Import Consolidated-Allowlist-Fixed.txt")
+    print("  3. Verify all domains are accepted")
 
 
 if __name__ == "__main__":

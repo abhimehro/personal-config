@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AdGuard Import Verification Script
+AdGuard Import Verification Script.
 
 This script helps verify that your consolidated lists are properly formatted
 and ready for AdGuard import.
@@ -79,7 +79,7 @@ def print_file_analysis(file_type, stats, issues):
         if len(issues) > 5:
             print(f"    ... and {len(issues) - 5} more issues")
     else:
-        print(f"  ✅ All lines are properly formatted!")
+        print("  ✅ All lines are properly formatted!")
 
 
 def verify_file_format(filepath, file_type):
@@ -166,7 +166,7 @@ def main():
         print("  - Re-run this verification script")
         print("  - Consider using the Python consolidation scripts for complete lists")
 
-    print(f"\n📁 Files checked:")
+    print("\n📁 Files checked:")
     print(f"  • {denylist_path.name} - {'✅ Ready' if denylist_ready else '❌ Issues'}")
     print(
         f"  • {allowlist_path.name} - {'✅ Ready' if allowlist_ready else '❌ Issues'}"

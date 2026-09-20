@@ -23,14 +23,14 @@ export LESS="${LESS:--FRX}"
 export AGENT_WORKSPACE="${AGENT_WORKSPACE:-$HOME/dev/abhimehro}"
 export PERSONAL_CONFIG="${PERSONAL_CONFIG:-$HOME/dev/personal-config}"
 
-# Prefer Homebrew + user bins without clobbering absolute agent paths later
+# Prefer user bins (Antigravity CLI lives in ~/.local/bin) over Homebrew.
 typeset -U path PATH
 path=(
+  $HOME/bin
+  $HOME/.local/bin
   /opt/homebrew/bin
   /opt/homebrew/sbin
   /usr/local/bin
-  $HOME/bin
-  $HOME/.local/bin
   /usr/bin
   /bin
   /usr/sbin

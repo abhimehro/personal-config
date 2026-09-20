@@ -67,16 +67,6 @@ def generate_markdown(all_prs):
     )
     out_md.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 
-    category_map = {
-        "bolt": "PERFORMANCE",
-        "sentinel": "SECURITY",
-        "palette": "UI",
-        "devin": "CI/INFRA",
-        "qa": "CI/INFRA",
-        "test": "CI/INFRA",
-        "fix": "REFACTOR",
-    }
-
     today_iso = datetime.date.today().isoformat()
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         cat = get_category(pr["title"], pr["headRefName"])

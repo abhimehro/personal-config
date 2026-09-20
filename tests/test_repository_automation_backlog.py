@@ -16,7 +16,7 @@ sys.path.append(
     )
 )
 
-from repository_automation_tasks import run_backlog_manager
+from repository_automation_tasks import run_backlog_manager  # noqa: E402
 
 
 class TestRunBacklogManager(TestCase):

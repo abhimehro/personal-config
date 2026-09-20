@@ -7,28 +7,15 @@
 
 ## 🕐 Complete Schedule Overview
 
-<<<<<<< Updated upstream
-
-| Time         | Event                   | Frequency    | Script                              | Description                                       |
-| ------------ | ----------------------- | ------------ | ----------------------------------- | ------------------------------------------------- |
-| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`                   | System monitoring, disk space, memory, crash logs |
-| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`                 | Cache cleanup, temp files, logs                   |
-| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`     | quick cleanup, node, Google Drive, optimizers     |
-| **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly`    | system/editor cleanup, deep cleaner               |
-| **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)      | Light Google Drive home backup                    |
-| **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)       | Fuller Google Drive backup                        |
-| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`               | Package updates, cask maintenance                 |
-| =======      |                         |              |                                     |                                                   |
-| Time         | Event                   | Frequency    | Script                              | Description                                       |
-| ------------ | ----------------------- | ------------ | ----------------------------------- | ------------------------------------------------- |
-| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`                   | System monitoring, disk space, memory, crash logs |
-| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`                 | Cache cleanup, temp files, logs                   |
-| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`     | quick cleanup, node, Google Drive, optimizers     |
-| **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly`    | system/editor cleanup, deep cleaner               |
-| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `bin/archive/protondrive_backup.sh` | One-way home backup to ProtonDrive                |
-| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`               | Package updates, cask maintenance                 |
-
->>>>>>> Stashed changes
+| Time         | Event                   | Frequency    | Script                           | Description                                       |
+| ------------ | ----------------------- | ------------ | -------------------------------- | ------------------------------------------------- |
+| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`                | System monitoring, disk space, memory, crash logs |
+| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                   |
+| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers     |
+| **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner               |
+| **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                    |
+| **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                        |
+| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                 |
 
 > ProtonDrive one-way backup is **archived**
 > (`maintenance/bin/archive/protondrive_backup.sh`) and is not installed by

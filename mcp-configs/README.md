@@ -2,7 +2,7 @@
 
 Single source of truth + generators for Model Context Protocol (MCP) servers
 across every client on this machine: **Ara, Cursor, Windsurf, Windsurf Next,
-Raycast AI**, and **Vibe**.
+Raycast AI**, **Antigravity**, and **Vibe** (opt-in TOML fragment).
 
 ## Source of truth
 
@@ -20,19 +20,28 @@ committed file.
 
 `scripts/generate-mcp-configs.sh` reads the canonical template, resolves every
 `op://` reference with **1Password** (`op inject`) — or **Proton Pass**
-(`pass-cli inject`) — and writes a correctly-formatted config to each client's
-real config path. Every generated file holds **live secrets**, is `chmod 600`,
-and lives **outside this repo** (in the app's own config dir), so git never sees
-it.
+(`pass-cli inject`) — and writes a correctly-formatted config to each JSON
+client's real config path. Those generated files hold **live secrets**, are
+`chmod 600`, and live **outside this repo** (or gitignored), so git never sees
+them.
 
-| Client        | Generated path                                | Wrapper key  | Remote-URL key                                  |
-| ------------- | --------------------------------------------- | ------------ | ----------------------------------------------- |
-| Ara           | `~/.ara/mcp-servers.json`                     | _(flat)_     | `url`                                           |
-| Cursor        | `~/.cursor/mcp.json`                          | `mcpServers` | `url`                                           |
-| Windsurf      | `~/.codeium/windsurf/mcp_config.json`         | `mcpServers` | `serverUrl`                                     |
-| Windsurf Next | `~/.codeium/windsurf-next/mcp_config.json`    | `mcpServers` | `serverUrl`                                     |
-| Raycast AI    | `~/.config/raycast/ai/mcp-servers.local.json` | `mcpServers` | `url`                                           |
-| Vibe          | `~/.vibe/mcp-servers.json`                    | _(flat)_     | `url` — already uses `op://`, resolved natively |
+**Vibe is different.** Official MCP is `[[mcp_servers]]` inside
+`~/.vibe/config.toml`, not `~/.vibe/mcp-servers.json` (treat that JSON as
+legacy). Pass `vibe` explicitly. The generator writes
+`~/.vibe/mcp.fragment.toml` with `op://` refs intact, filters by `--profile`
+(default `core-safe`), skips OAuth-only servers Vibe cannot use, and **never
+overwrites** `~/.vibe/config.toml`. `all` remains JSON clients only. Use
+`--dry-run` to print the fragment with no writes.
+
+| Client        | Generated path                               | Wrapper key            | Remote-URL key                                                   |
+| ------------- | -------------------------------------------- | ---------------------- | ---------------------------------------------------------------- |
+| Ara           | `~/.ara/mcp-servers.json`                    | _(flat)_               | `url`                                                            |
+| Cursor        | `~/.cursor/mcp.json`                         | `mcpServers`           | `url`                                                            |
+| Windsurf      | `~/.codeium/windsurf/mcp_config.json`        | `mcpServers`           | `serverUrl`                                                      |
+| Windsurf Next | `~/.codeium/windsurf-next/mcp_config.json`   | `mcpServers`           | `serverUrl`                                                      |
+| Raycast AI    | Raycast extension data dir `mcp-config.json` | `mcpServers`           | `url`                                                            |
+| Antigravity   | `~/.gemini/config/mcp_config.json`           | `mcpServers`           | `url`                                                            |
+| Vibe          | `~/.vibe/mcp.fragment.toml` (opt-in)         | TOML `[[mcp_servers]]` | secret-free `op://` refs; never overwrites `~/.vibe/config.toml` |
 
 > **Format gotcha:** Windsurf uses `serverUrl` for remote (HTTP/SSE) servers,
 > while everyone else uses `url`. The generator handles this automatically — do
@@ -44,8 +53,12 @@ it.
 # All clients, 1Password backend (default — current source of truth)
 ./scripts/generate-mcp-configs.sh
 
-# Specific clients only
+# Specific JSON clients only
 ./scripts/generate-mcp-configs.sh ara cursor
+
+# Vibe TOML fragment (opt-in; does not overwrite ~/.vibe/config.toml)
+./scripts/generate-mcp-configs.sh --dry-run vibe
+./scripts/generate-mcp-configs.sh --profile research vibe
 
 # Use Proton Pass as the secret backend instead of 1Password
 ./scripts/generate-mcp-configs.sh --backend proton
@@ -63,8 +76,11 @@ Each run backs up the previous config to `~/.config/mcp-backups/` (0700 dir,
 
 ## Raycast (extra step)
 
-Raycast AI does not auto-read a file path. After generating, open Raycast →
-**Manage MCP Servers** → import `~/.config/raycast/ai/mcp-servers.local.json`.
+Raycast AI does not auto-read a file path. The generator writes directly to the
+Raycast MCP extension's data store at
+`~/Library/Application Support/com.raycast-x.macos/extensions/7ecf9ae7-addc-4a42-83f9-57e84211471a/servers/mcp-config.json`.
+After generating, open Raycast → **Manage MCP Servers** to confirm the servers
+imported (a Raycast restart may be needed).
 
 ## Secret backends — running both
 

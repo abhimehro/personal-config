@@ -14,7 +14,7 @@ log_info "System cleanup started"
 CACHE_DIR="${HOME}/Library/Caches"
 if [[ -d ${CACHE_DIR} ]]; then
 	log_info "Pruning caches older than ${CLEANUP_CACHE_DAYS:-30} days in ${CACHE_DIR}"
-	find "${CACHE_DIR}" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print0 2>/dev/null | xargs -0 rm -f || true
+	find "${CACHE_DIR}" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -print0 2>/dev/null | xargs -0 rm -f || true
 	find "${CACHE_DIR}" -type d -empty -print0 2>/dev/null | xargs -0 rmdir || true
 fi
 
@@ -22,7 +22,7 @@ fi
 for TDIR in "${TMPDIR:-/tmp}" "/tmp"; do
 	if [[ -d $TDIR ]]; then
 		log_info "Cleaning temporary files older than ${TMP_CLEAN_DAYS:-7} days in $TDIR"
-		find "$TDIR" -type f -mtime +${TMP_CLEAN_DAYS:-7} -user "${USER}" -print0 2>/dev/null | xargs -0 rm -f || true
+		find "$TDIR" -type f -mtime +"${TMP_CLEAN_DAYS:-7}" -user "${USER}" -print0 2>/dev/null | xargs -0 rm -f || true
 	fi
 done
 
@@ -30,7 +30,7 @@ done
 DDIR="${HOME}/Library/Developer/Xcode/DerivedData"
 if [[ -d ${DDIR} ]]; then
 	log_info "Pruning Xcode DerivedData older than ${XCODE_DERIVEDDATA_KEEP_DAYS:-30} days"
-	find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print0 2>/dev/null | xargs -0 rm -rf || true
+	find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +"${XCODE_DERIVEDDATA_KEEP_DAYS:-30}" -print0 2>/dev/null | xargs -0 rm -rf || true
 fi
 
 # 4) iOS Simulator cleanup (if present)
@@ -43,7 +43,7 @@ fi
 # 5) Homebrew cleanup
 if command -v brew >/dev/null 2>&1; then
 	log_info "Running Homebrew cleanup"
-	with_retry 3 3 brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} || true
+	with_retry 3 3 brew cleanup --prune="${BREW_CLEAN_PRUNE_DAYS:-30}" || true
 	with_retry 3 3 brew autoremove || true
 fi
 

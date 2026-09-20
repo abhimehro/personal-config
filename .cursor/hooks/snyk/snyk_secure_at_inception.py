@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cursor Hook: Snyk Secure At Inception
+Cursor Hook: Snyk Secure At Inception.
 ======================================
 
 # SOURCE: Vendored from Snyk Studio Recipes / snyk-secure-development Cursor plugin

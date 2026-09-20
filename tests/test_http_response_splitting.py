@@ -75,6 +75,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         Args:
             origin_value: The Origin header value to test
             error_message: Error message for assertion failures
+
         """
         os.environ["ALD_ALLOWED_ORIGINS"] = "http://example.com"
 
@@ -126,7 +127,6 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         # Track sent headers
         sent_headers = []
-        original_send_header = handler.send_header
 
         def track_headers(key, value):
             sent_headers.append((key, value))

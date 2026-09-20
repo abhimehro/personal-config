@@ -47,7 +47,15 @@ not proceed to inventory, merge, or close.
 2. **Continuity read:** Read the last three Stage 1 run records and all
    Stage-1-owned entries in the
    [Automated PR Lifecycle Contract](automated-pr-lifecycle.md). Do not repeat
-   an unchanged, unexpired action owned by another stage.
+   an unchanged, unexpired **non-executable** action owned by another stage.
+   SHA_MATCH skip does **not** apply to merge, close, or canonical-pick that
+   Stage 1 can execute now. Fill remaining inventory slots from SHA_MATCH
+   executable remainder (elapsed close-candidates, MERGEABLE green BOT,
+   canonical-pick clusters, Stage 3 bounce-backs, salvage-eligible
+   CONFLICTING/DIRTY BOT) before spending the 80-item cap on NEW security twins.
+   Hold five of those 80 slots for salvage keepers. Queue up to ten Stage 2 work
+   items from the fetched ledger even when MERGEABLE/canonical candidates filled
+   the rest of the inventory.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,
@@ -56,8 +64,14 @@ not proceed to inventory, merge, or close.
    semantic duplicates (same issue, different versions), conflicting PRs (same
    files, incompatible changes), superseded (changes already on main), stale
    (e.g. >30 days, no activity, failing CI). Write findings to
-   `tasks/pr-triage.md`. Keep one PR per group; close others with linked
-   explanation.
+   `tasks/pr-triage.md`. **Canonical-pick:** keep one BOT non-sensitive PR per
+   overlap group; close the others with a linked explanation (`CLOSED_DUPLICATE`
+   or `CLOSED_SUPERSEDED`) in this Stage 1 run. Prefer the newest MERGEABLE
+   member whose required checks are green and readable; if none are MERGEABLE,
+   keep the member that has tests. Do **not** hand every cluster to Stage 3. If
+   **every** member is sticky-security or HUMAN, one Stage 3 cluster handoff
+   (not N packets). A `.jules/` journal collision alone is lesson **0cs**, not
+   sticky `generated_output`.
 
 ## Phase 2 — Review
 
@@ -90,38 +104,48 @@ security failures, or architectural changes.
 
 Assign each PR one disposition:
 
-| Disposition        | Criteria                                       | Action                           |
-| ------------------ | ---------------------------------------------- | -------------------------------- |
-| MERGE              | All gates pass, CI green, no conflicts         | Squash-merge, delete branch      |
-| MERGE-AFTER-FIX    | Minor issues auto-fixed                        | Push fix, re-run CI, then merge  |
-| REQUEST-CHANGES    | Issues beyond auto-fix                         | Post review, assign to human     |
-| ESCALATE           | Security gate failure or architectural concern | Tag human, block merge           |
-| CLOSE-DUPLICATE    | Duplicate or superseded                        | Close with linked explanation    |
-| CLOSE-STALE        | Stale per config threshold                     | Close with reopen instructions   |
-| CONSOLIDATE        | Multiple small PRs should be one               | See consolidation protocol below |
-| HANDOFF-SALVAGE    | One bounded mechanical recovery is required    | Create a Stage 2 ledger handoff  |
-| HANDOFF-COMPLETION | Policy, platform, canonical, or evidence hold  | Create a Stage 3 ledger handoff  |
+| Disposition        | Criteria                                                              | Action                                                                                                                        |
+| ------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| MERGE              | All gates pass, CI green, no conflicts                                | Squash-merge, delete branch                                                                                                   |
+| MERGE-AFTER-FIX    | Minor issues auto-fixed                                               | Push fix, re-run CI, then merge                                                                                               |
+| REQUEST-CHANGES    | Issues beyond auto-fix                                                | Post review, assign to human                                                                                                  |
+| ESCALATE           | Security gate failure or architectural concern                        | Tag human, block merge                                                                                                        |
+| CLOSE-DUPLICATE    | Duplicate or superseded                                               | Close with linked explanation                                                                                                 |
+| CLOSE-STALE        | Stale per config threshold                                            | Close with reopen instructions                                                                                                |
+| CONSOLIDATE        | Multiple small PRs should be one                                      | Do not implement recovery here. Create one complete Stage 2 work item when the rebase is salvage-eligible; otherwise Stage 3. |
+| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                           | Create a Stage 2 ledger handoff with a complete work item                                                                     |
+| HANDOFF-COMPLETION | Sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. Mechanical `HOLD_CONTRACT` is HANDOFF-SALVAGE.            |
 
-**Consolidation:** Create branch `chore/consolidated-[category]-updates` from
-main, cherry-pick or reapply changes, resolve conflicts, run tests, open one PR
-listing original PRs, close constituents with link.
+**Consolidation:** Stage 1 does not implement recovery. If several BOT
+non-sensitive PRs should become one rebase, create one complete Stage 2 work
+item with allowed paths and a named test. Otherwise canonical-pick (keep one,
+close the rest) in this run.
 
 **Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and
 test/format work follows the current repository merge method. Security-sensitive
 work is never automatically merged and is routed to Stage 3/human decision.
 After each completion, re-check remaining PRs for new conflicts.
 
+**Trunk stale-vs-main (personal-config):** A `trunk-failed` label or "GitHub
+blocked Trunk from preparing the test branch" after `main` moved is the PR being
+behind `main`, not a GitHub App or ruleset misconfiguration. Update the PR from
+`main` (`update_pull_request_branch`), wait until it is up to date, then comment
+`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
+unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
+only if Trunk still cannot enqueue after the PR is already up to date with
+`main`. See the lifecycle contract section "Trunk queue: stale vs main".
+
 ## Phase 4 — Reporting & Learning
 
 - Write the session report on the **daily documentation lineage**
-  (`pr-lifecycle-docs-YYYYMMDD` on personal-config). Create that branch/PR
-  from current `main` if it is missing; do not open a second overlapping
-  docs PR. Append to `tasks/review-session-reports.md` (repos processed,
-  actions taken, escalations, consolidations, patterns, metrics). Prefer a
-  point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or
-  `…-HHMM.md`) for bulky inventory. Also `/trunk merge` an older green
-  `pr-lifecycle-docs` PR when routine predicates pass (counts toward the
-  20-action cap).
+  (`pr-lifecycle-docs-YYYYMMDD` on personal-config). Create that branch/PR from
+  current `main` if it is missing; do not open a second overlapping docs PR.
+  Append to `tasks/review-session-reports.md` (repos processed, actions taken,
+  escalations, consolidations, patterns, metrics). Prefer a point-in-time
+  snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or `…-HHMM.md`) for bulky
+  inventory. Also `/trunk merge` an older green `pr-lifecycle-docs` PR when
+  routine predicates pass (bookkeeping; does **not** count toward the 40-action
+  product-mutation cap).
 - Update the lifecycle ledger for every item currently owned by Stage 1, using
   the shared anchors, outcome, next owner, safe default, evidence, and bounded
   next action. A base or head SHA change must invalidate evidence and return the
@@ -140,32 +164,38 @@ After each completion, re-check remaining PRs for new conflicts.
   written as state.
 - Review automation must not write to `tasks/salvage-session-reports.md`,
   `tasks/completion-session-reports.md`, `AGENTS.md`, or `tasks/todo.md`.
-- Canonical policy docs are read-mostly; only update for policy/version
-  changes, and never from the daily cron lineage.
+- Canonical policy docs are read-mostly; only update for policy/version changes,
+  and never from the daily cron lineage.
 
 ## Phase 5 — Hand off the nonterminal tail
 
 Phase 1 is throughput-optimized: it merges what is clean, closes what is
-redundant, and gives every remaining item one next owner. It must not leave a
-prose-only deferred tail. Use the
+redundant, canonical-picks BOT overlap clusters, and gives every remaining item
+one next owner. It must not leave a prose-only deferred tail. Use the
 [Automated PR Lifecycle Contract](automated-pr-lifecycle.md) to route a bounded
-mechanical recovery to Stage 2 and an evidence, policy, platform, canonical, or
-security hold to Stage 3.
+mechanical recovery to Stage 2 and sticky security, HUMAN, sticky
+`HOLD_CONTRACT`, or irreducible policy to Stage 3. `HOLD_PLATFORM` is
+**salvage-only**: a BOT PR whose required GitHub checks are already green and
+readable is Stage 1 merge eligible even when the Linux runner cannot execute
+Swift/`make guardrails` locally. Canonical file-overlap among BOT non-sensitive
+PRs is canonical-pick here, not a Stage 3 parking lot.
 
 When this skill finishes, append a Stage 1 run record and a ledger handoff. Each
 handoff must include repository, PR, base/head SHA, author type, classification,
 risk class, guardrail outcome, evidence, safe default, next action, and expiry.
-Trigger Stage 2 only for one bounded repair. Trigger Stage 3 for all other
-nonterminal work, including policy/security questions, unavailable platform
-evidence, canonical conflicts, and unverified close candidates.
+Trigger Stage 2 only for one bounded repair with a complete work item. Trigger
+Stage 3 for sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible
+policy. Do not trigger Stage 3 for BOT non-sensitive canonical clusters or for
+GitHub-green BOT PRs that only look like a platform hold because salvage would
+need Swift locally.
 
 Stage 2 produces one or more **draft** salvage / infra-fix PRs; it does not
 close a security original merely because a replacement draft exists. Stage 1
 **re-ingests** those replacement PRs (ledger `item_key` plus any open PR with
-salvage/provenance linkage) as inventory. Stage 1 may routine-merge a
-salvage replacement when every routine predicate already in this spec passes;
-it never grants Stage 2 merge authority and never marks a draft ready to skip a
-failed predicate. Stage 3 owns later reconciliation and, only after approved
+salvage/provenance linkage) as inventory. Stage 1 may routine-merge a salvage
+replacement when every routine predicate already in this spec passes; it never
+grants Stage 2 merge authority and never marks a draft ready to skip a failed
+predicate. Stage 3 owns later reconciliation and, only after approved
 calibration, bounded completion. Review automation must not write to
 `tasks/salvage-session-reports.md`. If a deferred PR is blocked by CodeScene
 code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`
@@ -235,12 +265,13 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   effective diff); close a bot-authored non-security PR when identity, anchors,
   canonical evidence, and the applicable cooldown are complete. Consume
   `STAGE1_INTAKE` close-candidates whose cooldown has elapsed and whose head SHA
-  still matches. Do not wait for Stage 3 calibration. Never mark a draft ready
-  as a shortcut around the stage contract.
+  still matches **even when SHA_MATCH would otherwise skip them**. Do not wait
+  for Stage 3. Never mark a draft ready as a shortcut around the stage contract.
 - **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after
   each merge before proceeding. PRs touching the same hot file (`main.py`,
-  `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — defer
-  with an explicit comment rather than force-push.
+  `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — create
+  a complete Stage 2 work item when salvage-eligible, else record overflow.
+  Never force-push.
 - **Stacked sibling PRs (`gh-stack`, Lesson 0ez):** When 2+ open PRs in the same
   repo collide on the same file(s) and all pass their gates, link them into a
   stack with `gh stack link <bottom> <middle> <top>` (bottom = the one that
@@ -260,9 +291,12 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 - **Security in REFACTOR:** Category classification should account for security
   (e.g. endswith fix, ReDoS-safe regex); treat as security-sensitive when
   applicable.
-- **File-path overlap:** Same files do not alone mean duplicate; confirm
-  title/intent before closing as duplicate. Prefer explicit superset accounting
-  in close comments (Lesson 0v).
+- **File-path overlap / canonical-pick:** Same files do not alone mean
+  duplicate; confirm title/intent before closing as duplicate. Prefer explicit
+  superset accounting in close comments (Lesson 0v). For BOT non-sensitive
+  overlap groups, keep one canonical (newest MERGEABLE with passing required
+  checks, else the one with tests) and close the rest in this run. Journal-only
+  `.jules/` overlap is lesson **0cs**, not sticky `generated_output`.
 - **Pre-existing CI infra breakage on `main` (Lesson 0t):** If the same required
   check fails on 4+ open PRs in the same repo **and** has failed on `main` since
   at least one merge ago, treat it as infra failure on `main` rather than
@@ -300,9 +334,13 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 ## Scheduling
 
 The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 15 * * *`
-UTC with one concurrent run, a 50-item inventory cap, and a 20-action cap (see
-`lifecycle.stage_caps`). It is followed by Stage 2 at `0 17 * * *` and Stage 3
-at `0 19 * * *`. See
+UTC with one concurrent run, an 80-item inventory cap, and a 40 **product**
+mutation cap (see `lifecycle.stage_caps`). Ledger CAS, Stage 2 work-item
+queueing, and the daily docs lineage do not consume that cap. A throughput
+self-grade is **FAIL** when net open BOT PRs grew and unused product-mutation
+slots remained, or when salvage-eligible BOT items exist and zero Stage 2 work
+items were queued. Salvage feed is not inventory-capped. It is followed by Stage
+2 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)
 for the common prompt preamble, role-based MCP/skill lists, and calibration
 relationship.

@@ -125,7 +125,7 @@ def write_lists(base_dir, denylist_domains, allowlist_domains):
                     + "\n"
                 )
 
-        print(f"\nFiles created:")
+        print("\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")
         print(f"- Consolidated-Allowlist.txt ({len(allowlist_domains)} domains)")
 

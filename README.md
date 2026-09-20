@@ -7,6 +7,7 @@
 [![CodeScene Hotspot Code Health](https://codescene.io/projects/80825/status-badges/hotspot-code-health)](https://codescene.io/projects/80825)
 [![CodeScene System Mastery](https://codescene.io/projects/80825/status-badges/system-mastery)](https://codescene.io/projects/80825)
 [![CodeScene Missed Goals](https://codescene.io/projects/80825/status-badges/missed-goals)](https://codescene.io/projects/80825)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/abhimehro/personal-config?utm_source=oss&utm_medium=github&utm_campaign=abhimehro%2Fpersonal-config&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 A comprehensive repository for personal system configurations, scripts, and
 documentation to make my macOS development and gaming setup reproducible and

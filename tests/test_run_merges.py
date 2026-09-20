@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from run_merges import (
     _fetch_all_pr_data_parallel,
-    _fetch_pr_diff_only,
     get_diff,
     run_gh,
 )

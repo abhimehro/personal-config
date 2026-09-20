@@ -73,7 +73,7 @@ def main():
 
     with setup_benchmark_data(num_rules) as temp_filepath:
         # Full end-to-end setups (including JSON parsing)
-        setup_e2e_old = f"""
+        setup_e2e_old = """
 import json
 def extract(filepath):
     domains = []
@@ -89,7 +89,7 @@ def extract(filepath):
     return domains
 """
 
-        setup_e2e_new = f"""
+        setup_e2e_new = """
 import json
 def extract(filepath):
     try:
@@ -102,7 +102,7 @@ def extract(filepath):
     return []
 """
 
-        setup_e2e_allow_old = f"""
+        setup_e2e_allow_old = """
 import json
 def extract(filepath):
     domains = []
@@ -111,7 +111,7 @@ def extract(filepath):
             data = json.load(f)
             if 'rules' in data:
                 for rule in data['rules']:
-                    if 'PK' in rule and rule.get('action', {{}}).get('do') == 1:
+                    if 'PK' in rule and rule.get('action', {}).get('do') == 1:
                         domains.append(rule['PK'])
     except Exception as e:
         pass
@@ -119,7 +119,7 @@ def extract(filepath):
 """
 
         # Using the optimized dictionary access rather than get().get()
-        setup_e2e_allow_new = f"""
+        setup_e2e_allow_new = """
 import json
 def extract(filepath):
     try:
@@ -136,7 +136,7 @@ def extract(filepath):
     return []
 """
 
-        print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
+        print("\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
 
         context = (temp_filepath, iterations)

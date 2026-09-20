@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scan Runner Module
+Scan Runner Module.
 ==================
 
 Manages background Snyk CLI scans: launching the scan_worker.py subprocess,
@@ -119,7 +119,9 @@ def _severity_from_priority_score(score: int) -> str:
 
 def _severity_from_sarif_result(result: Dict[str, Any]) -> str:
     level = result.get("level", "warning")
-    severity = {"error": "high", "warning": "medium", "note": "low"}.get(level, "medium")
+    severity = {"error": "high", "warning": "medium", "note": "low"}.get(
+        level, "medium"
+    )
     _props = result.get("properties")
     if not _props or "priorityScore" not in _props:
         return severity
