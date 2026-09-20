@@ -146,7 +146,8 @@ def _extract_duplicates_from_groups(file_groups):
     for (repo, _), pr_list in file_groups.items():
         if len(pr_list) > 1:
             pr_list.sort(key=lambda x: x["number"], reverse=True)
-            duplicates.extend(f"{repo}#{pr_info['number']}" for pr_info in pr_list[1:])
+            for pr_info in pr_list[1:]:
+                duplicates.append(f"{repo}#{pr_info['number']}")
     return duplicates
 
 

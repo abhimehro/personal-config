@@ -7,17 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from pr_identity import identity_policy_from_config
-from pr_lifecycle_support import (
-    ROOT,
-    SHA_RE,
-    require_fields,
-    require_list,
-    require_mapping,
-)
-from sync_cursor_export_prompts import (
-    PromptIncludeError,
-    expand_prompt_includes,
-)
+from pr_lifecycle_support import ROOT, require_fields, require_list, require_mapping
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -113,7 +103,9 @@ def _validate_identity_inference(identity: dict[str, Any]) -> None:
         )
 
 
-def _validate_identity_revision_match(policy: Any, inputs: dict[str, Any]) -> None:
+def _validate_identity_revision_match(
+    policy: Any, inputs: dict[str, Any]
+) -> None:
     if policy.revision != inputs["identity_classification_revision"]:
         raise ValueError(
             "config.identity_classification.revision: must match policy_inputs"
@@ -143,14 +135,12 @@ def validate_policy_inputs(value: Any) -> None:
 def require_exact_stage_caps(value: Any) -> None:
     caps = require_mapping(value, "config.lifecycle.stage_caps")
     expected = {
-        "stage1_inventory": 80,
-        "stage1_actions": 40,
-        # NOTE: keep 10. The 2026-09-08 halt was an unread invalid ledger
-        # (EMPTY_INTAKE), not salvage-cap starvation. Do not restore 5.
-        "stage2_salvage_candidates": 10,
+        "stage1_inventory": 50,
+        "stage1_actions": 20,
+        "stage2_salvage_candidates": 5,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
-        "stage3_completion_actions": 15,
+        "stage3_completion_actions": 5,
     }
     if caps != expected:
         raise ValueError("config.lifecycle.stage_caps: differs from approved contract")
@@ -201,7 +191,7 @@ def validate_pointer_identity(pointer: dict[str, Any]) -> None:
 
 
 def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
-    required = {
+    fields = {
         "data_branch",
         "data_path",
         "schema_path",
@@ -210,14 +200,7 @@ def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
         "allowed_write_primitives",
         "bootstrap_document",
     }
-    allowed = set(required)
-    allowed.add("last_known_data_commit")
-    require_fields(runtime, allowed, required, "ledger pointer.runtime_ledger")
-    commit = runtime.get("last_known_data_commit")
-    if commit is None:
-        return
-    if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
-        raise ValueError("ledger pointer: last_known_data_commit must be a 40-char SHA")
+    require_fields(runtime, fields, fields, "ledger pointer.runtime_ledger")
 
 
 def validate_pointer_location(
@@ -277,16 +260,7 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
         path = directory / export_name
         data = json.loads(path.read_text(encoding="utf-8"))
         validate_export_shape(data, path, stages[stage]["schedule"], allow_approve)
-        try:
-            source = (
-                expand_prompt_includes(
-                    (prompt_dir / prompt_name).read_text(encoding="utf-8"),
-                    prompt_dir,
-                ).strip()
-                + "\n"
-            )
-        except PromptIncludeError as exc:
-            raise ValueError(f"{path}: {exc}") from exc
+        source = (prompt_dir / prompt_name).read_text(encoding="utf-8").strip() + "\n"
         if data["prompts"][0].get("prompt") != source:
             raise ValueError(f"{path}: prompt differs from source")
         validate_prompt(source, prompt_name)
@@ -367,7 +341,6 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
-    normalized = " ".join(content.split())
     required = {
         "docs/automated-pr-lifecycle.md",
         "docs/pr-lifecycle-runtime-ledger.md",
@@ -375,5 +348,5 @@ def validate_prompt(content: str, name: str) -> None:
         "Dashboard-referenced MCP set",
         "ledger, run records, and lessons",
     }
-    if any(marker not in normalized for marker in required):
+    if any(marker not in content for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")

@@ -148,15 +148,6 @@ ensure_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$H
 log "Setting up Fish shell configuration..."
 ensure_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "$HOME/.config/fish"
 
-# 2b. Starship Prompt Configuration (file)
-# The Dracula palette lives here. Kaku shell integration and the zsh/fish
-# prompt both read ~/.config/starship.toml, so it must be a real path in $HOME.
-log "Setting up Starship prompt configuration..."
-ensure_file_link \
-	"$HOME/.config/starship.toml" \
-	"$REPO_ROOT/configs/.config/starship.toml" \
-	"$HOME/.config/starship.toml"
-
 # 3. Cursor Configuration (directory)
 log "Setting up Cursor IDE configuration..."
 ensure_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "$HOME/.cursor"

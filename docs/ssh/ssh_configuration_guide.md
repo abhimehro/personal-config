@@ -214,9 +214,7 @@ ssh -vvv cursor-mdns
 
 ### iTerm2
 
-There is no separate iTerm2 guide in this tree. Create a profile that runs
-`ssh cursor-mdns` (or `cursor-auto` as backup). Connection multiplexing and
-1Password agent behavior are the same as the Cursor hosts above.
+See [iTerm2 Setup Guide](iTerm2_setup_guide.md) for detailed configuration.
 
 ## 🔒 Security
 
@@ -240,7 +238,7 @@ There is no separate iTerm2 guide in this tree. Create a profile that runs
 
 ## 📚 Additional Resources
 
-- **[SSH README](ssh_readme.md)** - Quick start and host table
+- **[iTerm2 Setup Guide](iTerm2_setup_guide.md)** - Complete iTerm2 integration
 - **[1Password SSH Guide](https://developer.1password.com/docs/ssh/)** -
   Official documentation
 - **[SSH Config Manual](https://man.openbsd.org/ssh_config)** - SSH

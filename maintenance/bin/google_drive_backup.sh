@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Ensure HOME is set in launchd environment (which lacks login shell context)
-export HOME=${HOME:-/Users/speedybee}
 
 # Google Drive Backup Script
 # Supports --light (daily) and --full (weekly) modes.
