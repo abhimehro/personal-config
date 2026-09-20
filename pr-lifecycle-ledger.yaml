@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 77
+ledger_revision: 78
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -17627,7 +17627,7 @@ items:
   - pr_reference.py
   - run_merges.py
   attempts:
-    evidence: 4
+    evidence: 5
     recovery: 1
     mutations: 0
   handoffs:
@@ -17637,7 +17637,7 @@ items:
   - evt-s2-20260920-personalconfig-2030-q
   - evt-s2-20260920-personalconfig-2030-h
   revision: 5
-  updated_at_utc: '2026-09-20T17:20:00Z'
+  updated_at_utc: '2026-09-20T19:21:19Z'
 - key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
   repository: abhimehro/personal-config
   pr: 2029
@@ -17739,25 +17739,26 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge or close a mega-diff deleting tracked virtualenv and
-    backup artifacts from Stage 1.
-  next_action: Parked mega venv/backups PR remains OPEN CONFLICTING. Human history
-    cleanup; do not merge or close from Stage 3. Expires 2026-09-25T19:36:00Z.
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: CLOSED_SUPERSEDED of keeper https://github.com/abhimehro/Seatek_Analysis/pull/812.
+    GitHub closed unmerged 2026-09-20T15:20:11Z. Do not reopen or merge #812 from Stage 3.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/643
+  - https://github.com/abhimehro/Seatek_Analysis/pull/812
   changed_paths: *id007
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260906b-seatekanalys-643-reingest
-  revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-s3-20260920-seatekanalys-643-t
+  revision: 2
+  updated_at_utc: '2026-09-20T19:21:19Z'
 - key: abhimehro/personal-config#2163@512aaeb46a495f92bfb57a152ff656c77e759ad7
   repository: abhimehro/personal-config
   pr: 2163
@@ -42458,6 +42459,48 @@ events:
   reason: 'Structured failed-recovery CLOSE_NONSECURITY_NOOP: unique remainder superseded
     by stronger main after #2163 (partition plus slash validation). Do not open a
     weaker draft (0hm). Do not close original #2116.'
+- event_id: evt-s3-20260920-personalconfig-2030-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s2-20260920-personalconfig-2030-h
+  expected_item_revision: 5
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-s3-20260920-personalconfig-2030-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-20T19:21:19Z'
+  acknowledged_at_utc: '2026-09-20T19:21:19Z'
+  policy_revision: null
+  successful: null
+  reason: 'ACK Stage 2 unique-source salvage handoff. Draft #2246 holds pr_reference.py
+    remainder; original #2030 stays OPEN dirty. Do not close because a replacement
+    exists (0cs journal on original; 0gd draft).'
+- event_id: evt-s3-20260920-seatekanalys-643-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#643@613078797e39452e1f1223d5536d9398ba8b71a4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#643@613078797e39452e1f1223d5536d9398ba8b71a4:evt-s3-20260920-seatekanalys-643-t
+  status: PROJECTED
+  created_at_utc: '2026-09-20T19:21:19Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'GitHub already CLOSED unmerged at 2026-09-20T15:20:11Z (head 613078797e39452e1f1223d5536d9398ba8b71a4).
+    Named keeper #812 remains OPEN UNSTABLE; do not merge #812. Record CLOSED_SUPERSEDED
+    only. Stage 3 did not close the GitHub PR.'
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
