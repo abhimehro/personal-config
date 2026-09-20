@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 76
+ledger_revision: 77
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -13756,17 +13756,19 @@ items:
   classification: PERFORMANCE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: STAGE1_INTAKE
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Do not merge CONFLICTING #2116. Do not copy export JSON or .jules
-    paths. Execute only the queued work item.'
-  next_action: 'Stage 2 executes s2-20260920-personalconfig-2116-run-merges: recover
-    unique remaining source run_merges.py (str-split optimization) off merged #2163
-    into a focused draft. Take main''s export JSON. Prohibit workflows, secrets, lockfiles,
-    and .jules. Expires 2026-09-21T15:00:00Z.'
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Do not merge, approve, or close original #2116. Do not recreate a
+    weaker run_merges.py draft over main''s stronger partition-plus-validation (lesson
+    0hm).'
+  next_action: 'SHA_MATCH skip salvage: unique run_merges.py remainder is already
+    on main after #2163 (owner, separator, name = partition; reject missing separator
+    or extra slash). Source #2116 stays OPEN dirty. Stage 1 may later close after
+    cooldown; Stage 2 must not. Re-read anchors 22c5c38bbec68a1df81e021450a1b3f9afedf029
+    / dd972eb83986fe0e67ab79efd9541ede369e0743 by 2026-09-21T17:20:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2116
   - https://github.com/abhimehro/personal-config/pull/2163
@@ -13778,8 +13780,8 @@ items:
   - docs/cursor-automations/exports/daily-pr-salvage.json
   - run_merges.py
   attempts:
-    evidence: 6
-    recovery: 1
+    evidence: 7
+    recovery: 2
     mutations: 2
   handoffs:
   - evt-s1-20260906-personal-con-2116-queue
@@ -13787,8 +13789,9 @@ items:
   - evt-s3-20260906-bhimehro-personal-config-2116-22c5c38b-handoff
   - evt-s1-20260909-personalconf-2116-h
   - evt-s1-20260920-personalconfig-2116-s2
-  revision: 5
-  updated_at_utc: '2026-09-20T15:45:00Z'
+  - evt-s2-20260920-personalconfig-2116-h
+  revision: 6
+  updated_at_utc: '2026-09-20T17:20:00Z'
 - key: abhimehro/repoprompt-ce#309@29807d3f3ef337966377ed4ddd3dd4cd2141d0de
   repository: abhimehro/repoprompt-ce
   pr: 309
@@ -17603,33 +17606,38 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Do not merge CONFLICTING #2030. Do not copy .jules/bolt.md or overlapping
-    run_merges.py. Execute only the queued work item.'
-  next_action: 'Stage 2 executes s2-20260920-personalconfig-2030-pr-reference: recover
-    unique remaining source pr_reference.py (str.partition owner/name parse) into
-    a focused draft. Take main''s .jules/bolt.md (0cs). Do not touch run_merges.py
-    (2116 keeper). Prohibit workflows, secrets, and lockfiles. Expires 2026-09-21T15:00:00Z.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not merge, approve, or close original #2030. Keep .jules/bolt.md
+    on the original (lesson 0cs). Do not touch run_merges.py (2116 keeper). Draft
+    #2246 stays pr_reference.py only (0gd).'
+  next_action: 'Keep original #2030 OPEN dirty. Unique pr_reference.py lives on draft
+    #2246 head 4ef9a5bd195e404a7e0dacab856c564f040b2127. Do not salvage weaker journal
+    or run_merges.py. Do not merge, approve, or close #2030 or draft #2246. Re-read
+    anchors 48de37d8bd5c210ec10c9941381933db72458125 / abb33b2726df40e777f14826dd069f1ea1b0477e
+    by 2026-09-21T17:20:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2030
+  - https://github.com/abhimehro/personal-config/pull/2246
   - https://github.com/abhimehro/personal-config/pull/2116
   changed_paths:
   - .jules/bolt.md
   - pr_reference.py
   - run_merges.py
   attempts:
-    evidence: 3
-    recovery: 0
+    evidence: 4
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260906b-personal-con-2030-reingest
   - evt-s3-20260918-pc-2030-h
   - evt-s1-20260920-personalconfig-2030-s2
-  revision: 3
-  updated_at_utc: '2026-09-20T15:45:00Z'
+  - evt-s2-20260920-personalconfig-2030-q
+  - evt-s2-20260920-personalconfig-2030-h
+  revision: 5
+  updated_at_utc: '2026-09-20T17:20:00Z'
 - key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
   repository: abhimehro/personal-config
   pr: 2029
@@ -19006,6 +19014,54 @@ items:
   - evt-s1-20260919-repopromptce-337-t
   revision: 1
   updated_at_utc: '2026-09-19T15:40:05Z'
+- key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127
+  repository: abhimehro/personal-config
+  pr: 2246
+  url: https://github.com/abhimehro/personal-config/pull/2246
+  base_sha: 3e86704ab0262f822a68e81496156b686cecf6a9
+  head_sha: 4ef9a5bd195e404a7e0dacab856c564f040b2127
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'SHA_MATCH skip merge: Stage 1 re-ingest draft #2246 head 4ef9a5bd195e404a7e0dacab856c564f040b2127
+    (isDraft true after 0gd). Unique pr_reference.py remainder from #2030; python3
+    -m unittest tests.test_pr_reference. Do not replay .jules/bolt.md (0cs). Do not
+    merge, approve, or close the draft. Expires 2026-09-21T17:20:00Z.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2246
+  - https://github.com/abhimehro/personal-config/pull/2030
+  - https://github.com/abhimehro/personal-config/commit/4ef9a5bd195e404a7e0dacab856c564f040b2127
+  changed_paths:
+  - pr_reference.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260920-personalconfig-2246-i
+  - evt-s2-20260920-personalconfig-2246-q
+  - evt-s2-20260920-personalconfig-2246-h
+  revision: 3
+  updated_at_utc: '2026-09-20T17:20:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -42242,77 +42298,167 @@ events:
   successful: null
   reason: Stage 1 salvage HANDOFF of unique remaining pr_reference.py. Disjoint allowed_paths
     from 2116 keeper run_merges.py. Take main .jules/bolt.md (0cs). Do not merge source.
-stage2_work_items:
-- work_item_id: s2-20260920-personalconfig-2116-run-merges
-  source_item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
-  repository: abhimehro/personal-config
-  pr: 2116
-  base_sha: dd972eb83986fe0e67ab79efd9541ede369e0743
-  head_sha: 22c5c38bbec68a1df81e021450a1b3f9afedf029
-  allowed_paths:
-  - run_merges.py
-  prohibited_paths:
-  - .github/workflows
-  - .github/actions
-  - uv.lock
-  - requirements.txt
-  - .jules
-  - .Jules
-  - docs/cursor-automations/exports
-  - pr_reference.py
-  repair_description: 'Rebase unique remaining run_merges.py str-split optimization
-    off merged personal-config #2163 into a focused non-draft or draft replacement.
-    Diff against current main; keep only still-missing hunks. Do not copy export JSON
-    or .jules. Do not touch pr_reference.py.'
-  required_test_command: python3 -m unittest tests.test_run_merges
-  expected_test_result: OK
-  acceptance_criteria:
-  - Only run_merges.py changes on the replacement branch versus main.
-  - python3 -m unittest tests.test_run_merges reports OK.
-  - 'Source CONFLICTING PR #2116 is not merged, approved, or closed by Stage 2.'
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2116
-  - https://github.com/abhimehro/personal-config/pull/2163
-  expiry_utc: '2026-09-21T15:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260920-personalconfig-2116-s2
-  history: []
-- work_item_id: s2-20260920-personalconfig-2030-pr-reference
-  source_item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
-  repository: abhimehro/personal-config
-  pr: 2030
-  base_sha: abb33b2726df40e777f14826dd069f1ea1b0477e
-  head_sha: 48de37d8bd5c210ec10c9941381933db72458125
-  allowed_paths:
-  - pr_reference.py
-  prohibited_paths:
-  - .github/workflows
-  - .github/actions
-  - uv.lock
-  - requirements.txt
-  - .jules
-  - .Jules
-  - docs/cursor-automations/exports
-  - run_merges.py
-  repair_description: Recover unique remaining pr_reference.py str.partition owner/name
-    parse into a focused replacement. Take main's .jules/bolt.md (0cs). Do not copy
-    overlapping run_merges.py (2116 keeper).
-  required_test_command: python3 -m unittest tests.test_pr_reference
-  expected_test_result: OK
-  acceptance_criteria:
-  - Only pr_reference.py changes on the replacement branch versus main.
-  - python3 -m unittest tests.test_pr_reference reports OK.
-  - 'Source CONFLICTING PR #2030 is not merged, approved, or closed by Stage 2.'
-  - .jules/bolt.md on the replacement matches main (0cs).
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2030
-  - https://github.com/abhimehro/personal-config/pull/2116
-  expiry_utc: '2026-09-21T15:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260920-personalconfig-2030-s2
-  history: []
+- event_id: evt-s2-20260920-personalconfig-2030-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260920-personalconfig-2030-s2
+  expected_item_revision: 3
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-s2-20260920-personalconfig-2030-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: '2026-09-20T17:20:00Z'
+  policy_revision: null
+  successful: null
+  reason: ACK Stage 1 unique-source salvage queue for pr_reference.py. Work item s2-20260920-personalconfig-2030-pr-reference
+    claimed.
+- event_id: evt-s2-20260920-personalconfig-2030-q
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-s2-20260920-personalconfig-2030-q
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate unique-source salvage of #2030 pr_reference.py remainder.'
+- event_id: evt-s2-20260920-personalconfig-2030-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-s2-20260920-personalconfig-2030-h
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Tested draft #2246 recovered unique pr_reference.py remainder. Original
+    stays open; Stage 3 reconciles canonical relationship. Do not close because a
+    replacement exists. Journal stays on #2030 (0cs).'
+- event_id: evt-s2-20260920-personalconfig-2246-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127:evt-s2-20260920-personalconfig-2246-i
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2246 provenance to #2030. Live head 4ef9a5bd; 0gd
+    draft=true on create.'
+- event_id: evt-s2-20260920-personalconfig-2246-q
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127:evt-s2-20260920-personalconfig-2246-q
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #2246 before Stage 1 re-ingest.'
+- event_id: evt-s2-20260920-personalconfig-2246-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2246@4ef9a5bd195e404a7e0dacab856c564f040b2127:evt-s2-20260920-personalconfig-2246-h
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT pr_reference.py salvage complete. Stage 1 re-ingests draft
+    #2246. Merge authority is never Stage 2.'
+- event_id: evt-s2-20260920-personalconfig-2116-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260920-personalconfig-2116-s2
+  expected_item_revision: 5
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029:evt-s2-20260920-personalconfig-2116-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: '2026-09-20T17:20:00Z'
+  policy_revision: null
+  successful: null
+  reason: ACK Stage 1 unique-source salvage queue for run_merges.py. Work item s2-20260920-personalconfig-2116-run-merges
+    claimed.
+- event_id: evt-s2-20260920-personalconfig-2116-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_QUEUED
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 5
+  resulting_item_revision: 6
+  idempotency_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029:evt-s2-20260920-personalconfig-2116-h
+  status: PROJECTED
+  created_at_utc: '2026-09-20T17:20:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Structured failed-recovery CLOSE_NONSECURITY_NOOP: unique remainder superseded
+    by stronger main after #2163 (partition plus slash validation). Do not open a
+    weaker draft (0hm). Do not close original #2116.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
