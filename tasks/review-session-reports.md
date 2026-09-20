@@ -1124,3 +1124,40 @@ Downstream: Stage 2 executes `s2-20260918-seriescorre-409` (series_correction
 #409 unique `processor.py` + tests; take `main`'s `.jules/bolt.md`). Keep Stage
 1/2/3 completion enabled; leave calibration disabled. HITL paste already done;
 do not re-paste; do not disable Stage 1 (**0hk**).
+
+## Stage 1 — 2026-09-20 (cron 15:00 UTC)
+
+Scheduled fire `2026-09-20T15:02:24Z` (automation `77c168e0`, run
+<https://cursor.com/agents/bc-c1e5bc9e-b349-4fef-aa92-71ddb3b37e0e>). Isolated
+runtime ledger schema **PASS** at revision **75**, then CAS **76** (commit
+`8ddfbfe7484b50401391ad31ba7b3f6fe9f02584`, blob
+`fb57a812da66bea8f962242239a5c82a7e4f1486`). Calibration **APPROVED** 7/7, **not**
+reset. Export `--check` **MATCHES**. Observational open PRs **126 → 109**.
+Product mutations **22/40** (3 GitHub squash, 16 closes, 1 failed
+maintainer-login self-approve, 1 CodeScene command, 1 `update_pull_request_branch`).
+Feed fingerprint: `stage2_queued_count=2`, `salvage_eligible_count=0`,
+`throughput_grade=PASS`. Docs lineage: `pr-lifecycle-docs-20260920` (this PR).
+Yesterday's lineage [#2237](https://github.com/abhimehro/personal-config/pull/2237)
+remains OPEN DRAFT UNSTABLE — do **not** `/trunk merge` it or today's lineage
+in the opening run (**0gj**). Full record: `tasks/pr-review-2026-09-20.md`.
+Lesson **0hp**. Do **not** merge draft series #460 (**0gd**).
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   126 |
+| Product mutations           |    22 |
+| Merged (GitHub squash)      |     3 |
+| Closed superseded / no-op   |    16 |
+| Stage 2 queued (this run)   |     2 |
+| Stage 3 handoffs (this run) |     0 |
+| GitHub PR mutations         |    22 |
+| Ledger file CAS writes      |     1 |
+| Analysis errors             |     0 |
+
+Per-item table: see `tasks/pr-review-2026-09-20.md`.
+
+Downstream: Stage 2 (`0 17 * * *` UTC) executes
+`s2-20260920-personalconfig-2116-run-merges` and
+`s2-20260920-personalconfig-2030-pr-reference` (disjoint allowed_paths). Keep
+Stage 1/2/3 completion enabled; leave calibration disabled. Do not disable
+Stage 1 (**0hk**). Do not execute retracted `s2-20260919-seriescorre-409-processor`.
