@@ -360,11 +360,12 @@ The following tests contain early-exit skip guards that print `SKIP:` and exit
 77 on Linux/CI. They are **not failures** — `make test` will show them as
 `⏭️ skipped`:
 
-| Test file                                | Skip Reason                                                           | Guard                |
-| ---------------------------------------- | --------------------------------------------------------------------- | -------------------- |
-| `tests/test_config_fish.sh`              | Requires the `fish` shell, which is not present in the Linux CI image | `command -v fish`    |
-| `tests/test_ssh_config.sh`               | Requires the 1Password SSH agent socket (`~/.1password/agent.sock`)   | `uname -s == Darwin` |
-| `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only)                              | `uname -s == Darwin` |
+| Test file                                | Skip Reason                                                                   | Guard                |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | -------------------- |
+| `tests/test_config_fish.sh`              | Requires the `fish` shell, which is not present in the Linux CI image         | `command -v fish`    |
+| `tests/test_ssh_config.sh`               | Requires the 1Password SSH agent socket (`~/.1password/agent.sock`)           | `uname -s == Darwin` |
+| `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only)                                      | `uname -s == Darwin` |
+| `tests/test_network_mode_manager.sh`     | `network-mode-manager.sh` issues `sudo` commands unavailable in CI containers | `sudo -n true`       |
 
 If you add a new test that is intentionally macOS-only, add a `uname` guard at
 the top (Pattern 5 above) and add an entry to this table.
@@ -374,8 +375,8 @@ the top (Pattern 5 above) and add an entry to this table.
 ## Smoke test subset (`make test-quick`)
 
 A curated subset of fast, cross-platform tests is wired into `make test-quick`.
-Use this target for quick pre-commit feedback without running the full suite (3
-tests).
+Use this target for quick pre-commit feedback without running the full suite
+(~23 tests).
 
 **Included tests:**
 

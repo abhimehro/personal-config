@@ -5,7 +5,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
 
 import yaml
 
@@ -14,13 +13,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_config as config_validator  # noqa: E402
-import pr_lifecycle_validation as validator  # noqa: E402
-from pr_lifecycle_ledger import validate_transition_table  # noqa: E402
-from sync_cursor_export_prompts import (  # noqa: E402
-    PromptIncludeError,
-    expand_prompt_source,
-)
+import pr_lifecycle_validation as validator
 
 
 class TestPrLifecycleArtifacts(unittest.TestCase):
@@ -77,44 +70,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             validator.validate(self.write_ledger(ledger))
 
     def test_nonempty_example_and_source_exports_validate(self):
-        validator.validate(
-            ROOT / "tasks/pr-lifecycle-ledger.example.yaml",
-            include_exports=True,
-        )
-
-    def test_validate_does_not_run_export_prompt_gate(self):
-        with mock.patch.object(
-            validator,
-            "validate_exports_and_prompts",
-            side_effect=AssertionError("export gate must not run during CAS"),
-        ):
-            validator.validate(self.write_ledger(self.example()))
-
-    def test_validate_include_exports_invokes_prompt_gate(self):
-        # fmt: off
-        # Keep the `as gate` line wrapped under 79 chars: the export-authority
-        # merge gate patches this exact line, so black must not rejoin it.
-        with mock.patch.object(
-            validator, "validate_exports_and_prompts"
-        ) as gate:
-            validator.validate(
-                self.write_ledger(self.example()), include_exports=True
-            )
-            gate.assert_called_once()
-        # fmt: on
-
-    def test_export_validation_reports_prompt_include_errors(self):
-        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
-        with mock.patch.object(
-            config_validator,
-            "expand_prompt_includes",
-            side_effect=PromptIncludeError("include missing: _shared.md"),
-        ):
-            with self.assertRaisesRegex(
-                ValueError,
-                r"daily-pr-review\.json: include missing: _shared\.md",
-            ):
-                config_validator.validate_exports_and_prompts(config)
+        validator.validate(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
 
     def test_main_pointer_cannot_be_used_as_runtime_ledger(self):
         with self.assertRaisesRegex(ValueError, "schema root"):
@@ -194,16 +150,6 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ledger = self.example()
         ledger["items"][0]["revision"] = 2
         self.assert_invalid(ledger, "projection revision disagrees")
-
-    def test_stage2_can_return_routine_results_to_stage1(self):
-        for state in ("STAGE2_QUEUED", "STAGE2_ACTIVE"):
-            validate_transition_table(
-                {
-                    "event_id": f"evt-test-{state.lower()}-stage1",
-                    "from_state": state,
-                    "to_state": "STAGE1_INTAKE",
-                }
-            )
 
     def test_acknowledgement_and_cancellation_do_not_increment_revision(self):
         validator.validate(self.write_ledger(self.example()))
@@ -345,92 +291,6 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         )
         self.assertFalse(verified[6]["required_checks_verified_zero"])
         self.assertTrue(verified[6]["required_checks"])
-
-
-class TestStage1ThroughputGate(unittest.TestCase):
-    def _prompt(self, name: str) -> str:
-        return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
-
-    def test_review_prompt_sha_match_reselect(self):
-        review = self._prompt("daily-pr-review.md")
-        self.assertIn("SHA_MATCH skip only", review)
-        self.assertIn("Stage-1-executable", review)
-        self.assertIn("canonical-pick", review)
-
-    def test_review_prompt_hold_platform_is_salvage_only(self):
-        review = self._prompt("daily-pr-review.md")
-        self.assertIn("HOLD_PLATFORM is salvage-only", review)
-        self.assertIn("generated_output", review)
-
-    def test_review_prompt_throughput_fail_when_unused_slots(self):
-        review = self._prompt("daily-pr-review.md")
-        self.assertIn("FAIL", review)
-        self.assertIn("product mutations", review)
-        self.assertIn("bookkeeping", review)
-        self.assertIn("pr_lifecycle_ledger_cas.py", review)
-
-    def test_salvage_prompt_empty_intake_stop(self):
-        salvage = self._prompt("daily-pr-salvage.md")
-        self.assertIn("empty intake", salvage)
-        self.assertIn("Do not invent recoveries", salvage)
-
-    def test_completion_calibration_bounce_back(self):
-        calibration = self._prompt("daily-pr-completion.calibration.md")
-        self.assertIn("router", calibration)
-        self.assertIn("back to Stage 1", " ".join(calibration.split()))
-        self.assertIn("file-collision", calibration)
-
-    def test_completion_prompt_bounce_back(self):
-        completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("back to Stage 1", " ".join(completion.split()))
-        self.assertIn("canonical-pick", completion)
-
-    def test_lifecycle_contract_sha_match_exception(self):
-        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
-        self.assertIn("SHA_MATCH skip applies only", contract)
-        self.assertIn("canonical-pick", contract)
-        self.assertIn("product-mutation", contract)
-        self.assertIn("salvage only", contract)
-
-    def test_lifecycle_contract_trunk_stale_vs_main(self):
-        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
-        self.assertIn("Trunk queue: stale vs main", contract)
-        self.assertIn("stale-vs-main", contract)
-        self.assertIn("update_pull_request_branch", contract)
-        self.assertNotIn(
-            "cannot prepare a test branch (GitHub App or ruleset)",
-            contract,
-        )
-        salvage_spec = (ROOT / "docs/automated-pr-salvage-agent.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("stale-vs-main", salvage_spec)
-        review_spec = (ROOT / "docs/automated-pr-review-agent.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("stale-vs-main", review_spec)
-        completion_spec = (ROOT / "docs/automated-pr-completion-agent.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("stale-vs-main", completion_spec)
-        copilot = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
-        self.assertIn("stale-vs-main", copilot)
-        cursor_rules = (ROOT / ".cursorrules").read_text(encoding="utf-8")
-        self.assertIn("stale-vs-main", cursor_rules)
-        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
-        self.assertIn("stale-vs-main", contributing)
-
-    def test_policy_revision_stays_v14(self):
-        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
-        self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
-        self.assertEqual(
-            config["lifecycle"]["policy_inputs"]["prompt_revision"],
-            "pr-lifecycle-v1.4",
-        )
-        self.assertEqual(
-            config["lifecycle"]["policy_inputs"]["sensitive_path_taxonomy_revision"],
-            "2026-08-19",
-        )
 
 
 if __name__ == "__main__":

@@ -160,7 +160,7 @@ Visit: https://verify.controld.com
 
 ```bash
 # Run the automation script
-bash ~/dev/personal-config/scripts/macos/controld-ensure.sh
+bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh
 
 # Or manual reset
 for S in "Wi-Fi" "USB 10/100/1000 LAN"; do
@@ -194,7 +194,7 @@ sudo killall -HUP mDNSResponder
 
 The configuration is maintained by:
 
-- Script: `~/dev/personal-config/scripts/macos/controld-ensure.sh`
+- Script: `~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh`
 - LaunchAgent: `~/Library/LaunchAgents/com.personal.controld.ensure.plist`
 - Auto-runs at login to ensure DNS consistency
 

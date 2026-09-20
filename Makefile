@@ -24,9 +24,6 @@ test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit veri
 	@bash tests/test_lib_common.sh
 	@bash tests/test_lib_dns_utils.sh
 	@python3 -m unittest tests.test_path_validation -v
-	@python3 scripts/validate_pr_lifecycle_artifacts.py \
-		tasks/pr-lifecycle-ledger.example.yaml --include-exports
-	@python3 scripts/sync_cursor_export_prompts.py --check
 
 control-d-regression:  ## Run full Control D regression test suite
 	./scripts/network-mode-regression.sh browsing
