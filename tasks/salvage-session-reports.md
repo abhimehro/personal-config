@@ -2273,3 +2273,76 @@ Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
    Stage 2.
 
 Full record: `tasks/pr-salvage-2026-09-18-1700.md`.
+
+---
+
+## Run — 2026-09-21 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **79** (`python3 scripts/pr_lifecycle_ledger_cas.py`);
+  blob `871ed021a59236731fb171334c0bfcbd6d7b6418`; data-branch commit
+  `b4662b92b66be0f8a35d030b0a5cd77433ef2aba`. Contents GET `encoding: none`;
+  body via `GET /git/blobs/<sha>` (lesson **0gy**). `restored_ref: false`.
+- Preflight PASS; health `ledger_revision=79` `stage2_work_items=0`
+  `stage2_owned_items=0` `salvage_eligible=0` `starvation=false`. Calibration
+  `APPROVED` 7/7 `pr-lifecycle-v1.4` (not reset).
+- Live: `stage2_work_items: []`; `current_owner: stage2` **0**. Stage 1
+  fingerprint `stage2_queued_count: 0` / `salvage_eligible_count: 0` /
+  `throughput_grade: PASS` on `tasks/pr-review-2026-09-21.md` (lineage
+  [#2254](https://github.com/abhimehro/personal-config/pull/2254)). Retracted
+  WI `s2-20260919-seriescorre-409-processor` **absent** (**0ho**). Expired
+  2026-09-03 drain hints not executed.
+- CodeScene MCP `namespaceStatus=error` (unused — no salvage). Sonatype-mcp
+  unused (not a pin). Continuity for 2026-09-19
+  [#2237](https://github.com/abhimehro/personal-config/pull/2237) and 2026-09-20
+  [#2244](https://github.com/abhimehro/personal-config/pull/2244) cited, not
+  copied onto this lineage.
+
+### Outcomes
+
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                   |
+| ------ | -----: | ------------------------------------- | ------ | ----------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | Zero salvage-eligible remainder; not starvation; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API / autonomous merges / `request_reviewers`: **0 / 0 / skipped**
+- New lessons: **0**
+- Ledger CAS: **none** (no Stage-2-owned item; rev stays **79**)
+- Cap 10; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+  Unused 10/10 is empty remainder, not skipped salvage.
+
+### Verification
+
+- Isolated ledger schema **PASS** on rev 79. Health reason: `Stage 2 empty
+  intake with zero salvage-eligible remainder`. Owners: none 332 / human 82 /
+  stage3 14 / stage1 3 / stage2 0.
+- Live GitHub: series
+  [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460)
+  OPEN `isDraft=true` head `e5af43e4`. personal-config
+  [#2246](https://github.com/abhimehro/personal-config/pull/2246) OPEN
+  `isDraft=true` head `4ef9a5bd` (SHA_MATCH skip-merge; Stage 1 re-ingest when
+  unmarked). Did not merge, approve, close, or mark ready (**0gd** / S1).
+  Did not replay `processor.py` or weaker `run_merges.py` (**0hm**). Did not
+  copy `.jules/bolt.md` (**0cs**). Did not salvage rpce Swift on Linux.
+- Calibration untouched. Docs lineage this PR; no sibling; not marked ready;
+  no `/trunk merge`.
+
+### Handoff
+
+1. Stage 1: leftover MERGEABLE green BOT stays Stage 1 drain / Stage 3
+   overflow-complete. Re-ingest drafts
+   [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460)
+   and [#2246](https://github.com/abhimehro/personal-config/pull/2246) only when
+   unmarked **and** every routine predicate passes. Merge authority is never
+   Stage 2. personal-config stays Trunk-queue (stale-vs-main first).
+2. Stage 3: keep originals
+   [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+   and [#2030](https://github.com/abhimehro/personal-config/pull/2030) OPEN. Do
+   not close because a replacement exists. Sticky/HUMAN/workflow-consolidate
+   remainder is Stage 3, not a salvage invent.
+3. Do not salvage rpce Swift on Linux. Do not Trunk-merge this lineage from
+   Stage 2. Do not execute the retracted processor WI.
+
+Full record: `tasks/pr-salvage-2026-09-21-1700.md`.
