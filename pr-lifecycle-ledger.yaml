@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 78
+ledger_revision: 79
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -18626,7 +18626,7 @@ items:
   next_action: 'SHA_MATCH skip merge: Stage 1 re-ingest draft #460 head e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e
     (isDraft true after 0gd). Tests-only unique remainder from #409; pytest scripts/tests/test_processor.py.
     Do not replay processor.py (0hm). Do not merge, approve, or close the draft. Expires
-    2026-09-21T15:00:00Z.'
+    2026-09-22T15:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
@@ -18642,7 +18642,7 @@ items:
   - evt-s2-20260918-seriescorre-460-q
   - evt-s2-20260918-seriescorre-460-h
   revision: 3
-  updated_at_utc: '2026-09-20T15:45:00Z'
+  updated_at_utc: '2026-09-21T15:50:00Z'
 - key: abhimehro/ctrld-sync#1264@d6aae6637c718adc3b47253fe5ddf73346253c48
   repository: abhimehro/ctrld-sync
   pr: 1264
@@ -19063,6 +19063,394 @@ items:
   - evt-s2-20260920-personalconfig-2246-h
   revision: 3
   updated_at_utc: '2026-09-20T17:20:00Z'
+- key: abhimehro/series_correction_project_updated#470@2d42417896ae082c740486631c8b70029420d8b8
+  repository: abhimehro/series_correction_project_updated
+  pr: 470
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/470
+  base_sha: 519c67b3169e686ad0ab5b8642b6364868a8a51f
+  head_sha: 2d42417896ae082c740486631c8b70029420d8b8
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:14:02Z.
+    Dependabot patch/minor ruby/setup-ruby 1.323.0 to 1.324.0.'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/470
+  - https://github.com/abhimehro/series_correction_project_updated/commit/307b92a836e302624f362a2d98f390ccc15d293d
+  changed_paths:
+  - .github/workflows/changelog.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-seriescorre-470-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:02Z'
+- key: abhimehro/series_correction_project_updated#469@f519472a2e8950d7c8c2d06adae442cc7ac880bd
+  repository: abhimehro/series_correction_project_updated
+  pr: 469
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/469
+  base_sha: 519c67b3169e686ad0ab5b8642b6364868a8a51f
+  head_sha: f519472a2e8950d7c8c2d06adae442cc7ac880bd
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:14:06Z.
+    Dependabot patch codecov/codecov-action 7.1.0 to 7.1.1.'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/469
+  - https://github.com/abhimehro/series_correction_project_updated/commit/918effadc50999bef0e8993a9e9ead9c299a090d
+  changed_paths:
+  - .github/workflows/python-tests.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-seriescorre-469-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:06Z'
+- key: abhimehro/personal-config#2247@62edcacb2808fdf9bd291e96f4392a7807097ebb
+  repository: abhimehro/personal-config
+  pr: 2247
+  url: https://github.com/abhimehro/personal-config/pull/2247
+  base_sha: 3e86704ab0262f822a68e81496156b686cecf6a9
+  head_sha: 62edcacb2808fdf9bd291e96f4392a7807097ebb
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:14:28Z.
+    Dependabot patch github/codeql-action/analyze 4.38.0 to 4.38.1 via Trunk queue.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2247
+  - https://github.com/abhimehro/personal-config/commit/be5a0a6b1771a7effe3d4d57b80211a7e0ad4390
+  - https://github.com/abhimehro/personal-config/pull/2247#issuecomment-5762828415
+  changed_paths:
+  - .github/workflows/security-scan.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-personalconfig-2247-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:28Z'
+- key: abhimehro/personal-config#2250@0007178fd899be24b24635de10d3d011f6b46b50
+  repository: abhimehro/personal-config
+  pr: 2250
+  url: https://github.com/abhimehro/personal-config/pull/2250
+  base_sha: be5a0a6b1771a7effe3d4d57b80211a7e0ad4390
+  head_sha: 0007178fd899be24b24635de10d3d011f6b46b50
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:27:57Z.
+    Dependabot minor github/gh-aw/actions/setup 0.88.7 to 0.89.16. First /trunk merge
+    on stale SHA dec900a1 failed stale-vs-main; update_pull_request_branch then /trunk
+    merge on new SHA 0007178f.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2250
+  - https://github.com/abhimehro/personal-config/commit/6709bee1f54312eb4105b79c975aca134b5aa485
+  - https://github.com/abhimehro/personal-config/pull/2250#issuecomment-5763025648
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 2
+    recovery: 1
+    mutations: 2
+  handoffs:
+  - evt-s1-20260921-personalconfig-2250-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:27:57Z'
+- key: abhimehro/personal-config#2248@802a81e2b611e8d394446a3bc36a3e071c795dce
+  repository: abhimehro/personal-config
+  pr: 2248
+  url: https://github.com/abhimehro/personal-config/pull/2248
+  base_sha: 6709bee1f54312eb4105b79c975aca134b5aa485
+  head_sha: 802a81e2b611e8d394446a3bc36a3e071c795dce
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:31:53Z.
+    Dependabot minor github/gh-aw/actions/setup-cli 0.88.7 to 0.89.16 via Trunk queue.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2248
+  - https://github.com/abhimehro/personal-config/commit/7e9b3d388b60dd52b47ae0bd3ef23f14b868dbf0
+  - https://github.com/abhimehro/personal-config/pull/2248#issuecomment-5763080348
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-personalconfig-2248-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:31:53Z'
+- key: abhimehro/personal-config#2249@99bebf1c68786c5aae0765aa0effc221f98cd2e2
+  repository: abhimehro/personal-config
+  pr: 2249
+  url: https://github.com/abhimehro/personal-config/pull/2249
+  base_sha: 7e9b3d388b60dd52b47ae0bd3ef23f14b868dbf0
+  head_sha: 99bebf1c68786c5aae0765aa0effc221f98cd2e2
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:35:47Z.
+    Dependabot patch github/codeql-action/autobuild 4.38.0 to 4.38.1 via Trunk queue.
+    CodeQL version-skew after #2247 was GHAS infra noise (0hq).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2249
+  - https://github.com/abhimehro/personal-config/commit/3be8204905a8c799eb88da1a8d43fbee63959e8d
+  - https://github.com/abhimehro/personal-config/pull/2249#issuecomment-5763134802
+  changed_paths:
+  - .github/workflows/security-scan.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-personalconfig-2249-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:35:47Z'
+- key: abhimehro/personal-config#2251@0186696b416b1c923d1ff3645d33a5311ddd7e78
+  repository: abhimehro/personal-config
+  pr: 2251
+  url: https://github.com/abhimehro/personal-config/pull/2251
+  base_sha: 3be8204905a8c799eb88da1a8d43fbee63959e8d
+  head_sha: 0186696b416b1c923d1ff3645d33a5311ddd7e78
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: dependabot
+    identity_provenance:
+      method: allowlist_login
+  author_type: BOT
+  classification: DEPENDENCY
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'Terminal reconciliation complete: MERGED_ROUTINE at 2026-09-21T15:38:31Z.
+    Dependabot patch github/codeql-action/init 4.38.0 to 4.38.1 via Trunk queue.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2251
+  - https://github.com/abhimehro/personal-config/commit/113fa734148d9d14b9e2c8a238b6b24a26450b2f
+  - https://github.com/abhimehro/personal-config/pull/2251#issuecomment-5763173662
+  changed_paths:
+  - .github/workflows/security-scan.yml
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-personalconfig-2251-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:38:31Z'
+- key: abhimehro/Seatek_Analysis#872@acd12fbd344d556a49f738d5452b70feeeaad1e0
+  repository: abhimehro/Seatek_Analysis
+  pr: 872
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/872
+  base_sha: 1143ed22a7164690b736a220c174037be2936809
+  head_sha: acd12fbd344d556a49f738d5452b70feeeaad1e0
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - title
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: No further action; closed CLOSED_NOOP at 2026-09-21T15:14:27Z. Zero-diff
+    Jules Daily QA (files=[]). Cooldown elapsed (created 2026-09-19T20:17:35Z).
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/872
+  changed_paths: []
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-seatekanalys-872-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:27Z'
+- key: abhimehro/repoprompt-ce#352@4bd25b958ce2fd6947fc09129ce811df61aac89a
+  repository: abhimehro/repoprompt-ce
+  pr: 352
+  url: https://github.com/abhimehro/repoprompt-ce/pull/352
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: 4bd25b958ce2fd6947fc09129ce811df61aac89a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: No further action; closed CLOSED_NOOP at 2026-09-21T15:14:29Z. Zero-diff
+    Jules Daily QA (files=[]). Cooldown elapsed (created 2026-09-20T15:00:29Z).
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/352
+  changed_paths: []
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-repopromptce-352-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:29Z'
+- key: abhimehro/series_correction_project_updated#467@b7626b8023616b482151da097321360e8bf4d69f
+  repository: abhimehro/series_correction_project_updated
+  pr: 467
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/467
+  base_sha: 519c67b3169e686ad0ab5b8642b6364868a8a51f
+  head_sha: b7626b8023616b482151da097321360e8bf4d69f
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: No further action; preserve the verified terminal record.
+  next_action: 'No further action; closed CLOSED_SUPERSEDED vs keeper #464 at 2026-09-21T15:14:31Z.
+    Did not merge keeper #464.'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/467
+  - https://github.com/abhimehro/series_correction_project_updated/pull/464
+  changed_paths:
+  - .jules/bolt.md
+  - scripts/batch_correction.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260921-seriescorre-467-t
+  revision: 1
+  updated_at_utc: '2026-09-21T15:14:31Z'
+
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -42501,6 +42889,212 @@ events:
   reason: 'GitHub already CLOSED unmerged at 2026-09-20T15:20:11Z (head 613078797e39452e1f1223d5536d9398ba8b71a4).
     Named keeper #812 remains OPEN UNSTABLE; do not merge #812. Record CLOSED_SUPERSEDED
     only. Stage 3 did not close the GitHub PR.'
+- event_id: evt-s1-20260921-seriescorre-470-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#470@2d42417896ae082c740486631c8b70029420d8b8
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#470@2d42417896ae082c740486631c8b70029420d8b8:evt-s1-20260921-seriescorre-470-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch/minor ruby/setup-ruby 1.323.0 to 1.324.0.
+- event_id: evt-s1-20260921-seriescorre-469-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#469@f519472a2e8950d7c8c2d06adae442cc7ac880bd
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#469@f519472a2e8950d7c8c2d06adae442cc7ac880bd:evt-s1-20260921-seriescorre-469-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:06Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 squash-merged Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch codecov/codecov-action 7.1.0 to 7.1.1.
+- event_id: evt-s1-20260921-personalconfig-2247-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2247@62edcacb2808fdf9bd291e96f4392a7807097ebb
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2247@62edcacb2808fdf9bd291e96f4392a7807097ebb:evt-s1-20260921-personalconfig-2247-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:28Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 Trunk-queued Dependabot patch/minor action pin with fresh SHA anchors.
+    Dependabot patch github/codeql-action/analyze 4.38.0 to 4.38.1.
+- event_id: evt-s1-20260921-personalconfig-2250-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2250@0007178fd899be24b24635de10d3d011f6b46b50
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2250@0007178fd899be24b24635de10d3d011f6b46b50:evt-s1-20260921-personalconfig-2250-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:27:57Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 Trunk-queued Dependabot minor action pin after stale-vs-main repair.
+    Dependabot minor github/gh-aw/actions/setup 0.88.7 to 0.89.16. Did not re-comment
+    /trunk merge on unchanged SHA; did not squash-bypass.
+- event_id: evt-s1-20260921-personalconfig-2248-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2248@802a81e2b611e8d394446a3bc36a3e071c795dce
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2248@802a81e2b611e8d394446a3bc36a3e071c795dce:evt-s1-20260921-personalconfig-2248-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:31:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 Trunk-queued Dependabot minor action pin after sibling #2250. Dependabot
+    minor github/gh-aw/actions/setup-cli 0.88.7 to 0.89.16.'
+- event_id: evt-s1-20260921-personalconfig-2249-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2249@99bebf1c68786c5aae0765aa0effc221f98cd2e2
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2249@99bebf1c68786c5aae0765aa0effc221f98cd2e2:evt-s1-20260921-personalconfig-2249-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:35:47Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: Stage 1 Trunk-queued Dependabot patch after update-from-main. Dependabot
+    patch github/codeql-action/autobuild 4.38.0 to 4.38.1. CodeQL Analysis version-skew
+    was GHAS infra, not HOLD_PLATFORM.
+- event_id: evt-s1-20260921-personalconfig-2251-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2251@0186696b416b1c923d1ff3645d33a5311ddd7e78
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2251@0186696b416b1c923d1ff3645d33a5311ddd7e78:evt-s1-20260921-personalconfig-2251-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:38:31Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 Trunk-queued Dependabot patch after siblings #2247/#2249. Dependabot
+    patch github/codeql-action/init 4.38.0 to 4.38.1.'
+- event_id: evt-s1-20260921-seatekanalys-872-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#872@acd12fbd344d556a49f738d5452b70feeeaad1e0
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#872@acd12fbd344d556a49f738d5452b70feeeaad1e0:evt-s1-20260921-seatekanalys-872-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:27Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 closed bot-authored non-security zero-diff Jules QA after 24h cooldown.
+    Identity: title keyword Jules + allowlisted commenter google-labs-jules + commit-email
+    suffix [bot]. files=[].'
+- event_id: evt-s1-20260921-repopromptce-352-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#352@4bd25b958ce2fd6947fc09129ce811df61aac89a
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#352@4bd25b958ce2fd6947fc09129ce811df61aac89a:evt-s1-20260921-repopromptce-352-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:29Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 closed bot-authored non-security zero-diff Jules QA after 24h cooldown.
+    Identity: hyphen jules- branch + body jules.google.com + allowlisted commenter
+    + commit-email suffix [bot]. files=[].'
+- event_id: evt-s1-20260921-seriescorre-467-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#467@b7626b8023616b482151da097321360e8bf4d69f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#467@b7626b8023616b482151da097321360e8bf4d69f:evt-s1-20260921-seriescorre-467-t
+  status: PROJECTED
+  created_at_utc: '2026-09-21T15:14:31Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 1 canonical-pick closed non-keeper Bolt overlap twin. Identity: slash
+    bolt/ branch + title keyword Bolt. Keeper #464 remains OPEN; not merged. .jules/
+    journal alone is not sticky generated_output (0cs).'
+
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
