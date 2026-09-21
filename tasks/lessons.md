@@ -3140,3 +3140,40 @@ action cap.
 
 **Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
 twice ~10s apart after a sibling squash.
+
+## Lesson 0hq: Split codeql-action Dependabot PRs are GHAS version-skew, then stale-vs-main (2026-09-21)
+
+**Pattern:** personal-config Dependabot opened three separate PRs for
+`github/codeql-action/{analyze,autobuild,init}` 4.38.0 → 4.38.1 plus two for
+`gh-aw/actions/{setup,setup-cli}`. Stage 1 Trunk-merged
+[#2247](https://github.com/abhimehro/personal-config/pull/2247) (analyze) first.
+Siblings [#2249](https://github.com/abhimehro/personal-config/pull/2249)
+(autobuild) and [#2251](https://github.com/abhimehro/personal-config/pull/2251)
+(init) then showed CodeQL Analysis **FAILURE**
+(`Loaded a configuration file for version '4.38.0', but running version '4.38.1'`).
+That is GHAS infra from a split pin, not an actionable finding and not
+`HOLD_PLATFORM`. Independently,
+[#2250](https://github.com/abhimehro/personal-config/pull/2250) received
+`trunk-failed` on SHA `dec900a1` because `main` had moved (`behind_by: 1`).
+SBOM Generation FAILURE after the rebase was GitHub HTTP 504 downloading syft —
+also infra noise. Required checks remain verified-zero. Transient
+`trunk-not-ready` flipped to `trunk-merged` in ~45s on the **new** SHA; a
+same-SHA retry would have been wrong.
+
+**Rule:** (1) Split `github/codeql-action/*` Dependabot PRs are one logical pin.
+After the first sibling lands, later CodeQL **FAILURE** of the form
+`Loaded … 'X', but running 'Y'` is version-skew until init/autobuild/analyze
+all land. Treat it as GHAS infra; continue `update_pull_request_branch` then
+`/trunk merge` on the **new** head SHA when every other routine predicate
+passes. (2) Real CodeQL findings still block. (3) `trunk-failed` after `main`
+moved is stale-vs-main (**0hj**): update from `main`, wait until up to date,
+then `/trunk merge` on the **new** SHA. Do not re-comment the old SHA. Do not
+squash-bypass. Do not record App/ruleset `HOLD_PLATFORM` while the PR is behind
+`main`. (4) SBOM **FAILURE** whose log is GitHub HTTP 504 downloading syft is
+infra noise, not a merge block for otherwise routine BOT work. (5) Do not
+re-comment `/trunk merge` on an unchanged SHA while Trunk is still
+`trunk-not-ready`; re-poll until `trunk-merged` or a new SHA appears.
+
+**Detection cost:** Low — CodeQL log `Loaded a configuration file for version`;
+`behind_by` / `baseRefOid` vs `origin/main`; SBOM log `504` + `syft`; Trunk
+comment `trunk-not-ready` vs `trunk-merged` on the same new SHA.
