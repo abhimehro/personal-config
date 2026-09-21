@@ -58,7 +58,6 @@ import concurrent.futures
 import datetime as dt
 import hashlib
 import html
-import math
 import json
 import logging
 import os
@@ -1372,28 +1371,12 @@ def render_focus_item(label: str, item: FocusItem, today_iso: str) -> str:
 
 
 def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -> str:
-    rain_probability = sanitize_text(weather.rain_probability)
-    try:
-        rain_value = float(weather.rain_probability)
-        rain_available = math.isfinite(rain_value) and 0 <= rain_value <= 100
-    except (TypeError, ValueError):
-        rain_available = False
-
-    if rain_available:
-        rain_display = (
-            "(Rain: <meter aria-label='Rain Probability' min='0' max='100' "
-            f"low='30' high='70' optimum='0' value='{rain_probability}'>"
-            f"{rain_probability}%</meter>)"
-        )
-    else:
-        rain_display = f"(Rain: {rain_probability})"
-
     body = (
         f"<p>{sanitize_text(greeting_paragraph)}</p>"
         f"<div><strong>Baton Rouge Weather:</strong> "
         f"{sanitize_text(weather.high_temp)}°F High / "
         f"{sanitize_text(weather.current_temp)}°F Current "
-        f"{rain_display}</div>"
+        f"(Rain: <meter aria-label='Rain Probability' min='0' max='100' low='30' high='70' optimum='0' value='{sanitize_text(weather.rain_probability)}'>{sanitize_text(weather.rain_probability)}%</meter>)</div>"
     )
     return html_section("🌅 Good Morning, Abhi", body)
 
