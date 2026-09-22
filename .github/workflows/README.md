@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **18 active YAML
+Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **20 active YAML
 workflows** after consolidation (includes `greetings.yml`). Prefer this table
 over hunting through the directory.
 
@@ -42,6 +42,8 @@ over hunting through the directory.
 | `repository-automation-daily.yml`  | Daily cron + dispatch                  | Workflow updater, perf, QA, backlog, status report                                                                                                                                                                                    |
 | `repository-automation-weekly.yml` | Weekly cron + dispatch                 | Weekly retrospective (writes gated by input)                                                                                                                                                                                          |
 | `agentics-maintenance.yml`         | `workflow_dispatch`                    | gh-aw maintenance (disable/enable/update/upgrade)                                                                                                                                                                                     |
+| `jules.yml`                        | `workflow_dispatch`                    | Manual Google Jules task dispatcher; user enters a task and Jules opens a PR                                                                                                                                                          |
+| `jules-pr-review.yml`              | PR opened/synchronized/reopened/ready-for-review | Automated Jules PR review with line-level comments, high-severity check failure, no auto-approval                                                                                                                        |
 | `jules-daily-qa.yml`               | `workflow_dispatch` only (UI disabled) | **Disabled by design.** Jules only replies on Jules-initiated PRs; Actions-created Daily QA issues get no bot engagement. Daily Jules QA runs via Jules product scheduled tasks instead. Cron removed so re-enable cannot spam repos. |
 | `refactoring-agent.yml`            | Issue comment `/cs-agent`              | CodeScene PR refactoring agent                                                                                                                                                                                                        |
 | `copilot-setup-steps.yml`          | PR/issues + dispatch                   | Development Partner setup comments (**CWE-94:** bind `request` via `env.REQUEST`)                                                                                                                                                     |
@@ -61,7 +63,7 @@ over hunting through the directory.
 
 ```bash
 # List workflows
-ls .github/workflows/*.yml | wc -l   # expect 18
+ls .github/workflows/*.yml | wc -l   # expect 20
 
 # Actionlint if installed
 actionlint .github/workflows/*.yml
