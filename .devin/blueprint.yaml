@@ -39,3 +39,11 @@ knowledge:
       and do not assume ~/bin/agent-zsh exists unless initialize installs it.
       Keep all blueprint commands POSIX bash-safe.
       See docs/AGENT_SHELL_CONFIG_MATRIX.md in personal-config.
+---
+runs-on: macos
+initialize: |
+  test -x /opt/homebrew/bin/python3.12 || brew install python@3.12
+  /opt/homebrew/bin/python3.12 -m venv "$HOME/.venv-pc"
+  echo "PATH=$HOME/.venv-pc/bin:$PATH" >> $ENVRC
+maintenance: |
+  "$HOME/.venv-pc/bin/pip" install -r requirements.txt ruff==0.16.8 bandit black radon
