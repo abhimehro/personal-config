@@ -120,23 +120,6 @@ def _label_names(live: dict[str, Any]) -> list[str]:
     )
 
 
-def _terminal_action(
-    action_name: str,
-    key: str,
-    disposition: str,
-    reason: str,
-    evidence: dict[str, Any],
-) -> dict[str, Any]:
-    return {
-        "action": action_name,
-        "key": key,
-        "to_state": "TERMINAL",
-        "disposition": disposition,
-        "reason": reason,
-        "evidence": evidence,
-    }
-
-
 def _classify_live_merge(
     item: dict[str, Any], live: dict[str, Any], key: str
 ) -> dict[str, Any] | None:
@@ -150,13 +133,14 @@ def _classify_live_merge(
     disposition = (
         "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
     )
-    return _terminal_action(
-        "TERMINAL_MERGED",
-        key,
-        disposition,
-        f"live PR state=MERGED mergedBy={merger}",
-        {"mergedBy": merger},
-    )
+    return {
+        "action": "TERMINAL_MERGED",
+        "key": key,
+        "to_state": "TERMINAL",
+        "disposition": disposition,
+        "reason": f"live PR state=MERGED mergedBy={merger}",
+        "evidence": {"mergedBy": merger},
+    }
 
 
 def _classify_live_close(
@@ -175,13 +159,14 @@ def _classify_live_close(
         return _pending_terminal(
             item, key, "CLOSED", "no disposition-bearing label"
         )
-    return _terminal_action(
-        "TERMINAL_CLOSED",
-        key,
-        disposition,
-        f"live PR state=CLOSED labels={labels}",
-        {"labels": labels},
-    )
+    return {
+        "action": "TERMINAL_CLOSED",
+        "key": key,
+        "to_state": "TERMINAL",
+        "disposition": disposition,
+        "reason": f"live PR state=CLOSED labels={labels}",
+        "evidence": {"labels": labels},
+    }
 
 
 def _pending_terminal(
@@ -369,6 +354,18 @@ def build_transition_event(
     }
 
 
+def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
+    live_head = action.get("live_head_sha")
+    if live_head:
+        item["head_sha"] = live_head
+        item["next_action"] = (
+            f"Re-anchor intake to live head {live_head}; prior evidence void."
+        )
+    live_base = action.get("live_base_sha")
+    if live_base:
+        item["base_sha"] = live_base
+
+
 def _reanchor_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
@@ -420,15 +417,7 @@ def apply_action_to_ledger(
     item["handoffs"] = projected["handoffs"]
     item["updated_at_utc"] = event["created_at_utc"]
     if action.get("action") == "SHA_DRIFT_REINTAKE":
-        live_head = action.get("live_head_sha")
-        if live_head:
-            item["head_sha"] = live_head
-            item["next_action"] = (
-                f"Re-anchor intake to live head {live_head}; prior evidence void."
-            )
-        live_base = action.get("live_base_sha")
-        if live_base:
-            item["base_sha"] = live_base
+        _apply_drift_fields(item, action)
     if action.get("action") == "TERMINAL_PENDING":
         item["next_action"] = (
             f"Observed {action.get('observed_state')} unclassified; "

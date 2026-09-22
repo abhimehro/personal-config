@@ -90,29 +90,34 @@ def _classify(item_overrides=None, live=_DEFAULT):
 
 
 class ClassifyItemTests(unittest.TestCase):
-    def test_merged_goes_terminal(self):
-        action = _classify(
-            {"lifecycle_state": "STAGE1_INTAKE"},
-            {
-                "state": "MERGED",
-                "headRefOid": "a" * 40,
-                "mergedBy": {"login": "someuser"},
-            },
+    def test_evidence_backed_live_states_go_terminal(self):
+        cases = (
+            (
+                {"lifecycle_state": "STAGE1_INTAKE"},
+                {
+                    "state": "MERGED",
+                    "headRefOid": "a" * 40,
+                    "mergedBy": {"login": "someuser"},
+                },
+                "TERMINAL_MERGED",
+                "MERGED_ROUTINE",
+            ),
+            (
+                {"lifecycle_state": "STAGE2_QUEUED"},
+                {
+                    "state": "CLOSED",
+                    "headRefOid": "a" * 40,
+                    "labels": [{"name": "duplicate"}],
+                },
+                "TERMINAL_CLOSED",
+                "CLOSED_DUPLICATE",
+            ),
         )
-        self.assertEqual(action["action"], "TERMINAL_MERGED")
-        self.assertEqual(action["disposition"], "MERGED_ROUTINE")
-
-    def test_closed_goes_terminal(self):
-        action = _classify(
-            {"lifecycle_state": "STAGE2_QUEUED"},
-            {
-                "state": "CLOSED",
-                "headRefOid": "a" * 40,
-                "labels": [{"name": "duplicate"}],
-            },
-        )
-        self.assertEqual(action["action"], "TERMINAL_CLOSED")
-        self.assertEqual(action["disposition"], "CLOSED_DUPLICATE")
+        for overrides, live, action_name, disposition in cases:
+            with self.subTest(action_name=action_name):
+                action = _classify(overrides, live)
+                self.assertEqual(action["action"], action_name)
+                self.assertEqual(action["disposition"], disposition)
 
     def test_sha_drift_reintake(self):
         action = _classify(
@@ -256,6 +261,26 @@ class ClassifyItemTests(unittest.TestCase):
                 self.assertIsNone(_classify(overrides))
 
 
+def _transition_effect(event, projected):
+    projected.update(
+        revision=event["resulting_item_revision"],
+        lifecycle_state=event["to_state"],
+        current_owner=event["to_owner"],
+        next_owner=event["next_owner"],
+        terminal_disposition=event["terminal_disposition"],
+    )
+    projected["handoffs"].append(event["event_id"])
+
+
+def _apply_with_mocks(ledger, item, action):
+    with mock.patch.object(
+        reconcile.ledger_mod, "apply_transition", side_effect=_transition_effect
+    ):
+        with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+            with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+                return reconcile.apply_action_to_ledger(ledger, item, action)
+
+
 class ReconcileHelpersTests(unittest.TestCase):
     def test_collect_actions_skips_invalid_and_terminal_items_and_honors_limit(self):
         ledger = {
@@ -307,24 +332,7 @@ class ReconcileHelpersTests(unittest.TestCase):
             "reason": "head changed",
             "live_head_sha": "c" * 40,
         }
-
-        def apply_transition(event, projected):
-            projected.update(
-                revision=event["resulting_item_revision"],
-                lifecycle_state=event["to_state"],
-                current_owner=event["to_owner"],
-                next_owner=event["next_owner"],
-                terminal_disposition=event["terminal_disposition"],
-            )
-            projected["handoffs"].append(event["event_id"])
-
-        with mock.patch.object(
-            reconcile.ledger_mod, "apply_transition", side_effect=apply_transition
-        ):
-            with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
-                with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
-                    event = reconcile.apply_action_to_ledger(ledger, item, action)
-
+        event = _apply_with_mocks(ledger, item, action)
         self.assertEqual(item["revision"], 2)
         self.assertEqual(item["lifecycle_state"], "STAGE1_INTAKE")
         self.assertEqual(item["current_owner"], "stage1")
@@ -343,24 +351,7 @@ class ReconcileHelpersTests(unittest.TestCase):
             "observed_state": "CLOSED",
             "reason": "closed without classifying evidence",
         }
-
-        def apply_transition(event, projected):
-            projected.update(
-                revision=event["resulting_item_revision"],
-                lifecycle_state=event["to_state"],
-                current_owner=event["to_owner"],
-                next_owner=event["next_owner"],
-                terminal_disposition=event["terminal_disposition"],
-            )
-            projected["handoffs"].append(event["event_id"])
-
-        with mock.patch.object(
-            reconcile.ledger_mod, "apply_transition", side_effect=apply_transition
-        ):
-            with mock.patch.object(reconcile, "_event_id", return_value="evt-p"):
-                with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
-                    event = reconcile.apply_action_to_ledger(ledger, item, action)
-
+        event = _apply_with_mocks(ledger, item, action)
         self.assertEqual(event["kind"], "HANDOFF")
         self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
         self.assertEqual(item["current_owner"], "stage3")
