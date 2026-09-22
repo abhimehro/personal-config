@@ -31,16 +31,18 @@ calibration (Blocking / Discuss / Optional; mechanism or silence), Trunk-queue
 personal-config merges, never merge drafts unattended, never self-approve under
 maintainer login. Citing those files is not enough; the stage must apply them.
 
-Stage prompts include two sibling fragments (not nested):
+Stage prompts were rebalanced to short bootstraps on 2026-09-21:
+`docs/cursor-automations/prompts/daily-pr-{review,salvage,completion}.md`
+defer to `scripts/pr_lifecycle_run.py --stage N` (see the rebalance section
+below). The sibling fragments
 `docs/cursor-automations/prompts/_shared-cas-bootstrap.md` (ledger CAS
 mechanics) and `docs/cursor-automations/prompts/_shared-partner-frame.md`
-(elevated security-first partner line). Each is a whole-line `{{include:_….md}}`
-directive. `sync_cursor_export_prompts.py` expands those includes into export
-JSON. Paste the JSON `prompts[0].prompt` field into the existing Stage 1/2/3
-Dashboard UUIDs; never paste a raw `{{include}}` line. Do not add a fourth UUID,
-a weekly-health coordinator, or a second Grok Bot. Calibration stays
-self-contained (no includes). Stage-specific MCP lists and heal-forward cascade
-text stay in each stage file.
+(elevated security-first partner line) remain canonical reference text; the
+whole-line `{{include:_….md}}` expansion in `sync_cursor_export_prompts.py`
+remains supported for prompts that opt in. Paste the JSON `prompts[0].prompt`
+field into the existing Stage 1/2/3 Dashboard UUIDs; never paste a raw
+`{{include}}` line. Do not add a fourth UUID, a weekly-health coordinator, or
+a second Grok Bot. Calibration stays self-contained (no includes).
 
 ## Lifecycle principle
 
