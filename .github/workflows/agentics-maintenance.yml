@@ -114,7 +114,7 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw/actions/setup-cli@85f884513884bf03676b7531a7c713e4e2725645 # v0.89.16
+        uses: github/gh-aw/actions/setup-cli@00457477720387bcc7d7baaf841dedb22ad06617 # v0.89.17
         with:
           version: v0.55.0
 
