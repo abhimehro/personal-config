@@ -132,6 +132,36 @@ def plan_archive(
     }
 
 
+def _drop_events_for_items(
+    ledger: dict[str, Any], archived_keys: set[Any]
+) -> None:
+    # Drop events that only reference archived items (keep shared/calibration).
+    events = [
+        event
+        for event in ledger.get("events") or []
+        if not isinstance(event, dict) or event.get("item_key") not in archived_keys
+    ]
+    ledger["events"] = events
+
+
+def _write_month_archives(
+    buckets: dict[str, list[dict[str, Any]]],
+    out_dir: Path,
+    ledger: dict[str, Any],
+) -> dict[str, str]:
+    written: dict[str, str] = {}
+    for month, items in sorted(buckets.items()):
+        doc = build_archive_document(
+            month, items, source_revision=ledger.get("ledger_revision")
+        )
+        path = out_dir / "archive" / f"{month}.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Reuse dump_ledger shape for YAML stability.
+        path.write_text(dump_ledger(doc), encoding="utf-8")
+        written[month] = str(path)
+    return written
+
+
 def apply_archive(
     ledger: dict[str, Any],
     *,
@@ -146,30 +176,10 @@ def apply_archive(
         for item in ledger.get("items") or []
         if not isinstance(item, dict) or item.get("key") not in selected_keys
     ]
-    # Drop events that only reference archived items (keep shared/calibration).
-    archived_keys = selected_keys
-    events = []
-    for event in ledger.get("events") or []:
-        if not isinstance(event, dict):
-            continue
-        item_key = event.get("item_key")
-        if item_key in archived_keys:
-            continue
-        events.append(event)
-    ledger["events"] = events
+    _drop_events_for_items(ledger, selected_keys)
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     strip_in_memory_item_fields(ledger)
-
-    written: dict[str, str] = {}
-    for month, items in sorted(buckets.items()):
-        doc = build_archive_document(
-            month, items, source_revision=ledger.get("ledger_revision")
-        )
-        path = out_dir / "archive" / f"{month}.yaml"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # Reuse dump_ledger shape for YAML stability.
-        path.write_text(dump_ledger(doc), encoding="utf-8")
-        written[month] = str(path)
+    written = _write_month_archives(buckets, out_dir, ledger)
 
     active_text = dump_ledger(ledger)
     active_path = out_dir / "pr-lifecycle-ledger.yaml"
@@ -193,42 +203,56 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
         plan = plan_archive(ledger, after_days=after_days)
         plan["dry_run"] = not apply
         if not apply:
-            if json_out:
-                print(json.dumps(plan, indent=2, sort_keys=True))
-            else:
-                print(f"dry_run=true selected_count={plan['selected_count']}")
-                print(
-                    f"active_ledger_bytes_preview={plan['active_ledger_bytes_preview']}"
-                )
-                for month, meta in plan["months"].items():
-                    print(
-                        f"archive month={month} count={meta['count']} path={meta['path']}"
-                    )
+            _emit_plan(plan, json_out)
             return 0
-        result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
-        # CAS the active ledger only via existing helper (single-file CAS today).
-        cas_result = cas.run_commit(
-            Path(result["active_path"]),
-            "archive: move TERMINAL items older than "
-            f"{after_days}d into archive/YYYY-MM.yaml",
-            bump_revision=False,
-        )
-        payload = {**plan, "apply_result": result, "cas": cas_result}
-        if result["active_bytes"] > ACTIVE_LEDGER_MAX_BYTES:
-            payload["warning"] = "active ledger still exceeds 1MB after archive"
-        if json_out:
-            print(json.dumps(payload, indent=2, sort_keys=True))
-        else:
-            print(f"dry_run=false selected_count={result['selected_count']}")
-            print(f"active_bytes={result['active_bytes']}")
-            for path in result["archives"].values():
-                print(f"wrote {path}")
-            print(
-                "NOTE: archive/*.yaml files are written locally in this run; "
-                "multi-file data-branch CAS for archives may need a follow-up "
-                "if cas.run_commit only replaces the primary ledger path."
-            )
+        _run_apply(ledger, plan, tmp, after_days, json_out)
     return 0
+
+
+def _emit_plan(plan: dict[str, Any], json_out: bool) -> None:
+    if json_out:
+        print(json.dumps(plan, indent=2, sort_keys=True))
+        return
+    print(f"dry_run=true selected_count={plan['selected_count']}")
+    print(f"active_ledger_bytes_preview={plan['active_ledger_bytes_preview']}")
+    for month, meta in plan["months"].items():
+        print(f"archive month={month} count={meta['count']} path={meta['path']}")
+
+
+def _emit_apply(payload: dict[str, Any], result: dict[str, Any], json_out: bool) -> None:
+    if json_out:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return
+    print(f"dry_run=false selected_count={result['selected_count']}")
+    print(f"active_bytes={result['active_bytes']}")
+    for path in result["archives"].values():
+        print(f"wrote {path}")
+    print(
+        "NOTE: archive/*.yaml files are written locally in this run; "
+        "multi-file data-branch CAS for archives may need a follow-up "
+        "if cas.run_commit only replaces the primary ledger path."
+    )
+
+
+def _run_apply(
+    ledger: dict[str, Any],
+    plan: dict[str, Any],
+    tmp: str,
+    after_days: int,
+    json_out: bool,
+) -> None:
+    result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
+    # CAS the active ledger only via existing helper (single-file CAS today).
+    cas_result = cas.run_commit(
+        Path(result["active_path"]),
+        "archive: move TERMINAL items older than "
+        f"{after_days}d into archive/YYYY-MM.yaml",
+        bump_revision=False,
+    )
+    payload = {**plan, "apply_result": result, "cas": cas_result}
+    if result["active_bytes"] > ACTIVE_LEDGER_MAX_BYTES:
+        payload["warning"] = "active ledger still exceeds 1MB after archive"
+    _emit_apply(payload, result, json_out)
 
 
 def build_parser() -> argparse.ArgumentParser:

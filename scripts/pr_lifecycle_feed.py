@@ -92,6 +92,42 @@ def minimal_work_item(item: dict[str, Any], *, reason: str) -> dict[str, Any]:
     }
 
 
+def _collect_work_items(
+    ledger: dict[str, Any], *, expiry: int, clock: datetime, limit: int | None
+) -> list[dict[str, Any]]:
+    work_items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in ledger.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        key = str(item.get("key") or "")
+        if not key or key in seen:
+            continue
+        if health.is_salvage_eligible(item):
+            reason = "SALVAGE_ELIGIBLE"
+        elif is_expired_packet_salvage(item, expiry_days=expiry, now=clock):
+            reason = "EXPIRED_PACKET_OR_CLOSE_STALE"
+        else:
+            continue
+        work_items.append(minimal_work_item(item, reason=reason))
+        seen.add(key)
+        if limit is not None and len(work_items) >= limit:
+            break
+    return work_items
+
+
+def _expired_only_stock(
+    ledger: dict[str, Any], *, expiry: int, clock: datetime
+) -> int:
+    return sum(
+        1
+        for item in ledger.get("items") or []
+        if isinstance(item, dict)
+        and is_expired_packet_salvage(item, expiry_days=expiry, now=clock)
+        and not health.is_salvage_eligible(item)
+    )
+
+
 def build_feed(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -102,32 +138,11 @@ def build_feed(
     clock = now or _utc_now()
     expiry = _expiry_days(config)
     report = health.summarize(ledger, now=clock)
-    work_items: list[dict[str, Any]] = []
-    seen: set[str] = set()
-
-    for item in ledger.get("items") or []:
-        if not isinstance(item, dict):
-            continue
-        key = str(item.get("key") or "")
-        if not key or key in seen:
-            continue
-        if health.is_salvage_eligible(item):
-            work_items.append(minimal_work_item(item, reason="SALVAGE_ELIGIBLE"))
-            seen.add(key)
-        elif is_expired_packet_salvage(item, expiry_days=expiry, now=clock):
-            work_items.append(
-                minimal_work_item(item, reason="EXPIRED_PACKET_OR_CLOSE_STALE")
-            )
-            seen.add(key)
-        if limit is not None and len(work_items) >= limit:
-            break
-
-    eligible_stock = report.salvage_eligible_count + sum(
-        1
-        for item in ledger.get("items") or []
-        if isinstance(item, dict)
-        and is_expired_packet_salvage(item, expiry_days=expiry, now=clock)
-        and not health.is_salvage_eligible(item)
+    work_items = _collect_work_items(
+        ledger, expiry=expiry, clock=clock, limit=limit
+    )
+    eligible_stock = report.salvage_eligible_count + _expired_only_stock(
+        ledger, expiry=expiry, clock=clock
     )
     return {
         "generated_at_utc": clock.strftime("%Y-%m-%dT%H:%M:%SZ"),

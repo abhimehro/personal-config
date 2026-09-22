@@ -95,28 +95,7 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     return (now - stamp).total_seconds() / 86400.0
 
 
-def classify_item(
-    item: dict[str, Any],
-    live: dict[str, Any] | None,
-    *,
-    expiry_days: int,
-    now: datetime,
-) -> dict[str, Any] | None:
-    """Return a proposed action, or None when no change is needed."""
-    state = item.get("lifecycle_state")
-    if state == "TERMINAL":
-        return None
-    key = str(item.get("key") or "")
-    if live is None:
-        return {
-            "action": "LIVE_LOOKUP_FAILED",
-            "key": key,
-            "reason": "gh pr view failed; skip mutation",
-        }
-    live_state = str(live.get("state") or "").upper()
-    live_head = str(live.get("headRefOid") or "")
-    ledger_head = str(item.get("head_sha") or "")
-
+def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
     if live_state == "MERGED":
         return {
             "action": "TERMINAL_MERGED",
@@ -133,35 +112,78 @@ def classify_item(
             "disposition": "CLOSED_NOOP",
             "reason": "live PR state=CLOSED (not merged)",
         }
-    if live_head and ledger_head and live_head.lower() != ledger_head.lower():
-        return {
-            "action": "SHA_DRIFT_REINTAKE",
-            "key": key,
-            "to_state": "STAGE1_INTAKE",
-            "disposition": None,
-            "reason": f"head drift ledger={ledger_head[:12]} live={live_head[:12]}",
-            "live_head_sha": live_head,
-        }
-    if (
-        state == "WAITING_HUMAN"
+    return None
+
+
+def _classify_sha_drift(
+    item: dict[str, Any], live_head: str, key: str
+) -> dict[str, Any] | None:
+    ledger_head = str(item.get("head_sha") or "")
+    if not live_head or not ledger_head:
+        return None
+    if live_head.lower() == ledger_head.lower():
+        return None
+    return {
+        "action": "SHA_DRIFT_REINTAKE",
+        "key": key,
+        "to_state": "STAGE1_INTAKE",
+        "disposition": None,
+        "reason": f"head drift ledger={ledger_head[:12]} live={live_head[:12]}",
+        "live_head_sha": live_head,
+    }
+
+
+def _classify_stale(
+    item: dict[str, Any], *, expiry_days: int, now: datetime, key: str
+) -> dict[str, Any] | None:
+    stale_candidate = (
+        item.get("lifecycle_state") == "WAITING_HUMAN"
         and item.get("author_type") == "BOT"
         and item.get("guardrail_outcome") != "REVIEW_SECURITY"
-    ):
-        age = _item_age_days(item, now)
-        if age is not None and age > expiry_days:
-            return {
-                "action": "CLOSE_STALE",
-                "key": key,
-                "to_state": "TERMINAL",
-                "disposition": "CLOSED_STALE",
-                "reason": (
-                    f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d "
-                    f"> {expiry_days}d"
-                ),
-                "repository": item.get("repository"),
-                "pr": item.get("pr"),
-            }
-    return None
+    )
+    if not stale_candidate:
+        return None
+    age = _item_age_days(item, now)
+    if age is None or age <= expiry_days:
+        return None
+    return {
+        "action": "CLOSE_STALE",
+        "key": key,
+        "to_state": "TERMINAL",
+        "disposition": "CLOSED_STALE",
+        "reason": (
+            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d "
+            f"> {expiry_days}d"
+        ),
+        "repository": item.get("repository"),
+        "pr": item.get("pr"),
+    }
+
+
+def classify_item(
+    item: dict[str, Any],
+    live: dict[str, Any] | None,
+    *,
+    expiry_days: int,
+    now: datetime,
+) -> dict[str, Any] | None:
+    """Return a proposed action, or None when no change is needed."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return None
+    key = str(item.get("key") or "")
+    if live is None:
+        return {
+            "action": "LIVE_LOOKUP_FAILED",
+            "key": key,
+            "reason": "gh pr view failed; skip mutation",
+        }
+    live_state = str(live.get("state") or "").upper()
+    live_head = str(live.get("headRefOid") or "")
+    return (
+        _classify_live_terminal(live_state, key)
+        or _classify_sha_drift(item, live_head, key)
+        or _classify_stale(item, expiry_days=expiry_days, now=now, key=key)
+    )
 
 
 def _event_id(prefix: str) -> str:
@@ -171,12 +193,13 @@ def _event_id(prefix: str) -> str:
 
 def build_transition_event(
     item: dict[str, Any],
+    action: dict[str, Any],
     *,
-    to_state: str,
-    disposition: str | None,
-    reason: str,
     kind: str,
 ) -> dict[str, Any]:
+    to_state = action["to_state"]
+    disposition = action.get("disposition")
+    reason = str(action.get("reason") or "reconcile")
     event_id = _event_id("reconcile")
     item_key = item["key"]
     from_state = item["lifecycle_state"]
@@ -216,13 +239,7 @@ def apply_action_to_ledger(
     to_state = action["to_state"]
     disposition = action.get("disposition")
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
-    event = build_transition_event(
-        item,
-        to_state=to_state,
-        disposition=disposition,
-        reason=str(action.get("reason") or "reconcile"),
-        kind=kind,
-    )
+    event = build_transition_event(item, action, kind=kind)
     projected = {
         "revision": int(item["revision"]),
         "lifecycle_state": item["lifecycle_state"],
@@ -298,19 +315,26 @@ def collect_actions(
     expiry = _expiry_days(config)
     actions: list[dict[str, Any]] = []
     for item in ledger.get("items") or []:
-        if not isinstance(item, dict):
+        action = _action_for_item(item, expiry, clock)
+        if action is None:
             continue
-        if item.get("lifecycle_state") == "TERMINAL":
-            continue
-        repo = str(item.get("repository") or "")
-        pr = item.get("pr")
-        live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-        action = classify_item(item, live, expiry_days=expiry, now=clock)
-        if action is not None:
-            actions.append(action)
-            if limit is not None and len(actions) >= limit:
-                break
+        actions.append(action)
+        if limit is not None and len(actions) >= limit:
+            break
     return actions
+
+
+def _action_for_item(
+    item: Any, expiry: int, clock: datetime
+) -> dict[str, Any] | None:
+    if not isinstance(item, dict):
+        return None
+    if item.get("lifecycle_state") == "TERMINAL":
+        return None
+    repo = str(item.get("repository") or "")
+    pr = item.get("pr")
+    live = _gh_pr_view(repo, int(pr)) if repo and pr else None
+    return classify_item(item, live, expiry_days=expiry, now=clock)
 
 
 def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
