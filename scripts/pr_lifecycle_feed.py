@@ -88,6 +88,11 @@ def _reason_for_item(
     return None
 
 
+def _dict_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    """Ledger items, restricted to dict entries."""
+    return [i for i in ledger.get("items") or [] if isinstance(i, dict)]
+
+
 def _queued_stage2_work_items(
     ledger: dict[str, Any], clock: datetime
 ) -> tuple[list[dict[str, Any]], set[str]]:
@@ -97,7 +102,8 @@ def _queued_stage2_work_items(
     for wi in ledger.get("stage2_work_items") or []:
         if not isinstance(wi, dict) or not health.work_item_is_usable(wi, clock):
             continue
-        key = str(wi.get("source_item_key") or wi.get("work_item_id") or "")
+        # Usable WIs always carry a non-empty source_item_key (required field).
+        key = str(wi["source_item_key"])
         work_items.append(
             {**wi, "source_key": key, "reason": "QUEUED_STAGE2_WORK_ITEM"}
         )
@@ -110,7 +116,7 @@ def _collect_work_items(
 ) -> list[dict[str, Any]]:
     """Queued stage2_work_items first, then unique salvage items, in order."""
     work_items, seen = _queued_stage2_work_items(ledger, clock)
-    for item in ledger.get("items") or []:
+    for item in _dict_items(ledger):
         if limit is not None and len(work_items) >= limit:
             break
         wi = _item_work_entry(item, seen, expiry=expiry, clock=clock)
@@ -120,10 +126,8 @@ def _collect_work_items(
 
 
 def _item_work_entry(
-    item: Any, seen: set[str], *, expiry: int, clock: datetime
+    item: dict[str, Any], seen: set[str], *, expiry: int, clock: datetime
 ) -> dict[str, Any] | None:
-    if not isinstance(item, dict):
-        return None
     key = str(item.get("key") or "")
     if not key or key in seen:
         return None
@@ -135,13 +139,12 @@ def _item_work_entry(
 
 
 def _expired_only_stock(ledger: dict[str, Any], *, expiry: int, clock: datetime) -> int:
-    """Count expired packets not already considered salvage-eligible."""
+    """Count items whose only feed reason is packet expiry."""
     return sum(
         1
-        for item in ledger.get("items") or []
-        if isinstance(item, dict)
-        and is_expired_packet_salvage(item, expiry_days=expiry, now=clock)
-        and not health.is_salvage_eligible(item)
+        for item in _dict_items(ledger)
+        if _reason_for_item(item, expiry=expiry, clock=clock)
+        == "EXPIRED_PACKET_OR_CLOSE_STALE"
     )
 
 
@@ -178,6 +181,15 @@ def build_feed(
     }
 
 
+def _print_feed_lines(work_items: list[dict[str, Any]]) -> None:
+    for item in work_items:
+        paths = item.get("paths") or item.get("allowed_paths") or []
+        print(
+            f"wi source_key={item.get('source_key')} "
+            f"reason={item.get('reason')} paths={len(paths)}"
+        )
+
+
 def run_feed(*, limit: int | None, json_out: bool) -> int:
     """Fetch the runtime ledger, emit its feed, and return a feed exit code."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
@@ -193,12 +205,7 @@ def run_feed(*, limit: int | None, json_out: bool) -> int:
         print(f"reason={payload['reason']}")
         print(f"work_item_count={payload['work_item_count']}")
         print(f"eligible_stock_count={payload['eligible_stock_count']}")
-        for item in payload["work_items"]:
-            paths = item.get("paths") or item.get("allowed_paths") or []
-            print(
-                f"wi source_key={item.get('source_key')} "
-                f"reason={item.get('reason')} paths={len(paths)}"
-            )
+        _print_feed_lines(payload["work_items"])
     if payload["empty_with_stock"]:
         return EXIT_EMPTY_WITH_STOCK
     return EXIT_OK
