@@ -46,4 +46,5 @@ initialize: |
   /opt/homebrew/bin/python3.12 -m venv "$HOME/.venv-pc"
   echo "PATH=$HOME/.venv-pc/bin:$PATH" >> $ENVRC
 maintenance: |
+  export PATH="$HOME/.venv-pc/bin:$PATH"
   "$HOME/.venv-pc/bin/pip" install -r requirements.txt ruff==0.16.8 bandit black radon
