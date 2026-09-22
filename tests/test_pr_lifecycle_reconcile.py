@@ -312,7 +312,7 @@ class ReconcileHelpersTests(unittest.TestCase):
     def test_close_stale_github_validates_identity_and_runs_all_steps(self):
         self.assertEqual(
             reconcile._close_stale_github({}),
-            ["skip github close: missing repository/pr"],
+            (["skip github close: missing repository/pr"], False),
         )
         completed = [
             types.SimpleNamespace(returncode=0),
@@ -322,10 +322,11 @@ class ReconcileHelpersTests(unittest.TestCase):
         with mock.patch.object(
             reconcile.subprocess, "run", side_effect=completed
         ) as command:
-            steps = reconcile._close_stale_github(
+            steps, confirmed = reconcile._close_stale_github(
                 {"repository": "owner/repo", "pr": 7}
             )
         self.assertEqual(steps, ["comment exit=0", "label exit=1", "close exit=2"])
+        self.assertFalse(confirmed)
         self.assertEqual(
             [call.args[0][2] for call in command.call_args_list],
             ["comment", "edit", "close"],

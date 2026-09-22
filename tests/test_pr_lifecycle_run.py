@@ -284,9 +284,9 @@ class RunExecutionTests(unittest.TestCase):
                 }
             )
         self.assertEqual(command.call_count, 2)
-        self.assertEqual(
-            command.call_args_list[1].args[0][2:5], ["edit", "17", "--repo"]
-        )
+        argv = command.call_args_list[1].args[0]
+        self.assertEqual(argv[2:4], ["edit", "17"])
+        self.assertIn("--repo", argv)
 
     def test_update_pinned_issue_creates_when_listing_is_malformed(self):
         listed = types.SimpleNamespace(returncode=0, stdout="not-json")

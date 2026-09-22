@@ -121,18 +121,19 @@ def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
     return None
 
 
+def _field_drift(ledger_val: object, live_val: object) -> bool:
+    ledger = str(ledger_val or "")
+    live = str(live_val or "")
+    return bool(live and ledger and live.lower() != ledger.lower())
+
+
 def _drift_fields(item: dict[str, Any], live: dict[str, Any]) -> tuple[str, str, bool]:
     live_head = str(live.get("headRefOid") or "")
     live_base = str(live.get("baseRefOid") or "")
-    ledger_head = str(item.get("head_sha") or "")
-    ledger_base = str(item.get("base_sha") or "")
-    head_drift = bool(
-        live_head and ledger_head and live_head.lower() != ledger_head.lower()
+    drifted = _field_drift(item.get("head_sha"), live_head) or _field_drift(
+        item.get("base_sha"), live_base
     )
-    base_drift = bool(
-        live_base and ledger_base and live_base.lower() != ledger_base.lower()
-    )
-    return live_head, live_base, head_drift or base_drift
+    return live_head, live_base, drifted
 
 
 def _classify_sha_drift(
@@ -431,6 +432,15 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
     return 0
 
 
+def _apply_close_stale(action: dict[str, Any]) -> bool:
+    steps, closed = _close_stale_github(action)
+    action["github_steps"] = steps
+    if not closed:
+        # Failed/unconfirmed closes must not write terminal records.
+        action["close_unconfirmed"] = True
+    return closed
+
+
 def _apply_actions(
     ledger: dict[str, Any], actions: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -446,13 +456,8 @@ def _apply_actions(
         item = items_by_key.get(action["key"])
         if item is None:
             continue
-        if action["action"] == "CLOSE_STALE":
-            steps, closed = _close_stale_github(action)
-            action["github_steps"] = steps
-            if not closed:
-                # Failed/unconfirmed closes must not write terminal records.
-                action["close_unconfirmed"] = True
-                continue
+        if action["action"] == "CLOSE_STALE" and not _apply_close_stale(action):
+            continue
         event = apply_action_to_ledger(ledger, item, action)
         applied.append({"action": action, "event_id": event["event_id"]})
     return applied

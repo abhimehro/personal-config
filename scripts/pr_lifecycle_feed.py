@@ -132,17 +132,25 @@ def _collect_work_items(
     for item in ledger.get("items") or []:
         if limit is not None and len(work_items) >= limit:
             break
-        if not isinstance(item, dict):
-            continue
-        key = str(item.get("key") or "")
-        reason = _reason_for_item(item, expiry=expiry, clock=clock)
-        if not key or key in seen or reason is None:
-            continue
-        work_items.append(minimal_work_item(item, reason=reason))
-        seen.add(key)
+        wi = _item_work_entry(item, seen, expiry=expiry, clock=clock)
+        if wi is not None:
+            work_items.append(wi)
     if limit is not None:
         return work_items[:limit]
     return work_items
+
+
+def _item_work_entry(
+    item: Any, seen: set[str], *, expiry: int, clock: datetime
+) -> dict[str, Any] | None:
+    if not isinstance(item, dict):
+        return None
+    key = str(item.get("key") or "")
+    reason = _reason_for_item(item, expiry=expiry, clock=clock)
+    if not key or key in seen or reason is None:
+        return None
+    seen.add(key)
+    return minimal_work_item(item, reason=reason)
 
 
 def _expired_only_stock(ledger: dict[str, Any], *, expiry: int, clock: datetime) -> int:
