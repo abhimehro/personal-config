@@ -65,9 +65,15 @@ def identity_policy_from_config(config: Mapping[str, Any]) -> IdentityPolicy:
         bot_authors=tuple(str(item) for item in bots),
         maintainer_token_logins=_require_str_tuple(identity, "maintainer_token_logins"),
         required_independent_signals=required,
-        branch_prefixes=_require_str_tuple(identity, "branch_prefixes"),
-        title_keywords=_require_str_tuple(identity, "title_keywords"),
-        body_markers=_require_str_tuple(identity, "body_markers"),
+        branch_prefixes=tuple(
+            item.lower() for item in _require_str_tuple(identity, "branch_prefixes") if item
+        ),
+        title_keywords=tuple(
+            item.lower() for item in _require_str_tuple(identity, "title_keywords") if item
+        ),
+        body_markers=tuple(
+            item.lower() for item in _require_str_tuple(identity, "body_markers") if item
+        ),
         bot_commit_email_suffixes=_require_str_tuple(
             identity, "bot_commit_email_suffixes"
         ),
@@ -264,15 +270,22 @@ def _branch_name(pr: Mapping[str, Any]) -> str:
     return str(ref) if isinstance(ref, str) else ""
 
 
-def _prefix_match(value: str, prefixes: Sequence[str]) -> bool:
+def _prefix_match(value: str, prefixes: Sequence[str] | tuple[str, ...]) -> bool:
     # NOTE: Jules/Bolt/Palette/Sentinel often use hyphen prefixes (`jules-`)
     # rather than slash (`jules/`). Matching is startswith; both forms must be
     # versioned in config. Ordinary `feat/` / `fix/` are not bot prefixes.
+    # ⚡ Bolt Optimization: Use str.startswith(tuple) for native C-level prefix matching
+    if isinstance(prefixes, tuple):
+        return value.startswith(prefixes)
     return any(value.startswith(prefix.lower()) for prefix in prefixes if prefix)
 
 
-def _keyword_match(value: str, keywords: Sequence[str]) -> bool:
-    return any(keyword.lower() in value for keyword in keywords if keyword)
+def _keyword_match(value: str, keywords: Sequence[str] | tuple[str, ...]) -> bool:
+    # ⚡ Bolt Optimization: Loop over pre-lowered keywords directly to avoid generator allocation and repeated .lower()
+    for keyword in keywords:
+        if keyword and keyword in value:
+            return True
+    return False
 
 
 def _allowlisted_commenter(pr: Mapping[str, Any], policy: IdentityPolicy) -> bool:
