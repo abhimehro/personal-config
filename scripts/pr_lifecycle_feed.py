@@ -146,8 +146,10 @@ def _item_work_entry(
     if not isinstance(item, dict):
         return None
     key = str(item.get("key") or "")
+    if not key or key in seen:
+        return None
     reason = _reason_for_item(item, expiry=expiry, clock=clock)
-    if not key or key in seen or reason is None:
+    if reason is None:
         return None
     seen.add(key)
     return minimal_work_item(item, reason=reason)

@@ -453,14 +453,25 @@ def _apply_actions(
     for action in actions:
         if action["action"] == "LIVE_LOOKUP_FAILED":
             continue
-        item = items_by_key.get(action["key"])
-        if item is None:
-            continue
-        if action["action"] == "CLOSE_STALE" and not _apply_close_stale(action):
-            continue
-        event = apply_action_to_ledger(ledger, item, action)
-        applied.append({"action": action, "event_id": event["event_id"]})
+        result = _apply_one(ledger, action, items_by_key)
+        if result is not None:
+            applied.append(result)
     return applied
+
+
+def _apply_one(
+    ledger: dict[str, Any],
+    action: dict[str, Any],
+    items_by_key: dict[Any, dict[str, Any]],
+) -> dict[str, Any] | None:
+    item = items_by_key.get(action["key"])
+    if item is None:
+        return None
+    if action["action"] == "CLOSE_STALE":
+        if not _apply_close_stale(action):
+            return None
+    event = apply_action_to_ledger(ledger, item, action)
+    return {"action": action, "event_id": event["event_id"]}
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:

@@ -76,119 +76,84 @@ def _item(**overrides):
     return base
 
 
+_OPEN_LIVE = {"state": "OPEN", "headRefOid": "a" * 40}
+_DEFAULT = object()
+
+
+def _classify(item_overrides=None, live=_DEFAULT):
+    return reconcile.classify_item(
+        _item(**(item_overrides or {})),
+        _OPEN_LIVE if live is _DEFAULT else live,
+        expiry_days=7,
+        now=NOW,
+    )
+
+
 class ClassifyItemTests(unittest.TestCase):
     def test_merged_goes_terminal(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="STAGE1_INTAKE"),
+        action = _classify(
+            {"lifecycle_state": "STAGE1_INTAKE"},
             {"state": "MERGED", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
         )
         self.assertEqual(action["action"], "TERMINAL_MERGED")
         self.assertEqual(action["disposition"], "MERGED_ROUTINE")
 
     def test_closed_goes_terminal(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="STAGE2_QUEUED"),
+        action = _classify(
+            {"lifecycle_state": "STAGE2_QUEUED"},
             {"state": "CLOSED", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
         )
         self.assertEqual(action["action"], "TERMINAL_CLOSED")
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
     def test_sha_drift_reintake(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="STAGE2_QUEUED"),
+        action = _classify(
+            {"lifecycle_state": "STAGE2_QUEUED"},
             {"state": "OPEN", "headRefOid": "c" * 40},
-            expiry_days=7,
-            now=NOW,
         )
         self.assertEqual(action["action"], "SHA_DRIFT_REINTAKE")
         self.assertEqual(action["to_state"], "STAGE1_INTAKE")
 
     def test_stale_waiting_human_bot(self):
-        action = reconcile.classify_item(
-            _item(),
-            {"state": "OPEN", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
-        )
+        action = _classify()
         self.assertEqual(action["action"], "CLOSE_STALE")
         self.assertEqual(action["disposition"], "CLOSED_STALE")
 
     def test_review_security_not_stale_closed(self):
-        action = reconcile.classify_item(
-            _item(guardrail_outcome="REVIEW_SECURITY"),
-            {"state": "OPEN", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
-        )
-        self.assertIsNone(action)
+        self.assertIsNone(_classify({"guardrail_outcome": "REVIEW_SECURITY"}))
 
     def test_fresh_waiting_human_not_stale(self):
-        action = reconcile.classify_item(
-            _item(
-                updated_at_utc=(NOW - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            ),
-            {"state": "OPEN", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
-        )
-        self.assertIsNone(action)
+        stamp = (NOW - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.assertIsNone(_classify({"updated_at_utc": stamp}))
 
     def test_terminal_item_is_ignored_even_when_lookup_failed(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="TERMINAL"),
-            None,
-            expiry_days=7,
-            now=NOW,
-        )
-        self.assertIsNone(action)
+        self.assertIsNone(_classify({"lifecycle_state": "TERMINAL"}, None))
 
     def test_lookup_failure_is_reported_without_mutation_fields(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="STAGE1_INTAKE"),
-            None,
-            expiry_days=7,
-            now=NOW,
-        )
+        action = _classify({"lifecycle_state": "STAGE1_INTAKE"}, None)
         self.assertEqual(action["action"], "LIVE_LOOKUP_FAILED")
         self.assertNotIn("to_state", action)
 
     def test_live_terminal_state_takes_precedence_over_sha_drift(self):
-        action = reconcile.classify_item(
-            _item(lifecycle_state="STAGE2_QUEUED"),
+        action = _classify(
+            {"lifecycle_state": "STAGE2_QUEUED"},
             {"state": "merged", "headRefOid": "c" * 40},
-            expiry_days=7,
-            now=NOW,
         )
         self.assertEqual(action["action"], "TERMINAL_MERGED")
 
     def test_sha_comparison_is_case_insensitive(self):
-        action = reconcile.classify_item(
-            _item(
-                lifecycle_state="STAGE2_QUEUED",
-                head_sha="abcdef" * 6 + "abcd",
-            ),
+        action = _classify(
+            {
+                "lifecycle_state": "STAGE2_QUEUED",
+                "head_sha": "abcdef" * 6 + "abcd",
+            },
             {"state": "OPEN", "headRefOid": "ABCDEF" * 6 + "ABCD"},
-            expiry_days=7,
-            now=NOW,
         )
         self.assertIsNone(action)
 
     def test_stale_cutoff_is_exclusive(self):
-        action = reconcile.classify_item(
-            _item(
-                updated_at_utc=(NOW - timedelta(days=7)).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-            ),
-            {"state": "OPEN", "headRefOid": "a" * 40},
-            expiry_days=7,
-            now=NOW,
-        )
-        self.assertIsNone(action)
+        stamp = (NOW - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.assertIsNone(_classify({"updated_at_utc": stamp}))
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
@@ -199,13 +164,7 @@ class ClassifyItemTests(unittest.TestCase):
         )
         for overrides in cases:
             with self.subTest(overrides=overrides):
-                action = reconcile.classify_item(
-                    _item(**overrides),
-                    {"state": "OPEN", "headRefOid": "a" * 40},
-                    expiry_days=7,
-                    now=NOW,
-                )
-                self.assertIsNone(action)
+                self.assertIsNone(_classify(overrides))
 
 
 class ReconcileHelpersTests(unittest.TestCase):
