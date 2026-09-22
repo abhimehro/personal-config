@@ -93,7 +93,11 @@ class ClassifyItemTests(unittest.TestCase):
     def test_merged_goes_terminal(self):
         action = _classify(
             {"lifecycle_state": "STAGE1_INTAKE"},
-            {"state": "MERGED", "headRefOid": "a" * 40},
+            {
+                "state": "MERGED",
+                "headRefOid": "a" * 40,
+                "mergedBy": {"login": "someuser"},
+            },
         )
         self.assertEqual(action["action"], "TERMINAL_MERGED")
         self.assertEqual(action["disposition"], "MERGED_ROUTINE")
@@ -101,10 +105,14 @@ class ClassifyItemTests(unittest.TestCase):
     def test_closed_goes_terminal(self):
         action = _classify(
             {"lifecycle_state": "STAGE2_QUEUED"},
-            {"state": "CLOSED", "headRefOid": "a" * 40},
+            {
+                "state": "CLOSED",
+                "headRefOid": "a" * 40,
+                "labels": [{"name": "duplicate"}],
+            },
         )
         self.assertEqual(action["action"], "TERMINAL_CLOSED")
-        self.assertEqual(action["disposition"], "CLOSED_NOOP")
+        self.assertEqual(action["disposition"], "CLOSED_DUPLICATE")
 
     def test_sha_drift_reintake(self):
         action = _classify(
@@ -137,7 +145,11 @@ class ClassifyItemTests(unittest.TestCase):
     def test_live_terminal_state_takes_precedence_over_sha_drift(self):
         action = _classify(
             {"lifecycle_state": "STAGE2_QUEUED"},
-            {"state": "merged", "headRefOid": "c" * 40},
+            {
+                "state": "merged",
+                "headRefOid": "c" * 40,
+                "mergedBy": {"login": "someuser"},
+            },
         )
         self.assertEqual(action["action"], "TERMINAL_MERGED")
 
@@ -154,6 +166,83 @@ class ClassifyItemTests(unittest.TestCase):
     def test_stale_cutoff_is_exclusive(self):
         stamp = (NOW - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.assertIsNone(_classify({"updated_at_utc": stamp}))
+
+    def test_merged_stage3_owned_is_bounded_completion(self):
+        for overrides in (
+            {"lifecycle_state": "STAGE3_RECONCILIATION"},
+            {"lifecycle_state": "STAGE2_QUEUED", "current_owner": "stage3"},
+        ):
+            with self.subTest(overrides=overrides):
+                action = _classify(
+                    overrides,
+                    {
+                        "state": "MERGED",
+                        "headRefOid": "a" * 40,
+                        "mergedBy": {"login": "someuser"},
+                    },
+                )
+                self.assertEqual(action["disposition"], "MERGED_BOUNDED_COMPLETION")
+
+    def test_merged_without_merger_evidence_routes_to_stage3_pending(self):
+        action = _classify(
+            {"lifecycle_state": "WAITING_HUMAN"},
+            {"state": "MERGED", "headRefOid": "a" * 40},
+        )
+        self.assertEqual(action["action"], "TERMINAL_PENDING")
+        self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
+        self.assertIsNone(action["disposition"])
+        self.assertEqual(action["observed_state"], "MERGED")
+
+    def test_closed_label_dispositions(self):
+        cases = (
+            ("duplicate", "CLOSED_DUPLICATE"),
+            ("superseded", "CLOSED_SUPERSEDED"),
+            ("stale-auto-closed", "CLOSED_STALE"),
+            ("wontfix", "HUMAN_REJECTED"),
+            ("declined", "HUMAN_REJECTED"),
+        )
+        for label, expected in cases:
+            with self.subTest(label=label):
+                action = _classify(
+                    {"lifecycle_state": "STAGE2_QUEUED"},
+                    {
+                        "state": "CLOSED",
+                        "headRefOid": "a" * 40,
+                        "labels": [{"name": label}],
+                    },
+                )
+                self.assertEqual(action["action"], "TERMINAL_CLOSED")
+                self.assertEqual(action["disposition"], expected)
+
+    def test_closed_without_evidence_routes_to_stage3_pending(self):
+        for labels in (None, [], [{"name": "enhancement"}]):
+            with self.subTest(labels=labels):
+                live = {"state": "CLOSED", "headRefOid": "a" * 40}
+                if labels is not None:
+                    live["labels"] = labels
+                action = _classify({"lifecycle_state": "STAGE1_INTAKE"}, live)
+                self.assertEqual(action["action"], "TERMINAL_PENDING")
+                self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
+                self.assertIsNone(action["disposition"])
+
+    def test_pending_observed_stage3_item_notes_in_place(self):
+        action = _classify(
+            {"lifecycle_state": "STAGE3_RECONCILIATION"},
+            {"state": "CLOSED", "headRefOid": "a" * 40},
+        )
+        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
+        self.assertNotIn("to_state", action)
+        self.assertEqual(action["observed_state"], "CLOSED")
+
+    def test_repeat_reconcile_does_not_reclassify_pending_observation(self):
+        action = _classify(
+            {
+                "lifecycle_state": "STAGE3_RECONCILIATION",
+                "next_action": "Observed CLOSED unclassified: no label",
+            },
+            {"state": "CLOSED", "headRefOid": "a" * 40},
+        )
+        self.assertIsNone(action)
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
@@ -243,6 +332,60 @@ class ReconcileHelpersTests(unittest.TestCase):
         self.assertIn("c" * 40, item["next_action"])
         self.assertEqual(ledger["ledger_revision"], 5)
         self.assertIs(ledger["events"][0], event)
+
+    def test_apply_terminal_pending_handoffs_to_stage3_with_marker(self):
+        ledger = {"ledger_revision": 4, "events": []}
+        item = _item(lifecycle_state="WAITING_HUMAN", current_owner="human")
+        action = {
+            "action": "TERMINAL_PENDING",
+            "to_state": "STAGE3_RECONCILIATION",
+            "disposition": None,
+            "observed_state": "CLOSED",
+            "reason": "closed without classifying evidence",
+        }
+
+        def apply_transition(event, projected):
+            projected.update(
+                revision=event["resulting_item_revision"],
+                lifecycle_state=event["to_state"],
+                current_owner=event["to_owner"],
+                next_owner=event["next_owner"],
+                terminal_disposition=event["terminal_disposition"],
+            )
+            projected["handoffs"].append(event["event_id"])
+
+        with mock.patch.object(
+            reconcile.ledger_mod, "apply_transition", side_effect=apply_transition
+        ):
+            with mock.patch.object(reconcile, "_event_id", return_value="evt-p"):
+                with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+                    event = reconcile.apply_action_to_ledger(ledger, item, action)
+
+        self.assertEqual(event["kind"], "HANDOFF")
+        self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
+        self.assertEqual(item["current_owner"], "stage3")
+        self.assertIsNone(item["terminal_disposition"])
+        self.assertIn("Observed CLOSED unclassified", item["next_action"])
+        self.assertEqual(ledger["events"], [event])
+
+    def test_apply_terminal_observed_notes_in_place_without_event(self):
+        ledger = {"ledger_revision": 4, "events": []}
+        item = _item(
+            lifecycle_state="STAGE3_RECONCILIATION", current_owner="stage3"
+        )
+        action = {
+            "action": "TERMINAL_OBSERVED",
+            "observed_state": "MERGED",
+            "reason": "Observed MERGED unclassified: mergedBy unavailable",
+        }
+        with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+            result = reconcile.apply_action_to_ledger(ledger, item, action)
+        self.assertIsNone(result["event_id"])
+        self.assertEqual(item["revision"], 2)
+        self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
+        self.assertIn("Observed MERGED unclassified", item["next_action"])
+        self.assertEqual(ledger["events"], [])
+        self.assertEqual(ledger["ledger_revision"], 5)
 
     def test_gh_pr_view_handles_success_bad_json_and_command_failure(self):
         success = types.SimpleNamespace(

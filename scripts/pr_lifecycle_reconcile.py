@@ -75,7 +75,7 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
         "--repo",
         repo,
         "--json",
-        "state,mergedAt,closedAt,headRefOid,baseRefOid,url",
+        "state,mergedAt,closedAt,headRefOid,baseRefOid,url,mergedBy,labels",
     ]
     try:
         completed = subprocess.run(
@@ -100,24 +100,133 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     return (now - stamp).total_seconds() / 86400.0
 
 
-def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
-    """Return a terminal action for a merged or closed live PR."""
+# Only labels that make one disposition unambiguous evidence; anything else
+# leaves classification pending rather than guessing.
+_CLOSED_LABEL_DISPOSITIONS = {
+    "duplicate": "CLOSED_DUPLICATE",
+    "superseded": "CLOSED_SUPERSEDED",
+    STALE_LABEL: "CLOSED_STALE",
+    "wontfix": "HUMAN_REJECTED",
+    "declined": "HUMAN_REJECTED",
+}
+
+
+def _label_names(live: dict[str, Any]) -> list[str]:
+    """Sorted label names from a live PR payload."""
+    return sorted(
+        label["name"]
+        for label in live.get("labels") or []
+        if isinstance(label, dict) and isinstance(label.get("name"), str)
+    )
+
+
+def _terminal_action(
+    action_name: str,
+    key: str,
+    disposition: str,
+    reason: str,
+    evidence: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "action": action_name,
+        "key": key,
+        "to_state": "TERMINAL",
+        "disposition": disposition,
+        "reason": reason,
+        "evidence": evidence,
+    }
+
+
+def _classify_live_merge(
+    item: dict[str, Any], live: dict[str, Any], key: str
+) -> dict[str, Any] | None:
+    merger = str((live.get("mergedBy") or {}).get("login") or "")
+    if not merger:
+        return _pending_terminal(item, key, "MERGED", "mergedBy unavailable")
+    completion_owned = (
+        item.get("lifecycle_state") == "STAGE3_RECONCILIATION"
+        or item.get("current_owner") == "stage3"
+    )
+    disposition = (
+        "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
+    )
+    return _terminal_action(
+        "TERMINAL_MERGED",
+        key,
+        disposition,
+        f"live PR state=MERGED mergedBy={merger}",
+        {"mergedBy": merger},
+    )
+
+
+def _classify_live_close(
+    item: dict[str, Any], live: dict[str, Any], key: str
+) -> dict[str, Any] | None:
+    labels = _label_names(live)
+    disposition = next(
+        (
+            _CLOSED_LABEL_DISPOSITIONS[name]
+            for name in labels
+            if name in _CLOSED_LABEL_DISPOSITIONS
+        ),
+        None,
+    )
+    if disposition is None:
+        return _pending_terminal(
+            item, key, "CLOSED", "no disposition-bearing label"
+        )
+    return _terminal_action(
+        "TERMINAL_CLOSED",
+        key,
+        disposition,
+        f"live PR state=CLOSED labels={labels}",
+        {"labels": labels},
+    )
+
+
+def _pending_terminal(
+    item: dict[str, Any], key: str, observed: str, detail: str
+) -> dict[str, Any] | None:
+    """Observed a terminal live state without evidence to classify it.
+
+    Non-Stage-3 items route to Stage 3 for classification; an item already
+    Stage-3-owned gets an in-place observation note (same-state handoffs are
+    illegal). A prior identical observation is not re-emitted.
+    """
+    marker = f"Observed {observed} unclassified"
+    if marker in str(item.get("next_action") or ""):
+        return None
+    if item.get("lifecycle_state") != "STAGE3_RECONCILIATION":
+        return {
+            "action": "TERMINAL_PENDING",
+            "key": key,
+            "to_state": "STAGE3_RECONCILIATION",
+            "disposition": None,
+            "observed_state": observed,
+            "reason": (
+                f"live state={observed} without classifying evidence "
+                f"({detail}); route to Stage 3"
+            ),
+            "evidence": {"observed_state": observed, "detail": detail},
+        }
+    return {
+        "action": "TERMINAL_OBSERVED",
+        "key": key,
+        "observed_state": observed,
+        "reason": f"{marker}: {detail}",
+        "evidence": {"observed_state": observed, "detail": detail},
+    }
+
+
+def _classify_live_terminal(
+    item: dict[str, Any], live: dict[str, Any], key: str
+) -> dict[str, Any] | None:
+    """Return a terminal or pending action for a merged/closed live PR."""
+    live_state = str(live.get("state") or "").upper()
     if live_state == "MERGED":
-        return {
-            "action": "TERMINAL_MERGED",
-            "key": key,
-            "to_state": "TERMINAL",
-            "disposition": "MERGED_ROUTINE",
-            "reason": "live PR state=MERGED",
-        }
+        return _classify_live_merge(item, live, key)
     if live_state == "CLOSED":
-        return {
-            "action": "TERMINAL_CLOSED",
-            "key": key,
-            "to_state": "TERMINAL",
-            "disposition": "CLOSED_NOOP",
-            "reason": "live PR state=CLOSED (not merged)",
-        }
+        return _classify_live_close(item, live, key)
     return None
 
 
@@ -207,9 +316,8 @@ def classify_item(
             "key": key,
             "reason": "gh pr view failed; skip mutation",
         }
-    live_state = str(live.get("state") or "").upper()
     return (
-        _classify_live_terminal(live_state, key)
+        _classify_live_terminal(item, live, key)
         or _classify_sha_drift(item, live, key)
         or _classify_stale(item, expiry_days=expiry_days, now=now, key=key)
     )
@@ -288,6 +396,8 @@ def apply_action_to_ledger(
     """Apply an action in memory and return the appended transition event."""
     if action.get("action") == "REANCHOR_HEAD":
         return _reanchor_item(ledger, item, action)
+    if action.get("action") == "TERMINAL_OBSERVED":
+        return _note_observed_terminal(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -319,10 +429,26 @@ def apply_action_to_ledger(
         live_base = action.get("live_base_sha")
         if live_base:
             item["base_sha"] = live_base
+    if action.get("action") == "TERMINAL_PENDING":
+        item["next_action"] = (
+            f"Observed {action.get('observed_state')} unclassified; "
+            "Stage 3 classification required."
+        )
     events = ledger.setdefault("events", [])
     events.append(event)
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return event
+
+
+def _note_observed_terminal(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """In-place observation note for a Stage-3-owned unclassified terminal."""
+    item["revision"] = int(item.get("revision") or 0) + 1
+    item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["next_action"] = str(action.get("reason") or "Observed unclassified")
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
 
 
 def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
