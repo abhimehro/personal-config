@@ -36,10 +36,12 @@ DEFAULT_EXPIRY_DAYS = 7
 
 
 def _utc_now() -> datetime:
+    """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
 
 
 def _parse_utc(value: object) -> datetime | None:
+    """Parse a Z-suffixed timestamp as UTC, or return None if invalid."""
     if not isinstance(value, str) or not value.endswith("Z"):
         return None
     try:
@@ -51,6 +53,7 @@ def _parse_utc(value: object) -> datetime | None:
 
 
 def _expiry_days(config: dict[str, Any]) -> int:
+    """Return the configured positive packet expiry or the default."""
     lifecycle = config.get("lifecycle") or {}
     raw = lifecycle.get("packet_expiry_close_days", DEFAULT_EXPIRY_DAYS)
     if not isinstance(raw, int) or raw < 1:
@@ -95,6 +98,7 @@ def minimal_work_item(item: dict[str, Any], *, reason: str) -> dict[str, Any]:
 def _collect_work_items(
     ledger: dict[str, Any], *, expiry: int, clock: datetime, limit: int | None
 ) -> list[dict[str, Any]]:
+    """Collect unique salvage work items from the ledger in item order."""
     work_items: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in ledger.get("items") or []:
@@ -119,6 +123,7 @@ def _collect_work_items(
 def _expired_only_stock(
     ledger: dict[str, Any], *, expiry: int, clock: datetime
 ) -> int:
+    """Count expired packets not already considered salvage-eligible."""
     return sum(
         1
         for item in ledger.get("items") or []
@@ -135,6 +140,7 @@ def build_feed(
     now: datetime | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
+    """Build the Stage 2 intake feed and its empty-stock diagnostic."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
     report = health.summarize(ledger, now=clock)
@@ -161,6 +167,7 @@ def build_feed(
 
 
 def run_feed(*, limit: int | None, json_out: bool) -> int:
+    """Fetch the runtime ledger, emit its feed, and return a feed exit code."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-feed-") as tmp:
@@ -185,6 +192,7 @@ def run_feed(*, limit: int | None, json_out: bool) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the Stage 2 feed command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--json", action="store_true")
@@ -192,6 +200,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the feed CLI, mapping expected failures to ``EXIT_ERROR``."""
     args = build_parser().parse_args(argv)
     try:
         return run_feed(limit=args.limit, json_out=args.json)

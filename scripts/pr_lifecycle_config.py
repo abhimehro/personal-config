@@ -21,6 +21,7 @@ from sync_cursor_export_prompts import (
 
 
 def validate_config(config: dict[str, Any]) -> None:
+    """Validate required lifecycle settings and reject contract drift."""
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -372,6 +373,7 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
+    """Require the runtime continuity markers appropriate to a named prompt."""
     normalized = " ".join(content.split())
     required = {"docs/automated-pr-lifecycle.md"}
     if name == "daily-pr-completion.calibration.md":

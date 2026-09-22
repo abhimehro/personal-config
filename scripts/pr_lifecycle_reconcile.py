@@ -40,10 +40,12 @@ STALE_COMMENT = (
 
 
 def _utc_now() -> datetime:
+    """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
 
 
 def _parse_utc(value: object) -> datetime | None:
+    """Parse a Z-suffixed timestamp as UTC, or return None if invalid."""
     if not isinstance(value, str) or not value.endswith("Z"):
         return None
     try:
@@ -55,6 +57,7 @@ def _parse_utc(value: object) -> datetime | None:
 
 
 def _expiry_days(config: dict[str, Any]) -> int:
+    """Return the configured positive packet expiry or the default."""
     lifecycle = config.get("lifecycle") or {}
     raw = lifecycle.get("packet_expiry_close_days", DEFAULT_EXPIRY_DAYS)
     if not isinstance(raw, int) or raw < 1:
@@ -63,6 +66,7 @@ def _expiry_days(config: dict[str, Any]) -> int:
 
 
 def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
+    """Fetch live PR fields, returning None when the command or payload fails."""
     cmd = [
         "gh",
         "pr",
@@ -89,6 +93,7 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
 
 
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
+    """Return days since the item update, or None for an invalid timestamp."""
     stamp = _parse_utc(item.get("updated_at_utc"))
     if stamp is None:
         return None
@@ -96,6 +101,7 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
 
 
 def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
+    """Return a terminal action for a merged or closed live PR."""
     if live_state == "MERGED":
         return {
             "action": "TERMINAL_MERGED",
@@ -118,6 +124,7 @@ def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
 def _classify_sha_drift(
     item: dict[str, Any], live_head: str, key: str
 ) -> dict[str, Any] | None:
+    """Return a re-intake action when the ledger and live heads differ."""
     ledger_head = str(item.get("head_sha") or "")
     if not live_head or not ledger_head:
         return None
@@ -136,6 +143,7 @@ def _classify_sha_drift(
 def _classify_stale(
     item: dict[str, Any], *, expiry_days: int, now: datetime, key: str
 ) -> dict[str, Any] | None:
+    """Return a stale-close action for an expired eligible bot packet."""
     stale_candidate = (
         item.get("lifecycle_state") == "WAITING_HUMAN"
         and item.get("author_type") == "BOT"
@@ -187,6 +195,7 @@ def classify_item(
 
 
 def _event_id(prefix: str) -> str:
+    """Generate a unique timestamped event identifier."""
     stamp = _utc_now().strftime("%Y%m%d%H%M%S")
     return f"evt-{prefix}-{stamp}-{uuid.uuid4().hex[:8]}"
 
@@ -197,6 +206,7 @@ def build_transition_event(
     *,
     kind: str,
 ) -> dict[str, Any]:
+    """Build a projected ledger transition event for a reconcile action."""
     to_state = action["to_state"]
     disposition = action.get("disposition")
     reason = str(action.get("reason") or "reconcile")
@@ -235,7 +245,7 @@ def apply_action_to_ledger(
     item: dict[str, Any],
     action: dict[str, Any],
 ) -> dict[str, Any]:
-    """Mutate ledger in memory via apply_transition projection rules."""
+    """Apply an action in memory and return the appended transition event."""
     to_state = action["to_state"]
     disposition = action.get("disposition")
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
@@ -271,6 +281,7 @@ def apply_action_to_ledger(
 
 
 def _close_stale_github(action: dict[str, Any]) -> list[str]:
+    """Comment on, label, and close a stale PR, returning command statuses."""
     repo = str(action.get("repository") or "")
     pr = int(action.get("pr") or 0)
     steps: list[str] = []
@@ -311,6 +322,7 @@ def collect_actions(
     now: datetime | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
+    """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
     actions: list[dict[str, Any]] = []
@@ -327,6 +339,7 @@ def collect_actions(
 def _action_for_item(
     item: Any, expiry: int, clock: datetime
 ) -> dict[str, Any] | None:
+    """Look up and classify one nonterminal ledger item."""
     if not isinstance(item, dict):
         return None
     if item.get("lifecycle_state") == "TERMINAL":
@@ -338,6 +351,7 @@ def _action_for_item(
 
 
 def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
+    """Fetch and emit actions, optionally applying and CAS-committing them."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
@@ -384,6 +398,7 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:
+    """Print a reconciliation plan as JSON or concise text."""
     if json_out:
         print(json.dumps(plan, indent=2, sort_keys=True))
         return
@@ -398,6 +413,7 @@ def _emit(plan: dict[str, Any], json_out: bool) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the reconciliation command-line parser."""
     parser = argparse.ArgumentParser(
         description=(
             "Reconcile non-terminal ledger items against live GitHub PR state. "
@@ -415,6 +431,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
     try:
         return run_reconcile(apply=args.apply, limit=args.limit, json_out=args.json)

@@ -34,10 +34,12 @@ DEFAULT_ARCHIVE_AFTER_DAYS = 30
 
 
 def _utc_now() -> datetime:
+    """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
 
 
 def _parse_utc(value: object) -> datetime | None:
+    """Parse a Z-suffixed timestamp as UTC, or return None if invalid."""
     if not isinstance(value, str) or not value.endswith("Z"):
         return None
     try:
@@ -54,6 +56,7 @@ def select_archive_items(
     after_days: int = DEFAULT_ARCHIVE_AFTER_DAYS,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
+    """Select terminal items updated on or before the age cutoff."""
     clock = now or _utc_now()
     cutoff = clock - timedelta(days=after_days)
     selected: list[dict[str, Any]] = []
@@ -73,6 +76,7 @@ def select_archive_items(
 def partition_by_month(
     items: list[dict[str, Any]],
 ) -> dict[str, list[dict[str, Any]]]:
+    """Group timestamped items by their UTC update month."""
     buckets: dict[str, list[dict[str, Any]]] = {}
     for item in items:
         stamp = _parse_utc(item.get("updated_at_utc"))
@@ -86,6 +90,7 @@ def partition_by_month(
 def build_archive_document(
     month: str, items: list[dict[str, Any]], *, source_revision: Any
 ) -> dict[str, Any]:
+    """Build a monthly archive document for the supplied ledger items."""
     return {
         "archive_format_version": 1,
         "month": month,
@@ -102,6 +107,7 @@ def plan_archive(
     after_days: int = DEFAULT_ARCHIVE_AFTER_DAYS,
     now: datetime | None = None,
 ) -> dict[str, Any]:
+    """Summarize archive candidates and the projected active-ledger size."""
     selected = select_archive_items(ledger, after_days=after_days, now=now)
     buckets = partition_by_month(selected)
     remaining = [
@@ -135,6 +141,7 @@ def plan_archive(
 def _drop_events_for_items(
     ledger: dict[str, Any], archived_keys: set[Any]
 ) -> None:
+    """Remove events that refer to archived item keys."""
     # Drop events that only reference archived items (keep shared/calibration).
     events = [
         event
@@ -149,6 +156,7 @@ def _write_month_archives(
     out_dir: Path,
     ledger: dict[str, Any],
 ) -> dict[str, str]:
+    """Write one YAML archive per month and return the written paths."""
     written: dict[str, str] = {}
     for month, items in sorted(buckets.items()):
         doc = build_archive_document(
@@ -168,6 +176,7 @@ def apply_archive(
     after_days: int,
     out_dir: Path,
 ) -> dict[str, Any]:
+    """Mutate the ledger to remove eligible items and events, then write outputs."""
     selected = select_archive_items(ledger, after_days=after_days)
     buckets = partition_by_month(selected)
     selected_keys = {item.get("key") for item in selected}
@@ -194,6 +203,7 @@ def apply_archive(
 
 
 def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
+    """Emit an archive plan, or write archives and CAS-commit the active ledger."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-archive-") as tmp:
@@ -210,6 +220,7 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
 
 
 def _emit_plan(plan: dict[str, Any], json_out: bool) -> None:
+    """Print an archive plan as JSON or concise text."""
     if json_out:
         print(json.dumps(plan, indent=2, sort_keys=True))
         return
@@ -220,6 +231,7 @@ def _emit_plan(plan: dict[str, Any], json_out: bool) -> None:
 
 
 def _emit_apply(payload: dict[str, Any], result: dict[str, Any], json_out: bool) -> None:
+    """Print applied archive results as JSON or concise text."""
     if json_out:
         print(json.dumps(payload, indent=2, sort_keys=True))
         return
@@ -241,6 +253,7 @@ def _run_apply(
     after_days: int,
     json_out: bool,
 ) -> None:
+    """Write archives, CAS-commit the active ledger, and emit results."""
     result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
     # CAS the active ledger only via existing helper (single-file CAS today).
     cas_result = cas.run_commit(
@@ -256,6 +269,7 @@ def _run_apply(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the ledger archive command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--after-days", type=int, default=DEFAULT_ARCHIVE_AFTER_DAYS)
@@ -264,6 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the archive CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
     try:
         return run_archive(

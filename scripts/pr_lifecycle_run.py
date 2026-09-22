@@ -41,15 +41,18 @@ PINNED_ISSUE_TITLE = "PR pipeline status"
 
 
 def _utc_now() -> datetime:
+    """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
 
 
 def _run_id() -> str:
+    """Generate a unique timestamped lifecycle run identifier."""
     stamp = _utc_now().strftime("%Y%m%dT%H%M%SZ")
     return f"{stamp}-{uuid.uuid4().hex[:8]}"
 
 
 def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
+    """Append one JSON record to a JSONL file, creating parents as needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
@@ -151,6 +154,7 @@ def build_stage_plan(
 
 
 def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """Build the compact status document for a stage plan."""
     return {
         "updated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "run_id": run_id,
@@ -165,7 +169,7 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
 
 
 def update_pinned_issue(status: dict[str, Any]) -> None:
-    """Best-effort update of the pinned PR pipeline status issue."""
+    """Best-effort update of the pinned status issue, creating it if absent."""
     body = (
         f"<!-- pr-lifecycle-status -->\n"
         f"updated_at_utc: {status['updated_at_utc']}\n"
@@ -247,6 +251,7 @@ def update_pinned_issue(status: dict[str, Any]) -> None:
 
 
 def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
+    """Fetch the ledger, emit and log a plan, and optionally write status."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     run_id = _run_id()
@@ -289,6 +294,7 @@ def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the lifecycle stage-runner command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage", type=int, choices=[1, 2, 3], help="Stage to preflight"
@@ -313,6 +319,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run a stage preflight or refresh the pinned status issue."""
     args = build_parser().parse_args(argv)
     try:
         if args.status:
