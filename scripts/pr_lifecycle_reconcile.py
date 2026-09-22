@@ -121,22 +121,44 @@ def _classify_live_terminal(live_state: str, key: str) -> dict[str, Any] | None:
     return None
 
 
-def _classify_sha_drift(
-    item: dict[str, Any], live_head: str, key: str
-) -> dict[str, Any] | None:
-    """Return a re-intake action when the ledger and live heads differ."""
+def _drift_fields(item: dict[str, Any], live: dict[str, Any]) -> tuple[str, str, bool]:
+    live_head = str(live.get("headRefOid") or "")
+    live_base = str(live.get("baseRefOid") or "")
     ledger_head = str(item.get("head_sha") or "")
-    if not live_head or not ledger_head:
+    ledger_base = str(item.get("base_sha") or "")
+    head_drift = bool(
+        live_head and ledger_head and live_head.lower() != ledger_head.lower()
+    )
+    base_drift = bool(
+        live_base and ledger_base and live_base.lower() != ledger_base.lower()
+    )
+    return live_head, live_base, head_drift or base_drift
+
+
+def _classify_sha_drift(
+    item: dict[str, Any], live: dict[str, Any], key: str
+) -> dict[str, Any] | None:
+    live_head, live_base, drifted = _drift_fields(item, live)
+    if not drifted:
         return None
-    if live_head.lower() == ledger_head.lower():
-        return None
+    if item.get("lifecycle_state") == "STAGE1_INTAKE":
+        # Same-state handoffs are not legal transitions; re-anchor in place.
+        return {
+            "action": "REANCHOR_HEAD",
+            "key": key,
+            "reason": f"re-anchor intake to live head {live_head[:12]}",
+            "live_head_sha": live_head,
+            "live_base_sha": live_base,
+        }
+    ledger_head = str(item.get("head_sha") or "")
     return {
         "action": "SHA_DRIFT_REINTAKE",
         "key": key,
         "to_state": "STAGE1_INTAKE",
         "disposition": None,
-        "reason": f"head drift ledger={ledger_head[:12]} live={live_head[:12]}",
+        "reason": f"head/base drift ledger={ledger_head[:12]} live={live_head[:12]}",
         "live_head_sha": live_head,
+        "live_base_sha": live_base,
     }
 
 
@@ -160,8 +182,7 @@ def _classify_stale(
         "to_state": "TERMINAL",
         "disposition": "CLOSED_STALE",
         "reason": (
-            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d "
-            f"> {expiry_days}d"
+            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d > {expiry_days}d"
         ),
         "repository": item.get("repository"),
         "pr": item.get("pr"),
@@ -186,10 +207,9 @@ def classify_item(
             "reason": "gh pr view failed; skip mutation",
         }
     live_state = str(live.get("state") or "").upper()
-    live_head = str(live.get("headRefOid") or "")
     return (
         _classify_live_terminal(live_state, key)
-        or _classify_sha_drift(item, live_head, key)
+        or _classify_sha_drift(item, live, key)
         or _classify_stale(item, expiry_days=expiry_days, now=now, key=key)
     )
 
@@ -240,14 +260,34 @@ def build_transition_event(
     }
 
 
+def _reanchor_item(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """In-place head/base re-anchor for items already in STAGE1_INTAKE."""
+    live_head = action.get("live_head_sha")
+    if live_head:
+        item["head_sha"] = live_head
+    live_base = action.get("live_base_sha")
+    if live_base:
+        item["base_sha"] = live_base
+    item["revision"] = int(item.get("revision") or 0) + 1
+    item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["next_action"] = (
+        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
+    )
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
 def apply_action_to_ledger(
     ledger: dict[str, Any],
     item: dict[str, Any],
     action: dict[str, Any],
 ) -> dict[str, Any]:
     """Apply an action in memory and return the appended transition event."""
+    if action.get("action") == "REANCHOR_HEAD":
+        return _reanchor_item(ledger, item, action)
     to_state = action["to_state"]
-    disposition = action.get("disposition")
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
     projected = {
@@ -271,23 +311,27 @@ def apply_action_to_ledger(
     if action.get("action") == "SHA_DRIFT_REINTAKE":
         live_head = action.get("live_head_sha")
         if live_head:
+            item["head_sha"] = live_head
             item["next_action"] = (
                 f"Re-anchor intake to live head {live_head}; prior evidence void."
             )
+        live_base = action.get("live_base_sha")
+        if live_base:
+            item["base_sha"] = live_base
     events = ledger.setdefault("events", [])
     events.append(event)
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return event
 
 
-def _close_stale_github(action: dict[str, Any]) -> list[str]:
-    """Comment on, label, and close a stale PR, returning command statuses."""
+def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
+    """Close the stale PR on GitHub; confirm only when a re-read shows CLOSED."""
     repo = str(action.get("repository") or "")
     pr = int(action.get("pr") or 0)
     steps: list[str] = []
     if not repo or not pr:
         steps.append("skip github close: missing repository/pr")
-        return steps
+        return steps, False
     comment = subprocess.run(
         ["gh", "pr", "comment", str(pr), "--repo", repo, "--body", STALE_COMMENT],
         check=False,
@@ -312,7 +356,14 @@ def _close_stale_github(action: dict[str, Any]) -> list[str]:
         timeout=60,
     )
     steps.append(f"close exit={close.returncode}")
-    return steps
+    if close.returncode != 0:
+        return steps, False
+    live = _gh_pr_view(repo, pr)
+    confirmed = (
+        isinstance(live, dict) and str(live.get("state") or "").upper() == "CLOSED"
+    )
+    steps.append(f"confirm={'closed' if confirmed else 'unconfirmed'}")
+    return steps, confirmed
 
 
 def collect_actions(
@@ -336,9 +387,7 @@ def collect_actions(
     return actions
 
 
-def _action_for_item(
-    item: Any, expiry: int, clock: datetime
-) -> dict[str, Any] | None:
+def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] | None:
     """Look up and classify one nonterminal ledger item."""
     if not isinstance(item, dict):
         return None
@@ -368,22 +417,7 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
         if not apply:
             _emit(plan, json_out)
             return 0
-        items_by_key = {
-            item["key"]: item
-            for item in ledger.get("items") or []
-            if isinstance(item, dict) and "key" in item
-        }
-        applied: list[dict[str, Any]] = []
-        for action in actions:
-            if action["action"] == "LIVE_LOOKUP_FAILED":
-                continue
-            item = items_by_key.get(action["key"])
-            if item is None:
-                continue
-            if action["action"] == "CLOSE_STALE":
-                action["github_steps"] = _close_stale_github(action)
-            event = apply_action_to_ledger(ledger, item, action)
-            applied.append({"action": action, "event_id": event["event_id"]})
+        applied = _apply_actions(ledger, actions)
         strip_in_memory_item_fields(ledger)
         out.write_text(dump_ledger(ledger), encoding="utf-8")
         result = cas.run_commit(
@@ -395,6 +429,33 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
         plan["cas"] = result
         _emit(plan, json_out)
     return 0
+
+
+def _apply_actions(
+    ledger: dict[str, Any], actions: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    items_by_key = {
+        item["key"]: item
+        for item in ledger.get("items") or []
+        if isinstance(item, dict) and "key" in item
+    }
+    applied: list[dict[str, Any]] = []
+    for action in actions:
+        if action["action"] == "LIVE_LOOKUP_FAILED":
+            continue
+        item = items_by_key.get(action["key"])
+        if item is None:
+            continue
+        if action["action"] == "CLOSE_STALE":
+            steps, closed = _close_stale_github(action)
+            action["github_steps"] = steps
+            if not closed:
+                # Failed/unconfirmed closes must not write terminal records.
+                action["close_unconfirmed"] = True
+                continue
+        event = apply_action_to_ledger(ledger, item, action)
+        applied.append({"action": action, "event_id": event["event_id"]})
+    return applied
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:

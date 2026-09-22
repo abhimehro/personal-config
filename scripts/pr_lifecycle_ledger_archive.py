@@ -88,7 +88,11 @@ def partition_by_month(
 
 
 def build_archive_document(
-    month: str, items: list[dict[str, Any]], *, source_revision: Any
+    month: str,
+    items: list[dict[str, Any]],
+    *,
+    source_revision: Any,
+    events: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a monthly archive document for the supplied ledger items."""
     return {
@@ -98,6 +102,7 @@ def build_archive_document(
         "source_ledger_revision": source_revision,
         "item_count": len(items),
         "items": items,
+        "events": events or [],
     }
 
 
@@ -140,27 +145,49 @@ def plan_archive(
 
 def _drop_events_for_items(
     ledger: dict[str, Any], archived_keys: set[Any]
-) -> None:
-    """Remove events that refer to archived item keys."""
-    # Drop events that only reference archived items (keep shared/calibration).
-    events = [
-        event
-        for event in ledger.get("events") or []
-        if not isinstance(event, dict) or event.get("item_key") not in archived_keys
-    ]
-    ledger["events"] = events
+) -> list[dict[str, Any]]:
+    """Remove events for archived item keys; return the dropped events."""
+    # Dropped events move into the month archive docs.
+    kept: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for event in ledger.get("events") or []:
+        if isinstance(event, dict) and event.get("item_key") in archived_keys:
+            dropped.append(event)
+        else:
+            kept.append(event)
+    ledger["events"] = kept
+    return dropped
+
+
+def _month_events(
+    dropped: list[dict[str, Any]], buckets: dict[str, list[dict[str, Any]]]
+) -> dict[str, list[dict[str, Any]]]:
+    month_by_key = {
+        item.get("key"): month for month, items in buckets.items() for item in items
+    }
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for event in dropped:
+        month = month_by_key.get(event.get("item_key"))
+        if month is not None:
+            grouped.setdefault(month, []).append(event)
+    return grouped
 
 
 def _write_month_archives(
     buckets: dict[str, list[dict[str, Any]]],
     out_dir: Path,
     ledger: dict[str, Any],
+    dropped_events: list[dict[str, Any]],
 ) -> dict[str, str]:
     """Write one YAML archive per month and return the written paths."""
     written: dict[str, str] = {}
+    events_by_month = _month_events(dropped_events, buckets)
     for month, items in sorted(buckets.items()):
         doc = build_archive_document(
-            month, items, source_revision=ledger.get("ledger_revision")
+            month,
+            items,
+            source_revision=ledger.get("ledger_revision"),
+            events=events_by_month.get(month),
         )
         path = out_dir / "archive" / f"{month}.yaml"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -185,10 +212,10 @@ def apply_archive(
         for item in ledger.get("items") or []
         if not isinstance(item, dict) or item.get("key") not in selected_keys
     ]
-    _drop_events_for_items(ledger, selected_keys)
+    dropped_events = _drop_events_for_items(ledger, selected_keys)
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     strip_in_memory_item_fields(ledger)
-    written = _write_month_archives(buckets, out_dir, ledger)
+    written = _write_month_archives(buckets, out_dir, ledger, dropped_events)
 
     active_text = dump_ledger(ledger)
     active_path = out_dir / "pr-lifecycle-ledger.yaml"
@@ -215,7 +242,8 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
         if not apply:
             _emit_plan(plan, json_out)
             return 0
-        _run_apply(ledger, plan, tmp, after_days, json_out)
+        payload, result = _apply_payload(ledger, plan, tmp, after_days)
+        _emit_apply(payload, result, json_out)
     return 0
 
 
@@ -230,49 +258,94 @@ def _emit_plan(plan: dict[str, Any], json_out: bool) -> None:
         print(f"archive month={month} count={meta['count']} path={meta['path']}")
 
 
-def _emit_apply(payload: dict[str, Any], result: dict[str, Any], json_out: bool) -> None:
+def _emit_apply(
+    payload: dict[str, Any], result: dict[str, Any], json_out: bool
+) -> None:
     """Print applied archive results as JSON or concise text."""
     if json_out:
         print(json.dumps(payload, indent=2, sort_keys=True))
         return
     print(f"dry_run=false selected_count={result['selected_count']}")
     print(f"active_bytes={result['active_bytes']}")
-    for path in result["archives"].values():
-        print(f"wrote {path}")
-    print(
-        "NOTE: archive/*.yaml files are written locally in this run; "
-        "multi-file data-branch CAS for archives may need a follow-up "
-        "if cas.run_commit only replaces the primary ledger path."
-    )
+    for commit in payload.get("archive_commits") or []:
+        print(f"archive_commit={commit['path']} sha={commit['commit_sha'][:12]}")
+    print(f"ledger_commit={payload['cas']['commit_sha'][:12]}")
 
 
-def _run_apply(
-    ledger: dict[str, Any],
-    plan: dict[str, Any],
-    tmp: str,
-    after_days: int,
-    json_out: bool,
-) -> None:
-    """Write archives, CAS-commit the active ledger, and emit results."""
+def _cas_commit_path(
+    runtime: dict[str, Any], path: str, content: str, message: str
+) -> dict[str, Any]:
+    """Fast-forward CAS commit of one file at an arbitrary branch path.
+
+    Mirrors ``cas.cas_commit`` but targets ``path`` instead of the pointer's
+    ``data_path`` — archive docs bypass the active-ledger schema validate.
+    """
+    branch = str(runtime["data_branch"])
+    ensured = cas.ensure_data_ref(runtime)
+    parent_sha = cas.object_sha(ensured["ref"])
+    parent = cas.read_commit(parent_sha)
+    blob_sha = cas.create_blob(content)
+    new_tree = cas.create_tree(cas.tree_sha(parent), path, blob_sha)
+    commit_sha = cas.create_commit(message, new_tree, parent_sha)
+    try:
+        cas.update_ref(branch, commit_sha, parent_sha)
+    except cas.CasError as exc:
+        if cas.is_stale_tip_error(exc):
+            raise cas.CasError(cas.OPERATOR_CONFLICT, http_code=exc.http_code) from None
+        raise
+    return {"commit_sha": commit_sha, "path": path}
+
+
+def _apply_payload(
+    ledger: dict[str, Any], plan: dict[str, Any], tmp: str, after_days: int
+) -> tuple[dict[str, Any], dict[str, Any]]:
     result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
-    # CAS the active ledger only via existing helper (single-file CAS today).
+    runtime = cas.pointer_runtime()
+    # Commit each archive/YYYY-MM.yaml before the active-ledger rewrite so a
+    # later failure leaves duplication (re-archivable), never silent loss.
+    archive_commits: list[dict[str, Any]] = []
+    for month, file_path in sorted(result["archives"].items()):
+        rel = str(Path(file_path).relative_to(tmp))
+        text = Path(file_path).read_text(encoding="utf-8")
+        archive_commits.append(
+            _cas_commit_path(
+                runtime,
+                rel,
+                text,
+                f"archive: {month} TERMINAL items (>{after_days}d)",
+            )
+        )
     cas_result = cas.run_commit(
         Path(result["active_path"]),
         "archive: move TERMINAL items older than "
         f"{after_days}d into archive/YYYY-MM.yaml",
         bump_revision=False,
     )
-    payload = {**plan, "apply_result": result, "cas": cas_result}
+    payload = {
+        **plan,
+        "apply_result": result,
+        "archive_commits": archive_commits,
+        "cas": cas_result,
+    }
     if result["active_bytes"] > ACTIVE_LEDGER_MAX_BYTES:
         payload["warning"] = "active ledger still exceeds 1MB after archive"
-    _emit_apply(payload, result, json_out)
+    return payload, result
+
+
+def _non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be non-negative")
+    return parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the ledger archive command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--after-days", type=int, default=DEFAULT_ARCHIVE_AFTER_DAYS)
+    parser.add_argument(
+        "--after-days", type=_non_negative_int, default=DEFAULT_ARCHIVE_AFTER_DAYS
+    )
     parser.add_argument("--json", action="store_true")
     return parser
 

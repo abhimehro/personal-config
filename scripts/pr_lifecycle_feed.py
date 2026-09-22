@@ -95,34 +95,57 @@ def minimal_work_item(item: dict[str, Any], *, reason: str) -> dict[str, Any]:
     }
 
 
+def _reason_for_item(
+    item: dict[str, Any], *, expiry: int, clock: datetime
+) -> str | None:
+    if health.is_salvage_eligible(item):
+        return "SALVAGE_ELIGIBLE"
+    if is_expired_packet_salvage(item, expiry_days=expiry, now=clock):
+        return "EXPIRED_PACKET_OR_CLOSE_STALE"
+    return None
+
+
+def _queued_stage2_work_items(
+    ledger: dict[str, Any], clock: datetime
+) -> tuple[list[dict[str, Any]], set[str]]:
+    """Complete, unexpired stage2_work_items re-enter the feed ahead of new WIs."""
+    work_items: list[dict[str, Any]] = []
+    source_keys: set[str] = set()
+    for wi in ledger.get("stage2_work_items") or []:
+        if not isinstance(wi, dict) or not health.work_item_is_usable(wi, clock):
+            continue
+        source_key = str(wi.get("source_item_key") or "")
+        item = dict(wi)
+        item["source_key"] = source_key or wi.get("work_item_id")
+        item["reason"] = "QUEUED_STAGE2_WORK_ITEM"
+        work_items.append(item)
+        if source_key:
+            source_keys.add(source_key)
+    return work_items, source_keys
+
+
 def _collect_work_items(
     ledger: dict[str, Any], *, expiry: int, clock: datetime, limit: int | None
 ) -> list[dict[str, Any]]:
-    """Collect unique salvage work items from the ledger in item order."""
-    work_items: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    """Queued stage2_work_items first, then unique salvage items, in order."""
+    work_items, seen = _queued_stage2_work_items(ledger, clock)
     for item in ledger.get("items") or []:
+        if limit is not None and len(work_items) >= limit:
+            break
         if not isinstance(item, dict):
             continue
         key = str(item.get("key") or "")
-        if not key or key in seen:
-            continue
-        if health.is_salvage_eligible(item):
-            reason = "SALVAGE_ELIGIBLE"
-        elif is_expired_packet_salvage(item, expiry_days=expiry, now=clock):
-            reason = "EXPIRED_PACKET_OR_CLOSE_STALE"
-        else:
+        reason = _reason_for_item(item, expiry=expiry, clock=clock)
+        if not key or key in seen or reason is None:
             continue
         work_items.append(minimal_work_item(item, reason=reason))
         seen.add(key)
-        if limit is not None and len(work_items) >= limit:
-            break
+    if limit is not None:
+        return work_items[:limit]
     return work_items
 
 
-def _expired_only_stock(
-    ledger: dict[str, Any], *, expiry: int, clock: datetime
-) -> int:
+def _expired_only_stock(ledger: dict[str, Any], *, expiry: int, clock: datetime) -> int:
     """Count expired packets not already considered salvage-eligible."""
     return sum(
         1
@@ -144,9 +167,7 @@ def build_feed(
     clock = now or _utc_now()
     expiry = _expiry_days(config)
     report = health.summarize(ledger, now=clock)
-    work_items = _collect_work_items(
-        ledger, expiry=expiry, clock=clock, limit=limit
-    )
+    work_items = _collect_work_items(ledger, expiry=expiry, clock=clock, limit=limit)
     eligible_stock = report.salvage_eligible_count + _expired_only_stock(
         ledger, expiry=expiry, clock=clock
     )
@@ -182,9 +203,10 @@ def run_feed(*, limit: int | None, json_out: bool) -> int:
         print(f"work_item_count={payload['work_item_count']}")
         print(f"eligible_stock_count={payload['eligible_stock_count']}")
         for item in payload["work_items"]:
+            paths = item.get("paths") or item.get("allowed_paths") or []
             print(
-                f"wi source_key={item['source_key']} reason={item['reason']} "
-                f"paths={len(item['paths'])}"
+                f"wi source_key={item.get('source_key')} "
+                f"reason={item.get('reason')} paths={len(paths)}"
             )
     if payload["empty_with_stock"]:
         return EXIT_EMPTY_WITH_STOCK

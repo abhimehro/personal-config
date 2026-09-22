@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -58,6 +59,91 @@ def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+def _stage_cap(config: dict[str, Any], name: str, default: int) -> int:
+    raw = (config.get("lifecycle") or {}).get("stage_caps") or {}
+    value = raw.get(name, default)
+    if not isinstance(value, int) or value < 1:
+        return default
+    return value
+
+
+def _stage1_plan(
+    ledger: dict[str, Any], config: dict[str, Any]
+) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+    allowed = [
+        "python3 scripts/pr_lifecycle_reconcile.py --json",
+        "python3 scripts/pr_lifecycle_feed.py --json",
+        "gh pr view / gh pr list (read-only inventory)",
+        "routine approve/squash-merge/close per lifecycle predicates",
+        "CAS handoff via pr_lifecycle_ledger_cas (schema-aware only)",
+    ]
+    cap = _stage_cap(config, "stage1_actions", 40)
+    actions = reconcile_mod.collect_actions(ledger, config, limit=cap)
+    actions.append(
+        {
+            "action": "FEED_CHECK",
+            "reason": "ensure Stage 2 intake is non-empty when eligible stock exists",
+        }
+    )
+    return allowed, actions, None, "OK"
+
+
+def _stage2_plan(
+    ledger: dict[str, Any], config: dict[str, Any]
+) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+    allowed = [
+        "python3 scripts/pr_lifecycle_feed.py --json",
+        "open/update draft salvage PRs only (never merge/approve/close originals)",
+        "CAS write complete Stage 2 work items + handoff events",
+    ]
+    feed = feed_mod.build_feed(
+        ledger, config, limit=_stage_cap(config, "stage2_salvage_candidates", 10)
+    )
+    stop_class = None
+    reason = "OK"
+    if feed.get("empty_with_stock"):
+        stop_class = "LOGIC_STOP"
+        reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
+    actions = [
+        {
+            "action": "FEED_SUMMARY",
+            "feed": {
+                "reason": feed["reason"],
+                "work_item_count": feed["work_item_count"],
+                "eligible_stock_count": feed["eligible_stock_count"],
+            },
+        }
+    ]
+    actions.extend(
+        {"action": "SALVAGE_WI", "wi": wi} for wi in feed.get("work_items") or []
+    )
+    return allowed, actions, stop_class, reason
+
+
+def _stage3_plan() -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+    allowed = [
+        "python3 scripts/pr_lifecycle_reconcile.py --json",
+        "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
+        "bounded non-security completion / close per Stage 3 predicates",
+        "CAS terminal transitions; never force-push",
+        "calibration remains DISABLED — do not reset or enable it",
+    ]
+    actions = [
+        {
+            "action": "RECONCILE_REMAINDER",
+            "reason": "re-read predicates; builder ≠ merger",
+        },
+        {
+            "action": "ADVISORY_BOT_THREADS",
+            "reason": (
+                "Codacy/qodo/CodeRabbit threads with no human reply are "
+                "advisory; may resolve before /trunk (Abhi 2026-09-21)"
+            ),
+        },
+    ]
+    return allowed, actions, None, "OK"
+
+
 def build_stage_plan(
     stage: int,
     ledger: dict[str, Any],
@@ -65,72 +151,14 @@ def build_stage_plan(
 ) -> dict[str, Any]:
     """Build the exact action plan a stage agent may execute."""
     report = health.summarize(ledger)
-    allowed: list[str] = []
-    actions: list[dict[str, Any]] = []
-    stop_class = None
-    reason = "OK"
-
     if stage == 1:
-        allowed = [
-            "python3 scripts/pr_lifecycle_reconcile.py --json",
-            "python3 scripts/pr_lifecycle_feed.py --json",
-            "gh pr view / gh pr list (read-only inventory)",
-            "routine approve/squash-merge/close per lifecycle predicates",
-            "CAS handoff via pr_lifecycle_ledger_cas (schema-aware only)",
-        ]
-        actions = reconcile_mod.collect_actions(ledger, config, limit=40)
-        actions.append(
-            {
-                "action": "FEED_CHECK",
-                "reason": "ensure Stage 2 intake is non-empty when eligible stock exists",
-            }
-        )
+        allowed, actions, stop_class, reason = _stage1_plan(ledger, config)
     elif stage == 2:
-        allowed = [
-            "python3 scripts/pr_lifecycle_feed.py --json",
-            "open/update draft salvage PRs only (never merge/approve/close originals)",
-            "CAS write complete Stage 2 work items + handoff events",
-        ]
-        feed = feed_mod.build_feed(ledger, config)
-        if feed.get("empty_with_stock"):
-            stop_class = "LOGIC_STOP"
-            reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
-        actions = [
-            {"action": "SALVAGE_WI", "wi": wi} for wi in feed.get("work_items") or []
-        ]
-        actions.insert(
-            0,
-            {
-                "action": "FEED_SUMMARY",
-                "feed": {
-                    "reason": feed["reason"],
-                    "work_item_count": feed["work_item_count"],
-                    "eligible_stock_count": feed["eligible_stock_count"],
-                },
-            },
-        )
+        allowed, actions, stop_class, reason = _stage2_plan(ledger, config)
     elif stage == 3:
-        allowed = [
-            "python3 scripts/pr_lifecycle_reconcile.py --json",
-            "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
-            "bounded non-security completion / close per Stage 3 predicates",
-            "CAS terminal transitions; never force-push",
-            "calibration remains DISABLED — do not reset or enable it",
-        ]
-        actions = [
-            {
-                "action": "RECONCILE_REMAINDER",
-                "reason": "re-read predicates; builder ≠ merger",
-            },
-            {
-                "action": "ADVISORY_BOT_THREADS",
-                "reason": (
-                    "Codacy/qodo/CodeRabbit threads with no human reply are "
-                    "advisory; may resolve before /trunk (Abhi 2026-09-21)"
-                ),
-            },
-        ]
+        allowed, actions, stop_class, reason = _stage3_plan()
     else:
+        allowed, actions = [], []
         stop_class = "LOGIC_STOP"
         reason = f"invalid stage {stage}"
 
@@ -168,86 +196,69 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
     }
 
 
-def update_pinned_issue(status: dict[str, Any]) -> None:
-    """Best-effort update of the pinned status issue, creating it if absent."""
-    body = (
+def _issue_body(status: dict[str, Any]) -> str:
+    """Render the pinned status-issue body for a stage status dict."""
+    return (
         f"<!-- pr-lifecycle-status -->\n"
         f"updated_at_utc: {status['updated_at_utc']}\n"
-        f"run_id: {status.get('run_id')}\n"
-        f"stage: {status.get('stage')}\n"
-        f"ledger_revision: {status.get('ledger_revision')}\n"
-        f"reason: {status.get('reason')}\n"
-        f"stop_class: {status.get('stop_class')}\n"
+        f"run_id: {status.get('run_id') or ''}\n"
+        f"stage: {status.get('stage') or ''}\n"
+        f"ledger_revision: {status.get('ledger_revision') or ''}\n"
+        f"reason: {status.get('reason') or ''}\n"
+        f"stop_class: {status.get('stop_class') or ''}\n"
         f"calibration_enabled: false\n"
         f"\n```json\n{json.dumps(status, indent=2, sort_keys=True)}\n```\n"
     )
-    # Find existing issue by title; create if missing.
-    import subprocess
 
-    listed = subprocess.run(
-        [
-            "gh",
-            "issue",
-            "list",
-            "--repo",
-            "abhimehro/personal-config",
-            "--search",
-            f'in:title "{PINNED_ISSUE_TITLE}"',
-            "--json",
-            "number,title",
-            "--limit",
-            "5",
-        ],
+
+def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["gh", "issue", *cmd, "--repo", "abhimehro/personal-config"],
         check=False,
         capture_output=True,
         text=True,
         timeout=60,
     )
-    issue_number = None
-    if listed.returncode == 0 and listed.stdout.strip():
-        try:
-            rows = json.loads(listed.stdout)
-        except json.JSONDecodeError:
-            rows = []
-        for row in rows:
-            if row.get("title") == PINNED_ISSUE_TITLE:
-                issue_number = row.get("number")
-                break
-    if issue_number:
-        subprocess.run(
-            [
-                "gh",
-                "issue",
-                "edit",
-                str(issue_number),
-                "--repo",
-                "abhimehro/personal-config",
-                "--body",
-                body,
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+
+
+def _find_pinned_issue() -> int | None:
+    listed = _gh_issue(
+        [
+            "list",
+            "--search",
+            f'in:title "{PINNED_ISSUE_TITLE}"',
+            "--json",
+            "number,title",
+            "--limit",
+            "20",
+        ]
+    )
+    if listed.returncode != 0 or not listed.stdout.strip():
+        return None
+    try:
+        rows = json.loads(listed.stdout)
+    except json.JSONDecodeError:
+        return None
+    for row in rows:
+        if row.get("title") == PINNED_ISSUE_TITLE:
+            number = row.get("number")
+            return int(number) if number is not None else None
+    return None
+
+
+def _upsert_pinned_issue(issue_number: int | None, body: str) -> None:
+    if issue_number is not None:
+        result = _gh_issue(["edit", str(issue_number), "--body", body])
     else:
-        subprocess.run(
-            [
-                "gh",
-                "issue",
-                "create",
-                "--repo",
-                "abhimehro/personal-config",
-                "--title",
-                PINNED_ISSUE_TITLE,
-                "--body",
-                body,
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+        result = _gh_issue(["create", "--title", PINNED_ISSUE_TITLE, "--body", body])
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()[:200]
+        raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
+
+
+def update_pinned_issue(status: dict[str, Any]) -> None:
+    """Best-effort update of the pinned PR pipeline status issue."""
+    _upsert_pinned_issue(_find_pinned_issue(), _issue_body(status))
 
 
 def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
@@ -263,10 +274,13 @@ def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
             ledger = load_yaml(Path(fetch["ledger_path"]))
             plan = build_stage_plan(stage, ledger, config)
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+        # OSError covers fetch/service failures (recoverable); data-shape and
+        # validation failures are repo-owned and cannot heal by retrying.
+        stop_class = "TRANSIENT_RETRY" if isinstance(exc, OSError) else "LOGIC_STOP"
         record = {
             "run_id": run_id,
             "stage": stage,
-            "stop_class": "TRANSIENT_RETRY",
+            "stop_class": stop_class,
             "error": type(exc).__name__,
             "at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
