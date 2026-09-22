@@ -544,6 +544,26 @@ after live verification. A record lacking immutable anchors remains
 Deleted, merged, or closed PRs are imported as evidence with their observed
 terminal state, never resurrected.
 
+## 2026-09-21 rebalance — script-driven stages
+
+Cursor Dashboard schedules may be paused. Repo-side runners are canonical for a
+single Antigravity/Devin/Grok stage run:
+
+| Stage | Runner | Notes |
+| --- | --- | --- |
+| 1 Review | `python3 scripts/pr_lifecycle_run.py --stage 1` | reconcile + routine drain; feed Stage 2 |
+| 2 Salvage | `python3 scripts/pr_lifecycle_run.py --stage 2` | self-fed minimal WIs; never merges |
+| 3 Completion | `python3 scripts/pr_lifecycle_run.py --stage 3` | live completion; advisory bot threads |
+
+Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
+`pr_lifecycle_ledger_archive.py`. Prompts under
+`docs/cursor-automations/prompts/daily-pr-*.md` are short bootstraps; run
+`python3 scripts/sync_cursor_export_prompts.py --write` after editing.
+
+Weekly human digest: pinned GitHub issue / issue comment — Notion packets retired
+for this path. Pause/resume: leave Dashboard paused; operators run stage scripts
+manually until usage restores.
+
 ## Related specifications
 
 - [Automated PR Review & Consolidation Agent](automated-pr-review-agent.md)

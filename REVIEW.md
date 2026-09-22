@@ -88,3 +88,20 @@ Reference: only if the standard is non-obvious.
 
 Close with a verdict, **Approve** / **Approve with comments** / **Request
 changes**, one sentence of rationale, and the count of blocking findings.
+
+## Bot-thread advisory policy (Abhi approved 2026-09-21)
+
+Codacy, qodo, and CodeRabbit review threads that have **no human reply** are
+**advisory**. They do not block routine Stage 3 completion.
+
+Stage 3 may resolve those threads with a short standard comment (policy pointer +
+"no human reply; treating as advisory") **before** `/trunk`, then continue
+bounded non-security completion when all other predicates pass.
+
+Still blocking (unchanged):
+
+- Any thread with a human reply
+- REVIEW_SECURITY / sticky human holds
+- Unresolved required checks / merge conflicts / SHA drift
+
+Desk does not merge, approve, or close from chat.

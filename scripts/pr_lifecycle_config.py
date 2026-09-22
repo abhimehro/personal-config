@@ -46,7 +46,12 @@ def validate_config(config: dict[str, Any]) -> None:
         "stage_caps",
         "stages",
     }
-    require_fields(lifecycle, required, required, "config.lifecycle")
+    allowed = required | {
+        "packet_expiry_close_days",
+        "stage2_intake",
+        "lineage",
+    }
+    require_fields(lifecycle, allowed, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
     validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
