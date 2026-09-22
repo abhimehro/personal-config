@@ -11,16 +11,20 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-# Stub only remote/study deps — never clobber pack modules under test.
-for name in (
+# Stub remote/health deps for this module only; restoring sys.modules keeps
+# unittest discovery from leaking the stubs into the rest of the suite.
+_STUB_NAMES = (
     "pr_lifecycle_ledger_cas",
     "pr_lifecycle_pipeline_health",
     "pr_lifecycle_config",
     "pr_lifecycle_support",
     "pr_lifecycle_yaml",
-):
-    if name not in sys.modules:
-        sys.modules[name] = types.ModuleType(name)
+    "pr_lifecycle_reconcile",
+    "pr_lifecycle_feed",
+)
+_saved_modules = {name: sys.modules.get(name) for name in _STUB_NAMES}
+for name in _STUB_NAMES:
+    sys.modules[name] = types.ModuleType(name)
 
 sys.modules["pr_lifecycle_support"].ROOT = ROOT
 sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
@@ -33,22 +37,23 @@ sys.modules["pr_lifecycle_pipeline_health"].summarize = (
         reason="ok",
     )
 )
-
-# Ensure feed/reconcile stubs exist only if not already loaded as real modules.
-if "pr_lifecycle_reconcile" not in sys.modules:
-    sys.modules["pr_lifecycle_reconcile"] = types.ModuleType("pr_lifecycle_reconcile")
-    sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
-if "pr_lifecycle_feed" not in sys.modules:
-    sys.modules["pr_lifecycle_feed"] = types.ModuleType("pr_lifecycle_feed")
-    sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
-        "empty_with_stock": False,
-        "reason": "FEED_OK",
-        "work_item_count": 0,
-        "eligible_stock_count": 0,
-        "work_items": [],
-    }
+sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
+sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
+    "empty_with_stock": False,
+    "reason": "FEED_OK",
+    "work_item_count": 0,
+    "eligible_stock_count": 0,
+    "work_items": [],
+}
 
 import pr_lifecycle_run as run  # noqa: E402
+
+for _name in _STUB_NAMES:
+    _saved = _saved_modules[_name]
+    if _saved is None:
+        sys.modules.pop(_name, None)
+    else:
+        sys.modules[_name] = _saved
 
 
 class RunPlanTests(unittest.TestCase):

@@ -12,16 +12,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 # Stub heavy repo modules so classify_item can load without PyYAML / CAS.
-for name in (
+# Restoring sys.modules keeps unittest discovery from leaking the stubs into
+# the rest of the suite.
+_STUB_NAMES = (
     "pr_lifecycle_ledger",
     "pr_lifecycle_ledger_cas",
     "pr_lifecycle_config",
     "pr_lifecycle_persist",
     "pr_lifecycle_support",
     "pr_lifecycle_yaml",
-):
-    if name not in sys.modules:
-        sys.modules[name] = types.ModuleType(name)
+)
+_saved_modules = {name: sys.modules.get(name) for name in _STUB_NAMES}
+for name in _STUB_NAMES:
+    sys.modules[name] = types.ModuleType(name)
 
 sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
     "STAGE1_INTAKE": "stage1",
@@ -39,6 +42,13 @@ sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
 sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: 0
 
 import pr_lifecycle_reconcile as reconcile  # noqa: E402
+
+for _name in _STUB_NAMES:
+    _saved = _saved_modules[_name]
+    if _saved is None:
+        sys.modules.pop(_name, None)
+    else:
+        sys.modules[_name] = _saved
 
 NOW = datetime(2026, 9, 21, 18, 0, tzinfo=timezone.utc)
 

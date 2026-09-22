@@ -373,12 +373,15 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 def validate_prompt(content: str, name: str) -> None:
     normalized = " ".join(content.split())
-    required = {
-        "docs/automated-pr-lifecycle.md",
-        "docs/pr-lifecycle-runtime-ledger.md",
-        "Memory is enabled",
-        "Dashboard-referenced MCP set",
-        "ledger, run records, and lessons",
-    }
+    required = {"docs/automated-pr-lifecycle.md"}
+    if name == "daily-pr-completion.calibration.md":
+        required |= {
+            "docs/pr-lifecycle-runtime-ledger.md",
+            "Memory is enabled",
+            "Dashboard-referenced MCP set",
+            "ledger, run records, and lessons",
+        }
+    else:
+        required.add("scripts/pr_lifecycle_run.py --stage")
     if any(marker not in normalized for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
