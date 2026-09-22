@@ -35,23 +35,6 @@ EXIT_EMPTY_WITH_STOCK = 2
 DEFAULT_EXPIRY_DAYS = 7
 
 
-def _utc_now() -> datetime:
-    """Return the current timezone-aware UTC time."""
-    return datetime.now(timezone.utc)
-
-
-def _parse_utc(value: object) -> datetime | None:
-    """Parse a Z-suffixed timestamp as UTC, or return None if invalid."""
-    if not isinstance(value, str) or not value.endswith("Z"):
-        return None
-    try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
-            timezone.utc
-        )
-    except ValueError:
-        return None
-
-
 def _expiry_days(config: dict[str, Any]) -> int:
     """Return the configured positive packet expiry or the default."""
     lifecycle = config.get("lifecycle") or {}
@@ -71,7 +54,7 @@ def is_expired_packet_salvage(
         return False
     if item.get("guardrail_outcome") == "REVIEW_SECURITY":
         return False
-    stamp = _parse_utc(item.get("updated_at_utc"))
+    stamp = health.parse_expiry_utc(item.get("updated_at_utc"))
     if stamp is None:
         return False
     age = (now - stamp).total_seconds() / 86400.0
@@ -114,13 +97,11 @@ def _queued_stage2_work_items(
     for wi in ledger.get("stage2_work_items") or []:
         if not isinstance(wi, dict) or not health.work_item_is_usable(wi, clock):
             continue
-        source_key = str(wi.get("source_item_key") or "")
-        item = dict(wi)
-        item["source_key"] = source_key or wi.get("work_item_id")
-        item["reason"] = "QUEUED_STAGE2_WORK_ITEM"
-        work_items.append(item)
-        if source_key:
-            source_keys.add(source_key)
+        key = str(wi.get("source_item_key") or wi.get("work_item_id") or "")
+        work_items.append(
+            {**wi, "source_key": key, "reason": "QUEUED_STAGE2_WORK_ITEM"}
+        )
+        source_keys.add(key)
     return work_items, source_keys
 
 
@@ -135,9 +116,7 @@ def _collect_work_items(
         wi = _item_work_entry(item, seen, expiry=expiry, clock=clock)
         if wi is not None:
             work_items.append(wi)
-    if limit is not None:
-        return work_items[:limit]
-    return work_items
+    return work_items[:limit]
 
 
 def _item_work_entry(
@@ -174,12 +153,18 @@ def build_feed(
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Build the Stage 2 intake feed and its empty-stock diagnostic."""
-    clock = now or _utc_now()
+    clock = now or datetime.now(timezone.utc)
     expiry = _expiry_days(config)
     report = health.summarize(ledger, now=clock)
     work_items = _collect_work_items(ledger, expiry=expiry, clock=clock, limit=limit)
     eligible_stock = report.salvage_eligible_count + _expired_only_stock(
         ledger, expiry=expiry, clock=clock
+    )
+    empty_with_stock = len(work_items) == 0 and eligible_stock > 0
+    reason = (
+        "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
+        if empty_with_stock
+        else "EMPTY_FEED" if not work_items else "FEED_OK"
     )
     return {
         "generated_at_utc": clock.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -188,12 +173,8 @@ def build_feed(
         "salvage_eligible_count": report.salvage_eligible_count,
         "eligible_stock_count": eligible_stock,
         "work_items": work_items,
-        "empty_with_stock": len(work_items) == 0 and eligible_stock > 0,
-        "reason": (
-            "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
-            if len(work_items) == 0 and eligible_stock > 0
-            else ("EMPTY_FEED" if not work_items else "FEED_OK")
-        ),
+        "empty_with_stock": empty_with_stock,
+        "reason": reason,
     }
 
 
@@ -243,12 +224,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
-# Alias used by pr_lifecycle_run
-build_feed = build_feed
-
-# Public aliases
-is_expired_packet_salvage = is_expired_packet_salvage
-minimal_work_item = minimal_work_item
-build_feed = build_feed

@@ -41,6 +41,20 @@ sys.modules["pr_lifecycle_pipeline_health"].summarize = (
     )
 )
 
+
+def _parse_utc_stub(value):
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+            timezone.utc
+        )
+    except ValueError:
+        return None
+
+
+sys.modules["pr_lifecycle_pipeline_health"].parse_expiry_utc = _parse_utc_stub
+
 import pr_lifecycle_feed as feed  # noqa: E402
 
 for _name in _STUB_NAMES:
@@ -108,6 +122,7 @@ class FeedTests(unittest.TestCase):
         fake_health = types.SimpleNamespace(
             summarize=lambda *a, **k: FakeReport(),
             is_salvage_eligible=lambda *a, **k: False,
+            parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
             payload = feed.build_feed(ledger, config, now=NOW)
@@ -165,6 +180,7 @@ class FeedTests(unittest.TestCase):
         fake_health = types.SimpleNamespace(
             summarize=lambda *_a, **_k: report,
             is_salvage_eligible=eligible,
+            parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
             payload = feed.build_feed(
@@ -207,6 +223,7 @@ class FeedTests(unittest.TestCase):
                 salvage_eligible_count=0
             ),
             is_salvage_eligible=lambda *_a, **_k: False,
+            parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
             payload = feed.build_feed(
@@ -224,6 +241,7 @@ class FeedTests(unittest.TestCase):
                 salvage_eligible_count=0
             ),
             is_salvage_eligible=lambda *_a, **_k: False,
+            parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
             payload = feed.build_feed(
