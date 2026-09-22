@@ -282,6 +282,46 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ):
             validator.validate_config(config)
 
+    def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        lifecycle = config["lifecycle"]
+        self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
+        self.assertEqual(lifecycle["stage2_intake"], "self_fed")
+        self.assertFalse(lifecycle["lineage"]["open_as_draft"])
+        validator.validate_config(config)
+
+        lifecycle["unexpected_rebalance_option"] = True
+        with self.assertRaisesRegex(ValueError, "unsupported fields"):
+            validator.validate_config(config)
+
+    def test_live_stage_prompts_require_runner_marker(self):
+        contract = "Read docs/automated-pr-lifecycle.md first."
+        config_validator.validate_prompt(
+            contract + " Run scripts/pr_lifecycle_run.py --stage 1.",
+            "daily-pr-review.md",
+        )
+        with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
+            config_validator.validate_prompt(contract, "daily-pr-review.md")
+
+    def test_calibration_prompt_keeps_legacy_continuity_markers(self):
+        calibration = " ".join(
+            (
+                "docs/automated-pr-lifecycle.md",
+                "docs/pr-lifecycle-runtime-ledger.md",
+                "Memory is enabled",
+                "Dashboard-referenced MCP set",
+                "ledger, run records, and lessons",
+            )
+        )
+        config_validator.validate_prompt(
+            calibration, "daily-pr-completion.calibration.md"
+        )
+        with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
+            config_validator.validate_prompt(
+                "docs/automated-pr-lifecycle.md scripts/pr_lifecycle_run.py --stage 3",
+                "daily-pr-completion.calibration.md",
+            )
+
     def test_enabled_memory_is_required_for_all_cursor_exports(self):
         exports = ROOT / "docs/cursor-automations/exports"
         for path in sorted(exports.glob("*.json")):

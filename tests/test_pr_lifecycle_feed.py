@@ -6,6 +6,7 @@ import sys
 import types
 import unittest
 from datetime import datetime, timedelta, timezone
+from io import StringIO
 from pathlib import Path
 from unittest import mock
 
@@ -52,15 +53,27 @@ for _name in _STUB_NAMES:
 NOW = datetime(2026, 9, 21, 18, 0, tzinfo=timezone.utc)
 
 
+def _item(**overrides):
+    base = {
+        "key": "abhimehro/personal-config#1@" + "a" * 40,
+        "repository": "abhimehro/personal-config",
+        "pr": 1,
+        "base_sha": "b" * 40,
+        "head_sha": "a" * 40,
+        "changed_paths": ["scripts/foo.py"],
+        "author_type": "BOT",
+        "guardrail_outcome": "HOLD_EVIDENCE",
+        "lifecycle_state": "WAITING_HUMAN",
+        "updated_at_utc": (NOW - timedelta(days=9)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "next_action": "salvage the focused change",
+    }
+    base.update(overrides)
+    return base
+
+
 class FeedTests(unittest.TestCase):
     def test_expired_packet_reason(self):
-        item = {
-            "key": "abhimehro/personal-config#1@" + "a" * 40,
-            "lifecycle_state": "WAITING_HUMAN",
-            "author_type": "BOT",
-            "guardrail_outcome": "HOLD_EVIDENCE",
-            "updated_at_utc": (NOW - timedelta(days=9)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
+        item = _item()
         self.assertTrue(feed.is_expired_packet_salvage(item, expiry_days=7, now=NOW))
 
     def test_minimal_work_item_shape(self):
@@ -100,6 +113,148 @@ class FeedTests(unittest.TestCase):
             payload = feed.build_feed(ledger, config, now=NOW)
         self.assertTrue(payload["empty_with_stock"])
         self.assertEqual(payload["reason"], "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
+
+    def test_expired_packet_rejects_boundary_and_ineligible_records(self):
+        cases = (
+            _item(
+                updated_at_utc=(NOW - timedelta(days=7)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            ),
+            _item(author_type="HUMAN"),
+            _item(guardrail_outcome="REVIEW_SECURITY"),
+            _item(lifecycle_state="STAGE2_QUEUED"),
+            _item(updated_at_utc="invalid"),
+            _item(updated_at_utc="2026-09-01T00:00:00+00:00"),
+        )
+        for item in cases:
+            with self.subTest(item=item):
+                self.assertFalse(
+                    feed.is_expired_packet_salvage(item, expiry_days=7, now=NOW)
+                )
+
+    def test_minimal_work_item_uses_paths_fallback_and_copies_the_list(self):
+        paths = ["src/one.py"]
+        item = _item(changed_paths=None, paths=paths)
+        work_item = feed.minimal_work_item(item, reason="SALVAGE_ELIGIBLE")
+        paths.append("src/two.py")
+        self.assertEqual(work_item["paths"], ["src/one.py"])
+
+    def test_build_feed_deduplicates_keys_and_prioritizes_regular_salvage(self):
+        first = _item()
+        duplicate = _item(pr=2, changed_paths=["scripts/duplicate.py"])
+        expired_only = _item(
+            key="abhimehro/personal-config#3@" + "c" * 40,
+            pr=3,
+            changed_paths=["scripts/expired.py"],
+        )
+        ignored = _item(
+            key="abhimehro/personal-config#4@" + "d" * 40,
+            pr=4,
+            author_type="HUMAN",
+        )
+        ledger = {
+            "ledger_revision": 8,
+            "items": [first, duplicate, expired_only, ignored],
+        }
+        report = types.SimpleNamespace(salvage_eligible_count=1)
+
+        def eligible(item):
+            return item is first or item is duplicate
+
+        fake_health = types.SimpleNamespace(
+            summarize=lambda *_a, **_k: report,
+            is_salvage_eligible=eligible,
+        )
+        with mock.patch.object(feed, "health", fake_health):
+            payload = feed.build_feed(
+                ledger,
+                {"lifecycle": {"packet_expiry_close_days": 7}},
+                now=NOW,
+            )
+
+        self.assertEqual(payload["reason"], "FEED_OK")
+        self.assertEqual(payload["work_item_count"], 2)
+        self.assertEqual(payload["eligible_stock_count"], 2)
+        self.assertEqual(
+            [work_item["reason"] for work_item in payload["work_items"]],
+            ["SALVAGE_ELIGIBLE", "EXPIRED_PACKET_OR_CLOSE_STALE"],
+        )
+        self.assertEqual(
+            [work_item["pr"] for work_item in payload["work_items"]], [1, 3]
+        )
+
+    def test_build_feed_honors_limit_and_falls_back_for_invalid_expiry(self):
+        ledger = {
+            "ledger_revision": 8,
+            "items": [
+                _item(
+                    updated_at_utc=(NOW - timedelta(days=8)).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    )
+                ),
+                _item(
+                    key="abhimehro/personal-config#2@" + "c" * 40,
+                    pr=2,
+                    updated_at_utc=(NOW - timedelta(days=8)).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    ),
+                ),
+            ],
+        }
+        fake_health = types.SimpleNamespace(
+            summarize=lambda *_a, **_k: types.SimpleNamespace(
+                salvage_eligible_count=0
+            ),
+            is_salvage_eligible=lambda *_a, **_k: False,
+        )
+        with mock.patch.object(feed, "health", fake_health):
+            payload = feed.build_feed(
+                ledger,
+                {"lifecycle": {"packet_expiry_close_days": 0}},
+                now=NOW,
+                limit=1,
+            )
+        self.assertEqual(payload["work_item_count"], 1)
+        self.assertEqual(payload["eligible_stock_count"], 2)
+
+    def test_empty_feed_without_stock_is_a_successful_empty_feed(self):
+        fake_health = types.SimpleNamespace(
+            summarize=lambda *_a, **_k: types.SimpleNamespace(
+                salvage_eligible_count=0
+            ),
+            is_salvage_eligible=lambda *_a, **_k: False,
+        )
+        with mock.patch.object(feed, "health", fake_health):
+            payload = feed.build_feed(
+                {"ledger_revision": 1, "items": []},
+                {"lifecycle": {}},
+                now=NOW,
+            )
+        self.assertEqual(payload["reason"], "EMPTY_FEED")
+        self.assertFalse(payload["empty_with_stock"])
+
+    def test_run_feed_returns_named_exit_two_for_empty_feed_with_stock(self):
+        payload = {
+            "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
+            "work_item_count": 0,
+            "eligible_stock_count": 2,
+            "work_items": [],
+            "empty_with_stock": True,
+        }
+        with mock.patch.object(feed, "load_yaml", side_effect=[{"lifecycle": {}}, {}]):
+            with mock.patch.object(feed, "validate_config"):
+                with mock.patch.object(
+                    feed.cas,
+                    "run_preflight",
+                    return_value={"ledger_path": "ledger.yaml"},
+                    create=True,
+                ):
+                    with mock.patch.object(feed, "build_feed", return_value=payload):
+                        with mock.patch("sys.stdout", new=StringIO()) as output:
+                            result = feed.run_feed(limit=None, json_out=False)
+        self.assertEqual(result, feed.EXIT_EMPTY_WITH_STOCK)
+        self.assertIn("reason=EMPTY_FEED_WITH_ELIGIBLE_STOCK", output.getvalue())
 
 
 if __name__ == "__main__":

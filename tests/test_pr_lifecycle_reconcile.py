@@ -7,6 +7,7 @@ import types
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -135,6 +136,200 @@ class ClassifyItemTests(unittest.TestCase):
             now=NOW,
         )
         self.assertIsNone(action)
+
+    def test_terminal_item_is_ignored_even_when_lookup_failed(self):
+        action = reconcile.classify_item(
+            _item(lifecycle_state="TERMINAL"),
+            None,
+            expiry_days=7,
+            now=NOW,
+        )
+        self.assertIsNone(action)
+
+    def test_lookup_failure_is_reported_without_mutation_fields(self):
+        action = reconcile.classify_item(
+            _item(lifecycle_state="STAGE1_INTAKE"),
+            None,
+            expiry_days=7,
+            now=NOW,
+        )
+        self.assertEqual(action["action"], "LIVE_LOOKUP_FAILED")
+        self.assertNotIn("to_state", action)
+
+    def test_live_terminal_state_takes_precedence_over_sha_drift(self):
+        action = reconcile.classify_item(
+            _item(lifecycle_state="STAGE2_QUEUED"),
+            {"state": "merged", "headRefOid": "c" * 40},
+            expiry_days=7,
+            now=NOW,
+        )
+        self.assertEqual(action["action"], "TERMINAL_MERGED")
+
+    def test_sha_comparison_is_case_insensitive(self):
+        action = reconcile.classify_item(
+            _item(
+                lifecycle_state="STAGE2_QUEUED",
+                head_sha="abcdef" * 6 + "abcd",
+            ),
+            {"state": "OPEN", "headRefOid": "ABCDEF" * 6 + "ABCD"},
+            expiry_days=7,
+            now=NOW,
+        )
+        self.assertIsNone(action)
+
+    def test_stale_cutoff_is_exclusive(self):
+        action = reconcile.classify_item(
+            _item(
+                updated_at_utc=(NOW - timedelta(days=7)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            ),
+            {"state": "OPEN", "headRefOid": "a" * 40},
+            expiry_days=7,
+            now=NOW,
+        )
+        self.assertIsNone(action)
+
+    def test_stale_close_requires_parseable_bot_packet(self):
+        cases = (
+            {"author_type": "HUMAN"},
+            {"lifecycle_state": "STAGE2_QUEUED"},
+            {"updated_at_utc": "not-a-timestamp"},
+            {"updated_at_utc": "2026-09-01T00:00:00+00:00"},
+        )
+        for overrides in cases:
+            with self.subTest(overrides=overrides):
+                action = reconcile.classify_item(
+                    _item(**overrides),
+                    {"state": "OPEN", "headRefOid": "a" * 40},
+                    expiry_days=7,
+                    now=NOW,
+                )
+                self.assertIsNone(action)
+
+
+class ReconcileHelpersTests(unittest.TestCase):
+    def test_collect_actions_skips_invalid_and_terminal_items_and_honors_limit(self):
+        ledger = {
+            "items": [
+                "invalid",
+                _item(key="terminal", lifecycle_state="TERMINAL"),
+                _item(key="first", lifecycle_state="STAGE1_INTAKE"),
+                _item(key="second", lifecycle_state="STAGE2_QUEUED"),
+            ]
+        }
+        live = {"state": "CLOSED", "headRefOid": "a" * 40}
+        with mock.patch.object(reconcile, "_gh_pr_view", return_value=live) as view:
+            actions = reconcile.collect_actions(
+                ledger,
+                {"lifecycle": {"packet_expiry_close_days": 7}},
+                now=NOW,
+                limit=1,
+            )
+        self.assertEqual([action["key"] for action in actions], ["first"])
+        view.assert_called_once_with("abhimehro/personal-config", 99)
+
+    def test_build_transition_event_preserves_revision_and_owner_contract(self):
+        action = {
+            "to_state": "TERMINAL",
+            "disposition": "CLOSED_NOOP",
+            "reason": "closed upstream",
+        }
+        with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+            with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+                event = reconcile.build_transition_event(
+                    _item(lifecycle_state="STAGE2_QUEUED", current_owner="stage2"),
+                    action,
+                    kind="TERMINAL",
+                )
+        self.assertEqual(event["event_id"], "evt-fixed")
+        self.assertEqual(event["expected_item_revision"], 1)
+        self.assertEqual(event["resulting_item_revision"], 2)
+        self.assertEqual(event["to_owner"], "none")
+        self.assertEqual(event["next_owner"], "none")
+        self.assertEqual(event["created_at_utc"], "2026-09-21T18:00:00Z")
+
+    def test_apply_sha_drift_action_updates_projection_and_records_event(self):
+        ledger = {"ledger_revision": 4, "events": []}
+        item = _item(lifecycle_state="STAGE2_QUEUED", current_owner="stage2")
+        action = {
+            "action": "SHA_DRIFT_REINTAKE",
+            "to_state": "STAGE1_INTAKE",
+            "disposition": None,
+            "reason": "head changed",
+            "live_head_sha": "c" * 40,
+        }
+
+        def apply_transition(event, projected):
+            projected.update(
+                revision=event["resulting_item_revision"],
+                lifecycle_state=event["to_state"],
+                current_owner=event["to_owner"],
+                next_owner=event["next_owner"],
+                terminal_disposition=event["terminal_disposition"],
+            )
+            projected["handoffs"].append(event["event_id"])
+
+        with mock.patch.object(
+            reconcile.ledger_mod, "apply_transition", side_effect=apply_transition
+        ):
+            with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+                with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+                    event = reconcile.apply_action_to_ledger(ledger, item, action)
+
+        self.assertEqual(item["revision"], 2)
+        self.assertEqual(item["lifecycle_state"], "STAGE1_INTAKE")
+        self.assertEqual(item["current_owner"], "stage1")
+        self.assertEqual(item["handoffs"], ["evt-fixed"])
+        self.assertIn("c" * 40, item["next_action"])
+        self.assertEqual(ledger["ledger_revision"], 5)
+        self.assertIs(ledger["events"][0], event)
+
+    def test_gh_pr_view_handles_success_bad_json_and_command_failure(self):
+        success = types.SimpleNamespace(
+            returncode=0,
+            stdout='{"state": "OPEN", "headRefOid": "abc"}',
+        )
+        with mock.patch.object(reconcile.subprocess, "run", return_value=success):
+            self.assertEqual(
+                reconcile._gh_pr_view("owner/repo", 7)["headRefOid"], "abc"
+            )
+
+        for completed in (
+            types.SimpleNamespace(returncode=1, stdout=""),
+            types.SimpleNamespace(returncode=0, stdout="not-json"),
+            types.SimpleNamespace(returncode=0, stdout="[]"),
+        ):
+            with self.subTest(completed=completed):
+                with mock.patch.object(
+                    reconcile.subprocess, "run", return_value=completed
+                ):
+                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+        with mock.patch.object(reconcile.subprocess, "run", side_effect=OSError):
+            self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+    def test_close_stale_github_validates_identity_and_runs_all_steps(self):
+        self.assertEqual(
+            reconcile._close_stale_github({}),
+            ["skip github close: missing repository/pr"],
+        )
+        completed = [
+            types.SimpleNamespace(returncode=0),
+            types.SimpleNamespace(returncode=1),
+            types.SimpleNamespace(returncode=2),
+        ]
+        with mock.patch.object(
+            reconcile.subprocess, "run", side_effect=completed
+        ) as command:
+            steps = reconcile._close_stale_github(
+                {"repository": "owner/repo", "pr": 7}
+            )
+        self.assertEqual(steps, ["comment exit=0", "label exit=1", "close exit=2"])
+        self.assertEqual(
+            [call.args[0][2] for call in command.call_args_list],
+            ["comment", "edit", "close"],
+        )
 
 
 if __name__ == "__main__":
