@@ -43,7 +43,10 @@ def _validate_component(value: str, kind: str, regex: re.Pattern) -> None:
 
 
 def _split_repo(repo: str) -> tuple[str, str]:
-    """Split and validate an ``owner/name`` string."""
+    """Split and validate ``owner/name`` after stripping surrounding whitespace.
+
+    Raise InvalidPrReferenceError for malformed or unsafe references.
+    """
     repo = repo.strip()
     if not repo:
         raise InvalidPrReferenceError("repo reference is empty")
