@@ -34,6 +34,71 @@ class TestPRReference(unittest.TestCase):
         with self.assertRaises(InvalidPrReferenceError):
             PRReference.from_parts("owner/repo/extra", "1")
 
+    def test_repo_split_preserves_valid_component_boundaries(self):
+        cases = (
+            ("a/b", "a", "b"),
+            ("Org-1/Repo_2", "Org-1", "Repo_2"),
+            ("a.b_c/d.e-f", "a.b_c", "d.e-f"),
+            ("  Owner/Repo  ", "Owner", "Repo"),
+        )
+        for repo, owner, name in cases:
+            with self.subTest(repo=repo):
+                ref = PRReference.from_parts(repo, "7")
+                self.assertEqual((ref.owner, ref.name), (owner, name))
+                self.assertEqual(parse_repo_name(repo), f"{owner}/{name}")
+
+    def test_repo_split_requires_exactly_one_slash(self):
+        cases = (
+            ("owner", 0),
+            ("owner/repo/extra", 2),
+            ("owner//repo", 2),
+            ("/owner/repo", 2),
+            ("owner/repo//extra", 3),
+        )
+        for repo, slash_count in cases:
+            with self.subTest(repo=repo):
+                with self.assertRaisesRegex(
+                    InvalidPrReferenceError,
+                    rf"repo must be exactly owner/name \(got {slash_count} '/'\)",
+                ):
+                    PRReference.from_parts(repo, "7")
+
+    def test_repo_split_rejects_empty_components(self):
+        cases = (("/repo", "owner is empty"), ("owner/", "repo name is empty"))
+        for repo, message in cases:
+            with self.subTest(repo=repo):
+                with self.assertRaisesRegex(InvalidPrReferenceError, message):
+                    PRReference.from_parts(repo, "7")
+
+    def test_repo_split_validates_each_component(self):
+        cases = (
+            ("owner./repo", "owner contains invalid characters"),
+            ("owner/repo_", "repo name contains invalid characters"),
+            ("owner/rep:o", "repo name contains invalid characters"),
+            ("own\x7fer/repo", "repo reference contains whitespace/control characters"),
+            ("owner/na me", "repo reference contains whitespace/control characters"),
+        )
+        for repo, message in cases:
+            with self.subTest(repo=repo):
+                with self.assertRaisesRegex(InvalidPrReferenceError, message):
+                    PRReference.from_parts(repo, "7")
+
+    def test_repo_split_shared_by_reference_entry_points(self):
+        ref = PRReference.from_string("Org-1/Repo_2#7")
+        self.assertEqual((ref.owner, ref.name), ("Org-1", "Repo_2"))
+        self.assertEqual(parse_pr_reference("  Org-1/Repo_2  ", "7"), ref)
+        with self.assertRaisesRegex(
+            InvalidPrReferenceError, r"repo must be exactly owner/name \(got 2 '/'\)"
+        ):
+            PRReference.from_string("owner//repo#7")
+        with self.assertRaisesRegex(
+            InvalidPrReferenceError,
+            r"tasks/test.md:3: repo must be exactly owner/name \(got 2 '/'\)",
+        ):
+            parse_pr_reference(
+                "owner//repo", "7", loc=("tasks/test.md", 3), strict=True
+            )
+
     def test_repo_leading_hyphen(self):
         with self.assertRaises(InvalidPrReferenceError):
             PRReference.from_parts("-owner/repo", "1")
