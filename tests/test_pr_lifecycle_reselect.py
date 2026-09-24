@@ -280,6 +280,19 @@ class ReselectCandidateTests(unittest.TestCase):
             )
         )
 
+    def test_palette_shell_sticky_rejects_prohibited_wrap_instruction(self) -> None:
+        """Verify a "do not wrap" next_action cannot soften the shell hold."""
+        item = make_item(
+            sensitive_paths=["shell_execution", "generated_output"],
+            next_action="Palette: do not wrap; CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                item,
+                unique_remaining_paths=["maintenance/bin/refresh.sh"],
+            )
+        )
+
     def test_title_allowlist_for_non_bot_ledger_author(self) -> None:
         """Verify the title allowlist can classify a non-bot ledger author."""
         item = make_item(
