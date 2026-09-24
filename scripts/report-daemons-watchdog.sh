@@ -17,7 +17,7 @@ log "start mode=observe-only uid=$(id -u)"
 found=0
 for name in ReportCrash ReportCrashService ReportMemoryException; do
 	# SECURITY: -- prevents process names from being interpreted as command-line options.
-	pids="$(pgrep -x -- "$name" 2>/dev/null | tr '\n' ',' | sed 's/,$//' || true)"
+	pids="$(pgrep -x -d ',' -- "$name" 2>/dev/null)"
 	if [[ -n $pids ]]; then
 		log "process=$name pids=$pids action=leave-alone"
 		found=1
