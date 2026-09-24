@@ -14,7 +14,7 @@ _report = make_health_report
 
 
 class Option3RebalancePlanTests(unittest.TestCase):
-    def test_stage1_enqueue_cap_and_unique_path_override(self):
+    def test_stage1_enqueue_cap_and_unique_path_override(self) -> None:
         candidates = [
             {
                 "key": f"abhimehro/demo#{pr}@head",
@@ -56,7 +56,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             )
         )
 
-    def test_stage1_partial_enqueue_reports_incomplete_candidate(self):
+    def test_stage1_partial_enqueue_reports_incomplete_candidate(self) -> None:
         complete = {
             "key": "abhimehro/demo#1@head",
             "repository": "abhimehro/demo",
@@ -92,7 +92,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["actions"][1]["grade"], "PASS")
         self.assertIsNone(plan["stop_class"])
 
-    def test_stage1_all_incomplete_candidates_fail_feed_check(self):
+    def test_stage1_all_incomplete_candidates_fail_feed_check(self) -> None:
         incomplete = {
             "key": "abhimehro/demo#1@head",
             "repository": "abhimehro/demo",
@@ -117,7 +117,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
 
-    def test_stage2_mixed_feed_salvages_only_usable_sources(self):
+    def test_stage2_mixed_feed_salvages_only_usable_sources(self) -> None:
         never_touch = {"source_item_key": "abhimehro/Seatek_Analysis#692@head"}
         usable = {"source_key": "abhimehro/demo#8@head"}
         feed_payload = {
@@ -152,7 +152,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         )
         self.assertIs(plan["actions"][1]["wi"], usable)
 
-    def test_stage3_handoff_requires_owner_state_and_salvage_outcome(self):
+    def test_stage3_handoff_requires_owner_state_and_salvage_outcome(self) -> None:
         base = {
             "key": "abhimehro/demo#1@head",
             "repository": "abhimehro/demo",
@@ -199,7 +199,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             ["CONFLICTING_UNIQUE_RESELECT", "CONFLICTING_UNIQUE_RESELECT"],
         )
 
-    def test_stage3_handoff_cap_applies_after_owner_and_outcome_filter(self):
+    def test_stage3_handoff_cap_applies_after_owner_and_outcome_filter(self) -> None:
         base = {
             "current_owner": "stage3",
             "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -224,7 +224,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             ["demo#3@head", "demo#4@head"],
         )
 
-    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self):
+    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self) -> None:
         feed_payload = {
             "empty_with_stock": True,
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
@@ -246,7 +246,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             [action["action"] for action in plan["actions"]], ["FEED_SUMMARY"]
         )
 
-    def test_stage1_emits_enqueue_when_reselect_candidates_exist(self):
+    def test_stage1_emits_enqueue_when_reselect_candidates_exist(self) -> None:
         candidate = {
             "key": "abhimehro/personal-config#2069@abc",
             "repository": "abhimehro/personal-config",
@@ -275,7 +275,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(feed["enqueued"], 1)
         self.assertIsNone(plan["stop_class"])
 
-    def test_stage1_feed_check_fails_when_candidates_not_enqueued(self):
+    def test_stage1_feed_check_fails_when_candidates_not_enqueued(self) -> None:
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
             mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
@@ -301,7 +301,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         feed = plan["actions"][-1]
         self.assertEqual(feed["grade"], "FAIL")
 
-    def test_stage2_skip_if_empty_exits_success_without_docs_pr(self):
+    def test_stage2_skip_if_empty_exits_success_without_docs_pr(self) -> None:
         feed_payload = {
             "empty_with_stock": False,
             "reason": "EMPTY_FEED",
@@ -321,7 +321,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["actions"][0]["action"], "SKIP_IF_EMPTY")
         self.assertFalse(plan["stage2_may_merge"])
 
-    def test_stage2_filters_never_touch_then_may_skip(self):
+    def test_stage2_filters_never_touch_then_may_skip(self) -> None:
         feed_payload = {
             "empty_with_stock": False,
             "reason": "FEED_OK",
@@ -344,7 +344,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertTrue(plan.get("skip_cursor"))
         self.assertEqual(plan["actions"][0]["action"], "SKIP_IF_EMPTY")
 
-    def test_stage3_handoff_and_closed_noop_deferred(self):
+    def test_stage3_handoff_and_closed_noop_deferred(self) -> None:
         candidate = {
             "key": "abhimehro/personal-config#2092@abc",
             "repository": "abhimehro/personal-config",
