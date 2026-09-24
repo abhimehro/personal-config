@@ -142,8 +142,8 @@ CONFLICTING, and was not closed.
 
 | Ledger key | Owner before → after | Guardrail / action | Evidence | Final |
 | ---------- | -------------------- | ------------------ | -------- | ----- |
-| `series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736` | stage3 → stage3 | ACK `evt-s1-20260919-seriescorre-409-b`; keep OPEN CONFLICTING vs draft #460 (0gd/0hm/0ho) | https://github.com/abhimehro/series_correction_project_updated/pull/409 ; https://github.com/abhimehro/series_correction_project_updated/pull/460 | OPEN; rev 6; next_owner stage3 |
-| overflow rpce #342 (not imported) | none → none | CLOSED_NOOP after 24h; `s3-20260919-rpce-342-close` | https://github.com/abhimehro/repoprompt-ce/pull/342 | CLOSED unmerged |
+| `series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736` | stage3 → stage3 | ACK `evt-s1-20260919-seriescorre-409-b`; keep OPEN CONFLICTING vs draft #460 (0gd/0hm/0ho) | <https://github.com/abhimehro/series_correction_project_updated/pull/409> ; https://github.com/abhimehro/series_correction_project_updated/pull/460 | OPEN; rev 6; next_owner stage3 |
+| overflow rpce #342 (not imported) | none → none | CLOSED_NOOP after 24h; `s3-20260919-rpce-342-close` | <https://github.com/abhimehro/repoprompt-ce/pull/342> | CLOSED unmerged |
 
 ### Remaining Stage-3-owned (next_owner stage3)
 
