@@ -202,10 +202,11 @@ def import_lifecycle_run() -> Any:
     Stubs live in sys.modules only for the duration of the import so discovery
     does not leak them into the rest of the suite; run.health and friends stay
     patchable via mock.patch.object afterwards.
-    """
-    if str(SCRIPTS) not in sys.path:
-        sys.path.insert(0, str(SCRIPTS))
     saved = _install_run_stubs()
+    try:
+        import pr_lifecycle_run as module
+    finally:
+        _restore_run_stubs(saved)
     import pr_lifecycle_run as module
 
     _restore_run_stubs(saved)
