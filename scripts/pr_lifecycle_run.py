@@ -177,6 +177,36 @@ def plan_stage2_enqueues(
     }
 
 
+def _stage3_handoff_eligible(item: dict[str, Any]) -> bool:
+    """Return True for stage3-owned reconciliation items with a salvage outcome."""
+    return (
+        item.get("current_owner") == "stage3"
+        and item.get("lifecycle_state") == "STAGE3_RECONCILIATION"
+        and (item.get("guardrail_outcome") or "") in health.SALVAGE_OUTCOMES
+    )
+
+
+def _handoff_action(
+    item: dict[str, Any], allowed_paths: list[str]
+) -> dict[str, Any]:
+    """Build one HANDOFF_MECHANICAL_TO_STAGE2 plan action with WI anchors."""
+    return {
+        "action": "HANDOFF_MECHANICAL_TO_STAGE2",
+        "source_key": item.get("key"),
+        "repository": item.get("repository"),
+        "pr": item.get("pr"),
+        "base_sha": item.get("base_sha"),
+        "head_sha": item.get("head_sha"),
+        "allowed_paths": allowed_paths,
+        "reason": RESELECT_ENQUEUE_REASON,
+        "next_action": health.MECHANICAL_RESELECT_NA,
+        "note": (
+            "CAS complete Stage 2 WI + owner stage2; "
+            "do not leave mechanical CONFLICTING as WAITING_HUMAN"
+        ),
+    }
+
+
 def plan_stage3_mechanical_handoffs(
     ledger: dict[str, Any],
     *,
@@ -195,33 +225,13 @@ def plan_stage3_mechanical_handoffs(
     candidates = health.list_reselect_candidates(ledger, signals=signals)
     actions: list[dict[str, Any]] = []
     for item in candidates:
-        if item.get("current_owner") != "stage3":
-            continue
-        if item.get("lifecycle_state") != "STAGE3_RECONCILIATION":
-            continue
-        if (item.get("guardrail_outcome") or "") not in health.SALVAGE_OUTCOMES:
+        if not _stage3_handoff_eligible(item):
             continue
         key = str(item.get("key") or "")
         allowed_paths = _enqueue_source_paths(item, signals, key)
         if not _enqueue_fields_complete(item, key, allowed_paths):
             continue
-        actions.append(
-            {
-                "action": "HANDOFF_MECHANICAL_TO_STAGE2",
-                "source_key": item.get("key"),
-                "repository": item.get("repository"),
-                "pr": item.get("pr"),
-                "base_sha": item.get("base_sha"),
-                "head_sha": item.get("head_sha"),
-                "allowed_paths": allowed_paths,
-                "reason": RESELECT_ENQUEUE_REASON,
-                "next_action": health.MECHANICAL_RESELECT_NA,
-                "note": (
-                    "CAS complete Stage 2 WI + owner stage2; "
-                    "do not leave mechanical CONFLICTING as WAITING_HUMAN"
-                ),
-            }
-        )
+        actions.append(_handoff_action(item, allowed_paths))
         if len(actions) >= limit:
             break
     return actions
