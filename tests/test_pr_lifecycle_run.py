@@ -329,6 +329,128 @@ class RunExecutionTests(unittest.TestCase):
 
 
 class Option3RebalancePlanTests(unittest.TestCase):
+    def test_stage1_enqueue_cap_and_unique_path_override(self):
+        candidates = [
+            {
+                "key": f"abhimehro/demo#{pr}@head",
+                "repository": "abhimehro/demo",
+                "pr": pr,
+                "base_sha": "a" * 40,
+                "head_sha": "b" * 40,
+                "changed_paths": ["src/old.py"],
+            }
+            for pr in range(1, 7)
+        ]
+        with mock.patch.object(
+            run.health, "list_reselect_candidates", return_value=candidates[:5]
+        ) as select:
+            planned = run.plan_stage2_enqueues(
+                {"items": candidates},
+                unique_paths_by_key={"abhimehro/demo#1": ["src/unique.py"]},
+            )
+        self.assertEqual(select.call_args.kwargs["limit"], 5)
+        self.assertEqual(planned["candidate_count"], 5)
+        self.assertEqual(planned["enqueued_count"], 5)
+        self.assertEqual(
+            [action["source_key"] for action in planned["enqueue_actions"]],
+            [candidate["key"] for candidate in candidates[:5]],
+        )
+        first = planned["enqueue_actions"][0]
+        self.assertEqual(first["allowed_paths"], ["src/unique.py"])
+        self.assertEqual(first["base_sha"], "a" * 40)
+        self.assertEqual(first["head_sha"], "b" * 40)
+        self.assertEqual(
+            first["next_action"], run.health.mechanical_reselect_next_action()
+        )
+        self.assertTrue(
+            all(
+                action["action"] == "ENQUEUE_STAGE2_WI"
+                for action in planned["enqueue_actions"]
+            )
+        )
+
+    def test_stage2_mixed_feed_salvages_only_usable_sources(self):
+        never_touch = {"source_item_key": "abhimehro/Seatek_Analysis#692@head"}
+        usable = {"source_key": "abhimehro/demo#8@head"}
+        feed_payload = {
+            "empty_with_stock": False,
+            "reason": "FEED_OK",
+            "work_item_count": 2,
+            "eligible_stock_count": 1,
+            "work_items": [never_touch, usable],
+        }
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.feed_mod, "build_feed", return_value=feed_payload
+            ):
+                with mock.patch.object(
+                    run.health,
+                    "is_never_touch_key",
+                    side_effect=lambda key: key.startswith(
+                        "abhimehro/Seatek_Analysis#692@"
+                    ),
+                ):
+                    plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        self.assertEqual(plan["reason"], "OK")
+        self.assertFalse(plan["skip_cursor"])
+        self.assertEqual(plan["mechanical_candidate_count"], 1)
+        self.assertEqual(
+            plan["never_touch_skipped"],
+            [{"source_key": never_touch["source_item_key"], "reason": "NEVER_TOUCH"}],
+        )
+        self.assertEqual(
+            [action["action"] for action in plan["actions"]],
+            ["FEED_SUMMARY", "SALVAGE_WI"],
+        )
+        self.assertIs(plan["actions"][1]["wi"], usable)
+
+    def test_stage3_handoff_requires_owner_state_and_salvage_outcome(self):
+        base = {
+            "key": "abhimehro/demo#1@head",
+            "repository": "abhimehro/demo",
+            "pr": 1,
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "guardrail_outcome": "HOLD_CONTRACT",
+        }
+        candidates = [
+            base,
+            {**base, "key": "abhimehro/demo#2@head", "current_owner": "stage1"},
+            {
+                **base,
+                "key": "abhimehro/demo#3@head",
+                "lifecycle_state": "WAITING_HUMAN",
+            },
+            {
+                **base,
+                "key": "abhimehro/demo#4@head",
+                "guardrail_outcome": "REVIEW_SECURITY",
+            },
+            {
+                **base,
+                "key": "abhimehro/demo#5@head",
+                "guardrail_outcome": "HOLD_EVIDENCE",
+            },
+        ]
+        with mock.patch.object(
+            run.health, "list_reselect_candidates", return_value=candidates
+        ):
+            actions = run.plan_stage3_mechanical_handoffs({"items": candidates})
+        self.assertEqual(
+            [action["source_key"] for action in actions],
+            [candidates[0]["key"], candidates[4]["key"]],
+        )
+        self.assertTrue(
+            all(
+                action["action"] == "HANDOFF_MECHANICAL_TO_STAGE2"
+                for action in actions
+            )
+        )
+        self.assertEqual(
+            [action["reason"] for action in actions],
+            ["CONFLICTING_UNIQUE_RESELECT", "CONFLICTING_UNIQUE_RESELECT"],
+        )
+
     def test_stage1_emits_enqueue_when_reselect_candidates_exist(self):
         candidate = {
             "key": "abhimehro/personal-config#2069@abc",

@@ -486,6 +486,127 @@ class TestStagePromptContracts(unittest.TestCase):
 
 
 class ReselectCandidateTests(unittest.TestCase):
+    def test_reselect_rejects_terminal_and_non_salvage_outcomes(self):
+        base = _item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        for outcome in (
+            "REVIEW_SECURITY",
+            "HOLD_PLATFORM",
+            "HOLD_CANONICAL",
+            "PASS_ROUTINE",
+            "CLOSE_NONSECURITY_NOOP",
+            "ANALYSIS_ERROR",
+        ):
+            with self.subTest(outcome=outcome):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(
+                        {**base, "guardrail_outcome": outcome}
+                    )
+                )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                {**base, "lifecycle_state": "TERMINAL"}
+            )
+        )
+
+    def test_reselect_requires_non_journal_unique_remaining_paths(self):
+        item = _item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT DIRTY unique remaining",
+        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item))
+        for paths in ([], [".jules/journal.md"], ["notes/.jules/journal.md"]):
+            with self.subTest(paths=paths):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(
+                        item, unique_remaining_paths=paths
+                    )
+                )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, unique_remaining_paths=[".jules/journal.md", "src/unique.py"]
+            )
+        )
+
+    def test_palette_shell_sticky_requires_only_allowlisted_paths(self):
+        item = _item(
+            sensitive_paths=["shell_execution"],
+            next_action="Palette wrap CONFLICTING unique remaining",
+        )
+        allowed = (
+            "analytics_dashboard.sh",
+            "maintenance/bin/refresh.sh",
+            "docs/cursor-automations/prompts/daily-pr-review.md",
+        )
+        for path in allowed:
+            with self.subTest(allowed=path):
+                self.assertTrue(
+                    health.is_reselect_salvage_candidate(
+                        item, unique_remaining_paths=[".jules/journal.md", path]
+                    )
+                )
+        for paths in (
+            [".jules/journal.md"],
+            ["maintenance/bin/refresh.sh", "scripts/deploy.sh"],
+            ["maintenance/bin/refresh.py"],
+        ):
+            with self.subTest(blocked=paths):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(
+                        item, unique_remaining_paths=paths
+                    )
+                )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                {**item, "next_action": "CONFLICTING unique remaining"},
+                unique_remaining_paths=["maintenance/bin/refresh.sh"],
+            )
+        )
+
+    def test_title_bot_prefixes_do_not_admit_arbitrary_human_titles(self):
+        item = _item(
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        for prefix in (
+            "⚡ Bolt",
+            "🎨 Palette",
+            "salvage(",
+            "chore(qa)",
+            "chore(repo-health)",
+        ):
+            with self.subTest(prefix=prefix):
+                self.assertTrue(
+                    health.is_reselect_salvage_candidate(
+                        item, title=f"  {prefix} focused repair"
+                    )
+                )
+        for title in (None, "Human repair", "Review ⚡ Bolt repair"):
+            with self.subTest(title=title):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(item, title=title)
+                )
+
+    def test_reselect_candidate_lookup_accepts_source_prefix_metadata(self):
+        key = "abhimehro/demo#7@abc"
+        item = _item(
+            key=key,
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="Needs live verification",
+        )
+        ledger = _ledger([item, _item(key="", changed_paths=["src/other.py"])], [])
+        selected = health.list_reselect_candidates(
+            ledger,
+            live_mergeable_by_key={"abhimehro/demo#7": "DIRTY"},
+            titles_by_key={"abhimehro/demo#7": "⚡ Bolt: repair"},
+            unique_paths_by_key={"abhimehro/demo#7": ["src/unique.py"]},
+        )
+        self.assertEqual([entry["key"] for entry in selected], [key])
+
     def test_palette_conflicting_soft_shell_sticky_is_reselect(self):
         item = _item(
             key="abhimehro/personal-config#2069@abc",
