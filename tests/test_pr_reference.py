@@ -55,6 +55,7 @@ class TestPRReference(unittest.TestCase):
         cases = (
             ("owner", 0),
             ("owner/repo/extra", 2),
+            ("owner/repo/", 2),
             ("owner//repo", 2),
             ("/owner/repo", 2),
             ("owner/repo//extra", 3),
@@ -66,6 +67,18 @@ class TestPRReference(unittest.TestCase):
                     rf"repo must be exactly owner/name \(got {slash_count} '/'\)",
                 ):
                     PRReference.from_parts(repo, "7")
+
+    def test_repo_split_rejects_empty_after_trimming(self):
+        for repo in ("", " \t\n ", "\u2003"):
+            with self.subTest(repo=repo):
+                with self.assertRaisesRegex(
+                    InvalidPrReferenceError, "repo reference is empty"
+                ):
+                    PRReference.from_parts(repo, "7")
+                with self.assertRaisesRegex(
+                    InvalidPrReferenceError, "repo reference is empty"
+                ):
+                    parse_repo_name(repo, strict=True)
 
     def test_repo_split_rejects_empty_components(self):
         """Reject empty owner and repository names after splitting."""
@@ -83,6 +96,7 @@ class TestPRReference(unittest.TestCase):
             ("owner/rep:o", "repo name contains invalid characters"),
             ("own\x7fer/repo", "repo reference contains whitespace/control characters"),
             ("owner/na me", "repo reference contains whitespace/control characters"),
+            (" owner/ repo ", "repo reference contains whitespace/control characters"),
         )
         for repo, message in cases:
             with self.subTest(repo=repo):
@@ -105,6 +119,20 @@ class TestPRReference(unittest.TestCase):
             parse_pr_reference(
                 "owner//repo", "7", loc=("tasks/test.md", 3), strict=True
             )
+
+    def test_repo_split_non_strict_reports_trailing_separator(self):
+        captured = io.StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = captured
+        try:
+            result = parse_pr_reference(
+                "owner/repo/", "7", loc=("tasks/test.md", 4)
+            )
+        finally:
+            sys.stderr = old_stderr
+        self.assertIsNone(result)
+        self.assertIn("skipping invalid repo name at tasks/test.md:4", captured.getvalue())
+        self.assertIn("got 2 '/'", captured.getvalue())
 
     def test_repo_leading_hyphen(self):
         with self.assertRaises(InvalidPrReferenceError):
