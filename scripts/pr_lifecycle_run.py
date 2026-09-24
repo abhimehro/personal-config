@@ -72,13 +72,14 @@ RESELECT_ENQUEUE_REASON = "CONFLICTING_UNIQUE_RESELECT"
 
 
 def _wi_source_key(wi: dict[str, Any]) -> str:
+    """Get a feed item's source_key or source_item_key, or an empty string."""
     return str(wi.get("source_key") or wi.get("source_item_key") or "")
 
 
 def _filter_never_touch_work_items(
     work_items: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Split feed WIs into mechanical vs hard never-touch report-only."""
+    """Separate feed items by never-touch source, preserving their order."""
     mechanical: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     for wi in work_items:
@@ -97,7 +98,13 @@ def plan_stage2_enqueues(
     unique_paths_by_key: dict[str, list[str]] | None = None,
     limit: int = STAGE2_ENQUEUE_CAP,
 ) -> dict[str, Any]:
-    """Plan ≤N complete Stage 2 WI CAS enqueues from reselect candidates."""
+    """Return Stage 2 enqueue action proposals for capped reselect candidates.
+
+    Prefer nonempty unique paths from the optional map over changed_paths, and
+    omit journal paths from each action's allowed_paths. candidate_count counts
+    candidates after the limit. These actions request later CAS writes; this
+    function neither creates complete work items nor writes to the ledger.
+    """
     candidates = health.list_reselect_candidates(
         ledger,
         live_mergeable_by_key=live_mergeable_by_key,
@@ -145,7 +152,13 @@ def plan_stage2_enqueues(
 def plan_stage3_mechanical_handoffs(
     ledger: dict[str, Any], *, limit: int = STAGE2_ENQUEUE_CAP
 ) -> list[dict[str, Any]]:
-    """STAGE3_RECONCILIATION mechanical CONFLICTING → Stage 2 WI handoff plans."""
+    """Propose Stage 2 handoffs for eligible Stage 3 reconciliation items.
+
+    The shared selector accepts CONFLICTING or DIRTY; only stage3-owned items
+    with a salvage outcome produce actions. The limit caps candidates before
+    these filters, so the result may contain fewer actions. No ledger update
+    occurs here.
+    """
     actions: list[dict[str, Any]] = []
     for item in health.list_reselect_candidates(ledger, limit=limit):
         if item.get("current_owner") != "stage3":
@@ -181,6 +194,12 @@ def _stage1_plan(
     titles_by_key: dict[str, str] | None = None,
     unique_paths_by_key: dict[str, list[str]] | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+    """Plan Stage 1 reconciliation and reselect enqueues with a FEED_CHECK grade.
+
+    Optional maps supply live mergeability, titles, and unique paths for the
+    reselect planner. Return allowed commands, actions, stop class, and reason;
+    candidates without any enqueue actions yield LOGIC_STOP and FEED_CHECK_FAIL.
+    """
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
         "python3 scripts/pr_lifecycle_feed.py --json (read-only verification)",
@@ -231,6 +250,13 @@ def _stage1_plan(
 def _stage2_plan(
     ledger: dict[str, Any], config: dict[str, Any]
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
+    """Plan Stage 2 work after excluding never-touch feed items.
+
+    Empty feed with eligible stock yields LOGIC_STOP. With no remaining feed
+    items, return a SKIP_IF_EMPTY action and skip flags; otherwise return feed
+    and salvage actions. The final result also reports skipped sources and the
+    remaining item count.
+    """
     allowed = [
         "python3 scripts/pr_lifecycle_feed.py --json",
         "open/update draft salvage PRs only (never merge/approve/close originals)",
@@ -294,6 +320,7 @@ def _stage2_plan(
 def _stage3_plan(
     ledger: dict[str, Any],
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+    """Plan Stage 3 reconciliation, deferred CLOSED_NOOP, and handoff actions."""
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
         "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
@@ -335,7 +362,11 @@ def build_stage_plan(
     titles_by_key: dict[str, str] | None = None,
     unique_paths_by_key: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
-    """Build the exact action plan a stage agent may execute."""
+    """Build a stage plan with health, permitted commands, and planned actions.
+
+    Live mergeability, title, and unique-path maps apply only to Stage 1.
+    An invalid stage produces LOGIC_STOP with no permitted commands or actions.
+    """
     report = health.summarize(ledger)
     extras: dict[str, Any] = {}
     if stage == 1:

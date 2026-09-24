@@ -219,11 +219,16 @@ def _source_pr_prefix(key: object) -> str:
 
 
 def is_never_touch_key(key: object) -> bool:
-    """Hard never-touch sources (Seatek#692 journals, ctrld#1206 CSPRNG)."""
+    """Identify the two hard never-touch source PRs, ignoring any @SHA suffix.
+
+    They are abhimehro/Seatek_Analysis#692 (journals) and
+    abhimehro/ctrld-sync#1206 (CSPRNG).
+    """
     return _source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
 
 
 def _title_is_reselect_bot(title: str | None) -> bool:
+    """Return whether a stripped title starts with an allowed reselect prefix."""
     if not title:
         return False
     stripped = title.strip()
@@ -231,6 +236,7 @@ def _title_is_reselect_bot(title: str | None) -> bool:
 
 
 def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
+    """Accept nonterminal items with BOT authorship or an allowed title."""
     if item.get("lifecycle_state") == "TERMINAL":
         return False
     if item.get("author_type") == "BOT":
@@ -239,6 +245,10 @@ def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
 
 
 def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
+    """Use the supplied state or the first CONFLICTING/DIRTY in next_action.
+
+    Return an empty string when neither source provides a state.
+    """
     if live_mergeable:
         return str(live_mergeable).upper()
     next_action = item.get("next_action") or ""
@@ -247,6 +257,7 @@ def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> s
 
 
 def _non_journal_paths(paths: list[str]) -> list[str]:
+    """Return paths outside any .jules directory."""
     return [path for path in paths if not JOURNAL_PATH_RE.search(path)]
 
 
@@ -262,6 +273,11 @@ def _paths_allow_soft_shell(paths: list[str]) -> bool:
 
 
 def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
+    """Accept no sensitive labels beyond generated_output.
+
+    Also accept shell_execution for Palette actions with allowed non-journal
+    paths.
+    """
     sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
     if not sticky:
         return True
@@ -275,6 +291,11 @@ def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
 def _unique_remaining_ok(
     unique_remaining_paths: list[str] | None, fallback_paths: list[str]
 ) -> tuple[bool, list[str]]:
+    """Discard journal paths and report whether any source paths remain.
+
+    Use fallback paths only when unique_remaining_paths is None; an explicit
+    empty list means there is no unique source to reselect.
+    """
     if unique_remaining_paths is not None:
         cleaned = _non_journal_paths([str(p) for p in unique_remaining_paths])
         return (bool(cleaned), cleaned)
@@ -290,11 +311,16 @@ def is_reselect_salvage_candidate(
     title: str | None = None,
     unique_remaining_paths: list[str] | None = None,
 ) -> bool:
-    """Stage 1 enqueue predicate for CONFLICTING/DIRTY unique-source reselect.
+    """Return whether Stage 1 may plan a unique-source reselect for this item.
 
-    Separate from ``is_salvage_eligible`` (monitor). Requires unique remaining
-    (provided or non-journal ``changed_paths`` proxy), live CONFLICTING/DIRTY,
-    and never-touch / REVIEW_SECURITY / hard sticky exclusion.
+    Accept a nonterminal BOT item or one with an allowed title prefix when its
+    supplied mergeability, or a state inferred from next_action, is CONFLICTING
+    or DIRTY. An explicit unique_remaining_paths list must contain a non-journal
+    path. When omitted, changed_paths (then paths) serves only as a proxy. Exclude
+    never-touch sources and blocked guardrail outcomes. Generated output is the
+    only unrestricted sensitive label; shell_execution additionally requires a
+    Palette action and paths on the wrap allowlist. This predicate is separate
+    from ``is_salvage_eligible``.
     """
     if is_never_touch_key(item.get("key")):
         return False
@@ -344,7 +370,13 @@ def list_reselect_candidates(
     unique_paths_by_key: dict[str, list[str]] | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Return ledger items that pass ``is_reselect_salvage_candidate``."""
+    """Return eligible keyed ledger items in their original order.
+
+    Optional maps are looked up by full ledger key, then repository#PR prefix;
+    falsey values do not override fallbacks. A None limit is unbounded.
+    The limit is checked after appending, so a nonpositive limit can still
+    return one item.
+    """
     live_map = live_mergeable_by_key or {}
     title_map = titles_by_key or {}
     paths_map = unique_paths_by_key or {}
