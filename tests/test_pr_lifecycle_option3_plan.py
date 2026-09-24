@@ -239,7 +239,8 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "empty_with_stock": True,
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
             "work_item_count": 1,
-            "eligible_stock_count": 1,
+            "eligible_stock_count": 2,
+            "non_never_touch_stock_count": 1,
             "work_items": [{"source_item_key": "abhimehro/ctrld-sync#1206@head"}],
         }
         with (
@@ -254,6 +255,29 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["mechanical_candidate_count"], 0)
         self.assertEqual(
             [action["action"] for action in plan["actions"]], ["FEED_SUMMARY"]
+        )
+
+    def test_stage2_skips_when_only_never_touch_stock_remains(self) -> None:
+        """Verify never-touch-only stock still yields the successful skip."""
+        feed_payload = {
+            "empty_with_stock": True,
+            "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
+            "work_item_count": 1,
+            "eligible_stock_count": 1,
+            "non_never_touch_stock_count": 0,
+            "work_items": [{"source_item_key": "abhimehro/Seatek_Analysis#692@head"}],
+        }
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+            mock.patch.object(run.health, "is_never_touch_key", return_value=True),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 1}, {})
+        self.assertIsNone(plan["stop_class"])
+        self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
+        self.assertTrue(plan["skip_cursor"])
+        self.assertEqual(
+            [action["action"] for action in plan["actions"]], ["SKIP_IF_EMPTY"]
         )
 
     def test_stage1_emits_enqueue_when_reselect_candidates_exist(self) -> None:
@@ -308,6 +332,26 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(planned["candidate_count"], 0)
         self.assertEqual(planned["enqueued_count"], 0)
         self.assertEqual(planned["enqueue_actions"], [])
+
+    def test_stage1_enqueue_uses_paths_when_changed_paths_missing(self) -> None:
+        """Verify enqueue path resolution falls back to the item paths field."""
+        candidate = {
+            "key": "abhimehro/demo#2@abc",
+            "repository": "abhimehro/demo",
+            "pr": 2,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "paths": ["src/demo.py"],
+        }
+        with mock.patch.object(
+            run.health, "list_reselect_candidates", return_value=[candidate]
+        ):
+            planned = run.plan_stage2_enqueues({"items": [candidate]})
+        self.assertEqual(planned["enqueued_count"], 1)
+        self.assertEqual(
+            planned["enqueue_actions"][0]["allowed_paths"], ["src/demo.py"]
+        )
+        self.assertEqual(planned["skipped_incomplete"], [])
 
     def test_stage1_feed_check_fails_when_candidates_not_enqueued(self) -> None:
         """Verify the feed check fails when no candidate can be enqueued."""

@@ -40,6 +40,9 @@ sys.modules["pr_lifecycle_pipeline_health"].summarize = (
         reason="ok",
     )
 )
+sys.modules["pr_lifecycle_pipeline_health"].is_never_touch_key = (
+    lambda *_a, **_k: False
+)
 
 
 def _parse_utc_stub(value):
@@ -122,6 +125,7 @@ class FeedTests(unittest.TestCase):
         fake_health = types.SimpleNamespace(
             summarize=lambda *a, **k: FakeReport(),
             is_salvage_eligible=lambda *a, **k: False,
+            is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
@@ -180,6 +184,7 @@ class FeedTests(unittest.TestCase):
         fake_health = types.SimpleNamespace(
             summarize=lambda *_a, **_k: report,
             is_salvage_eligible=eligible,
+            is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
@@ -199,6 +204,34 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(
             [work_item["pr"] for work_item in payload["work_items"]], [1, 3]
         )
+
+    def test_build_feed_counts_stock_excluding_never_touch(self):
+        never_touch = _item(key="abhimehro/Seatek_Analysis#692@" + "a" * 40)
+        usable = _item(
+            key="abhimehro/personal-config#2@" + "c" * 40, pr=2
+        )
+        ledger = {
+            "ledger_revision": 8,
+            "items": [never_touch, usable],
+        }
+        fake_health = types.SimpleNamespace(
+            summarize=lambda *_a, **_k: types.SimpleNamespace(
+                salvage_eligible_count=2
+            ),
+            is_salvage_eligible=lambda *_a, **_k: True,
+            is_never_touch_key=lambda key, **_k: str(key or "").startswith(
+                "abhimehro/Seatek_Analysis#692"
+            ),
+            parse_expiry_utc=_parse_utc_stub,
+        )
+        with mock.patch.object(feed, "health", fake_health):
+            payload = feed.build_feed(
+                ledger,
+                {"lifecycle": {"packet_expiry_close_days": 7}},
+                now=NOW,
+            )
+        self.assertEqual(payload["eligible_stock_count"], 2)
+        self.assertEqual(payload["non_never_touch_stock_count"], 1)
 
     def test_build_feed_honors_limit_and_falls_back_for_invalid_expiry(self):
         ledger = {
@@ -223,6 +256,7 @@ class FeedTests(unittest.TestCase):
                 salvage_eligible_count=0
             ),
             is_salvage_eligible=lambda *_a, **_k: False,
+            is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):
@@ -241,6 +275,7 @@ class FeedTests(unittest.TestCase):
                 salvage_eligible_count=0
             ),
             is_salvage_eligible=lambda *_a, **_k: False,
+            is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,
         )
         with mock.patch.object(feed, "health", fake_health):

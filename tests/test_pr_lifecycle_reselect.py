@@ -12,7 +12,11 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
-from tests.pr_lifecycle_helpers import make_item, make_ledger  # noqa: E402
+from tests.pr_lifecycle_helpers import (  # noqa: E402
+    make_item,
+    make_ledger,
+    make_work_item,
+)
 
 class ReselectCandidateTests(unittest.TestCase):
     def test_reselect_rejects_terminal_and_non_salvage_outcomes(self) -> None:
@@ -294,6 +298,21 @@ class ReselectCandidateTests(unittest.TestCase):
         got = health.list_reselect_candidates(ledger, limit=2)
         self.assertEqual(len(got), 2)
 
+    def test_expired_work_item_does_not_block_reselect(self) -> None:
+        """Verify only a still-usable work item suppresses reselection."""
+        item = make_item(
+            key="abhimehro/demo#1@abc",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        expired = make_ledger(
+            [item], [make_work_item(expiry_utc="2026-01-01T00:00:00Z")]
+        )
+        usable = make_ledger(
+            [item], [make_work_item(expiry_utc="2999-01-01T00:00:00Z")]
+        )
+        self.assertEqual(len(health.list_reselect_candidates(expired)), 1)
+        self.assertEqual(len(health.list_reselect_candidates(usable)), 0)
 
 
 if __name__ == "__main__":

@@ -108,6 +108,7 @@ class RunPlanTests(unittest.TestCase):
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
             "work_item_count": 0,
             "eligible_stock_count": 2,
+            "non_never_touch_stock_count": 2,
             "work_items": [],
         }
         with (

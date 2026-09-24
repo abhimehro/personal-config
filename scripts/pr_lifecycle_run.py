@@ -96,7 +96,7 @@ def _enqueue_source_paths(
     item: dict[str, Any], signals: health.ReselectSignals, key: str
 ) -> list[str]:
     """Resolve allowed paths, preferring caller-supplied unique remaining."""
-    paths = list(item.get("changed_paths") or [])
+    paths = list(item.get("changed_paths") or item.get("paths") or [])
     unique = health.signal_value(signals.unique_paths_by_key, key)
     if unique is not None:
         paths = list(unique)
@@ -299,9 +299,7 @@ def _stage2_plan(
     }
     stop_class = None
     reason = "OK"
-    if feed.get("empty_with_stock") or (
-        not mechanical and feed.get("eligible_stock_count", 0) > 0
-    ):
+    if not mechanical and feed.get("non_never_touch_stock_count", 0) > 0:
         stop_class = "LOGIC_STOP"
         reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
     elif not mechanical:

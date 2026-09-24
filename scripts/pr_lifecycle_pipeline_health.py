@@ -397,9 +397,11 @@ def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
 
 
 def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
-    """Return repo#PR prefixes of sources that already hold a Stage 2 WI."""
+    """Return repo#PR prefixes of sources with a usable Stage 2 WI."""
     prefixes: set[str] = set()
     for work_item in _raw_work_items(ledger):
+        if not work_item_is_usable(work_item):
+            continue
         source = work_item.get("source_item_key") or work_item.get("source_key")
         if source:
             prefixes.add(source_pr_prefix(source))
