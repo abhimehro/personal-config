@@ -116,7 +116,7 @@ for dir in /usr/bin /bin /usr/local/bin; do
 		for bin in "${dir}"/*; do
 			base="${bin##*/}"
 			if [[ -x "${bin}" && "${base}" != "npm" && ! -e "${NO_NPM_BIN}/${base}" ]]; then
-				ln -sf "${bin}" "${NO_NPM_BIN}/${base}" 2>/dev/null || true
+				ln -sf "${bin}" "${NO_NPM_BIN}/${base}" 2>>"${TEST_DIR}/symlink-debug.log" || true
 			fi
 		done
 	fi
