@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 162
+ledger_revision: 163
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -9509,17 +9509,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not merge, approve, or close original #409. Keep the journal on
-    the original (lesson 0cs). Do not wholesale-replay scripts/processor.py (lesson
-    0hm). Draft #460 stays tests-only (0gd).'
-  next_action: 'Keep original #409 OPEN CONFLICTING. Unique tests live on draft #460.
-    Do not salvage weaker processor.py (0hm). Journal stays on #409 (0cs). Do not
-    merge, approve, or close #409 or draft #460. Re-read anchors 15621ef6 / d5f92cf0
-    by 2026-09-26T16:30:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen, merge, or approve original #409. Superseded by merged
+    #460.'
+  next_action: 'TERMINAL CLOSED_SUPERSEDED — unique tests on main via #460; no further
+    action.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
@@ -9538,8 +9535,9 @@ items:
   - evt-s2-20260918-seriescorre-409-h
   - evt-s1-20260919-seriescorre-409-h
   - evt-s1-20260919-seriescorre-409-b
-  revision: 6
-  updated_at_utc: '2026-09-19T15:45:00Z'
+  - evt-reconcile-20260924161433-0ea682a7
+  revision: 7
+  updated_at_utc: '2026-09-24T16:14:33Z'
 - key: abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824
   repository: abhimehro/repoprompt-ce
   pr: 291
@@ -44810,6 +44808,28 @@ events:
   acknowledged_at_utc: null
   reason: 'Stage3 FOLLOW-UP: live CLOSED without disposition label; classify CLOSED_NOOP
     (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924161433-0ea682a7
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 6
+  resulting_item_revision: 7
+  idempotency_key: abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736:evt-reconcile-20260924161433-0ea682a7
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:14:33Z'
+  acknowledged_at_utc: null
+  reason: 'Desk/human decision 2026-09-24 ~11:12 CT: Abhi authorized close-as-superseded.
+    GitHub #409 CLOSED unmerged; unique shallow-copy isolation tests already on main
+    via #460 squash 7b3d2c8106a4be4e537db4b15acfe05410e1cc9c. Original processor.py
+    not replayed (0hm); journal historical on #409 (0cs).'
   successful: null
   policy_revision: null
 stage2_work_items: []
