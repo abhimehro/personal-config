@@ -145,15 +145,12 @@ def plan_stage2_enqueues(
     signals: health.ReselectSignals | None = None,
     limit: int = STAGE2_ENQUEUE_CAP,
 ) -> dict[str, Any]:
-    """Return Stage 2 enqueue action proposals for capped reselect candidates.
-
-    Prefer nonempty unique paths from the signal map over changed_paths, and
-    omit journal paths from each action's allowed_paths. Candidates missing
-    fields a complete work item needs are listed under skipped_incomplete
-    instead of producing actions, so enqueued_count can trail candidate_count
-    and FEED_CHECK can fail. These actions request later CAS writes; this
-    function neither creates complete work items nor writes to the ledger.
-    """
+    """Return Stage 2 enqueue action proposals for capped reselect candidates."""
+    # Unique-path signals beat changed_paths; journal paths are stripped from
+    # allowed_paths. Candidates that cannot form a complete WI land in
+    # skipped_incomplete instead, so enqueued_count can trail candidate_count
+    # and FEED_CHECK can fail. Actions request later CAS writes; nothing here
+    # creates WIs or writes to the ledger.
     signals = signals or health.ReselectSignals()
     candidates = health.list_reselect_candidates(
         ledger, signals=signals, limit=limit
@@ -181,13 +178,10 @@ def plan_stage3_mechanical_handoffs(
     signals: health.ReselectSignals | None = None,
     limit: int = STAGE2_ENQUEUE_CAP,
 ) -> list[dict[str, Any]]:
-    """Propose Stage 2 handoffs for eligible Stage 3 reconciliation items.
-
-    The shared selector accepts CONFLICTING or DIRTY; only stage3-owned items
-    with a salvage outcome produce actions. The limit is applied after the
-    ownership, state, and outcome filters, so earlier Stage 1 candidates never
-    consume handoff slots. No ledger update occurs here.
-    """
+    """Propose Stage 2 handoffs for eligible Stage 3 reconciliation items."""
+    # The selector accepts CONFLICTING or DIRTY; only stage3-owned items with a
+    # salvage outcome produce actions. The limit applies after those filters,
+    # so Stage 1 candidates never consume handoff slots. No ledger update here.
     candidates = health.list_reselect_candidates(ledger, signals=signals)
     actions: list[dict[str, Any]] = []
     for item in candidates:
@@ -222,12 +216,10 @@ def _stage1_plan(
     *,
     signals: health.ReselectSignals | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    """Plan Stage 1 reconciliation and reselect enqueues with a FEED_CHECK grade.
-
-    Optional maps supply live mergeability, titles, and unique paths for the
-    reselect planner. Return allowed commands, actions, stop class, and reason;
-    candidates without any enqueue actions yield LOGIC_STOP and FEED_CHECK_FAIL.
-    """
+    """Plan Stage 1 reconciliation and reselect enqueues plus a FEED_CHECK grade."""
+    # Signals supply live mergeability, titles, and unique paths for the
+    # reselect planner; candidates yielding no enqueue actions grade
+    # FEED_CHECK FAIL with LOGIC_STOP.
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
         "python3 scripts/pr_lifecycle_feed.py --json (read-only verification)",
@@ -273,13 +265,10 @@ def _stage1_plan(
 def _stage2_plan(
     ledger: dict[str, Any], config: dict[str, Any]
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
-    """Plan Stage 2 work after excluding never-touch feed items.
-
-    Empty feed with eligible stock yields LOGIC_STOP. With no remaining feed
-    items, return a SKIP_IF_EMPTY action and skip flags; otherwise return feed
-    and salvage actions. The final result also reports skipped sources and the
-    remaining item count.
-    """
+    """Plan Stage 2 work after excluding never-touch feed items."""
+    # Empty feed with eligible stock is LOGIC_STOP; no remaining feed items
+    # emits SKIP_IF_EMPTY + skip flags, else feed + salvage actions. The result
+    # also reports skipped sources and the remaining item count.
     allowed = [
         "python3 scripts/pr_lifecycle_feed.py --json",
         "open/update draft salvage PRs only (never merge/approve/close originals)",
@@ -387,11 +376,9 @@ def build_stage_plan(
     *,
     signals: health.ReselectSignals | None = None,
 ) -> dict[str, Any]:
-    """Build a stage plan with health, permitted commands, and planned actions.
-
-    Live mergeability, title, and unique-path maps apply only to Stage 1.
-    An invalid stage produces LOGIC_STOP with no permitted commands or actions.
-    """
+    """Build a stage plan with health, permitted commands, and planned actions."""
+    # Signals apply only to Stage 1; an invalid stage yields LOGIC_STOP with no
+    # permitted commands or actions.
     report = health.summarize(ledger)
     extras: dict[str, Any] = {}
     if stage == 1:

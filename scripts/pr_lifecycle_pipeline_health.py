@@ -238,11 +238,8 @@ def source_pr_prefix(key: object) -> str:
 
 
 def is_never_touch_key(key: object) -> bool:
-    """Identify the two hard never-touch source PRs, ignoring any @SHA suffix.
-
-    They are abhimehro/Seatek_Analysis#692 (journals) and
-    abhimehro/ctrld-sync#1206 (CSPRNG).
-    """
+    """Identify the two hard never-touch source PRs, ignoring any @SHA suffix."""
+    # Seatek_Analysis#692 (journals) and ctrld-sync#1206 (CSPRNG).
     return source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
 
 
@@ -264,10 +261,7 @@ def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
 
 
 def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
-    """Use the supplied state or the first CONFLICTING/DIRTY in next_action.
-
-    Return an empty string when neither source provides a state.
-    """
+    """Return the supplied state, else the first CONFLICTING/DIRTY in next_action."""
     if live_mergeable:
         return str(live_mergeable).upper()
     next_action = item.get("next_action") or ""
@@ -292,11 +286,7 @@ def _paths_allow_soft_shell(paths: list[str]) -> bool:
 
 
 def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
-    """Accept no sensitive labels beyond generated_output.
-
-    Also accept shell_execution for Palette actions with allowed non-journal
-    paths.
-    """
+    """Accept generated_output, or Palette shell_execution on allowed paths."""
     sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
     if not sticky:
         return True
@@ -310,11 +300,7 @@ def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
 def _unique_remaining_ok(
     unique_remaining_paths: list[str] | None, fallback_paths: list[str]
 ) -> tuple[bool, list[str]]:
-    """Discard journal paths and report whether any source paths remain.
-
-    Use fallback paths only when unique_remaining_paths is None; an explicit
-    empty list means there is no unique source to reselect.
-    """
+    """Drop journal paths; an explicit empty unique list means no reselect source."""
     if unique_remaining_paths is not None:
         cleaned = non_journal_paths([str(p) for p in unique_remaining_paths])
         return (bool(cleaned), cleaned)
@@ -367,18 +353,15 @@ def is_reselect_salvage_candidate(
     title: str | None = None,
     unique_remaining_paths: list[str] | None = None,
 ) -> bool:
-    """
-    Return whether Stage 1 may plan a unique-source reselect for this item.
-
-    Accept a nonterminal BOT item or one with an allowed title prefix when its
-    supplied mergeability, or a state inferred from next_action, is CONFLICTING
-    or DIRTY. An explicit unique_remaining_paths list must contain a non-journal
-    path. When omitted, changed_paths (then paths) serves only as a proxy. Exclude
-    never-touch sources and blocked guardrail outcomes. Generated output is the
-    only unrestricted sensitive label; shell_execution additionally requires a
-    Palette action and paths on the wrap allowlist. This predicate is separate
-    from ``is_salvage_eligible``.
-    """
+    """Return whether Stage 1 may plan a unique-source reselect for this item."""
+    # Accept a nonterminal BOT item or one with an allowed title prefix when its
+    # supplied mergeability, or a state inferred from next_action, is
+    # CONFLICTING or DIRTY. An explicit unique_remaining_paths list must contain
+    # a non-journal path; when omitted, changed_paths (then paths) is a proxy.
+    # Never-touch sources and NON_SALVAGE outcomes are excluded first.
+    # generated_output is the only unrestricted sensitive label; shell_execution
+    # additionally requires a Palette action and wrap-allowlist paths. Separate
+    # from ``is_salvage_eligible``.
     if not _reselect_identity_ok(item, title):
         return False
     state = _infer_live_mergeable(item, live_mergeable)
@@ -409,13 +392,10 @@ def list_reselect_candidates(
     signals: ReselectSignals | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Return eligible keyed ledger items in their original order.
-
-    Optional signal maps are looked up by full ledger key, then
-    repository#PR prefix; falsey values do not override fallbacks. A None
-    limit is unbounded. The limit is checked after appending, so a
-    nonpositive limit can still return one item.
-    """
+    """Return eligible keyed ledger items in their original order."""
+    # Signal maps are looked up by full key then repository#PR prefix; falsey
+    # values do not override fallbacks. None limit is unbounded; the limit is
+    # checked after appending, so a nonpositive limit still returns one item.
     signals = signals or ReselectSignals()
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
