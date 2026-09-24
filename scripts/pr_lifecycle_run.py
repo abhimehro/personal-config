@@ -281,9 +281,9 @@ def _stage2_plan(
         "skip-if-empty: exit success with no docs PR when usable WI==0",
     ]
     cap = _stage_cap(config, "stage2_salvage_candidates", 10)
-    # Request extra items so never-touch entries don't fill the cap and hide
-    # usable salvage items behind them; the cap is applied after filtering.
-    feed = feed_mod.build_feed(ledger, config, limit=cap * 2)
+    # Build the complete feed so never-touch entries cannot hide usable salvage
+    # items. Apply the candidate cap only after filtering those entries out.
+    feed = feed_mod.build_feed(ledger, config)
     mechanical, never_touch = _filter_never_touch_work_items(
         list(feed.get("work_items") or [])
     )

@@ -129,7 +129,9 @@ class Option3RebalancePlanTests(unittest.TestCase):
         }
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
-            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+            mock.patch.object(
+                run.feed_mod, "build_feed", return_value=feed_payload
+            ) as build_feed,
             mock.patch.object(
                 run.health,
                 "is_never_touch_key",
@@ -150,6 +152,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             [action["action"] for action in plan["actions"]],
             ["FEED_SUMMARY", "SALVAGE_WI"],
         )
+        build_feed.assert_called_once_with({"ledger_revision": 2}, {})
         self.assertIs(plan["actions"][1]["wi"], usable)
 
     def test_stage3_handoff_requires_owner_state_and_salvage_outcome(self) -> None:
