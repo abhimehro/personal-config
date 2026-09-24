@@ -681,6 +681,47 @@ class ReselectCandidateTests(unittest.TestCase):
             )
         )
 
+    def test_live_mergeability_overrides_stale_conflicting_action(self):
+        item = _item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="dirty")
+        )
+
+    def test_explicit_empty_unique_signal_does_not_reselect_stale_paths(self):
+        item = _item(
+            changed_paths=["src/old.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        selected = health.list_reselect_candidates(
+            _ledger([item], []),
+            signals=health.ReselectSignals(unique_paths_by_key={item["key"]: []}),
+        )
+        self.assertEqual(selected, [])
+
+    def test_palette_shell_sticky_rejects_near_match_paths(self):
+        item = _item(
+            sensitive_paths=["shell_execution", "generated_output"],
+            next_action="Palette wrap DIRTY unique remaining",
+        )
+        for path in (
+            "maintenance/bin/refresh.py",
+            "docs/cursor-automations-copy/prompt.md",
+            "scripts/deploy.sh",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(
+                        item,
+                        unique_remaining_paths=["maintenance/bin/refresh.sh", path],
+                    )
+                )
+
     def test_title_allowlist_for_non_bot_ledger_author(self):
         item = _item(
             author_type="HUMAN",

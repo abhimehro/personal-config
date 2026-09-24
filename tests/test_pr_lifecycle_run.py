@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import types
@@ -383,6 +384,67 @@ class Option3RebalancePlanTests(unittest.TestCase):
             )
         )
 
+    def test_stage1_partial_enqueue_reports_incomplete_candidate(self):
+        complete = {
+            "key": "abhimehro/demo#1@head",
+            "repository": "abhimehro/demo",
+            "pr": 1,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["src/demo.py"],
+        }
+        incomplete = {**complete, "key": "abhimehro/demo#2@head", "head_sha": ""}
+        ledger = {"ledger_revision": 1, "items": [complete, incomplete]}
+        original = copy.deepcopy(ledger)
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
+            mock.patch.object(
+                run.health, "list_reselect_candidates", return_value=ledger["items"]
+            ),
+        ):
+            plan = run.build_stage_plan(1, ledger, {})
+        self.assertEqual(ledger, original)
+        self.assertEqual(
+            [action["action"] for action in plan["actions"]],
+            ["ENQUEUE_STAGE2_WI", "FEED_CHECK"],
+        )
+        self.assertEqual(plan["actions"][0]["source_key"], complete["key"])
+        self.assertEqual(plan["actions"][0]["allowed_paths"], ["src/demo.py"])
+        self.assertEqual(plan["actions"][1]["reselect_candidates"], 2)
+        self.assertEqual(plan["actions"][1]["enqueued"], 1)
+        self.assertEqual(
+            plan["actions"][1]["skipped_incomplete"],
+            [{"source_key": incomplete["key"], "reason": "INCOMPLETE_WI_FIELDS"}],
+        )
+        self.assertEqual(plan["actions"][1]["grade"], "PASS")
+        self.assertIsNone(plan["stop_class"])
+
+    def test_stage1_all_incomplete_candidates_fail_feed_check(self):
+        incomplete = {
+            "key": "abhimehro/demo#1@head",
+            "repository": "abhimehro/demo",
+            "pr": 1,
+            "base_sha": "a" * 40,
+            "head_sha": "",
+            "changed_paths": ["src/demo.py"],
+        }
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
+            mock.patch.object(
+                run.health, "list_reselect_candidates", return_value=[incomplete]
+            ),
+        ):
+            plan = run.build_stage_plan(1, {"items": [incomplete]}, {})
+        self.assertEqual(
+            [action["action"] for action in plan["actions"]], ["FEED_CHECK"]
+        )
+        self.assertEqual(plan["actions"][0]["grade"], "FAIL")
+        self.assertEqual(plan["actions"][0]["enqueued"], 0)
+        self.assertEqual(plan["stop_class"], "LOGIC_STOP")
+        self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
+
     def test_stage2_mixed_feed_salvages_only_usable_sources(self):
         never_touch = {"source_item_key": "abhimehro/Seatek_Analysis#692@head"}
         usable = {"source_key": "abhimehro/demo#8@head"}
@@ -463,6 +525,53 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(
             [action["reason"] for action in actions],
             ["CONFLICTING_UNIQUE_RESELECT", "CONFLICTING_UNIQUE_RESELECT"],
+        )
+
+    def test_stage3_handoff_cap_applies_after_owner_and_outcome_filter(self):
+        base = {
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "guardrail_outcome": "HOLD_CONTRACT",
+        }
+        candidates = [
+            {**base, "key": "demo#1@head", "current_owner": "stage1"},
+            {**base, "key": "demo#2@head", "guardrail_outcome": "REVIEW_SECURITY"},
+            {**base, "key": "demo#3@head"},
+            {**base, "key": "demo#4@head"},
+            {**base, "key": "demo#5@head"},
+        ]
+        with mock.patch.object(
+            run.health, "list_reselect_candidates", return_value=candidates
+        ) as select:
+            actions = run.plan_stage3_mechanical_handoffs(
+                {"items": candidates}, limit=2
+            )
+        self.assertNotIn("limit", select.call_args.kwargs)
+        self.assertEqual(
+            [action["source_key"] for action in actions],
+            ["demo#3@head", "demo#4@head"],
+        )
+
+    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self):
+        feed_payload = {
+            "empty_with_stock": True,
+            "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
+            "work_item_count": 1,
+            "eligible_stock_count": 1,
+            "work_items": [{"source_item_key": "abhimehro/ctrld-sync#1206@head"}],
+        }
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+            mock.patch.object(run.health, "is_never_touch_key", return_value=True),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 1}, {})
+        self.assertEqual(plan["stop_class"], "LOGIC_STOP")
+        self.assertEqual(plan["reason"], "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
+        self.assertFalse(plan["skip_cursor"])
+        self.assertEqual(plan["mechanical_candidate_count"], 0)
+        self.assertEqual(
+            [action["action"] for action in plan["actions"]], ["FEED_SUMMARY"]
         )
 
     def test_stage1_emits_enqueue_when_reselect_candidates_exist(self):
