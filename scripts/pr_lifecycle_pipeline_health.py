@@ -251,7 +251,7 @@ def _non_journal_paths(paths: list[str]) -> list[str]:
 
 
 def _paths_allow_soft_shell(paths: list[str]) -> bool:
-    """True when every non-journal path is on the Palette wrap allowlist."""
+    """Return True when every non-journal path is on the Palette wrap allowlist."""
     remaining = _non_journal_paths(paths)
     if not remaining:
         return False
