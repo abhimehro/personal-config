@@ -383,7 +383,9 @@ def _signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
     """Look up a signal by full key, falling back to the @sha-stripped prefix."""
     if not mapping:
         return None
-    return mapping.get(key) or mapping.get(source_pr_prefix(key))
+    if key in mapping:
+        return mapping[key]
+    return mapping.get(source_pr_prefix(key))
 
 
 def list_reselect_candidates(
@@ -393,8 +395,9 @@ def list_reselect_candidates(
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Return eligible keyed ledger items in their original order."""
-    # Signal maps are looked up by full key then repository#PR prefix; falsey
-    # values do not override fallbacks. None limit is unbounded; the limit is
+    # Signal maps are looked up by full key then repository#PR prefix; a key
+    # present with an empty value is honored (e.g. [] means "no unique paths").
+    # None limit is unbounded; the limit is
     # checked after appending, so a nonpositive limit still returns one item.
     signals = signals or ReselectSignals()
     selected: list[dict[str, Any]] = []

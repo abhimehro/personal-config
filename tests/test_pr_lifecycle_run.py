@@ -77,7 +77,7 @@ sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
     "work_items": [],
 }
 
-import pr_lifecycle_run as run
+import pr_lifecycle_run as run  # noqa: E402
 
 for _name in _STUB_NAMES:
     _saved = _saved_modules[_name]
