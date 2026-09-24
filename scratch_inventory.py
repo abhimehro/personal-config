@@ -7,6 +7,15 @@ from gh_token_env import load_gh_token_env
 from spreadsheet_safety import escape_spreadsheet_formula
 
 
+def _escape_markdown_table_cell(value: str) -> str:
+    return (
+        value.replace("|", "&#124;")
+        .replace("\r\n", " ")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
+
+
 def _fetch_repo_prs(repo):
     repo_prs = []
     env = load_gh_token_env()
@@ -86,9 +95,11 @@ def generate_markdown(all_prs):
 
         # SECURITY: PR metadata is untrusted; escape formula injection if the
         # inventory table is opened in Excel/Sheets (CWE-1236).
-        author = escape_spreadsheet_formula(pr["author"]["login"])
-        branch = escape_spreadsheet_formula(pr["headRefName"])
-        title = escape_spreadsheet_formula(pr["title"])
+        author = _escape_markdown_table_cell(
+            escape_spreadsheet_formula(pr["author"]["login"])
+        )
+        branch = _escape_markdown_table_cell(escape_spreadsheet_formula(pr["headRefName"]))
+        title = _escape_markdown_table_cell(escape_spreadsheet_formula(pr["title"]))
         out_md.append(
             f"| {pr['repo']} | {pr['number']} | {author} | {branch} | {cat} | {ci} | {conflicts} | {date_str} | {title} |"
         )
