@@ -9,25 +9,15 @@ export HOME=${HOME:-/Users/speedybee}
 # Full: Backs up everything including media and large files.
 # Automatically pauses light backup on weekends if requested.
 
-# Default Google Drive Root
-GDRIVE_ROOT_DEFAULT="${GDRIVE_ROOT:-$HOME/Library/CloudStorage}"
-# Try to find GoogleDrive mount point
-if [[ -d $GDRIVE_ROOT_DEFAULT ]]; then
-	GDRIVE_MOUNT=$(ls -1d "$GDRIVE_ROOT_DEFAULT/GoogleDrive-"* 2>/dev/null | head -1 || true)
-	if [[ -n $GDRIVE_MOUNT ]]; then
-		GDRIVE_ROOT_DEFAULT="$GDRIVE_MOUNT"
-	fi
-fi
-
-# Fallback destination
-DEST_DEFAULT="${GOOGLE_DRIVE_BACKUP_DEST:-$GDRIVE_ROOT_DEFAULT/My Drive/HomeBackup}"
-
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f $CONFIG_FILE ]]; then
 	# shellcheck disable=SC1090
 	source "$CONFIG_FILE" 2>/dev/null || true
 fi
+
+# An explicit destination may override the configured account root.
+DEST_DEFAULT="${GOOGLE_DRIVE_BACKUP_DEST:-}"
 
 # Determine Excludes File
 if [[ -n ${MAINTENANCE_HOME-} ]]; then
@@ -117,6 +107,15 @@ if [[ $MODE == "light" ]]; then
 	fi
 
 	# Note: Weekend pause removed per user request (Tue-Sun schedule active)
+fi
+
+if [[ -z $DEST ]]; then
+	# Never infer an account from other GoogleDrive mounts or create a missing mount.
+	if [[ -z ${GDRIVE_ROOT:-} || ! -d $GDRIVE_ROOT || ! -d "$GDRIVE_ROOT/My Drive" ]]; then
+		echo "ERROR: Configured Google Drive account is unavailable: ${GDRIVE_ROOT:-unset}" >&2
+		exit 1
+	fi
+	DEST="$GDRIVE_ROOT/My Drive/HomeBackup"
 fi
 
 if [[ ! -d $DEST ]]; then
