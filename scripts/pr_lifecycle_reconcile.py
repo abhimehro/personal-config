@@ -66,7 +66,11 @@ def _expiry_days(config: dict[str, Any]) -> int:
 
 
 def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
-    """Fetch live PR fields, returning None when the command or payload fails."""
+    """Fetch live PR fields, returning None when the command or payload fails.
+
+    Note: ``gh pr view --json`` has no ``baseRefOid`` field (local dry-run
+    fix 2026-09-24); base SHA is enriched via REST ``gh api``.
+    """
     cmd = [
         "gh",
         "pr",
@@ -75,7 +79,7 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
         "--repo",
         repo,
         "--json",
-        "state,mergedAt,closedAt,headRefOid,baseRefOid,url,mergedBy,labels",
+        "state,mergedAt,closedAt,headRefOid,url,mergedBy,labels",
     ]
     try:
         completed = subprocess.run(
@@ -89,7 +93,31 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
         payload = json.loads(completed.stdout)
     except json.JSONDecodeError:
         return None
-    return payload if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        return None
+    # Enrich base SHA via REST — required by SHA-drift classification.
+    # Fail closed (None) if either call fails: missing baseRefOid would
+    # mis-classify SHA drift.
+    base_cmd = [
+        "gh",
+        "api",
+        f"repos/{repo}/pulls/{pr}",
+        "--jq",
+        ".base.sha",
+    ]
+    try:
+        base = subprocess.run(
+            base_cmd, check=False, capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if base.returncode != 0:
+        return None
+    sha = (base.stdout or "").strip()
+    if not sha:
+        return None
+    payload["baseRefOid"] = sha
+    return payload
 
 
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
