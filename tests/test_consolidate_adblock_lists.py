@@ -1,5 +1,6 @@
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
@@ -170,11 +171,11 @@ class TestProcessTrackerFiles(unittest.TestCase):
         load_json_se=None,
     ):
         with (
-            patch("pathlib.Path.exists") as mock_exists,
+            patch("pathlib.Path.is_file") as mock_is_file,
             patch("consolidate_adblock_lists.load_json_file") as mock_load_json,
             patch("sys.stdout", new_callable=unittest.mock.MagicMock),
         ):
-            mock_exists.return_value = mock_exists_val
+            mock_is_file.return_value = mock_exists_val
             if load_json_rv is not None:
                 mock_load_json.return_value = load_json_rv
             if load_json_se is not None:
@@ -183,25 +184,41 @@ class TestProcessTrackerFiles(unittest.TestCase):
             return process_tracker_files(Path("/fake/dir"), files)
 
     def test_happy_path(self):
-        data = {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]}
+        data = {
+            "rules": [
+                {"PK": "tracker1.com", "action": {"do": 0}},
+                {"PK": "tracker2.com", "action": {"do": 0}},
+            ]
+        }
         result = self._run_process_tracker(["file1.json"], load_json_rv=data)
         self.assertEqual(result, {"tracker1.com", "tracker2.com"})
 
     def test_file_not_found(self):
-        result = self._run_process_tracker(["missing.json"], mock_exists_val=False)
-        self.assertEqual(result, set())
+        with self.assertRaises(FileNotFoundError):
+            self._run_process_tracker(["missing.json"], mock_exists_val=False)
 
     def test_missing_rules_key(self):
-        result = self._run_process_tracker(
-            ["norules.json"],
-            load_json_rv={"other_key": "data"},
-        )
-        self.assertEqual(result, set())
+        with self.assertRaises(ValueError):
+            self._run_process_tracker(
+                ["norules.json"],
+                load_json_rv={"other_key": "data"},
+            )
+
+    def test_unreadable_or_malformed_source(self):
+        with self.assertRaises(ValueError):
+            self._run_process_tracker(["bad.json"], load_json_rv={"rules": []})
+        with self.assertRaises(ValueError):
+            self._run_process_tracker(["unreadable.json"], load_json_se=[None])
 
     def test_multiple_files_with_duplicates(self):
         load_results = [
-            {"rules": [{"PK": "tracker1.com"}]},
-            {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]},
+            {"rules": [{"PK": "tracker1.com", "action": {"do": 0}}]},
+            {
+                "rules": [
+                    {"PK": "tracker1.com", "action": {"do": 0}},
+                    {"PK": "tracker2.com", "action": {"do": 0}},
+                ]
+            },
         ]
         result = self._run_process_tracker(
             ["file1.json", "file2.json"],
@@ -214,38 +231,35 @@ class TestExtractAllowlistFromFile(unittest.TestCase):
 
     def test_file_not_found(self):
         filepath = MagicMock()
-        filepath.exists.return_value = False
-        result = extract_allowlist_from_file(filepath, "desc")
-        self.assertEqual(result, set())
+        filepath.is_file.return_value = False
+        with self.assertRaises(FileNotFoundError):
+            extract_allowlist_from_file(filepath, "desc")
 
     @patch("consolidate_adblock_lists.load_json_file")
     def test_missing_or_invalid_data(self, mock_load):
         filepath = MagicMock()
-        filepath.exists.return_value = True
+        filepath.is_file.return_value = True
         filepath.name = "test.json"
 
         with patch("sys.stdout", new_callable=unittest.mock.MagicMock):
             mock_load.return_value = None
-            result = extract_allowlist_from_file(filepath, "desc")
-            self.assertEqual(result, set())
+            with self.assertRaises(ValueError):
+                extract_allowlist_from_file(filepath, "desc")
 
             mock_load.return_value = {"other": "value"}
-            result = extract_allowlist_from_file(filepath, "desc")
-            self.assertEqual(result, set())
+            with self.assertRaises(ValueError):
+                extract_allowlist_from_file(filepath, "desc")
 
     @patch("consolidate_adblock_lists.load_json_file")
-    def test_extract_valid_and_invalid_rules(self, mock_load):
+    def test_extract_allow_rules_only(self, mock_load):
         filepath = MagicMock()
         filepath.exists.return_value = True
         filepath.name = "test.json"
+        filepath.is_file.return_value = True
 
         mock_load.return_value = {
             "rules": [
                 {"PK": "valid1.com", "action": {"do": 1}},
-                {"action": {"do": 1}},
-                {"PK": "invalid_no_action.com"},
-                {"PK": "invalid_action_not_dict.com", "action": "allow"},
-                {"PK": "invalid_no_do.com", "action": {"other": 1}},
                 {"PK": "invalid_do_0.com", "action": {"do": 0}},
                 {"PK": "valid2.com", "action": {"do": 1}},
             ]
@@ -255,6 +269,19 @@ class TestExtractAllowlistFromFile(unittest.TestCase):
             result = extract_allowlist_from_file(filepath, "desc")
 
         self.assertEqual(result, {"valid1.com", "valid2.com"})
+
+    @patch("consolidate_adblock_lists.load_json_file")
+    def test_invalid_rule_is_rejected(self, mock_load):
+        filepath = MagicMock()
+        filepath.is_file.return_value = True
+        mock_load.return_value = {
+            "rules": [
+                {"PK": "valid.com", "action": {"do": 1}},
+                {"PK": "invalid.com"},
+            ]
+        }
+        with patch("sys.stdout"), self.assertRaises(ValueError):
+            extract_allowlist_from_file(filepath, "desc")
 
 
 class TestProcessAllowlistFiles(unittest.TestCase):
@@ -339,55 +366,146 @@ class TestWriteTextFiles(unittest.TestCase):
 
 
 class TestRunConsolidation(unittest.TestCase):
+    tracker_files = (
+        "CD-Microsoft-Tracker.json",
+        "CD-No-Safesearch-Support.json",
+        "CD-OPPO_Realme-Tracker.json",
+        "CD-Roku-Tracker.json",
+        "CD-Samsung-Tracker.json",
+        "CD-Tiktok-Tracker---aggressive.json",
+        "CD-Vivo-Tracker.json",
+        "CD-Xiaomi-Tracker.json",
+        "CD-Amazon-Tracker.json",
+        "CD-Apple-Tracker.json",
+        "CD-Badware-Hoster.json",
+        "CD-LG-webOS-Tracker.json",
+        "CD-Huawei-Tracker.json",
+    )
+    outputs = (
+        "Consolidated-Denylist.json",
+        "Consolidated-Allowlist.json",
+        "Consolidated-Denylist.txt",
+        "Consolidated-Allowlist.txt",
+    )
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.input_dir = Path(self.temp.name) / "input"
+        self.output_dir = Path(self.temp.name) / "output"
+        self.input_dir.mkdir()
+        self.output_dir.mkdir()
+        for index, name in enumerate(self.tracker_files):
+            (self.input_dir / name).write_text(
+                json.dumps(
+                    {"rules": [{"PK": f"tracker{index}.example", "action": {"do": 0}}]}
+                )
+            )
+        for name in ("CD-Control-D-Bypass.json", "CD-Most-Abused-TLDs.json"):
+            (self.input_dir / name).write_text(
+                json.dumps({"rules": [{"PK": "allowed.example", "action": {"do": 1}}]})
+            )
+
+    def seed_outputs(self):
+        for name in self.outputs:
+            (self.output_dir / name).write_text("existing content\n")
+
+    def assert_outputs_unchanged(self):
+        for name in self.outputs:
+            self.assertEqual((self.output_dir / name).read_text(), "existing content\n")
+        self.assertEqual({p.name for p in self.output_dir.iterdir()}, set(self.outputs))
+
     def test_run_consolidation(self):
-        input_dir = Path("/fake/input")
-        output_dir = Path("/fake/output")
+        self.seed_outputs()
+        with patch("sys.stdout"):
+            run_consolidation(self.input_dir, self.output_dir)
+        denylist = (self.output_dir / "Consolidated-Denylist.txt").read_text()
+        self.assertEqual(len(denylist.splitlines()), len(self.tracker_files))
+        self.assertIn("tracker0.example\n", denylist)
+        self.assertEqual(
+            (self.output_dir / "Consolidated-Allowlist.txt").read_text(),
+            "@@allowed.example\n",
+        )
+        self.assertEqual(
+            len(
+                json.loads(
+                    (self.output_dir / "Consolidated-Denylist.json").read_text()
+                )["rules"]
+            ),
+            len(self.tracker_files),
+        )
 
-        with (
-            patch(
-                "consolidate_adblock_lists.process_tracker_files"
-            ) as mock_process_tracker,
-            patch(
-                "consolidate_adblock_lists.process_allowlist_files"
-            ) as mock_process_allowlist,
-            patch("consolidate_adblock_lists.write_json_files") as mock_write_json,
-            patch("consolidate_adblock_lists.write_text_files") as mock_write_text,
-            patch("consolidate_adblock_lists.print_summary") as mock_print_summary,
-            patch("sys.stdout"),
+    def test_missing_or_invalid_tracker_preserves_existing_outputs(self):
+        self.seed_outputs()
+        source = self.input_dir / self.tracker_files[-1]
+        for change in (
+            source.unlink,
+            lambda: source.write_text("{invalid"),
+            lambda: source.write_text('{"rules": []}'),
         ):
-            mock_process_tracker.return_value = {"tracker.com"}
-            mock_process_allowlist.return_value = {"allow.com"}
+            change()
+            with (
+                patch("sys.stdout"),
+                self.assertRaises((FileNotFoundError, ValueError)),
+            ):
+                run_consolidation(self.input_dir, self.output_dir)
+            self.assert_outputs_unchanged()
 
-            run_consolidation(input_dir, output_dir)
+    def test_invalid_allowlist_preserves_existing_outputs(self):
+        self.seed_outputs()
+        (self.input_dir / "CD-Control-D-Bypass.json").write_text("{invalid")
+        with patch("sys.stdout"), self.assertRaises(ValueError):
+            run_consolidation(self.input_dir, self.output_dir)
+        self.assert_outputs_unchanged()
 
-            mock_process_tracker.assert_called_once_with(
-                input_dir,
-                [
-                    "CD-Microsoft-Tracker.json",
-                    "CD-No-Safesearch-Support.json",
-                    "CD-OPPO_Realme-Tracker.json",
-                    "CD-Roku-Tracker.json",
-                    "CD-Samsung-Tracker.json",
-                    "CD-Tiktok-Tracker---aggressive.json",
-                    "CD-Vivo-Tracker.json",
-                    "CD-Xiaomi-Tracker.json",
-                    "CD-Amazon-Tracker.json",
-                    "CD-Apple-Tracker.json",
-                    "CD-Badware-Hoster.json",
-                    "CD-LG-webOS-Tracker.json",
-                    "CD-Huawei-Tracker.json",
-                ],
-            )
-            mock_process_allowlist.assert_called_once_with(input_dir)
-            mock_write_json.assert_called_once_with(
-                output_dir, {"tracker.com"}, {"allow.com"}
-            )
-            mock_write_text.assert_called_once_with(
-                output_dir, {"tracker.com"}, {"allow.com"}
-            )
-            mock_print_summary.assert_called_once_with(
-                {"tracker.com"}, {"allow.com"}, output_dir
-            )
+    def test_output_write_failure_preserves_existing_outputs(self):
+        self.seed_outputs()
+        with (
+            patch("sys.stdout"),
+            patch(
+                "consolidate_adblock_lists.write_text_files",
+                side_effect=OSError("disk full"),
+            ),
+            self.assertRaises(OSError),
+        ):
+            run_consolidation(self.input_dir, self.output_dir)
+        self.assert_outputs_unchanged()
+
+    def test_symlinked_output_is_rejected_before_replacement(self):
+        self.seed_outputs()
+        target = Path(self.temp.name) / "linked-denylist.txt"
+        target.write_text("linked content\n")
+        link = self.output_dir / "Consolidated-Denylist.txt"
+        link.unlink()
+        link.symlink_to(target)
+        with (
+            patch("sys.stdout"),
+            self.assertRaisesRegex(ValueError, "symlinked output"),
+        ):
+            run_consolidation(self.input_dir, self.output_dir)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(target.read_text(), "linked content\n")
+        for name in self.outputs:
+            if name != link.name:
+                self.assertEqual(
+                    (self.output_dir / name).read_text(), "existing content\n"
+                )
+        self.assertEqual({p.name for p in self.output_dir.iterdir()}, set(self.outputs))
+
+    def test_non_file_output_is_rejected_before_replacement(self):
+        self.seed_outputs()
+        destination = self.output_dir / "Consolidated-Allowlist.txt"
+        destination.unlink()
+        destination.mkdir()
+        with patch("sys.stdout"), self.assertRaisesRegex(ValueError, "regular file"):
+            run_consolidation(self.input_dir, self.output_dir)
+        self.assertTrue(destination.is_dir())
+        for name in self.outputs:
+            if name != destination.name:
+                self.assertEqual(
+                    (self.output_dir / name).read_text(), "existing content\n"
+                )
+        self.assertEqual({p.name for p in self.output_dir.iterdir()}, set(self.outputs))
 
 
 if __name__ == "__main__":
