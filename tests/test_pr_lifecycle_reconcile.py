@@ -379,15 +379,25 @@ class ReconcileHelpersTests(unittest.TestCase):
         self.assertEqual(ledger["ledger_revision"], 5)
 
     def test_gh_pr_view_handles_success_bad_json_and_command_failure(self):
-        success = types.SimpleNamespace(
+        # Success path uses two gh calls: pr view --json (no baseRefOid) then
+        # REST api for base.sha, mapped into payload["baseRefOid"].
+        # Fail closed (None) if either call fails.
+        view_ok = types.SimpleNamespace(
             returncode=0,
             stdout='{"state": "OPEN", "headRefOid": "abc"}',
         )
-        with mock.patch.object(reconcile.subprocess, "run", return_value=success):
-            self.assertEqual(
-                reconcile._gh_pr_view("owner/repo", 7)["headRefOid"], "abc"
-            )
+        base_ok = types.SimpleNamespace(returncode=0, stdout="def456\n")
+        with mock.patch.object(
+            reconcile.subprocess, "run", side_effect=[view_ok, base_ok]
+        ) as run:
+            payload = reconcile._gh_pr_view("owner/repo", 7)
+            self.assertEqual(payload["headRefOid"], "abc")
+            self.assertEqual(payload["baseRefOid"], "def456")
+            self.assertEqual(run.call_count, 2)
+            self.assertNotIn("baseRefOid", run.call_args_list[0].args[0][6])
+            self.assertIn("repos/owner/repo/pulls/7", run.call_args_list[1].args[0])
 
+        # View fails (returncode / bad json / non-dict) → None
         for completed in (
             types.SimpleNamespace(returncode=1, stdout=""),
             types.SimpleNamespace(returncode=0, stdout="not-json"),
@@ -400,6 +410,25 @@ class ReconcileHelpersTests(unittest.TestCase):
                     self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(reconcile.subprocess, "run", side_effect=OSError):
+            self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+        # Base REST fails / empty → fail closed None (view already succeeded)
+        base_fail = types.SimpleNamespace(returncode=1, stdout="")
+        base_empty = types.SimpleNamespace(returncode=0, stdout="\n")
+        for base_resp in (base_fail, base_empty):
+            with self.subTest(base=base_resp):
+                with mock.patch.object(
+                    reconcile.subprocess,
+                    "run",
+                    side_effect=[view_ok, base_resp],
+                ):
+                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+        with mock.patch.object(
+            reconcile.subprocess,
+            "run",
+            side_effect=[view_ok, OSError("boom")],
+        ):
             self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
     def test_close_stale_github_validates_identity_and_runs_all_steps(self):
