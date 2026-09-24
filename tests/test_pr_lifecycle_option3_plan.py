@@ -254,8 +254,8 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "base_sha": "a" * 40,
             "head_sha": "b" * 40,
             "changed_paths": ["maintenance/bin/analytics_dashboard.sh"],
-            "current_owner": "stage3",
-            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "current_owner": "stage1",
+            "lifecycle_state": "CONFLICTING",
             "guardrail_outcome": "HOLD_CONTRACT",
         }
         with (
@@ -275,7 +275,53 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(feed["enqueued"], 1)
         self.assertIsNone(plan["stop_class"])
 
+    def test_stage1_excludes_stage3_owned_from_enqueues(self):
+        stage3_item = {
+            "key": "abhimehro/demo#1@abc",
+            "repository": "abhimehro/demo",
+            "pr": 1,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["src/demo.py"],
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "guardrail_outcome": "HOLD_CONTRACT",
+        }
+        with mock.patch.object(
+            run.health, "list_reselect_candidates", return_value=[stage3_item]
+        ):
+            planned = run.plan_stage2_enqueues(
+                {"items": [stage3_item]},
+            )
+        self.assertEqual(planned["candidate_count"], 0)
+        self.assertEqual(planned["enqueued_count"], 0)
+        self.assertEqual(planned["enqueue_actions"], [])
+
     def test_stage1_feed_check_fails_when_candidates_not_enqueued(self) -> None:
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
+            mock.patch.object(
+                run,
+                "plan_stage2_enqueues",
+                return_value={
+                    "candidate_count": 2,
+                    "enqueued_count": 0,
+                    "skipped_incomplete": [
+                        {
+                            "source_key": "owner/repo#1@a",
+                            "reason": "INCOMPLETE_WI_FIELDS",
+                        }
+                    ],
+                    "enqueue_actions": [],
+                },
+            ),
+        ):
+            plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
+        self.assertEqual(plan["stop_class"], "LOGIC_STOP")
+        self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
+        feed = plan["actions"][-1]
+        self.assertEqual(feed["grade"], "FAIL")
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
             mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),

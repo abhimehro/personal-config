@@ -154,9 +154,13 @@ def plan_stage2_enqueues(
     # Select unbounded, then cap complete WIs: an early-run of incomplete
     # candidates must not starve a complete one further down ledger order.
     candidates = health.list_reselect_candidates(ledger, signals=signals)
+    # Stage 3 owns its handoff items; Stage 1 must not re-enqueue them.
+    stage1_candidates = [
+        item for item in candidates if item.get("current_owner") != "stage3"
+    ]
     enqueue_actions: list[dict[str, Any]] = []
     incomplete: list[dict[str, Any]] = []
-    for item in candidates:
+    for item in stage1_candidates:
         if len(enqueue_actions) >= limit:
             break
         key = str(item.get("key") or "")
@@ -166,7 +170,7 @@ def plan_stage2_enqueues(
             continue
         enqueue_actions.append(_enqueue_action(item, key, allowed_paths))
     return {
-        "candidate_count": len(candidates),
+        "candidate_count": len(stage1_candidates),
         "enqueued_count": len(enqueue_actions),
         "skipped_incomplete": incomplete,
         "enqueue_actions": enqueue_actions,
