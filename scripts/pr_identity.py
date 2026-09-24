@@ -270,8 +270,8 @@ def _prefix_match(value: str, prefixes: Sequence[str]) -> bool:
     # NOTE: Jules/Bolt/Palette/Sentinel often use hyphen prefixes (`jules-`)
     # rather than slash (`jules/`). Matching is startswith; both forms must be
     # versioned in config. Ordinary `feat/` / `fix/` are not bot prefixes.
-    prefixes_lower = tuple(prefix.lower() for prefix in prefixes if prefix)
-    return value.startswith(prefixes_lower) if prefixes_lower else False
+    prefixes_lower = tuple(p.lower() for p in prefixes if p)
+    return value.startswith(prefixes_lower)
 
 
 def _keyword_match(value: str, keywords: Sequence[str]) -> bool:
