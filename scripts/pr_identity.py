@@ -301,7 +301,7 @@ def _comment_logins(value: Any) -> tuple[str, ...]:
 
 def _bot_commit_email(pr: Mapping[str, Any], policy: IdentityPolicy) -> bool:
     # ⚡ Bolt Optimization: Use tuple endswith to evaluate email suffix checks in C
-    suffixes = tuple(item.lower() for item in policy.bot_commit_email_suffixes)
+    suffixes = tuple(item.lower() for item in policy.bot_commit_email_suffixes if item)
     if not suffixes:
         return False
     for email in _commit_emails(pr):
