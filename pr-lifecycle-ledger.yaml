@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 129
+ledger_revision: 148
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -514,13 +514,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: 'Do not squash-merge original #535. Do not merge salvage draft #543
     during REPORT_ONLY. Leave both open until the packet is answered.'
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_CANONICAL)'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543
@@ -538,8 +539,9 @@ items:
   - evt-s2-20260820-hydrographve-535-h
   - evt-s3-20260820-hydrographve-535-h
   - evt-reconcile-20260924155259-e2baea66
-  revision: 4
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-de1ff6a8
+  revision: 5
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#498@0edc77bc9b55e57dd347e44b062280e6cf26de3b
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 498
@@ -605,13 +607,14 @@ items:
   sensitive_paths:
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Leave open; require human security and compatibility review before
     choosing or merging upgrades.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_EVIDENCE)'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/393
   - https://app.notion.com/p/3d37419416de8167ab47f51147e1892e?pvs=204
@@ -625,8 +628,9 @@ items:
   - evt-s1-20260819-seriescorrec-393-h
   - evt-s3-20260906-rrection-project-updated-393-9554d6fd-handoff
   - evt-reconcile-20260924155259-41c49f74
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-13dc87f5
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/series_correction_project_updated#386@712e0ba38754af500ecce4a7cff52a026502d3cf
   repository: abhimehro/series_correction_project_updated
   pr: 386
@@ -736,13 +740,14 @@ items:
   sensitive_paths:
   - shell_execution
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Leave open; do not merge or close security/dashboard changes without
     a human decision.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2025
   - https://app.notion.com/p/3d37419416de81f9b7a8fac5d25abf8f?pvs=204
@@ -757,8 +762,9 @@ items:
   - evt-s1-20260820-personalconf-2025-h
   - evt-s3-20260906-bhimehro-personal-config-2025-9cf886c1-handoff
   - evt-reconcile-20260924155259-728a68bd
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-6a624a5a
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/personal-config#2020@23577be3619cea5b408ab32c387f7180a997cb72
   repository: abhimehro/personal-config
   pr: 2020
@@ -1621,13 +1627,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_PLATFORM
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash-merge the 53-file Palette PR. Do not push an un-preflighted
     Swift commit. Do not --no-verify.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_PLATFORM)'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/247
   - https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206
@@ -1695,8 +1702,9 @@ items:
   - evt-s2-20260820-repopromptce-247-h
   - evt-s3-20260820-repopromptce-247-h
   - evt-reconcile-20260924155259-10c48ab4
-  revision: 4
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-94ec439b
+  revision: 5
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#536@3a63ebb016aef7a8558337d8c5f1f072d6a30c83
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 536
@@ -1887,13 +1895,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_PLATFORM
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: 'Do not squash-merge UNSTABLE a11y #271. Do not start a salvage branch
     until make guardrails can run on a macOS runner. Distinct from #247.'
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_PLATFORM)'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/271
   - https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206
@@ -1911,8 +1920,9 @@ items:
   - evt-s2-20260820b-repopromptce-271-h
   - evt-s3-20260820-repopromptce-271-h
   - evt-reconcile-20260924155259-5871806e
-  revision: 4
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-9ccb3fbc
+  revision: 5
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/series_correction_project_updated#403@bd04945b78cdf90fd46dca38d7c5cc26b85188aa
   repository: abhimehro/series_correction_project_updated
   pr: 403
@@ -2144,12 +2154,13 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash overlapping test-mypy siblings that both touch tests/test_gh_client.py.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_CANONICAL)'
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1165
   - https://github.com/abhimehro/ctrld-sync/pull/1202
@@ -2165,8 +2176,9 @@ items:
   - evt-s1-20260820b-ctrldsync-1165-h
   - evt-s3-20260820-ctrldsync-1165-h
   - evt-reconcile-20260924155259-0da369ff
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-7ad58966
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#541@f0fb70f67aefe794bfff54894ee57e968c73e220
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 541
@@ -2861,13 +2873,14 @@ items:
   sensitive_paths:
   - shell_execution
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Leave open; do not merge or close security/dashboard changes without
     a human decision.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2021
   - https://app.notion.com/p/3d37419416de81f9b7a8fac5d25abf8f?pvs=204
@@ -2881,8 +2894,9 @@ items:
   - evt-s1-20260820b-personalconf-2021-h
   - evt-s3-20260906-bhimehro-personal-config-2021-d650ddb2-handoff
   - evt-reconcile-20260924155259-22ebc038
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-d755496a
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/personal-config#2018@1776b05120fb8a796f96fe2ea0f79ff581a1f3b1
   repository: abhimehro/personal-config
   pr: 2018
@@ -2905,13 +2919,14 @@ items:
   - generated_output
   - shell_execution
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Leave open; do not merge or close security/dashboard changes without
     a human decision.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2018
   - https://app.notion.com/p/3d37419416de81f9b7a8fac5d25abf8f?pvs=204
@@ -2926,8 +2941,9 @@ items:
   - evt-s1-20260820b-personalconf-2018-h
   - evt-s3-20260906-bhimehro-personal-config-2018-1776b051-handoff
   - evt-reconcile-20260924155259-67506a24
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-3f68fc53
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/personal-config#2014@1ea58aa37bb7f6bf0d079501607ac729cc634e0a
   repository: abhimehro/personal-config
   pr: 2014
@@ -7885,12 +7901,13 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_PLATFORM
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash UNSTABLE Swift PR from Linux. Do not --no-verify.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_PLATFORM)'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/279
   - https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206
@@ -7906,8 +7923,9 @@ items:
   - evt-s1-20260822b-repopromptce-279-h
   - evt-s3-20260822-repopromptce-279-h
   - evt-reconcile-20260924155259-7f554adf
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-13a67a12
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/personal-config#2024@5e5f2e0cb639edc5e67ecf53f5785eeea988b364
   repository: abhimehro/personal-config
   pr: 2024
@@ -8908,12 +8926,13 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not close HUMAN zero-diff PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_EVIDENCE)'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/283
   - https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206
@@ -8926,8 +8945,9 @@ items:
   - evt-s1-20260823-repopromptce-283-h
   - evt-s3-20260824-repopromptce-283-h
   - evt-reconcile-20260924155259-5f226671
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-70fe9850
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/repoprompt-ce#282@78d302f815078d9af156c29635a6e0b4796dae9d
   repository: abhimehro/repoprompt-ce
   pr: 282
@@ -9733,12 +9753,13 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not Trunk-queue workflow or permissions PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2088
   changed_paths:
@@ -9751,8 +9772,9 @@ items:
   - evt-s1-20260825-personalconf-2088-h
   - evt-s3-20260825-personalconf-2088-h
   - evt-reconcile-20260924155259-97d0018f
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-ce5cf1db
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/personal-config#2087@0f5aad7f42dcbd60fd7d6511ee1dab8d98aa3509
   repository: abhimehro/personal-config
   pr: 2087
@@ -10076,12 +10098,13 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash-merge workflow dependency PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1526
   changed_paths:
@@ -10094,8 +10117,9 @@ items:
   - evt-s1-20260825-emailsecuri-1526-h
   - evt-s3-20260825-emailsecuri-1526-h
   - evt-reconcile-20260924155259-e015a4f9
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-88bd2e9e
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332
   repository: abhimehro/email-security-pipeline
   pr: 1525
@@ -10116,12 +10140,13 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash-merge workflow dependency PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1525
   changed_paths:
@@ -10134,8 +10159,9 @@ items:
   - evt-s1-20260825-emailsecuri-1525-h
   - evt-s3-20260826-emailsecuri-1525-h
   - evt-reconcile-20260924155259-790d0203
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-87fe93a6
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/email-security-pipeline#1524@fda9c13c7cf9de9e5bddd6387aacba7632b26e45
   repository: abhimehro/email-security-pipeline
   pr: 1524
@@ -11860,12 +11886,13 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not squash-merge toolchain trust-boundary PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_CONTRACT)'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/752
   changed_paths:
@@ -11879,8 +11906,9 @@ items:
   - evt-s1-20260827-seatekanalys-752-h
   - evt-s3-20260827-seatekanalys-752-h
   - evt-reconcile-20260924155259-c635ca35
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-a4c1c894
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Seatek_Analysis#751@ac992c312c3cba6c47eb767265dc075f8434cd36
   repository: abhimehro/Seatek_Analysis
   pr: 751
@@ -12947,12 +12975,13 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not approve, merge, or close sticky workflow dependency PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1537
   changed_paths:
@@ -12965,8 +12994,9 @@ items:
   - evt-s1-20260828-emailsecuri-1537-h
   - evt-s3-20260828-emailsecuri-1537-h
   - evt-reconcile-20260924155259-b229e230
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-c4503ad2
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/email-security-pipeline#1536@29f16ae70a8eb726ec6500799ad1402bad9c706d
   repository: abhimehro/email-security-pipeline
   pr: 1536
@@ -12987,12 +13017,13 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not approve, merge, or close sticky workflow dependency PRs.
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=REVIEW_SECURITY)'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1536
   changed_paths:
@@ -13005,8 +13036,9 @@ items:
   - evt-s1-20260828-emailsecuri-1536-h
   - evt-s3-20260828-emailsecuri-1536-h
   - evt-reconcile-20260924155259-57c884e1
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-4ef4b339
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Seatek_Analysis#760@1d454a675a5ee7ee45288c55709d6c6b5f7b8851
   repository: abhimehro/Seatek_Analysis
   pr: 760
@@ -13771,18 +13803,15 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: CLOSE_NONSECURITY_NOOP
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: 'Do not merge, approve, or close original #2116. Do not recreate a
     weaker run_merges.py draft over main''s stronger partition-plus-validation (lesson
     0hm).'
-  next_action: 'SHA_MATCH skip salvage: unique run_merges.py remainder is already
-    on main after #2163 (owner, separator, name = partition; reject missing separator
-    or extra slash). Source #2116 stays OPEN dirty. Stage 1 may later close after
-    cooldown; Stage 2 must not. Re-read anchors 22c5c38bbec68a1df81e021450a1b3f9afedf029
-    / dd972eb83986fe0e67ab79efd9541ede369e0743 by 2026-09-21T17:20:00Z.'
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: CLOSE_NONSECURITY_NOOP SHA_MATCH
+    already on main after #2163'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2116
   - https://github.com/abhimehro/personal-config/pull/2163
@@ -13804,8 +13833,9 @@ items:
   - evt-s1-20260909-personalconf-2116-h
   - evt-s1-20260920-personalconfig-2116-s2
   - evt-s2-20260920-personalconfig-2116-h
-  revision: 6
-  updated_at_utc: '2026-09-20T17:20:00Z'
+  - evt-reconcile-20260924160429-9a06ed22
+  revision: 7
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/repoprompt-ce#309@29807d3f3ef337966377ed4ddd3dd4cd2141d0de
   repository: abhimehro/repoprompt-ce
   pr: 309
@@ -17489,13 +17519,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CANONICAL
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: 'Keep both PRs open and keep #809 draft while the unsupported-model
     platform failure remains.'
-  next_action: Observed CLOSED unclassified; Stage 3 classification required.
+  next_action: 'TERMINAL CLOSED_NOOP: Stage3 APPLY: live CLOSED without disposition
+    label; classify CLOSED_NOOP (prior guardrail=HOLD_CANONICAL)'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/807
   - https://github.com/abhimehro/Seatek_Analysis/pull/809
@@ -17513,8 +17544,9 @@ items:
   - evt-s2-20260906-seatekanalys-807-handoff
   - evt-s3-20260906-bhimehro-seatek-analysis-807-5f8abfec-handoff
   - evt-reconcile-20260924155259-76eb88ee
-  revision: 4
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-5108e657
+  revision: 5
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/Seatek_Analysis#806@75ae88f07c48172009eb3bf99a9533d6e9eed122
   repository: abhimehro/Seatek_Analysis
   pr: 806
@@ -18638,14 +18670,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: Re-anchored to live head dbd59da60aa9133b9aea888f57c25bc61e6aaf56;
-    prior evidence void.
+  next_action: 'TERMINAL MERGED_BOUNDED_COMPLETION: Stage3 APPLY: squash-merged MERGEABLE
+    green BOT salvage; advisory Codacy resolved'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/460
   - https://github.com/abhimehro/series_correction_project_updated/pull/409
@@ -18660,8 +18692,9 @@ items:
   - evt-s2-20260918-seriescorre-460-i
   - evt-s2-20260918-seriescorre-460-q
   - evt-s2-20260918-seriescorre-460-h
-  revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  - evt-reconcile-20260924160429-993539d3
+  revision: 4
+  updated_at_utc: '2026-09-24T16:04:29Z'
 - key: abhimehro/ctrld-sync#1264@d6aae6637c718adc3b47253fe5ddf73346253c48
   repository: abhimehro/ctrld-sync
   pr: 1264
@@ -44090,6 +44123,385 @@ events:
   created_at_utc: '2026-09-24T15:52:59Z'
   acknowledged_at_utc: null
   reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-9a06ed22
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 6
+  resulting_item_revision: 7
+  idempotency_key: abhimehro/personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029:evt-reconcile-20260924160429-9a06ed22
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: CLOSE_NONSECURITY_NOOP SHA_MATCH already on main after #2163'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-993539d3
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#460@dbd59da60aa9133b9aea888f57c25bc61e6aaf56
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/series_correction_project_updated#460@dbd59da60aa9133b9aea888f57c25bc61e6aaf56:evt-reconcile-20260924160429-993539d3
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: squash-merged MERGEABLE green BOT salvage; advisory Codacy
+    resolved'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-70fe9850
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#283@c1662143af9ebd35c79c7d3efbc4ee3062ba2383
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/repoprompt-ce#283@c1662143af9ebd35c79c7d3efbc4ee3062ba2383:evt-reconcile-20260924160429-70fe9850
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_EVIDENCE)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-13dc87f5
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#393@9554d6fd27e4f79fa39d524a5905959c14371a06
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/series_correction_project_updated#393@9554d6fd27e4f79fa39d524a5905959c14371a06:evt-reconcile-20260924160429-13dc87f5
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_EVIDENCE)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-94ec439b
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80:evt-reconcile-20260924160429-94ec439b
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_PLATFORM)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-9ccb3fbc
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a:evt-reconcile-20260924160429-9ccb3fbc
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_PLATFORM)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-13a67a12
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#279@7c565945dc5ddac83d6539e95c0c4fd78f742488
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/repoprompt-ce#279@7c565945dc5ddac83d6539e95c0c4fd78f742488:evt-reconcile-20260924160429-13a67a12
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_PLATFORM)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-de1ff6a8
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07:evt-reconcile-20260924160429-de1ff6a8
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_CANONICAL)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-5108e657
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/Seatek_Analysis#807@5f8abfecdb42d64860e507509c1f5efbb5e64f2f:evt-reconcile-20260924160429-5108e657
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_CANONICAL)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-7ad58966
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1165@de77774551baeceff87ff2b6a8921b082bf3edea
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/ctrld-sync#1165@de77774551baeceff87ff2b6a8921b082bf3edea:evt-reconcile-20260924160429-7ad58966
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_CANONICAL)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-a4c1c894
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#752@90f81f8be276beb6c1a39cca6f8cb8334f1791e1
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/Seatek_Analysis#752@90f81f8be276beb6c1a39cca6f8cb8334f1791e1:evt-reconcile-20260924160429-a4c1c894
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=HOLD_CONTRACT)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-87fe93a6
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332:evt-reconcile-20260924160429-87fe93a6
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-88bd2e9e
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1526@aa5d014f12515eec49c1a63f1f9d3eea187d4248
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1526@aa5d014f12515eec49c1a63f1f9d3eea187d4248:evt-reconcile-20260924160429-88bd2e9e
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-4ef4b339
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1536@29f16ae70a8eb726ec6500799ad1402bad9c706d
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1536@29f16ae70a8eb726ec6500799ad1402bad9c706d:evt-reconcile-20260924160429-4ef4b339
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-c4503ad2
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1537@b6ae5ea64a27e715e8e19491e5766471f5b20db4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1537@b6ae5ea64a27e715e8e19491e5766471f5b20db4:evt-reconcile-20260924160429-c4503ad2
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-3f68fc53
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2018@1776b05120fb8a796f96fe2ea0f79ff581a1f3b1
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2018@1776b05120fb8a796f96fe2ea0f79ff581a1f3b1:evt-reconcile-20260924160429-3f68fc53
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-d755496a
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2021@d650ddb2ae511c91d1d17fe21bd0f59efd77bcea
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2021@d650ddb2ae511c91d1d17fe21bd0f59efd77bcea:evt-reconcile-20260924160429-d755496a
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-6a624a5a
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2025@9cf886c17a23478d63258dda032bacd45be59dc2
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2025@9cf886c17a23478d63258dda032bacd45be59dc2:evt-reconcile-20260924160429-6a624a5a
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260924160429-ce5cf1db
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2088@e1cc0bd810346ca8c6324ce15bcb4acc8090236d
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2088@e1cc0bd810346ca8c6324ce15bcb4acc8090236d:evt-reconcile-20260924160429-ce5cf1db
+  status: PROJECTED
+  created_at_utc: '2026-09-24T16:04:29Z'
+  acknowledged_at_utc: null
+  reason: 'Stage3 APPLY: live CLOSED without disposition label; classify CLOSED_NOOP
+    (prior guardrail=REVIEW_SECURITY)'
   successful: null
   policy_revision: null
 stage2_work_items: []
