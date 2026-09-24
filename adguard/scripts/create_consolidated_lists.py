@@ -13,6 +13,11 @@ import json
 import os
 from pathlib import Path
 
+if __package__:
+    from .domain_validation import InvalidDomainError, validate_pk
+else:
+    from domain_validation import InvalidDomainError, validate_pk
+
 
 def extract_domains_from_file(filepath, action_filter=None):
     """Extract domains from a JSON file with optional action filtering."""
@@ -25,10 +30,14 @@ def extract_domains_from_file(filepath, action_filter=None):
 
         # ⚡ Bolt Optimization: Use list comprehension instead of generator and use direct dict lookups
         if action_filter is None:
-            return [rule["PK"] for rule in data["rules"] if "PK" in rule]
+            return [
+                validate_pk(rule["PK"], filepath)
+                for rule in data["rules"]
+                if "PK" in rule
+            ]
 
         return [
-            rule["PK"]
+            validate_pk(rule["PK"], filepath, allow_wildcards=action_filter == 1)
             for rule in data["rules"]
             if "PK" in rule
             and "action" in rule
@@ -36,6 +45,8 @@ def extract_domains_from_file(filepath, action_filter=None):
             and "do" in rule["action"]
             and rule["action"]["do"] == action_filter
         ]
+    except InvalidDomainError:
+        raise
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
         return []
