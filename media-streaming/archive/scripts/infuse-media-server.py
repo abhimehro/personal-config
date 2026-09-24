@@ -261,6 +261,8 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
 
         # ⚡ Performance: tuple for fast C-level endswith checking
         video_exts = (".mp4", ".mkv", ".avi", ".mov")
+        video_icon = "\U0001f3ac"
+        file_icon = "\U0001f4c4"
 
         # Add files and directories
         # ⚡ Performance: Use generator expression/list comprehension instead of for loop with .append
@@ -279,7 +281,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
                 if item.endswith("/")
                 else (
                     f'<li><a href="/{safe_base_path}{html.escape(item)}" class="file video">'
-                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a></li>\n'
+                    f'<span aria-hidden="true">{video_icon if item.lower().endswith(video_exts) else file_icon}</span> {html.escape(item)}</a></li>\n'
                 )
             )
             for item in files
