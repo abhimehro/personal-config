@@ -165,6 +165,9 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "key": "abhimehro/demo#1@head",
             "repository": "abhimehro/demo",
             "pr": 1,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["maintenance/bin/refresh.sh"],
             "current_owner": "stage3",
             "lifecycle_state": "STAGE3_RECONCILIATION",
             "guardrail_outcome": "HOLD_CONTRACT",
@@ -210,6 +213,11 @@ class Option3RebalancePlanTests(unittest.TestCase):
     def test_stage3_handoff_cap_applies_after_owner_and_outcome_filter(self) -> None:
         """Verify the handoff cap applies after eligibility filtering."""
         base = {
+            "repository": "abhimehro/demo",
+            "pr": 3,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["maintenance/bin/refresh.sh"],
             "current_owner": "stage3",
             "lifecycle_state": "STAGE3_RECONCILIATION",
             "guardrail_outcome": "HOLD_CONTRACT",
@@ -458,6 +466,9 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "key": "abhimehro/personal-config#2092@abc",
             "repository": "abhimehro/personal-config",
             "pr": 2092,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["maintenance/bin/refresh.sh"],
             "current_owner": "stage3",
             "lifecycle_state": "STAGE3_RECONCILIATION",
             "guardrail_outcome": "HOLD_CONTRACT",

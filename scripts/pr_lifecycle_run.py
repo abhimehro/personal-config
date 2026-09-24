@@ -186,7 +186,12 @@ def plan_stage3_mechanical_handoffs(
     """Propose Stage 2 handoffs for eligible Stage 3 reconciliation items."""
     # The selector accepts CONFLICTING or DIRTY; only stage3-owned items with a
     # salvage outcome produce actions. The limit applies after those filters,
-    # so Stage 1 candidates never consume handoff slots. No ledger update here.
+    # so Stage 1 candidates never consume handoff slots. Handoffs carry the same
+    # verified unique paths and SHA anchors as Stage 1 enqueues — an action
+    # without them could not assemble the complete WI it requests, so
+    # incomplete items stay Stage-3-owned for evidence gathering instead.
+    # No ledger update here.
+    signals = signals or health.ReselectSignals()
     candidates = health.list_reselect_candidates(ledger, signals=signals)
     actions: list[dict[str, Any]] = []
     for item in candidates:
@@ -196,12 +201,19 @@ def plan_stage3_mechanical_handoffs(
             continue
         if (item.get("guardrail_outcome") or "") not in health.SALVAGE_OUTCOMES:
             continue
+        key = str(item.get("key") or "")
+        allowed_paths = _enqueue_source_paths(item, signals, key)
+        if not _enqueue_fields_complete(item, key, allowed_paths):
+            continue
         actions.append(
             {
                 "action": "HANDOFF_MECHANICAL_TO_STAGE2",
                 "source_key": item.get("key"),
                 "repository": item.get("repository"),
                 "pr": item.get("pr"),
+                "base_sha": item.get("base_sha"),
+                "head_sha": item.get("head_sha"),
+                "allowed_paths": allowed_paths,
                 "reason": RESELECT_ENQUEUE_REASON,
                 "next_action": health.MECHANICAL_RESELECT_NA,
                 "note": (

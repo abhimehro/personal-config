@@ -300,7 +300,7 @@ def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
         return True
     if sticky <= RESELECT_SOFT_STICKY:
         next_action = (item.get("next_action") or "").lower()
-        palette_wrap = "palette wrap" in next_action or "palette" in next_action
+        palette_wrap = "palette" in next_action and "wrap" in next_action
         return palette_wrap and _paths_allow_soft_shell(paths)
     return False
 
