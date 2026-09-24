@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import subprocess
 import sys
+import types
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -109,3 +110,78 @@ def run_health_cli(*cli_args: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
+
+def make_health_report(**overrides: object) -> types.SimpleNamespace:
+    values: dict[str, object] = {
+        "salvage_eligible_count": 0,
+        "stage2_work_item_count": 0,
+        "starvation": False,
+        "reason": "ok",
+    }
+    values.update(overrides)
+    return types.SimpleNamespace(**values)
+
+
+_RUN_STUB_NAMES = (
+    "pr_lifecycle_ledger_cas",
+    "pr_lifecycle_pipeline_health",
+    "pr_lifecycle_config",
+    "pr_lifecycle_support",
+    "pr_lifecycle_yaml",
+    "pr_lifecycle_reconcile",
+    "pr_lifecycle_feed",
+)
+
+
+def import_lifecycle_run() -> Any:
+    """Import pr_lifecycle_run with its remote/health deps stubbed.
+
+    Stubs live in sys.modules only for the duration of the import so discovery
+    does not leak them into the rest of the suite; run.health and friends stay
+    patchable via mock.patch.object afterwards.
+    """
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    saved = {name: sys.modules.get(name) for name in _RUN_STUB_NAMES}
+    for name in _RUN_STUB_NAMES:
+        sys.modules[name] = types.ModuleType(name)
+    sys.modules["pr_lifecycle_support"].ROOT = ROOT
+    sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
+    sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
+    health = sys.modules["pr_lifecycle_pipeline_health"]
+    health.summarize = lambda *_a, **_k: make_health_report()
+    health.is_never_touch_key = lambda *_a, **_k: False
+    health.list_reselect_candidates = lambda *_a, **_k: []
+    health.MECHANICAL_RESELECT_NA = (
+        "Recover unique source only on a new focused draft."
+    )
+    health.ReselectSignals = lambda **kw: types.SimpleNamespace(
+        **{
+            "live_mergeable_by_key": None,
+            "titles_by_key": None,
+            "unique_paths_by_key": None,
+            **kw,
+        }
+    )
+    health.source_pr_prefix = lambda key: str(key or "").split("@", 1)[0]
+    health.non_journal_paths = lambda paths: list(paths or [])
+    health.SALVAGE_OUTCOMES = frozenset(
+        {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
+    )
+    sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
+    sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
+        "empty_with_stock": False,
+        "reason": "FEED_OK",
+        "work_item_count": 0,
+        "eligible_stock_count": 0,
+        "work_items": [],
+    }
+    import pr_lifecycle_run as module
+
+    for name, previous in saved.items():
+        if previous is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = previous
+    return module
