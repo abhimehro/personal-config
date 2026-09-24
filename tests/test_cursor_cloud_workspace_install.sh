@@ -114,7 +114,7 @@ mkdir -p "${NO_NPM_BIN}"
 for dir in /usr/bin /bin /usr/local/bin; do
 	if [[ -d "${dir}" ]]; then
 		for bin in "${dir}"/*; do
-			base="$(basename "${bin}")"
+			base="${bin##*/}"
 			if [[ -x "${bin}" && "${base}" != "npm" && ! -e "${NO_NPM_BIN}/${base}" ]]; then
 				ln -sf "${bin}" "${NO_NPM_BIN}/${base}" 2>/dev/null || true
 			fi
