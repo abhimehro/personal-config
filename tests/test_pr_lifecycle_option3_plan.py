@@ -233,22 +233,34 @@ class Option3RebalancePlanTests(unittest.TestCase):
             ["demo#3@head", "demo#4@head"],
         )
 
-    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self) -> None:
-        """Verify eligible stock blocks an empty-intake skip despite filtering."""
-        feed_payload = {
+    @staticmethod
+    def _never_touch_stock_feed(source_key: str, *, non_never_touch: int) -> dict:
+        """Build a stock-only feed payload carrying one never-touch item."""
+        return {
             "empty_with_stock": True,
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
             "work_item_count": 1,
             "eligible_stock_count": 2,
-            "non_never_touch_stock_count": 1,
-            "work_items": [{"source_item_key": "abhimehro/ctrld-sync#1206@head"}],
+            "non_never_touch_stock_count": non_never_touch,
+            "work_items": [{"source_item_key": source_key}],
         }
+
+    def _stage2_plan_with_feed(self, feed_payload: dict) -> dict:
+        """Plan Stage 2 against a stubbed feed and all-never-touch sources."""
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
             mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
             mock.patch.object(run.health, "is_never_touch_key", return_value=True),
         ):
-            plan = run.build_stage_plan(2, {"ledger_revision": 1}, {})
+            return run.build_stage_plan(2, {"ledger_revision": 1}, {})
+
+    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self) -> None:
+        """Verify eligible stock blocks an empty-intake skip despite filtering."""
+        plan = self._stage2_plan_with_feed(
+            self._never_touch_stock_feed(
+                "abhimehro/ctrld-sync#1206@head", non_never_touch=1
+            )
+        )
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
         self.assertFalse(plan["skip_cursor"])
@@ -259,20 +271,11 @@ class Option3RebalancePlanTests(unittest.TestCase):
 
     def test_stage2_skips_when_only_never_touch_stock_remains(self) -> None:
         """Verify never-touch-only stock still yields the successful skip."""
-        feed_payload = {
-            "empty_with_stock": True,
-            "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
-            "work_item_count": 1,
-            "eligible_stock_count": 1,
-            "non_never_touch_stock_count": 0,
-            "work_items": [{"source_item_key": "abhimehro/Seatek_Analysis#692@head"}],
-        }
-        with (
-            mock.patch.object(run.health, "summarize", return_value=_report()),
-            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
-            mock.patch.object(run.health, "is_never_touch_key", return_value=True),
-        ):
-            plan = run.build_stage_plan(2, {"ledger_revision": 1}, {})
+        plan = self._stage2_plan_with_feed(
+            self._never_touch_stock_feed(
+                "abhimehro/Seatek_Analysis#692@head", non_never_touch=0
+            )
+        )
         self.assertIsNone(plan["stop_class"])
         self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
         self.assertTrue(plan["skip_cursor"])
