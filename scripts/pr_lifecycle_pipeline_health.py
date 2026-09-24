@@ -58,6 +58,24 @@ from pr_lifecycle_schema import validate_schema
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
 
+__all__ = [
+    "MECHANICAL_RESELECT_NA",
+    "NON_SALVAGE_OUTCOMES",
+    "REQUIRED_WORK_ITEM_FIELDS",
+    "SALVAGE_OUTCOMES",
+    "PipelineHealth",
+    "ReselectSignals",
+    "is_never_touch_key",
+    "is_reselect_salvage_candidate",
+    "is_salvage_eligible",
+    "list_reselect_candidates",
+    "non_journal_paths",
+    "parse_expiry_utc",
+    "source_pr_prefix",
+    "summarize",
+    "work_item_is_usable",
+]
+
 NON_SALVAGE_OUTCOMES = frozenset(
     {
         "REVIEW_SECURITY",
@@ -137,6 +155,7 @@ class PipelineHealth:
     stage2_owned_item_count: int
     salvage_eligible_count: int
     salvage_eligible_keys: tuple[str, ...]
+    reselect_candidate_count: int
     starvation: bool
     reason: str
 
@@ -210,7 +229,7 @@ def is_salvage_eligible(item: dict[str, Any]) -> bool:
     return _next_action_is_mechanical(item.get("next_action") or "")
 
 
-def _source_pr_prefix(key: object) -> str:
+def source_pr_prefix(key: object) -> str:
     """Return repository#pr from a ledger key (strip @sha)."""
     text_key = str(key or "")
     if "@" in text_key:
@@ -224,7 +243,7 @@ def is_never_touch_key(key: object) -> bool:
     They are abhimehro/Seatek_Analysis#692 (journals) and
     abhimehro/ctrld-sync#1206 (CSPRNG).
     """
-    return _source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
+    return source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
 
 
 def _title_is_reselect_bot(title: str | None) -> bool:
@@ -256,14 +275,14 @@ def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> s
     return match.group(1).upper() if match else ""
 
 
-def _non_journal_paths(paths: list[str]) -> list[str]:
+def non_journal_paths(paths: list[str]) -> list[str]:
     """Return paths outside any .jules directory."""
     return [path for path in paths if not JOURNAL_PATH_RE.search(path)]
 
 
 def _paths_allow_soft_shell(paths: list[str]) -> bool:
     """Return True when every non-journal path is on the Palette wrap allowlist."""
-    remaining = _non_journal_paths(paths)
+    remaining = non_journal_paths(paths)
     if not remaining:
         return False
     for path in remaining:
@@ -297,11 +316,48 @@ def _unique_remaining_ok(
     empty list means there is no unique source to reselect.
     """
     if unique_remaining_paths is not None:
-        cleaned = _non_journal_paths([str(p) for p in unique_remaining_paths])
+        cleaned = non_journal_paths([str(p) for p in unique_remaining_paths])
         return (bool(cleaned), cleaned)
-    cleaned = _non_journal_paths([str(p) for p in fallback_paths])
+    cleaned = non_journal_paths([str(p) for p in fallback_paths])
     # Planner may use changed_paths as a proxy; APPLY must live-verify unique.
     return (bool(cleaned), cleaned)
+
+
+def _reselect_identity_ok(item: dict[str, Any], title: str | None) -> bool:
+    """Check never-touch, identity, and guardrail-outcome exclusions."""
+    if is_never_touch_key(item.get("key")):
+        return False
+    if not _identity_allows_reselect(item, title):
+        return False
+    outcome = item.get("guardrail_outcome") or ""
+    # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
+    # HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE / CLOSE_NONSECURITY_NOOP.
+    return outcome not in NON_SALVAGE_OUTCOMES
+
+
+LOCKFILE_SUFFIXES = (
+    ".lock",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "Cargo.lock",
+    "poetry.lock",
+)
+
+
+def _reselect_paths_ok(
+    item: dict[str, Any], unique_remaining_paths: list[str] | None
+) -> bool:
+    """Check unique remaining, sticky, and lockfile exclusions on paths."""
+    fallback = list(item.get("changed_paths") or item.get("paths") or [])
+    unique_ok, paths = _unique_remaining_ok(unique_remaining_paths, fallback)
+    if not unique_ok:
+        return False
+    if not _sticky_allows_reselect(item, paths):
+        return False
+    sticky = set(item.get("sensitive_paths") or [])
+    if "lockfiles_and_major_dependencies" not in sticky:
+        return True
+    return not any(path.endswith(LOCKFILE_SUFFIXES) for path in paths)
 
 
 def is_reselect_salvage_candidate(
@@ -311,7 +367,8 @@ def is_reselect_salvage_candidate(
     title: str | None = None,
     unique_remaining_paths: list[str] | None = None,
 ) -> bool:
-    """Return whether Stage 1 may plan a unique-source reselect for this item.
+    """
+    Return whether Stage 1 may plan a unique-source reselect for this item.
 
     Accept a nonterminal BOT item or one with an allowed title prefix when its
     supplied mergeability, or a state inferred from next_action, is CONFLICTING
@@ -322,64 +379,44 @@ def is_reselect_salvage_candidate(
     Palette action and paths on the wrap allowlist. This predicate is separate
     from ``is_salvage_eligible``.
     """
-    if is_never_touch_key(item.get("key")):
-        return False
-    if not _identity_allows_reselect(item, title):
-        return False
-    outcome = item.get("guardrail_outcome") or ""
-    # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
-    # HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE / CLOSE_NONSECURITY_NOOP.
-    if outcome in NON_SALVAGE_OUTCOMES:
+    if not _reselect_identity_ok(item, title):
         return False
     state = _infer_live_mergeable(item, live_mergeable)
     if state not in RESELECT_LIVE_STATES:
         return False
-    fallback = list(item.get("changed_paths") or item.get("paths") or [])
-    ok, paths = _unique_remaining_ok(unique_remaining_paths, fallback)
-    if not ok:
-        return False
-    if not _sticky_allows_reselect(item, paths):
-        return False
-    sticky = set(item.get("sensitive_paths") or [])
-    if "lockfiles_and_major_dependencies" in sticky:
-        lockfile_paths = [
-            path
-            for path in paths
-            if path.endswith(".lock")
-            or path.endswith("uv.lock")
-            or path.endswith("package-lock.json")
-            or path.endswith("pnpm-lock.yaml")
-            or path.endswith("Cargo.lock")
-            or path.endswith("poetry.lock")
-        ]
-        if lockfile_paths:
-            return False
-    return True
+    return _reselect_paths_ok(item, unique_remaining_paths)
 
 
-def mechanical_reselect_next_action() -> str:
-    """Canonical mechanical next_action template for CONFLICTING_UNIQUE_RESELECT."""
-    return MECHANICAL_RESELECT_NA
+@dataclass(frozen=True)
+class ReselectSignals:
+    """Optional live signals narrowing reselect candidate evaluation."""
+
+    live_mergeable_by_key: dict[str, str] | None = None
+    titles_by_key: dict[str, str] | None = None
+    unique_paths_by_key: dict[str, list[str]] | None = None
+
+
+def _signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
+    """Look up a signal by full key, falling back to the @sha-stripped prefix."""
+    if not mapping:
+        return None
+    return mapping.get(key) or mapping.get(source_pr_prefix(key))
 
 
 def list_reselect_candidates(
     ledger: dict[str, Any],
     *,
-    live_mergeable_by_key: dict[str, str] | None = None,
-    titles_by_key: dict[str, str] | None = None,
-    unique_paths_by_key: dict[str, list[str]] | None = None,
+    signals: ReselectSignals | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Return eligible keyed ledger items in their original order.
 
-    Optional maps are looked up by full ledger key, then repository#PR prefix;
-    falsey values do not override fallbacks. A None limit is unbounded.
-    The limit is checked after appending, so a nonpositive limit can still
-    return one item.
+    Optional signal maps are looked up by full ledger key, then
+    repository#PR prefix; falsey values do not override fallbacks. A None
+    limit is unbounded. The limit is checked after appending, so a
+    nonpositive limit can still return one item.
     """
-    live_map = live_mergeable_by_key or {}
-    title_map = titles_by_key or {}
-    paths_map = unique_paths_by_key or {}
+    signals = signals or ReselectSignals()
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
         key = str(item.get("key") or "")
@@ -387,10 +424,11 @@ def list_reselect_candidates(
             continue
         if not is_reselect_salvage_candidate(
             item,
-            live_mergeable=live_map.get(key) or live_map.get(_source_pr_prefix(key)),
-            title=title_map.get(key) or title_map.get(_source_pr_prefix(key)),
-            unique_remaining_paths=paths_map.get(key)
-            or paths_map.get(_source_pr_prefix(key)),
+            live_mergeable=_signal_value(signals.live_mergeable_by_key, key),
+            title=_signal_value(signals.titles_by_key, key),
+            unique_remaining_paths=_signal_value(
+                signals.unique_paths_by_key, key
+            ),
         ):
             continue
         selected.append(item)
@@ -510,6 +548,7 @@ def _health_report(
         stage2_owned_item_count=owned_count,
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
+        reselect_candidate_count=len(list_reselect_candidates(ledger)),
         starvation=starvation,
         reason=_starvation_reason(starvation, usable_count, eligible_count),
     )
@@ -534,6 +573,7 @@ def _print_report(report: PipelineHealth, as_json: bool) -> None:
     print(f"stage2_work_items={report.stage2_work_item_count}")
     print(f"stage2_owned_items={report.stage2_owned_item_count}")
     print(f"salvage_eligible={report.salvage_eligible_count}")
+    print(f"reselect_candidates={report.reselect_candidate_count}")
     print(f"starvation={str(report.starvation).lower()}")
     print(f"reason={report.reason}")
     for key in report.salvage_eligible_keys:

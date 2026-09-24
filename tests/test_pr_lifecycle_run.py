@@ -45,13 +45,23 @@ sys.modules["pr_lifecycle_pipeline_health"].is_never_touch_key = lambda *_a, **_
 sys.modules["pr_lifecycle_pipeline_health"].list_reselect_candidates = (
     lambda *_a, **_k: []
 )
-sys.modules["pr_lifecycle_pipeline_health"].mechanical_reselect_next_action = (
-    lambda: "Recover unique source only on a new focused draft."
+sys.modules["pr_lifecycle_pipeline_health"].MECHANICAL_RESELECT_NA = (
+    "Recover unique source only on a new focused draft."
 )
-sys.modules["pr_lifecycle_pipeline_health"]._source_pr_prefix = (
+sys.modules["pr_lifecycle_pipeline_health"].ReselectSignals = (
+    lambda **kw: types.SimpleNamespace(
+        **{
+            "live_mergeable_by_key": None,
+            "titles_by_key": None,
+            "unique_paths_by_key": None,
+            **kw,
+        }
+    )
+)
+sys.modules["pr_lifecycle_pipeline_health"].source_pr_prefix = (
     lambda key: str(key or "").split("@", 1)[0]
 )
-sys.modules["pr_lifecycle_pipeline_health"]._non_journal_paths = (
+sys.modules["pr_lifecycle_pipeline_health"].non_journal_paths = (
     lambda paths: list(paths or [])
 )
 sys.modules["pr_lifecycle_pipeline_health"].SALVAGE_OUTCOMES = frozenset(
@@ -66,7 +76,7 @@ sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
     "work_items": [],
 }
 
-import pr_lifecycle_run as run  # noqa: E402
+import pr_lifecycle_run as run
 
 for _name in _STUB_NAMES:
     _saved = _saved_modules[_name]
@@ -98,8 +108,9 @@ class RunPlanTests(unittest.TestCase):
             starvation = False
             reason = "ok"
 
-        with mock.patch.object(run.health, "summarize", return_value=FakeReport()):
-            with mock.patch.object(
+        with (
+            mock.patch.object(run.health, "summarize", return_value=FakeReport()),
+            mock.patch.object(
                 run.feed_mod,
                 "build_feed",
                 return_value={
@@ -109,8 +120,9 @@ class RunPlanTests(unittest.TestCase):
                     "eligible_stock_count": 0,
                     "work_items": [],
                 },
-            ):
-                plan = run.build_stage_plan(2, ledger, config)
+            ),
+        ):
+            plan = run.build_stage_plan(2, ledger, config)
         self.assertFalse(plan.get("stage2_may_merge"))
         self.assertFalse(plan.get("calibration_enabled"))
         self.assertEqual(plan["stage"], 2)
@@ -134,11 +146,13 @@ class RunPlanTests(unittest.TestCase):
     def test_stage1_uses_bounded_reconciliation_and_always_checks_feed(self):
         ledger = {"ledger_revision": 11, "items": []}
         action = {"action": "TERMINAL_CLOSED", "key": "owner/repo#1@sha"}
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(
                 run.reconcile_mod, "collect_actions", return_value=[action]
-            ) as collect:
-                plan = run.build_stage_plan(1, ledger, {"lifecycle": {}})
+            ) as collect,
+        ):
+            plan = run.build_stage_plan(1, ledger, {"lifecycle": {}})
         collect.assert_called_once_with(ledger, {"lifecycle": {}}, limit=40)
         self.assertEqual(plan["actions"][0], action)
         self.assertEqual(plan["actions"][-1]["action"], "FEED_CHECK")
@@ -153,11 +167,11 @@ class RunPlanTests(unittest.TestCase):
             "eligible_stock_count": 1,
             "work_items": [work_item],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["actions"][0]["action"], "FEED_SUMMARY")
         self.assertEqual(plan["actions"][1], {"action": "SALVAGE_WI", "wi": work_item})
         self.assertIsNone(plan["stop_class"])
@@ -171,11 +185,11 @@ class RunPlanTests(unittest.TestCase):
             "eligible_stock_count": 2,
             "work_items": [],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
 
@@ -218,26 +232,24 @@ class RunExecutionTests(unittest.TestCase):
         }
         with TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
-            with mock.patch.object(run, "LOG_DIR", log_dir):
-                with mock.patch.object(run, "_run_id", return_value="run-fixed"):
-                    with mock.patch.object(
-                        run, "load_yaml", side_effect=[{"lifecycle": {}}, {"items": []}]
-                    ):
-                        with mock.patch.object(run, "validate_config"):
-                            with mock.patch.object(
-                                run.cas,
-                                "run_preflight",
-                                return_value={"ledger_path": "ledger.yaml"},
-                                create=True,
-                            ):
-                                with mock.patch.object(
-                                    run, "build_stage_plan", return_value=plan.copy()
-                                ):
-                                    output = StringIO()
-                                    with redirect_stdout(output):
-                                        result = run.run_stage(
-                                            1, dry_run=True, write_status=True
-                                        )
+            with (
+                mock.patch.object(run, "LOG_DIR", log_dir),
+                mock.patch.object(run, "_run_id", return_value="run-fixed"),
+                mock.patch.object(
+                    run, "load_yaml", side_effect=[{"lifecycle": {}}, {"items": []}]
+                ),
+                mock.patch.object(run, "validate_config"),
+                mock.patch.object(
+                    run.cas,
+                    "run_preflight",
+                    return_value={"ledger_path": "ledger.yaml"},
+                    create=True,
+                ),
+                mock.patch.object(run, "build_stage_plan", return_value=plan.copy()),
+            ):
+                output = StringIO()
+                with redirect_stdout(output):
+                    result = run.run_stage(1, dry_run=True, write_status=True)
             self.assertEqual(result, 0)
             emitted = json.loads(output.getvalue())
             self.assertEqual(emitted["run_id"], "run-fixed")
@@ -259,23 +271,23 @@ class RunExecutionTests(unittest.TestCase):
     def test_run_stage_records_transient_preflight_failure(self):
         with TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
-            with mock.patch.object(run, "LOG_DIR", log_dir):
-                with mock.patch.object(run, "_run_id", return_value="run-error"):
-                    with mock.patch.object(
-                        run, "load_yaml", side_effect=[{"lifecycle": {}}, OSError()]
-                    ):
-                        with mock.patch.object(run, "validate_config"):
-                            with mock.patch.object(
-                                run.cas,
-                                "run_preflight",
-                                return_value={"ledger_path": "ledger.yaml"},
-                                create=True,
-                            ):
-                                output = StringIO()
-                                with redirect_stdout(output):
-                                    result = run.run_stage(
-                                        1, dry_run=True, write_status=False
-                                    )
+            with (
+                mock.patch.object(run, "LOG_DIR", log_dir),
+                mock.patch.object(run, "_run_id", return_value="run-error"),
+                mock.patch.object(
+                    run, "load_yaml", side_effect=[{"lifecycle": {}}, OSError()]
+                ),
+                mock.patch.object(run, "validate_config"),
+                mock.patch.object(
+                    run.cas,
+                    "run_preflight",
+                    return_value={"ledger_path": "ledger.yaml"},
+                    create=True,
+                ),
+            ):
+                output = StringIO()
+                with redirect_stdout(output):
+                    result = run.run_stage(1, dry_run=True, write_status=False)
             self.assertEqual(result, 1)
             record = json.loads(output.getvalue())
             self.assertEqual(record["stop_class"], "TRANSIENT_RETRY")
@@ -346,7 +358,9 @@ class Option3RebalancePlanTests(unittest.TestCase):
         ) as select:
             planned = run.plan_stage2_enqueues(
                 {"items": candidates},
-                unique_paths_by_key={"abhimehro/demo#1": ["src/unique.py"]},
+                signals=run.health.ReselectSignals(
+                    unique_paths_by_key={"abhimehro/demo#1": ["src/unique.py"]}
+                ),
             )
         self.assertEqual(select.call_args.kwargs["limit"], 5)
         self.assertEqual(planned["candidate_count"], 5)
@@ -360,7 +374,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(first["base_sha"], "a" * 40)
         self.assertEqual(first["head_sha"], "b" * 40)
         self.assertEqual(
-            first["next_action"], run.health.mechanical_reselect_next_action()
+            first["next_action"], run.health.MECHANICAL_RESELECT_NA
         )
         self.assertTrue(
             all(
@@ -379,18 +393,18 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "eligible_stock_count": 1,
             "work_items": [never_touch, usable],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                with mock.patch.object(
-                    run.health,
-                    "is_never_touch_key",
-                    side_effect=lambda key: key.startswith(
-                        "abhimehro/Seatek_Analysis#692@"
-                    ),
-                ):
-                    plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+            mock.patch.object(
+                run.health,
+                "is_never_touch_key",
+                side_effect=lambda key: key.startswith(
+                    "abhimehro/Seatek_Analysis#692@"
+                ),
+            ),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["reason"], "OK")
         self.assertFalse(plan["skip_cursor"])
         self.assertEqual(plan["mechanical_candidate_count"], 1)
@@ -463,24 +477,14 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "lifecycle_state": "STAGE3_RECONCILIATION",
             "guardrail_outcome": "HOLD_CONTRACT",
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.reconcile_mod, "collect_actions", return_value=[]
-            ):
-                with mock.patch.object(
-                    run.health, "list_reselect_candidates", return_value=[candidate]
-                ):
-                    with mock.patch.object(
-                        run.health,
-                        "mechanical_reselect_next_action",
-                        return_value="Recover unique source only on a new focused draft.",
-                    ):
-                        with mock.patch.object(
-                            run.health,
-                            "_non_journal_paths",
-                            side_effect=lambda paths: list(paths or []),
-                        ):
-                            plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
+            mock.patch.object(
+                run.health, "list_reselect_candidates", return_value=[candidate]
+            ),
+        ):
+            plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
         enqueue = [a for a in plan["actions"] if a["action"] == "ENQUEUE_STAGE2_WI"]
         self.assertEqual(len(enqueue), 1)
         self.assertEqual(enqueue[0]["reason"], "CONFLICTING_UNIQUE_RESELECT")
@@ -491,20 +495,26 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertIsNone(plan["stop_class"])
 
     def test_stage1_feed_check_fails_when_candidates_not_enqueued(self):
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.reconcile_mod, "collect_actions", return_value=[]
-            ):
-                with mock.patch.object(
-                    run,
-                    "plan_stage2_enqueues",
-                    return_value={
-                        "candidate_count": 2,
-                        "enqueued_count": 0,
-                        "enqueue_actions": [],
-                    },
-                ):
-                    plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
+            mock.patch.object(
+                run,
+                "plan_stage2_enqueues",
+                return_value={
+                    "candidate_count": 2,
+                    "enqueued_count": 0,
+                    "skipped_incomplete": [
+                        {
+                            "source_key": "owner/repo#1@a",
+                            "reason": "INCOMPLETE_WI_FIELDS",
+                        }
+                    ],
+                    "enqueue_actions": [],
+                },
+            ),
+        ):
+            plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
         feed = plan["actions"][-1]
@@ -518,11 +528,11 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "eligible_stock_count": 0,
             "work_items": [],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
         self.assertIsNone(plan["stop_class"])
         self.assertTrue(plan.get("skip_cursor"))
@@ -543,14 +553,12 @@ class Option3RebalancePlanTests(unittest.TestCase):
                 }
             ],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                with mock.patch.object(
-                    run.health, "is_never_touch_key", return_value=True
-                ):
-                    plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+            mock.patch.object(run.health, "is_never_touch_key", return_value=True),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
         self.assertTrue(plan.get("skip_cursor"))
         self.assertEqual(plan["actions"][0]["action"], "SKIP_IF_EMPTY")
@@ -564,16 +572,13 @@ class Option3RebalancePlanTests(unittest.TestCase):
             "lifecycle_state": "STAGE3_RECONCILIATION",
             "guardrail_outcome": "HOLD_CONTRACT",
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(
                 run.health, "list_reselect_candidates", return_value=[candidate]
-            ):
-                with mock.patch.object(
-                    run.health,
-                    "mechanical_reselect_next_action",
-                    return_value="Recover unique source only on a new focused draft.",
-                ):
-                    plan = run.build_stage_plan(3, {"ledger_revision": 3}, {})
+            ),
+        ):
+            plan = run.build_stage_plan(3, {"ledger_revision": 3}, {})
         kinds = [a["action"] for a in plan["actions"]]
         self.assertIn("CLOSED_NOOP_DEFERRED", kinds)
         self.assertIn("HANDOFF_MECHANICAL_TO_STAGE2", kinds)

@@ -71,9 +71,11 @@ STAGE2_ENQUEUE_CAP = 5
 RESELECT_ENQUEUE_REASON = "CONFLICTING_UNIQUE_RESELECT"
 
 
-def _wi_source_key(wi: dict[str, Any]) -> str:
+def _wi_source_key(work_item: dict[str, Any]) -> str:
     """Get a feed item's source_key or source_item_key, or an empty string."""
-    return str(wi.get("source_key") or wi.get("source_item_key") or "")
+    return str(
+        work_item.get("source_key") or work_item.get("source_item_key") or ""
+    )
 
 
 def _filter_never_touch_work_items(
@@ -82,85 +84,113 @@ def _filter_never_touch_work_items(
     """Separate feed items by never-touch source, preserving their order."""
     mechanical: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
-    for wi in work_items:
-        if health.is_never_touch_key(_wi_source_key(wi)):
-            skipped.append(wi)
+    for work_item in work_items:
+        if health.is_never_touch_key(_wi_source_key(work_item)):
+            skipped.append(work_item)
         else:
-            mechanical.append(wi)
+            mechanical.append(work_item)
     return mechanical, skipped
+
+
+def _enqueue_source_paths(
+    item: dict[str, Any], signals: health.ReselectSignals, key: str
+) -> list[str]:
+    """Resolve allowed paths, preferring caller-supplied unique remaining."""
+    paths = list(item.get("changed_paths") or [])
+    unique_map = signals.unique_paths_by_key or {}
+    unique = unique_map.get(key) or unique_map.get(health.source_pr_prefix(key))
+    if unique:
+        paths = list(unique)
+    return health.non_journal_paths([str(path) for path in paths])
+
+
+def _enqueue_action(
+    item: dict[str, Any], key: str, allowed_paths: list[str]
+) -> dict[str, Any]:
+    """Build one ENQUEUE_STAGE2_WI plan action for a reselect candidate."""
+    return {
+        "action": "ENQUEUE_STAGE2_WI",
+        "source_key": key,
+        "repository": item.get("repository"),
+        "pr": item.get("pr"),
+        "base_sha": item.get("base_sha"),
+        "head_sha": item.get("head_sha"),
+        "allowed_paths": allowed_paths,
+        "reason": RESELECT_ENQUEUE_REASON,
+        "next_action": health.MECHANICAL_RESELECT_NA,
+        "note": (
+            "CAS-write a complete stage2_work_item; "
+            "pr_lifecycle_feed.py is read-only verification only"
+        ),
+    }
+
+
+def _enqueue_fields_complete(
+    item: dict[str, Any], key: str, allowed_paths: list[str]
+) -> bool:
+    """Return True when the ledger item can yield a complete Stage 2 WI."""
+    fields = (
+        key,
+        item.get("repository"),
+        item.get("pr"),
+        item.get("base_sha"),
+        item.get("head_sha"),
+    )
+    return all(fields) and bool(allowed_paths)
 
 
 def plan_stage2_enqueues(
     ledger: dict[str, Any],
     *,
-    live_mergeable_by_key: dict[str, str] | None = None,
-    titles_by_key: dict[str, str] | None = None,
-    unique_paths_by_key: dict[str, list[str]] | None = None,
+    signals: health.ReselectSignals | None = None,
     limit: int = STAGE2_ENQUEUE_CAP,
 ) -> dict[str, Any]:
     """Return Stage 2 enqueue action proposals for capped reselect candidates.
 
-    Prefer nonempty unique paths from the optional map over changed_paths, and
-    omit journal paths from each action's allowed_paths. candidate_count counts
-    candidates after the limit. These actions request later CAS writes; this
+    Prefer nonempty unique paths from the signal map over changed_paths, and
+    omit journal paths from each action's allowed_paths. Candidates missing
+    fields a complete work item needs are listed under skipped_incomplete
+    instead of producing actions, so enqueued_count can trail candidate_count
+    and FEED_CHECK can fail. These actions request later CAS writes; this
     function neither creates complete work items nor writes to the ledger.
     """
+    signals = signals or health.ReselectSignals()
     candidates = health.list_reselect_candidates(
-        ledger,
-        live_mergeable_by_key=live_mergeable_by_key,
-        titles_by_key=titles_by_key,
-        unique_paths_by_key=unique_paths_by_key,
-        limit=limit,
+        ledger, signals=signals, limit=limit
     )
     enqueue_actions: list[dict[str, Any]] = []
+    incomplete: list[dict[str, Any]] = []
     for item in candidates:
-        paths = list(item.get("changed_paths") or [])
-        # Prefer caller-supplied unique paths when present.
         key = str(item.get("key") or "")
-        prefix = health._source_pr_prefix(key)
-        if unique_paths_by_key:
-            paths = (
-                unique_paths_by_key.get(key)
-                or unique_paths_by_key.get(prefix)
-                or paths
-            )
-        paths = health._non_journal_paths([str(p) for p in paths])
-        enqueue_actions.append(
-            {
-                "action": "ENQUEUE_STAGE2_WI",
-                "source_key": key,
-                "repository": item.get("repository"),
-                "pr": item.get("pr"),
-                "base_sha": item.get("base_sha"),
-                "head_sha": item.get("head_sha"),
-                "allowed_paths": paths,
-                "reason": RESELECT_ENQUEUE_REASON,
-                "next_action": health.mechanical_reselect_next_action(),
-                "note": (
-                    "CAS-write a complete stage2_work_item; "
-                    "pr_lifecycle_feed.py is read-only verification only"
-                ),
-            }
-        )
+        allowed_paths = _enqueue_source_paths(item, signals, key)
+        if not _enqueue_fields_complete(item, key, allowed_paths):
+            incomplete.append({"source_key": key, "reason": "INCOMPLETE_WI_FIELDS"})
+            continue
+        enqueue_actions.append(_enqueue_action(item, key, allowed_paths))
     return {
         "candidate_count": len(candidates),
         "enqueued_count": len(enqueue_actions),
+        "skipped_incomplete": incomplete,
         "enqueue_actions": enqueue_actions,
     }
 
 
 def plan_stage3_mechanical_handoffs(
-    ledger: dict[str, Any], *, limit: int = STAGE2_ENQUEUE_CAP
+    ledger: dict[str, Any],
+    *,
+    signals: health.ReselectSignals | None = None,
+    limit: int = STAGE2_ENQUEUE_CAP,
 ) -> list[dict[str, Any]]:
     """Propose Stage 2 handoffs for eligible Stage 3 reconciliation items.
 
     The shared selector accepts CONFLICTING or DIRTY; only stage3-owned items
-    with a salvage outcome produce actions. The limit caps candidates before
-    these filters, so the result may contain fewer actions. No ledger update
-    occurs here.
+    with a salvage outcome produce actions. The limit is applied after the
+    ownership, state, and outcome filters, so earlier Stage 1 candidates never
+    consume handoff slots. No ledger update occurs here.
     """
+    candidates = health.list_reselect_candidates(ledger, signals=signals)
     actions: list[dict[str, Any]] = []
-    for item in health.list_reselect_candidates(ledger, limit=limit):
+    for item in candidates:
         if item.get("current_owner") != "stage3":
             continue
         if item.get("lifecycle_state") != "STAGE3_RECONCILIATION":
@@ -174,7 +204,7 @@ def plan_stage3_mechanical_handoffs(
                 "repository": item.get("repository"),
                 "pr": item.get("pr"),
                 "reason": RESELECT_ENQUEUE_REASON,
-                "next_action": health.mechanical_reselect_next_action(),
+                "next_action": health.MECHANICAL_RESELECT_NA,
                 "note": (
                     "CAS complete Stage 2 WI + owner stage2; "
                     "do not leave mechanical CONFLICTING as WAITING_HUMAN"
@@ -190,9 +220,7 @@ def _stage1_plan(
     ledger: dict[str, Any],
     config: dict[str, Any],
     *,
-    live_mergeable_by_key: dict[str, str] | None = None,
-    titles_by_key: dict[str, str] | None = None,
-    unique_paths_by_key: dict[str, list[str]] | None = None,
+    signals: health.ReselectSignals | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
     """Plan Stage 1 reconciliation and reselect enqueues with a FEED_CHECK grade.
 
@@ -211,18 +239,12 @@ def _stage1_plan(
     ]
     cap = _stage_cap(config, "stage1_actions", 40)
     actions = reconcile_mod.collect_actions(ledger, config, limit=cap)
-    planned = plan_stage2_enqueues(
-        ledger,
-        live_mergeable_by_key=live_mergeable_by_key,
-        titles_by_key=titles_by_key,
-        unique_paths_by_key=unique_paths_by_key,
-        limit=STAGE2_ENQUEUE_CAP,
-    )
+    planned = plan_stage2_enqueues(ledger, signals=signals)
     actions.extend(planned["enqueue_actions"])
     stop_class = None
     reason = "OK"
     feed_ok = not (
-        planned["candidate_count"] > 0 and planned["enqueued_count"] == 0
+        planned["candidate_count"] > 0 and not planned["enqueued_count"]
     )
     if not feed_ok:
         stop_class = "LOGIC_STOP"
@@ -232,6 +254,7 @@ def _stage1_plan(
             "action": "FEED_CHECK",
             "reselect_candidates": planned["candidate_count"],
             "enqueued": planned["enqueued_count"],
+            "skipped_incomplete": planned["skipped_incomplete"],
             "grade": "PASS" if feed_ok else "FAIL",
             "reason": (
                 "CAS-write complete stage2_work_items when reselect stock exists; "
@@ -283,7 +306,7 @@ def _stage2_plan(
     if feed.get("empty_with_stock"):
         stop_class = "LOGIC_STOP"
         reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
-    elif len(mechanical) == 0:
+    elif not mechanical:
         # True empty or only never-touch leftovers → success skip (no docs PR).
         reason = "EMPTY_INTAKE_SKIP"
         extras["skip_cursor"] = True
@@ -313,12 +336,16 @@ def _stage2_plan(
             },
         }
     ]
-    actions.extend({"action": "SALVAGE_WI", "wi": wi} for wi in mechanical)
+    actions.extend(
+        {"action": "SALVAGE_WI", "wi": work_item} for work_item in mechanical
+    )
     return allowed, actions, stop_class, reason, extras
 
 
 def _stage3_plan(
     ledger: dict[str, Any],
+    *,
+    signals: health.ReselectSignals | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
     """Plan Stage 3 reconciliation, deferred CLOSED_NOOP, and handoff actions."""
     allowed = [
@@ -349,7 +376,7 @@ def _stage3_plan(
             ),
         },
     ]
-    actions.extend(plan_stage3_mechanical_handoffs(ledger))
+    actions.extend(plan_stage3_mechanical_handoffs(ledger, signals=signals))
     return allowed, actions, None, "OK"
 
 
@@ -358,9 +385,7 @@ def build_stage_plan(
     ledger: dict[str, Any],
     config: dict[str, Any],
     *,
-    live_mergeable_by_key: dict[str, str] | None = None,
-    titles_by_key: dict[str, str] | None = None,
-    unique_paths_by_key: dict[str, list[str]] | None = None,
+    signals: health.ReselectSignals | None = None,
 ) -> dict[str, Any]:
     """Build a stage plan with health, permitted commands, and planned actions.
 
@@ -371,16 +396,14 @@ def build_stage_plan(
     extras: dict[str, Any] = {}
     if stage == 1:
         allowed, actions, stop_class, reason = _stage1_plan(
-            ledger,
-            config,
-            live_mergeable_by_key=live_mergeable_by_key,
-            titles_by_key=titles_by_key,
-            unique_paths_by_key=unique_paths_by_key,
+            ledger, config, signals=signals
         )
     elif stage == 2:
         allowed, actions, stop_class, reason, extras = _stage2_plan(ledger, config)
     elif stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan(ledger)
+        allowed, actions, stop_class, reason = _stage3_plan(
+            ledger, signals=signals
+        )
     else:
         allowed, actions = [], []
         stop_class = "LOGIC_STOP"

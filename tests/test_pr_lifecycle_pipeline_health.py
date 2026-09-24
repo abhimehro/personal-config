@@ -21,10 +21,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_pipeline_health as health  # noqa: E402
-import pr_lifecycle_validation as validator  # noqa: E402
-import yaml  # noqa: E402
-from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
+import pr_lifecycle_pipeline_health as health
+import pr_lifecycle_validation as validator
+import yaml
+from sync_cursor_export_prompts import expand_prompt_source
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -601,9 +601,11 @@ class ReselectCandidateTests(unittest.TestCase):
         ledger = _ledger([item, _item(key="", changed_paths=["src/other.py"])], [])
         selected = health.list_reselect_candidates(
             ledger,
-            live_mergeable_by_key={"abhimehro/demo#7": "DIRTY"},
-            titles_by_key={"abhimehro/demo#7": "⚡ Bolt: repair"},
-            unique_paths_by_key={"abhimehro/demo#7": ["src/unique.py"]},
+            signals=health.ReselectSignals(
+                live_mergeable_by_key={"abhimehro/demo#7": "DIRTY"},
+                titles_by_key={"abhimehro/demo#7": "⚡ Bolt: repair"},
+                unique_paths_by_key={"abhimehro/demo#7": ["src/unique.py"]},
+            ),
         )
         self.assertEqual([entry["key"] for entry in selected], [key])
 
