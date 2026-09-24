@@ -280,12 +280,14 @@ def _stage2_plan(
         "CAS write complete Stage 2 work items + handoff events",
         "skip-if-empty: exit success with no docs PR when usable WI==0",
     ]
-    feed = feed_mod.build_feed(
-        ledger, config, limit=_stage_cap(config, "stage2_salvage_candidates", 10)
-    )
+    cap = _stage_cap(config, "stage2_salvage_candidates", 10)
+    # Request extra items so never-touch entries don't fill the cap and hide
+    # usable salvage items behind them; the cap is applied after filtering.
+    feed = feed_mod.build_feed(ledger, config, limit=cap * 2)
     mechanical, never_touch = _filter_never_touch_work_items(
         list(feed.get("work_items") or [])
     )
+    mechanical = mechanical[:cap]
     extras: dict[str, Any] = {
         "skip_cursor": False,
         "empty_intake_skip": False,
@@ -297,7 +299,9 @@ def _stage2_plan(
     }
     stop_class = None
     reason = "OK"
-    if feed.get("empty_with_stock"):
+    if feed.get("empty_with_stock") or (
+        not mechanical and feed.get("eligible_stock_count", 0) > 0
+    ):
         stop_class = "LOGIC_STOP"
         reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
     elif not mechanical:
