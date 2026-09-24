@@ -134,6 +134,59 @@ _RUN_STUB_NAMES = (
 )
 
 
+def _health_stub_attrs() -> dict[str, Any]:
+    return {
+        "summarize": lambda *_a, **_k: make_health_report(),
+        "is_never_touch_key": lambda *_a, **_k: False,
+        "list_reselect_candidates": lambda *_a, **_k: [],
+        "MECHANICAL_RESELECT_NA": (
+            "Recover unique source only on a new focused draft."
+        ),
+        "ReselectSignals": lambda **kw: types.SimpleNamespace(
+            **{
+                "live_mergeable_by_key": None,
+                "titles_by_key": None,
+                "unique_paths_by_key": None,
+                **kw,
+            }
+        ),
+        "source_pr_prefix": lambda key: str(key or "").split("@", 1)[0],
+        "non_journal_paths": lambda paths: list(paths or []),
+        "SALVAGE_OUTCOMES": frozenset(
+            {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
+        ),
+    }
+
+
+def _install_run_stubs() -> dict[str, Any]:
+    """Install stub modules; return the previous sys.modules entries."""
+    saved = {name: sys.modules.get(name) for name in _RUN_STUB_NAMES}
+    for name in _RUN_STUB_NAMES:
+        sys.modules[name] = types.ModuleType(name)
+    for attr, value in _health_stub_attrs().items():
+        setattr(sys.modules["pr_lifecycle_pipeline_health"], attr, value)
+    sys.modules["pr_lifecycle_support"].ROOT = ROOT
+    sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
+    sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
+    sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
+    sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
+        "empty_with_stock": False,
+        "reason": "FEED_OK",
+        "work_item_count": 0,
+        "eligible_stock_count": 0,
+        "work_items": [],
+    }
+    return saved
+
+
+def _restore_run_stubs(saved: dict[str, Any]) -> None:
+    for name, previous in saved.items():
+        if previous is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = previous
+
+
 def import_lifecycle_run() -> Any:
     """Import pr_lifecycle_run with its remote/health deps stubbed.
 
@@ -143,45 +196,8 @@ def import_lifecycle_run() -> Any:
     """
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
-    saved = {name: sys.modules.get(name) for name in _RUN_STUB_NAMES}
-    for name in _RUN_STUB_NAMES:
-        sys.modules[name] = types.ModuleType(name)
-    sys.modules["pr_lifecycle_support"].ROOT = ROOT
-    sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
-    sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
-    health = sys.modules["pr_lifecycle_pipeline_health"]
-    health.summarize = lambda *_a, **_k: make_health_report()
-    health.is_never_touch_key = lambda *_a, **_k: False
-    health.list_reselect_candidates = lambda *_a, **_k: []
-    health.MECHANICAL_RESELECT_NA = (
-        "Recover unique source only on a new focused draft."
-    )
-    health.ReselectSignals = lambda **kw: types.SimpleNamespace(
-        **{
-            "live_mergeable_by_key": None,
-            "titles_by_key": None,
-            "unique_paths_by_key": None,
-            **kw,
-        }
-    )
-    health.source_pr_prefix = lambda key: str(key or "").split("@", 1)[0]
-    health.non_journal_paths = lambda paths: list(paths or [])
-    health.SALVAGE_OUTCOMES = frozenset(
-        {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
-    )
-    sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
-    sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
-        "empty_with_stock": False,
-        "reason": "FEED_OK",
-        "work_item_count": 0,
-        "eligible_stock_count": 0,
-        "work_items": [],
-    }
+    saved = _install_run_stubs()
     import pr_lifecycle_run as module
 
-    for name, previous in saved.items():
-        if previous is None:
-            sys.modules.pop(name, None)
-        else:
-            sys.modules[name] = previous
+    _restore_run_stubs(saved)
     return module
