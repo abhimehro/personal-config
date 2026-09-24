@@ -77,6 +77,37 @@ class TestRunCmd(unittest.TestCase):
         self.assertEqual(err, "not found")
 
 
+class TestProcessPr(unittest.TestCase):
+    @patch("scratch_triage.run_cmd")
+    def test_mergeable_prs_are_held_without_github_mutation(self, mock_run_cmd):
+        for merge_state in ("CLEAN", "HAS_HOOKS", "BLOCKED"):
+            with self.subTest(merge_state=merge_state):
+                pr = {
+                    "full_repo": "abhimehro/personal-config",
+                    "number": 123,
+                    "mergeStateStatus": merge_state,
+                }
+                result, action = scratch_triage._process_pr(pr)
+                self.assertIs(result, pr)
+                self.assertEqual(action, "escalated")
+                self.assertIn("eligibility", result["hold_reason"])
+        mock_run_cmd.assert_not_called()
+
+    @patch("scratch_triage.run_cmd")
+    def test_duplicate_candidate_is_held_without_github_mutation(self, mock_run_cmd):
+        pr = {
+            "full_repo": "abhimehro/personal-config",
+            "number": 123,
+            "mergeStateStatus": "CLEAN",
+            "status_action": "CLOSE",
+        }
+        result, action = scratch_triage._process_pr(pr)
+        self.assertIs(result, pr)
+        self.assertEqual(action, "escalated")
+        self.assertIn("author and diff review", result["hold_reason"])
+        mock_run_cmd.assert_not_called()
+
+
 class TestContainsAllKeywords(unittest.TestCase):
     def test_contains_all_present(self):
         title = "bolt optimization: fix dataframe iteration performance"
