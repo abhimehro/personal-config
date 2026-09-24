@@ -109,8 +109,16 @@ echo ""
 echo "Test 4: missing npm is a non-fatal skip"
 echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
+NO_NPM_BIN="${TEST_DIR}/no-npm-bin"
+mkdir -p "${NO_NPM_BIN}"
+for cmd in date mkdir dirname grep head printf cat rm chmod ln bash; do
+	cp_path="$(command -v "${cmd}" || true)"
+	if [[ -n ${cp_path} ]]; then
+		ln -sf "${cp_path}" "${NO_NPM_BIN}/${cmd}"
+	fi
+done
 hash -r
-PATH="${MOCK_BIN}:/usr/bin:/bin" ensure_gitnexus >"${TEST_DIR}/t4.out" 2>&1 ||
+PATH="${MOCK_BIN}:${NO_NPM_BIN}" ensure_gitnexus >"${TEST_DIR}/t4.out" 2>&1 ||
 	fail "missing npm should skip GitNexus installation"
 assert_grep 'skip gitnexus \(npm not on PATH' "${TEST_DIR}/t4.out" "missing npm skip log"
 pass "workspace setup tolerates images without npm"
