@@ -422,23 +422,26 @@ def list_reselect_candidates(
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
         key = str(item.get("key") or "")
-        if not key:
+        if not key or source_pr_prefix(key) in queued_prefixes:
             continue
-        if source_pr_prefix(key) in queued_prefixes:
-            continue
-        if not is_reselect_salvage_candidate(
-            item,
-            live_mergeable=signal_value(signals.live_mergeable_by_key, key),
-            title=signal_value(signals.titles_by_key, key),
-            unique_remaining_paths=signal_value(
-                signals.unique_paths_by_key, key
-            ),
-        ):
+        if not _reselect_item_ok(item, key, signals):
             continue
         selected.append(item)
         if limit is not None and len(selected) >= limit:
             break
     return selected
+
+
+def _reselect_item_ok(
+    item: dict[str, Any], key: str, signals: "ReselectSignals"
+) -> bool:
+    """Apply the signal-resolved reselect predicate to one ledger item."""
+    return is_reselect_salvage_candidate(
+        item,
+        live_mergeable=signal_value(signals.live_mergeable_by_key, key),
+        title=signal_value(signals.titles_by_key, key),
+        unique_remaining_paths=signal_value(signals.unique_paths_by_key, key),
+    )
 
 
 def parse_expiry_utc(value: object) -> datetime | None:
