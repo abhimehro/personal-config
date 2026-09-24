@@ -71,6 +71,7 @@ __all__ = [
     "list_reselect_candidates",
     "non_journal_paths",
     "parse_expiry_utc",
+    "signal_value",
     "source_pr_prefix",
     "summarize",
     "work_item_is_usable",
@@ -255,6 +256,13 @@ def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
     """Accept nonterminal items with BOT authorship or an allowed title."""
     if item.get("lifecycle_state") == "TERMINAL":
         return False
+    # Already Stage 2 owned/queued: reselecting it would emit a duplicate
+    # ENQUEUE_STAGE2_WI for work Stage 2 already holds.
+    if (
+        item.get("current_owner") == "stage2"
+        or item.get("lifecycle_state") in STAGE2_OWNED_STATES
+    ):
+        return False
     if item.get("author_type") == "BOT":
         return True
     return _title_is_reselect_bot(title)
@@ -379,13 +387,23 @@ class ReselectSignals:
     unique_paths_by_key: dict[str, list[str]] | None = None
 
 
-def _signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
+def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
     """Look up a signal by full key, falling back to the @sha-stripped prefix."""
     if not mapping:
         return None
     if key in mapping:
         return mapping[key]
     return mapping.get(source_pr_prefix(key))
+
+
+def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
+    """Return repo#PR prefixes of sources that already hold a Stage 2 WI."""
+    prefixes: set[str] = set()
+    for work_item in _raw_work_items(ledger):
+        source = work_item.get("source_item_key") or work_item.get("source_key")
+        if source:
+            prefixes.add(source_pr_prefix(source))
+    return prefixes
 
 
 def list_reselect_candidates(
@@ -400,16 +418,19 @@ def list_reselect_candidates(
     # None limit is unbounded; the limit is
     # checked after appending, so a nonpositive limit still returns one item.
     signals = signals or ReselectSignals()
+    queued_prefixes = _existing_wi_prefixes(ledger)
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
         key = str(item.get("key") or "")
         if not key:
             continue
+        if source_pr_prefix(key) in queued_prefixes:
+            continue
         if not is_reselect_salvage_candidate(
             item,
-            live_mergeable=_signal_value(signals.live_mergeable_by_key, key),
-            title=_signal_value(signals.titles_by_key, key),
-            unique_remaining_paths=_signal_value(
+            live_mergeable=signal_value(signals.live_mergeable_by_key, key),
+            title=signal_value(signals.titles_by_key, key),
+            unique_remaining_paths=signal_value(
                 signals.unique_paths_by_key, key
             ),
         ):

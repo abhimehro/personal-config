@@ -97,9 +97,8 @@ def _enqueue_source_paths(
 ) -> list[str]:
     """Resolve allowed paths, preferring caller-supplied unique remaining."""
     paths = list(item.get("changed_paths") or [])
-    unique_map = signals.unique_paths_by_key or {}
-    unique = unique_map.get(key) or unique_map.get(health.source_pr_prefix(key))
-    if unique:
+    unique = health.signal_value(signals.unique_paths_by_key, key)
+    if unique is not None:
         paths = list(unique)
     return health.non_journal_paths([str(path) for path in paths])
 
@@ -152,12 +151,14 @@ def plan_stage2_enqueues(
     # and FEED_CHECK can fail. Actions request later CAS writes; nothing here
     # creates WIs or writes to the ledger.
     signals = signals or health.ReselectSignals()
-    candidates = health.list_reselect_candidates(
-        ledger, signals=signals, limit=limit
-    )
+    # Select unbounded, then cap complete WIs: an early-run of incomplete
+    # candidates must not starve a complete one further down ledger order.
+    candidates = health.list_reselect_candidates(ledger, signals=signals)
     enqueue_actions: list[dict[str, Any]] = []
     incomplete: list[dict[str, Any]] = []
     for item in candidates:
+        if len(enqueue_actions) >= limit:
+            break
         key = str(item.get("key") or "")
         allowed_paths = _enqueue_source_paths(item, signals, key)
         if not _enqueue_fields_complete(item, key, allowed_paths):

@@ -27,7 +27,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
             for pr in range(1, 7)
         ]
         with mock.patch.object(
-            run.health, "list_reselect_candidates", return_value=candidates[:5]
+            run.health, "list_reselect_candidates", return_value=candidates
         ) as select:
             planned = run.plan_stage2_enqueues(
                 {"items": candidates},
@@ -35,8 +35,8 @@ class Option3RebalancePlanTests(unittest.TestCase):
                     unique_paths_by_key={"abhimehro/demo#1": ["src/unique.py"]}
                 ),
             )
-        self.assertEqual(select.call_args.kwargs["limit"], 5)
-        self.assertEqual(planned["candidate_count"], 5)
+        self.assertNotIn("limit", select.call_args.kwargs)
+        self.assertEqual(planned["candidate_count"], 6)
         self.assertEqual(planned["enqueued_count"], 5)
         self.assertEqual(
             [action["source_key"] for action in planned["enqueue_actions"]],

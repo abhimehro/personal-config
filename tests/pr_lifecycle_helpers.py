@@ -134,9 +134,18 @@ _RUN_STUB_NAMES = (
 )
 
 
+def _signal_value_stub(mapping: Any, key: str) -> Any:
+    if not mapping:
+        return None
+    if key in mapping:
+        return mapping[key]
+    return mapping.get(str(key or "").split("@", 1)[0])
+
+
 def _health_stub_attrs() -> dict[str, Any]:
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
+        "signal_value": _signal_value_stub,
         "is_never_touch_key": lambda *_a, **_k: False,
         "list_reselect_candidates": lambda *_a, **_k: [],
         "MECHANICAL_RESELECT_NA": (
