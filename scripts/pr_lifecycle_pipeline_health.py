@@ -421,15 +421,24 @@ def list_reselect_candidates(
     queued_prefixes = _existing_wi_prefixes(ledger)
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
-        key = str(item.get("key") or "")
-        if not key or source_pr_prefix(key) in queued_prefixes:
-            continue
-        if not _reselect_item_ok(item, key, signals):
+        if not _reselect_item_key(item, queued_prefixes, signals):
             continue
         selected.append(item)
         if limit is not None and len(selected) >= limit:
             break
     return selected
+
+
+def _reselect_item_key(
+    item: dict[str, Any], queued_prefixes: set[str], signals: "ReselectSignals"
+) -> str:
+    """Return the item's key when it survives dedupe and the predicate."""
+    key = str(item.get("key") or "")
+    if not key or source_pr_prefix(key) in queued_prefixes:
+        return ""
+    if not _reselect_item_ok(item, key, signals):
+        return ""
+    return key
 
 
 def _reselect_item_ok(
