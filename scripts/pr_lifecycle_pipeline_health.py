@@ -581,6 +581,7 @@ def summarize(ledger: dict[str, Any], now: datetime | None = None) -> PipelineHe
 
 
 def _print_report(report: PipelineHealth, as_json: bool) -> None:
+    """Print the health report as JSON or readable fields."""
     payload = asdict(report)
     if as_json:
         print(json.dumps(payload, indent=2))

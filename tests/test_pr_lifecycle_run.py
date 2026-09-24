@@ -20,6 +20,7 @@ _report = make_health_report
 
 class RunPlanTests(unittest.TestCase):
     def test_stage2_never_merges_in_plan(self):
+        """Verify Stage 2 plans exclude merge authority."""
         ledger = {"ledger_revision": 9, "items": []}
         config = {"lifecycle": {}}
 
@@ -65,6 +66,7 @@ class RunPlanTests(unittest.TestCase):
         self.assertFalse(plan.get("calibration_enabled"))
 
     def test_stage1_uses_bounded_reconciliation_and_always_checks_feed(self):
+        """Verify Stage 1 bounds reconciliation and always checks the feed."""
         ledger = {"ledger_revision": 11, "items": []}
         action = {"action": "TERMINAL_CLOSED", "key": "owner/repo#1@sha"}
         with (
@@ -80,6 +82,7 @@ class RunPlanTests(unittest.TestCase):
         self.assertIn("schema-aware only", " ".join(plan["allowed_commands"]))
 
     def test_stage2_materializes_work_items_without_merge_authority(self):
+        """Verify Stage 2 materializes intake without merge authority."""
         work_item = {"source_key": "owner/repo#1@sha", "reason": "SALVAGE_ELIGIBLE"}
         feed_payload = {
             "empty_with_stock": False,
@@ -99,6 +102,7 @@ class RunPlanTests(unittest.TestCase):
         self.assertFalse(plan["stage2_may_merge"])
 
     def test_stage2_empty_feed_with_stock_is_a_logic_stop(self):
+        """Verify eligible stock with an empty feed triggers a logic stop."""
         feed_payload = {
             "empty_with_stock": True,
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
@@ -140,6 +144,7 @@ class RunPlanTests(unittest.TestCase):
 
 class RunExecutionTests(unittest.TestCase):
     def test_run_stage_writes_plan_and_status_records(self):
+        """Verify running a stage writes its plan and status records."""
         plan = {
             "stage": 1,
             "ledger_revision": 12,
@@ -190,6 +195,7 @@ class RunExecutionTests(unittest.TestCase):
             self.assertEqual(status["action_count"], 1)
 
     def test_run_stage_records_transient_preflight_failure(self):
+        """Verify transient preflight failures receive a status record."""
         with TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
             with (

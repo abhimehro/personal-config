@@ -132,6 +132,7 @@ CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
 
 class TestSalvageEligibleClassifier(unittest.TestCase):
     def test_classifier_table(self) -> None:
+        """Verify salvage eligibility across the classifier cases."""
         for label, overrides, expected in CLASSIFIER_CASES:
             with self.subTest(label):
                 actual = health.is_salvage_eligible(make_item(**overrides))
@@ -140,11 +141,13 @@ class TestSalvageEligibleClassifier(unittest.TestCase):
 
 class TestPipelineHealthSummarize(unittest.TestCase):
     def test_starvation_when_eligible_and_empty_stage2(self) -> None:
+        """Verify eligible stock with empty Stage 2 intake is starvation."""
         report = health.summarize(make_ledger([make_item()], [], revision=30))
         self.assertTrue(report.starvation)
         self.assertEqual(report.salvage_eligible_count, 1)
 
     def test_no_starvation_when_nothing_is_eligible(self) -> None:
+        """Verify no starvation when nothing is eligible."""
         blocked = make_item(
             guardrail_outcome="REVIEW_SECURITY",
             next_action="Human packet",
@@ -154,6 +157,7 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         self.assertEqual(report.salvage_eligible_count, 0)
 
     def test_work_item_expiry_gates_starvation(self) -> None:
+        """Verify only unexpired work items prevent starvation."""
         cases = (
             ("queued future", "2026-08-31T12:00:00Z", False, 1),
             ("expired", "2026-08-29T12:00:00Z", True, 0),
@@ -170,6 +174,7 @@ class TestPipelineHealthSummarize(unittest.TestCase):
                 self.assertEqual(report.stage2_work_item_count, wi_count)
 
     def test_owned_item_starvation_matrix(self) -> None:
+        """Verify Stage 2 ownership and queued work affect starvation separately."""
         owned = make_item(
             current_owner="stage2",
             lifecycle_state="STAGE2_QUEUED",
@@ -197,6 +202,7 @@ class TestPipelineHealthSummarize(unittest.TestCase):
                 self.assertEqual(report.salvage_eligible_count, eligible)
 
     def test_attempt_count_zero_and_empty_optional_lists_are_usable(self) -> None:
+        """Verify attempt count zero and empty optional lists are usable."""
         report = health.summarize(
             make_ledger(
                 [make_item()],
@@ -208,6 +214,7 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         self.assertEqual(report.stage2_work_item_count, 1)
 
     def test_incomplete_work_item_does_not_suppress_starvation(self) -> None:
+        """Verify incomplete work item does not suppress starvation."""
         incomplete = make_work_item()
         del incomplete["repository"]
         report = health.summarize(make_ledger([make_item()], [incomplete]), now=NOW)
@@ -215,6 +222,7 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         self.assertEqual(report.stage2_work_item_count, 0)
 
     def test_empty_required_strings_do_not_suppress_starvation(self) -> None:
+        """Verify empty required strings do not suppress starvation."""
         cases = (
             ("empty repair_description", {"repair_description": ""}),
             ("empty work_item_id", {"work_item_id": ""}),

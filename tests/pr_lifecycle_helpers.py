@@ -40,6 +40,7 @@ def make_item(**overrides: object) -> dict[str, object]:
 
 
 def make_work_item(**overrides: object) -> dict[str, object]:
+    """Build a complete Stage 2 work item with test overrides."""
     sha = "0123456789abcdef0123456789abcdef01234567"
     base: dict[str, object] = {
         "work_item_id": "s2-20260830-demo",
@@ -70,6 +71,7 @@ def make_ledger(
     work_items: list[dict[str, object]],
     revision: int = 1,
 ) -> dict[str, object]:
+    """Build a minimal runtime ledger from test records."""
     return {
         "ledger_revision": revision,
         "items": items,
@@ -78,6 +80,7 @@ def make_ledger(
 
 
 def schema_valid_starved_ledger() -> dict[str, Any]:
+    """Create a valid ledger with eligible work and no Stage 2 intake."""
     ledger = copy.deepcopy(yaml.safe_load(EXAMPLE_LEDGER.read_text(encoding="utf-8")))
     keeper = ledger["items"][0]
     keeper["lifecycle_state"] = "STAGE3_RECONCILIATION"
@@ -104,6 +107,7 @@ def schema_valid_starved_ledger() -> dict[str, Any]:
 
 
 def run_health_cli(*cli_args: str) -> subprocess.CompletedProcess[str]:
+    """Run the health CLI and capture its output and exit status."""
     return subprocess.run(
         [sys.executable, str(HEALTH_SCRIPT), *cli_args],
         check=False,
@@ -113,6 +117,7 @@ def run_health_cli(*cli_args: str) -> subprocess.CompletedProcess[str]:
 
 
 def make_health_report(**overrides: object) -> types.SimpleNamespace:
+    """Build a health report stub with overridable fields."""
     values: dict[str, object] = {
         "salvage_eligible_count": 0,
         "stage2_work_item_count": 0,
@@ -135,6 +140,7 @@ _RUN_STUB_NAMES = (
 
 
 def _signal_value_stub(mapping: Any, key: str) -> Any:
+    """Resolve a signal by full item key or source PR prefix."""
     if not mapping:
         return None
     if key in mapping:
@@ -143,6 +149,7 @@ def _signal_value_stub(mapping: Any, key: str) -> Any:
 
 
 def _health_stub_attrs() -> dict[str, Any]:
+    """Provide health module attributes required by runner tests."""
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
         "signal_value": _signal_value_stub,
@@ -189,6 +196,7 @@ def _install_run_stubs() -> dict[str, Any]:
 
 
 def _restore_run_stubs(saved: dict[str, Any]) -> None:
+    """Restore modules replaced during the runner import."""
     for name, previous in saved.items():
         if previous is None:
             sys.modules.pop(name, None)

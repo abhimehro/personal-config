@@ -16,6 +16,7 @@ from tests.pr_lifecycle_helpers import make_item, make_ledger  # noqa: E402
 
 class ReselectCandidateTests(unittest.TestCase):
     def test_reselect_rejects_terminal_and_non_salvage_outcomes(self) -> None:
+        """Verify terminal and non-salvage outcomes cannot be reselected."""
         base = make_item(
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
@@ -41,6 +42,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_reselect_requires_non_journal_unique_remaining_paths(self) -> None:
+        """Verify reselection requires unique paths outside the journal."""
         item = make_item(
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT DIRTY unique remaining",
@@ -60,6 +62,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_palette_shell_sticky_requires_only_allowlisted_paths(self) -> None:
+        """Verify Palette shell execution uses only allowlisted paths."""
         item = make_item(
             sensitive_paths=["shell_execution"],
             next_action="Palette wrap CONFLICTING unique remaining",
@@ -95,6 +98,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_title_bot_prefixes_do_not_admit_arbitrary_human_titles(self) -> None:
+        """Verify bot title prefixes reject unrelated human titles."""
         item = make_item(
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
@@ -120,6 +124,7 @@ class ReselectCandidateTests(unittest.TestCase):
                 )
 
     def test_reselect_candidate_lookup_accepts_source_prefix_metadata(self) -> None:
+        """Verify candidate signals resolve from a source PR prefix."""
         key = "abhimehro/demo#7@abc"
         item = make_item(
             key=key,
@@ -139,6 +144,7 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertEqual([entry["key"] for entry in selected], [key])
 
     def test_palette_conflicting_soft_shell_sticky_is_reselect(self) -> None:
+        """Verify conflicting Palette shell work qualifies for reselection."""
         item = make_item(
             key="abhimehro/personal-config#2069@abc",
             sensitive_paths=["shell_execution", "generated_output"],
@@ -155,6 +161,7 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertFalse(health.is_salvage_eligible(item))
 
     def test_never_touch_seatek_692_and_ctrld_1206(self) -> None:
+        """Verify protected Seatek and ctrld PRs cannot be reselected."""
         base = make_item(
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
@@ -176,6 +183,7 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertTrue(health.is_never_touch_key("abhimehro/ctrld-sync#1206@dead"))
 
     def test_review_security_and_lockfile_only_blocked(self) -> None:
+        """Verify security review and lockfile-only work stays blocked."""
         self.assertFalse(
             health.is_reselect_salvage_candidate(
                 make_item(
@@ -196,6 +204,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_live_mergeable_required_conflicting_or_dirty(self) -> None:
+        """Verify live mergeability must be conflicting or dirty."""
         item = make_item(
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT do not merge without unique language",
@@ -211,6 +220,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_live_mergeability_overrides_stale_conflicting_action(self) -> None:
+        """Verify live mergeability takes priority over stale action text."""
         item = make_item(
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
@@ -223,6 +233,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_explicit_empty_unique_signal_does_not_reselect_stale_paths(self) -> None:
+        """Verify an explicit empty path signal blocks stale path fallback."""
         item = make_item(
             changed_paths=["src/old.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
@@ -234,6 +245,7 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertEqual(selected, [])
 
     def test_palette_shell_sticky_rejects_near_match_paths(self) -> None:
+        """Verify Palette path matching rejects similar but unlisted paths."""
         item = make_item(
             sensitive_paths=["shell_execution", "generated_output"],
             next_action="Palette wrap DIRTY unique remaining",
@@ -252,6 +264,7 @@ class ReselectCandidateTests(unittest.TestCase):
                 )
 
     def test_title_allowlist_for_non_bot_ledger_author(self) -> None:
+        """Verify the title allowlist can classify a non-bot ledger author."""
         item = make_item(
             author_type="HUMAN",
             changed_paths=["maintenance/bin/analytics_dashboard.sh"],
@@ -266,6 +279,7 @@ class ReselectCandidateTests(unittest.TestCase):
         )
 
     def test_list_reselect_candidates_respects_limit(self) -> None:
+        """Verify candidate listing honors its requested limit."""
         items = [
             make_item(
                 key=f"abhimehro/personal-config#{n}@abc",

@@ -18,9 +18,11 @@ class TestStagePromptContracts(unittest.TestCase):
     """Stage prompts are thin bootstraps that defer to pr_lifecycle_run plans."""
 
     def _prompt(self, name: str) -> str:
+        """Read an automation prompt for contract assertions."""
         return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
 
     def test_review_prompt_feeds_stage2_via_runner(self) -> None:
+        """Verify the review prompt uses the runner to feed Stage 2."""
         review = self._prompt("daily-pr-review.md")
         self.assertIn("pr_lifecycle_run.py --stage 1", review)
         self.assertIn("emitted plan", review)
@@ -38,11 +40,13 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertIn("Minimal WI intake", salvage)
 
     def test_review_prompt_schema_aware_cas_only(self) -> None:
+        """Verify the review prompt requires schema-aware CAS writes."""
         review = self._prompt("daily-pr-review.md")
         self.assertIn("Schema-aware CAS", review)
         self.assertIn("raw YAML", review)
 
     def test_completion_prompt_re_reads_predicates(self) -> None:
+        """Verify the completion prompt rechecks live predicates."""
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("pr_lifecycle_run.py --stage 3", completion)
         self.assertIn("Re-read predicates", completion)
@@ -55,6 +59,7 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertIn("REVIEW.md", completion)
 
     def test_completion_prompt_live_stage3_not_calibration(self) -> None:
+        """Verify the completion prompt uses live Stage 3 rules."""
         completion = self._prompt("daily-pr-completion.md")
         self.assertIn("live Stage 3", completion)
         self.assertIn("Calibration stays", completion)
@@ -102,6 +107,7 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertNotIn("{{include:", calibration)
 
     def test_stage_caps_are_80_40_10_and_15(self) -> None:
+        """Verify the documented intake, mutation, salvage, and completion caps."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         caps = config["lifecycle"]["stage_caps"]
         self.assertEqual(caps["stage1_inventory"], 80)
