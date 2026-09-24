@@ -1144,7 +1144,7 @@ DRAFT lineages
 [#2237](https://github.com/abhimehro/personal-config/pull/2237) and
 [#2244](https://github.com/abhimehro/personal-config/pull/2244); those records
 are **not** duplicated here. Do **not** `/trunk merge` this lineage in the
-opening run (**0gj**). Do **not** Trunk those DRAFT lineages.
+opening run (**0gj**). Do **not** trunk-merge those DRAFT lineages.
 
 | Metric                      | Count |
 | --------------------------- | ----: |
