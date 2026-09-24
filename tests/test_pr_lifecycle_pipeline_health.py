@@ -484,5 +484,110 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
 
 
+
+class ReselectCandidateTests(unittest.TestCase):
+    def test_palette_conflicting_soft_shell_sticky_is_reselect(self):
+        item = _item(
+            key="abhimehro/personal-config#2069@abc",
+            sensitive_paths=["shell_execution", "generated_output"],
+            changed_paths=[
+                "maintenance/bin/analytics_dashboard.sh",
+                "docs/cursor-automations/prompts/daily-pr-salvage.md",
+            ],
+            next_action=(
+                "HOLD_CONTRACT Palette wrap + analytics_dashboard.sh CONFLICTING."
+            ),
+        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item))
+        # Soft sticky still blocks classic salvage_eligible (monitor unchanged).
+        self.assertFalse(health.is_salvage_eligible(item))
+
+    def test_never_touch_seatek_692_and_ctrld_1206(self):
+        base = _item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                {**base, "key": "abhimehro/Seatek_Analysis#692@dead"}
+            )
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                {
+                    **base,
+                    "key": "abhimehro/ctrld-sync#1206@dead",
+                    "sensitive_paths": ["security_configuration"],
+                }
+            )
+        )
+        self.assertTrue(health.is_never_touch_key("abhimehro/ctrld-sync#1206@dead"))
+
+    def test_review_security_and_lockfile_only_blocked(self):
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                _item(
+                    guardrail_outcome="REVIEW_SECURITY",
+                    next_action="CONFLICTING security twin",
+                    changed_paths=["validate_data.py"],
+                )
+            )
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                _item(
+                    sensitive_paths=["lockfiles_and_major_dependencies"],
+                    changed_paths=["uv.lock"],
+                    next_action="HOLD_CONTRACT CONFLICTING lockfile major-dep",
+                )
+            )
+        )
+
+    def test_live_mergeable_required_conflicting_or_dirty(self):
+        item = _item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT do not merge without unique language",
+        )
+        self.assertFalse(health.is_reselect_salvage_candidate(item))
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="CONFLICTING")
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, live_mergeable="DIRTY", unique_remaining_paths=["src/demo.py"]
+            )
+        )
+
+    def test_title_allowlist_for_non_bot_ledger_author(self):
+        item = _item(
+            author_type="HUMAN",
+            changed_paths=["maintenance/bin/analytics_dashboard.sh"],
+            sensitive_paths=["shell_execution", "generated_output"],
+            next_action="Palette wrap CONFLICTING",
+        )
+        self.assertFalse(health.is_reselect_salvage_candidate(item))
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, title="🎨 Palette: wrap analytics dashboard"
+            )
+        )
+
+    def test_list_reselect_candidates_respects_limit(self):
+        items = [
+            _item(
+                key=f"abhimehro/personal-config#{n}@abc",
+                pr=n,
+                changed_paths=["src/demo.py"],
+                next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+                sensitive_paths=["generated_output"],
+            )
+            for n in (100, 101, 102)
+        ]
+        ledger = _ledger(items, [])
+        got = health.list_reselect_candidates(ledger, limit=2)
+        self.assertEqual(len(got), 2)
+
+
+
 if __name__ == "__main__":
     unittest.main()

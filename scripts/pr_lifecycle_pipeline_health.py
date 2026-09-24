@@ -26,6 +26,13 @@ do not suppress starvation. `stage2_owned_item_count` is observational for
 the health flag: a Stage 2-owned ledger item without a usable work item
 does not hide EMPTY_INTAKE. Cascade CLAIM still passes that count as
 `stage2_owned_materializable` so Stage 2 proceeds to materialize.
+
+Option 3 (2026-09-24): `is_reselect_salvage_candidate` is a separate Stage 1
+enqueue predicate for live CONFLICTING/DIRTY ledger-BOT stock with unique
+remaining. It does not widen `is_salvage_eligible` (monitor starvation stays
+unchanged). Soft sticky `shell_execution` is allowed only for Palette wrap
+with a tight path allowlist. Never-touch (Seatek#692, ctrld#1206 CSPRNG,
+Hydro Sentinel / REVIEW_SECURITY / HUMAN sticky, real HOLD_PLATFORM) stays out.
 """
 
 from __future__ import annotations
@@ -89,6 +96,36 @@ MAJOR_DEP_BLOCK = re.compile(
     re.IGNORECASE,
 )
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
+
+# Option 3 reselect: never invent whole-PR rebase; never-touch stays human/Desk.
+NEVER_TOUCH_PR_PREFIXES = frozenset(
+    {
+        "abhimehro/Seatek_Analysis#692",
+        "abhimehro/ctrld-sync#1206",
+    }
+)
+RESELECT_LIVE_STATES = frozenset({"CONFLICTING", "DIRTY"})
+RESELECT_SOFT_STICKY = frozenset({"shell_execution"})
+RESELECT_TITLE_PREFIXES = (
+    "⚡ Bolt",
+    "🎨 Palette",
+    "salvage(",
+    "chore(qa)",
+    "chore(repo-health)",
+)
+# Soft shell_execution only when every non-journal path matches Palette wrap.
+PALETTE_WRAP_PATH_ALLOW = (
+    re.compile(r"(^|/)analytics_dashboard\.sh$"),
+    re.compile(r"(^|/)maintenance/bin/.*\.sh$"),
+    re.compile(r"docs/cursor-automations/"),
+)
+JOURNAL_PATH_RE = re.compile(r"(^|/)\.jules/")
+LIVE_STATE_IN_TEXT = re.compile(r"\b(CONFLICTING|DIRTY)\b")
+MECHANICAL_RESELECT_NA = (
+    "Recover unique source only on a new focused draft that excludes "
+    "journals and sticky paths outside the work-item allowlist."
+)
+
 
 
 @dataclass(frozen=True)
@@ -171,6 +208,163 @@ def is_salvage_eligible(item: dict[str, Any]) -> bool:
     if _has_blocking_sticky(item):
         return False
     return _next_action_is_mechanical(item.get("next_action") or "")
+
+
+def _source_pr_prefix(key: object) -> str:
+    """Return repository#pr from a ledger key (strip @sha)."""
+    text_key = str(key or "")
+    if "@" in text_key:
+        text_key = text_key.split("@", 1)[0]
+    return text_key
+
+
+def is_never_touch_key(key: object) -> bool:
+    """Hard never-touch sources (Seatek#692 journals, ctrld#1206 CSPRNG)."""
+    return _source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
+
+
+def _title_is_reselect_bot(title: str | None) -> bool:
+    if not title:
+        return False
+    stripped = title.strip()
+    return any(stripped.startswith(prefix) for prefix in RESELECT_TITLE_PREFIXES)
+
+
+def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if item.get("author_type") == "BOT":
+        return True
+    return _title_is_reselect_bot(title)
+
+
+def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
+    if live_mergeable:
+        return str(live_mergeable).upper()
+    next_action = item.get("next_action") or ""
+    match = LIVE_STATE_IN_TEXT.search(next_action)
+    return match.group(1).upper() if match else ""
+
+
+def _non_journal_paths(paths: list[str]) -> list[str]:
+    return [path for path in paths if not JOURNAL_PATH_RE.search(path)]
+
+
+def _paths_allow_soft_shell(paths: list[str]) -> bool:
+    """True when every non-journal path is on the Palette wrap allowlist."""
+    remaining = _non_journal_paths(paths)
+    if not remaining:
+        return False
+    for path in remaining:
+        if not any(pattern.search(path) for pattern in PALETTE_WRAP_PATH_ALLOW):
+            return False
+    return True
+
+
+def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
+    sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
+    if not sticky:
+        return True
+    if sticky <= RESELECT_SOFT_STICKY:
+        next_action = (item.get("next_action") or "").lower()
+        palette_wrap = "palette wrap" in next_action or "palette" in next_action
+        return palette_wrap and _paths_allow_soft_shell(paths)
+    return False
+
+
+def _unique_remaining_ok(
+    unique_remaining_paths: list[str] | None, fallback_paths: list[str]
+) -> tuple[bool, list[str]]:
+    if unique_remaining_paths is not None:
+        cleaned = _non_journal_paths([str(p) for p in unique_remaining_paths])
+        return (bool(cleaned), cleaned)
+    cleaned = _non_journal_paths([str(p) for p in fallback_paths])
+    # Planner may use changed_paths as a proxy; APPLY must live-verify unique.
+    return (bool(cleaned), cleaned)
+
+
+def is_reselect_salvage_candidate(
+    item: dict[str, Any],
+    *,
+    live_mergeable: str | None = None,
+    title: str | None = None,
+    unique_remaining_paths: list[str] | None = None,
+) -> bool:
+    """Stage 1 enqueue predicate for CONFLICTING/DIRTY unique-source reselect.
+
+    Separate from ``is_salvage_eligible`` (monitor). Requires unique remaining
+    (provided or non-journal ``changed_paths`` proxy), live CONFLICTING/DIRTY,
+    and never-touch / REVIEW_SECURITY / hard sticky exclusion.
+    """
+    if is_never_touch_key(item.get("key")):
+        return False
+    if not _identity_allows_reselect(item, title):
+        return False
+    outcome = item.get("guardrail_outcome") or ""
+    # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
+    # HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE / CLOSE_NONSECURITY_NOOP.
+    if outcome in NON_SALVAGE_OUTCOMES:
+        return False
+    state = _infer_live_mergeable(item, live_mergeable)
+    if state not in RESELECT_LIVE_STATES:
+        return False
+    fallback = list(item.get("changed_paths") or item.get("paths") or [])
+    ok, paths = _unique_remaining_ok(unique_remaining_paths, fallback)
+    if not ok:
+        return False
+    if not _sticky_allows_reselect(item, paths):
+        return False
+    sticky = set(item.get("sensitive_paths") or [])
+    if "lockfiles_and_major_dependencies" in sticky:
+        lockfile_paths = [
+            path
+            for path in paths
+            if path.endswith(".lock")
+            or path.endswith("uv.lock")
+            or path.endswith("package-lock.json")
+            or path.endswith("pnpm-lock.yaml")
+            or path.endswith("Cargo.lock")
+            or path.endswith("poetry.lock")
+        ]
+        if lockfile_paths:
+            return False
+    return True
+
+
+def mechanical_reselect_next_action() -> str:
+    """Canonical mechanical next_action template for CONFLICTING_UNIQUE_RESELECT."""
+    return MECHANICAL_RESELECT_NA
+
+
+def list_reselect_candidates(
+    ledger: dict[str, Any],
+    *,
+    live_mergeable_by_key: dict[str, str] | None = None,
+    titles_by_key: dict[str, str] | None = None,
+    unique_paths_by_key: dict[str, list[str]] | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return ledger items that pass ``is_reselect_salvage_candidate``."""
+    live_map = live_mergeable_by_key or {}
+    title_map = titles_by_key or {}
+    paths_map = unique_paths_by_key or {}
+    selected: list[dict[str, Any]] = []
+    for item in _ledger_items(ledger):
+        key = str(item.get("key") or "")
+        if not key:
+            continue
+        if not is_reselect_salvage_candidate(
+            item,
+            live_mergeable=live_map.get(key) or live_map.get(_source_pr_prefix(key)),
+            title=title_map.get(key) or title_map.get(_source_pr_prefix(key)),
+            unique_remaining_paths=paths_map.get(key)
+            or paths_map.get(_source_pr_prefix(key)),
+        ):
+            continue
+        selected.append(item)
+        if limit is not None and len(selected) >= limit:
+            break
+    return selected
 
 
 def parse_expiry_utc(value: object) -> datetime | None:

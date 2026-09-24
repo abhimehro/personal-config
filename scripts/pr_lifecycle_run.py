@@ -67,43 +67,215 @@ def _stage_cap(config: dict[str, Any], name: str, default: int) -> int:
     return value
 
 
+STAGE2_ENQUEUE_CAP = 5
+RESELECT_ENQUEUE_REASON = "CONFLICTING_UNIQUE_RESELECT"
+
+
+def _wi_source_key(wi: dict[str, Any]) -> str:
+    return str(wi.get("source_key") or wi.get("source_item_key") or "")
+
+
+def _filter_never_touch_work_items(
+    work_items: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split feed WIs into mechanical vs hard never-touch report-only."""
+    mechanical: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for wi in work_items:
+        if health.is_never_touch_key(_wi_source_key(wi)):
+            skipped.append(wi)
+        else:
+            mechanical.append(wi)
+    return mechanical, skipped
+
+
+def plan_stage2_enqueues(
+    ledger: dict[str, Any],
+    *,
+    live_mergeable_by_key: dict[str, str] | None = None,
+    titles_by_key: dict[str, str] | None = None,
+    unique_paths_by_key: dict[str, list[str]] | None = None,
+    limit: int = STAGE2_ENQUEUE_CAP,
+) -> dict[str, Any]:
+    """Plan ≤N complete Stage 2 WI CAS enqueues from reselect candidates."""
+    candidates = health.list_reselect_candidates(
+        ledger,
+        live_mergeable_by_key=live_mergeable_by_key,
+        titles_by_key=titles_by_key,
+        unique_paths_by_key=unique_paths_by_key,
+        limit=limit,
+    )
+    enqueue_actions: list[dict[str, Any]] = []
+    for item in candidates:
+        paths = list(item.get("changed_paths") or [])
+        # Prefer caller-supplied unique paths when present.
+        key = str(item.get("key") or "")
+        prefix = health._source_pr_prefix(key)
+        if unique_paths_by_key:
+            paths = (
+                unique_paths_by_key.get(key)
+                or unique_paths_by_key.get(prefix)
+                or paths
+            )
+        paths = health._non_journal_paths([str(p) for p in paths])
+        enqueue_actions.append(
+            {
+                "action": "ENQUEUE_STAGE2_WI",
+                "source_key": key,
+                "repository": item.get("repository"),
+                "pr": item.get("pr"),
+                "base_sha": item.get("base_sha"),
+                "head_sha": item.get("head_sha"),
+                "allowed_paths": paths,
+                "reason": RESELECT_ENQUEUE_REASON,
+                "next_action": health.mechanical_reselect_next_action(),
+                "note": (
+                    "CAS-write a complete stage2_work_item; "
+                    "pr_lifecycle_feed.py is read-only verification only"
+                ),
+            }
+        )
+    return {
+        "candidate_count": len(candidates),
+        "enqueued_count": len(enqueue_actions),
+        "enqueue_actions": enqueue_actions,
+    }
+
+
+def plan_stage3_mechanical_handoffs(
+    ledger: dict[str, Any], *, limit: int = STAGE2_ENQUEUE_CAP
+) -> list[dict[str, Any]]:
+    """STAGE3_RECONCILIATION mechanical CONFLICTING → Stage 2 WI handoff plans."""
+    actions: list[dict[str, Any]] = []
+    for item in health.list_reselect_candidates(ledger, limit=limit):
+        if item.get("current_owner") != "stage3":
+            continue
+        if item.get("lifecycle_state") != "STAGE3_RECONCILIATION":
+            continue
+        if (item.get("guardrail_outcome") or "") not in health.SALVAGE_OUTCOMES:
+            continue
+        actions.append(
+            {
+                "action": "HANDOFF_MECHANICAL_TO_STAGE2",
+                "source_key": item.get("key"),
+                "repository": item.get("repository"),
+                "pr": item.get("pr"),
+                "reason": RESELECT_ENQUEUE_REASON,
+                "next_action": health.mechanical_reselect_next_action(),
+                "note": (
+                    "CAS complete Stage 2 WI + owner stage2; "
+                    "do not leave mechanical CONFLICTING as WAITING_HUMAN"
+                ),
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
+
+
 def _stage1_plan(
-    ledger: dict[str, Any], config: dict[str, Any]
+    ledger: dict[str, Any],
+    config: dict[str, Any],
+    *,
+    live_mergeable_by_key: dict[str, str] | None = None,
+    titles_by_key: dict[str, str] | None = None,
+    unique_paths_by_key: dict[str, list[str]] | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
-        "python3 scripts/pr_lifecycle_feed.py --json",
+        "python3 scripts/pr_lifecycle_feed.py --json (read-only verification)",
         "gh pr view / gh pr list (read-only inventory)",
         "routine approve/squash-merge/close per lifecycle predicates",
         "CAS handoff via pr_lifecycle_ledger_cas (schema-aware only)",
+        "CAS-write ≤5 complete stage2_work_items (ENQUEUE_STAGE2_WI)",
+        "CLOSED_NOOP Observed-CLOSED ledger catch-up (bookkeeping; weekly ok)",
     ]
     cap = _stage_cap(config, "stage1_actions", 40)
     actions = reconcile_mod.collect_actions(ledger, config, limit=cap)
+    planned = plan_stage2_enqueues(
+        ledger,
+        live_mergeable_by_key=live_mergeable_by_key,
+        titles_by_key=titles_by_key,
+        unique_paths_by_key=unique_paths_by_key,
+        limit=STAGE2_ENQUEUE_CAP,
+    )
+    actions.extend(planned["enqueue_actions"])
+    stop_class = None
+    reason = "OK"
+    feed_ok = not (
+        planned["candidate_count"] > 0 and planned["enqueued_count"] == 0
+    )
+    if not feed_ok:
+        stop_class = "LOGIC_STOP"
+        reason = "FEED_CHECK_FAIL"
     actions.append(
         {
             "action": "FEED_CHECK",
-            "reason": "ensure Stage 2 intake is non-empty when eligible stock exists",
+            "reselect_candidates": planned["candidate_count"],
+            "enqueued": planned["enqueued_count"],
+            "grade": "PASS" if feed_ok else "FAIL",
+            "reason": (
+                "CAS-write complete stage2_work_items when reselect stock exists; "
+                "pr_lifecycle_feed.py is read-only — not enqueue"
+                if feed_ok
+                else (
+                    "FEED_CHECK FAIL: reselect candidates > 0 but enqueued == 0 "
+                    "(do not leave Stage 2 EMPTY_INTAKE theater)"
+                )
+            ),
         }
     )
-    return allowed, actions, None, "OK"
+    return allowed, actions, stop_class, reason
 
 
 def _stage2_plan(
     ledger: dict[str, Any], config: dict[str, Any]
-) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
     allowed = [
         "python3 scripts/pr_lifecycle_feed.py --json",
         "open/update draft salvage PRs only (never merge/approve/close originals)",
         "CAS write complete Stage 2 work items + handoff events",
+        "skip-if-empty: exit success with no docs PR when usable WI==0",
     ]
     feed = feed_mod.build_feed(
         ledger, config, limit=_stage_cap(config, "stage2_salvage_candidates", 10)
     )
+    mechanical, never_touch = _filter_never_touch_work_items(
+        list(feed.get("work_items") or [])
+    )
+    extras: dict[str, Any] = {
+        "skip_cursor": False,
+        "empty_intake_skip": False,
+        "mechanical_candidate_count": len(mechanical),
+        "never_touch_skipped": [
+            {"source_key": _wi_source_key(wi), "reason": "NEVER_TOUCH"}
+            for wi in never_touch
+        ],
+    }
     stop_class = None
     reason = "OK"
     if feed.get("empty_with_stock"):
         stop_class = "LOGIC_STOP"
         reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
+    elif len(mechanical) == 0:
+        # True empty or only never-touch leftovers → success skip (no docs PR).
+        reason = "EMPTY_INTAKE_SKIP"
+        extras["skip_cursor"] = True
+        extras["empty_intake_skip"] = True
+        actions = [
+            {
+                "action": "SKIP_IF_EMPTY",
+                "reason": (
+                    "usable mechanical Stage 2 WI == 0 after never-touch filter; "
+                    "exit success; do not open/push docs PR; do not launch "
+                    "further agents"
+                ),
+                "feed_reason": feed.get("reason"),
+                "work_item_count": feed.get("work_item_count"),
+                "eligible_stock_count": feed.get("eligible_stock_count"),
+            }
+        ]
+        return allowed, actions, stop_class, reason, extras
     actions = [
         {
             "action": "FEED_SUMMARY",
@@ -111,21 +283,23 @@ def _stage2_plan(
                 "reason": feed["reason"],
                 "work_item_count": feed["work_item_count"],
                 "eligible_stock_count": feed["eligible_stock_count"],
+                "mechanical_candidate_count": len(mechanical),
             },
         }
     ]
-    actions.extend(
-        {"action": "SALVAGE_WI", "wi": wi} for wi in feed.get("work_items") or []
-    )
-    return allowed, actions, stop_class, reason
+    actions.extend({"action": "SALVAGE_WI", "wi": wi} for wi in mechanical)
+    return allowed, actions, stop_class, reason, extras
 
 
-def _stage3_plan() -> tuple[list[str], list[dict[str, Any]], str | None, str]:
+def _stage3_plan(
+    ledger: dict[str, Any],
+) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
         "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
         "bounded non-security completion / close per Stage 3 predicates",
         "CAS terminal transitions; never force-push",
+        "HANDOFF_MECHANICAL_TO_STAGE2 for CONFLICTING HOLD_CONTRACT remainder",
         "calibration remains DISABLED — do not reset or enable it",
     ]
     actions = [
@@ -140,7 +314,15 @@ def _stage3_plan() -> tuple[list[str], list[dict[str, Any]], str | None, str]:
                 "advisory; may resolve before /trunk (Abhi 2026-09-21)"
             ),
         },
+        {
+            "action": "CLOSED_NOOP_DEFERRED",
+            "reason": (
+                "Observed-CLOSED CLOSED_NOOP is Stage 1 reconcile bookkeeping "
+                "or weekly archive — do not spend Stage 3 daily completion cap"
+            ),
+        },
     ]
+    actions.extend(plan_stage3_mechanical_handoffs(ledger))
     return allowed, actions, None, "OK"
 
 
@@ -148,21 +330,32 @@ def build_stage_plan(
     stage: int,
     ledger: dict[str, Any],
     config: dict[str, Any],
+    *,
+    live_mergeable_by_key: dict[str, str] | None = None,
+    titles_by_key: dict[str, str] | None = None,
+    unique_paths_by_key: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     """Build the exact action plan a stage agent may execute."""
     report = health.summarize(ledger)
+    extras: dict[str, Any] = {}
     if stage == 1:
-        allowed, actions, stop_class, reason = _stage1_plan(ledger, config)
+        allowed, actions, stop_class, reason = _stage1_plan(
+            ledger,
+            config,
+            live_mergeable_by_key=live_mergeable_by_key,
+            titles_by_key=titles_by_key,
+            unique_paths_by_key=unique_paths_by_key,
+        )
     elif stage == 2:
-        allowed, actions, stop_class, reason = _stage2_plan(ledger, config)
+        allowed, actions, stop_class, reason, extras = _stage2_plan(ledger, config)
     elif stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan()
+        allowed, actions, stop_class, reason = _stage3_plan(ledger)
     else:
         allowed, actions = [], []
         stop_class = "LOGIC_STOP"
         reason = f"invalid stage {stage}"
 
-    return {
+    plan = {
         "stage": stage,
         "generated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "ledger_revision": ledger.get("ledger_revision"),
@@ -179,6 +372,8 @@ def build_stage_plan(
         "stop_class": stop_class,
         "reason": reason,
     }
+    plan.update(extras)
+    return plan
 
 
 def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:

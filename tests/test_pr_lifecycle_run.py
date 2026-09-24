@@ -41,6 +41,22 @@ sys.modules["pr_lifecycle_pipeline_health"].summarize = (
         reason="ok",
     )
 )
+sys.modules["pr_lifecycle_pipeline_health"].is_never_touch_key = lambda *_a, **_k: False
+sys.modules["pr_lifecycle_pipeline_health"].list_reselect_candidates = (
+    lambda *_a, **_k: []
+)
+sys.modules["pr_lifecycle_pipeline_health"].mechanical_reselect_next_action = (
+    lambda: "Recover unique source only on a new focused draft."
+)
+sys.modules["pr_lifecycle_pipeline_health"]._source_pr_prefix = (
+    lambda key: str(key or "").split("@", 1)[0]
+)
+sys.modules["pr_lifecycle_pipeline_health"]._non_journal_paths = (
+    lambda paths: list(paths or [])
+)
+sys.modules["pr_lifecycle_pipeline_health"].SALVAGE_OUTCOMES = frozenset(
+    {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
+)
 sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
 sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
     "empty_with_stock": False,
@@ -309,6 +325,138 @@ class RunExecutionTests(unittest.TestCase):
             result = run.main([])
         self.assertEqual(result, 1)
         self.assertIn("--stage is required", error.getvalue())
+
+
+
+class Option3RebalancePlanTests(unittest.TestCase):
+    def test_stage1_emits_enqueue_when_reselect_candidates_exist(self):
+        candidate = {
+            "key": "abhimehro/personal-config#2069@abc",
+            "repository": "abhimehro/personal-config",
+            "pr": 2069,
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "changed_paths": ["maintenance/bin/analytics_dashboard.sh"],
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "guardrail_outcome": "HOLD_CONTRACT",
+        }
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.reconcile_mod, "collect_actions", return_value=[]
+            ):
+                with mock.patch.object(
+                    run.health, "list_reselect_candidates", return_value=[candidate]
+                ):
+                    with mock.patch.object(
+                        run.health,
+                        "mechanical_reselect_next_action",
+                        return_value="Recover unique source only on a new focused draft.",
+                    ):
+                        with mock.patch.object(
+                            run.health,
+                            "_non_journal_paths",
+                            side_effect=lambda paths: list(paths or []),
+                        ):
+                            plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
+        enqueue = [a for a in plan["actions"] if a["action"] == "ENQUEUE_STAGE2_WI"]
+        self.assertEqual(len(enqueue), 1)
+        self.assertEqual(enqueue[0]["reason"], "CONFLICTING_UNIQUE_RESELECT")
+        feed = plan["actions"][-1]
+        self.assertEqual(feed["action"], "FEED_CHECK")
+        self.assertEqual(feed["grade"], "PASS")
+        self.assertEqual(feed["enqueued"], 1)
+        self.assertIsNone(plan["stop_class"])
+
+    def test_stage1_feed_check_fails_when_candidates_not_enqueued(self):
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.reconcile_mod, "collect_actions", return_value=[]
+            ):
+                with mock.patch.object(
+                    run,
+                    "plan_stage2_enqueues",
+                    return_value={
+                        "candidate_count": 2,
+                        "enqueued_count": 0,
+                        "enqueue_actions": [],
+                    },
+                ):
+                    plan = run.build_stage_plan(1, {"ledger_revision": 1}, {})
+        self.assertEqual(plan["stop_class"], "LOGIC_STOP")
+        self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
+        feed = plan["actions"][-1]
+        self.assertEqual(feed["grade"], "FAIL")
+
+    def test_stage2_skip_if_empty_exits_success_without_docs_pr(self):
+        feed_payload = {
+            "empty_with_stock": False,
+            "reason": "EMPTY_FEED",
+            "work_item_count": 0,
+            "eligible_stock_count": 0,
+            "work_items": [],
+        }
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.feed_mod, "build_feed", return_value=feed_payload
+            ):
+                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
+        self.assertIsNone(plan["stop_class"])
+        self.assertTrue(plan.get("skip_cursor"))
+        self.assertTrue(plan.get("empty_intake_skip"))
+        self.assertEqual(plan["actions"][0]["action"], "SKIP_IF_EMPTY")
+        self.assertFalse(plan["stage2_may_merge"])
+
+    def test_stage2_filters_never_touch_then_may_skip(self):
+        feed_payload = {
+            "empty_with_stock": False,
+            "reason": "FEED_OK",
+            "work_item_count": 1,
+            "eligible_stock_count": 0,
+            "work_items": [
+                {
+                    "source_key": "abhimehro/ctrld-sync#1206@deadbeef",
+                    "reason": "EXPIRED_PACKET_OR_CLOSE_STALE",
+                }
+            ],
+        }
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.feed_mod, "build_feed", return_value=feed_payload
+            ):
+                with mock.patch.object(
+                    run.health, "is_never_touch_key", return_value=True
+                ):
+                    plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        self.assertEqual(plan["reason"], "EMPTY_INTAKE_SKIP")
+        self.assertTrue(plan.get("skip_cursor"))
+        self.assertEqual(plan["actions"][0]["action"], "SKIP_IF_EMPTY")
+
+    def test_stage3_handoff_and_closed_noop_deferred(self):
+        candidate = {
+            "key": "abhimehro/personal-config#2092@abc",
+            "repository": "abhimehro/personal-config",
+            "pr": 2092,
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_RECONCILIATION",
+            "guardrail_outcome": "HOLD_CONTRACT",
+        }
+        with mock.patch.object(run.health, "summarize", return_value=_report()):
+            with mock.patch.object(
+                run.health, "list_reselect_candidates", return_value=[candidate]
+            ):
+                with mock.patch.object(
+                    run.health,
+                    "mechanical_reselect_next_action",
+                    return_value="Recover unique source only on a new focused draft.",
+                ):
+                    plan = run.build_stage_plan(3, {"ledger_revision": 3}, {})
+        kinds = [a["action"] for a in plan["actions"]]
+        self.assertIn("CLOSED_NOOP_DEFERRED", kinds)
+        self.assertIn("HANDOFF_MECHANICAL_TO_STAGE2", kinds)
+        self.assertIn("ADVISORY_BOT_THREADS", kinds)
+
 
 
 if __name__ == "__main__":

@@ -2,6 +2,14 @@
 
 ## Lesson 0hr: Three-stage PR pipeline rebalance (2026-09-21)
 
+**Option 3 addendum (2026-09-24):** Keep three stages. Stage 1 reselects
+live CONFLICTING/DIRTY unique-remaining ledger-BOT into ≤5 complete
+`stage2_work_items` (`ENQUEUE_STAGE2_WI`); feed is read-only. Stage 3
+hands mechanical CONFLICTING HOLD_CONTRACT to Stage 2
+(`HANDOFF_MECHANICAL_TO_STAGE2`) and defers CLOSED_NOOP Observed-CLOSED
+off the daily completion cap. Stage 2 / Cursor skip-if-empty when usable
+mechanical WI == 0. Never-touch unchanged. Calibration stays DISABLED.
+
 **Pattern:** Cursor scheduled automations paused (usage exhausted). Long
 calibration prompts + Notion packets + Stage 2 empty-intake while salvage stock
 remained caused drain failure. Bot review threads (Codacy/qodo/CodeRabbit) with
