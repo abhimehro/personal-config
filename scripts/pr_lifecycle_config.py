@@ -21,6 +21,13 @@ from sync_cursor_export_prompts import (
 
 
 def validate_config(config: dict[str, Any]) -> None:
+    """Validate the PR lifecycle configuration against its fixed contract.
+
+    Reject legacy keys, missing repositories, extra or missing lifecycle
+    fields, and invalid identity, policy, validation command, or stage settings.
+    Raise ``ValueError`` for rejected settings. A missing
+    ``policy_inputs.identity_classification_revision`` raises ``KeyError``.
+    """
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -367,6 +374,11 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
+    """Require the lifecycle, ledger, memory, MCP, and evidence prompt markers.
+
+    Whitespace is normalized before matching. ``name`` identifies the prompt
+    in the ``ValueError`` raised when a marker is missing.
+    """
     normalized = " ".join(content.split())
     required = {
         "docs/automated-pr-lifecycle.md",

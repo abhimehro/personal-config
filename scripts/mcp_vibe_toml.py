@@ -72,6 +72,12 @@ _MULTI_UNDERSCORE_RE = re.compile(r"_+")
 
 
 def slug(name: str) -> str:
+    """Normalize an MCP server name for Vibe.
+
+    Lowercase alphanumeric characters, replace runs of other characters with
+    one underscore, and remove edge underscores. Return ``"server"`` if the
+    result is empty.
+    """
     # ⚡ Bolt Optimization: Replace slow manual string-parsing loop and while-replace loop
     # with list comprehension and a pre-compiled regex for O(N) single-pass normalization.
     out = [ch.lower() if ch.isalnum() else "_" for ch in name.strip()]

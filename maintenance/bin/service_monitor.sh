@@ -146,6 +146,8 @@ count_widget_extensions() {
 	pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' '
 }
 
+# Print the recursive count of .ips files in $HOME/Library/Logs/DiagnosticReports.
+# Return failure if find fails, including when the report directory is absent.
 count_diagnostic_reports() {
 	find "$HOME/Library/Logs/DiagnosticReports" -type f -name "*.ips" 2>/dev/null | wc -l | tr -d ' '
 }
