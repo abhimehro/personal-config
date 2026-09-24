@@ -430,7 +430,7 @@ def list_reselect_candidates(
 
 
 def _reselect_item_key(
-    item: dict[str, Any], queued_prefixes: set[str], signals: "ReselectSignals"
+    item: dict[str, Any], queued_prefixes: set[str], signals: ReselectSignals
 ) -> str:
     """Return the item's key when it survives dedupe and the predicate."""
     key = str(item.get("key") or "")
@@ -442,7 +442,7 @@ def _reselect_item_key(
 
 
 def _reselect_item_ok(
-    item: dict[str, Any], key: str, signals: "ReselectSignals"
+    item: dict[str, Any], key: str, signals: ReselectSignals
 ) -> bool:
     """Apply the signal-resolved reselect predicate to one ledger item."""
     return is_reselect_salvage_candidate(
