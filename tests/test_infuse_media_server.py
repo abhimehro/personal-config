@@ -1,14 +1,20 @@
 """
 Tests for the infuse-media-server.py script.
-This module specifically tests the authentication handlers and related methods
-in isolation without needing to spin up a full HTTP server instance.
+Most tests exercise authentication and related methods in isolation. The HEAD
+regression test uses a local HTTP server to check response headers.
 """
 
+import base64
+import functools
+import http.client
 import importlib.util
 import os
 import sys
+import tempfile
+import threading
 import unittest
-from unittest.mock import MagicMock
+from http.server import ThreadingHTTPServer
+from unittest.mock import MagicMock, patch
 
 # Add the script directory to sys.path so we can import it
 script_dir = os.path.abspath(
@@ -211,6 +217,56 @@ class TestMediaServerHandler(unittest.TestCase):
             '<li><a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a></li>',
             html_sub,
         )
+
+
+class TestHeadIsolation(unittest.TestCase):
+    def test_head_does_not_expose_local_file_metadata(self):
+        token = base64.b64encode(b"fixture:fixture").decode("ascii")
+        with tempfile.TemporaryDirectory() as local_dir:
+            with open(os.path.join(local_dir, "private.bin"), "wb") as local_file:
+                local_file.write(b"local-only-fixture")
+
+            handler = functools.partial(
+                infuse_media_server.MediaServerHandler, directory=local_dir
+            )
+            with (
+                patch.object(infuse_media_server, "AUTH_USER", "fixture"),
+                patch.object(infuse_media_server, "AUTH_PASS", "fixture"),
+                patch.object(infuse_media_server, "EXPECTED_AUTH_TOKEN", token),
+                patch.dict(infuse_media_server.FAILED_AUTH_ATTEMPTS, {}, clear=True),
+                patch.object(infuse_media_server.MediaServerHandler, "log_message"),
+                ThreadingHTTPServer(("127.0.0.1", 0), handler) as server,
+            ):
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    connection = http.client.HTTPConnection(*server.server_address)
+                    try:
+                        connection.request("HEAD", "/private.bin")
+                        self.assertEqual(connection.getresponse().status, 401)
+                    finally:
+                        connection.close()
+
+                    for path in ("/private.bin", "/missing.bin"):
+                        with self.subTest(path=path):
+                            connection = http.client.HTTPConnection(*server.server_address)
+                            try:
+                                connection.request(
+                                    "HEAD",
+                                    path,
+                                    headers={"Authorization": f"Basic {token}"},
+                                )
+                                response = connection.getresponse()
+                                self.assertEqual(response.status, 405)
+                                self.assertEqual(response.getheader("Allow"), "GET")
+                                self.assertIsNone(response.getheader("Last-Modified"))
+                                self.assertIsNone(response.getheader("Content-Length"))
+                                self.assertEqual(response.read(), b"")
+                            finally:
+                                connection.close()
+                finally:
+                    server.shutdown()
+                    thread.join()
 
 
 if __name__ == "__main__":
