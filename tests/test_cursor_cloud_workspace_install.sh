@@ -111,14 +111,10 @@ echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
 NO_NPM_BIN="${TEST_DIR}/no-npm-bin"
 mkdir -p "${NO_NPM_BIN}"
-for dir in /usr/bin /bin /usr/local/bin; do
-	if [[ -d "${dir}" ]]; then
-		for bin in "${dir}"/*; do
-			base="${bin##*/}"
-			if [[ -x "${bin}" && "${base}" != "npm" && ! -e "${NO_NPM_BIN}/${base}" ]]; then
-				ln -sf "${bin}" "${NO_NPM_BIN}/${base}" 2>>"${TEST_DIR}/symlink-debug.log" || true
-			fi
-		done
+for cmd in date mkdir dirname grep head printf cat rm chmod ln bash; do
+	cp_path="$(command -v "${cmd}" || true)"
+	if [[ -n ${cp_path} ]]; then
+		ln -sf "${cp_path}" "${NO_NPM_BIN}/${cmd}"
 	fi
 done
 hash -r
