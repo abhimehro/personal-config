@@ -297,7 +297,7 @@ if command -v brew >/dev/null 2>&1; then
 fi
 
 # 7) Software updates check (skip if running automated to avoid password prompts)
-if [[ ${AUTOMATED_RUN:-0} == "1" ]] || [[ -n ${SUDO_USER} ]] || [[ $EUID -ne 0 ]]; then
+if [[ ${AUTOMATED_RUN:-0} == "1" ]] || [[ -n ${SUDO_USER:-} ]] || [[ $EUID -ne 0 ]]; then
 	# Skip software update check during automated runs to avoid password prompts
 	append "Software updates: Skipped (automated run)"
 	log_info "Software update check skipped to avoid password prompts"

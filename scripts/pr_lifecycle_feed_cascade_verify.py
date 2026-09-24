@@ -28,20 +28,21 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
-from pr_lifecycle_feed_cascade import (
+from pr_lifecycle_feed_cascade import (  # noqa: E402
     CascadeDecision,
     FeedFingerprint,
     claimable_work_items,
     grade_stage1_feed,
     stage2_cascade_decision,
     stage3_cascade_decision,
+    unhealthy_stage2_feed,
 )
-from pr_lifecycle_pipeline_health import (
+from pr_lifecycle_pipeline_health import (  # noqa: E402
     PipelineHealth,
     _load_runtime_ledger,
     summarize,
 )
-from pr_lifecycle_yaml import load_yaml
+from pr_lifecycle_yaml import load_yaml  # noqa: E402
 
 _SAMPLE_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
@@ -165,26 +166,35 @@ def _stage_decisions(
         health,
         fingerprint,
         usable_work_item_count=len(claimable),
+        stage2_owned_materializable=health.stage2_owned_item_count,
     )
     stage3_decision = stage3_cascade_decision(
         health,
         fingerprint,
-        stage2_feed_fail_same_utc_day=stage2_decision.action == "FEED_FAIL",
+        stage2_feed_fail_same_utc_day=unhealthy_stage2_feed(stage2_decision),
     )
     return stage2_decision, stage3_decision
 
 
-def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapshot:
-    """Compute health, fingerprint, and Stage 2/3 decisions for one ledger."""
+def _build_snapshot(
+    ledger: dict[str, Any],
+    *,
+    now: datetime,
+    session_queued_count: int = 0,
+) -> DecisionSnapshot:
+    """Compute health, fingerprint, and Stage 2/3 decisions for one ledger.
+
+    Leftover complete WIs are CLAIM stock, not today's Stage 1 queue.
+    Grade throughput from ``session_queued_count`` (inject-sample or an
+    explicit run-record). Default 0 so leftover stock cannot mint a PASS.
+    """
     health = summarize(ledger, now=now)
     claimable = claimable_work_items(ledger, now=now)
     fingerprint = grade_stage1_feed(
-        stage2_queued_count=health.stage2_work_item_count,
+        stage2_queued_count=session_queued_count,
         salvage_eligible_count=health.salvage_eligible_count,
     )
-    stage2_decision, stage3_decision = _stage_decisions(
-        health, fingerprint, claimable
-    )
+    stage2_decision, stage3_decision = _stage_decisions(health, fingerprint, claimable)
     return DecisionSnapshot(
         health=health,
         fingerprint=fingerprint,
@@ -195,17 +205,33 @@ def _build_snapshot(ledger: dict[str, Any], *, now: datetime) -> DecisionSnapsho
 
 
 def _verify_exit_code(snapshot: DecisionSnapshot) -> int:
-    """Map snapshot to process exit: 2 starved, 1 claimless PROCEED, else 0."""
+    """Map a snapshot to the verify process exit code.
+
+    Return 0 for a claimed proceed or non-starved stop, 1 for a claimless
+    proceed, and 2 for a starved stop.
+    """
+    # CLAIM (usable WI or Stage-2-owned materializable) beats observational
+    # starvation so verify does not idle-fail a heal-forward run.
+    if snapshot.stage2_decision.action == "PROCEED":
+        owned = snapshot.health.stage2_owned_item_count
+        if snapshot.claimable or owned > 0:
+            return 0
+        return 1
     if snapshot.health.starvation:
         return 2
-    if snapshot.stage2_decision.action == "PROCEED" and not snapshot.claimable:
-        return 1
     return 0
 
 
-def verify_ledger(ledger: dict[str, Any], *, now: datetime) -> int:
+def verify_ledger(
+    ledger: dict[str, Any],
+    *,
+    now: datetime,
+    session_queued_count: int = 0,
+) -> int:
     """Print cascade decisions and return the verify exit code."""
-    snapshot = _build_snapshot(ledger, now=now)
+    snapshot = _build_snapshot(
+        ledger, now=now, session_queued_count=session_queued_count
+    )
     _print_decision_reports(snapshot)
     return _verify_exit_code(snapshot)
 
@@ -223,9 +249,7 @@ def _load_validated_ledger(path: Path) -> dict[str, Any] | None:
     return ledger
 
 
-def _append_sample(
-    ledger: dict[str, Any], sample: dict[str, Any]
-) -> dict[str, Any]:
+def _append_sample(ledger: dict[str, Any], sample: dict[str, Any]) -> dict[str, Any]:
     """Deep-copy ledger and append one Stage 2 work item."""
     mutated = copy.deepcopy(ledger)
     items = mutated.get("stage2_work_items")
@@ -236,9 +260,7 @@ def _append_sample(
     return mutated
 
 
-def _write_injected_ledger(
-    ledger: dict[str, Any], sample: dict[str, Any]
-) -> Path:
+def _write_injected_ledger(ledger: dict[str, Any], sample: dict[str, Any]) -> Path:
     """Write mutated ledger to a temp file; caller owns deletion."""
     mutated = _append_sample(ledger, sample)
     with tempfile.NamedTemporaryFile(
@@ -328,7 +350,8 @@ def main() -> int:
     ledger = _maybe_inject(ledger, inject=args.inject_sample, now=now)
     if ledger is None:
         return 1
-    return verify_ledger(ledger, now=now)
+    queued = 1 if args.inject_sample else 0
+    return verify_ledger(ledger, now=now, session_queued_count=queued)
 
 
 if __name__ == "__main__":
