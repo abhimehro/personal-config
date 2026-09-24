@@ -347,6 +347,77 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assertTrue(verified[6]["required_checks"])
 
 
+class TestPrLifecycleConfigValidation(unittest.TestCase):
+    def test_current_lifecycle_config_is_valid(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        config_validator.validate_config(config)
+
+    def test_removed_and_unknown_lifecycle_options_are_rejected(self):
+        original = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        for key, value in (
+            ("packet_expiry_close_days", 7),
+            ("stage2_intake", "self_fed"),
+            ("lineage", {"open_as_draft": False}),
+            ("unexpected_option", True),
+        ):
+            with self.subTest(key=key):
+                config = copy.deepcopy(original)
+                config["lifecycle"][key] = value
+                with self.assertRaisesRegex(
+                    ValueError, r"config\.lifecycle: unsupported fields"
+                ):
+                    config_validator.validate_config(config)
+
+    def test_missing_required_lifecycle_option_is_rejected(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        del config["lifecycle"]["version"]
+        with self.assertRaisesRegex(ValueError, r"config\.lifecycle: missing"):
+            config_validator.validate_config(config)
+
+    def test_all_stage_prompts_accept_the_runtime_continuity_contract(self):
+        content = "\n".join(
+            (
+                "docs/automated-pr-lifecycle.md",
+                "docs/pr-lifecycle-runtime-ledger.md",
+                "Memory is enabled",
+                "Dashboard-referenced MCP set",
+                "ledger, run records, and lessons",
+            )
+        )
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
+        ):
+            with self.subTest(name=name):
+                config_validator.validate_prompt(content, name)
+
+    def test_prompt_rejects_each_missing_continuity_marker(self):
+        markers = (
+            "docs/automated-pr-lifecycle.md",
+            "docs/pr-lifecycle-runtime-ledger.md",
+            "Memory is enabled",
+            "Dashboard-referenced MCP set",
+            "ledger, run records, and lessons",
+        )
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
+        ):
+            for missing in markers:
+                with self.subTest(name=name, missing=missing):
+                    content = "\n".join(
+                        marker for marker in markers if marker != missing
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError, f"{name}: missing runtime continuity marker"
+                    ):
+                        config_validator.validate_prompt(content, name)
+
+
 class TestStage1ThroughputGate(unittest.TestCase):
     def _prompt(self, name: str) -> str:
         return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
