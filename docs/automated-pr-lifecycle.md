@@ -31,18 +31,16 @@ calibration (Blocking / Discuss / Optional; mechanism or silence), Trunk-queue
 personal-config merges, never merge drafts unattended, never self-approve under
 maintainer login. Citing those files is not enough; the stage must apply them.
 
-Stage prompts were rebalanced to short bootstraps on 2026-09-21:
-`docs/cursor-automations/prompts/daily-pr-{review,salvage,completion}.md`
-defer to `scripts/pr_lifecycle_run.py --stage N` (see the rebalance section
-below). The sibling fragments
+Stage prompts include two sibling fragments (not nested):
 `docs/cursor-automations/prompts/_shared-cas-bootstrap.md` (ledger CAS
 mechanics) and `docs/cursor-automations/prompts/_shared-partner-frame.md`
-(elevated security-first partner line) remain canonical reference text; the
-whole-line `{{include:_….md}}` expansion in `sync_cursor_export_prompts.py`
-remains supported for prompts that opt in. Paste the JSON `prompts[0].prompt`
-field into the existing Stage 1/2/3 Dashboard UUIDs; never paste a raw
-`{{include}}` line. Do not add a fourth UUID, a weekly-health coordinator, or
-a second Grok Bot. Calibration stays self-contained (no includes).
+(elevated security-first partner line). Each is a whole-line `{{include:_….md}}`
+directive. `sync_cursor_export_prompts.py` expands those includes into export
+JSON. Paste the JSON `prompts[0].prompt` field into the existing Stage 1/2/3
+Dashboard UUIDs; never paste a raw `{{include}}` line. Do not add a fourth UUID,
+a weekly-health coordinator, or a second Grok Bot. Calibration stays
+self-contained (no includes). Stage-specific MCP lists and heal-forward cascade
+text stay in each stage file.
 
 ## Lifecycle principle
 
@@ -545,26 +543,6 @@ after live verification. A record lacking immutable anchors remains
 `EVIDENCE_ONLY`; it becomes actionable only after GitHub live reconciliation.
 Deleted, merged, or closed PRs are imported as evidence with their observed
 terminal state, never resurrected.
-
-## 2026-09-21 rebalance — script-driven stages
-
-Cursor Dashboard schedules may be paused. Repo-side runners are canonical for a
-single Antigravity/Devin/Grok stage run:
-
-| Stage | Runner | Notes |
-| --- | --- | --- |
-| 1 Review | `python3 scripts/pr_lifecycle_run.py --stage 1` | reconcile + routine drain; feed Stage 2 |
-| 2 Salvage | `python3 scripts/pr_lifecycle_run.py --stage 2` | self-fed minimal WIs; never merges |
-| 3 Completion | `python3 scripts/pr_lifecycle_run.py --stage 3` | live completion; advisory bot threads |
-
-Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
-`pr_lifecycle_ledger_archive.py`. Prompts under
-`docs/cursor-automations/prompts/daily-pr-*.md` are short bootstraps; run
-`python3 scripts/sync_cursor_export_prompts.py --write` after editing.
-
-Weekly human digest: pinned GitHub issue / issue comment — Notion packets retired
-for this path. Pause/resume: leave Dashboard paused; operators run stage scripts
-manually until usage restores.
 
 ## Related specifications
 

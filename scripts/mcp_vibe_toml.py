@@ -12,6 +12,7 @@ templates with op:// refs, or inject only into untracked 0600 destinations.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -67,16 +68,20 @@ def vibe_supported(inventory: dict[str, Any], name: str) -> bool:
     return name not in OAUTH_SKIP_DEFAULT
 
 
+_MULTI_UNDERSCORE_RE = re.compile(r"_+")
+
+
 def slug(name: str) -> str:
-    out = []
-    for ch in name.strip():
-        if ch.isalnum():
-            out.append(ch.lower())
-        else:
-            out.append("_")
-    compact = "".join(out).strip("_")
-    while "__" in compact:
-        compact = compact.replace("__", "_")
+    """Normalize an MCP server name for Vibe.
+
+    Lowercase alphanumeric characters, replace runs of other characters with
+    one underscore, and remove edge underscores. Return ``"server"`` if the
+    result is empty.
+    """
+    # ⚡ Bolt Optimization: Replace slow manual string-parsing loop and while-replace loop
+    # with list comprehension and a pre-compiled regex for O(N) single-pass normalization.
+    out = [ch.lower() if ch.isalnum() else "_" for ch in name.strip()]
+    compact = _MULTI_UNDERSCORE_RE.sub("_", "".join(out)).strip("_")
     return compact or "server"
 
 

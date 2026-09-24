@@ -14,7 +14,7 @@ initialize: |
   curl https://get.trunk.io -fsSL | bash
 # Install project dependencies (runs during builds, surfaced to agent at session start).
 maintenance: |
-  python3.12 -m pip install -r requirements.txt ruff==0.16.8 bandit black radon
+  python3.12 -m pip install -r requirements.txt
   export PATH="$HOME/.local/bin:$PATH"
   pipx ensurepath || true
   pipx install --force git+https://github.com/CharlesHoskinson/anthropies.git || true
@@ -39,12 +39,3 @@ knowledge:
       and do not assume ~/bin/agent-zsh exists unless initialize installs it.
       Keep all blueprint commands POSIX bash-safe.
       See docs/AGENT_SHELL_CONFIG_MATRIX.md in personal-config.
----
-runs-on: macos
-initialize: |
-  PY312="$(brew --prefix)/bin/python3.12"
-  test -x "$PY312" || { brew install python@3.12 || { echo "Failed to install Python 3.12"; exit 1; }; }
-  "$PY312" -m venv "$HOME/.venv-pc"
-  grep -q "\.venv-pc/bin" "$ENVRC" 2>/dev/null || echo "PATH=$HOME/.venv-pc/bin:$PATH" >> "$ENVRC"
-maintenance: |
-  "$HOME/.venv-pc/bin/pip" install -r requirements.txt ruff==0.16.8 bandit black radon

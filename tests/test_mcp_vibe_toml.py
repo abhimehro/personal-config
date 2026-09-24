@@ -88,6 +88,37 @@ class TestMcpVibeToml(unittest.TestCase):
             self.assertIn(name, servers)
 
 
+class TestSlug(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_module()
+
+    def test_normalizes_names_without_changing_alphanumeric_characters(self):
+        cases = {
+            "Context7": "context7",
+            "  My MCP---Server / v2  ": "my_mcp_server_v2",
+            "Straße 日本語 42": "straße_日本語_42",
+            "İ": "i\u0307",
+        }
+        for name, expected in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(self.mod.slug(name), expected)
+
+    def test_empty_and_separator_only_names_use_fallback(self):
+        for name in ("", "  \t\n  ", "--- / ...", "___"):
+            with self.subTest(name=name):
+                self.assertEqual(self.mod.slug(name), "server")
+
+    def test_long_separator_run_becomes_one_underscore(self):
+        self.assertEqual(self.mod.slug("A" + "-" * 10_000 + "B"), "a_b")
+
+    def test_emitted_server_names_use_normalized_slug_for_both_transports(self):
+        for config in ({"command": "example"}, {"url": "https://example.test/mcp"}):
+            with self.subTest(config=config):
+                block = self.mod.emit_server("  Team / MCP---V2  ", config)
+                self.assertIn('name = "team_mcp_v2"\n', block)
+
+
 class TestInventoryFile(unittest.TestCase):
     def test_json_valid_and_secret_free(self):
         raw = (REPO / "ai" / "inventory" / "mcp-capabilities.json").read_text()
