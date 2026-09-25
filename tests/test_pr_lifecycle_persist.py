@@ -1,3 +1,4 @@
+import base64
 import io
 import subprocess
 import sys
@@ -234,6 +235,118 @@ class TestPrLifecyclePersist(unittest.TestCase):
             cas.contained_output_path(link)
         with self.assertRaises(cas.CasError):
             cas.contained_output_path(Path("/etc/passwd"))
+
+    def test_fetch_keeps_original_parent_when_path_is_swapped(self) -> None:
+        from pr_lifecycle_github_git import fetch_runtime_ledger
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            parent = root / "active"
+            parent.mkdir()
+            outside = root / "outside"
+            outside.mkdir()
+            victim = outside / "ledger.yaml"
+            victim.write_text("unchanged", encoding="utf-8")
+            moved = root / "moved"
+
+            def request(method: str, path: str, _body=None) -> dict:
+                if "/git/ref/" in path:
+                    return {"object": {"sha": "a" * 40}}
+                if "/contents/" in path:
+                    return {"sha": "b" * 40}
+                if "/git/blobs/" in path:
+                    parent.rename(moved)
+                    parent.symlink_to(outside, target_is_directory=True)
+                    return {
+                        "encoding": "base64",
+                        "content": base64.b64encode(b"fetched").decode("ascii"),
+                    }
+                raise AssertionError((method, path))
+
+            fetch_runtime_ledger(
+                {"data_branch": "data", "data_path": "ledger.yaml"},
+                parent / "ledger.yaml",
+                request,
+            )
+            self.assertEqual(victim.read_text(encoding="utf-8"), "unchanged")
+            self.assertEqual(
+                (moved / "ledger.yaml").read_text(encoding="utf-8"), "fetched"
+            )
+
+    def test_fetch_replaces_symlink_without_following_it(self) -> None:
+        from pr_lifecycle_github_git import fetch_runtime_ledger
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            victim = root / "victim"
+            victim.write_text("unchanged", encoding="utf-8")
+            dest = root / "ledger.yaml"
+
+            def request(method: str, path: str, _body=None) -> dict:
+                if "/git/ref/" in path:
+                    return {"object": {"sha": "a" * 40}}
+                if "/contents/" in path:
+                    return {"sha": "b" * 40}
+                if "/git/blobs/" in path:
+                    dest.symlink_to(victim)
+                    return {
+                        "encoding": "base64",
+                        "content": base64.b64encode(b"fetched").decode("ascii"),
+                    }
+                raise AssertionError((method, path))
+
+            fetch_runtime_ledger(
+                {"data_branch": "data", "data_path": "ledger.yaml"}, dest, request
+            )
+            self.assertEqual(victim.read_text(encoding="utf-8"), "unchanged")
+            self.assertEqual(dest.read_text(encoding="utf-8"), "fetched")
+            self.assertFalse(dest.is_symlink())
+
+    def test_fetch_rejects_shared_writable_parent(self) -> None:
+        from pr_lifecycle_github_git import fetch_runtime_ledger
+
+        with tempfile.TemporaryDirectory() as temporary:
+            shared = Path(temporary) / "shared"
+            shared.mkdir()
+            shared.chmod(0o777)
+            with self.assertRaisesRegex(ValueError, "PR_LIFECYCLE_CAS_ERROR"):
+                fetch_runtime_ledger(
+                    {"data_branch": "data", "data_path": "ledger.yaml"},
+                    shared / "ledger.yaml",
+                    lambda *_args: self.fail("network request before path check"),
+                )
+
+    def test_preflight_sanitizes_and_validates_fetched_ledger(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        ledger = self.example()
+        ledger["items"][0]["latest_transition"] = "evt-test"
+        content = yaml.safe_dump(ledger, sort_keys=False).encode("utf-8")
+        runtime = {"data_branch": "data", "data_path": "ledger.yaml"}
+
+        def request(method: str, path: str, _body=None) -> dict:
+            if "/git/ref/" in path:
+                return {"object": {"sha": "a" * 40}}
+            if "/contents/" in path:
+                return {"sha": "b" * 40}
+            if "/git/blobs/" in path:
+                return {
+                    "encoding": "base64",
+                    "content": base64.b64encode(content).decode("ascii"),
+                }
+            raise AssertionError((method, path))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            dest = Path(temporary) / "nested" / "ledger.yaml"
+            with (
+                mock.patch.object(cas, "pointer_runtime", return_value=runtime),
+                mock.patch.object(cas, "github_request", side_effect=request),
+            ):
+                result = cas.run_preflight(dest)
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["sanitized_fields"], 1)
+            self.assertEqual(result["ledger_path"], str(dest))
+            self.assertNotIn("latest_transition:", dest.read_text(encoding="utf-8"))
 
     def test_commit_parser_defaults_message(self) -> None:
         import pr_lifecycle_ledger_cas as cas

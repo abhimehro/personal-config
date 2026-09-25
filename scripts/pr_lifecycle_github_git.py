@@ -6,6 +6,9 @@
 from __future__ import annotations
 
 import base64
+import os
+import secrets
+import stat
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -86,6 +89,60 @@ def contained_output_path(raw: Path) -> Path:
         except ValueError:
             continue
     raise CasError()
+
+
+def _open_output_parent(dest: Path) -> int:
+    """Open a stable parent, creating private directories without following links."""
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    parent_fd = os.open("/", flags)
+    try:
+        for part in (*dest.parent.parts[1:], None):
+            parent = os.fstat(parent_fd)
+            # SECURITY: later preflight steps reopen dest by path. Only an
+            # owned directory or a sticky directory can keep another user
+            # from replacing the next path component.
+            if parent.st_uid not in {0, os.geteuid()} or (
+                parent.st_mode & 0o022 and not parent.st_mode & stat.S_ISVTX
+            ):
+                raise CasError()
+            if part is None:
+                break
+            try:
+                child_fd = os.open(part, flags, dir_fd=parent_fd)
+            except FileNotFoundError:
+                os.mkdir(part, mode=0o700, dir_fd=parent_fd)
+                child_fd = os.open(part, flags, dir_fd=parent_fd)
+            os.close(parent_fd)
+            parent_fd = child_fd
+        return parent_fd
+    except BaseException:
+        os.close(parent_fd)
+        raise
+
+
+def _replace_output(parent_fd: int, name: str, content: str) -> None:
+    """Replace a file relative to its held parent without following links."""
+    temporary_name = f".pr-lifecycle-{secrets.token_hex(12)}.tmp"
+    try:
+        fd = os.open(
+            temporary_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+            dir_fd=parent_fd,
+        )
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            output.write(content)
+        os.replace(
+            temporary_name,
+            name,
+            src_dir_fd=parent_fd,
+            dst_dir_fd=parent_fd,
+        )
+    finally:
+        try:
+            os.unlink(temporary_name, dir_fd=parent_fd)
+        except FileNotFoundError:
+            pass
 
 
 def decode_github_blob(payload: dict[str, Any]) -> str:
@@ -172,11 +229,16 @@ def fetch_runtime_ledger(
 ) -> dict[str, Any]:
     """Write the runtime ledger blob to a contained dest path."""
     dest = contained_output_path(dest)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    ensured = ensure_data_ref(runtime, request)
-    branch = str(runtime["data_branch"])
-    meta = contents_metadata(runtime, branch, request)
-    dest.write_text(fetch_blob_text(str(meta["sha"]), request), encoding="utf-8")
+    parent_fd = _open_output_parent(dest)
+    try:
+        ensured = ensure_data_ref(runtime, request)
+        branch = str(runtime["data_branch"])
+        meta = contents_metadata(runtime, branch, request)
+        _replace_output(
+            parent_fd, dest.name, fetch_blob_text(str(meta["sha"]), request)
+        )
+    finally:
+        os.close(parent_fd)
     return {
         "restored_ref": bool(ensured["restored"]),
         "commit_sha": optional_object_sha(ensured["ref"]),
