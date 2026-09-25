@@ -14,7 +14,6 @@ from tests.pr_lifecycle_helpers import (
     make_work_item,
 )
 
-import pr_lifecycle_feed as real_feed
 import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
@@ -106,7 +105,16 @@ class Option3RebalancePlanTests(unittest.TestCase):
                 side_effect=real_health.is_never_touch_key,
             ),
             mock.patch.object(
-                run.feed_mod, "build_feed", side_effect=real_feed.build_feed
+                run.feed_mod,
+                "build_feed",
+                return_value={
+                    "empty_with_stock": False,
+                    "reason": "FEED_OK",
+                    "work_item_count": 2,
+                    "eligible_stock_count": 2,
+                    "non_never_touch_stock_count": 2,
+                    "work_items": [protected, mechanical],
+                },
             ),
         ):
             plan = run.build_stage_plan(
@@ -123,7 +131,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         )
         self.assertEqual(
             [
-                action["wi"]["source_key"]
+                action["wi"]["source_item_key"]
                 for action in plan["actions"]
                 if action["action"] == "SALVAGE_WI"
             ],
