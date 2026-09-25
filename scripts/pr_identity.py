@@ -268,7 +268,9 @@ def _prefix_match(value: str, prefixes: Sequence[str]) -> bool:
     # NOTE: Jules/Bolt/Palette/Sentinel often use hyphen prefixes (`jules-`)
     # rather than slash (`jules/`). Matching is startswith; both forms must be
     # versioned in config. Ordinary `feat/` / `fix/` are not bot prefixes.
-    return any(value.startswith(prefix.lower()) for prefix in prefixes if prefix)
+    # ⚡ Bolt Optimization: Use tuple startswith to evaluate prefix checks in C
+    valid_prefixes = tuple(prefix.lower() for prefix in prefixes if prefix)
+    return value.startswith(valid_prefixes) if valid_prefixes else False
 
 
 def _keyword_match(value: str, keywords: Sequence[str]) -> bool:
@@ -298,10 +300,12 @@ def _comment_logins(value: Any) -> tuple[str, ...]:
 
 
 def _bot_commit_email(pr: Mapping[str, Any], policy: IdentityPolicy) -> bool:
+    # ⚡ Bolt Optimization: Use tuple endswith to evaluate email suffix checks in C
     suffixes = tuple(item.lower() for item in policy.bot_commit_email_suffixes)
+    if not suffixes:
+        return False
     for email in _commit_emails(pr):
-        lowered = email.lower()
-        if any(lowered.endswith(suffix) for suffix in suffixes):
+        if email.lower().endswith(suffixes):
             return True
     return False
 
