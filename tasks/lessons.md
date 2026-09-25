@@ -3169,3 +3169,24 @@ action cap.
 
 **Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
 twice ~10s apart after a sibling squash.
+
+## Lesson 0hp: Re-read Codacy and threads after updating a Trunk PR from main (2026-09-20)
+
+**Pattern:** personal-config Palette [#2059](https://github.com/abhimehro/personal-config/pull/2059)
+was behind `main`. `update_pull_request_branch` produced a new head
+(`bbd387b0`) whose base matched `origin/main`, which looks Trunk-ready. The
+same update opened Codacy `ACTION_REQUIRED` plus two unresolved review threads
+on `morning-brief.py`. Commenting `/trunk merge` on that new SHA would have
+enqueued a PR that failed the clean-discussion / static-analysis hold
+predicates.
+
+**Rule:** (1) After `update_pull_request_branch`, treat the new head as a fresh
+anchor: re-read mergeability, required checks, Codacy, and unresolved review
+threads before `/trunk merge`. (2) Do not re-comment `/trunk merge` on an
+unchanged SHA, and do not comment it on a new SHA that still has
+`ACTION_REQUIRED` or `is_resolved=false` threads (even outdated nits). (3)
+Stale-vs-main repair is not a merge predicate by itself. (4) Leave the PR
+Stage 1 owned with a bounded next action; do not squash-bypass.
+
+**Detection cost:** Low — `gh pr view --json headRefOid,mergeStateStatus` plus
+review-thread / Codacy status on the new SHA.

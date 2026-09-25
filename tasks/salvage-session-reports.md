@@ -2273,3 +2273,71 @@ Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
    Stage 2.
 
 Full record: `tasks/pr-salvage-2026-09-18-1700.md`.
+
+---
+
+## Run — 2026-09-20 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **76** (`python3 scripts/pr_lifecycle_ledger_cas.py`);
+  blob `fb57a812da66bea8f962242239a5c82a7e4f1486`; data-branch commit
+  `8ddfbfe7484b50401391ad31ba7b3f6fe9f02584`
+- Preflight PASS; health start `ledger_revision=76` `stage2_work_items=2`
+  `salvage_eligible=0` `starvation=false`. Calibration `APPROVED` 7/7
+  `pr-lifecycle-v1.4` (not reset).
+- Live: complete unexpired WIs `s2-20260920-personalconfig-2116-run-merges` and
+  `s2-20260920-personalconfig-2030-pr-reference` (expire
+  `2026-09-21T15:00:00Z`). Stage 1 fingerprint
+  `stage2_queued_count: 2` / `salvage_eligible_count: 0` /
+  `throughput_grade: PASS` on `tasks/pr-review-2026-09-20.md`.
+- CodeScene MCP `namespaceStatus=error` (unused; tests-only salvage).
+  Sonatype-mcp unused (not a pin).
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| ---- | -----: | ----------- | ------ | ----- |
+| personal-config | 2116 | unique remainder already on stronger main (#2163); structured failed-recovery; original stays OPEN dirty | — | `CLOSE_NONSECURITY_NOOP`; no weaker `run_merges.py` draft (**0hm**) |
+| personal-config | 2030 | unique `pr_reference.py` remainder recovered; original stays OPEN dirty | [#2246](https://github.com/abhimehro/personal-config/pull/2246) | tests-only path; `draft=true` after 0gd; live head `4ef9a5bd`; journal not copied (**0cs**) |
+
+- Salvage drafts opened: **1** (product). Infra-fix drafts: **0**
+- Closed via API / autonomous merges / `request_reviewers`: **0 / 0 / skipped**
+- New lessons: **0**
+- Ledger CAS: rev **76 → 77**, commit `906d9aadfec8d41f78cd388d7e1e277d219a97e8`,
+  blob `3f6372d978a57284ec32fa05593316101fd1e45e` (Git Data API FF, attempt 1)
+- Cap 10; completed **2** eligible items. Remaining `stage2_work_items`: **[]**.
+  Unused 8/10 is empty remainder after both WIs, not skipped salvage.
+
+### Verification
+
+- `python3 -m unittest tests.test_pr_reference -v` → **20 tests OK** on live
+  head `4ef9a5bd195e404a7e0dacab856c564f040b2127`.
+- Original #2116 still OPEN dirty; base/head unchanged `dd972eb8` / `22c5c38b`.
+  Main `_build_graphql_query` already `partition` plus slash validation.
+- Original #2030 still OPEN dirty / trunk-failed; base/head unchanged
+  `abb33b27` / `48de37d8`. `.jules/bolt.md` not copied (**0cs**).
+- Create landed draft then marked ready; converted back to draft (**0gd**).
+  Re-read `isDraft=true` head still `4ef9a5bd`.
+- Post-CAS health: `ledger_revision=77` `stage2_work_items=0`
+  `salvage_eligible=0` `starvation=false` (empty remainder).
+- Calibration untouched. Docs lineage this PR; no sibling; not marked ready;
+  no `/trunk merge`.
+
+### Handoff
+
+1. Stage 1: re-ingest draft
+   [#2246](https://github.com/abhimehro/personal-config/pull/2246)
+   head `4ef9a5bd…` (`isDraft` true). Merge authority is never Stage 2.
+   Personal-config routine merge stays Trunk-queue after the draft is unmarked.
+2. Stage 3: ACK `evt-s2-20260920-personalconfig-2030-h`. Keep original
+   [#2030](https://github.com/abhimehro/personal-config/pull/2030)
+   open. Do not close because a replacement exists.
+3. Stage 1 may later close
+   [#2116](https://github.com/abhimehro/personal-config/pull/2116)
+   after cooldown; Stage 2 must not. Do not recreate a weaker `run_merges.py`
+   draft (**0hm**).
+4. Do not salvage rpce Swift on Linux. Do not Trunk-merge this lineage from
+   Stage 2. Do not execute retracted `s2-20260919-seriescorre-409-processor`.
+
+Full record: `tasks/pr-salvage-2026-09-20-1700.md`.
