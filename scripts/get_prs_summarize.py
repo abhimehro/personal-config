@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 from spreadsheet_safety import escape_spreadsheet_formula
 
 FAIL_CONCLUSIONS = frozenset(
@@ -168,6 +169,9 @@ def _format_details(data: dict) -> str:
 
 
 def fetch_details(repo: str, num: int) -> str:
+    validated_repo = parse_repo_name(repo)
+    if not validated_repo:
+        return "_Could not load details_"
     env = load_gh_token_env()
     try:
         result = subprocess.run(
@@ -177,7 +181,7 @@ def fetch_details(repo: str, num: int) -> str:
                 "view",
                 str(num),
                 "--repo",
-                repo,
+                validated_repo,
                 "--json",
                 "reviews,comments,latestReviews,reviewDecision",
             ],
