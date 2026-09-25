@@ -1,3 +1,39 @@
+# Stage 1 — 2026-09-19 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **122**; BOT **110**. SHA_MATCH **60**; NEW **62**. Product
+mutations **11/40** (9 squash, 1 CLOSED_NOOP, 1 CodeScene command). Ledger CAS
+**72 → 74** (rev 73 blob `80baf166fa06b70fa9c570a06c48b72723214cbb` commit
+`1cf35f9286799c2e255aa4dbed4f7e5b30dea764`; rev 74 blob
+`9475321cb5a586ce7df37832baaa4120567b2cee` commit
+`14850777671becf5987ca81b582946ddcd2fb570` retracts the processor WI). `/trunk
+merge` **1** (personal-config #2231 `06b83a13` after mark-ready; **MERGED**
+`3e86704a`; bookkeeping). Stage 2 queued **0** at close. Stage 3 **1**
+bounce-back (series PR 409 stays OPEN; tests-only draft 460). Throughput
+**PASS** (open 122 → 112; no leftover MERGEABLE green Dependabot patch/minor;
+salvage remainder 0 after **0hm** / **0ho**). Docs lineage:
+`pr-lifecycle-docs-20260919` (this PR). Do **not** `/trunk merge` today's
+lineage in the opening run (**0gj**). Full record:
+`tasks/pr-review-2026-09-19.md`. Lesson **0ho** is EOF-appended; **0hn** on
+`main` remains sibling `UNKNOWN` re-poll from [#2231](https://github.com/abhimehro/personal-config/pull/2231).
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   122 |
+| Product mutations           |    11 |
+| Merged (GitHub squash)      |     9 |
+| Closed no-op                |     1 |
+| CodeScene commands          |     1 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |     1 |
+| GitHub PR mutations         |    12 |
+| Ledger CAS writes           |     2 |
+
+Per-item table: see `tasks/pr-review-2026-09-19.md` (mandatory Stage 1 columns).
+
 # Stage 1 — 2026-08-29 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
