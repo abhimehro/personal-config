@@ -1124,3 +1124,45 @@ Downstream: Stage 2 executes `s2-20260918-seriescorre-409` (series_correction
 #409 unique `processor.py` + tests; take `main`'s `.jules/bolt.md`). Keep Stage
 1/2/3 completion enabled; leave calibration disabled. HITL paste already done;
 do not re-paste; do not disable Stage 1 (**0hk**).
+
+## Stage 1 — 2026-09-21 (cron 15:00 UTC)
+
+Scheduled fire `2026-09-21T15:02:40.570Z` (automation `77c168e0`, run
+<https://cursor.com/agents/bc-09fe22ce-d900-4885-862c-4b122ce14ace>). Isolated
+runtime ledger schema **PASS** at revision **78**, then CAS **79** (commit
+`b4662b92b66be0f8a35d030b0a5cd77433ef2aba`, blob
+`871ed021a59236731fb171334c0bfcbd6d7b6418`). Calibration **APPROVED** 7/7, **not**
+reset. Export `--check` **MATCHES**. Observational open PRs ~**135 → 125**.
+Product mutations **15/40** (2 GitHub squash of MERGEABLE CLEAN Dependabot
+patch/minor + 5 personal-config `/trunk merge` + 3 CLOSED_NOOP/SUPERSEDED + 1
+failed first `/trunk merge` on stale #2250 SHA + 4 `update_pull_request_branch`).
+Feed fingerprint: `stage2_queued_count=0`, `salvage_eligible_count=0`,
+`throughput_grade=PASS`. Docs lineage: `pr-lifecycle-docs-20260921` (created
+from `origin/main` `113fa734`). Full record: `tasks/pr-review-2026-09-21.md`.
+Lesson **0hq**. Continuity for 2026-09-19 / 2026-09-20 remains on still-open
+DRAFT lineages
+[#2237](https://github.com/abhimehro/personal-config/pull/2237) and
+[#2244](https://github.com/abhimehro/personal-config/pull/2244); those records
+are **not** duplicated here. Do **not** `/trunk merge` this lineage in the
+opening run (**0gj**). Do **not** trunk-merge those DRAFT lineages.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (triage)        |   135 |
+| Product mutations           |    15 |
+| Merged                      |     7 |
+| Closed                      |     3 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |     0 |
+| GitHub PR mutations         |    15 |
+| Ledger file CAS writes      |     1 |
+| Analysis errors             |     0 |
+
+Per-item table: see `tasks/pr-review-2026-09-21.md`.
+
+Downstream: Stage 2 (`0 17 * * *` UTC) has empty salvage intake. Do **not**
+invent work items. Do **not** merge drafts series #460 / personal-config #2246.
+Keep Stage 1/2/3 completion enabled; leave calibration disabled. Split
+codeql-action Dependabot siblings (#2247 analyze, then #2249 autobuild / #2251
+init) cause CodeQL version-skew until all three land — GHAS infra, not
+`HOLD_PLATFORM` (lesson **0hq**).
