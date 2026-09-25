@@ -188,7 +188,7 @@ export RCLONE_PASS="$WEB_PASS"
 
 # Start Rclone WebDAV (Performance Tuned)
 nohup rclone serve webdav "media:" \
-	--addr "tls://$BIND_ADDR:$AVAILABLE_PORT" \
+	--addr "$BIND_ADDR:$AVAILABLE_PORT" \
 	--cert "$WEBDAV_CERT" \
 	--key "$WEBDAV_KEY" \
 	--min-tls-version tls1.2 \

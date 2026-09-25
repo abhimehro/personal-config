@@ -164,7 +164,7 @@ WEBDAV_CACHE_DIR="$HOME/Library/Caches/rclone-media-webdav"
 mkdir -p "$WEBDAV_CACHE_DIR"
 
 exec rclone serve webdav "media:" \
-	--addr "tls://0.0.0.0:$AVAILABLE_PORT" \
+	--addr "0.0.0.0:$AVAILABLE_PORT" \
 	--cert "$WEBDAV_CERT" \
 	--key "$WEBDAV_KEY" \
 	--min-tls-version tls1.2 \

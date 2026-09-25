@@ -217,7 +217,7 @@ else
 	echo "PASS: No command line arguments for user/pass"
 fi
 
-if [[ $OUTPUT == *"ARG_ADDR=tls://0.0.0.0:8080"* &&
+if [[ $OUTPUT == *"ARG_ADDR=0.0.0.0:8080"* &&
       $OUTPUT == *"ARG_CERT=$HOME/.config/media-server/tls.crt"* &&
       $OUTPUT == *"ARG_KEY=$HOME/.config/media-server/tls.key"* &&
       $OUTPUT == *"ARG_MIN_TLS=tls1.2"* ]]; then
@@ -311,7 +311,7 @@ else
 	echo "PASS: final-media-server.sh no args"
 fi
 
-if [[ $LOG_CONTENT == *"ARG_ADDR=tls://0.0.0.0:8080"* &&
+if [[ $LOG_CONTENT == *"ARG_ADDR=0.0.0.0:8080"* &&
       $LOG_CONTENT == *"ARG_CERT=$HOME/.config/media-server/tls.crt"* &&
       $LOG_CONTENT == *"ARG_KEY=$HOME/.config/media-server/tls.key"* &&
       $LOG_CONTENT == *"ARG_MIN_TLS=tls1.2"* ]]; then
