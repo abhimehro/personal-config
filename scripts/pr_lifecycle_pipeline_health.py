@@ -26,6 +26,13 @@ do not suppress starvation. `stage2_owned_item_count` is observational for
 the health flag: a Stage 2-owned ledger item without a usable work item
 does not hide EMPTY_INTAKE. Cascade CLAIM still passes that count as
 `stage2_owned_materializable` so Stage 2 proceeds to materialize.
+
+Option 3 (2026-09-24): `is_reselect_salvage_candidate` is a separate Stage 1
+enqueue predicate for live CONFLICTING/DIRTY ledger-BOT stock with unique
+remaining. It does not widen `is_salvage_eligible` (monitor starvation stays
+unchanged). Soft sticky `shell_execution` is allowed only for Palette wrap
+with a tight path allowlist. Never-touch (Seatek#692, ctrld#1206 CSPRNG,
+Hydro Sentinel / REVIEW_SECURITY / HUMAN sticky, real HOLD_PLATFORM) stays out.
 """
 
 from __future__ import annotations
@@ -50,6 +57,25 @@ from pr_lifecycle_persist import strip_in_memory_item_fields
 from pr_lifecycle_schema import validate_schema
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
+
+__all__ = [
+    "MECHANICAL_RESELECT_NA",
+    "NON_SALVAGE_OUTCOMES",
+    "REQUIRED_WORK_ITEM_FIELDS",
+    "SALVAGE_OUTCOMES",
+    "PipelineHealth",
+    "ReselectSignals",
+    "is_never_touch_key",
+    "is_reselect_salvage_candidate",
+    "is_salvage_eligible",
+    "list_reselect_candidates",
+    "non_journal_paths",
+    "parse_expiry_utc",
+    "signal_value",
+    "source_pr_prefix",
+    "summarize",
+    "work_item_is_usable",
+]
 
 NON_SALVAGE_OUTCOMES = frozenset(
     {
@@ -90,6 +116,36 @@ MAJOR_DEP_BLOCK = re.compile(
 )
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 
+# Option 3 reselect: never invent whole-PR rebase; never-touch stays human/Desk.
+NEVER_TOUCH_PR_PREFIXES = frozenset(
+    {
+        "abhimehro/Seatek_Analysis#692",
+        "abhimehro/ctrld-sync#1206",
+    }
+)
+RESELECT_LIVE_STATES = frozenset({"CONFLICTING", "DIRTY"})
+RESELECT_SOFT_STICKY = frozenset({"shell_execution"})
+RESELECT_TITLE_PREFIXES = (
+    "⚡ Bolt",
+    "🎨 Palette",
+    "salvage(",
+    "chore(qa)",
+    "chore(repo-health)",
+)
+# Soft shell_execution only when every non-journal path matches Palette wrap.
+PALETTE_WRAP_PATH_ALLOW = (
+    re.compile(r"(^|/)analytics_dashboard\.sh$"),
+    re.compile(r"(^|/)maintenance/bin/.*\.sh$"),
+    re.compile(r"docs/cursor-automations/"),
+)
+JOURNAL_PATH_RE = re.compile(r"(^|/)\.jules/")
+LIVE_STATE_IN_TEXT = re.compile(r"\b(CONFLICTING|DIRTY)\b")
+MECHANICAL_RESELECT_NA = (
+    "Recover unique source only on a new focused draft that excludes "
+    "journals and sticky paths outside the work-item allowlist."
+)
+
+
 
 @dataclass(frozen=True)
 class PipelineHealth:
@@ -100,6 +156,7 @@ class PipelineHealth:
     stage2_owned_item_count: int
     salvage_eligible_count: int
     salvage_eligible_keys: tuple[str, ...]
+    reselect_candidate_count: int
     starvation: bool
     reason: str
 
@@ -171,6 +228,233 @@ def is_salvage_eligible(item: dict[str, Any]) -> bool:
     if _has_blocking_sticky(item):
         return False
     return _next_action_is_mechanical(item.get("next_action") or "")
+
+
+def source_pr_prefix(key: object) -> str:
+    """Return repository#pr from a ledger key (strip @sha)."""
+    text_key = str(key or "")
+    if "@" in text_key:
+        text_key = text_key.split("@", 1)[0]
+    return text_key
+
+
+def is_never_touch_key(key: object) -> bool:
+    """Identify the two hard never-touch source PRs, ignoring any @SHA suffix."""
+    # Seatek_Analysis#692 (journals) and ctrld-sync#1206 (CSPRNG).
+    return source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
+
+
+def _title_is_reselect_bot(title: str | None) -> bool:
+    """Return whether a stripped title starts with an allowed reselect prefix."""
+    if not title:
+        return False
+    stripped = title.strip()
+    return any(stripped.startswith(prefix) for prefix in RESELECT_TITLE_PREFIXES)
+
+
+def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
+    """Accept nonterminal items with BOT authorship or an allowed title."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    # Already Stage 2 owned/queued: reselecting it would emit a duplicate
+    # ENQUEUE_STAGE2_WI for work Stage 2 already holds.
+    if (
+        item.get("current_owner") == "stage2"
+        or item.get("lifecycle_state") in STAGE2_OWNED_STATES
+    ):
+        return False
+    if item.get("author_type") == "BOT":
+        return True
+    return _title_is_reselect_bot(title)
+
+
+def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
+    """Return the supplied state, else the first CONFLICTING/DIRTY in next_action."""
+    if live_mergeable:
+        return str(live_mergeable).upper()
+    next_action = item.get("next_action") or ""
+    match = LIVE_STATE_IN_TEXT.search(next_action)
+    return match.group(1).upper() if match else ""
+
+
+def non_journal_paths(paths: list[str]) -> list[str]:
+    """Return paths outside any .jules directory."""
+    return [path for path in paths if not JOURNAL_PATH_RE.search(path)]
+
+
+def _paths_allow_soft_shell(paths: list[str]) -> bool:
+    """Return True when every non-journal path is on the Palette wrap allowlist."""
+    remaining = non_journal_paths(paths)
+    if not remaining:
+        return False
+    for path in remaining:
+        if not any(pattern.search(path) for pattern in PALETTE_WRAP_PATH_ALLOW):
+            return False
+    return True
+
+
+def _sticky_allows_reselect(item: dict[str, Any], paths: list[str]) -> bool:
+    """Accept generated_output, or Palette shell_execution on allowed paths."""
+    sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
+    if not sticky:
+        return True
+    if sticky <= RESELECT_SOFT_STICKY:
+        next_action = (item.get("next_action") or "").lower()
+        if PROHIBITED_NEXT_ACTION.search(next_action):
+            return False
+        palette_wrap = "palette" in next_action and "wrap" in next_action
+        return palette_wrap and _paths_allow_soft_shell(paths)
+    return False
+
+
+def _unique_remaining_ok(
+    unique_remaining_paths: list[str] | None, fallback_paths: list[str]
+) -> tuple[bool, list[str]]:
+    """Drop journal paths; an explicit empty unique list means no reselect source."""
+    if unique_remaining_paths is not None:
+        cleaned = non_journal_paths([str(p) for p in unique_remaining_paths])
+        return (bool(cleaned), cleaned)
+    cleaned = non_journal_paths([str(p) for p in fallback_paths])
+    # Planner may use changed_paths as a proxy; APPLY must live-verify unique.
+    return (bool(cleaned), cleaned)
+
+
+def _reselect_identity_ok(item: dict[str, Any], title: str | None) -> bool:
+    """Check never-touch, identity, and guardrail-outcome exclusions."""
+    if is_never_touch_key(item.get("key")):
+        return False
+    if not _identity_allows_reselect(item, title):
+        return False
+    outcome = item.get("guardrail_outcome") or ""
+    # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
+    # HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE / CLOSE_NONSECURITY_NOOP.
+    return outcome not in NON_SALVAGE_OUTCOMES
+
+
+LOCKFILE_SUFFIXES = (
+    ".lock",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "Cargo.lock",
+    "poetry.lock",
+)
+
+
+def _reselect_paths_ok(
+    item: dict[str, Any], unique_remaining_paths: list[str] | None
+) -> bool:
+    """Check unique remaining, sticky, and lockfile exclusions on paths."""
+    fallback = list(item.get("changed_paths") or item.get("paths") or [])
+    unique_ok, paths = _unique_remaining_ok(unique_remaining_paths, fallback)
+    if not unique_ok:
+        return False
+    if not _sticky_allows_reselect(item, paths):
+        return False
+    sticky = set(item.get("sensitive_paths") or [])
+    if "lockfiles_and_major_dependencies" not in sticky:
+        return True
+    return not any(path.endswith(LOCKFILE_SUFFIXES) for path in paths)
+
+
+def is_reselect_salvage_candidate(
+    item: dict[str, Any],
+    *,
+    live_mergeable: str | None = None,
+    title: str | None = None,
+    unique_remaining_paths: list[str] | None = None,
+) -> bool:
+    """Return whether Stage 1 may plan a unique-source reselect for this item."""
+    # Accept a nonterminal BOT item or one with an allowed title prefix when its
+    # supplied mergeability, or a state inferred from next_action, is
+    # CONFLICTING or DIRTY. An explicit unique_remaining_paths list must contain
+    # a non-journal path; when omitted, changed_paths (then paths) is a proxy.
+    # Never-touch sources and NON_SALVAGE outcomes are excluded first.
+    # generated_output is the only unrestricted sensitive label; shell_execution
+    # additionally requires a Palette action and wrap-allowlist paths. Separate
+    # from ``is_salvage_eligible``.
+    if not _reselect_identity_ok(item, title):
+        return False
+    state = _infer_live_mergeable(item, live_mergeable)
+    if state not in RESELECT_LIVE_STATES:
+        return False
+    return _reselect_paths_ok(item, unique_remaining_paths)
+
+
+@dataclass(frozen=True)
+class ReselectSignals:
+    """Optional live signals narrowing reselect candidate evaluation."""
+
+    live_mergeable_by_key: dict[str, str] | None = None
+    titles_by_key: dict[str, str] | None = None
+    unique_paths_by_key: dict[str, list[str]] | None = None
+
+
+def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
+    """Look up a signal by full key, falling back to the @sha-stripped prefix."""
+    if not mapping:
+        return None
+    if key in mapping:
+        return mapping[key]
+    return mapping.get(source_pr_prefix(key))
+
+
+def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
+    """Return repo#PR prefixes of sources with a usable Stage 2 WI."""
+    prefixes: set[str] = set()
+    for work_item in _raw_work_items(ledger):
+        if not work_item_is_usable(work_item):
+            continue
+        source = work_item.get("source_item_key") or work_item.get("source_key")
+        if source:
+            prefixes.add(source_pr_prefix(source))
+    return prefixes
+
+
+def list_reselect_candidates(
+    ledger: dict[str, Any],
+    *,
+    signals: ReselectSignals | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return eligible keyed ledger items in their original order."""
+    # Signal maps are looked up by full key then repository#PR prefix; a key
+    # present with an empty value is honored (e.g. [] means "no unique paths").
+    # None limit is unbounded; the limit is
+    # checked after appending, so a nonpositive limit still returns one item.
+    signals = signals or ReselectSignals()
+    queued_prefixes = _existing_wi_prefixes(ledger)
+    selected: list[dict[str, Any]] = []
+    for item in _ledger_items(ledger):
+        if not _reselect_item_key(item, queued_prefixes, signals):
+            continue
+        selected.append(item)
+        if limit is not None and len(selected) >= limit:
+            break
+    return selected
+
+
+def _reselect_item_key(
+    item: dict[str, Any], queued_prefixes: set[str], signals: ReselectSignals
+) -> str:
+    """Return the item's key when it survives dedupe and the predicate."""
+    key = str(item.get("key") or "")
+    if not key or source_pr_prefix(key) in queued_prefixes:
+        return ""
+    if not _reselect_item_ok(item, key, signals):
+        return ""
+    return key
+
+
+def _reselect_item_ok(
+    item: dict[str, Any], key: str, signals: ReselectSignals
+) -> bool:
+    """Apply the signal-resolved reselect predicate to one ledger item."""
+    return is_reselect_salvage_candidate(
+        item,
+        live_mergeable=signal_value(signals.live_mergeable_by_key, key),
+        title=signal_value(signals.titles_by_key, key),
+        unique_remaining_paths=signal_value(signals.unique_paths_by_key, key),
+    )
 
 
 def parse_expiry_utc(value: object) -> datetime | None:
@@ -284,6 +568,7 @@ def _health_report(
         stage2_owned_item_count=owned_count,
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
+        reselect_candidate_count=len(list_reselect_candidates(ledger)),
         starvation=starvation,
         reason=_starvation_reason(starvation, usable_count, eligible_count),
     )
@@ -300,6 +585,7 @@ def summarize(ledger: dict[str, Any], now: datetime | None = None) -> PipelineHe
 
 
 def _print_report(report: PipelineHealth, as_json: bool) -> None:
+    """Print the health report as JSON or readable fields."""
     payload = asdict(report)
     if as_json:
         print(json.dumps(payload, indent=2))
@@ -308,6 +594,7 @@ def _print_report(report: PipelineHealth, as_json: bool) -> None:
     print(f"stage2_work_items={report.stage2_work_item_count}")
     print(f"stage2_owned_items={report.stage2_owned_item_count}")
     print(f"salvage_eligible={report.salvage_eligible_count}")
+    print(f"reselect_candidates={report.reselect_candidate_count}")
     print(f"starvation={str(report.starvation).lower()}")
     print(f"reason={report.reason}")
     for key in report.salvage_eligible_keys:

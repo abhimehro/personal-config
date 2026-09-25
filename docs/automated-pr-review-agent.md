@@ -55,7 +55,13 @@ not proceed to inventory, merge, or close.
    CONFLICTING/DIRTY BOT) before spending the 80-item cap on NEW security twins.
    Hold five of those 80 slots for salvage keepers. Queue up to ten Stage 2 work
    items from the fetched ledger even when MERGEABLE/canonical candidates filled
-   the rest of the inventory.
+   the rest of the inventory. **Option 3 (2026-09-24):** prefer CAS-writing ≤5
+   complete `stage2_work_items` via `ENQUEUE_STAGE2_WI` /
+   `CONFLICTING_UNIQUE_RESELECT` for live CONFLICTING/DIRTY unique-remaining
+   ledger-BOT (soft `shell_execution` only for Palette wrap allowlist).
+   `pr_lifecycle_feed.py` verifies intake; it does not enqueue. `FEED_CHECK`
+   fails the Stage 1 throughput grade when reselect candidates > 0 and
+   enqueued == 0.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,

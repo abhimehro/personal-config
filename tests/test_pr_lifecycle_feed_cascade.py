@@ -367,8 +367,8 @@ class TestSampleEmissionAndClaim(unittest.TestCase):
             self.skipTest("example ledger missing")
         # Reuse the health-suite starved fixture (event↔item integrity).
         sys.path.insert(0, str(ROOT / "tests"))
-        from test_pr_lifecycle_pipeline_health import (  # noqa: E402
-            _schema_valid_starved_ledger,
+        from pr_lifecycle_helpers import (  # noqa: E402
+            schema_valid_starved_ledger as _schema_valid_starved_ledger,
         )
 
         with tempfile.TemporaryDirectory() as tmp:

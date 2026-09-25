@@ -1,9 +1,8 @@
-"""Unit tests for pr_lifecycle_run plan shape."""
+"""Unit tests for pr_lifecycle_run plan shape and CLI emission."""
 
 from __future__ import annotations
 
 import json
-import sys
 import types
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -12,67 +11,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+from tests.pr_lifecycle_helpers import import_lifecycle_run, make_health_report
 
-# Stub remote/health deps for this module only; restoring sys.modules keeps
-# unittest discovery from leaking the stubs into the rest of the suite.
-_STUB_NAMES = (
-    "pr_lifecycle_ledger_cas",
-    "pr_lifecycle_pipeline_health",
-    "pr_lifecycle_config",
-    "pr_lifecycle_support",
-    "pr_lifecycle_yaml",
-    "pr_lifecycle_reconcile",
-    "pr_lifecycle_feed",
-)
-_saved_modules = {name: sys.modules.get(name) for name in _STUB_NAMES}
-for name in _STUB_NAMES:
-    sys.modules[name] = types.ModuleType(name)
+run = import_lifecycle_run()
 
-sys.modules["pr_lifecycle_support"].ROOT = ROOT
-sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
-sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
-sys.modules["pr_lifecycle_pipeline_health"].summarize = (
-    lambda *_a, **_k: types.SimpleNamespace(
-        salvage_eligible_count=0,
-        stage2_work_item_count=0,
-        starvation=False,
-        reason="ok",
-    )
-)
-sys.modules["pr_lifecycle_reconcile"].collect_actions = lambda *_a, **_k: []
-sys.modules["pr_lifecycle_feed"].build_feed = lambda *_a, **_k: {
-    "empty_with_stock": False,
-    "reason": "FEED_OK",
-    "work_item_count": 0,
-    "eligible_stock_count": 0,
-    "work_items": [],
-}
-
-import pr_lifecycle_run as run  # noqa: E402
-
-for _name in _STUB_NAMES:
-    _saved = _saved_modules[_name]
-    if _saved is None:
-        sys.modules.pop(_name, None)
-    else:
-        sys.modules[_name] = _saved
-
-
-def _report(**overrides):
-    values = {
-        "salvage_eligible_count": 0,
-        "stage2_work_item_count": 0,
-        "starvation": False,
-        "reason": "ok",
-    }
-    values.update(overrides)
-    return types.SimpleNamespace(**values)
+_report = make_health_report
 
 
 class RunPlanTests(unittest.TestCase):
     def test_stage2_never_merges_in_plan(self):
+        """Verify Stage 2 plans exclude merge authority."""
         ledger = {"ledger_revision": 9, "items": []}
         config = {"lifecycle": {}}
 
@@ -82,8 +30,9 @@ class RunPlanTests(unittest.TestCase):
             starvation = False
             reason = "ok"
 
-        with mock.patch.object(run.health, "summarize", return_value=FakeReport()):
-            with mock.patch.object(
+        with (
+            mock.patch.object(run.health, "summarize", return_value=FakeReport()),
+            mock.patch.object(
                 run.feed_mod,
                 "build_feed",
                 return_value={
@@ -93,8 +42,9 @@ class RunPlanTests(unittest.TestCase):
                     "eligible_stock_count": 0,
                     "work_items": [],
                 },
-            ):
-                plan = run.build_stage_plan(2, ledger, config)
+            ),
+        ):
+            plan = run.build_stage_plan(2, ledger, config)
         self.assertFalse(plan.get("stage2_may_merge"))
         self.assertFalse(plan.get("calibration_enabled"))
         self.assertEqual(plan["stage"], 2)
@@ -116,19 +66,23 @@ class RunPlanTests(unittest.TestCase):
         self.assertFalse(plan.get("calibration_enabled"))
 
     def test_stage1_uses_bounded_reconciliation_and_always_checks_feed(self):
+        """Verify Stage 1 bounds reconciliation and always checks the feed."""
         ledger = {"ledger_revision": 11, "items": []}
         action = {"action": "TERMINAL_CLOSED", "key": "owner/repo#1@sha"}
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(
                 run.reconcile_mod, "collect_actions", return_value=[action]
-            ) as collect:
-                plan = run.build_stage_plan(1, ledger, {"lifecycle": {}})
+            ) as collect,
+        ):
+            plan = run.build_stage_plan(1, ledger, {"lifecycle": {}})
         collect.assert_called_once_with(ledger, {"lifecycle": {}}, limit=40)
         self.assertEqual(plan["actions"][0], action)
         self.assertEqual(plan["actions"][-1]["action"], "FEED_CHECK")
         self.assertIn("schema-aware only", " ".join(plan["allowed_commands"]))
 
     def test_stage2_materializes_work_items_without_merge_authority(self):
+        """Verify Stage 2 materializes intake without merge authority."""
         work_item = {"source_key": "owner/repo#1@sha", "reason": "SALVAGE_ELIGIBLE"}
         feed_payload = {
             "empty_with_stock": False,
@@ -137,29 +91,31 @@ class RunPlanTests(unittest.TestCase):
             "eligible_stock_count": 1,
             "work_items": [work_item],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["actions"][0]["action"], "FEED_SUMMARY")
         self.assertEqual(plan["actions"][1], {"action": "SALVAGE_WI", "wi": work_item})
         self.assertIsNone(plan["stop_class"])
         self.assertFalse(plan["stage2_may_merge"])
 
     def test_stage2_empty_feed_with_stock_is_a_logic_stop(self):
+        """Verify eligible stock with an empty feed triggers a logic stop."""
         feed_payload = {
             "empty_with_stock": True,
             "reason": "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
             "work_item_count": 0,
             "eligible_stock_count": 2,
+            "non_never_touch_stock_count": 2,
             "work_items": [],
         }
-        with mock.patch.object(run.health, "summarize", return_value=_report()):
-            with mock.patch.object(
-                run.feed_mod, "build_feed", return_value=feed_payload
-            ):
-                plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(run.feed_mod, "build_feed", return_value=feed_payload),
+        ):
+            plan = run.build_stage_plan(2, {"ledger_revision": 2}, {})
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
 
@@ -189,6 +145,7 @@ class RunPlanTests(unittest.TestCase):
 
 class RunExecutionTests(unittest.TestCase):
     def test_run_stage_writes_plan_and_status_records(self):
+        """Verify running a stage writes its plan and status records."""
         plan = {
             "stage": 1,
             "ledger_revision": 12,
@@ -202,26 +159,24 @@ class RunExecutionTests(unittest.TestCase):
         }
         with TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
-            with mock.patch.object(run, "LOG_DIR", log_dir):
-                with mock.patch.object(run, "_run_id", return_value="run-fixed"):
-                    with mock.patch.object(
-                        run, "load_yaml", side_effect=[{"lifecycle": {}}, {"items": []}]
-                    ):
-                        with mock.patch.object(run, "validate_config"):
-                            with mock.patch.object(
-                                run.cas,
-                                "run_preflight",
-                                return_value={"ledger_path": "ledger.yaml"},
-                                create=True,
-                            ):
-                                with mock.patch.object(
-                                    run, "build_stage_plan", return_value=plan.copy()
-                                ):
-                                    output = StringIO()
-                                    with redirect_stdout(output):
-                                        result = run.run_stage(
-                                            1, dry_run=True, write_status=True
-                                        )
+            with (
+                mock.patch.object(run, "LOG_DIR", log_dir),
+                mock.patch.object(run, "_run_id", return_value="run-fixed"),
+                mock.patch.object(
+                    run, "load_yaml", side_effect=[{"lifecycle": {}}, {"items": []}]
+                ),
+                mock.patch.object(run, "validate_config"),
+                mock.patch.object(
+                    run.cas,
+                    "run_preflight",
+                    return_value={"ledger_path": "ledger.yaml"},
+                    create=True,
+                ),
+                mock.patch.object(run, "build_stage_plan", return_value=plan.copy()),
+            ):
+                output = StringIO()
+                with redirect_stdout(output):
+                    result = run.run_stage(1, dry_run=True, write_status=True)
             self.assertEqual(result, 0)
             emitted = json.loads(output.getvalue())
             self.assertEqual(emitted["run_id"], "run-fixed")
@@ -241,25 +196,26 @@ class RunExecutionTests(unittest.TestCase):
             self.assertEqual(status["action_count"], 1)
 
     def test_run_stage_records_transient_preflight_failure(self):
+        """Verify transient preflight failures receive a status record."""
         with TemporaryDirectory() as tmp:
             log_dir = Path(tmp)
-            with mock.patch.object(run, "LOG_DIR", log_dir):
-                with mock.patch.object(run, "_run_id", return_value="run-error"):
-                    with mock.patch.object(
-                        run, "load_yaml", side_effect=[{"lifecycle": {}}, OSError()]
-                    ):
-                        with mock.patch.object(run, "validate_config"):
-                            with mock.patch.object(
-                                run.cas,
-                                "run_preflight",
-                                return_value={"ledger_path": "ledger.yaml"},
-                                create=True,
-                            ):
-                                output = StringIO()
-                                with redirect_stdout(output):
-                                    result = run.run_stage(
-                                        1, dry_run=True, write_status=False
-                                    )
+            with (
+                mock.patch.object(run, "LOG_DIR", log_dir),
+                mock.patch.object(run, "_run_id", return_value="run-error"),
+                mock.patch.object(
+                    run, "load_yaml", side_effect=[{"lifecycle": {}}, OSError()]
+                ),
+                mock.patch.object(run, "validate_config"),
+                mock.patch.object(
+                    run.cas,
+                    "run_preflight",
+                    return_value={"ledger_path": "ledger.yaml"},
+                    create=True,
+                ),
+            ):
+                output = StringIO()
+                with redirect_stdout(output):
+                    result = run.run_stage(1, dry_run=True, write_status=False)
             self.assertEqual(result, 1)
             record = json.loads(output.getvalue())
             self.assertEqual(record["stop_class"], "TRANSIENT_RETRY")
@@ -309,7 +265,3 @@ class RunExecutionTests(unittest.TestCase):
             result = run.main([])
         self.assertEqual(result, 1)
         self.assertIn("--stage is required", error.getvalue())
-
-
-if __name__ == "__main__":
-    unittest.main()
