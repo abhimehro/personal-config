@@ -33,6 +33,9 @@ def run_gh(cmd_list):
         return None
 
 
+# ⚡ Bolt Optimization: Module-level tuple constant avoids re-instantiating list objects on every loop iteration
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+
 ready_prs = [
     "abhimehro/personal-config#744",
     "abhimehro/personal-config#743",
@@ -110,8 +113,10 @@ for pr, info in results:
     if not info:
         continue
 
-    if info.get("mergeStateStatus") in ["DIRTY", "CONFLICTING"]:
-        print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
+    # ⚡ Bolt Optimization: Store mergeStateStatus in a local variable to avoid redundant dict lookups and list allocations per iteration
+    status = info.get("mergeStateStatus")
+    if status in _UNMERGEABLE_STATUSES:
+        print(f"Skipping {pr} because it is {status}")
         continue
 
     title = info.get("title", "")
