@@ -13,6 +13,7 @@ from tests.pr_lifecycle_helpers import (
     make_work_item,
 )
 
+import pr_lifecycle_feed as real_feed
 import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
@@ -79,6 +80,58 @@ class Option3Stage2IntakeTests(unittest.TestCase):
             [mechanical["source_item_key"]],
         )
         self.assertEqual(ledger, original)
+
+    def test_stage2_full_feed_pipeline_filters_protected_queue(self) -> None:
+        """Real build_feed + planner keep mechanical WI behind a never-touch one."""
+        protected = make_work_item(
+            work_item_id="s2-seatek-692",
+            source_item_key="abhimehro/Seatek_Analysis#692@old",
+            repository="abhimehro/Seatek_Analysis",
+            pr=692,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        mechanical = make_work_item(
+            work_item_id="s2-demo-7",
+            source_item_key="abhimehro/demo#7@new",
+            pr=7,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        ledger = make_ledger([], [protected, mechanical])
+        # test_pr_lifecycle_feed binds feed.health to a stub at import; repoint it
+        # to the real module for the duration of this regression check.
+        with (
+            mock.patch.object(
+                run.health, "summarize", side_effect=real_health.summarize
+            ),
+            mock.patch.object(
+                run.health,
+                "is_never_touch_key",
+                side_effect=real_health.is_never_touch_key,
+            ),
+            mock.patch.object(
+                run.feed_mod, "build_feed", side_effect=real_feed.build_feed
+            ),
+            mock.patch.object(real_feed, "health", real_health),
+        ):
+            plan = run.build_stage_plan(
+                2,
+                ledger,
+                {"lifecycle": {"stage_caps": {"stage2_salvage_candidates": 1}}},
+            )
+        self.assertEqual(plan["reason"], "OK")
+        self.assertEqual(plan["mechanical_candidate_count"], 1)
+        self.assertEqual(
+            plan["never_touch_skipped"],
+            [{"source_key": protected["source_item_key"], "reason": "NEVER_TOUCH"}],
+        )
+        self.assertEqual(
+            [
+                action["wi"]["source_item_key"]
+                for action in plan["actions"]
+                if action["action"] == "SALVAGE_WI"
+            ],
+            [mechanical["source_item_key"]],
+        )
 
     def test_stage2_mixed_feed_salvages_only_usable_sources(self) -> None:
         """Verify Stage 2 filters never-touch entries from a mixed feed."""
