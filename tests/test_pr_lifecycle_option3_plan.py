@@ -6,7 +6,16 @@ import copy
 import unittest
 from unittest import mock
 
-from tests.pr_lifecycle_helpers import import_lifecycle_run, make_health_report
+from tests.pr_lifecycle_helpers import (
+    import_lifecycle_run,
+    make_health_report,
+    make_item,
+    make_ledger,
+    make_work_item,
+)
+
+import pr_lifecycle_feed as real_feed
+import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
 
@@ -14,6 +23,114 @@ _report = make_health_report
 
 
 class Option3RebalancePlanTests(unittest.TestCase):
+    def test_stage1_planner_uses_live_selector_before_enqueuing(self) -> None:
+        """Only current conflicting or dirty sources become enqueue actions."""
+        base = {
+            "repository": "abhimehro/demo",
+            "base_sha": "a" * 40,
+            "head_sha": "b" * 40,
+            "current_owner": "stage1",
+            "changed_paths": ["src/stale.py"],
+        }
+        stale = make_item(
+            **base,
+            key="abhimehro/demo#1@new",
+            pr=1,
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        live = make_item(
+            **base,
+            key="abhimehro/demo#2@new",
+            pr=2,
+            next_action="Needs live verification",
+        )
+        ledger = make_ledger([stale, live], [])
+        signals = real_health.ReselectSignals(
+            live_mergeable_by_key={
+                "abhimehro/demo#1": "MERGEABLE",
+                "abhimehro/demo#2": "DIRTY",
+            },
+            unique_paths_by_key={
+                "abhimehro/demo#2": [".jules/journal.md", "src/unique.py"]
+            },
+        )
+        with (
+            mock.patch.object(
+                run.health,
+                "list_reselect_candidates",
+                side_effect=real_health.list_reselect_candidates,
+            ),
+            mock.patch.object(
+                run.health,
+                "non_journal_paths",
+                side_effect=real_health.non_journal_paths,
+            ),
+            mock.patch.object(
+                run.health, "signal_value", side_effect=real_health.signal_value
+            ),
+        ):
+            planned = run.plan_stage2_enqueues(ledger, signals=signals)
+        self.assertEqual(planned["candidate_count"], 1)
+        self.assertEqual(planned["enqueued_count"], 1)
+        self.assertEqual(planned["skipped_incomplete"], [])
+        self.assertEqual(
+            [action["source_key"] for action in planned["enqueue_actions"]],
+            [live["key"]],
+        )
+        self.assertEqual(
+            planned["enqueue_actions"][0]["allowed_paths"], ["src/unique.py"]
+        )
+
+    def test_stage2_real_feed_filters_protected_queue_before_salvage(self) -> None:
+        """Queued never-touch work cannot hide a later mechanical work item."""
+        protected = make_work_item(
+            work_item_id="s2-seatek-692",
+            source_item_key="abhimehro/Seatek_Analysis#692@old",
+            repository="abhimehro/Seatek_Analysis",
+            pr=692,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        mechanical = make_work_item(
+            work_item_id="s2-demo-7",
+            source_item_key="abhimehro/demo#7@new",
+            pr=7,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        ledger = make_ledger([], [protected, mechanical])
+        original = copy.deepcopy(ledger)
+        with (
+            mock.patch.object(run.health, "summarize", return_value=_report()),
+            mock.patch.object(
+                run.health,
+                "is_never_touch_key",
+                side_effect=real_health.is_never_touch_key,
+            ),
+            mock.patch.object(
+                run.feed_mod, "build_feed", side_effect=real_feed.build_feed
+            ),
+        ):
+            plan = run.build_stage_plan(
+                2,
+                ledger,
+                {"lifecycle": {"stage_caps": {"stage2_salvage_candidates": 1}}},
+            )
+        self.assertEqual(plan["reason"], "OK")
+        self.assertFalse(plan["skip_cursor"])
+        self.assertEqual(plan["mechanical_candidate_count"], 1)
+        self.assertEqual(
+            plan["never_touch_skipped"],
+            [{"source_key": protected["source_item_key"], "reason": "NEVER_TOUCH"}],
+        )
+        self.assertEqual(
+            [
+                action["wi"]["source_key"]
+                for action in plan["actions"]
+                if action["action"] == "SALVAGE_WI"
+            ],
+            [mechanical["source_item_key"]],
+        )
+        self.assertEqual(ledger, original)
+
     def test_stage1_enqueue_cap_and_unique_path_override(self) -> None:
         """Verify Stage 1 caps complete enqueues and uses unique source paths."""
         candidates = [

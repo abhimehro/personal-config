@@ -266,6 +266,36 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertEqual(selected, [])
 
+    def test_exact_live_mergeability_overrides_stale_prefix_and_action(self) -> None:
+        """A current mergeable SHA must not inherit a stale conflicting signal."""
+        item = make_item(
+            key="abhimehro/demo#1@new",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        selected = health.list_reselect_candidates(
+            make_ledger([item], []),
+            signals=health.ReselectSignals(
+                live_mergeable_by_key={
+                    "abhimehro/demo#1": "CONFLICTING",
+                    item["key"]: "MERGEABLE",
+                }
+            ),
+        )
+        self.assertEqual(selected, [])
+
+    def test_palette_shell_allowlist_keeps_other_sticky_holds(self) -> None:
+        """An allowed wrap path cannot bypass a separate sensitive-path hold."""
+        item = make_item(
+            sensitive_paths=["shell_execution", "security_configuration"],
+            next_action="Palette wrap CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                item, unique_remaining_paths=["maintenance/bin/refresh.sh"]
+            )
+        )
+
     def test_stage2_owned_or_queued_item_cannot_be_reselected(self) -> None:
         """Reselection must not duplicate work already assigned to Stage 2."""
         base = make_item(
