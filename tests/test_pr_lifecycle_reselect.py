@@ -396,6 +396,78 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertEqual(len(health.list_reselect_candidates(expired)), 1)
         self.assertEqual(len(health.list_reselect_candidates(usable)), 0)
 
+    def test_queued_source_blocks_reselect_across_head_sha_changes(self) -> None:
+        """A queued PR must not be enqueued again under a newer ledger key."""
+        queued_source = make_item(
+            key="abhimehro/demo#1@new-head",
+            changed_paths=["src/one.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        other_source = make_item(
+            key="abhimehro/demo#2@new-head",
+            changed_paths=["src/two.py"],
+            next_action="HOLD_CONTRACT DIRTY unique remaining",
+        )
+        queued_work = make_work_item(
+            source_item_key="abhimehro/demo#1@old-head",
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        ledger = make_ledger([queued_source, other_source], [queued_work])
+
+        selected = health.list_reselect_candidates(ledger)
+
+        self.assertEqual([item["key"] for item in selected], [other_source["key"]])
+
+    def test_incomplete_queued_work_does_not_suppress_reselect(self) -> None:
+        """Only a usable Stage 2 work item reserves its source PR."""
+        source = make_item(
+            key="abhimehro/demo#1@new-head",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        for invalid_fields in (
+            {"allowed_paths": []},
+            {"required_test_command": ""},
+            {"current_owner": "stage3"},
+        ):
+            with self.subTest(invalid_fields=invalid_fields):
+                work_item = make_work_item(
+                    source_item_key="abhimehro/demo#1@old-head",
+                    expiry_utc="2999-01-01T00:00:00Z",
+                    **invalid_fields,
+                )
+                selected = health.list_reselect_candidates(
+                    make_ledger([source], [work_item])
+                )
+                self.assertEqual([item["key"] for item in selected], [source["key"]])
+
+    def test_exact_empty_title_overrides_prefix_bot_title(self) -> None:
+        """An explicit empty live title must not inherit stale BOT metadata."""
+        source = make_item(
+            key="abhimehro/demo#7@new-head",
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        ledger = make_ledger([source], [])
+        prefix = "abhimehro/demo#7"
+        stale_title = {prefix: "⚡ Bolt: old title"}
+        self.assertEqual(
+            health.list_reselect_candidates(
+                ledger, signals=health.ReselectSignals(titles_by_key=stale_title)
+            ),
+            [source],
+        )
+
+        selected = health.list_reselect_candidates(
+            ledger,
+            signals=health.ReselectSignals(
+                titles_by_key={**stale_title, source["key"]: ""}
+            ),
+        )
+
+        self.assertEqual(selected, [])
+
 
 if __name__ == "__main__":
     unittest.main()
