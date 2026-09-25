@@ -248,6 +248,40 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertEqual(selected, [])
 
+    def test_exact_empty_signal_overrides_positive_source_prefix_signal(self) -> None:
+        """A current SHA with no unique paths cannot reuse stale PR metadata."""
+        item = make_item(
+            key="abhimehro/demo#1@new",
+            changed_paths=["src/old.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        selected = health.list_reselect_candidates(
+            make_ledger([item], []),
+            signals=health.ReselectSignals(
+                unique_paths_by_key={
+                    "abhimehro/demo#1": ["src/previous.py"],
+                    item["key"]: [],
+                }
+            ),
+        )
+        self.assertEqual(selected, [])
+
+    def test_stage2_owned_or_queued_item_cannot_be_reselected(self) -> None:
+        """Reselection must not duplicate work already assigned to Stage 2."""
+        base = make_item(
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        for overrides in (
+            {"current_owner": "stage2"},
+            {"current_owner": "stage1", "lifecycle_state": "STAGE2_QUEUED"},
+            {"current_owner": "stage1", "lifecycle_state": "STAGE2_ACTIVE"},
+        ):
+            with self.subTest(overrides=overrides):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate({**base, **overrides})
+                )
+
     def test_palette_shell_sticky_rejects_near_match_paths(self) -> None:
         """Verify Palette path matching rejects similar but unlisted paths."""
         item = make_item(

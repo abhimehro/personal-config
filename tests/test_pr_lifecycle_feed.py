@@ -233,6 +233,42 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(payload["eligible_stock_count"], 2)
         self.assertEqual(payload["non_never_touch_stock_count"], 1)
 
+    def test_non_never_touch_stock_includes_expired_packets_beyond_feed_limit(self):
+        """Stock diagnostics count eligible records even after feed truncation."""
+        regular = _item(
+            key="abhimehro/demo#1@head", lifecycle_state="STAGE1_INTAKE"
+        )
+        expired = _item(key="abhimehro/demo#2@head")
+        protected = _item(key="abhimehro/Seatek_Analysis#692@head")
+        recent = _item(
+            key="abhimehro/demo#3@head",
+            updated_at_utc=(NOW - timedelta(days=7)).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            ),
+        )
+        security = _item(
+            key="abhimehro/demo#4@head", guardrail_outcome="REVIEW_SECURITY"
+        )
+        ledger = {
+            "ledger_revision": 8,
+            "items": [regular, expired, protected, recent, security],
+        }
+        fake_health = types.SimpleNamespace(
+            summarize=lambda *_a, **_k: types.SimpleNamespace(
+                salvage_eligible_count=1
+            ),
+            is_salvage_eligible=lambda item: item is regular,
+            is_never_touch_key=lambda key: str(key or "").split("@", 1)[0]
+            == "abhimehro/Seatek_Analysis#692",
+            parse_expiry_utc=_parse_utc_stub,
+        )
+        with mock.patch.object(feed, "health", fake_health):
+            payload = feed.build_feed(ledger, {}, now=NOW, limit=1)
+        self.assertEqual(payload["work_item_count"], 1)
+        self.assertEqual(payload["work_items"][0]["source_key"], regular["key"])
+        self.assertEqual(payload["eligible_stock_count"], 3)
+        self.assertEqual(payload["non_never_touch_stock_count"], 2)
+
     def test_build_feed_honors_limit_and_falls_back_for_invalid_expiry(self):
         ledger = {
             "ledger_revision": 8,

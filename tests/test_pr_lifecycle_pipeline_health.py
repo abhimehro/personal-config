@@ -140,6 +140,32 @@ class TestSalvageEligibleClassifier(unittest.TestCase):
 
 
 class TestPipelineHealthSummarize(unittest.TestCase):
+    def test_reselect_count_is_independent_of_starvation_eligibility(self) -> None:
+        """A soft-sticky reselect candidate must not widen salvage stock."""
+        ordinary = make_item(
+            key="abhimehro/demo#1@head",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        palette = make_item(
+            key="abhimehro/demo#2@head",
+            changed_paths=["maintenance/bin/wrap.sh"],
+            sensitive_paths=["shell_execution"],
+            next_action="Palette wrap CONFLICTING unique remaining",
+        )
+        blocked = make_item(
+            key="abhimehro/Seatek_Analysis#692@head",
+            changed_paths=["src/blocked.py"],
+            guardrail_outcome="REVIEW_SECURITY",
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        report = health.summarize(
+            make_ledger([ordinary, palette, blocked], []), now=NOW
+        )
+        self.assertEqual(report.reselect_candidate_count, 2)
+        self.assertEqual(report.salvage_eligible_count, 1)
+        self.assertTrue(report.starvation)
+
     def test_starvation_when_eligible_and_empty_stage2(self) -> None:
         """Verify eligible stock with empty Stage 2 intake is starvation."""
         report = health.summarize(make_ledger([make_item()], [], revision=30))
@@ -242,4 +268,3 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         expected = tuple(schema["$defs"]["stage2WorkItem"]["required"])
         self.assertEqual(health.REQUIRED_WORK_ITEM_FIELDS, expected)
-
