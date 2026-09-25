@@ -17,6 +17,39 @@ echo
 # Determine mode
 MODE="${1:-auto}"
 
+# Stop any existing WebDAV listener, including an older HTTP process.
+echo "🧹 Cleaning up existing servers..."
+pkill -f -- "rclone serve webdav" 2>/dev/null || true
+
+# SECURITY: The manual starter must not reopen the forwarded WebDAV port as HTTP.
+WEBDAV_CERT="${MEDIA_WEBDAV_CERT:-$HOME/.config/media-server/tls.crt}"
+WEBDAV_KEY="${MEDIA_WEBDAV_KEY:-$HOME/.config/media-server/tls.key}"
+if [[ ! -r $WEBDAV_CERT || ! -r $WEBDAV_KEY ]]; then
+	echo "❌ WebDAV TLS certificate and key must be readable before the server starts."
+	exit 1
+fi
+if [[ $(uname -s) == Darwin ]]; then
+	KEY_MODE=$(stat -L -f '%Lp' "$WEBDAV_KEY" 2>/dev/null) || KEY_MODE=""
+else
+	KEY_MODE=$(stat -L -c '%a' "$WEBDAV_KEY" 2>/dev/null) || KEY_MODE=""
+fi
+if [[ ! $KEY_MODE =~ ^[0-7]+$ ]]; then
+	echo "❌ Could not check WebDAV TLS key permissions."
+	exit 1
+fi
+if (( (8#$KEY_MODE & 077) != 0 )); then
+	echo "❌ WebDAV TLS key must be accessible only to its owner (chmod 600)."
+	exit 1
+fi
+if [[ $(uname -s) == Darwin ]]; then
+	# SECURITY: macOS ACLs can grant key access even when mode bits are 600.
+	KEY_LISTING=$(LC_ALL=C ls -lLde "$WEBDAV_KEY" 2>/dev/null) || KEY_LISTING=""
+	if [[ -z $KEY_LISTING || ${KEY_LISTING%% *} == *+ || $KEY_LISTING == *$'\n'* ]]; then
+		echo "❌ WebDAV TLS key must have no ACL entries."
+		exit 1
+	fi
+fi
+
 # Accessible Spinner
 spinner_wait() {
 	local duration=$1
@@ -50,9 +83,6 @@ spinner_wait() {
 	fi
 }
 
-# Kill any existing servers
-echo "🧹 Cleaning up existing servers..."
-pkill -f -- "rclone serve" 2>/dev/null || true
 spinner_wait 2 "🧹 Waiting for cleanup..."
 
 # Network discovery
@@ -158,7 +188,10 @@ export RCLONE_PASS="$WEB_PASS"
 
 # Start Rclone WebDAV (Performance Tuned)
 nohup rclone serve webdav "media:" \
-	--addr "$BIND_ADDR:$AVAILABLE_PORT" \
+	--addr "tls://$BIND_ADDR:$AVAILABLE_PORT" \
+	--cert "$WEBDAV_CERT" \
+	--key "$WEBDAV_KEY" \
+	--min-tls-version tls1.2 \
 	--vfs-cache-mode full \
 	--vfs-read-chunk-size 32M \
 	--vfs-read-chunk-size-limit 2G \
@@ -188,8 +221,8 @@ echo "════════════════════════�
 echo
 echo "📱 PRIMARY (LAN/Home Network) - Best Performance"
 echo "─────────────────────────────────────────────────────────────"
-echo "   Protocol:  WebDAV (HTTP)"
-echo "   Address:   $PRIMARY_IP"
+echo "   Protocol:  WebDAV (HTTPS)"
+echo "   Address:   YOUR_WEBDAV_HOST (resolve to $PRIMARY_IP on the LAN)"
 echo "   Port:      $AVAILABLE_PORT"
 echo "   Username:  $WEB_USER"
 echo "   Password:  (from 1Password MediaServer)"
@@ -198,8 +231,8 @@ echo
 if [[ $VPN_CONNECTED == true ]]; then
 	echo "🌐 SECONDARY (External/VPN) - Remote Access"
 	echo "─────────────────────────────────────────────────────────────"
-	echo "   Protocol:  WebDAV (HTTP)"
-	echo "   Address:   82.23.253.53"
+	echo "   Protocol:  WebDAV (HTTPS)"
+	echo "   Address:   YOUR_WEBDAV_HOST (DNS to 82.23.253.53)"
 	echo "   Port:      8088  (Windscribe external WebDAV port)"
 	echo "   Username:  $WEB_USER"
 	echo "   Password:  (from 1Password MediaServer)"
@@ -220,7 +253,7 @@ echo "📝 Server Information"
 echo "════════════════════════════════════════════════════════════════"
 echo "   PID:           $SERVER_PID"
 echo "   Log File:      ~/Library/Logs/media-server.log"
-echo "   Kill Command:  pkill -f -- 'rclone serve'"
+echo "   Kill Command:  pkill -f -- 'rclone serve webdav'"
 echo
 echo "This server is now running in the background."
 echo "════════════════════════════════════════════════════════════════"

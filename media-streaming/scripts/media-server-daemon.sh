@@ -33,8 +33,38 @@ run_with_timeout() {
 
 log "🔧 Media Server - Starting..."
 
-# Kill any existing rclone WebDAV servers
+# Stop any existing WebDAV listener, including an older HTTP process.
 pkill -f -- "rclone serve webdav" 2>/dev/null || true
+
+# SECURITY: Never expose Basic credentials or media on the forwarded port over HTTP.
+WEBDAV_CERT="${MEDIA_WEBDAV_CERT:-$HOME/.config/media-server/tls.crt}"
+WEBDAV_KEY="${MEDIA_WEBDAV_KEY:-$HOME/.config/media-server/tls.key}"
+if [[ ! -r $WEBDAV_CERT || ! -r $WEBDAV_KEY ]]; then
+	log "ERROR: WebDAV TLS certificate and key must be readable before the server starts."
+	exit 1
+fi
+if [[ $(uname -s) == Darwin ]]; then
+	KEY_MODE=$(stat -L -f '%Lp' "$WEBDAV_KEY" 2>/dev/null) || KEY_MODE=""
+else
+	KEY_MODE=$(stat -L -c '%a' "$WEBDAV_KEY" 2>/dev/null) || KEY_MODE=""
+fi
+if [[ ! $KEY_MODE =~ ^[0-7]+$ ]]; then
+	log "ERROR: Could not check WebDAV TLS key permissions."
+	exit 1
+fi
+if (( (8#$KEY_MODE & 077) != 0 )); then
+	log "ERROR: WebDAV TLS key must be accessible only to its owner (chmod 600)."
+	exit 1
+fi
+if [[ $(uname -s) == Darwin ]]; then
+	# SECURITY: macOS ACLs can grant key access even when mode bits are 600.
+	KEY_LISTING=$(LC_ALL=C ls -lLde "$WEBDAV_KEY" 2>/dev/null) || KEY_LISTING=""
+	if [[ -z $KEY_LISTING || ${KEY_LISTING%% *} == *+ || $KEY_LISTING == *$'\n'* ]]; then
+		log "ERROR: WebDAV TLS key must have no ACL entries."
+		exit 1
+	fi
+fi
+
 sleep 2
 
 # Get network info
@@ -117,7 +147,7 @@ if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
 fi
 
 log "✅ Credentials loaded"
-log "🚀 Starting rclone WebDAV server on 0.0.0.0:$AVAILABLE_PORT"
+log "🚀 Starting rclone WebDAV server with TLS on 0.0.0.0:$AVAILABLE_PORT"
 log "   User: $WEB_USER"
 log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 
@@ -134,7 +164,10 @@ WEBDAV_CACHE_DIR="$HOME/Library/Caches/rclone-media-webdav"
 mkdir -p "$WEBDAV_CACHE_DIR"
 
 exec rclone serve webdav "media:" \
-	--addr "0.0.0.0:$AVAILABLE_PORT" \
+	--addr "tls://0.0.0.0:$AVAILABLE_PORT" \
+	--cert "$WEBDAV_CERT" \
+	--key "$WEBDAV_KEY" \
+	--min-tls-version tls1.2 \
 	--cache-dir "$WEBDAV_CACHE_DIR" \
 	--vfs-cache-mode full \
 	--vfs-cache-max-size 10G \

@@ -246,7 +246,7 @@ echo "   ~/start-media-server-fast.sh"
 echo "   (linked to $REPO_ROOT/media-streaming/scripts/start-media-server-fast.sh)"
 echo
 echo "🎬 Then add to Infuse:"
-echo "   Address: http://$(get_local_ip):8088"
+echo "   Address: https://YOUR_WEBDAV_HOST:8080 (see media-streaming/README.md for TLS setup)"
 echo "   Username: infuse"
-echo "   Password: resolved via 1Password in the current setup (fallback file: ~/.config/media-server/credentials)"
+echo "   Password: configured WebDAV credentials (local file when complete, otherwise 1Password)"
 echo

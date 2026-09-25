@@ -160,8 +160,10 @@ print_post_rotation_checklist() {
 Post-rotation checklist:
   1. Confirm 1Password item '$OP_ITEM' shows a new password (1Password app).
   2. Update Infuse / other WebDAV clients (old password no longer works).
-  3. Verify locally: curl -u "USER:\$(op read op://$OP_VAULT/$OP_ITEM/password)" http://127.0.0.1:8080/
-     (adjust port if your daemon binds elsewhere)
+  3. Verify locally: curl --resolve "YOUR_WEBDAV_HOST:8080:127.0.0.1" \
+       -u infuse https://YOUR_WEBDAV_HOST:8080/
+     (enter the current WebDAV password when prompted; use your configured
+      username if different, and the hostname on your TLS certificate)
   4. If remote access is enabled, confirm Windscribe port-forward still matches your WebDAV port.
 
 EOF
