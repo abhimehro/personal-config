@@ -233,7 +233,7 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(payload["eligible_stock_count"], 2)
         self.assertEqual(payload["non_never_touch_stock_count"], 1)
 
-    def test_non_never_touch_stock_includes_expired_packets_beyond_feed_limit(self):
+    def test_non_never_touch_stock_includes_expired_packets_beyond_feed_limit(self) -> None:
         """Stock diagnostics count eligible records even after feed truncation."""
         regular = _item(
             key="abhimehro/demo#1@head", lifecycle_state="STAGE1_INTAKE"
