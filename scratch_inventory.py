@@ -8,6 +8,7 @@ from spreadsheet_safety import escape_spreadsheet_formula
 
 
 def _escape_markdown_table_cell(value: str) -> str:
+    """Escape pipes and collapse newlines so *value* stays within one table cell."""
     return (
         value.replace("|", "&#124;")
         .replace("\r\n", " ")
@@ -61,6 +62,7 @@ def fetch_prs(repos):
 
 
 def generate_markdown(all_prs):
+    """Render *all_prs* as a Markdown inventory table with untrusted text escaped."""
     out_md = []
     out_md.append(
         f"# Automated PR inventory — backlog cleanup test ({datetime.date.today().isoformat()})\n"

@@ -74,6 +74,7 @@ class TestScratchInventory(unittest.TestCase):
         self.assertIn("'=HYPERLINK", md)
 
     def test_generate_markdown_keeps_untrusted_text_in_its_cells(self) -> None:
+        """Untrusted pipes/newlines in author, branch, and title stay in their own cells."""
         prs = [
             {
                 "repo": "personal-config",
