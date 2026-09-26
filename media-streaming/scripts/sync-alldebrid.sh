@@ -224,18 +224,24 @@ create_candidate() {
 	local candidate_file="$PENDING_DIR/$candidate_id"
 	local tmp_file="$PENDING_DIR/${candidate_id}.tmp"
 
-	# Create metadata JSON
-	cat >"$tmp_file" <<EOF
-{
-  "filename": "$file",
-  "size_bytes": $file_size_bytes,
-  "size_human": "$size_human",
-  "size_gb": $file_size_gb,
-  "alldebrid_path": "$ALLDEBRID_REMOTE/$file",
-  "queued_at": "$queued_at",
-  "status": "pending"
-}
-EOF
+	# Serialize the remote filename as data; it may contain JSON syntax.
+	python3 - "$tmp_file" "$file" "$file_size_bytes" "$size_human" "$file_size_gb" "$ALLDEBRID_REMOTE/$file" "$queued_at" <<'PY'
+import json
+import sys
+
+path, filename, size_bytes, size_human, size_gb, remote_path, queued_at = sys.argv[1:]
+with open(path, "w", encoding="utf-8") as candidate:
+    json.dump({
+        "filename": filename,
+        "size_bytes": int(size_bytes),
+        "size_human": size_human,
+        "size_gb": float(size_gb),
+        "alldebrid_path": remote_path,
+        "queued_at": queued_at,
+        "status": "pending",
+    }, candidate, indent=2)
+    candidate.write("\n")
+PY
 
 	# Atomic write: tmp -> final
 	mv "$tmp_file" "$candidate_file"
@@ -252,12 +258,41 @@ process_approved_candidates() {
 	for approved_file in "$APPROVED_DIR"/*.candidate.json; do
 		[[ -f $approved_file ]] || continue
 
-		local filename
-		filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$approved_file" 2>/dev/null)
-		local alldebrid_path
-		alldebrid_path=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['alldebrid_path'])" "$approved_file" 2>/dev/null)
 		local candidate_id
 		candidate_id="${approved_file##*/}"
+		local filename approved_bytes candidate_info
+		if ! candidate_info=$(python3 - "$approved_file" "$ALLDEBRID_REMOTE" "$MAX_FILE_SIZE_GB" <<'PY'
+import json
+import os
+import re
+import sys
+
+def unique_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate candidate field")
+        result[key] = value
+    return result
+
+with open(sys.argv[1], encoding="utf-8") as approved:
+    candidate = json.load(approved, object_pairs_hook=unique_keys)
+filename = candidate["filename"]
+size = candidate["size_bytes"]
+if (not isinstance(filename, str) or not filename or
+        not filename.isprintable() or "/" in filename or
+        not re.search(r"\.(mp4|mkv|avi|m4v|mov)$", filename, re.I) or
+        os.path.basename(sys.argv[1]) != filename + ".candidate.json" or
+        candidate.get("alldebrid_path") != sys.argv[2] + "/" + filename or
+        type(size) is not int or not 0 <= size <= int(sys.argv[3]) * 1024**3):
+    raise ValueError("invalid approved candidate")
+print(f"{filename}\t{size}")
+PY
+		); then
+			log "✗ Invalid approved candidate"
+			continue
+		fi
+		IFS=$'\t' read -r filename approved_bytes <<<"$candidate_info"
 
 		log "----------------------------------------"
 		log "Processing approved candidate: $filename"
@@ -276,12 +311,33 @@ process_approved_candidates() {
 			sleep 60
 		done
 
-		# Download the file
-		if rclone copy "$alldebrid_path" "$TEMP_DOWNLOAD_DIR/" "${RCLONE_FLAGS[@]}" --progress 2>&1 | tee -a "$LOG_FILE"; then
-			log "✓ Downloaded to temp: $basename"
+		# The approved document must still describe one file of the measured size.
+		if ! rclone lsjson "$ALLDEBRID_REMOTE/$filename" --stat 2>/dev/null | python3 -c '
+import json, sys
+item = json.load(sys.stdin)
+size = item.get("Size")
+if (item.get("IsDir") is not False or type(size) is not int or
+        size != int(sys.argv[1]) or
+        not 0 <= size <= int(sys.argv[2]) * 1024**3):
+    sys.exit(1)
+' "$approved_bytes" "$MAX_FILE_SIZE_GB" 2>/dev/null; then
+			log "✗ Approved source is missing, changed, or too large: $filename"
+			continue
+		fi
 
+		# Download the file
+		local max_file_bytes=$((MAX_FILE_SIZE_GB * 1024 * 1024 * 1024))
+		if rclone copy "$ALLDEBRID_REMOTE/$filename" "$TEMP_DOWNLOAD_DIR/" "${RCLONE_FLAGS[@]}" --max-transfer "$((max_file_bytes + 1))B" --progress 2>&1 | tee -a "$LOG_FILE"; then
 			# Ensure it is a file before attempting to move
 			if [[ -f "$TEMP_DOWNLOAD_DIR/$basename" ]]; then
+				local downloaded_bytes
+				downloaded_bytes=$(wc -c <"$TEMP_DOWNLOAD_DIR/$basename")
+				if ((downloaded_bytes != approved_bytes || downloaded_bytes > max_file_bytes)); then
+					log "✗ Download size differs from approved size or exceeds limit: $basename"
+					rm -f "$TEMP_DOWNLOAD_DIR/$basename"
+					continue
+				fi
+				log "✓ Downloaded to temp: $basename"
 				if mv "$TEMP_DOWNLOAD_DIR/$basename" "$APPROVAL_DIR/"; then
 					log "➜ Moved to Approval Folder: $basename"
 
@@ -314,8 +370,8 @@ process_approved_candidates() {
 			fi
 		else
 			log "✗ Download failed: $basename"
-			# Clean up approved candidate file even on failure
-			rm -f "$approved_file"
+			rm -f "$TEMP_DOWNLOAD_DIR/$basename"
+			# Keep the approval for a later retry after a transient transfer error.
 		fi
 	done
 
@@ -400,6 +456,10 @@ fi
 selection_log=$(mktemp)
 trap 'rm -f "$selection_log"' EXIT
 file=$(printf "%s\n" "$files_list" | APPROVAL_DIR="$APPROVAL_DIR" python3 "$SCRIPT_DIR/select-best-alldebrid-candidate.py" 2>"$selection_log")
+if ! python3 -c 'import sys; sys.exit(not sys.argv[1].isprintable())' "$file"; then
+	log "ERROR: Candidate filename contains non-printable characters. Skipping."
+	exit 0
+fi
 while IFS= read -r line; do
 	log "$line"
 done <"$selection_log"
