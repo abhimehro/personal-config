@@ -71,7 +71,9 @@ runtime ledger file and records its blob `sha`. GitHub Contents GET returns
 `encoding: none` (empty `content`) when the file is larger than 1 MB; the body
 must be fetched with `GET /git/blobs/<sha>`. Writes of a ledger that size must
 use the Git Data API fast-forward helper `scripts/pr_lifecycle_ledger_cas.py`
-(blob → tree → commit → ref update with `force=false`). GitHub GET uses singular
+(blob → tree → commit → ref update with `force=false`). Pass preflight's `blob_sha`
+as commit's required `--base-blob-sha`; commit rejects a changed ledger before
+building its replacement tree. GitHub GET uses singular
 `/git/ref/heads/<branch>`; PATCH uses plural `/git/refs/heads/<branch>`. Mixing
 them returns HTTP 404 after the blob and commit already exist. Contents PUT is
 not the write path above 1 MB. A stale-SHA or non-fast-forward conflict is a CAS
