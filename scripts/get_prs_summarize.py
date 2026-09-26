@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 from spreadsheet_safety import escape_spreadsheet_formula
 
 FAIL_CONCLUSIONS = frozenset(
@@ -231,9 +232,13 @@ def _format_pr_row(pr: dict) -> str:
 
 
 def _print_details_section(data: list) -> None:
-    repo = os.environ.get("GH_DETAIL_REPO", "")
-    if not repo:
+    raw_repo = os.environ.get("GH_DETAIL_REPO", "")
+    if not raw_repo:
         print("\n_Details skipped: internal error (no repo env)._")
+        return
+    repo = parse_repo_name(raw_repo, loc=("GH_DETAIL_REPO", None))
+    if not repo:
+        print("\n_Details skipped: invalid repository reference._")
         return
 
     print("\n#### Review / comment context\n")
