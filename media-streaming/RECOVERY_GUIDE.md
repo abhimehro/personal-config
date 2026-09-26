@@ -1,8 +1,8 @@
 # Infuse Connection Recovery Guide
 
-> Note: Current media auth is 1Password-first. References in this guide to the
-> media-server credentials file describe the optional fallback path, not a
-> required file for normal operation.
+> Note: The daemon reads the local credentials file when present, then uses
+> 1Password if the file does not supply both values. File-based credentials are
+> optional.
 
 ## 🔍 Problem Identified
 
@@ -132,19 +132,11 @@ rclone lsd media:
 
 ```bash
 cd ~/dev/personal-config
-./media-streaming/scripts/start-media-server-fast.sh
+./media-streaming/scripts/media-server-daemon.sh
 ```
 
-Or manually:
-
-```bash
-rclone serve webdav media: \
-    --addr 0.0.0.0:8080 \
-    --user infuse \
-    --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" \
-    --read-only \
-    --verbose
-```
+Install the certificate and key described in [README.md](README.md#-security-note)
+before starting the server. The daemon requires HTTPS for all connections.
 
 #### 7. Configure Infuse
 
@@ -160,9 +152,9 @@ In Infuse, add WebDAV source:
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8080
+Address: https://YOUR_WEBDAV_HOST:8080
 Username: infuse
-Password: [from ~/.config/media-server/credentials]
+Password: [1Password MediaServer, or credentials file if it has both values]
 Path: /
 ```
 
@@ -260,8 +252,10 @@ After setup, verify everything:
 - [ ] `rclone lsd onedrive:Media` shows folders
 - [ ] `rclone lsd media:` shows folders (union)
 - [ ] WebDAV server running: `lsof -nP -iTCP:8080 -sTCP:LISTEN | grep rclone`
-- [ ] Local test works:
-      `curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/`
+- [ ] Local test works with a certificate-valid hostname:
+      `curl --resolve YOUR_WEBDAV_HOST:8080:127.0.0.1 -u infuse https://YOUR_WEBDAV_HOST:8080/`
+      Enter the current 1Password `MediaServer` password, or the fallback file's
+      password if the daemon uses that file.
 - [ ] Infuse can connect and see folders
 
 ## 🎯 Quick Diagnostic

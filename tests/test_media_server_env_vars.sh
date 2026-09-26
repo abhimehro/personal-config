@@ -11,6 +11,7 @@ trap 'rm -rf "$MOCK_BIN" "$MOCK_HOME"' EXIT
 # Mock pkill to prevent killing real processes
 cat >"$MOCK_BIN/pkill" <<'EOF'
 #!/bin/bash
+printf '%s\n' "$*" >> "$HOME/pkill.log"
 exit 0
 EOF
 chmod +x "$MOCK_BIN/pkill"
@@ -25,9 +26,13 @@ if [[ "$1" == "serve" ]]; then
     echo "MOCK RCLONE SERVE CALLED"
     echo "ENV_RCLONE_USER=$RCLONE_USER"
     echo "ENV_RCLONE_PASS=$RCLONE_PASS"
-    # Check args for user/pass
+    # Check credentials stay out of arguments and TLS is enabled.
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --addr) echo "ARG_ADDR=$2"; shift 2 ;;
+            --cert) echo "ARG_CERT=$2"; shift 2 ;;
+            --key) echo "ARG_KEY=$2"; shift 2 ;;
+            --min-tls-version) echo "ARG_MIN_TLS=$2"; shift 2 ;;
             --user)
                 echo "ARG_USER=$2"
                 shift 2
@@ -107,7 +112,71 @@ esac
 EOF
 chmod +x "$MOCK_BIN/sleep"
 
+# Exercise the macOS ACL branch on Linux without depending on macOS tools.
+cat >"$MOCK_BIN/uname" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+if [[ ${MOCK_DARWIN:-0} == 1 ]]; then echo Darwin; else exec /usr/bin/uname "$@"; fi
+EOF
+cat >"$MOCK_BIN/stat" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+if [[ ${MOCK_DARWIN:-0} == 1 ]]; then echo 600; else exec /usr/bin/stat "$@"; fi
+EOF
+cat >"$MOCK_BIN/ls" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+if [[ ${MOCK_DARWIN:-0} == 1 ]]; then
+    case ${MOCK_KEY_ACL:-none} in
+        marker) echo '-rw-------+ 1 owner group 0 key' ;;
+        entries)
+            echo '-rw-------@ 1 owner group 0 key'
+            echo ' 0: user:other allow read'
+            ;;
+        *) echo '-rw------- 1 owner group 0 key' ;;
+    esac
+else
+    exec /bin/ls "$@"
+fi
+EOF
+chmod +x "$MOCK_BIN/uname" "$MOCK_BIN/stat" "$MOCK_BIN/ls"
+
 export PATH="$MOCK_BIN:$PATH"
+
+expect_tls_rejection() {
+	local expected="$1" output
+	shift
+	if output=$("$@" 2>&1) || [[ $output != *"$expected"* ]]; then
+		echo "FAIL: WebDAV starter accepted invalid TLS files or returned the wrong error"
+		exit 1
+	fi
+}
+
+# Both starters must reject TLS misconfiguration before invoking rclone.
+expect_tls_rejection "WebDAV TLS certificate and key must be readable" ./media-streaming/scripts/media-server-daemon.sh
+expect_tls_rejection "WebDAV TLS certificate and key must be readable" ./media-streaming/scripts/final-media-server.sh
+echo "PASS: WebDAV starters reject missing TLS files"
+
+mkdir -p "$HOME/.config/media-server"
+: > "$HOME/.config/media-server/tls.crt"
+: > "$HOME/.config/media-server/tls.key"
+chmod 644 "$HOME/.config/media-server/tls.key"
+expect_tls_rejection "WebDAV TLS key must be accessible only to its owner" ./media-streaming/scripts/media-server-daemon.sh
+expect_tls_rejection "WebDAV TLS key must be accessible only to its owner" ./media-streaming/scripts/final-media-server.sh
+echo "PASS: WebDAV starters reject a group-readable TLS key"
+chmod 600 "$HOME/.config/media-server/tls.key"
+
+: > "$HOME/.config/media-server/alternate.key"
+chmod 640 "$HOME/.config/media-server/alternate.key"
+expect_tls_rejection "WebDAV TLS key must be accessible only to its owner" env MEDIA_WEBDAV_KEY="$HOME/.config/media-server/alternate.key" ./media-streaming/scripts/media-server-daemon.sh
+expect_tls_rejection "WebDAV TLS key must be accessible only to its owner" env MEDIA_WEBDAV_KEY="$HOME/.config/media-server/alternate.key" ./media-streaming/scripts/final-media-server.sh
+echo "PASS: WebDAV starters reject an overridden group-readable TLS key"
+
+for acl_case in marker entries; do
+	expect_tls_rejection "WebDAV TLS key must have no ACL entries" env MOCK_DARWIN=1 MOCK_KEY_ACL="$acl_case" ./media-streaming/scripts/media-server-daemon.sh
+	expect_tls_rejection "WebDAV TLS key must have no ACL entries" env MOCK_DARWIN=1 MOCK_KEY_ACL="$acl_case" ./media-streaming/scripts/final-media-server.sh
+done
+echo "PASS: WebDAV starters reject both macOS key ACL formats"
 
 # Poll a file until a marker string appears or a timeout is reached.
 # Useful for tests that start a background process and must wait for it to
@@ -148,6 +217,16 @@ else
 	echo "PASS: No command line arguments for user/pass"
 fi
 
+if [[ $OUTPUT == *"ARG_ADDR=0.0.0.0:8080"* &&
+      $OUTPUT == *"ARG_CERT=$HOME/.config/media-server/tls.crt"* &&
+      $OUTPUT == *"ARG_KEY=$HOME/.config/media-server/tls.key"* &&
+      $OUTPUT == *"ARG_MIN_TLS=tls1.2"* ]]; then
+	echo "PASS: media-server-daemon.sh requires TLS"
+else
+	echo "FAIL: media-server-daemon.sh missing TLS arguments"
+	exit 1
+fi
+
 # Test 2: final-media-server.sh
 echo "Test 2: final-media-server.sh"
 # Execute the real script. The $MOCK_BIN/sleep shim collapses cosmetic
@@ -171,6 +250,10 @@ if [[ "$1" == "serve" ]]; then
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --addr) echo "ARG_ADDR=$2" >> "$HOME/Library/Logs/media-server.log"; shift 2 ;;
+            --cert) echo "ARG_CERT=$2" >> "$HOME/Library/Logs/media-server.log"; shift 2 ;;
+            --key) echo "ARG_KEY=$2" >> "$HOME/Library/Logs/media-server.log"; shift 2 ;;
+            --min-tls-version) echo "ARG_MIN_TLS=$2" >> "$HOME/Library/Logs/media-server.log"; shift 2 ;;
             --user)
                 echo "ARG_USER=$2" >> "$HOME/Library/Logs/media-server.log"
                 shift 2
@@ -227,5 +310,21 @@ if echo "$LOG_CONTENT" | grep -q "ARG_USER=" ||
 else
 	echo "PASS: final-media-server.sh no args"
 fi
+
+if [[ $LOG_CONTENT == *"ARG_ADDR=0.0.0.0:8080"* &&
+      $LOG_CONTENT == *"ARG_CERT=$HOME/.config/media-server/tls.crt"* &&
+      $LOG_CONTENT == *"ARG_KEY=$HOME/.config/media-server/tls.key"* &&
+      $LOG_CONTENT == *"ARG_MIN_TLS=tls1.2"* ]]; then
+	echo "PASS: final-media-server.sh requires TLS"
+else
+	echo "FAIL: final-media-server.sh missing TLS arguments"
+	exit 1
+fi
+
+if [[ ! -s "$HOME/pkill.log" ]] || grep -qvFx -- '-f -- rclone serve webdav' "$HOME/pkill.log"; then
+	echo "FAIL: a starter stopped a non-WebDAV rclone server"
+	exit 1
+fi
+echo "PASS: cleanup targets only rclone WebDAV servers"
 
 echo "ALL TESTS PASSED"
