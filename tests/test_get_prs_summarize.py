@@ -6,7 +6,10 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from get_prs_summarize import automation_hints, check_summary
+import io
+import os
+from unittest.mock import patch
+from get_prs_summarize import _print_details_section, automation_hints, check_summary
 
 
 class TestAutomationHints(unittest.TestCase):
@@ -167,6 +170,34 @@ class TestCheckSummary(unittest.TestCase):
             {"status": "COMPLETED", "conclusion": "failure"},
         ]
         self.assertEqual(check_summary(rollup), "FAIL_1")
+
+
+class TestPrintDetailsSection(unittest.TestCase):
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": ""}, clear=True)
+    def test_missing_repo_env(self):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            _print_details_section([{"number": 1}])
+        self.assertIn("_Details skipped: internal error (no repo env)._", buf.getvalue())
+
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": "-oProxyCommand=calc.exe"}, clear=True)
+    def test_invalid_repo_env(self):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf), patch("sys.stderr", io.StringIO()):
+            _print_details_section([{"number": 1}])
+        self.assertIn("_Details skipped: invalid repository reference._", buf.getvalue())
+
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": "owner/valid-repo"}, clear=True)
+    @patch("get_prs_summarize.fetch_details", return_value="- reviewDecision: `APPROVED`")
+    def test_valid_repo_env(self, mock_fetch):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            _print_details_section([{"number": 123}])
+        output = buf.getvalue()
+        self.assertIn("#### Review / comment context", output)
+        self.assertIn("**PR #123**", output)
+        self.assertIn("- reviewDecision: `APPROVED`", output)
+        mock_fetch.assert_called_once_with("owner/valid-repo", 123)
 
 
 if __name__ == "__main__":
