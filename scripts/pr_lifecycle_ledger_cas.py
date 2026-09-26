@@ -192,9 +192,9 @@ def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[st
     contained = contained_output_path(file_path)
     # NOTE: export/prompt equality is CI `--check`, not this CAS write.
     # Always line-strip before validate+upload so projection keys cannot re-persist.
-    sanitize_ledger_file(contained, bump_revision=bump_revision)
-    stripped = validate(contained)
-    result = cas_commit(runtime, contained.read_text(encoding="utf-8"), message)
+    content = sanitize_ledger_file(contained, bump_revision=bump_revision)["content"]
+    stripped = validate(contained, content=content)
+    result = cas_commit(runtime, content, message)
     result["validator_stripped_fields"] = stripped
     return result
 
