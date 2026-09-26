@@ -227,3 +227,11 @@ plane (packets + personal notes).
 - [x] Merge `origin/main` (#2051 Learned*) into #2052 so Trunk can prepare a
       test branch; remaining `AGENTS.md` delta is the salvage stacked-PR bullet
       only — no Learned* rewrite
+
+## Issue #2277 — restore Linux security-manager test coverage (2026-09-24)
+
+- [x] Reproduce the reported Linux skip and trace the test entrypoints
+- [x] Replace BSD-only test patching with platform-aware `sed`
+- [x] Remove the obsolete expected-failure suppression and update test docs
+- [x] Run focused/full shell tests, lint, and GitNexus change analysis
+- [x] Commit the focused fix on `coderabbit/issue-2277-security-test`

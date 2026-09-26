@@ -581,7 +581,6 @@ skip guard that prints `SKIP:` and exits 77):
 | ---------------------------------- | --------------------------------- | -------------------- |
 | `test_config_fish.sh`              | Needs `fish` shell                | `command -v fish`    |
 | `test_ssh_config.sh`               | Needs 1Password agent socket      | `uname -s == Darwin` |
-| `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) | `uname -s == Darwin` |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a
 copy-paste test skeleton and a known-limitations table.
@@ -596,7 +595,7 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | What                       | Command                                          | Notes                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
+| Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`, 2 expected macOS-only skips (fish and 1Password socket)                                                                                                                |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
 | Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                       |
@@ -624,10 +623,9 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a
   Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not
   run `npm install`.
-- **macOS-specific test skips on Linux**: `test_config_fish.sh`,
-  `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:`
-  message and exit with code 77 on Linux/CI. The test runner treats this as a
-  skip, not a failure.
+- **macOS-specific test skips on Linux**: `test_config_fish.sh` and
+  `test_ssh_config.sh` emit a `SKIP:` message and exit with code 77 on
+  Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
 - **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus CLI
