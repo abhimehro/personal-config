@@ -63,7 +63,11 @@ chmod +x "$MOCK_BIN/date_monday"
 
 # ---- shared mock home ----
 MOCK_HOME="$TEST_DIR/home"
-mkdir -p "$MOCK_HOME"
+INTENDED_MOUNT="$MOCK_HOME/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com"
+OTHER_MOUNT="$MOCK_HOME/Library/CloudStorage/GoogleDrive-aaa-other"
+mkdir -p "$INTENDED_MOUNT/My Drive" "$OTHER_MOUNT/My Drive"
+# Keep --run tests inside the fixture even if the caller has a destination override.
+export GOOGLE_DRIVE_BACKUP_DEST=
 
 # ---- Test 1: --help exits 0 ----
 check_exit "--help exits 0" 0 \
@@ -156,6 +160,66 @@ else
 	cat "$TEST_DIR/t7.log"
 	FAIL=$((FAIL + 1))
 fi
+
+# ---- Test 8: choose the configured account, even when another sorts first ----
+check_output "destination uses configured account" \
+	"Destination: $INTENDED_MOUNT/My Drive/HomeBackup" "$TEST_DIR/t7.log"
+if ! grep -q "Destination: $OTHER_MOUNT" "$TEST_DIR/t7.log"; then
+	echo "PASS: other account is not selected"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: other account was selected"
+	FAIL=$((FAIL + 1))
+fi
+
+mkdir -p "$MOCK_HOME/Documents"
+printf 'backup probe\n' >"$MOCK_HOME/Documents/backup-probe.txt"
+check_exit "real backup uses configured account" 0 \
+	env PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
+	bash "$SCRIPT" --run --light --no-delete
+if [[ -f "$INTENDED_MOUNT/My Drive/HomeBackup$MOCK_HOME/Documents/backup-probe.txt" && ! -e "$OTHER_MOUNT/My Drive/HomeBackup" ]]; then
+	echo "PASS: real backup copies only to configured account"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: real backup was not confined to configured account"
+	FAIL=$((FAIL + 1))
+fi
+
+# ---- Test 9: a missing configured account must not create another destination ----
+mv "$INTENDED_MOUNT" "$TEST_DIR/offline_mount"
+check_exit "missing configured account fails" 1 \
+	env PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
+	bash "$SCRIPT" --run --full --no-delete
+check_output "missing account reports error" \
+	"Configured Google Drive account is unavailable" "$TEST_DIR/check.log"
+if [[ ! -e "$OTHER_MOUNT/My Drive/HomeBackup" && ! -e "$INTENDED_MOUNT" ]]; then
+	echo "PASS: missing account creates no backup destination"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: missing account created a backup destination"
+	FAIL=$((FAIL + 1))
+fi
+
+# ---- Test 10: a missing My Drive folder also fails before mkdir ----
+mv "$TEST_DIR/offline_mount" "$INTENDED_MOUNT"
+mv "$INTENDED_MOUNT/My Drive" "$TEST_DIR/offline_my_drive"
+check_exit "missing My Drive folder fails" 1 \
+	env PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
+	bash "$SCRIPT" --run --full --no-delete
+if [[ ! -e "$INTENDED_MOUNT/My Drive" ]]; then
+	echo "PASS: missing My Drive folder is not recreated"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: missing My Drive folder was recreated"
+	FAIL=$((FAIL + 1))
+fi
+
+# ---- Test 11: an explicit destination still works without the account mount ----
+check_exit "explicit destination overrides account mount" 0 \
+	env PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
+	bash "$SCRIPT" --dry-run --full --dest "$TEST_DIR/custom_destination"
+check_output "explicit destination is used" \
+	"Destination: $TEST_DIR/custom_destination" "$TEST_DIR/check.log"
 
 # ---- Summary ----
 echo ""
