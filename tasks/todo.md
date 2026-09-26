@@ -1,3 +1,14 @@
+# ABHI-2208 — Python 3.9 daily-QA compatibility (2026-09-24)
+
+T2 — Keep the media directory-listing module importable by the Python used in
+Linux automation while preserving its rendered HTML.
+
+- [x] Reproduce the `make test-quick` syntax failure on Python 3.9
+- [x] Run GitNexus impact analysis for `generate_directory_listing`
+- [x] Remove the pre-3.12-incompatible f-string expression
+- [x] Run focused and repository verification gates
+- [x] Run GitNexus change analysis and prepare a linked PR
+
 # Exclusive docs lineage 0hk (2026-09-18, this Stage 1 session)
 
 T5 — Stage 2/3 must not think heal-forward is still Trunk-queued, and must not
