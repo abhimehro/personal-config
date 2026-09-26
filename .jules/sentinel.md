@@ -669,7 +669,7 @@ parsed as flags. **Prevention:** Always use the `--` argument delimiter before
 positional arguments when using `pkill` with external variables (e.g.,
 `pkill -f -- "ctrld"`).
 
-## $(date +%Y-%m-%d) - AppleScript Option Injection Risk via osascript without -- delimiter
+## 2026-08-21 - AppleScript Option Injection Risk via osascript without -- delimiter
 
 **Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when
 passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the
@@ -687,7 +687,7 @@ arguments or stdin indicators to prevent them from being parsed as flags.
 indicator or any positional arguments when using `osascript` with external
 variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
 
-## $(date +%Y-%m-%d) - Option Injection in pkill
+## 2026-08-21 - Option Injection in pkill
 
 **Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts
 using `pkill` for process management did not include the `--` delimiter before
@@ -824,3 +824,9 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-08-21 - Hardening CWE-78 eval vulnerability in shopt restores
+
+**Vulnerability:** Shell script variables that captured glob states (e.g. `_nullglob_state=$(shopt -p nullglob || true)`) were being restored using `eval "$_nullglob_state"`. If these state variables could somehow be influenced or if another similar pattern was copied with attacker-controlled input, `eval` would execute arbitrary code (CWE-78 Command Injection). Previous fixes left unquoted variable expansions (like `$_nullglob_state`), which could still word-split and execute an attacker payload if it was ever tainted.
+**Learning:** `eval` (and unquoted variable expansion) must never be used to execute dynamic state variables like saved `shopt` options. While the options from `shopt -p` appear safe as they come from the shell environment itself, using `eval` establishes a dangerous pattern that can lead to command injection if reused elsewhere with tainted input.
+**Prevention:** To safely restore options originally gathered via `shopt -p`, perform safe string matching on the saved state and invoke the hardcoded command directly (e.g., `if [[ $_state == *" -s "* ]]; then shopt -s opt; elif [[ $_state == *" -u "* ]]; then shopt -u opt; fi`), completely eliminating the risk of arbitrary code execution.
