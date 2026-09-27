@@ -118,15 +118,14 @@ class IssueStatusTests(unittest.TestCase):
             ],
         )
 
-    def test_unavailable_or_unmatched_listing_creates_status_issue(self) -> None:
+    def test_unmatched_listing_creates_status_issue(self) -> None:
+        """A well-formed listing with no exact-title row is the only create path."""
         for listed in (
             self.result("[]"),
-            self.result(" \n"),
-            self.result("not-json"),
             self.result('[{"number": 7, "title": "PR pipeline status old"}]'),
-            self.result('[{"number": 7, "title": "PR pipeline status"}]', returncode=1),
+            self.result('[{"number": 8, "title": "pr pipeline status"}]'),
         ):
-            with self.subTest(stdout=listed.stdout, returncode=listed.returncode):
+            with self.subTest(stdout=listed.stdout):
                 self.command.reset_mock()
                 self.command.side_effect = [listed, self.result()]
                 issue_status.update_pinned_issue(self.status)
@@ -148,6 +147,25 @@ class IssueStatusTests(unittest.TestCase):
                     text=True,
                     timeout=60,
                 )
+
+    def test_failed_or_malformed_listing_raises_before_any_create(self) -> None:
+        """Untrusted listings fail closed rather than duplicate the pinned issue."""
+        for listed in (
+            self.result("[]", returncode=1, stderr="gh unavailable"),
+            self.result('[{"number": 7, "title": "PR pipeline status"}]', returncode=1),
+            self.result(" \n"),
+            self.result("not-json"),
+            self.result('{"number": 7, "title": "PR pipeline status"}'),
+            self.result('["not-a-row"]'),
+            self.result('[{"number": null, "title": "PR pipeline status"}]'),
+            self.result('[{"number": "17", "title": "PR pipeline status"}]'),
+        ):
+            with self.subTest(stdout=listed.stdout, returncode=listed.returncode):
+                self.command.reset_mock()
+                self.command.side_effect = [listed]
+                with self.assertRaises(OSError):
+                    issue_status.update_pinned_issue(self.status)
+                self.command.assert_called_once()
 
     def test_failed_create_and_edit_raise_bounded_error_without_retry(self) -> None:
         for rows, operation in (
@@ -202,22 +220,32 @@ class IssueStatusTests(unittest.TestCase):
         stage.assert_not_called()
 
     def test_status_cli_failure_reports_type_without_provider_details(self) -> None:
-        error_output, output = StringIO(), StringIO()
-        with (
-            mock.patch.object(
-                run,
-                "update_pinned_issue",
-                side_effect=OSError("provider-private-details"),
-            ),
-            mock.patch.object(run, "run_stage") as stage,
-            redirect_stderr(error_output),
-            redirect_stdout(output),
+        for error, expected in (
+            (OSError("provider-private-details"), "OSError"),
+            # subprocess.TimeoutExpired is a SubprocessError, not an OSError;
+            # a gh timeout must still exit 1 rather than traceback.
+            (subprocess.TimeoutExpired(["gh"], 60), "TimeoutExpired"),
         ):
-            code = run.main(["--status"])
-        self.assertEqual(code, 1)
-        self.assertEqual(error_output.getvalue(), "PR_LIFECYCLE_RUN_ERROR: OSError\n")
-        self.assertEqual(output.getvalue(), "")
-        stage.assert_not_called()
+            with self.subTest(error=type(error).__name__):
+                error_output, output = StringIO(), StringIO()
+                with (
+                    mock.patch.object(
+                        run,
+                        "update_pinned_issue",
+                        side_effect=error,
+                    ),
+                    mock.patch.object(run, "run_stage") as stage,
+                    redirect_stderr(error_output),
+                    redirect_stdout(output),
+                ):
+                    code = run.main(["--status"])
+                self.assertEqual(code, 1)
+                self.assertEqual(
+                    error_output.getvalue(),
+                    f"PR_LIFECYCLE_RUN_ERROR: {expected}\n",
+                )
+                self.assertEqual(output.getvalue(), "")
+                stage.assert_not_called()
 
 
 if __name__ == "__main__":

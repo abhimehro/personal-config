@@ -145,9 +145,7 @@ class TestReselectScanMechanics(unittest.TestCase):
 
     def test_missing_ledger_paths_still_get_a_live_lookup(self) -> None:
         """Empty changed_paths stays plausible; the live file list decides."""
-        item = make_queryable_item(
-            repository="owner/repo", pr=1, changed_paths=[]
-        )
+        item = make_queryable_item(repository="owner/repo", pr=1, changed_paths=[])
         runner = mock.Mock(
             side_effect=stub_gh_runner(
                 {

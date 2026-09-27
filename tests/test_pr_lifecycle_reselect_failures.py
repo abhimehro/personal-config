@@ -113,9 +113,11 @@ class TestReselectFailureStatuses(unittest.TestCase):
         self.assertEqual(result.status, "DEGRADED")
         self.assertEqual(result.queried_count, 3)
         self.assertEqual(result.failed_keys, (items[2]["key"],))
-        self.assertEqual(result.base_enriched_count, 2)
+        self.assertEqual(result.base_enriched_count, 1)
         self.assertFalse(result.timed_out)
-        self.assertEqual(runner.call_count, 5)
+        # The MERGED item skips its base enrichment; the OPEN item runs view
+        # plus base, and the FileNotFoundError stops the scan mid-key.
+        self.assertEqual(runner.call_count, 4)
         self.assertEqual(
             result.signals,
             health.ReselectSignals(
@@ -135,9 +137,11 @@ class TestReselectFailureStatuses(unittest.TestCase):
             RuntimeError("private-provider-message"),
         ):
             with self.subTest(error=type(error).__name__):
+                # The exception lands on the first item's base-sha call so it
+                # drops only the advisory enrichment, not the key itself.
                 runner = mock.Mock(
                     side_effect=[
-                        make_gh_proc({"state": "CLOSED"}),
+                        make_gh_proc({"state": "OPEN"}),
                         error,
                         make_gh_proc({"state": "OPEN", "title": "healthy"}),
                         make_gh_proc("d" * 40),
@@ -154,9 +158,7 @@ class TestReselectFailureStatuses(unittest.TestCase):
                 self.assertEqual(result.queried_count, 2)
                 self.assertEqual(result.base_enriched_count, 1)
                 self.assertEqual(runner.call_count, 4)
-                self.assertEqual(
-                    result.signals.closed_keys, frozenset({items[0]["key"]})
-                )
+                self.assertIsNone(result.signals.closed_keys)
                 self.assertEqual(
                     result.signals.titles_by_key, {items[1]["key"]: "healthy"}
                 )

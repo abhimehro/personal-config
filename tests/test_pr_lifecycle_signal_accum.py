@@ -88,7 +88,10 @@ class SignalAccumTests(unittest.TestCase):
             signals.live_mergeable_by_key,
             {"open": "CONFLICTING", "truncated": "CONFLICTING"},
         )
-        self.assertEqual(signals.unique_paths_by_key, {"open": ["src/demo.py"]})
+        # Truncated keys pin an explicit empty path signal (fail closed).
+        self.assertEqual(
+            signals.unique_paths_by_key, {"open": ["src/demo.py"], "truncated": []}
+        )
         self.assertEqual(acc.truncated, ["truncated"])
         self.assertEqual(payloads, original)
 
@@ -109,7 +112,9 @@ class SignalAccumTests(unittest.TestCase):
                     },
                 )
                 signals = acc.to_signals()
-                self.assertIsNone(signals.unique_paths_by_key)
+                # A malformed entry pins an explicit empty path signal so the
+                # sticky-path gate fails closed rather than trusting ledger paths.
+                self.assertEqual(signals.unique_paths_by_key, {"key": []})
                 self.assertEqual(signals.live_head_sha_by_key, {"key": "new-head"})
                 self.assertEqual(signals.live_base_sha_by_key, {"key": "new-base"})
                 self.assertEqual(signals.live_mergeable_by_key, {"key": "MERGEABLE"})
@@ -138,7 +143,7 @@ class SignalAccumTests(unittest.TestCase):
                     )
                     self.assertEqual(acc.truncated, [])
                 else:
-                    self.assertIsNone(acc.to_signals().unique_paths_by_key)
+                    self.assertEqual(acc.to_signals().unique_paths_by_key, {"key": []})
                     self.assertEqual(acc.truncated, ["key"])
 
     def test_non_string_identity_values_are_not_coerced_into_evidence(self) -> None:

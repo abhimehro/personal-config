@@ -449,9 +449,7 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
     if result.status == "DEGRADED":
         clauses.append("scan aborted, all unqueried keys use ledger values")
     if result.open_count > 0 and result.base_enriched_count == 0:
-        clauses.append(
-            f"live base anchors missing (0/{result.open_count} enriched)"
-        )
+        clauses.append(f"live base anchors missing (0/{result.open_count} enriched)")
     return clauses
 
 

@@ -259,8 +259,7 @@ def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | Non
         return None, _print_pointer_refusal()
     if not _has_runtime_ledger_shape(ledger):
         LOGGER.error(
-            "PR_LIFECYCLE_HEALTH: not a runtime ledger mapping "
-            "(expected items list)"
+            "PR_LIFECYCLE_HEALTH: not a runtime ledger mapping " "(expected items list)"
         )
         return None, 1
     try:
