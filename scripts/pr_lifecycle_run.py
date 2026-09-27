@@ -722,7 +722,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run a stage preflight or refresh the pinned status issue."""
+    """Run a stage preflight or refresh the pinned status issue.
+
+    Parse argv, defaulting to process arguments. --status takes precedence
+    over --stage: create or update the GitHub issue, print status JSON, and
+    return 0. Otherwise delegate planning and local output to run_stage and
+    return its exit code (0, 1, or 2).
+
+    Return 1 for a missing stage or caught OSError, TypeError, ValueError, or
+    KeyError during execution. Other exceptions propagate; argument parsing
+    raises SystemExit for help or invalid arguments.
+    """
     args = build_parser().parse_args(argv)
     try:
         if args.status:

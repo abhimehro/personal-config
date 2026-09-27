@@ -366,7 +366,14 @@ def _identity_allows_reselect(
     author_gate: bool = True,
     allowed_authors: Sequence[str] | None = None,
 ) -> bool:
-    """Accept nonterminal items with BOT authorship or an allowed title and author."""
+    """Check reselect authorship, excluding terminal and Stage 2-owned items.
+
+    Ledger BOT authors bypass title and login checks. Other items need an
+    allowed title prefix; author_gate=False bypasses only the login check.
+    Prefer a nonblank author_login over ledger author fields, rejecting missing
+    identity when the gate is enabled. Use allowed_authors when supplied;
+    otherwise load the allowlist, propagating errors not handled by the loader.
+    """
     if item.get("lifecycle_state") == "TERMINAL":
         return False
     # Already Stage 2 owned/queued: reselecting it would emit a duplicate
