@@ -15,7 +15,7 @@ import re
 import subprocess  # nosec B404 - only the fixed gh argv below, never shell=True
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -69,10 +69,10 @@ class SignalsResult:
     base_enriched_count: int = 0
     # Total budget elapsed mid-scan; unqueried candidates keep ledger values.
     timed_out: bool = False
-    # Plausible ledger candidates before the max_prs cap; when it exceeds
-    # queried_count the cap clipped coverage and unqueried keys use ledger
-    # values, which floors the status at PARTIAL so surplus records are not
-    # silently acted on from stale ledger state.
+    # Plausible ledger candidates before the max_prs cap. When the cap
+    # clips the set, the surplus lands in signals.unqueried_keys — the
+    # planner excludes those keys rather than acting on stale ledger state —
+    # and the status floors at PARTIAL so the coverage gap is visible.
     candidate_count: int = 0
     # Open-PR payloads folded; the base-enrichment floor and the degraded
     # note's enriched denominator count only these keys.
@@ -273,21 +273,28 @@ def _finish(
     acc: SignalsAccum,
     queried_count: int,
     candidate_count: int,
+    unqueried_keys: frozenset[str],
 ) -> SignalsResult:
     """Assemble the SignalsResult from accumulated state.
 
     Every signal collected so far is retained — including on DEGRADED — so a
     later query failure cannot resurrect an already-excluded ledger candidate;
-    ledger fallback applies only to failed or unqueried keys. View successes
-    with zero base enrichments on open PRs also floor at PARTIAL so a systemic
-    REST outage is visible instead of reading as a clean scan, and a
-    candidate_count that
-    exceeds the queried count floors at PARTIAL so a capped scan does not
-    silently act on surplus records from stale ledger state.
+    ledger fallback applies only to failed keys and keys the scan left
+    unqueried without being cap-clipped (budget/abort). unqueried_keys are
+    the plausible records the max_prs cap clipped before any query — they
+    carry no live evidence, so they ride the signals bundle and the planner
+    excludes them rather than authorizing stale-ledger reselects. View
+    successes with zero base enrichments on open PRs also floor at PARTIAL
+    so a systemic REST outage is visible instead of reading as a clean scan,
+    and a nonempty unqueried_keys floors at PARTIAL so a capped scan does
+    not silently drop surplus records.
     """
+    signals = acc.to_signals()
+    if unqueried_keys:
+        signals = replace(signals, unqueried_keys=unqueried_keys)
     return SignalsResult(
-        signals=acc.to_signals(),
-        status=_resolved_status(acc, candidate_count > queried_count),
+        signals=signals,
+        status=_resolved_status(acc, bool(unqueried_keys)),
         queried_count=queried_count,
         failed_keys=tuple(acc.failed),
         truncated_keys=tuple(acc.truncated),
@@ -355,8 +362,9 @@ def produce_reselect_signals(
     """Query GitHub for live signals on prefiltered ledger candidates.
 
     Use gh pr view unless runner is supplied; runner receives argv and the
-    per-call timeout in seconds. limits.max_prs is passed to
-    prefilter_ledger_items. Check limits.total_budget_s before each query,
+    per-call timeout in seconds. limits.max_prs bounds the candidate slice
+    taken from _ledger_survivors; the clipped surplus lands in
+    signals.unqueried_keys. Check limits.total_budget_s before each query,
     so an in-flight call can exceed the total budget. A nonpositive budget
     prevents queries.
 
@@ -399,7 +407,12 @@ def produce_reselect_signals(
             _scan_item(acc, run_cmd, item, limits.per_call_timeout_s)
             if acc.hard_status is not None:
                 break
-        return _finish(start_time, acc, queried_count, len(survivors))
+        unqueried = frozenset(
+            key
+            for item in survivors[limits.max_prs :]
+            if (key := str(item.get("key") or ""))
+        )
+        return _finish(start_time, acc, queried_count, len(survivors), unqueried)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.
         LOGGER.warning("reselect signals: producer DEGRADED (%s)", type(exc).__name__)

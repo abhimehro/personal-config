@@ -41,16 +41,22 @@ _MISSING_DEPS = [
     for module, package in (("yaml", "pyyaml"), ("jsonschema", "jsonschema"))
     if importlib.util.find_spec(module) is None
 ]
-if _MISSING_DEPS and not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
-    print(
+
+
+def _missing_deps_message() -> str:
+    """Render the install hint emitted when runtime deps are absent."""
+    return (
         "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies: "
         + ", ".join(_MISSING_DEPS)
         + f" (interpreter: {sys.executable}). Install requirements.txt, e.g. "
         "`python3 -m pip install -r requirements.txt`, or run via "
         "`uv run --with-requirements requirements.txt python3 "
-        "scripts/pr_lifecycle_run.py ...`",
-        file=sys.stderr,
+        "scripts/pr_lifecycle_run.py ...`"
     )
+
+
+if _MISSING_DEPS and not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
+    print(_missing_deps_message(), file=sys.stderr)
     raise SystemExit(2)
 
 # pylint: disable=wrong-import-position
@@ -117,6 +123,7 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "signals_candidates": plan.get("signals_candidates"),
         "signals_base_enriched": plan.get("signals_base_enriched"),
         "signals_timed_out": plan.get("signals_timed_out"),
+        "signals_truncated_keys": plan.get("signals_truncated_keys"),
         "action_count": len(plan.get("actions") or []),
         "calibration_enabled": False,
     }
@@ -159,6 +166,7 @@ def _attach_signal_fields(
     plan["signals_timed_out"] = result.timed_out
     plan["signals_failed_keys"] = list(result.failed_keys)
     plan["signals_truncated_keys"] = list(result.truncated_keys)
+    plan["signals_unqueried_keys"] = sorted(result.signals.unqueried_keys or ())
     plan["signals_elapsed_s"] = result.elapsed_s
     if signals_error:
         plan["signals_error"] = signals_error
@@ -273,6 +281,11 @@ def main(argv: list[str] | None = None) -> int:
     SystemExit for help or invalid arguments.
     """
     args = build_parser().parse_args(argv)
+    # The import-time dep gate keys off sys.argv; a caller passing argv whose
+    # request is not dep-free would otherwise hit unbound ledger imports.
+    if _MISSING_DEPS and not args.status:
+        print(_missing_deps_message(), file=sys.stderr)
+        return 2
     try:
         if args.status:
             status = {

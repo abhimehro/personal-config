@@ -217,6 +217,9 @@ class TestReselectScanMechanics(unittest.TestCase):
         self.assertEqual(
             result.signals.closed_keys, frozenset(item["key"] for item in items[1:])
         )
+        # The cap-clipped surplus rides the signals bundle so the planner
+        # excludes it instead of reselecting it from stale ledger state.
+        self.assertEqual(result.signals.unqueried_keys, frozenset({items[0]["key"]}))
         self.assertEqual(ledger, original)
 
     def test_default_runner_uses_fixed_argv_and_configured_timeout(self) -> None:

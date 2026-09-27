@@ -440,16 +440,22 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
             f"{result.queried_count} attempted queries, unqueried keys use "
             "ledger values"
         )
-    if result.candidate_count > result.queried_count:
+    unqueried = result.signals.unqueried_keys or frozenset()
+    if unqueried:
         clauses.append(
             "candidate cap clipped live coverage to "
             f"{result.queried_count} of {result.candidate_count} plausible "
-            "records, surplus keys use ledger values"
+            f"records; {len(unqueried)} surplus keys excluded from reselect"
         )
     if result.status == "DEGRADED":
         clauses.append("scan aborted, all unqueried keys use ledger values")
     if result.open_count > 0 and result.base_enriched_count == 0:
         clauses.append(f"live base anchors missing (0/{result.open_count} enriched)")
+    if result.truncated_keys:
+        clauses.append(
+            "file lists truncated or malformed for "
+            f"{len(result.truncated_keys)} keys; path gate fails closed"
+        )
     return clauses
 
 

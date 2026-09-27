@@ -166,6 +166,23 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertEqual([entry["key"] for entry in selected], [key])
 
+    def test_unqueried_keys_cannot_reselect_from_ledger_state(self) -> None:
+        """Cap-clipped keys carry no live evidence: they are excluded like
+        closed keys even when ledger fields alone would qualify them."""
+        item = make_item(
+            key="abhimehro/demo#8@abc",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING unique remaining",
+        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item))
+        selected = health.list_reselect_candidates(
+            make_ledger([item], []),
+            signals=health.ReselectSignals(
+                unqueried_keys=frozenset({"abhimehro/demo#8@abc"})
+            ),
+        )
+        self.assertEqual(selected, [])
+
     def test_palette_conflicting_soft_shell_sticky_is_reselect(self) -> None:
         """Verify conflicting Palette shell work qualifies for reselection."""
         item = make_item(

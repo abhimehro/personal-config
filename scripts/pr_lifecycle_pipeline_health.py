@@ -649,6 +649,10 @@ class ReselectSignals:
     author_login_by_key: dict[str, str] | None = None
     # Keys whose live PR state is authoritatively CLOSED/MERGED.
     closed_keys: frozenset[str] | None = None
+    # Plausible keys the live scan never reached because the max_prs cap
+    # clipped the candidate set. They carry zero live evidence, so they must
+    # not be reselected from ledger state; excluded like closed_keys.
+    unqueried_keys: frozenset[str] | None = None
 
 
 def signal_contains(keys: frozenset[str] | None, key: str) -> bool:
@@ -676,7 +680,8 @@ def list_reselect_candidates(
 ) -> list[dict[str, Any]]:
     """Return eligible keyed ledger items in their original order.
 
-    Exclude sources with usable queued work and keys signaled closed/merged.
+    Exclude sources with usable queued work, keys signaled closed/merged,
+    and cap-clipped unqueried keys (which carry no live evidence).
     Resolve signals by full key before repository#PR prefix, honoring explicit
     empty values. Return the original item dictionaries. A None limit is
     unbounded; a nonpositive limit still returns the first eligible item.
@@ -716,6 +721,8 @@ def _reselect_item_key(
     if not key or source_pr_prefix(key) in queued_prefixes:
         return ""
     if signal_contains(signals.closed_keys, key):
+        return ""
+    if signal_contains(signals.unqueried_keys, key):
         return ""
     if not _reselect_item_ok(item, key, signals, author_gate=author_gate):
         return ""

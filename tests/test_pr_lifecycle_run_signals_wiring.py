@@ -146,10 +146,14 @@ class ProducerWiringTests(unittest.TestCase):
 
     def test_candidate_cap_clip_partial_reports_coverage_note(self):
         """A clean scan clipped by max_prs -> PARTIAL naming the clipped
-        coverage so unqueried surplus keys are not invisible."""
+        coverage and the exclusion of unqueried surplus keys."""
         plan, note = self._degraded_plan(
             SignalsResult(
-                signals=real_health.ReselectSignals(),
+                signals=real_health.ReselectSignals(
+                    unqueried_keys=frozenset(
+                        {"owner/repo#4@a", "owner/repo#5@a", "owner/repo#6@a"}
+                    )
+                ),
                 status="PARTIAL",
                 queried_count=2,
                 candidate_count=5,
@@ -159,20 +163,57 @@ class ProducerWiringTests(unittest.TestCase):
         self.assertEqual(plan["signals_candidates"], 5)
         self.assertIn("candidate cap clipped", note)
         self.assertIn("2 of 5", note)
+        self.assertIn("3 surplus keys excluded", note)
         self.assertNotIn("failed keys", note)
+
+    def test_shortfall_without_cap_clip_does_not_claim_the_cap(self):
+        """Budget/abort shortfalls must not attribute to the cap: a run whose
+        queried count trails candidate_count for a non-cap reason names the
+        real cause only."""
+        _, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=2,
+                candidate_count=5,
+                timed_out=True,
+            )
+        )
+        self.assertIn("truncated by total budget", note)
+        self.assertNotIn("candidate cap", note)
+
+    def test_truncated_file_lists_surface_in_note(self):
+        """Truncated/malformed live file lists are diagnosable — the fail-
+        closed exclusion gets a named clause instead of looking like an
+        ordinary run with fewer candidates."""
+        _, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=3,
+                timed_out=True,
+                truncated_keys=("owner/repo#9@a", "owner/repo#10@a"),
+            )
+        )
+        self.assertIn("file lists truncated or malformed for 2 keys", note)
+        self.assertIn("path gate fails closed", note)
 
     def test_budget_truncation_partial_reports_truncated_scan_note(self):
         """Budget elapsed mid-scan -> PARTIAL with a truncation note, not the
-        failed-keys note (nothing failed; keys were simply never queried)."""
+        failed-keys note (nothing failed; keys were simply never queried).
+        candidate_count outrunning queried_count is not asserted as cap
+        clipping — the budget is the real cause."""
         plan, note = self._degraded_plan(
             SignalsResult(
                 signals=real_health.ReselectSignals(),
                 status="PARTIAL",
                 queried_count=1,
+                candidate_count=4,
                 elapsed_s=120.0,
                 timed_out=True,
             )
         )
+        self.assertNotIn("candidate cap", note)
         self.assertEqual(plan["signals_status"], "PARTIAL")
         self.assertTrue(plan["signals_timed_out"])
         self.assertIn("truncated by total budget", note)

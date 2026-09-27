@@ -344,6 +344,51 @@ class TestDependencyPreflight(unittest.TestCase):
                 ):
                     namespace = runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
                 self.assertIn("main", namespace)
+                if flag == "--status":
+                    # Exercise the dep-free branch for real: the ledger-side
+                    # imports were never bound, so main must not touch them.
+                    # runpy returns a copy of the module dict — patch the
+                    # function's own globals, not the returned namespace.
+                    update = mock.Mock()
+                    stdout = StringIO()
+                    with (
+                        mock.patch.dict(
+                            namespace["main"].__globals__,
+                            {"update_pinned_issue": update},
+                        ),
+                        redirect_stdout(stdout),
+                    ):
+                        self.assertEqual(namespace["main"](["--status"]), 0)
+                    update.assert_called_once()
+                    self.assertIn('"signals_status": "SKIPPED"', stdout.getvalue())
+                else:
+                    stdout = StringIO()
+                    with (
+                        redirect_stdout(stdout),
+                        self.assertRaises(SystemExit) as raised,
+                    ):
+                        namespace["main"]([flag])
+                    self.assertIn(raised.exception.code, (0, None))
+                    self.assertIn("usage:", stdout.getvalue())
+
+    def test_non_dep_free_argv_in_dep_free_namespace_exits_2(self) -> None:
+        """A non-dep-free main(argv) call in a dep-free import fails as
+        documented instead of hitting unbound ledger-side names."""
+        with (
+            mock.patch(
+                "importlib.util.find_spec",
+                side_effect=lambda name, package=None: None,
+            ),
+            mock.patch.object(sys, "argv", ["pr_lifecycle_run.py", "--status"]),
+        ):
+            namespace = runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            self.assertEqual(namespace["main"](["--stage", "1"]), 2)
+        self.assertIn(
+            "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies", stderr.getvalue()
+        )
+        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_missing_yaml_exits_2_with_hint(self) -> None:
         """Run isolated (-I) without site-packages (-S) as a bare interpreter."""
