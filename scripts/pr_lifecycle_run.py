@@ -263,7 +263,13 @@ def _stage1_plan(
     signals: health.ReselectSignals | None = None,
     signals_status: str | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    """Plan Stage 1 reconciliation and reselect enqueues plus a FEED_CHECK grade."""
+    """Plan Stage 1 reconciliation and reselect enqueues plus a FEED_CHECK grade.
+
+    Return permitted commands, action proposals, stop class, and reason.
+    Candidates with no enqueue proposals yield LOGIC_STOP/FEED_CHECK_FAIL.
+    PARTIAL or DEGRADED signals_status annotates the feed check without
+    independently changing its grade or stop class.
+    """
     # Signals supply live mergeability, titles, and unique paths for the
     # reselect planner; candidates yielding no enqueue actions grade
     # FEED_CHECK FAIL with LOGIC_STOP.
@@ -427,7 +433,14 @@ def build_stage_plan(
     signals: health.ReselectSignals | None = None,
     signals_status: str | None = None,
 ) -> dict[str, Any]:
-    """Build a stage plan with health, permitted commands, and planned actions."""
+    """Build a stage plan with health, permitted commands, and planned actions.
+
+    Signals inform the health reselect count and Stage 1/3 action selection.
+    signals_status is descriptive: PARTIAL/DEGRADED adds an informational
+    action and condition without changing stop classification or discarding
+    supplied signals. Invalid stages return LOGIC_STOP. Proposed commands and
+    actions are not executed.
+    """
     # Signals apply only to Stage 1 and Stage 3; an invalid stage yields LOGIC_STOP with no
     # permitted commands or actions.
     report = health.summarize(ledger, signals=signals)
@@ -584,7 +597,20 @@ def run_stage(
     write_status: bool,
     no_live_signals: bool = False,
 ) -> int:
-    """Fetch the ledger, emit and log a plan, and optionally write status."""
+    """Fetch the ledger, emit and log a plan, and optionally write local status.
+
+    Query live signals for Stages 1/3 unless no_live_signals is set. Producer
+    exceptions degrade to ledger fallbacks. dry_run only labels the plan:
+    reads and local writes still occur, and proposed actions are never applied.
+    Append run records under LOG_DIR and, with write_status, replace its
+    status.json mirror.
+
+    Return 0 for a plan without LOGIC_STOP, 2 for LOGIC_STOP, or 1 for caught
+    preflight/planning OSError, TypeError, ValueError, or KeyError failures.
+    OSError failures are classified TRANSIENT_RETRY; other caught failures
+    are LOGIC_STOP. Initial config loading/validation errors and local output
+    I/O errors propagate, as do exceptions outside those caught classes.
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     run_id = _run_id()

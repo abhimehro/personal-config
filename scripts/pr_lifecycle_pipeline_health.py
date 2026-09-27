@@ -274,7 +274,13 @@ def is_never_touch_key(key: object) -> bool:
 def _load_reselect_allowed_authors(
     config: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
-    """Load bot and maintainer logins from config, disk, then built-in defaults."""
+    """Load bot and maintainer logins from config, disk, then built-in defaults.
+
+    Use the first source with a nonempty list; do not merge sources or cache
+    disk reads. Disk OSError/ValueError failures, including invalid YAML, fall
+    back to built-ins. Other errors propagate, as do errors reading the
+    caller-supplied config.
+    """
     if config:
         bots = list(config.get("bot_authors") or [])
         maintainers = list(
@@ -326,7 +332,11 @@ def _normalize_title_for_prefix(title: str) -> str:
 
 
 def _title_is_reselect_bot(title: str | None) -> bool:
-    """Return whether a stripped title starts with an allowed reselect prefix."""
+    """Return whether a normalized title starts with an allowed reselect prefix.
+
+    Ignore case, whitespace, variation selectors, and Unicode format characters.
+    Missing or empty titles do not match.
+    """
     if not title:
         return False
     norm = _normalize_title_for_prefix(title)
@@ -499,10 +509,23 @@ def is_reselect_salvage_candidate(
 ) -> bool:
     """Return whether Stage 1 may plan a unique-source reselect for this item.
 
-    With ``author_gate`` on and ``allowed_authors`` None, every call reloads
-    the allowlist YAML via ``_load_reselect_allowed_authors``. Callers
-    evaluating many items should resolve it once and pass ``allowed_authors``
-    on each call, as ``list_reselect_candidates`` does.
+    Exclude terminal, Stage 2-owned, never-touch, and blocked-outcome items.
+    Ledger BOT authors bypass title and author checks. Other items need an
+    allowed title prefix and, with author_gate enabled, an allowed login.
+    Prefer a nonblank author_login over the ledger author fields; missing
+    identity fails the author gate. Disabling it still requires the title.
+
+    Known live mergeability overrides next_action; unknown or absent values
+    fall back to its first CONFLICTING/DIRTY marker. Only those two states
+    qualify. A supplied live_head_sha must match a nonempty ledger head_sha
+    after trimming and ignoring case. Explicit empty unique_remaining_paths
+    rejects the item; None uses changed_paths, then paths, as a proxy. At
+    least one non-journal path must survive sticky-path exclusions.
+
+    When a title-based author check needs an allowlist and allowed_authors is
+    None, load it via _load_reselect_allowed_authors; its uncaught errors
+    propagate. Callers evaluating many items can resolve it once and pass it
+    on each call, as list_reselect_candidates does.
     """
     # Accept a nonterminal BOT item or one with an allowed title prefix and
     # author when its supplied mergeability, or a state inferred from
@@ -587,7 +610,17 @@ def list_reselect_candidates(
     author_gate: bool = True,
     allowed_authors: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return eligible keyed ledger items in their original order."""
+    """Return eligible keyed ledger items in their original order.
+
+    Exclude sources with usable queued work and keys signaled closed/merged.
+    Resolve signals by full key before repository#PR prefix, honoring explicit
+    empty values. Return the original item dictionaries. A None limit is
+    unbounded; a nonpositive limit still returns the first eligible item.
+
+    Pass author_gate and allowed_authors to is_reselect_salvage_candidate.
+    With the gate enabled and no explicit allowlist, load it once per call;
+    uncaught allowlist-loading errors propagate.
+    """
     # Signal maps are looked up by full key then repository#PR prefix; a key
     # present with an empty value is honored (e.g. [] means "no unique paths").
     # None limit is unbounded; the limit is
@@ -622,7 +655,7 @@ def _reselect_item_key(
     author_gate: bool = True,
     allowed_authors: Sequence[str] | None = None,
 ) -> str:
-    """Return the item's key when it survives dedupe and the predicate."""
+    """Return the key if unqueued, not signaled closed, and eligible; else ""."""
     key = str(item.get("key") or "")
     if not key or source_pr_prefix(key) in queued_prefixes:
         return ""
@@ -764,6 +797,11 @@ def _health_report(
     *,
     signals: ReselectSignals | None = None,
 ) -> PipelineHealth:
+    """Combine preclassified stock counts with a signal-aware reselect count.
+
+    Starvation requires no usable work items and at least one salvage-eligible
+    item; owned-item and reselect counts do not affect that flag.
+    """
     usable_count = len(usable)
     owned_count = len(owned)
     eligible_count = len(eligible)
@@ -786,7 +824,13 @@ def summarize(
     *,
     signals: ReselectSignals | None = None,
 ) -> PipelineHealth:
-    """Build a starvation report from a runtime ledger dict."""
+    """Build a starvation report from a runtime ledger dict.
+
+    Use now (an aware datetime, defaulting to current UTC) for work-item
+    expiry in the starvation counts. Signals affect only the reselect count;
+    its queued-work exclusions use the current clock independently of now.
+    Schema validation is left to callers.
+    """
     clock = _clock(now)
     items = _ledger_items(ledger)
     usable = _usable_work_items(ledger, clock)

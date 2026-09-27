@@ -66,6 +66,11 @@ class SignalsResult:
 def _default_runner(
     cmd: list[str], timeout_s: float
 ) -> subprocess.CompletedProcess[str]:
+    """Run argv without a shell and capture stdout and stderr as text.
+
+    Pass the timeout in seconds to subprocess.run. Nonzero exits are returned;
+    OSError, TimeoutExpired, and output decoding errors propagate to the caller.
+    """
     # argv list, no shell; repository/pr are schema-constrained ledger fields.
     return subprocess.run(  # nosec B603
         cmd, check=False, capture_output=True, text=True, timeout=timeout_s
@@ -77,9 +82,14 @@ def prefilter_ledger_items(
     *,
     max_prs: int = 40,
 ) -> list[dict[str, Any]]:
-    """Return survivor items using cheap ledger checks only.
+    """Return ledger candidates for live queries, prioritizing Stage 1/3 owners.
 
-    Do not filter on author_type, next_action, or paths.
+    Exclude records missing key/repository/PR anchors, never-touch sources,
+    terminal or Stage 2-owned items, blocked outcomes, and sources with usable
+    queued work. Do not filter on author_type, next_action, or paths.
+    Preserve ledger order within each priority group and return the original
+    item dictionaries. Apply max_prs as a Python slice stop: zero returns no
+    items, and a negative value omits that many items from the end.
     """
     queued_prefixes = health.existing_wi_prefixes(ledger)
     raw_items = ledger.get("items")
@@ -132,7 +142,28 @@ def produce_reselect_signals(
     per_call_timeout_s: float = 20.0,
     total_budget_s: float = 120.0,
 ) -> SignalsResult:
-    """Produce live reselect signals for prefiltered ledger items."""
+    """Query GitHub for live signals on prefiltered ledger candidates.
+
+    Use gh pr view unless runner is supplied; runner receives argv and the
+    per-call timeout in seconds. max_prs is passed to prefilter_ledger_items.
+    Check total_budget_s before each query, so an in-flight call can exceed
+    the total budget. A nonpositive budget prevents queries.
+
+    Return signals keyed by full ledger keys, attempted-query count, failed
+    and truncated keys, and elapsed seconds. Closed/merged PRs populate only
+    closed_keys; unknown PR states emit no signals. File lists with at least
+    100 entries or malformed entries are marked truncated and omitted from
+    path signals; accepted lists omit .jules paths and may be empty. These
+    paths are changed-file proxies, not verified unique remaining source.
+
+    Return OK if the scan finishes without query failures, including when
+    there are no candidates. Query failures or budget exhaustion yield
+    PARTIAL with accumulated signals. Missing gh or producer-level exceptions
+    yield DEGRADED with empty signals; three consecutive query failures yield
+    DEGRADED retaining only collected closed keys and head SHAs. Query and
+    processing exceptions are caught for ledger fallback. Truncated files and
+    the candidate cap alone do not change status; SKIPPED is never returned.
+    """
     start_time = time.monotonic()
     run_cmd = runner or _default_runner
 
