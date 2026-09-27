@@ -14,6 +14,11 @@ class TestSpreadsheetSafety(unittest.TestCase):
             ("@SUM(A1)", "'@SUM(A1)"),
             ("\tcmd", "'\tcmd"),
             ("\rcmd", "'\rcmd"),
+            (" =1+1", "' =1+1"),
+            ("  +cmd", "'  +cmd"),
+            ("\n=1+1", "'\n=1+1"),
+            ("|cmd", "'|cmd"),
+            ("%cmd", "'%cmd"),
         )
         for raw, expected in cases:
             with self.subTest(raw=raw):
