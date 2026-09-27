@@ -34,10 +34,23 @@ PR_JSON_FIELDS = "state,mergeable,mergeStateStatus,title,headRefOid,author,files
 SHA_RE = re.compile(r"[0-9a-fA-F]{7,64}")
 
 __all__ = [
+    "SignalQueryLimits",
     "SignalsResult",
     "prefilter_ledger_items",
     "produce_reselect_signals",
 ]
+
+
+@dataclass(frozen=True)
+class SignalQueryLimits:
+    """Scan bounds for produce_reselect_signals."""
+
+    max_prs: int = 40
+    per_call_timeout_s: float = 20.0
+    total_budget_s: float = 120.0
+
+
+_DEFAULT_LIMITS = SignalQueryLimits()
 
 
 @dataclass(frozen=True)
@@ -282,16 +295,15 @@ def produce_reselect_signals(
     runner: (
         Callable[[list[str], float], subprocess.CompletedProcess[str]] | None
     ) = None,
-    max_prs: int = 40,
-    per_call_timeout_s: float = 20.0,
-    total_budget_s: float = 120.0,
+    limits: SignalQueryLimits = _DEFAULT_LIMITS,
 ) -> SignalsResult:
     """Query GitHub for live signals on prefiltered ledger candidates.
 
     Use gh pr view unless runner is supplied; runner receives argv and the
-    per-call timeout in seconds. max_prs is passed to prefilter_ledger_items.
-    Check total_budget_s before each query, so an in-flight call can exceed
-    the total budget. A nonpositive budget prevents queries.
+    per-call timeout in seconds. limits.max_prs is passed to
+    prefilter_ledger_items. Check limits.total_budget_s before each query,
+    so an in-flight call can exceed the total budget. A nonpositive budget
+    prevents queries.
 
     Return signals keyed by full ledger keys, attempted-query count, failed
     and truncated keys, and elapsed seconds. Closed/merged PRs populate only
@@ -314,15 +326,15 @@ def produce_reselect_signals(
     run_cmd = runner or _default_runner
 
     try:
-        candidates = prefilter_ledger_items(ledger, max_prs=max_prs)
+        candidates = prefilter_ledger_items(ledger, max_prs=limits.max_prs)
         acc = SignalsAccum()
         queried_count = 0
         for item in candidates:
-            if time.monotonic() - start_time >= total_budget_s:
+            if time.monotonic() - start_time >= limits.total_budget_s:
                 acc.timed_out = True
                 break
             queried_count += 1
-            _scan_item(acc, run_cmd, item, per_call_timeout_s)
+            _scan_item(acc, run_cmd, item, limits.per_call_timeout_s)
             if acc.hard_status is not None:
                 break
         return _finish(start_time, acc, queried_count)

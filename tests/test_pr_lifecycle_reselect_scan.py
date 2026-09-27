@@ -16,7 +16,10 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
-from pr_lifecycle_reselect_signals import produce_reselect_signals  # noqa: E402
+from pr_lifecycle_reselect_signals import (  # noqa: E402
+    SignalQueryLimits,
+    produce_reselect_signals,
+)
 
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_gh_proc,
@@ -85,8 +88,7 @@ class TestReselectScanMechanics(unittest.TestCase):
             result = produce_reselect_signals(
                 make_ledger([item], []),
                 runner=runner,
-                per_call_timeout_s=8.0,
-                total_budget_s=5.0,
+                limits=SignalQueryLimits(per_call_timeout_s=8.0, total_budget_s=5.0),
             )
         # view + base-sha calls share the configured per-call timeout.
         self.assertEqual(runner.call_count, 2)
@@ -149,7 +151,9 @@ class TestReselectScanMechanics(unittest.TestCase):
                     "pr_lifecycle_reselect_signals.time.monotonic", return_value=10.0
                 ):
                     result = produce_reselect_signals(
-                        ledger, runner=runner, total_budget_s=budget
+                        ledger,
+                        runner=runner,
+                        limits=SignalQueryLimits(total_budget_s=budget),
                     )
                 runner.assert_not_called()
                 self.assertEqual(result.status, "PARTIAL")
@@ -171,7 +175,9 @@ class TestReselectScanMechanics(unittest.TestCase):
         ledger = make_ledger(items, [])
         original = copy.deepcopy(ledger)
         runner = mock.Mock(side_effect=stub_gh_runner({"state": "CLOSED"}))
-        result = produce_reselect_signals(ledger, runner=runner, max_prs=2)
+        result = produce_reselect_signals(
+            ledger, runner=runner, limits=SignalQueryLimits(max_prs=2)
+        )
         self.assertEqual(_view_calls(runner), ["2", "3"])
         self.assertEqual(result.status, "OK")
         self.assertEqual(result.queried_count, 2)
@@ -196,7 +202,8 @@ class TestReselectScanMechanics(unittest.TestCase):
             side_effect=fake_run,
         ) as process:
             result = produce_reselect_signals(
-                make_ledger([item], []), per_call_timeout_s=2.5
+                make_ledger([item], []),
+                limits=SignalQueryLimits(per_call_timeout_s=2.5),
             )
         # The base SHA ships via `gh api` because `gh pr view --json` lacks
         # baseRefOid on gh older than v2.63.0.

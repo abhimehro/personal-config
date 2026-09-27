@@ -43,14 +43,18 @@ class SignalsAccum:
 
     def to_signals(self) -> health.ReselectSignals:
         return health.ReselectSignals(
-            live_mergeable_by_key=self.live_mergeable or None,
-            titles_by_key=self.titles or None,
-            unique_paths_by_key=self.unique_paths or None,
-            live_head_sha_by_key=self.live_head_sha or None,
-            live_base_sha_by_key=self.live_base_sha or None,
-            author_login_by_key=self.author_login or None,
-            closed_keys=frozenset(self.closed) or None,
+            live_mergeable_by_key=_non_empty(self.live_mergeable),
+            titles_by_key=_non_empty(self.titles),
+            unique_paths_by_key=_non_empty(self.unique_paths),
+            live_head_sha_by_key=_non_empty(self.live_head_sha),
+            live_base_sha_by_key=_non_empty(self.live_base_sha),
+            author_login_by_key=_non_empty(self.author_login),
+            closed_keys=_non_empty(frozenset(self.closed)),
         )
+
+
+def _non_empty(collection: Any) -> Any:
+    return collection or None
 
 
 def _record_mergeable(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> None:
@@ -83,11 +87,15 @@ def _record_identity_fields(
         _record_text(acc.author_login, key, author.get("login"))
 
 
+def _file_entry_ok(entry: Any) -> bool:
+    return isinstance(entry, dict) and bool(entry.get("path"))
+
+
 def _files_unreliable(files: list[Any]) -> bool:
     """Return True when the file list hit the page cap or has bad entries."""
-    if len(files) >= FILE_LIST_TRUNCATION:
-        return True
-    return any(not isinstance(f, dict) or not f.get("path") for f in files)
+    return len(files) >= FILE_LIST_TRUNCATION or not all(
+        _file_entry_ok(entry) for entry in files
+    )
 
 
 def _record_paths(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> None:

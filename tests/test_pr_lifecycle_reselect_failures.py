@@ -16,7 +16,10 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
-from pr_lifecycle_reselect_signals import produce_reselect_signals  # noqa: E402
+from pr_lifecycle_reselect_signals import (  # noqa: E402
+    SignalQueryLimits,
+    produce_reselect_signals,
+)
 
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_gh_proc,
@@ -302,7 +305,9 @@ class TestReselectFailureStatuses(unittest.TestCase):
             side_effect=[10.0, 10.0, 15.0, 15.0],
         ):
             result = produce_reselect_signals(
-                make_ledger(items, []), runner=runner, total_budget_s=5.0
+                make_ledger(items, []),
+                runner=runner,
+                limits=SignalQueryLimits(total_budget_s=5.0),
             )
         # The one completed item ran its view and base-sha calls.
         self.assertEqual(runner.call_count, 2)
@@ -337,7 +342,9 @@ class TestReselectFailureStatuses(unittest.TestCase):
             )
 
         # total_budget_s = 0.0 forces timeout before subsequent items
-        result = produce_reselect_signals(ledger, runner=runner, total_budget_s=0.0)
+        result = produce_reselect_signals(
+            ledger, runner=runner, limits=SignalQueryLimits(total_budget_s=0.0)
+        )
         self.assertEqual(result.status, "PARTIAL")
         # Zero budget: the check runs before the first query.
         self.assertEqual(call_count, 0)
@@ -373,7 +380,9 @@ class TestReselectFailureStatuses(unittest.TestCase):
 
         with mock.patch("time.monotonic", side_effect=lambda: mock_time[0]):
             # total_budget_s = 0.1 allows ~2 calls (0.05 each) before timeout
-            result = produce_reselect_signals(ledger, runner=runner, total_budget_s=0.1)
+            result = produce_reselect_signals(
+                ledger, runner=runner, limits=SignalQueryLimits(total_budget_s=0.1)
+            )
 
         self.assertEqual(result.status, "PARTIAL")
         # Should have queried 2 items before budget exhausted
