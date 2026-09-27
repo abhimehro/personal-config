@@ -49,6 +49,7 @@ class ProducerWiringTests(unittest.TestCase):
             failed_keys=(),
             truncated_keys=(),
             elapsed_s=0.5,
+            base_enriched_count=2,
         )
         mock_producer = mock.Mock(return_value=result_payload)
 
@@ -59,6 +60,10 @@ class ProducerWiringTests(unittest.TestCase):
         mock_producer.assert_called_with(ledger)
         self.assertEqual(plan["signals_status"], "OK")
         self.assertEqual(plan["signals_queried"], 2)
+        self.assertEqual(plan["signals_base_enriched"], 2)
+        status_doc = run.write_status_doc(plan, "rid")
+        self.assertEqual(status_doc["signals_base_enriched"], 2)
+        self.assertEqual(status_doc["signals_queried"], 2)
         feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check["signals_status"], "OK")
 
@@ -106,6 +111,31 @@ class ProducerWiringTests(unittest.TestCase):
         status = run.write_status_doc(plan, "run-deg")
         self.assertEqual(status.get("condition"), "SIGNALS_DEGRADED")
         self.assertEqual(status.get("signals_error"), "RuntimeError")
+
+    def test_base_enrichment_gap_partial_reports_missing_base_note(self):
+        """Zero base enrichments across clean views -> PARTIAL with a
+        missing-base note (not the failed-keys note, which would mislead)."""
+        result_payload = SignalsResult(
+            signals=real_health.ReselectSignals(),
+            status="PARTIAL",
+            queried_count=3,
+            failed_keys=(),
+            truncated_keys=(),
+            elapsed_s=0.5,
+            base_enriched_count=0,
+        )
+        ledger = {"ledger_revision": 1, "items": []}
+        code, plan = _exec_stage(
+            1, ledger, producer_override=mock.Mock(return_value=result_payload)
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(plan["signals_status"], "PARTIAL")
+        self.assertEqual(plan["signals_base_enriched"], 0)
+        degraded = next(
+            a for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
+        )
+        self.assertIn("live base anchors missing", degraded["note"])
+        self.assertNotIn("failed keys", degraded["note"])
 
     def test_no_live_signals_flag_skips_producer(self):
         """--no-live-signals skips live fetch and reports status SKIPPED."""

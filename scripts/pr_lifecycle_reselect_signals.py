@@ -342,13 +342,14 @@ def produce_reselect_signals(
     least one base enrichment succeeded (or nothing was scanned). View-call
     failures, budget exhaustion, or a full base-enrichment gap — every view
     succeeded yet no `gh api` base SHA came back, the observable signature of
-    a systemic REST outage — yield PARTIAL with accumulated signals. The base
-    enrichment itself stays advisory: failures never fail a key. Missing gh on a view call, producer-level
-    exceptions, or MAX_CONSECUTIVE_FAILURES straight view failures yield
-    DEGRADED; the consecutive-failure and missing-gh exits retain every
-    signal collected so far while producer-level exceptions emit none.
-    Truncated files and the candidate cap alone do not change status; SKIPPED
-    is never returned.
+    a systemic REST outage — yield PARTIAL with accumulated signals.
+    The base enrichment itself stays advisory: failures never fail a key.
+    Missing gh on a view call, producer-level exceptions, or
+    MAX_CONSECUTIVE_FAILURES straight view failures yield DEGRADED; the
+    consecutive-failure and missing-gh exits retain every signal collected
+    so far while producer-level exceptions emit none. Truncated files and
+    the candidate cap alone do not change status; SKIPPED is never
+    returned.
     """
     start_time = time.monotonic()
     run_cmd = runner or _default_runner

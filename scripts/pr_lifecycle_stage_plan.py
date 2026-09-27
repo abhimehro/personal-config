@@ -421,19 +421,31 @@ def _dispatch_stage_plan(
     return (*plan, {})
 
 
-def _annotate_degraded_signals(actions: list[dict[str, Any]], status: str) -> None:
+def _annotate_degraded_signals(
+    actions: list[dict[str, Any]], result: SignalsResult
+) -> None:
     """Append the informational SIGNALS_DEGRADED action once per plan."""
-    if status not in {"DEGRADED", "PARTIAL"}:
+    if result.status not in {"DEGRADED", "PARTIAL"}:
         return
     if any(
         isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
     ):
         return
+    scanned_ok = result.queried_count - len(result.failed_keys)
+    if scanned_ok > 0 and not result.failed_keys and result.base_enriched_count == 0:
+        note = (
+            f"live base anchors missing (0/{scanned_ok} enriched); "
+            "view signals otherwise complete"
+        )
+    else:
+        note = (
+            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
+        )
     actions.append(
         {
             "action": "SIGNALS_DEGRADED",
-            "status": status,
-            "note": "ledger fallbacks in effect; title-gated items invisible for failed keys",
+            "status": result.status,
+            "note": note,
         }
     )
 
@@ -461,7 +473,7 @@ def build_stage_plan(
     allowed, actions, stop_class, reason, extras = _dispatch_stage_plan(
         stage, ledger, config, result
     )
-    _annotate_degraded_signals(actions, signals_status)
+    _annotate_degraded_signals(actions, result)
 
     plan = {
         "stage": stage,

@@ -81,8 +81,12 @@ decisions:
   queries fail, the producer drops gracefully to ledger fallbacks.
 - **Signals Status (`signals_status`):**
   - `OK`: All candidate PRs queried successfully with live signals attached.
-  - `PARTIAL`: One or more individual PR queries timed out or failed; successful
-    queries attach live signals, while failed keys fall back to ledger values.
+  - `PARTIAL`: One or more individual PR queries timed out or failed, the total
+    budget elapsed, or every `gh api` base-SHA enrichment failed across
+    otherwise-successful queries (the observable signature of a systemic REST
+    outage). Successful queries attach live signals, while failed keys fall
+    back to ledger values; a full enrichment gap reports
+    `signals_base_enriched: 0`.
   - `DEGRADED`: Global failure (CLI missing, consecutive failures, or caught
     exception). The planner uses ledger fallbacks; after consecutive failures,
     already-collected closed keys and live head SHAs still exclude ineligible

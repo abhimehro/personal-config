@@ -100,6 +100,8 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "stop_class": plan.get("stop_class"),
         "pipeline_health": plan.get("pipeline_health"),
         "signals_status": plan.get("signals_status"),
+        "signals_queried": plan.get("signals_queried"),
+        "signals_base_enriched": plan.get("signals_base_enriched"),
         "action_count": len(plan.get("actions") or []),
         "calibration_enabled": False,
     }
