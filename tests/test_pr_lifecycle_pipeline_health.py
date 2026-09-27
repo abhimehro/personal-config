@@ -275,6 +275,245 @@ class TestPipelineHealthSummarize(unittest.TestCase):
 class TestPredicateHardening(unittest.TestCase):
     """Tests for #2298: title normalization, UNKNOWN mergeable, head-SHA, author gate."""
 
+    def test_all_authoritative_nonconflict_states_override_stale_ledger(self) -> None:
+        item = make_item(changed_paths=["src/demo.py"], next_action="CONFLICTING")
+        for state in (
+            "MERGEABLE",
+            "CLEAN",
+            "BLOCKED",
+            "BEHIND",
+            "UNSTABLE",
+            "HAS_HOOKS",
+        ):
+            with self.subTest(state=state):
+                self.assertFalse(
+                    health.is_reselect_salvage_candidate(
+                        item, live_mergeable=f"  {state.lower()}  ", allowed_authors=()
+                    )
+                )
+
+    def test_live_head_requires_nonempty_matching_ledger_head(self) -> None:
+        for ledger_head, live_head, expected in (
+            (None, "abc", False),
+            ("", "abc", False),
+            ("  ", "abc", False),
+            ("abc", "", False),
+            ("abc", "  ", False),
+            (" ABC ", " abc ", True),
+            (None, None, True),
+        ):
+            with self.subTest(ledger_head=ledger_head, live_head=live_head):
+                item = make_item(
+                    head_sha=ledger_head,
+                    changed_paths=["src/demo.py"],
+                    next_action="CONFLICTING",
+                )
+                self.assertEqual(
+                    health.is_reselect_salvage_candidate(
+                        item, live_head_sha=live_head, allowed_authors=()
+                    ),
+                    expected,
+                )
+
+    def test_ledger_author_formats_and_precedence(self) -> None:
+        cases = (
+            ({"author": {"login": " maintainer "}}, True),
+            ({"author": " maintainer "}, True),
+            ({"author_login": " maintainer "}, True),
+            ({"author": {"login": ""}, "author_login": "maintainer"}, True),
+            ({"author": {"login": 12}, "author_login": "maintainer"}, True),
+            ({"author": {"login": "outsider"}, "author_login": "maintainer"}, False),
+            ({"author": "outsider", "author_login": "maintainer"}, False),
+            ({"author_login": 12}, False),
+            ({}, False),
+        )
+        for author_fields, expected in cases:
+            with self.subTest(author_fields=author_fields):
+                item = make_item(
+                    author_type="HUMAN",
+                    changed_paths=["src/demo.py"],
+                    next_action="CONFLICTING",
+                    **author_fields,
+                )
+                self.assertEqual(
+                    health.is_reselect_salvage_candidate(
+                        item,
+                        title="chore(qa): add tests",
+                        allowed_authors=("maintainer",),
+                    ),
+                    expected,
+                )
+
+    def test_live_author_overrides_ledger_author_in_both_directions(self) -> None:
+        for ledger_author, live_author, expected in (
+            ("maintainer", "outsider", False),
+            ("outsider", "maintainer", True),
+        ):
+            with self.subTest(ledger_author=ledger_author, live_author=live_author):
+                item = make_item(
+                    author_type="HUMAN",
+                    author=ledger_author,
+                    changed_paths=["src/demo.py"],
+                    next_action="CONFLICTING",
+                )
+                signals = health.ReselectSignals(
+                    titles_by_key={item["key"]: "chore(qa): tests"},
+                    author_login_by_key={item["key"]: live_author},
+                )
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=signals,
+                        allowed_authors=("maintainer",),
+                    ),
+                    [item] if expected else [],
+                )
+
+    def test_full_key_head_and_author_signals_override_prefix_values(self) -> None:
+        item = make_item(
+            head_sha="abc",
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING",
+        )
+        key = item["key"]
+        prefix = "abhimehro/demo#1"
+        # Prefix-only signals apply to a current head; exact-head signals win.
+        cases = (
+            ({prefix: "abc"}, {prefix: "maintainer"}, True),
+            ({prefix: "abc", key: "different"}, {prefix: "maintainer"}, False),
+            ({prefix: "different", key: "abc"}, {prefix: "maintainer"}, True),
+            ({prefix: "abc"}, {prefix: "maintainer", key: "outsider"}, False),
+            ({prefix: "abc"}, {prefix: "outsider", key: "maintainer"}, True),
+        )
+        for heads, authors, expected in cases:
+            with self.subTest(heads=heads, authors=authors):
+                signals = health.ReselectSignals(
+                    titles_by_key={prefix: "chore(qa): tests"},
+                    live_head_sha_by_key=heads,
+                    author_login_by_key=authors,
+                )
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=signals,
+                        allowed_authors=("maintainer",),
+                    ),
+                    [item] if expected else [],
+                )
+
+    def test_closed_signal_does_not_exclude_another_head_or_pr(self) -> None:
+        item = make_item(changed_paths=["src/demo.py"], next_action="CONFLICTING")
+        for closed_key in (
+            "abhimehro/demo#1@old-head",
+            "abhimehro/demo#10",
+            "other/demo#1",
+        ):
+            with self.subTest(closed_key=closed_key):
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=health.ReselectSignals(
+                            closed_keys=frozenset({closed_key})
+                        ),
+                        allowed_authors=(),
+                    ),
+                    [item],
+                )
+
+    def test_author_allowlist_reloads_between_batches_but_not_between_items(
+        self,
+    ) -> None:
+        items = [
+            make_item(
+                key=f"demo#{n}@abc",
+                author_type="HUMAN",
+                author="maintainer",
+                changed_paths=["src/demo.py"],
+                next_action="CONFLICTING",
+            )
+            for n in (1, 2)
+        ]
+        signals = health.ReselectSignals(
+            titles_by_key={item["key"]: "chore(qa): tests" for item in items}
+        )
+        with mock.patch.object(
+            health,
+            "_load_reselect_allowed_authors",
+            side_effect=[("maintainer",), ("other",)],
+        ) as loader:
+            self.assertEqual(
+                health.list_reselect_candidates(
+                    make_ledger(items, []), signals=signals
+                ),
+                items,
+            )
+            loader.assert_called_once_with()
+            self.assertEqual(
+                health.list_reselect_candidates(
+                    make_ledger(items, []), signals=signals
+                ),
+                [],
+            )
+            self.assertEqual(loader.call_count, 2)
+
+    def test_explicit_empty_allowlist_does_not_fall_back_to_config(self) -> None:
+        item = make_item(
+            author_type="HUMAN",
+            author="abhimehro",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING",
+        )
+        signals = health.ReselectSignals(titles_by_key={item["key"]: "⚡ Bolt: test"})
+        with mock.patch.object(health, "_load_reselect_allowed_authors") as loader:
+            self.assertEqual(
+                health.list_reselect_candidates(
+                    make_ledger([item], []), signals=signals, allowed_authors=()
+                ),
+                [],
+            )
+            self.assertEqual(
+                health.list_reselect_candidates(
+                    make_ledger([item], []), signals=signals, author_gate=False
+                ),
+                [item],
+            )
+        loader.assert_not_called()
+
+    def test_explicit_config_authors_take_precedence_over_disk(self) -> None:
+        config = {
+            "bot_authors": ["custom[bot]"],
+            "identity_classification": {"maintainer_token_logins": ["maintainer"]},
+        }
+        with mock.patch.object(health, "load_yaml") as load:
+            self.assertEqual(
+                health._load_reselect_allowed_authors(config),
+                ("custom[bot]", "maintainer"),
+            )
+        load.assert_not_called()
+
+    def test_disk_allowlist_supports_bot_only_and_maintainer_only_config(self) -> None:
+        cases = (
+            (
+                {"bot_authors": ["custom[bot]"], "identity_classification": []},
+                ("custom[bot]",),
+            ),
+            (
+                {
+                    "identity_classification": {
+                        "maintainer_token_logins": ["maintainer"]
+                    }
+                },
+                ("maintainer",),
+            ),
+        )
+        for config, expected in cases:
+            with self.subTest(config=config), mock.patch.object(
+                health, "CONFIG_PATH"
+            ) as path, mock.patch.object(health, "load_yaml", return_value=config):
+                path.is_file.return_value = True
+                self.assertEqual(health._load_reselect_allowed_authors({}), expected)
+
     def test_title_prefix_normalization(self) -> None:
         """Titles with FE0F, no space, extra spaces, and lowercase all match; feat: Bolt and Bolted do not."""
         matching_titles = (

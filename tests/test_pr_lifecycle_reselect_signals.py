@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
@@ -44,6 +45,52 @@ def _make_completed_proc(
 
 
 class TestPrefilterLedgerItems(unittest.TestCase):
+    def test_malformed_items_and_empty_ledgers_do_not_query_github(self) -> None:
+        for items in (None, {}, "invalid", [None, "invalid", {}]):
+            with self.subTest(items=items):
+                runner = mock.Mock()
+                result = produce_reselect_signals(
+                    {"items": items, "stage2_work_items": []}, runner=runner
+                )
+                runner.assert_not_called()
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(result.queried_count, 0)
+                self.assertEqual(result.signals, health.ReselectSignals())
+
+    def test_priority_is_applied_before_cap_without_mutating_ledger(self) -> None:
+        items = [
+            make_item(
+                key=f"demo#{n}@sha", repository="demo", pr=n, current_owner="human"
+            )
+            for n in range(1, 42)
+        ]
+        priority = make_item(
+            key="demo#42@sha", repository="demo", pr=42, current_owner="stage1"
+        )
+        ledger = make_ledger([*items, priority], [])
+        original = copy.deepcopy(ledger)
+        self.assertEqual(prefilter_ledger_items(ledger), [priority, *items[:39]])
+        self.assertEqual(prefilter_ledger_items(ledger, max_prs=1), [priority])
+        self.assertEqual(prefilter_ledger_items(ledger, max_prs=0), [])
+        self.assertEqual(ledger, original)
+
+    def test_unusable_work_items_do_not_hide_candidates(self) -> None:
+        item = make_item(repository="abhimehro/demo", pr=1)
+        cases = (
+            {"expiry_utc": "2000-01-01T00:00:00Z"},
+            {"expiry_utc": "not-a-date"},
+            {"required_test_command": ""},
+        )
+        for overrides in cases:
+            with self.subTest(overrides=overrides):
+                work_item = make_work_item(
+                    source_item_key="abhimehro/demo#1@older-head",
+                    **{"expiry_utc": "2999-01-01T00:00:00Z", **overrides},
+                )
+                self.assertEqual(
+                    prefilter_ledger_items(make_ledger([item], [work_item])), [item]
+                )
+
     def test_prefilter_excludes_ineligible_records(self) -> None:
         """Prefilter excludes never-touch, TERMINAL, stage2-owned, NON_SALVAGE, and already-queued items."""
         valid_candidate = make_item(
@@ -144,6 +191,227 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
 
 class TestProduceReselectSignals(unittest.TestCase):
+    def test_default_runner_uses_fixed_argv_and_configured_timeout(self) -> None:
+        item = make_item(repository="abhimehro/demo", pr=1)
+        with mock.patch(
+            "pr_lifecycle_reselect_signals.subprocess.run",
+            return_value=_make_completed_proc({"state": "OPEN"}),
+        ) as process:
+            result = produce_reselect_signals(
+                make_ledger([item], []), per_call_timeout_s=2.5
+            )
+        process.assert_called_once_with(
+            [
+                "gh",
+                "pr",
+                "view",
+                "1",
+                "--repo",
+                "abhimehro/demo",
+                "--json",
+                "state,mergeable,mergeStateStatus,title,headRefOid,author,files",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2.5,
+        )
+        self.assertEqual(result.status, "OK")
+
+    def test_invalid_json_and_non_object_payloads_fail_only_the_affected_key(
+        self,
+    ) -> None:
+        items = [
+            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+        ]
+        for payload in ("{invalid", "", "[]", "null", "42", '"OPEN"', "true"):
+            with self.subTest(payload=payload):
+                runner = mock.Mock(
+                    side_effect=[
+                        _make_completed_proc(payload),
+                        _make_completed_proc({"state": "OPEN", "title": "healthy"}),
+                    ]
+                )
+                result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+                self.assertEqual(result.status, "PARTIAL")
+                self.assertEqual(result.queried_count, 2)
+                self.assertEqual(result.failed_keys, (items[0]["key"],))
+                self.assertEqual(
+                    result.signals,
+                    health.ReselectSignals(titles_by_key={items[1]["key"]: "healthy"}),
+                )
+
+    def test_timeout_is_sanitized_and_next_candidate_is_still_queried(self) -> None:
+        items = [
+            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+        ]
+        runner = mock.Mock(
+            side_effect=[
+                subprocess.TimeoutExpired(
+                    "private-command", 2, output="private-output"
+                ),
+                _make_completed_proc({"state": "OPEN", "mergeable": "CONFLICTING"}),
+            ]
+        )
+        with self.assertLogs("pr_lifecycle_reselect_signals", level="WARNING") as logs:
+            result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.failed_keys, (items[0]["key"],))
+        self.assertEqual(result.queried_count, 2)
+        self.assertEqual(
+            result.signals.live_mergeable_by_key, {items[1]["key"]: "CONFLICTING"}
+        )
+        self.assertIn("TimeoutExpired", "\n".join(logs.output))
+        self.assertNotIn("private-", "\n".join(logs.output))
+
+    def test_success_resets_consecutive_failure_threshold(self) -> None:
+        items = [
+            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in range(6)
+        ]
+        runner = mock.Mock(
+            side_effect=[
+                _make_completed_proc("error", returncode=1),
+                _make_completed_proc("invalid-json"),
+                _make_completed_proc({"state": "OPEN", "title": "first success"}),
+                _make_completed_proc("null"),
+                _make_completed_proc("error", returncode=1),
+                _make_completed_proc({"state": "CLOSED"}),
+            ]
+        )
+        result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.queried_count, 6)
+        self.assertEqual(
+            result.failed_keys, tuple(items[n]["key"] for n in (0, 1, 3, 4))
+        )
+        self.assertEqual(
+            result.signals.titles_by_key, {items[2]["key"]: "first success"}
+        )
+        self.assertEqual(result.signals.closed_keys, frozenset({items[5]["key"]}))
+
+    def test_budget_boundary_preserves_successful_signals(self) -> None:
+        items = [
+            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+        ]
+        runner = mock.Mock(
+            return_value=_make_completed_proc(
+                {"state": "OPEN", "title": "collected before budget expired"}
+            )
+        )
+        # Start, first query, second-query budget check, final elapsed time.
+        with mock.patch(
+            "pr_lifecycle_reselect_signals.time.monotonic",
+            side_effect=[10.0, 10.0, 15.0, 15.0],
+        ):
+            result = produce_reselect_signals(
+                make_ledger(items, []), runner=runner, total_budget_s=5.0
+            )
+        runner.assert_called_once()
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.queried_count, 1)
+        self.assertEqual(result.elapsed_s, 5.0)
+        self.assertEqual(result.failed_keys, ())
+        self.assertEqual(
+            result.signals.titles_by_key,
+            {items[0]["key"]: "collected before budget expired"},
+        )
+
+    def test_files_boundary_and_missing_files_preserve_ledger_fallback(self) -> None:
+        item = make_item(
+            repository="abhimehro/demo",
+            pr=1,
+            changed_paths=["src/ledger.py"],
+            next_action="CONFLICTING",
+        )
+        cases = (
+            ([], [], False, False),
+            (
+                [{"path": f"src/{n}.py"} for n in range(99)],
+                [f"src/{n}.py" for n in range(99)],
+                False,
+                True,
+            ),
+            ([{"path": f"src/{n}.py"} for n in range(100)], None, True, True),
+            ([{"path": "src/ok.py"}, {}], None, True, True),
+            ([{"path": ""}], None, True, True),
+            (None, None, False, True),
+            ({}, None, False, True),
+        )
+        for files, expected_paths, truncated, eligible in cases:
+            with self.subTest(files=files):
+                result = produce_reselect_signals(
+                    make_ledger([item], []),
+                    runner=mock.Mock(
+                        return_value=_make_completed_proc(
+                            {"state": "OPEN", "files": files}
+                        )
+                    ),
+                )
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(
+                    result.truncated_keys, (item["key"],) if truncated else ()
+                )
+                self.assertEqual(
+                    result.signals.unique_paths_by_key,
+                    None if expected_paths is None else {item["key"]: expected_paths},
+                )
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=result.signals,
+                        allowed_authors=(),
+                    ),
+                    [item] if eligible else [],
+                )
+
+    def test_unknown_pr_state_does_not_leak_other_payload_fields(self) -> None:
+        item = make_item(repository="abhimehro/demo", pr=1)
+        for state in (None, "", "DRAFT", "unknown"):
+            with self.subTest(state=state):
+                payload = {
+                    "state": state,
+                    "mergeable": "CONFLICTING",
+                    "title": "⚡ Bolt: stale",
+                    "headRefOid": "new-head",
+                    "author": {"login": "abhimehro"},
+                    "files": [{"path": "src/demo.py"}],
+                }
+                result = produce_reselect_signals(
+                    make_ledger([item], []),
+                    runner=mock.Mock(return_value=_make_completed_proc(payload)),
+                )
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(result.signals, health.ReselectSignals())
+
+    def test_merge_state_precedence_and_normalization(self) -> None:
+        item = make_item(repository="abhimehro/demo", pr=1)
+        cases = (
+            (" mergeable ", " dirty ", "DIRTY"),
+            (" conflicting ", " blocked ", "CONFLICTING"),
+            ("UNKNOWN", " behind ", "BEHIND"),
+            (None, "unstable", "UNSTABLE"),
+            ("UNKNOWN", "has_hooks", "HAS_HOOKS"),
+            ("UNKNOWN", "unrecognized", None),
+        )
+        for mergeable, merge_status, expected in cases:
+            with self.subTest(mergeable=mergeable, merge_status=merge_status):
+                result = produce_reselect_signals(
+                    make_ledger([item], []),
+                    runner=mock.Mock(
+                        return_value=_make_completed_proc(
+                            {
+                                "state": " open ",
+                                "mergeable": mergeable,
+                                "mergeStateStatus": merge_status,
+                            }
+                        )
+                    ),
+                )
+                self.assertEqual(
+                    result.signals.live_mergeable_by_key,
+                    {item["key"]: expected} if expected else None,
+                )
+
     def test_successful_mapping_of_all_fields(self) -> None:
         """Live PR response populates mergeable, title, headRefOid, author, and non-journal files."""
         item = make_item(
@@ -390,9 +658,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(result.status, "DEGRADED")
         self.assertEqual(result.queried_count, 5)
         self.assertEqual(runner.call_count, 5)
-        self.assertEqual(
-            result.failed_keys, tuple(item["key"] for item in items[2:5])
-        )
+        self.assertEqual(result.failed_keys, tuple(item["key"] for item in items[2:5]))
         self.assertEqual(result.truncated_keys, (items[1]["key"],))
         self.assertGreaterEqual(result.elapsed_s, 0)
         self.assertEqual(

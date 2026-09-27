@@ -15,7 +15,13 @@ from tempfile import TemporaryDirectory
 from typing import Any
 from unittest import mock
 
-from tests.pr_lifecycle_helpers import SCRIPTS, import_lifecycle_run, make_health_report
+from tests.pr_lifecycle_helpers import (
+    SCRIPTS,
+    import_lifecycle_run,
+    make_health_report,
+    make_item,
+    make_ledger,
+)
 
 run = import_lifecycle_run()
 
@@ -352,6 +358,164 @@ def _exec_stage(
 
 class ReselectSignalsTests(unittest.TestCase):
     """Integration and unit tests for live reselect signal wiring."""
+
+    def test_partial_signals_mix_live_exclusions_with_ledger_fallback(self):
+        for stage, action_name in (
+            (1, "ENQUEUE_STAGE2_WI"),
+            (3, "HANDOFF_MECHANICAL_TO_STAGE2"),
+        ):
+            with self.subTest(stage=stage):
+                items = [
+                    make_item(
+                        key=f"owner/repo#{n}@abc",
+                        repository="owner/repo",
+                        pr=n,
+                        head_sha="abc",
+                        base_sha="def",
+                        current_owner=f"stage{stage}",
+                        changed_paths=["src/ledger.py"],
+                        next_action="CONFLICTING",
+                    )
+                    for n in range(1, 6)
+                ]
+                result = SignalsResult(
+                    signals=real_health.ReselectSignals(
+                        live_mergeable_by_key={items[0]["key"]: "MERGEABLE"},
+                        closed_keys=frozenset({items[1]["key"]}),
+                        live_head_sha_by_key={items[2]["key"]: "new-head"},
+                        unique_paths_by_key={items[3]["key"]: ["src/live.py"]},
+                    ),
+                    status="PARTIAL",
+                    queried_count=5,
+                    failed_keys=(items[4]["key"],),
+                    truncated_keys=(items[0]["key"],),
+                    elapsed_s=1.25,
+                )
+                ledger = make_ledger(items, [])
+                producer = mock.Mock(return_value=result)
+                with mock.patch.object(run.health, "summarize", real_health.summarize):
+                    code, plan = _exec_stage(stage, ledger, producer_override=producer)
+                producer.assert_called_once_with(ledger)
+                self.assertEqual(code, 0)
+                self.assertIsNone(plan["stop_class"])
+                self.assertEqual(plan["signals_status"], "PARTIAL")
+                self.assertEqual(plan["signals_queried"], 5)
+                self.assertEqual(plan["signals_failed_keys"], [items[4]["key"]])
+                self.assertEqual(plan["signals_truncated_keys"], [items[0]["key"]])
+                self.assertEqual(plan["signals_elapsed_s"], 1.25)
+                self.assertEqual(plan["pipeline_health"]["reselect_candidate_count"], 2)
+                actions = [a for a in plan["actions"] if a["action"] == action_name]
+                self.assertEqual(
+                    [a["source_key"] for a in actions],
+                    [items[3]["key"], items[4]["key"]],
+                )
+                self.assertEqual(
+                    [a["allowed_paths"] for a in actions],
+                    [["src/live.py"], ["src/ledger.py"]],
+                )
+                degraded = [
+                    a for a in plan["actions"] if a["action"] == "SIGNALS_DEGRADED"
+                ]
+                self.assertEqual(len(degraded), 1)
+                self.assertEqual(degraded[0]["status"], "PARTIAL")
+                if stage == 1:
+                    feed = next(
+                        a for a in plan["actions"] if a["action"] == "FEED_CHECK"
+                    )
+                    self.assertEqual(feed["grade"], "PASS")
+                    self.assertEqual(feed["reselect_candidates"], 2)
+                    self.assertEqual(feed["enqueued"], 2)
+                    self.assertEqual(feed["condition"], "SIGNALS_DEGRADED")
+
+    def test_degraded_signals_do_not_mask_incomplete_work_item_stop(self):
+        item = make_item(
+            repository="owner/repo",
+            pr=1,
+            current_owner="stage1",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING",
+        )
+        # Missing base/head SHAs permit eligibility but prevent a complete WI.
+        for status in ("OK", "PARTIAL", "DEGRADED", "SKIPPED"):
+            with self.subTest(status=status):
+                code, plan = _exec_stage(
+                    1,
+                    make_ledger([item], []),
+                    producer_override=SignalsResult(status=status),
+                )
+                self.assertEqual(code, 2)
+                self.assertEqual(plan["stop_class"], "LOGIC_STOP")
+                self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
+                feed = next(a for a in plan["actions"] if a["action"] == "FEED_CHECK")
+                self.assertEqual(feed["grade"], "FAIL")
+                self.assertEqual(feed["signals_status"], status)
+                self.assertEqual(feed["reselect_candidates"], 1)
+                self.assertEqual(feed["enqueued"], 0)
+                self.assertEqual(
+                    feed["skipped_incomplete"],
+                    [
+                        {
+                            "source_key": item["key"],
+                            "reason": "INCOMPLETE_WI_FIELDS",
+                        }
+                    ],
+                )
+
+    def test_status_and_issue_body_expose_signal_condition_only_when_degraded(self):
+        for signal_status in ("OK", "PARTIAL", "DEGRADED", "SKIPPED"):
+            with self.subTest(signal_status=signal_status):
+                plan = run.build_stage_plan(
+                    3, make_ledger([], []), {}, signals_status=signal_status
+                )
+                status = run.write_status_doc(plan, "test-run")
+                body = run._issue_body(status)
+                self.assertEqual(status["signals_status"], signal_status)
+                self.assertIn(f"signals_status: {signal_status}\n", body)
+                if signal_status in {"PARTIAL", "DEGRADED"}:
+                    self.assertEqual(status["condition"], "SIGNALS_DEGRADED")
+                    self.assertIn("condition: SIGNALS_DEGRADED\n", body)
+                else:
+                    self.assertNotIn("condition", status)
+                    self.assertNotIn("SIGNALS_DEGRADED", body)
+                self.assertNotIn("signals_error", status)
+
+    def test_no_live_signals_preserves_stage3_ledger_handoff(self):
+        item = make_item(
+            repository="owner/repo",
+            pr=1,
+            head_sha="abc",
+            base_sha="def",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING",
+        )
+        producer = mock.Mock()
+        code, plan = _exec_stage(
+            3, make_ledger([item], []), producer_override=producer, no_live_signals=True
+        )
+        producer.assert_not_called()
+        self.assertEqual(code, 0)
+        self.assertEqual(plan["signals_status"], "SKIPPED")
+        self.assertEqual(plan["signals_queried"], 0)
+        self.assertEqual(plan["signals_failed_keys"], [])
+        self.assertEqual(plan["signals_truncated_keys"], [])
+        self.assertNotIn("condition", plan)
+        actions = [
+            a for a in plan["actions"] if a["action"] == "HANDOFF_MECHANICAL_TO_STAGE2"
+        ]
+        self.assertEqual([a["source_key"] for a in actions], [item["key"]])
+
+    def test_main_forwards_live_signals_flag_and_stage_exit_code(self):
+        for flags, expected in (([], False), (["--no-live-signals"], True)):
+            with (
+                self.subTest(flags=flags),
+                mock.patch.object(run, "run_stage", return_value=2) as run_stage,
+            ):
+                self.assertEqual(
+                    run.main(["--stage", "3", "--dry-run", "--write-status", *flags]), 2
+                )
+                run_stage.assert_called_once_with(
+                    3, dry_run=True, write_status=True, no_live_signals=expected
+                )
 
     def test_stage1_and_stage3_invoke_producer_and_pass_signals(self):
         """Stage 1 and Stage 3 invoke producer and attach signals to plan."""
