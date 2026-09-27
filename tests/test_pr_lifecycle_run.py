@@ -970,7 +970,7 @@ class TestDependencyPreflight(unittest.TestCase):
                 with (
                     mock.patch(
                         "importlib.util.find_spec",
-                        side_effect=lambda name, missing=missing: (
+                        side_effect=lambda name, package=None, missing=missing: (
                             None if name in missing else mock.sentinel.spec
                         ),
                     ),
