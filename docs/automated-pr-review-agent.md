@@ -86,9 +86,10 @@ decisions:
     emit no signals and skip the enrichment call entirely).
   - `PARTIAL`: One or more individual PR queries timed out or failed, the total
     budget elapsed, the `max_prs` cap clipped the plausible candidate set
-    (`signals_candidates > signals_queried` — surplus keys keep acting on
-    ledger values, surfaced rather than silent), or every `gh api` base-SHA
-    enrichment failed across queried open PRs (the observable signature of a
+    (surplus keys land in `signals_unqueried_keys` and are excluded from
+    reselect — no live evidence, so ledger paths cannot authorize them), or
+    every `gh api` base-SHA enrichment failed across queried open PRs (the
+    observable signature of a
     systemic REST outage). Successful queries attach live signals, while
     failed keys fall back to ledger values; a full enrichment gap reports
     `signals_base_enriched: 0`.
