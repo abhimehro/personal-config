@@ -440,6 +440,17 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
             f"{result.queried_count} attempted queries, unqueried keys use "
             "ledger values"
         )
+    if result.status == "DEGRADED":
+        clauses.append("scan aborted, all unqueried keys use ledger values")
+    if result.open_count > 0 and result.base_enriched_count == 0:
+        clauses.append(f"live base anchors missing (0/{result.open_count} enriched)")
+    clauses.extend(_coverage_clauses(result))
+    return clauses
+
+
+def _coverage_clauses(result: SignalsResult) -> list[str]:
+    """Name coverage gaps: cap-clipped surplus and fail-closed truncation."""
+    clauses: list[str] = []
     unqueried = result.signals.unqueried_keys or frozenset()
     if unqueried:
         clauses.append(
@@ -447,10 +458,6 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
             f"{result.queried_count} of {result.candidate_count} plausible "
             f"records; {len(unqueried)} surplus keys excluded from reselect"
         )
-    if result.status == "DEGRADED":
-        clauses.append("scan aborted, all unqueried keys use ledger values")
-    if result.open_count > 0 and result.base_enriched_count == 0:
-        clauses.append(f"live base anchors missing (0/{result.open_count} enriched)")
     if result.truncated_keys:
         clauses.append(
             "file lists truncated or malformed for "

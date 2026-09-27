@@ -44,6 +44,8 @@ class SignalsAccum:
     base_enriched: int = 0
     # Open payloads seen; the base-enrichment floor applies only to them.
     open_scanned: int = 0
+    # Plausible keys clipped by the max_prs cap before any live query.
+    unqueried: frozenset[str] = frozenset()
 
     def to_signals(self) -> health.ReselectSignals:
         """Build planner signals, using None for empty collections.
@@ -59,6 +61,7 @@ class SignalsAccum:
             live_base_sha_by_key=_non_empty(self.live_base_sha),
             author_login_by_key=_non_empty(self.author_login),
             closed_keys=_non_empty(frozenset(self.closed)),
+            unqueried_keys=_non_empty(self.unqueried),
         )
 
 

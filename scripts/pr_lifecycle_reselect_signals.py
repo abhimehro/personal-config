@@ -15,7 +15,7 @@ import re
 import subprocess  # nosec B404 - only the fixed gh argv below, never shell=True
 import sys
 import time
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
@@ -273,28 +273,25 @@ def _finish(
     acc: SignalsAccum,
     queried_count: int,
     candidate_count: int,
-    unqueried_keys: frozenset[str],
 ) -> SignalsResult:
     """Assemble the SignalsResult from accumulated state.
 
     Every signal collected so far is retained — including on DEGRADED — so a
     later query failure cannot resurrect an already-excluded ledger candidate;
     ledger fallback applies only to failed keys and keys the scan left
-    unqueried without being cap-clipped (budget/abort). unqueried_keys are
+    unqueried without being cap-clipped (budget/abort). acc.unqueried holds
     the plausible records the max_prs cap clipped before any query — they
     carry no live evidence, so they ride the signals bundle and the planner
     excludes them rather than authorizing stale-ledger reselects. View
     successes with zero base enrichments on open PRs also floor at PARTIAL
     so a systemic REST outage is visible instead of reading as a clean scan,
-    and a nonempty unqueried_keys floors at PARTIAL so a capped scan does
+    and a nonempty unqueried set floors at PARTIAL so a capped scan does
     not silently drop surplus records.
     """
     signals = acc.to_signals()
-    if unqueried_keys:
-        signals = replace(signals, unqueried_keys=unqueried_keys)
     return SignalsResult(
         signals=signals,
-        status=_resolved_status(acc, bool(unqueried_keys)),
+        status=_resolved_status(acc, bool(signals.unqueried_keys)),
         queried_count=queried_count,
         failed_keys=tuple(acc.failed),
         truncated_keys=tuple(acc.truncated),
@@ -407,12 +404,12 @@ def produce_reselect_signals(
             _scan_item(acc, run_cmd, item, limits.per_call_timeout_s)
             if acc.hard_status is not None:
                 break
-        unqueried = frozenset(
+        acc.unqueried = frozenset(
             key
             for item in survivors[limits.max_prs :]
             if (key := str(item.get("key") or ""))
         )
-        return _finish(start_time, acc, queried_count, len(survivors), unqueried)
+        return _finish(start_time, acc, queried_count, len(survivors))
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.
         LOGGER.warning("reselect signals: producer DEGRADED (%s)", type(exc).__name__)
