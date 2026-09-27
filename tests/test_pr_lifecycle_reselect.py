@@ -117,6 +117,7 @@ class ReselectCandidateTests(unittest.TestCase):
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
         )
+        gate = health.ReselectAuthorGate(allowed_authors=("abhimehro",))
         for prefix in (
             "⚡ Bolt",
             "🎨 Palette",
@@ -129,13 +130,16 @@ class ReselectCandidateTests(unittest.TestCase):
                     health.is_reselect_salvage_candidate(
                         item,
                         live=health.LivePrSignals(title=f"  {prefix} focused repair"),
+                        author_gate=gate,
                     )
                 )
         for title in (None, "Human repair", "Review ⚡ Bolt repair"):
             with self.subTest(title=title):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, live=health.LivePrSignals(title=title)
+                        item,
+                        live=health.LivePrSignals(title=title),
+                        author_gate=gate,
                     )
                 )
 

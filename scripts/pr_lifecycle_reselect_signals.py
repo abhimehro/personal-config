@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess  # nosec B404 - only the fixed gh argv below, never shell=True
 import sys
 import time
@@ -27,9 +28,10 @@ LOGGER = logging.getLogger(__name__)
 CLOSED_PR_STATES = frozenset({"CLOSED", "MERGED"})
 MAX_CONSECUTIVE_FAILURES = 3
 FILE_LIST_TRUNCATION = 100
-PR_JSON_FIELDS = (
-    "state,mergeable,mergeStateStatus,title,headRefOid,baseRefOid,author,files"
-)
+# baseRefOid is unavailable to `gh pr view --json` before gh v2.63.0, so the
+# base SHA is enriched via `gh api` like pr_lifecycle_reconcile.py does.
+PR_JSON_FIELDS = "state,mergeable,mergeStateStatus,title,headRefOid,author,files"
+SHA_RE = re.compile(r"[0-9a-fA-F]{7,64}")
 
 __all__ = [
     "SignalsResult",
@@ -65,7 +67,7 @@ def _default_runner(
 
 
 def _query_argv(item: dict[str, Any]) -> list[str]:
-    """Return the fixed gh argv for one ledger item's live PR lookup."""
+    """Return the fixed gh pr view argv for one ledger item's live lookup."""
     return [
         "gh",
         "pr",
@@ -75,6 +77,17 @@ def _query_argv(item: dict[str, Any]) -> list[str]:
         str(item.get("repository") or ""),
         "--json",
         PR_JSON_FIELDS,
+    ]
+
+
+def _base_sha_argv(item: dict[str, Any]) -> list[str]:
+    """Return the fixed gh api argv for one ledger item's live base SHA."""
+    return [
+        "gh",
+        "api",
+        f"repos/{item.get('repository')}/pulls/{item.get('pr')}",
+        "--jq",
+        ".base.sha",
     ]
 
 
@@ -135,7 +148,7 @@ def _prefilter_anchors(item: dict[str, Any]) -> bool:
 
 @dataclass
 class _SignalsAccum:
-    """Per-key signal maps collected while scanning candidates."""
+    """Per-key signal maps and outcome state collected while scanning."""
 
     live_mergeable: dict[str, str] = field(default_factory=dict)
     titles: dict[str, str] = field(default_factory=dict)
@@ -146,6 +159,9 @@ class _SignalsAccum:
     closed: set[str] = field(default_factory=set)
     failed: list[str] = field(default_factory=list)
     truncated: list[str] = field(default_factory=list)
+    consecutive_failures: int = 0
+    timed_out: bool = False
+    hard_status: str | None = None
 
     def to_signals(self) -> health.ReselectSignals:
         """Materialize collected maps into the immutable signal bundle."""
@@ -160,12 +176,44 @@ class _SignalsAccum:
         )
 
 
+def _fetch_base_sha(
+    run_cmd: Callable[[list[str], float], subprocess.CompletedProcess[str]],
+    item: dict[str, Any],
+    per_call_timeout_s: float,
+) -> str | None:
+    """Return the PR's live base SHA via gh api, or None on any failure.
+
+    FileNotFoundError (missing gh) propagates like the main query. A nonzero
+    exit or a non-SHA stdout (for example an error body) yields None so the
+    caller fails the key instead of trusting a stale ledger anchor.
+    """
+    try:
+        base = run_cmd(_base_sha_argv(item), per_call_timeout_s)
+    except FileNotFoundError:
+        raise
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        LOGGER.warning(
+            "reselect signals: base query failed for one PR (%s)",
+            type(exc).__name__,
+        )
+        return None
+    if base.returncode != 0:
+        return None
+    sha = str(base.stdout or "").strip()
+    return sha if SHA_RE.fullmatch(sha) else None
+
+
 def _fetch_payload(
     run_cmd: Callable[[list[str], float], subprocess.CompletedProcess[str]],
     item: dict[str, Any],
     per_call_timeout_s: float,
 ) -> dict[str, Any] | None:
-    """Run one live query; return the JSON payload or None on failure.
+    """Run the live queries for one item; return the payload or None.
+
+    `gh pr view` supplies the bulk fields, then a `gh api` REST call enriches
+    baseRefOid (unavailable on gh older than v2.63.0) matching the pattern in
+    pr_lifecycle_reconcile.py. Fail closed on either call: a partial payload
+    risks stamping a stale base anchor into a proposal.
 
     FileNotFoundError (missing gh) propagates for the caller's immediate
     DEGRADED exit. Every other failure — nonzero exit, invalid JSON,
@@ -189,7 +237,13 @@ def _fetch_payload(
         parsed = json.loads(completed.stdout)
     except json.JSONDecodeError:
         return None
-    return parsed if isinstance(parsed, dict) else None
+    if not isinstance(parsed, dict):
+        return None
+    base_sha = _fetch_base_sha(run_cmd, item, per_call_timeout_s)
+    if base_sha is None:
+        return None
+    parsed["baseRefOid"] = base_sha
+    return parsed
 
 
 def _record_mergeable(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
@@ -208,6 +262,12 @@ def _record_mergeable(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> 
         acc.live_mergeable[key] = merge_state_status
 
 
+def _record_text(target: dict[str, str], key: str, raw: Any) -> None:
+    """Store a stripped nonempty string field under key."""
+    if isinstance(raw, str) and raw.strip():
+        target[key] = raw.strip()
+
+
 def _record_identity_fields(
     acc: _SignalsAccum, key: str, payload: dict[str, Any]
 ) -> None:
@@ -215,17 +275,18 @@ def _record_identity_fields(
     title = payload.get("title")
     if isinstance(title, str) and title.strip():
         acc.titles[key] = title
-    head_ref_oid = payload.get("headRefOid")
-    if isinstance(head_ref_oid, str) and head_ref_oid.strip():
-        acc.live_head_sha[key] = head_ref_oid.strip()
-    base_ref_oid = payload.get("baseRefOid")
-    if isinstance(base_ref_oid, str) and base_ref_oid.strip():
-        acc.live_base_sha[key] = base_ref_oid.strip()
+    _record_text(acc.live_head_sha, key, payload.get("headRefOid"))
+    _record_text(acc.live_base_sha, key, payload.get("baseRefOid"))
     author = payload.get("author")
     if isinstance(author, dict):
-        login = str(author.get("login") or "").strip()
-        if login:
-            acc.author_login[key] = login
+        _record_text(acc.author_login, key, author.get("login"))
+
+
+def _files_unreliable(files: list[Any]) -> bool:
+    """Return True when the file list hit the page cap or has bad entries."""
+    if len(files) >= FILE_LIST_TRUNCATION:
+        return True
+    return any(not isinstance(f, dict) or not f.get("path") for f in files)
 
 
 def _record_paths(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
@@ -233,13 +294,10 @@ def _record_paths(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None
     files = payload.get("files")
     if not isinstance(files, list):
         return
-    if len(files) >= FILE_LIST_TRUNCATION or any(
-        not isinstance(f, dict) or not f.get("path") for f in files
-    ):
+    if _files_unreliable(files):
         acc.truncated.append(key)
         return
-    paths = [str(f["path"]) for f in files]
-    acc.unique_paths[key] = health.non_journal_paths(paths)
+    acc.unique_paths[key] = health.non_journal_paths([str(f["path"]) for f in files])
 
 
 def _fold_payload(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
@@ -261,9 +319,6 @@ def _finish(
     start_time: float,
     acc: _SignalsAccum,
     queried_count: int,
-    *,
-    status: str | None = None,
-    timed_out: bool = False,
 ) -> SignalsResult:
     """Assemble the SignalsResult from accumulated state.
 
@@ -271,7 +326,7 @@ def _finish(
     later query failure cannot resurrect an already-excluded ledger candidate;
     ledger fallback applies only to failed or unqueried keys.
     """
-    resolved = status or ("PARTIAL" if (timed_out or acc.failed) else "OK")
+    resolved = acc.hard_status or ("PARTIAL" if (acc.timed_out or acc.failed) else "OK")
     return SignalsResult(
         signals=acc.to_signals(),
         status=resolved,
@@ -280,6 +335,36 @@ def _finish(
         truncated_keys=tuple(acc.truncated),
         elapsed_s=round(time.monotonic() - start_time, 4),
     )
+
+
+def _scan_item(
+    acc: _SignalsAccum,
+    run_cmd: Callable[[list[str], float], subprocess.CompletedProcess[str]],
+    item: dict[str, Any],
+    per_call_timeout_s: float,
+) -> None:
+    """Query one candidate and record the outcome; set hard_status on stops.
+
+    A missing gh binary (FileNotFoundError) or MAX_CONSECUTIVE_FAILURES in a
+    row flips hard_status to DEGRADED, which the caller turns into an early
+    exit. All collected signals stay in acc either way.
+    """
+    key = str(item.get("key") or "")
+    try:
+        payload = _fetch_payload(run_cmd, item, per_call_timeout_s)
+    except FileNotFoundError:
+        # gh missing -> global degradation immediately.
+        acc.failed.append(key)
+        acc.hard_status = "DEGRADED"
+        return
+    if payload is None:
+        acc.failed.append(key)
+        acc.consecutive_failures += 1
+        if acc.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+            acc.hard_status = "DEGRADED"
+        return
+    acc.consecutive_failures = 0
+    _fold_payload(acc, key, payload)
 
 
 def produce_reselect_signals(
@@ -321,35 +406,15 @@ def produce_reselect_signals(
         candidates = prefilter_ledger_items(ledger, max_prs=max_prs)
         acc = _SignalsAccum()
         queried_count = 0
-        consecutive_failures = 0
-        timed_out = False
-
         for item in candidates:
             if time.monotonic() - start_time >= total_budget_s:
-                timed_out = True
+                acc.timed_out = True
                 break
-            key = str(item.get("key") or "")
             queried_count += 1
-            try:
-                payload = _fetch_payload(run_cmd, item, per_call_timeout_s)
-            except FileNotFoundError:
-                # gh missing -> global degradation immediately.
-                acc.failed.append(key)
-                return _finish(start_time, acc, queried_count, status="DEGRADED")
-            if payload is None:
-                acc.failed.append(key)
-                consecutive_failures += 1
-            else:
-                consecutive_failures = 0
-            if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-                # Retain collected exclusions so failed keys alone fall back
-                # to ledger values.
-                return _finish(start_time, acc, queried_count, status="DEGRADED")
-            if payload is not None:
-                _fold_payload(acc, key, payload)
-
-        return _finish(start_time, acc, queried_count, timed_out=timed_out)
-
+            _scan_item(acc, run_cmd, item, per_call_timeout_s)
+            if acc.hard_status is not None:
+                break
+        return _finish(start_time, acc, queried_count)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.
         LOGGER.warning("reselect signals: producer DEGRADED (%s)", type(exc).__name__)

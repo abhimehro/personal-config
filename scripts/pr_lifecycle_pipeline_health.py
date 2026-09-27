@@ -38,13 +38,12 @@ Hydro Sentinel / REVIEW_SECURITY / HUMAN sticky, real HOLD_PLATFORM) stays out.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import re
 import sys
 import unicodedata
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -54,10 +53,21 @@ if str(SCRIPT_DIR) not in sys.path:
 
 # pylint: disable=wrong-import-position
 from pr_identity import identities_match
-from pr_lifecycle_config import validate_config
-from pr_lifecycle_ledger import validate_runtime_records
-from pr_lifecycle_persist import strip_in_memory_item_fields
-from pr_lifecycle_schema import validate_schema
+from pr_lifecycle_health_runtime import (  # noqa: F401 -- re-exported
+    REQUIRED_WORK_ITEM_FIELDS,
+    STAGE2_OWNED_STATES,
+    _clock,
+    _ledger_items,
+    _ledger_revision,
+    _load_runtime_ledger,
+    _print_report,
+    _stage2_owned,
+    _usable_work_items,
+    existing_wi_prefixes,
+    parse_expiry_utc,
+    source_pr_prefix,
+    work_item_is_usable,
+)
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
 
@@ -101,9 +111,6 @@ NON_SALVAGE_OUTCOMES = frozenset(
 SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"})
 # Allowlist: unknown owners fail closed. Stage 2 already owns its queue.
 AUTOMATED_SALVAGE_OWNERS = frozenset({"stage1", "stage3"})
-STAGE2_OWNED_STATES = frozenset({"STAGE2_QUEUED", "STAGE2_ACTIVE"})
-NONEMPTY_WORK_ITEM_LISTS = ("allowed_paths", "acceptance_criteria", "provenance_urls")
-SCHEMA_PATH = ROOT / "schemas/pr-lifecycle-ledger.schema.json"
 PROHIBITED_NEXT_ACTION = re.compile(
     r"\bdo not (import|lint|wrap|pin|test)\b|" r"\bdon't (import|lint|wrap|pin|test)\b",
     re.IGNORECASE,
@@ -191,39 +198,6 @@ class PipelineHealth:
     reason: str
 
 
-def _load_required_work_item_fields() -> tuple[str, ...]:
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    required = schema["$defs"]["stage2WorkItem"]["required"]
-    return tuple(required)
-
-
-REQUIRED_WORK_ITEM_FIELDS = _load_required_work_item_fields()
-
-
-def _clock(now: datetime | None) -> datetime:
-    if now is not None:
-        return now
-    return datetime.now(timezone.utc)
-
-
-def _as_item_list(raw: Any) -> list[dict[str, Any]]:
-    if not isinstance(raw, list):
-        return []
-    items: list[dict[str, Any]] = []
-    for entry in raw:
-        if isinstance(entry, dict):
-            items.append(entry)
-    return items
-
-
-def _ledger_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
-    return _as_item_list(ledger.get("items"))
-
-
-def _raw_work_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
-    return _as_item_list(ledger.get("stage2_work_items"))
-
-
 def _has_blocking_sticky(item: dict[str, Any]) -> bool:
     sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
     return bool(sticky)
@@ -258,14 +232,6 @@ def is_salvage_eligible(item: dict[str, Any]) -> bool:
     if _has_blocking_sticky(item):
         return False
     return _next_action_is_mechanical(item.get("next_action") or "")
-
-
-def source_pr_prefix(key: object) -> str:
-    """Return repository#pr from a ledger key (strip @sha)."""
-    text_key = str(key or "")
-    if "@" in text_key:
-        text_key = text_key.split("@", 1)[0]
-    return text_key
 
 
 def is_never_touch_key(key: object) -> bool:
@@ -522,22 +488,21 @@ def _reselect_paths_ok(
 
 
 def _anchors_match(item: dict[str, Any], live: LivePrSignals) -> bool:
-    """Supplied live base/head SHAs must match nonempty ledger anchors.
+    """Require a supplied live head SHA to match the nonempty ledger anchor.
 
-    A live SHA that disagrees with its ledger anchor means the PR was retargeted
-    or pushed since intake; the item needs Stage 1 re-intake, not salvage with
-    obsolete anchors. Absent live values fall back to the ledger anchors.
+    A live head that disagrees with the ledger anchor means commits were
+    pushed since intake; the item needs Stage 1 re-intake, not salvage with
+    an obsolete anchor. An absent live head falls back to the ledger anchor.
+    The live base SHA is deliberately not gated: baseRefOid tracks the moving
+    tip of the base branch, so a routine merge advances it without
+    invalidating the item. Plan actions stamp the fetched live base instead
+    of shipping the stale ledger anchor; pr_lifecycle_reconcile.py owns
+    base-drift re-anchoring.
     """
-    for ledger_field, live_sha in (
-        ("head_sha", live.head_sha),
-        ("base_sha", live.base_sha),
-    ):
-        if live_sha is None:
-            continue
-        ledger_sha = str(item.get(ledger_field) or "").strip().lower()
-        if not ledger_sha or str(live_sha).strip().lower() != ledger_sha:
-            return False
-    return True
+    if live.head_sha is None:
+        return True
+    ledger_head = str(item.get("head_sha") or "").strip().lower()
+    return bool(ledger_head) and str(live.head_sha).strip().lower() == ledger_head
 
 
 def is_reselect_salvage_candidate(
@@ -557,8 +522,9 @@ def is_reselect_salvage_candidate(
 
     Known live mergeability overrides next_action; unknown or absent values
     fall back to its first CONFLICTING/DIRTY marker. Only those two states
-    qualify. Supplied live head/base SHAs must match nonempty ledger anchors
+    qualify. A supplied live head SHA must match the nonempty ledger anchor
     after trimming and ignoring case; drift means the item needs re-intake.
+    Live base movement is routine base-branch advance and never excludes.
     Explicit empty unique_paths rejects the item; None uses changed_paths,
     then paths, as a proxy. At least one non-journal path must survive
     sticky-path exclusions.
@@ -572,7 +538,7 @@ def is_reselect_salvage_candidate(
     # author when its supplied mergeability, or a state inferred from
     # next_action, is CONFLICTING or DIRTY. An explicit unique_paths
     # list must contain a non-journal path; when omitted, changed_paths (then
-    # paths) is a proxy. Live head/base SHAs must match ledger anchors.
+    # paths) is a proxy. A supplied live head must match the ledger anchor.
     # Never-touch sources and NON_SALVAGE outcomes are excluded first.
     # generated_output is the only unrestricted sensitive label; shell_execution
     # additionally requires a Palette action and wrap-allowlist paths. Separate
@@ -601,11 +567,10 @@ def is_reselect_plausible(
     passes never-touch, lifecycle, outcome, and path gates, and for non-BOT
     authors requires an allowlisted ledger author login. Ledger records carry
     no title field, so title-gated items stay plausible when their ledger
-    author is allowed; the selector evaluates the live title later.
+    author is allowed; the selector evaluates the live title later. The gate
+    is resolved once per call, as with the resolved gates call sites pass in.
     """
-    if not str(item.get("base_sha") or "").strip():
-        return False
-    if not str(item.get("head_sha") or "").strip():
+    if not _has_anchors(item):
         return False
     if _lifecycle_blocks_reselect(item):
         return False
@@ -614,10 +579,18 @@ def is_reselect_plausible(
     if (item.get("guardrail_outcome") or "") in NON_SALVAGE_OUTCOMES:
         return False
     if item.get("author_type") != "BOT":
-        gate = author_gate or ReselectAuthorGate()
+        gate = (author_gate or ReselectAuthorGate()).resolved()
         if not gate.allows(_extract_item_author_login(item)):
             return False
     return _reselect_paths_ok(item, None)
+
+
+def _has_anchors(item: dict[str, Any]) -> bool:
+    """Require nonempty base and head SHA anchors for a complete work item."""
+    return bool(
+        str(item.get("base_sha") or "").strip()
+        and str(item.get("head_sha") or "").strip()
+    )
 
 
 @dataclass(frozen=True)
@@ -692,25 +665,6 @@ def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
     if key in mapping:
         return mapping[key]
     return mapping.get(source_pr_prefix(key))
-
-
-def existing_wi_prefixes(
-    ledger: dict[str, Any], now: datetime | None = None
-) -> set[str]:
-    """Return repo#PR prefixes of sources with a usable Stage 2 WI."""
-    prefixes: set[str] = set()
-    for work_item in _raw_work_items(ledger):
-        if not work_item_is_usable(work_item, now):
-            continue
-        source = work_item.get("source_item_key") or work_item.get("source_key")
-        if source:
-            prefixes.add(source_pr_prefix(source))
-    return prefixes
-
-
-def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
-    """Delegate to the public helper for source PR prefixes of usable work items."""
-    return existing_wi_prefixes(ledger)
 
 
 def list_reselect_candidates(
@@ -796,70 +750,6 @@ def _reselect_item_ok(
     )
 
 
-def parse_expiry_utc(value: object) -> datetime | None:
-    """Parse a ledger expiry timestamp. Missing or malformed values are None."""
-    if not isinstance(value, str) or not value.endswith("Z"):
-        return None
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    return parsed.astimezone(timezone.utc)
-
-
-def _has_required_work_item_fields(item: dict[str, Any]) -> bool:
-    # SECURITY: empty required strings are not usable intake. Do not use
-    # truthiness on non-strings: attempt_count 0 and empty optional lists
-    # remain complete.
-    return all(
-        field in item
-        and item[field] is not None
-        and not (isinstance(item[field], str) and item[field] == "")
-        for field in REQUIRED_WORK_ITEM_FIELDS
-    )
-
-
-def _has_required_work_item_lists(item: dict[str, Any]) -> bool:
-    for field in NONEMPTY_WORK_ITEM_LISTS:
-        value = item.get(field)
-        if not isinstance(value, list) or len(value) < 1:
-            return False
-    return True
-
-
-def work_item_is_usable(item: dict[str, Any], now: datetime | None = None) -> bool:
-    """Return True for a complete work item whose expiry_utc is still in the future."""
-    clock = _clock(now)
-    if item.get("current_owner") != "stage2":
-        return False
-    if not _has_required_work_item_fields(item):
-        return False
-    if not _has_required_work_item_lists(item):
-        return False
-    expiry = parse_expiry_utc(item.get("expiry_utc"))
-    if expiry is None:
-        return False
-    return expiry > clock
-
-
-def _stage2_owned(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    owned: list[dict[str, Any]] = []
-    for item in items:
-        owner = item.get("current_owner") == "stage2"
-        queued = item.get("lifecycle_state") in STAGE2_OWNED_STATES
-        if owner or queued:
-            owned.append(item)
-    return owned
-
-
-def _usable_work_items(ledger: dict[str, Any], clock: datetime) -> list[dict[str, Any]]:
-    usable: list[dict[str, Any]] = []
-    for item in _raw_work_items(ledger):
-        if work_item_is_usable(item, clock):
-            usable.append(item)
-    return usable
-
-
 def _eligible_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     eligible: list[dict[str, Any]] = []
     for item in items:
@@ -873,10 +763,6 @@ def _eligible_keys(eligible: list[dict[str, Any]]) -> tuple[str, ...]:
     for item in eligible:
         keys.append(str(item.get("key") or ""))
     return tuple(keys)
-
-
-def _ledger_revision(ledger: dict[str, Any]) -> int:
-    return int(ledger.get("ledger_revision") or 0)
 
 
 def _is_starved(usable_count: int, eligible_count: int) -> bool:
@@ -924,101 +810,6 @@ def summarize(
         starvation=starvation,
         reason=_starvation_reason(starvation, usable_count, eligible_count),
     )
-
-
-def _print_report(report: PipelineHealth, as_json: bool) -> None:
-    """Print the health report as JSON or readable fields."""
-    payload = asdict(report)
-    if as_json:
-        print(json.dumps(payload, indent=2))
-        return
-    print(f"ledger_revision={report.ledger_revision}")
-    print(f"stage2_work_items={report.stage2_work_item_count}")
-    print(f"stage2_owned_items={report.stage2_owned_item_count}")
-    print(f"salvage_eligible={report.salvage_eligible_count}")
-    print(f"reselect_candidates={report.reselect_candidate_count}")
-    print(f"starvation={str(report.starvation).lower()}")
-    print(f"reason={report.reason}")
-    for key in report.salvage_eligible_keys:
-        print(f"eligible_key={key}")
-
-
-def _print_pointer_refusal() -> int:
-    print(
-        "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
-        "(fetch automation/pr-lifecycle-ledger)",
-        file=sys.stderr,
-    )
-    return 1
-
-
-def _print_health_error(exc: BaseException) -> int:
-    print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
-    return 1
-
-
-def _path_is_bootstrap_pointer(pointer: Path) -> bool:
-    return pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts
-
-
-def _is_bootstrap_pointer_document(data: dict[str, Any]) -> bool:
-    if data.get("pointer_kind") == "runtime_lifecycle_ledger":
-        return True
-    runtime = data.get("runtime_ledger")
-    return isinstance(runtime, dict) and "items" not in data
-
-
-def _is_list_or_missing(value: Any) -> bool:
-    return value is None or isinstance(value, list)
-
-
-def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
-    if "items" not in data:
-        return False
-    items_ok = _is_list_or_missing(data.get("items"))
-    work_ok = _is_list_or_missing(data.get("stage2_work_items"))
-    return items_ok and work_ok
-
-
-def _require_valid_runtime_ledger(ledger: dict[str, Any]) -> None:
-    strip_in_memory_item_fields(ledger)
-    validate_schema(ledger)
-    config = load_yaml(CONFIG_PATH)
-    validate_config(config)
-    validate_runtime_records(ledger, config)
-
-
-def _parse_ledger_file(path: Path) -> tuple[dict[str, Any] | None, int]:
-    try:
-        return load_yaml(path), 0
-    except (OSError, ValueError, KeyError) as exc:
-        return None, _print_health_error(exc)
-
-
-def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | None, int]:
-    if _is_bootstrap_pointer_document(ledger):
-        return None, _print_pointer_refusal()
-    if not _has_runtime_ledger_shape(ledger):
-        print(
-            "PR_LIFECYCLE_HEALTH: not a runtime ledger mapping "
-            "(expected items list)",
-            file=sys.stderr,
-        )
-        return None, 1
-    try:
-        _require_valid_runtime_ledger(ledger)
-    except (OSError, ValueError, KeyError) as exc:
-        return None, _print_health_error(exc)
-    return ledger, 0
-
-
-def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
-    if _path_is_bootstrap_pointer(path.resolve()):
-        return None, _print_pointer_refusal()
-    ledger, status = _parse_ledger_file(path)
-    if ledger is None:
-        return None, status
-    return _accept_runtime_ledger(ledger)
 
 
 def main() -> int:

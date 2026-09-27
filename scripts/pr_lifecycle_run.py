@@ -125,15 +125,22 @@ def _enqueue_source_paths(
 
 
 def _enqueue_action(
-    item: dict[str, Any], key: str, allowed_paths: list[str]
+    item: dict[str, Any],
+    key: str,
+    allowed_paths: list[str],
+    live_base_sha: str | None = None,
 ) -> dict[str, Any]:
-    """Build one ENQUEUE_STAGE2_WI plan action for a reselect candidate."""
+    """Build one ENQUEUE_STAGE2_WI plan action for a reselect candidate.
+
+    The base anchor prefers the fetched live base (baseRefOid tracks the
+    moving tip of the base branch) and falls back to the ledger anchor.
+    """
     return {
         "action": "ENQUEUE_STAGE2_WI",
         "source_key": key,
         "repository": item.get("repository"),
         "pr": item.get("pr"),
-        "base_sha": item.get("base_sha"),
+        "base_sha": live_base_sha or item.get("base_sha"),
         "head_sha": item.get("head_sha"),
         "allowed_paths": allowed_paths,
         "reason": RESELECT_ENQUEUE_REASON,
@@ -189,7 +196,14 @@ def plan_stage2_enqueues(
         if not _enqueue_fields_complete(item, key, allowed_paths):
             incomplete.append({"source_key": key, "reason": "INCOMPLETE_WI_FIELDS"})
             continue
-        enqueue_actions.append(_enqueue_action(item, key, allowed_paths))
+        enqueue_actions.append(
+            _enqueue_action(
+                item,
+                key,
+                allowed_paths,
+                live_base_sha=health.signal_value(signals.live_base_sha_by_key, key),
+            )
+        )
     return {
         "candidate_count": len(stage1_candidates),
         "enqueued_count": len(enqueue_actions),
@@ -207,14 +221,21 @@ def _stage3_handoff_eligible(item: dict[str, Any]) -> bool:
     )
 
 
-def _handoff_action(item: dict[str, Any], allowed_paths: list[str]) -> dict[str, Any]:
-    """Build one HANDOFF_MECHANICAL_TO_STAGE2 plan action with WI anchors."""
+def _handoff_action(
+    item: dict[str, Any],
+    allowed_paths: list[str],
+    live_base_sha: str | None = None,
+) -> dict[str, Any]:
+    """Build one HANDOFF_MECHANICAL_TO_STAGE2 plan action with WI anchors.
+
+    The base anchor prefers the fetched live base over the ledger anchor.
+    """
     return {
         "action": "HANDOFF_MECHANICAL_TO_STAGE2",
         "source_key": item.get("key"),
         "repository": item.get("repository"),
         "pr": item.get("pr"),
-        "base_sha": item.get("base_sha"),
+        "base_sha": live_base_sha or item.get("base_sha"),
         "head_sha": item.get("head_sha"),
         "allowed_paths": allowed_paths,
         "reason": RESELECT_ENQUEUE_REASON,
@@ -250,7 +271,13 @@ def plan_stage3_mechanical_handoffs(
         allowed_paths = _enqueue_source_paths(item, signals, key)
         if not _enqueue_fields_complete(item, key, allowed_paths):
             continue
-        actions.append(_handoff_action(item, allowed_paths))
+        actions.append(
+            _handoff_action(
+                item,
+                allowed_paths,
+                live_base_sha=health.signal_value(signals.live_base_sha_by_key, key),
+            )
+        )
         if len(actions) >= limit:
             break
     return actions
@@ -434,21 +461,19 @@ def _dispatch_stage_plan(
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
     """Route the stage to its planner; invalid stages fail closed."""
     if stage == 1:
-        allowed, actions, stop_class, reason = _stage1_plan(
+        plan = _stage1_plan(
             ledger,
             config,
             signals=signals_result.signals,
             signals_status=signals_result.status,
         )
-        return allowed, actions, stop_class, reason, {}
-    if stage == 2:
+    elif stage == 3:
+        plan = _stage3_plan(ledger, signals=signals_result.signals)
+    elif stage == 2:
         return _stage2_plan(ledger, config)
-    if stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan(
-            ledger, signals=signals_result.signals
-        )
-        return allowed, actions, stop_class, reason, {}
-    return [], [], "LOGIC_STOP", f"invalid stage {stage}", {}
+    else:
+        plan = ([], [], "LOGIC_STOP", f"invalid stage {stage}")
+    return (*plan, {})
 
 
 def _annotate_degraded_signals(actions: list[dict[str, Any]], status: str) -> None:
@@ -463,10 +488,7 @@ def _annotate_degraded_signals(actions: list[dict[str, Any]], status: str) -> No
         {
             "action": "SIGNALS_DEGRADED",
             "status": status,
-            "note": (
-                "ledger fallbacks in effect; "
-                "title-gated items invisible for failed keys"
-            ),
+            "note": "ledger fallbacks in effect; title-gated items invisible for failed keys",
         }
     )
 
@@ -656,13 +678,11 @@ def run_stage(
                         signals_error,
                     )
                     signals_result = SignalsResult(
-                        signals=health.ReselectSignals(),
-                        status="DEGRADED",
+                        signals=health.ReselectSignals(), status="DEGRADED"
                     )
             else:
                 signals_result = SignalsResult(
-                    signals=health.ReselectSignals(),
-                    status="SKIPPED",
+                    signals=health.ReselectSignals(), status="SKIPPED"
                 )
 
             plan = build_stage_plan(
@@ -715,14 +735,9 @@ def run_stage(
 def build_parser() -> argparse.ArgumentParser:
     """Build the lifecycle stage-runner command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stage", type=int, choices=[1, 2, 3], help="Stage")
     parser.add_argument(
-        "--stage", type=int, choices=[1, 2, 3], help="Stage to preflight"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=True,
-        help="Print plan only (default)",
+        "--dry-run", action="store_true", default=True, help="Print plan only"
     )
     parser.add_argument(
         "--write-status",
@@ -735,9 +750,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip live GitHub signals fetch; use ledger fallbacks (status SKIPPED)",
     )
     parser.add_argument(
-        "--status",
-        action="store_true",
-        help="Update the pinned PR pipeline status GitHub issue",
+        "--status", action="store_true", help="Update pinned status issue"
     )
     return parser
 

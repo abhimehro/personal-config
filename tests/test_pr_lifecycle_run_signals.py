@@ -20,6 +20,7 @@ from tests.pr_lifecycle_helpers import (
     import_lifecycle_run,
     make_item,
     make_ledger,
+    stub_gh_runner,
 )
 
 run = import_lifecycle_run()
@@ -150,7 +151,7 @@ def _dependabot_item(**overrides: Any) -> dict[str, Any]:
         "current_owner": "stage1",
         "lifecycle_state": "OPEN",
         "guardrail_outcome": "HOLD_CONTRACT",
-        "next_action": "conflict markers in src/foo.py",
+        "next_action": "HOLD_CONTRACT CONFLICTING conflict markers in src/foo.py",
         "changed_paths": ["src/foo.py"],
         "unique_remaining_paths": ["src/foo.py"],
     }
@@ -173,9 +174,18 @@ def _open_payload(mergeable: str, merge_state: str) -> dict[str, Any]:
 
 
 def _namespace_runner(payload: dict[str, Any]):
-    """Runner stub returning a namespace-shaped gh result for one payload."""
+    """Runner stub returning a namespace-shaped gh result for one payload.
+
+    `gh pr view` gets the payload; the `gh api` base-sha enrichment gets the
+    payload's embedded baseRefOid so live and ledger anchors stay in sync.
+    """
+    base_sha = payload.get("baseRefOid", "b" * 40)
 
     def runner(cmd, timeout=None):
+        if "api" in cmd:
+            return types.SimpleNamespace(
+                returncode=0, stdout=f"{base_sha}\n", stderr=""
+            )
         return types.SimpleNamespace(
             returncode=0, stdout=json.dumps(payload), stderr=""
         )
@@ -186,6 +196,53 @@ def _namespace_runner(payload: dict[str, Any]):
 class ReselectSignalsTests(unittest.TestCase):
     """Integration and unit tests for live reselect signal wiring."""
 
+    def _assert_consecutive_failures_keep_exclusions(
+        self, stage: int, action_name: str
+    ) -> None:
+        items = _stage_candidate_items(stage, 6)
+        payloads = [
+            {"state": "MERGED"},
+            {"state": "OPEN", "headRefOid": "new-head"},
+        ]
+        runner = mock.Mock(
+            side_effect=stub_gh_runner(
+                results=[
+                    *[_live_payload(payload) for payload in payloads],
+                    *[
+                        subprocess.CompletedProcess(
+                            args=["gh"], returncode=1, stdout=""
+                        )
+                        for _ in range(3)
+                    ],
+                ]
+            )
+        )
+        ledger = make_ledger(items, [])
+        result = produce_reselect_signals(ledger, runner=runner)
+        with mock.patch.object(run.health, "summarize", real_health.summarize):
+            code, plan = _exec_stage(stage, ledger, producer_override=result)
+        # Successful items run a view plus a base-sha call; failures stop early.
+        self.assertEqual(runner.call_count, 7)
+        self.assertEqual(code, 0)
+        self.assertIsNone(plan["stop_class"])
+        self.assertEqual(plan["signals_status"], "DEGRADED")
+        self.assertEqual(plan["signals_queried"], 5)
+        self.assertEqual(
+            plan["signals_failed_keys"], [item["key"] for item in items[2:5]]
+        )
+        self.assertEqual(plan["pipeline_health"]["reselect_candidate_count"], 4)
+        actions = [a for a in plan["actions"] if a["action"] == action_name]
+        # Failed and unqueried keys use the ledger; known exclusions survive.
+        self.assertEqual(
+            [a["source_key"] for a in actions],
+            [item["key"] for item in items[2:]],
+        )
+        self.assertEqual([a["allowed_paths"] for a in actions], [["src/ledger.py"]] * 4)
+        if stage == 1:
+            feed = next(a for a in plan["actions"] if a["action"] == "FEED_CHECK")
+            self.assertEqual(feed["grade"], "PASS")
+            self.assertEqual(feed["enqueued"], 4)
+
     def test_consecutive_query_failures_preserve_exclusions_in_stage_plans(
         self,
     ) -> None:
@@ -194,50 +251,7 @@ class ReselectSignalsTests(unittest.TestCase):
             (3, "HANDOFF_MECHANICAL_TO_STAGE2"),
         ):
             with self.subTest(stage=stage):
-                items = _stage_candidate_items(stage, 6)
-                payloads = [
-                    {"state": "MERGED"},
-                    {"state": "OPEN", "headRefOid": "new-head"},
-                ]
-                runner = mock.Mock(
-                    side_effect=[
-                        *[_live_payload(payload) for payload in payloads],
-                        *[
-                            subprocess.CompletedProcess(
-                                args=["gh"], returncode=1, stdout=""
-                            )
-                            for _ in range(3)
-                        ],
-                    ]
-                )
-                ledger = make_ledger(items, [])
-                result = produce_reselect_signals(ledger, runner=runner)
-                with mock.patch.object(run.health, "summarize", real_health.summarize):
-                    code, plan = _exec_stage(stage, ledger, producer_override=result)
-                self.assertEqual(runner.call_count, 5)
-                self.assertEqual(code, 0)
-                self.assertIsNone(plan["stop_class"])
-                self.assertEqual(plan["signals_status"], "DEGRADED")
-                self.assertEqual(plan["signals_queried"], 5)
-                self.assertEqual(
-                    plan["signals_failed_keys"], [item["key"] for item in items[2:5]]
-                )
-                self.assertEqual(plan["pipeline_health"]["reselect_candidate_count"], 4)
-                actions = [a for a in plan["actions"] if a["action"] == action_name]
-                # Failed and unqueried keys use the ledger; known exclusions survive.
-                self.assertEqual(
-                    [a["source_key"] for a in actions],
-                    [item["key"] for item in items[2:]],
-                )
-                self.assertEqual(
-                    [a["allowed_paths"] for a in actions], [["src/ledger.py"]] * 4
-                )
-                if stage == 1:
-                    feed = next(
-                        a for a in plan["actions"] if a["action"] == "FEED_CHECK"
-                    )
-                    self.assertEqual(feed["grade"], "PASS")
-                    self.assertEqual(feed["enqueued"], 4)
+                self._assert_consecutive_failures_keep_exclusions(stage, action_name)
 
     def test_live_file_completeness_controls_stage1_and_stage3_actions(self) -> None:
         cases = (
@@ -263,15 +277,8 @@ class ReselectSignalsTests(unittest.TestCase):
                         next_action="CONFLICTING",
                         changed_paths=["src/ledger.py"],
                     )
-                    runner = mock.Mock(
-                        return_value=subprocess.CompletedProcess(
-                            args=["gh", "pr", "view"],
-                            returncode=0,
-                            stdout=json.dumps(
-                                {"state": "OPEN", "headRefOid": "abc", "files": files}
-                            ),
-                            stderr="",
-                        )
+                    runner = stub_gh_runner(
+                        {"state": "OPEN", "headRefOid": "abc", "files": files}
                     )
                     result = produce_reselect_signals(
                         make_ledger([item], []), runner=runner
@@ -297,6 +304,8 @@ class ReselectSignalsTests(unittest.TestCase):
                     if actions:
                         self.assertEqual(actions[0]["source_key"], item["key"])
                         self.assertEqual(actions[0]["allowed_paths"], expected_paths)
+                        # The proposal carries the fetched live base anchor.
+                        self.assertEqual(actions[0]["base_sha"], "b" * 40)
                     if stage == 1:
                         feed = next(
                             a for a in plan["actions"] if a["action"] == "FEED_CHECK"

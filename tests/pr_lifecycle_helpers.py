@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import subprocess
 import sys
 import types
@@ -77,6 +78,62 @@ def make_ledger(
         "items": items,
         "stage2_work_items": work_items,
     }
+
+
+def make_queryable_item(**overrides: Any) -> dict[str, Any]:
+    """Ledger item plausible enough to consume a live query slot."""
+    defaults: dict[str, Any] = {
+        "base_sha": "b" * 40,
+        "head_sha": "c" * 40,
+        "changed_paths": ["src/demo.py"],
+    }
+    defaults.update(overrides)
+    return make_item(**defaults)
+
+
+def make_gh_proc(
+    stdout_dict: dict[str, Any] | str, returncode: int = 0
+) -> subprocess.CompletedProcess[str]:
+    """Build a gh result from a JSON object or raw stdout and an exit code."""
+    stdout = (
+        json.dumps(stdout_dict) if isinstance(stdout_dict, dict) else str(stdout_dict)
+    )
+    return subprocess.CompletedProcess(
+        args=["gh", "pr", "view"],
+        returncode=returncode,
+        stdout=stdout,
+        stderr="",
+    )
+
+
+def stub_gh_runner(
+    payload: dict[str, Any] | str | None = None,
+    *,
+    results: list[Any] | None = None,
+    base_sha: str = "b" * 40,
+) -> Any:
+    """Runner answering `gh pr view` with payload/queued results and `gh api`.
+
+    The producer issues two calls per candidate: `gh pr view --json` for the
+    bulk fields and `gh api ... --jq .base.sha` for the live base anchor. This
+    stub returns base_sha for every api call and consumes `results` (or repeats
+    `payload`) for pr-view calls, raising AssertionError once results run out.
+    """
+    queue = list(results or [])
+
+    def runner(cmd: list[str], timeout: float | None = None) -> Any:
+        if "api" in cmd:
+            return make_gh_proc(base_sha)
+        if queue:
+            result = queue.pop(0)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+        if payload is None:
+            raise AssertionError("gh pr view called more times than expected")
+        return make_gh_proc(payload)
+
+    return runner
 
 
 def schema_valid_starved_ledger() -> dict[str, Any]:
