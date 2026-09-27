@@ -172,6 +172,37 @@ class ProducerWiringTests(unittest.TestCase):
         self.assertIn("failed keys", note)
         self.assertIn("truncated by total budget", note)
 
+    def test_hard_degraded_after_success_names_abort_and_base_gap(self):
+        """MAX_CONSECUTIVE_FAILURES after one clean view -> the note carries
+        the failure, the abort, and the base gap with a 0/1 denominator."""
+        plan, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="DEGRADED",
+                queried_count=4,
+                failed_keys=("a#1", "b#2", "c#3"),
+                base_enriched_count=0,
+            )
+        )
+        self.assertEqual(plan["signals_status"], "DEGRADED")
+        self.assertIn("failed keys", note)
+        self.assertIn("scan aborted", note)
+        self.assertIn("0/1 enriched", note)
+        self.assertNotIn("otherwise complete", note)
+
+    def test_degraded_without_queries_suppresses_base_clause(self):
+        """Producer-exception shape (nothing queried) -> abort named, the
+        0/0 base clause suppressed."""
+        _, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="DEGRADED",
+                queried_count=0,
+            )
+        )
+        self.assertIn("scan aborted", note)
+        self.assertNotIn("enriched", note)
+
     def test_no_live_signals_flag_skips_producer(self):
         """--no-live-signals skips live fetch and reports status SKIPPED."""
         mock_producer = mock.Mock()

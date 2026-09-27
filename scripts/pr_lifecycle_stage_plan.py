@@ -431,21 +431,21 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
     clauses: list[str] = []
     if result.failed_keys:
         clauses.append(
-            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
+            "ledger fallbacks in effect, title-gated items invisible " "for failed keys"
         )
     if result.timed_out:
         clauses.append(
             "live scan truncated by total budget after "
-            f"{result.queried_count} attempted queries; unqueried keys use "
+            f"{result.queried_count} attempted queries, unqueried keys use "
             "ledger values"
         )
     if result.status == "DEGRADED":
-        clauses.append("scan aborted; all unqueried keys use ledger values")
+        clauses.append("scan aborted, all unqueried keys use ledger values")
     scanned_ok = result.queried_count - len(result.failed_keys)
     if scanned_ok > 0 and result.base_enriched_count == 0:
         clauses.append(
-            f"live base anchors missing (0/{scanned_ok} enriched); "
-            "view signals otherwise complete"
+            f"live base anchors missing (0/{scanned_ok} enriched), no view "
+            f"failures among the {scanned_ok} queried"
         )
     return clauses
 
@@ -454,7 +454,7 @@ def _degraded_note(result: SignalsResult) -> str:
     """Join the degradation causes into the SIGNALS_DEGRADED action note."""
     clauses = _cause_clauses(result)
     if clauses:
-        return "; ".join(clauses)
+        return " | ".join(clauses)
     return "live signal query unavailable; all keys use ledger values"
 
 
