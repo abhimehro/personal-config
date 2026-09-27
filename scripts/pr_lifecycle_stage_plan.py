@@ -431,7 +431,7 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
     clauses: list[str] = []
     if result.failed_keys:
         clauses.append(
-            "ledger fallbacks in effect, title-gated items invisible " "for failed keys"
+            "ledger fallbacks in effect, title-gated items invisible for failed keys"
         )
     if result.timed_out:
         clauses.append(
@@ -445,7 +445,7 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
     if scanned_ok > 0 and result.base_enriched_count == 0:
         clauses.append(
             f"live base anchors missing (0/{scanned_ok} enriched), no view "
-            f"failures among the {scanned_ok} queried"
+            f"failures among those {scanned_ok} queries"
         )
     return clauses
 
@@ -459,7 +459,7 @@ def _degraded_note(result: SignalsResult) -> str:
 
 
 def _has_degraded_action(actions: list[dict[str, Any]]) -> bool:
-    """True when the plan already carries a SIGNALS_DEGRADED action."""
+    """Whether the plan already carries a SIGNALS_DEGRADED action."""
     return any(
         isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
     )

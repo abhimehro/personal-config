@@ -171,6 +171,7 @@ class ProducerWiringTests(unittest.TestCase):
         )
         self.assertIn("failed keys", note)
         self.assertIn("truncated by total budget", note)
+        self.assertIn("keys | live scan", note)
 
     def test_hard_degraded_after_success_names_abort_and_base_gap(self):
         """MAX_CONSECUTIVE_FAILURES after one clean view -> the note carries
