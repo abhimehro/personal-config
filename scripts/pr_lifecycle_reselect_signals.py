@@ -277,7 +277,9 @@ def _resolved_status(acc: SignalsAccum, scanned_ok: int) -> str:
     """Resolve the scan status; a full base-enrichment gap floors at PARTIAL."""
     if acc.hard_status is not None:
         return acc.hard_status
-    if acc.timed_out or acc.failed or (scanned_ok > 0 and acc.base_enriched == 0):
+    if acc.timed_out or acc.failed:
+        return "PARTIAL"
+    if scanned_ok > 0 and acc.base_enriched == 0:
         return "PARTIAL"
     return "OK"
 
