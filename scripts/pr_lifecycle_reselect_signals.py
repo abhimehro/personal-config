@@ -226,18 +226,26 @@ def _fetch_payload(
             type(exc).__name__,
         )
         return None, False
-    if completed.returncode != 0:
-        return None, False
-    try:
-        parsed = json.loads(completed.stdout)
-    except json.JSONDecodeError:
-        return None, False
-    if not isinstance(parsed, dict):
+    parsed = _parse_payload(completed)
+    if parsed is None:
         return None, False
     base_sha = _fetch_base_sha(run_cmd, item, per_call_timeout_s)
     if base_sha is not None:
         parsed["baseRefOid"] = base_sha
     return parsed, base_sha is not None
+
+
+def _parse_payload(
+    completed: subprocess.CompletedProcess[str],
+) -> dict[str, Any] | None:
+    """Decode a `gh pr view` stdout payload; unusable output yields None."""
+    if completed.returncode != 0:
+        return None
+    try:
+        parsed = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def _finish(
@@ -254,19 +262,24 @@ def _finish(
     is visible instead of reading as a clean scan.
     """
     scanned_ok = queried_count - len(acc.failed)
-    base_gap = scanned_ok > 0 and acc.base_enriched == 0
-    resolved = acc.hard_status or (
-        "PARTIAL" if (acc.timed_out or acc.failed or base_gap) else "OK"
-    )
     return SignalsResult(
         signals=acc.to_signals(),
-        status=resolved,
+        status=_resolved_status(acc, scanned_ok),
         queried_count=queried_count,
         failed_keys=tuple(acc.failed),
         truncated_keys=tuple(acc.truncated),
         elapsed_s=round(time.monotonic() - start_time, 4),
         base_enriched_count=acc.base_enriched,
     )
+
+
+def _resolved_status(acc: SignalsAccum, scanned_ok: int) -> str:
+    """Resolve the scan status; a full base-enrichment gap floors at PARTIAL."""
+    if acc.hard_status is not None:
+        return acc.hard_status
+    if acc.timed_out or acc.failed or (scanned_ok > 0 and acc.base_enriched == 0):
+        return "PARTIAL"
+    return "OK"
 
 
 def _scan_item(
