@@ -65,8 +65,10 @@ def _list_pinned_rows() -> list[Any]:
             f'in:title "{PINNED_ISSUE_TITLE}"',
             "--json",
             "number,title",
+            "--state",
+            "all",
             "--limit",
-            "20",
+            "1000",
         ]
     )
     if listed.returncode != 0:
