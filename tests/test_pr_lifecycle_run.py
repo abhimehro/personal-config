@@ -359,6 +359,71 @@ def _exec_stage(
 class ReselectSignalsTests(unittest.TestCase):
     """Integration and unit tests for live reselect signal wiring."""
 
+    def test_live_file_completeness_controls_stage1_and_stage3_actions(self) -> None:
+        cases = (
+            ([], [], False),
+            ([{"path": ".jules/bolt.md"}], [], False),
+            ([{"path": "src/live.py"}], ["src/live.py"], False),
+            ([{"path": f"src/{n}.py"} for n in range(100)], ["src/ledger.py"], True),
+        )
+        for stage, action_name in (
+            (1, "ENQUEUE_STAGE2_WI"),
+            (3, "HANDOFF_MECHANICAL_TO_STAGE2"),
+        ):
+            for files, expected_paths, truncated in cases:
+                with self.subTest(
+                    stage=stage, file_count=len(files), truncated=truncated
+                ):
+                    item = make_item(
+                        repository="abhimehro/demo",
+                        pr=1,
+                        head_sha="abc",
+                        base_sha="def",
+                        current_owner=f"stage{stage}",
+                        next_action="CONFLICTING",
+                        changed_paths=["src/ledger.py"],
+                    )
+                    runner = mock.Mock(
+                        return_value=subprocess.CompletedProcess(
+                            args=["gh", "pr", "view"],
+                            returncode=0,
+                            stdout=json.dumps(
+                                {"state": "OPEN", "headRefOid": "abc", "files": files}
+                            ),
+                            stderr="",
+                        )
+                    )
+                    result = produce_reselect_signals(
+                        make_ledger([item], []), runner=runner
+                    )
+                    with mock.patch.object(
+                        run.health, "summarize", real_health.summarize
+                    ):
+                        code, plan = _exec_stage(
+                            stage, make_ledger([item], []), producer_override=result
+                        )
+                    self.assertEqual(code, 0)
+                    self.assertEqual(plan["signals_status"], "OK")
+                    self.assertEqual(
+                        plan["signals_truncated_keys"],
+                        [item["key"]] if truncated else [],
+                    )
+                    self.assertEqual(
+                        plan["pipeline_health"]["reselect_candidate_count"],
+                        int(bool(expected_paths)),
+                    )
+                    actions = [a for a in plan["actions"] if a["action"] == action_name]
+                    self.assertEqual(len(actions), int(bool(expected_paths)))
+                    if actions:
+                        self.assertEqual(actions[0]["source_key"], item["key"])
+                        self.assertEqual(actions[0]["allowed_paths"], expected_paths)
+                    if stage == 1:
+                        feed = next(
+                            a for a in plan["actions"] if a["action"] == "FEED_CHECK"
+                        )
+                        self.assertEqual(feed["grade"], "PASS")
+                        self.assertEqual(feed["enqueued"], len(actions))
+
     def test_partial_signals_mix_live_exclusions_with_ledger_fallback(self):
         for stage, action_name in (
             (1, "ENQUEUE_STAGE2_WI"),

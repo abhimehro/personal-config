@@ -275,6 +275,80 @@ class TestPipelineHealthSummarize(unittest.TestCase):
 class TestPredicateHardening(unittest.TestCase):
     """Tests for #2298: title normalization, UNKNOWN mergeable, head-SHA, author gate."""
 
+    def test_disabling_author_gate_preserves_other_exclusions(self) -> None:
+        cases = (
+            ({}, "chore(qa): tests", "abc", True),
+            ({}, "feat: unrelated", "abc", False),
+            ({}, None, "abc", False),
+            ({}, "chore(qa): tests", "new-head", False),
+            ({"lifecycle_state": "TERMINAL"}, "chore(qa): tests", "abc", False),
+            ({"current_owner": "stage2"}, "chore(qa): tests", "abc", False),
+            (
+                {"guardrail_outcome": "REVIEW_SECURITY"},
+                "chore(qa): tests",
+                "abc",
+                False,
+            ),
+        )
+        for overrides, title, head, expected in cases:
+            with self.subTest(overrides=overrides, title=title, head=head):
+                item = make_item(
+                    author_type="HUMAN",
+                    head_sha="abc",
+                    changed_paths=["src/demo.py"],
+                    next_action="CONFLICTING",
+                    **overrides,
+                )
+                signals = health.ReselectSignals(
+                    titles_by_key={item["key"]: title},
+                    live_head_sha_by_key={item["key"]: head},
+                )
+                with mock.patch.object(
+                    health, "_load_reselect_allowed_authors"
+                ) as load:
+                    candidates = health.list_reselect_candidates(
+                        make_ledger([item], []), signals=signals, author_gate=False
+                    )
+                load.assert_not_called()
+                self.assertEqual(candidates, [item] if expected else [])
+
+    def test_live_exclusions_do_not_consume_candidate_limit(self) -> None:
+        items = [
+            make_item(
+                key=f"owner/repo#{n}@abc",
+                head_sha="abc",
+                next_action="CONFLICTING",
+                changed_paths=["src/demo.py"],
+            )
+            for n in range(1, 6)
+        ]
+        signals = health.ReselectSignals(
+            closed_keys=frozenset({"owner/repo#1"}),
+            live_head_sha_by_key={items[1]["key"]: "new-head"},
+            live_mergeable_by_key={items[2]["key"]: "MERGEABLE"},
+        )
+        self.assertEqual(
+            health.list_reselect_candidates(
+                make_ledger(items, []), signals=signals, limit=1, allowed_authors=()
+            ),
+            [items[3]],
+        )
+
+    def test_queued_prefixes_expire_at_the_supplied_clock(self) -> None:
+        for expiry, expected in (
+            ("2026-08-30T11:59:59Z", set()),
+            ("2026-08-30T12:00:00Z", set()),
+            ("2026-08-30T12:00:01Z", {"owner/repo#1"}),
+        ):
+            with self.subTest(expiry=expiry):
+                work_item = make_work_item(
+                    source_item_key="owner/repo#1@old-head", expiry_utc=expiry
+                )
+                self.assertEqual(
+                    health.existing_wi_prefixes(make_ledger([], [work_item]), now=NOW),
+                    expected,
+                )
+
     def test_all_authoritative_nonconflict_states_override_stale_ledger(self) -> None:
         item = make_item(changed_paths=["src/demo.py"], next_action="CONFLICTING")
         for state in (

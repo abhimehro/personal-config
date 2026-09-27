@@ -191,6 +191,109 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
 
 class TestProduceReselectSignals(unittest.TestCase):
+    def test_nonpositive_budget_does_not_attempt_queries(self) -> None:
+        ledger = make_ledger([make_item(repository="owner/repo", pr=1)], [])
+        for budget in (0, -1):
+            with self.subTest(budget=budget):
+                runner = mock.Mock()
+                with mock.patch(
+                    "pr_lifecycle_reselect_signals.time.monotonic", return_value=10.0
+                ):
+                    result = produce_reselect_signals(
+                        ledger, runner=runner, total_budget_s=budget
+                    )
+                runner.assert_not_called()
+                self.assertEqual(result.status, "PARTIAL")
+                self.assertEqual(result.queried_count, 0)
+                self.assertEqual(result.failed_keys, ())
+                self.assertEqual(result.signals, health.ReselectSignals())
+
+    def test_producer_queries_only_prioritized_candidates_within_cap(self) -> None:
+        items = [
+            make_item(
+                key=f"owner/repo#{n}@abc",
+                repository="owner/repo",
+                pr=n,
+                current_owner=owner,
+            )
+            for n, owner in enumerate(("human", "stage3", "stage1"), start=1)
+        ]
+        ledger = make_ledger(items, [])
+        original = copy.deepcopy(ledger)
+        runner = mock.Mock(return_value=_make_completed_proc({"state": "CLOSED"}))
+        result = produce_reselect_signals(ledger, runner=runner, max_prs=2)
+        self.assertEqual(
+            [call.args[0][3] for call in runner.call_args_list], ["2", "3"]
+        )
+        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.queried_count, 2)
+        self.assertEqual(
+            result.signals.closed_keys, frozenset(item["key"] for item in items[1:])
+        )
+        self.assertEqual(ledger, original)
+
+    def test_nonzero_exit_discards_even_valid_stdout(self) -> None:
+        item = make_item(repository="owner/repo", pr=1)
+        # A failed gh call must not supply an authoritative exclusion.
+        runner = mock.Mock(
+            return_value=_make_completed_proc({"state": "CLOSED"}, returncode=1)
+        )
+        result = produce_reselect_signals(make_ledger([item], []), runner=runner)
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.queried_count, 1)
+        self.assertEqual(result.failed_keys, (item["key"],))
+        self.assertEqual(result.signals, health.ReselectSignals())
+
+    def test_mixed_failure_types_share_consecutive_failure_limit(self) -> None:
+        items = [
+            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            for n in range(1, 5)
+        ]
+        runner = mock.Mock(
+            side_effect=[
+                _make_completed_proc("error", returncode=1),
+                _make_completed_proc("{invalid"),
+                _make_completed_proc("[]"),
+                _make_completed_proc({"state": "OPEN"}),
+            ]
+        )
+        result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+        self.assertEqual(result.status, "DEGRADED")
+        self.assertEqual(runner.call_count, 3)
+        self.assertEqual(result.queried_count, 3)
+        self.assertEqual(result.failed_keys, tuple(item["key"] for item in items[:3]))
+        self.assertEqual(result.signals, health.ReselectSignals())
+
+    def test_blank_optional_fields_do_not_override_ledger_fallbacks(self) -> None:
+        item = make_item(repository="owner/repo", pr=1)
+        for title, head, author in (
+            (None, None, None),
+            ("  ", "\t", {"login": "  "}),
+            (42, [], "maintainer"),
+        ):
+            with self.subTest(title=title, head=head, author=author):
+                runner = mock.Mock(
+                    return_value=_make_completed_proc(
+                        {
+                            "state": "OPEN",
+                            "mergeable": "CONFLICTING",
+                            "title": title,
+                            "headRefOid": head,
+                            "author": author,
+                        }
+                    )
+                )
+                result = produce_reselect_signals(
+                    make_ledger([item], []), runner=runner
+                )
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(
+                    result.signals,
+                    health.ReselectSignals(
+                        live_mergeable_by_key={item["key"]: "CONFLICTING"}
+                    ),
+                )
+
     def test_default_runner_uses_fixed_argv_and_configured_timeout(self) -> None:
         item = make_item(repository="abhimehro/demo", pr=1)
         with mock.patch(
