@@ -8,9 +8,11 @@ from typing import Any
 from unittest import mock
 
 from tests.pr_lifecycle_helpers import (
+    NOW,
     import_lifecycle_run,
     make_ledger,
     make_queryable_item,
+    make_work_item,
 )
 
 import pr_lifecycle_pipeline_health as health
@@ -129,6 +131,75 @@ class StagePlanSignalTests(unittest.TestCase):
         )
         self.assertEqual(enqueues[0]["action"], "ENQUEUE_STAGE2_WI")
         self.assertEqual(handoffs[0]["action"], "HANDOFF_MECHANICAL_TO_STAGE2")
+
+    def test_live_exclusions_leave_capacity_for_later_candidates(self) -> None:
+        for stage in (1, 3):
+            with self.subTest(stage=stage):
+                items = [self.candidate(stage, pr) for pr in range(1, 6)]
+                signals = health.ReselectSignals(
+                    closed_keys=frozenset({items[0]["key"]}),
+                    live_head_sha_by_key={items[1]["key"]: "d" * 40},
+                    live_mergeable_by_key={items[2]["key"]: "CLEAN"},
+                    unique_paths_by_key={items[3]["key"]: ["src/live.py"]},
+                    live_base_sha_by_key={items[3]["key"]: "e" * 40},
+                )
+                ledger = make_ledger(items, [])
+                if stage == 1:
+                    planned = run.plan_stage2_enqueues(ledger, signals=signals, limit=1)
+                    self.assertEqual(planned["candidate_count"], 2)
+                    self.assertEqual(planned["enqueued_count"], 1)
+                    self.assertEqual(planned["skipped_incomplete"], [])
+                    actions = planned["enqueue_actions"]
+                else:
+                    actions = run.plan_stage3_mechanical_handoffs(
+                        ledger, signals=signals, limit=1
+                    )
+                self.assertEqual(len(actions), 1)
+                self.assertEqual(actions[0]["source_key"], items[3]["key"])
+                self.assertEqual(actions[0]["base_sha"], "e" * 40)
+                self.assertEqual(actions[0]["head_sha"], "c" * 40)
+                self.assertEqual(actions[0]["allowed_paths"], ["src/live.py"])
+
+    def test_exact_empty_paths_override_prefix_and_ledger_paths(self) -> None:
+        for stage in (1, 3):
+            item = self.candidate(stage)
+            for paths in ([], [".jules/bolt.md"]):
+                with self.subTest(stage=stage, paths=paths):
+                    signals = health.ReselectSignals(
+                        unique_paths_by_key={
+                            "abhimehro/demo#1": ["src/prefix.py"],
+                            item["key"]: paths,
+                        },
+                        live_mergeable_by_key={item["key"]: "CONFLICTING"},
+                    )
+                    self.assertEqual(
+                        self.actions(stage, make_ledger([item], []), signals), []
+                    )
+
+    @mock.patch("pr_lifecycle_health_runtime._clock", return_value=NOW)
+    def test_live_signals_do_not_duplicate_queued_work_for_another_head(
+        self, _clock: mock.Mock
+    ) -> None:
+        for stage in (1, 3):
+            with self.subTest(stage=stage):
+                item = self.candidate(stage)
+                queued = make_work_item(
+                    source_item_key="abhimehro/demo#1@" + "a" * 40,
+                    head_sha="a" * 40,
+                )
+                signals = health.ReselectSignals(
+                    live_mergeable_by_key={item["key"]: "CONFLICTING"},
+                    live_head_sha_by_key={item["key"]: item["head_sha"]},
+                    unique_paths_by_key={item["key"]: ["src/live.py"]},
+                )
+                # A usable WI suppresses the entire PR prefix even if the
+                # new ledger head and live signals would otherwise qualify.
+                self.assertEqual(
+                    self.actions(stage, make_ledger([item], [queued]), signals), []
+                )
+                self.assertEqual(
+                    len(self.actions(stage, make_ledger([item], []), signals)), 1
+                )
 
 
 if __name__ == "__main__":

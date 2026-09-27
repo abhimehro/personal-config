@@ -30,6 +30,140 @@ from tests.pr_lifecycle_helpers import (  # noqa: E402
 
 
 class TestReselectFailureStatuses(unittest.TestCase):
+    def test_base_sha_enrichment_accepts_only_complete_hex_output(self) -> None:
+        item = make_queryable_item(repository="demo", pr=1)
+        for stdout, expected in (
+            ("a" * 6, None),
+            ("a" * 7, "a" * 7),
+            (" \t" + "ABCDEF01" * 8 + "\n", "ABCDEF01" * 8),
+            ("a" * 65, None),
+            ("g" * 40, None),
+            ("a" * 40 + "\n" + "b" * 40, None),
+            ('"' + "a" * 40 + '"', None),
+        ):
+            with self.subTest(stdout=stdout):
+                result = produce_reselect_signals(
+                    make_ledger([item], []),
+                    runner=stub_gh_runner(
+                        {"state": "OPEN", "headRefOid": item["head_sha"]},
+                        base_sha=stdout,
+                    ),
+                )
+                self.assertEqual(result.status, "OK" if expected else "PARTIAL")
+                self.assertEqual(result.base_enriched_count, int(expected is not None))
+                self.assertEqual(result.failed_keys, ())
+                self.assertEqual(result.queried_count, 1)
+                self.assertEqual(
+                    result.signals.live_base_sha_by_key,
+                    {item["key"]: expected} if expected else None,
+                )
+                self.assertEqual(
+                    result.signals.live_head_sha_by_key,
+                    {item["key"]: item["head_sha"]},
+                )
+
+    def test_one_base_enrichment_success_avoids_systemic_outage_status(self) -> None:
+        items = [
+            make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in (1, 2)
+        ]
+        for successful_index in (0, 1):
+            with self.subTest(successful_index=successful_index):
+                responses = []
+                for index in range(2):
+                    responses.extend(
+                        [
+                            make_gh_proc({"state": "OPEN", "mergeable": "CONFLICTING"}),
+                            make_gh_proc(
+                                "d" * 40, returncode=int(index != successful_index)
+                            ),
+                        ]
+                    )
+                runner = mock.Mock(side_effect=responses)
+                result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(result.queried_count, 2)
+                self.assertEqual(result.base_enriched_count, 1)
+                self.assertEqual(result.failed_keys, ())
+                self.assertEqual(runner.call_count, 4)
+                self.assertEqual(
+                    result.signals.live_mergeable_by_key,
+                    {item["key"]: "CONFLICTING" for item in items},
+                )
+                self.assertEqual(
+                    result.signals.live_base_sha_by_key,
+                    {items[successful_index]["key"]: "d" * 40},
+                )
+
+    def test_missing_gh_mid_scan_preserves_signals_and_stops_immediately(self) -> None:
+        items = [
+            make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in range(4)
+        ]
+        runner = mock.Mock(
+            side_effect=stub_gh_runner(
+                results=[
+                    make_gh_proc({"state": "MERGED"}),
+                    make_gh_proc({"state": "OPEN", "headRefOid": "new-head"}),
+                    FileNotFoundError("gh disappeared"),
+                ]
+            )
+        )
+        result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+        self.assertEqual(result.status, "DEGRADED")
+        self.assertEqual(result.queried_count, 3)
+        self.assertEqual(result.failed_keys, (items[2]["key"],))
+        self.assertEqual(result.base_enriched_count, 2)
+        self.assertFalse(result.timed_out)
+        self.assertEqual(runner.call_count, 5)
+        self.assertEqual(
+            result.signals,
+            health.ReselectSignals(
+                closed_keys=frozenset({items[0]["key"]}),
+                live_head_sha_by_key={items[1]["key"]: "new-head"},
+                live_base_sha_by_key={items[1]["key"]: "b" * 40},
+            ),
+        )
+
+    def test_base_exception_is_sanitized_and_does_not_block_next_query(self) -> None:
+        items = [
+            make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in (1, 2)
+        ]
+        for error in (
+            subprocess.TimeoutExpired(["gh", "private-argument"], 20),
+            RuntimeError("private-provider-message"),
+        ):
+            with self.subTest(error=type(error).__name__):
+                runner = mock.Mock(
+                    side_effect=[
+                        make_gh_proc({"state": "CLOSED"}),
+                        error,
+                        make_gh_proc({"state": "OPEN", "title": "healthy"}),
+                        make_gh_proc("d" * 40),
+                    ]
+                )
+                with self.assertLogs(
+                    "pr_lifecycle_reselect_signals", level="WARNING"
+                ) as logs:
+                    result = produce_reselect_signals(
+                        make_ledger(items, []), runner=runner
+                    )
+                self.assertEqual(result.status, "OK")
+                self.assertEqual(result.failed_keys, ())
+                self.assertEqual(result.queried_count, 2)
+                self.assertEqual(result.base_enriched_count, 1)
+                self.assertEqual(runner.call_count, 4)
+                self.assertEqual(
+                    result.signals.closed_keys, frozenset({items[0]["key"]})
+                )
+                self.assertEqual(
+                    result.signals.titles_by_key, {items[1]["key"]: "healthy"}
+                )
+                output = "\n".join(logs.output)
+                self.assertIn(type(error).__name__, output)
+                self.assertNotIn("private-", output)
+
     def test_nonzero_exit_discards_even_valid_stdout(self) -> None:
         """Verify failed gh calls cannot contribute authoritative live signals."""
         item = make_queryable_item(repository="owner/repo", pr=1)
