@@ -296,7 +296,9 @@ class TestPredicateHardening(unittest.TestCase):
                     health.list_reselect_candidates(
                         make_ledger([item], []),
                         signals=health.ReselectSignals(titles_by_key=titles),
-                        allowed_authors=("maintainer",),
+                        author_gate=health.ReselectAuthorGate(
+                            allowed_authors=("maintainer",)
+                        ),
                     ),
                     [item] if expected else [],
                 )
@@ -323,7 +325,7 @@ class TestPredicateHardening(unittest.TestCase):
                         signals=health.ReselectSignals(
                             unique_paths_by_key={item["key"]: paths}
                         ),
-                        allowed_authors=(),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
                     ),
                     [item] if expected else [],
                 )
@@ -361,7 +363,9 @@ class TestPredicateHardening(unittest.TestCase):
                     health, "_load_reselect_allowed_authors"
                 ) as load:
                     candidates = health.list_reselect_candidates(
-                        make_ledger([item], []), signals=signals, author_gate=False
+                        make_ledger([item], []),
+                        signals=signals,
+                        author_gate=health.ReselectAuthorGate(enabled=False),
                     )
                 load.assert_not_called()
                 self.assertEqual(candidates, [item] if expected else [])
@@ -384,7 +388,10 @@ class TestPredicateHardening(unittest.TestCase):
         )
         self.assertEqual(
             health.list_reselect_candidates(
-                make_ledger(items, []), signals=signals, limit=1, allowed_authors=()
+                make_ledger(items, []),
+                signals=signals,
+                limit=1,
+                author_gate=health.ReselectAuthorGate(allowed_authors=()),
             ),
             [items[3]],
         )
@@ -419,7 +426,9 @@ class TestPredicateHardening(unittest.TestCase):
             with self.subTest(state=state):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, live_mergeable=f"  {state.lower()}  ", allowed_authors=()
+                        item,
+                        live=health.LivePrSignals(mergeable=f"  {state.lower()}  "),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
                     )
                 )
 
@@ -442,7 +451,39 @@ class TestPredicateHardening(unittest.TestCase):
                 )
                 self.assertEqual(
                     health.is_reselect_salvage_candidate(
-                        item, live_head_sha=live_head, allowed_authors=()
+                        item,
+                        live=health.LivePrSignals(head_sha=live_head),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
+                    ),
+                    expected,
+                )
+
+    def test_live_base_sha_requires_nonempty_matching_ledger_base(self) -> None:
+        """Verify a supplied live base requires a nonempty, normalized SHA match.
+
+        A PR retargeted to a different base must re-enter Stage 1 intake rather
+        than salvage with an obsolete ledger base revision.
+        """
+        for ledger_base, live_base, expected in (
+            (None, "abc", False),
+            ("", "abc", False),
+            ("  ", "abc", False),
+            ("abc", "", False),
+            ("abc", "  ", False),
+            (" ABC ", " abc ", True),
+            (None, None, True),
+        ):
+            with self.subTest(ledger_base=ledger_base, live_base=live_base):
+                item = make_item(
+                    base_sha=ledger_base,
+                    changed_paths=["src/demo.py"],
+                    next_action="CONFLICTING",
+                )
+                self.assertEqual(
+                    health.is_reselect_salvage_candidate(
+                        item,
+                        live=health.LivePrSignals(base_sha=live_base),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
                     ),
                     expected,
                 )
@@ -471,8 +512,10 @@ class TestPredicateHardening(unittest.TestCase):
                 self.assertEqual(
                     health.is_reselect_salvage_candidate(
                         item,
-                        title="chore(qa): add tests",
-                        allowed_authors=("maintainer",),
+                        live=health.LivePrSignals(title="chore(qa): add tests"),
+                        author_gate=health.ReselectAuthorGate(
+                            allowed_authors=("maintainer",)
+                        ),
                     ),
                     expected,
                 )
@@ -498,7 +541,9 @@ class TestPredicateHardening(unittest.TestCase):
                     health.list_reselect_candidates(
                         make_ledger([item], []),
                         signals=signals,
-                        allowed_authors=("maintainer",),
+                        author_gate=health.ReselectAuthorGate(
+                            allowed_authors=("maintainer",)
+                        ),
                     ),
                     [item] if expected else [],
                 )
@@ -532,7 +577,9 @@ class TestPredicateHardening(unittest.TestCase):
                     health.list_reselect_candidates(
                         make_ledger([item], []),
                         signals=signals,
-                        allowed_authors=("maintainer",),
+                        author_gate=health.ReselectAuthorGate(
+                            allowed_authors=("maintainer",)
+                        ),
                     ),
                     [item] if expected else [],
                 )
@@ -552,7 +599,7 @@ class TestPredicateHardening(unittest.TestCase):
                         signals=health.ReselectSignals(
                             closed_keys=frozenset({closed_key})
                         ),
-                        allowed_authors=(),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
                     ),
                     [item],
                 )
@@ -606,13 +653,17 @@ class TestPredicateHardening(unittest.TestCase):
         with mock.patch.object(health, "_load_reselect_allowed_authors") as loader:
             self.assertEqual(
                 health.list_reselect_candidates(
-                    make_ledger([item], []), signals=signals, allowed_authors=()
+                    make_ledger([item], []),
+                    signals=signals,
+                    author_gate=health.ReselectAuthorGate(allowed_authors=()),
                 ),
                 [],
             )
             self.assertEqual(
                 health.list_reselect_candidates(
-                    make_ledger([item], []), signals=signals, author_gate=False
+                    make_ledger([item], []),
+                    signals=signals,
+                    author_gate=health.ReselectAuthorGate(enabled=False),
                 ),
                 [item],
             )
@@ -707,25 +758,43 @@ class TestPredicateHardening(unittest.TestCase):
         )
         # UNKNOWN should fall back to next_action (which has CONFLICTING) -> candidate
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="UNKNOWN")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="UNKNOWN")
+            )
         )
         # empty or None should fall back to next_action -> candidate
-        self.assertTrue(health.is_reselect_salvage_candidate(item, live_mergeable=""))
-        self.assertTrue(health.is_reselect_salvage_candidate(item, live_mergeable=None))
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="")
+            )
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable=None)
+            )
+        )
         # MERGEABLE is authoritative -> excluded (not in CONFLICTING/DIRTY)
         self.assertFalse(
-            health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="MERGEABLE")
+            )
         )
         # CLEAN is authoritative -> excluded
         self.assertFalse(
-            health.is_reselect_salvage_candidate(item, live_mergeable="CLEAN")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="CLEAN")
+            )
         )
         # DIRTY and CONFLICTING are authoritative -> candidate
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="DIRTY")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="DIRTY")
+            )
         )
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="CONFLICTING")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="CONFLICTING")
+            )
         )
 
     def test_head_sha_mismatch_excludes_item(self) -> None:
@@ -738,17 +807,59 @@ class TestPredicateHardening(unittest.TestCase):
         )
         # Matching head SHA -> candidate
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_head_sha="abc1234")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(head_sha="abc1234")
+            )
         )
         # Case-insensitive match -> candidate
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_head_sha="ABC1234")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(head_sha="ABC1234")
+            )
         )
         # No signal (None) -> unchanged candidate
-        self.assertTrue(health.is_reselect_salvage_candidate(item, live_head_sha=None))
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(head_sha=None)
+            )
+        )
         # Mismatch -> excluded
         self.assertFalse(
-            health.is_reselect_salvage_candidate(item, live_head_sha="def5678")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(head_sha="def5678")
+            )
+        )
+
+        # Base SHA drift (retargeted PR) -> excluded
+        item_with_base = make_item(
+            key="abhimehro/demo#2@abc1234",
+            base_sha="base9999",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                item_with_base, live=health.LivePrSignals(base_sha="other0000")
+            )
+        )
+        ledger = make_ledger([item_with_base], [])
+        self.assertEqual(
+            health.list_reselect_candidates(
+                ledger,
+                signals=health.ReselectSignals(
+                    live_base_sha_by_key={item_with_base["key"]: "base9999"}
+                ),
+            ),
+            [item_with_base],
+        )
+        self.assertEqual(
+            health.list_reselect_candidates(
+                ledger,
+                signals=health.ReselectSignals(
+                    live_base_sha_by_key={item_with_base["key"]: "drifted"}
+                ),
+            ),
+            [],
         )
 
         # In list_reselect_candidates with ReselectSignals
@@ -766,87 +877,87 @@ class TestPredicateHardening(unittest.TestCase):
             len(health.list_reselect_candidates(ledger, signals=mismatch_signals)), 0
         )
 
-    def test_author_gate_for_title_only_identity(self) -> None:
-        """Title-only with author gate on: maintainer/bot -> candidate; human -> excluded; no live login -> ledger author decides; no login at all -> excluded (fails closed)."""
-        item = make_item(
-            key="abhimehro/demo#1@abc1234",
-            author="abhimehro",
-            author_type="HUMAN",
-            changed_paths=["src/demo.py"],
-            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
-        )
-        title = "⚡ Bolt: fix something"
+    def _title_gated_item(self, **overrides: Any) -> dict[str, Any]:
+        """Human-authored item that qualifies only via a live allowed title."""
+        fields = {
+            "key": "abhimehro/demo#1@abc1234",
+            "author": "abhimehro",
+            "author_type": "HUMAN",
+            "changed_paths": ["src/demo.py"],
+            "next_action": "HOLD_CONTRACT CONFLICTING unique remaining",
+        }
+        fields.update(overrides)
+        return make_item(**fields)
 
-        # Maintainer login -> candidate
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(
-                item, title=title, author_login="abhimehro"
+    def test_title_gate_accepts_allowed_live_logins(self) -> None:
+        """Allowed maintainer/bot logins pass; an arbitrary human login fails."""
+        item = self._title_gated_item()
+        title = "⚡ Bolt: fix something"
+        for login, expected in (
+            ("abhimehro", True),
+            ("google-labs-jules[bot]", True),
+            ("random-external-user", False),
+        ):
+            with self.subTest(login=login):
+                self.assertEqual(
+                    health.is_reselect_salvage_candidate(
+                        item, live=health.LivePrSignals(title=title, author_login=login)
+                    ),
+                    expected,
+                )
+
+    def test_title_gate_falls_back_to_ledger_author_and_fails_closed(self) -> None:
+        """Missing live logins fall back to the ledger author; none fails closed."""
+        item = self._title_gated_item()
+        title = "⚡ Bolt: fix something"
+        # Missing login signal with maintainer in ledger -> candidate.
+        for blank in (None, ""):
+            self.assertTrue(
+                health.is_reselect_salvage_candidate(
+                    item, live=health.LivePrSignals(title=title, author_login=blank)
+                )
             )
-        )
-        # Bot login -> candidate
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(
-                item, title=title, author_login="google-labs-jules[bot]"
+        # Missing login signal with an external human in ledger -> rejected.
+        human_item = self._title_gated_item(author="random-external-user")
+        for blank in (None, ""):
+            self.assertFalse(
+                health.is_reselect_salvage_candidate(
+                    human_item,
+                    live=health.LivePrSignals(title=title, author_login=blank),
+                )
             )
-        )
-        # Arbitrary human login -> excluded
-        self.assertFalse(
-            health.is_reselect_salvage_candidate(
-                item, title=title, author_login="random-external-user"
-            )
-        )
-        # Missing login signal with maintainer in ledger -> candidate (ledger fallback)
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(item, title=title, author_login=None)
-        )
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(item, title=title, author_login="")
-        )
-        # Missing login signal with external human in ledger -> rejected (never for humans)
-        human_item = make_item(
-            key="abhimehro/demo#1@abc1234",
-            author="random-external-user",
-            author_type="HUMAN",
-            changed_paths=["src/demo.py"],
-            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
-        )
-        self.assertFalse(
-            health.is_reselect_salvage_candidate(
-                human_item, title=title, author_login=None
-            )
-        )
-        self.assertFalse(
-            health.is_reselect_salvage_candidate(
-                human_item, title=title, author_login=""
-            )
-        )
-        # No login signal and no ledger author -> rejected (gate fails closed)
+        # No login signal and no ledger author -> rejected (gate fails closed).
         anon_item = {k: v for k, v in item.items() if k != "author"}
         self.assertFalse(
             health.is_reselect_salvage_candidate(
-                anon_item, title=title, author_login=None
-            )
-        )
-        # Author gate disabled -> candidate even with random human
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(
-                item,
-                title=title,
-                author_login="random-external-user",
-                author_gate=False,
+                anon_item, live=health.LivePrSignals(title=title, author_login=None)
             )
         )
 
-        # Ledger-BOT item bypasses author gate and title check
-        bot_item = make_item(
-            key="abhimehro/demo#2@abc1234",
-            author_type="BOT",
-            changed_paths=["src/demo.py"],
-            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+    def test_title_gate_disabled_and_bot_bypass(self) -> None:
+        """A disabled gate bypasses logins; ledger BOT items bypass everything."""
+        item = self._title_gated_item()
+        title = "⚡ Bolt: fix something"
+        # Author gate disabled -> candidate even with a random human login.
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item,
+                live=health.LivePrSignals(
+                    title=title, author_login="random-external-user"
+                ),
+                author_gate=health.ReselectAuthorGate(enabled=False),
+            )
+        )
+        # Ledger-BOT item bypasses author gate and title check.
+        bot_item = self._title_gated_item(
+            key="abhimehro/demo#2@abc1234", author_type="BOT"
         )
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                bot_item, title="non-matching title", author_login="random-user"
+                bot_item,
+                live=health.LivePrSignals(
+                    title="non-matching title", author_login="random-user"
+                ),
             )
         )
 

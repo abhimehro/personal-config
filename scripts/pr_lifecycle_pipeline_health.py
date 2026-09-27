@@ -70,10 +70,13 @@ __all__ = [
     "REQUIRED_WORK_ITEM_FIELDS",
     "SALVAGE_OUTCOMES",
     "STAGE2_OWNED_STATES",
+    "LivePrSignals",
     "PipelineHealth",
+    "ReselectAuthorGate",
     "ReselectSignals",
     "existing_wi_prefixes",
     "is_never_touch_key",
+    "is_reselect_plausible",
     "is_reselect_salvage_candidate",
     "is_salvage_eligible",
     "list_reselect_candidates",
@@ -271,6 +274,45 @@ def is_never_touch_key(key: object) -> bool:
     return source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
 
 
+_BUILTIN_RESELECT_AUTHORS = (
+    "dependabot[bot]",
+    "renovate[bot]",
+    "google-labs-jules[bot]",
+    "cursor[bot]",
+    "devin[bot]",
+    "copilot[bot]",
+    "app/copilot-swe-agent",
+    "abhimehro",
+)
+
+
+def _reselect_authors_from_config(config: dict[str, Any]) -> tuple[str, ...]:
+    """Return bot_authors + maintainer_token_logins from a caller config."""
+    bots = list(config.get("bot_authors") or [])
+    identity = config.get("identity_classification") or {}
+    maintainers = list(identity.get("maintainer_token_logins") or [])
+    return tuple(bots) + tuple(maintainers)
+
+
+def _reselect_authors_from_disk() -> tuple[str, ...]:
+    """Return configured author lists from CONFIG_PATH, or () when unreadable.
+
+    A missing file or non-mapping document yields (); malformed
+    identity_classification is tolerated as empty on disk.
+    """
+    if not CONFIG_PATH.is_file():
+        return ()
+    loaded = load_yaml(CONFIG_PATH)
+    if not isinstance(loaded, dict):
+        return ()
+    bots = list(loaded.get("bot_authors") or [])
+    identity = loaded.get("identity_classification")
+    if not isinstance(identity, dict):
+        identity = {}
+    maintainers = list(identity.get("maintainer_token_logins") or [])
+    return tuple(bots) + tuple(maintainers)
+
+
 def _load_reselect_allowed_authors(
     config: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
@@ -282,40 +324,19 @@ def _load_reselect_allowed_authors(
     caller-supplied config.
     """
     if config:
-        bots = list(config.get("bot_authors") or [])
-        maintainers = list(
-            (config.get("identity_classification") or {}).get("maintainer_token_logins")
-            or []
-        )
-        if bots or maintainers:
-            return tuple(bots + maintainers)
+        authors = _reselect_authors_from_config(config)
+        if authors:
+            return authors
     try:
-        if CONFIG_PATH.is_file():
-            loaded = load_yaml(CONFIG_PATH)
-            if isinstance(loaded, dict):
-                bots = list(loaded.get("bot_authors") or [])
-                identity = loaded.get("identity_classification")
-                if not isinstance(identity, dict):
-                    identity = {}
-                maintainers = list(identity.get("maintainer_token_logins") or [])
-                if bots or maintainers:
-                    return tuple(bots + maintainers)
+        authors = _reselect_authors_from_disk()
     # ArtifactValidationError subclasses ValueError; other errors propagate.
     except (OSError, ValueError) as exc:
         LOGGER.warning(
             "reselect allowlist: config unreadable (%s); using built-in list",
             type(exc).__name__,
         )
-    return (
-        "dependabot[bot]",
-        "renovate[bot]",
-        "google-labs-jules[bot]",
-        "cursor[bot]",
-        "devin[bot]",
-        "copilot[bot]",
-        "app/copilot-swe-agent",
-        "abhimehro",
-    )
+        authors = ()
+    return authors or _BUILTIN_RESELECT_AUTHORS
 
 
 def _normalize_title_for_prefix(title: str) -> str:
@@ -358,47 +379,51 @@ def _extract_item_author_login(item: dict[str, Any]) -> str | None:
     return None
 
 
+def _lifecycle_blocks_reselect(item: dict[str, Any]) -> bool:
+    """Exclude terminal and Stage 2-owned/queued items from reselect.
+
+    Already Stage 2 owned/queued: reselecting it would emit a duplicate
+    ENQUEUE_STAGE2_WI for work Stage 2 already holds.
+    """
+    return (
+        item.get("lifecycle_state") == "TERMINAL"
+        or item.get("current_owner") == "stage2"
+        or item.get("lifecycle_state") in STAGE2_OWNED_STATES
+    )
+
+
+def _title_gated_identity_ok(
+    item: dict[str, Any], live: LivePrSignals, gate: ReselectAuthorGate
+) -> bool:
+    """Non-BOT items need an allowed title prefix and, when gated, a login.
+
+    A nonblank live author login wins over the ledger record; inside the
+    record, author precedes author_login. Missing identity fails the author
+    gate when enabled.
+    """
+    if not _title_is_reselect_bot(live.title):
+        return False
+    login = (live.author_login or "").strip() or _extract_item_author_login(item)
+    return gate.allows(login)
+
+
 def _identity_allows_reselect(
     item: dict[str, Any],
-    title: str | None,
+    live: LivePrSignals,
     *,
-    author_login: str | None = None,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> bool:
     """Check reselect authorship, excluding terminal and Stage 2-owned items.
 
     Ledger BOT authors bypass title and login checks. Other items need an
-    allowed title prefix; author_gate=False bypasses only the login check.
-    A nonblank author_login argument wins over the ledger record; inside the
-    record, author precedes author_login. Missing identity fails the author
-    gate when enabled. Use allowed_authors when supplied; otherwise load the
-    allowlist, propagating errors not handled by the loader.
+    allowed title prefix; a disabled gate bypasses only the login check.
     """
-    if item.get("lifecycle_state") == "TERMINAL":
-        return False
-    # Already Stage 2 owned/queued: reselecting it would emit a duplicate
-    # ENQUEUE_STAGE2_WI for work Stage 2 already holds.
-    if (
-        item.get("current_owner") == "stage2"
-        or item.get("lifecycle_state") in STAGE2_OWNED_STATES
-    ):
+    if _lifecycle_blocks_reselect(item):
         return False
     if item.get("author_type") == "BOT":
         return True
-    if not _title_is_reselect_bot(title):
-        return False
-    if not author_gate:
-        return True
-    login = (author_login or "").strip() or _extract_item_author_login(item)
-    if not login:
-        return False
-    allowed = (
-        allowed_authors
-        if allowed_authors is not None
-        else _load_reselect_allowed_authors()
-    )
-    return identities_match(login, allowed)
+    gate = author_gate or ReselectAuthorGate()
+    return _title_gated_identity_ok(item, live, gate)
 
 
 def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
@@ -456,22 +481,14 @@ def _unique_remaining_ok(
 
 def _reselect_identity_ok(
     item: dict[str, Any],
-    title: str | None,
+    live: LivePrSignals,
     *,
-    author_login: str | None = None,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> bool:
     """Check never-touch, identity, and guardrail-outcome exclusions."""
     if is_never_touch_key(item.get("key")):
         return False
-    if not _identity_allows_reselect(
-        item,
-        title,
-        author_login=author_login,
-        author_gate=author_gate,
-        allowed_authors=allowed_authors,
-    ):
+    if not _identity_allows_reselect(item, live, author_gate=author_gate):
         return False
     outcome = item.get("guardrail_outcome") or ""
     # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
@@ -504,63 +521,147 @@ def _reselect_paths_ok(
     return not any(path.endswith(LOCKFILE_SUFFIXES) for path in paths)
 
 
+def _anchors_match(item: dict[str, Any], live: LivePrSignals) -> bool:
+    """Supplied live base/head SHAs must match nonempty ledger anchors.
+
+    A live SHA that disagrees with its ledger anchor means the PR was retargeted
+    or pushed since intake; the item needs Stage 1 re-intake, not salvage with
+    obsolete anchors. Absent live values fall back to the ledger anchors.
+    """
+    for ledger_field, live_sha in (
+        ("head_sha", live.head_sha),
+        ("base_sha", live.base_sha),
+    ):
+        if live_sha is None:
+            continue
+        ledger_sha = str(item.get(ledger_field) or "").strip().lower()
+        if not ledger_sha or str(live_sha).strip().lower() != ledger_sha:
+            return False
+    return True
+
+
 def is_reselect_salvage_candidate(
     item: dict[str, Any],
     *,
-    live_mergeable: str | None = None,
-    title: str | None = None,
-    unique_remaining_paths: list[str] | None = None,
-    live_head_sha: str | None = None,
-    author_login: str | None = None,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    live: LivePrSignals | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> bool:
     """Return whether Stage 1 may plan a unique-source reselect for this item.
 
     Exclude terminal, Stage 2-owned, never-touch, and blocked-outcome items.
     Ledger BOT authors bypass title and author checks. Other items need an
-    allowed title prefix and, with author_gate enabled, an allowed login.
-    A nonblank author_login argument wins over the ledger record; inside the
+    allowed title prefix and, with the author gate enabled, an allowed login.
+    A nonblank live author login wins over the ledger record; inside the
     record, author precedes author_login. Missing identity fails the author
     gate; disabling it still requires the title.
 
     Known live mergeability overrides next_action; unknown or absent values
     fall back to its first CONFLICTING/DIRTY marker. Only those two states
-    qualify. A supplied live_head_sha must match a nonempty ledger head_sha
-    after trimming and ignoring case. Explicit empty unique_remaining_paths
-    rejects the item; None uses changed_paths, then paths, as a proxy. At
-    least one non-journal path must survive sticky-path exclusions.
+    qualify. Supplied live head/base SHAs must match nonempty ledger anchors
+    after trimming and ignoring case; drift means the item needs re-intake.
+    Explicit empty unique_paths rejects the item; None uses changed_paths,
+    then paths, as a proxy. At least one non-journal path must survive
+    sticky-path exclusions.
 
-    When a title-based author check needs an allowlist and allowed_authors is
-    None, load it via _load_reselect_allowed_authors; its uncaught errors
-    propagate. Callers evaluating many items can resolve it once and pass it
-    on each call, as list_reselect_candidates does.
+    When a title-based author check needs an allowlist and the gate has no
+    concrete allowed_authors, load it via _load_reselect_allowed_authors; its
+    uncaught errors propagate. Callers evaluating many items can resolve it
+    once via ReselectAuthorGate.resolved(), as list_reselect_candidates does.
     """
     # Accept a nonterminal BOT item or one with an allowed title prefix and
     # author when its supplied mergeability, or a state inferred from
-    # next_action, is CONFLICTING or DIRTY. An explicit unique_remaining_paths
+    # next_action, is CONFLICTING or DIRTY. An explicit unique_paths
     # list must contain a non-journal path; when omitted, changed_paths (then
-    # paths) is a proxy. A live_head_sha must match ledger head_sha.
+    # paths) is a proxy. Live head/base SHAs must match ledger anchors.
     # Never-touch sources and NON_SALVAGE outcomes are excluded first.
     # generated_output is the only unrestricted sensitive label; shell_execution
     # additionally requires a Palette action and wrap-allowlist paths. Separate
     # from ``is_salvage_eligible``.
-    if not _reselect_identity_ok(
-        item,
-        title,
-        author_login=author_login,
-        author_gate=author_gate,
-        allowed_authors=allowed_authors,
-    ):
+    live = live or LivePrSignals()
+    if not _reselect_identity_ok(item, live, author_gate=author_gate):
         return False
-    if live_head_sha is not None:
-        ledger_head = str(item.get("head_sha") or "").strip().lower()
-        if not ledger_head or str(live_head_sha).strip().lower() != ledger_head:
-            return False
-    state = _infer_live_mergeable(item, live_mergeable)
+    if not _anchors_match(item, live):
+        return False
+    state = _infer_live_mergeable(item, live.mergeable)
     if state not in RESELECT_LIVE_STATES:
         return False
-    return _reselect_paths_ok(item, unique_remaining_paths)
+    return _reselect_paths_ok(item, live.unique_paths)
+
+
+def is_reselect_plausible(
+    item: dict[str, Any],
+    *,
+    author_gate: ReselectAuthorGate | None = None,
+) -> bool:
+    """Return whether a ledger item can pass every non-live reselect gate.
+
+    Used by the live-signals prefilter so that records which can never yield
+    a salvage action do not consume the live query cap. Requires nonempty
+    base/head anchors (a complete work item cannot be assembled without them),
+    passes never-touch, lifecycle, outcome, and path gates, and for non-BOT
+    authors requires an allowlisted ledger author login. Ledger records carry
+    no title field, so title-gated items stay plausible when their ledger
+    author is allowed; the selector evaluates the live title later.
+    """
+    if not str(item.get("base_sha") or "").strip():
+        return False
+    if not str(item.get("head_sha") or "").strip():
+        return False
+    if _lifecycle_blocks_reselect(item):
+        return False
+    if is_never_touch_key(item.get("key")):
+        return False
+    if (item.get("guardrail_outcome") or "") in NON_SALVAGE_OUTCOMES:
+        return False
+    if item.get("author_type") != "BOT":
+        gate = author_gate or ReselectAuthorGate()
+        if not gate.allows(_extract_item_author_login(item)):
+            return False
+    return _reselect_paths_ok(item, None)
+
+
+@dataclass(frozen=True)
+class ReselectAuthorGate:
+    """Author gate for reselect identity checks.
+
+    enabled=False bypasses only the login check (titles still gate). A None
+    allowed_authors resolves lazily via _load_reselect_allowed_authors on the
+    first check; resolved() materializes the allowlist once up front.
+    """
+
+    enabled: bool = True
+    allowed_authors: Sequence[str] | None = None
+
+    def resolved(self) -> "ReselectAuthorGate":
+        """Return a gate whose allowlist is concrete (loads config once)."""
+        if not self.enabled or self.allowed_authors is not None:
+            return self
+        return ReselectAuthorGate(allowed_authors=_load_reselect_allowed_authors())
+
+    def allows(self, login: str | None) -> bool:
+        """Return whether the login passes the gate."""
+        if not self.enabled:
+            return True
+        if not login:
+            return False
+        allowed = (
+            self.allowed_authors
+            if self.allowed_authors is not None
+            else _load_reselect_allowed_authors()
+        )
+        return identities_match(login, allowed)
+
+
+@dataclass(frozen=True)
+class LivePrSignals:
+    """Live signal values resolved for one ledger key; None means no signal."""
+
+    mergeable: str | None = None
+    title: str | None = None
+    unique_paths: list[str] | None = None
+    head_sha: str | None = None
+    base_sha: str | None = None
+    author_login: str | None = None
 
 
 @dataclass(frozen=True)
@@ -571,6 +672,7 @@ class ReselectSignals:
     titles_by_key: dict[str, str] | None = None
     unique_paths_by_key: dict[str, list[str]] | None = None
     live_head_sha_by_key: dict[str, str] | None = None
+    live_base_sha_by_key: dict[str, str] | None = None
     author_login_by_key: dict[str, str] | None = None
     # Keys whose live PR state is authoritatively CLOSED/MERGED.
     closed_keys: frozenset[str] | None = None
@@ -616,8 +718,7 @@ def list_reselect_candidates(
     *,
     signals: ReselectSignals | None = None,
     limit: int | None = None,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> list[dict[str, Any]]:
     """Return eligible keyed ledger items in their original order.
 
@@ -626,9 +727,9 @@ def list_reselect_candidates(
     empty values. Return the original item dictionaries. A None limit is
     unbounded; a nonpositive limit still returns the first eligible item.
 
-    Pass author_gate and allowed_authors to is_reselect_salvage_candidate.
-    With the gate enabled and no explicit allowlist, load it once per call;
-    uncaught allowlist-loading errors propagate.
+    Pass author_gate through to is_reselect_salvage_candidate. With the gate
+    enabled and no explicit allowlist, resolve it once per call; uncaught
+    allowlist-loading errors propagate.
     """
     # Signal maps are looked up by full key then repository#PR prefix; a key
     # present with an empty value is honored (e.g. [] means "no unique paths").
@@ -637,18 +738,11 @@ def list_reselect_candidates(
     signals = signals or ReselectSignals()
     # Resolve the allowlist once per call; deliberately not cached across
     # calls so config edits stay visible.
-    if author_gate and allowed_authors is None:
-        allowed_authors = _load_reselect_allowed_authors()
+    gate = (author_gate or ReselectAuthorGate()).resolved()
     queued_prefixes = existing_wi_prefixes(ledger)
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
-        if not _reselect_item_key(
-            item,
-            queued_prefixes,
-            signals,
-            author_gate=author_gate,
-            allowed_authors=allowed_authors,
-        ):
+        if not _reselect_item_key(item, queued_prefixes, signals, author_gate=gate):
             continue
         selected.append(item)
         if limit is not None and len(selected) >= limit:
@@ -661,8 +755,7 @@ def _reselect_item_key(
     queued_prefixes: set[str],
     signals: ReselectSignals,
     *,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> str:
     """Return the key if unqueued, not signaled closed, and eligible; else ""."""
     key = str(item.get("key") or "")
@@ -670,15 +763,21 @@ def _reselect_item_key(
         return ""
     if signal_contains(signals.closed_keys, key):
         return ""
-    if not _reselect_item_ok(
-        item,
-        key,
-        signals,
-        author_gate=author_gate,
-        allowed_authors=allowed_authors,
-    ):
+    if not _reselect_item_ok(item, key, signals, author_gate=author_gate):
         return ""
     return key
+
+
+def _live_signals_for(signals: ReselectSignals, key: str) -> LivePrSignals:
+    """Resolve all per-key live signals into a per-item value bundle."""
+    return LivePrSignals(
+        mergeable=signal_value(signals.live_mergeable_by_key, key),
+        title=signal_value(signals.titles_by_key, key),
+        unique_paths=signal_value(signals.unique_paths_by_key, key),
+        head_sha=signal_value(signals.live_head_sha_by_key, key),
+        base_sha=signal_value(signals.live_base_sha_by_key, key),
+        author_login=signal_value(signals.author_login_by_key, key),
+    )
 
 
 def _reselect_item_ok(
@@ -686,20 +785,14 @@ def _reselect_item_ok(
     key: str,
     signals: ReselectSignals,
     *,
-    author_gate: bool = True,
-    allowed_authors: Sequence[str] | None = None,
+    author_gate: ReselectAuthorGate | None = None,
 ) -> bool:
     """Apply the signal-resolved reselect predicate to one ledger item."""
-    # Head-SHA drift is enforced inside is_reselect_salvage_candidate.
+    # Head/base SHA drift is enforced inside is_reselect_salvage_candidate.
     return is_reselect_salvage_candidate(
         item,
-        live_mergeable=signal_value(signals.live_mergeable_by_key, key),
-        title=signal_value(signals.titles_by_key, key),
-        unique_remaining_paths=signal_value(signals.unique_paths_by_key, key),
-        live_head_sha=signal_value(signals.live_head_sha_by_key, key),
-        author_login=signal_value(signals.author_login_by_key, key),
+        live=_live_signals_for(signals, key),
         author_gate=author_gate,
-        allowed_authors=allowed_authors,
     )
 
 
@@ -798,35 +891,6 @@ def _starvation_reason(starvation: bool, usable_count: int, eligible: int) -> st
     return "Stage 2 has queued work"
 
 
-def _health_report(
-    ledger: dict[str, Any],
-    usable: list[dict[str, Any]],
-    owned: list[dict[str, Any]],
-    eligible: list[dict[str, Any]],
-    *,
-    signals: ReselectSignals | None = None,
-) -> PipelineHealth:
-    """Combine preclassified stock counts with a signal-aware reselect count.
-
-    Starvation requires no usable work items and at least one salvage-eligible
-    item; owned-item and reselect counts do not affect that flag.
-    """
-    usable_count = len(usable)
-    owned_count = len(owned)
-    eligible_count = len(eligible)
-    starvation = _is_starved(usable_count, eligible_count)
-    return PipelineHealth(
-        ledger_revision=_ledger_revision(ledger),
-        stage2_work_item_count=usable_count,
-        stage2_owned_item_count=owned_count,
-        salvage_eligible_count=eligible_count,
-        salvage_eligible_keys=_eligible_keys(eligible),
-        reselect_candidate_count=len(list_reselect_candidates(ledger, signals=signals)),
-        starvation=starvation,
-        reason=_starvation_reason(starvation, usable_count, eligible_count),
-    )
-
-
 def summarize(
     ledger: dict[str, Any],
     now: datetime | None = None,
@@ -838,14 +902,28 @@ def summarize(
     Use now (an aware datetime, defaulting to current UTC) for work-item
     expiry in the starvation counts. Signals affect only the reselect count;
     its queued-work exclusions use the current clock independently of now.
-    Schema validation is left to callers.
+    Schema validation is left to callers. Starvation requires no usable work
+    items and at least one salvage-eligible item; owned-item and reselect
+    counts do not affect that flag.
     """
     clock = _clock(now)
     items = _ledger_items(ledger)
     usable = _usable_work_items(ledger, clock)
     owned = _stage2_owned(items)
     eligible = _eligible_items(items)
-    return _health_report(ledger, usable, owned, eligible, signals=signals)
+    usable_count = len(usable)
+    eligible_count = len(eligible)
+    starvation = _is_starved(usable_count, eligible_count)
+    return PipelineHealth(
+        ledger_revision=_ledger_revision(ledger),
+        stage2_work_item_count=usable_count,
+        stage2_owned_item_count=len(owned),
+        salvage_eligible_count=eligible_count,
+        salvage_eligible_keys=_eligible_keys(eligible),
+        reselect_candidate_count=len(list_reselect_candidates(ledger, signals=signals)),
+        starvation=starvation,
+        reason=_starvation_reason(starvation, usable_count, eligible_count),
+    )
 
 
 def _print_report(report: PipelineHealth, as_json: bool) -> None:

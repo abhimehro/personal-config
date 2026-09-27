@@ -58,12 +58,15 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(paths=paths):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=paths
+                        item, live=health.LivePrSignals(unique_paths=paths)
                     )
                 )
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, unique_remaining_paths=[".jules/journal.md", "src/unique.py"]
+                item,
+                live=health.LivePrSignals(
+                    unique_paths=[".jules/journal.md", "src/unique.py"]
+                ),
             )
         )
 
@@ -82,7 +85,10 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(allowed=path):
                 self.assertTrue(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=[".jules/journal.md", path]
+                        item,
+                        live=health.LivePrSignals(
+                            unique_paths=[".jules/journal.md", path]
+                        ),
                     )
                 )
         for paths in (
@@ -93,13 +99,13 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(blocked=paths):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=paths
+                        item, live=health.LivePrSignals(unique_paths=paths)
                     )
                 )
         self.assertFalse(
             health.is_reselect_salvage_candidate(
                 {**item, "next_action": "CONFLICTING unique remaining"},
-                unique_remaining_paths=["maintenance/bin/refresh.sh"],
+                live=health.LivePrSignals(unique_paths=["maintenance/bin/refresh.sh"]),
             )
         )
 
@@ -121,13 +127,16 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(prefix=prefix):
                 self.assertTrue(
                     health.is_reselect_salvage_candidate(
-                        item, title=f"  {prefix} focused repair"
+                        item,
+                        live=health.LivePrSignals(title=f"  {prefix} focused repair"),
                     )
                 )
         for title in (None, "Human repair", "Review ⚡ Bolt repair"):
             with self.subTest(title=title):
                 self.assertFalse(
-                    health.is_reselect_salvage_candidate(item, title=title)
+                    health.is_reselect_salvage_candidate(
+                        item, live=health.LivePrSignals(title=title)
+                    )
                 )
 
     def test_reselect_candidate_lookup_accepts_source_prefix_metadata(self) -> None:
@@ -221,11 +230,16 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertFalse(health.is_reselect_salvage_candidate(item))
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="CONFLICTING")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="CONFLICTING")
+            )
         )
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, live_mergeable="DIRTY", unique_remaining_paths=["src/demo.py"]
+                item,
+                live=health.LivePrSignals(
+                    mergeable="DIRTY", unique_paths=["src/demo.py"]
+                ),
             )
         )
 
@@ -236,10 +250,14 @@ class ReselectCandidateTests(unittest.TestCase):
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
         )
         self.assertFalse(
-            health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="MERGEABLE")
+            )
         )
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="dirty")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="dirty")
+            )
         )
 
     def test_explicit_empty_unique_signal_does_not_reselect_stale_paths(self) -> None:
@@ -298,7 +316,8 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertFalse(
             health.is_reselect_salvage_candidate(
-                item, unique_remaining_paths=["maintenance/bin/refresh.sh"]
+                item,
+                live=health.LivePrSignals(unique_paths=["maintenance/bin/refresh.sh"]),
             )
         )
 
@@ -333,7 +352,9 @@ class ReselectCandidateTests(unittest.TestCase):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
                         item,
-                        unique_remaining_paths=["maintenance/bin/refresh.sh", path],
+                        live=health.LivePrSignals(
+                            unique_paths=["maintenance/bin/refresh.sh", path]
+                        ),
                     )
                 )
 
@@ -351,7 +372,9 @@ class ReselectCandidateTests(unittest.TestCase):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
                         item,
-                        unique_remaining_paths=["maintenance/bin/refresh.sh"],
+                        live=health.LivePrSignals(
+                            unique_paths=["maintenance/bin/refresh.sh"]
+                        ),
                     )
                 )
 
@@ -367,7 +390,8 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertFalse(health.is_reselect_salvage_candidate(item))
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, title="🎨 Palette: wrap analytics dashboard"
+                item,
+                live=health.LivePrSignals(title="🎨 Palette: wrap analytics dashboard"),
             )
         )
 

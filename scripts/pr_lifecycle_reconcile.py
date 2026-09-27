@@ -68,8 +68,9 @@ def _expiry_days(config: dict[str, Any]) -> int:
 def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
     """Fetch live PR fields, returning None when the command or payload fails.
 
-    Note: ``gh pr view --json`` has no ``baseRefOid`` field (local dry-run
-    fix 2026-09-24); base SHA is enriched via REST ``gh api``.
+    Note: base SHA is enriched via REST ``gh api`` rather than folding
+    ``baseRefOid`` into the ``--json`` field list, so a missing base SHA
+    fails closed as None instead of silently omitting the drift check.
     """
     cmd = [
         "gh",

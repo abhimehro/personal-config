@@ -426,54 +426,75 @@ def _stage3_plan(
     return allowed, actions, None, "OK"
 
 
+def _dispatch_stage_plan(
+    stage: int,
+    ledger: dict[str, Any],
+    config: dict[str, Any],
+    signals_result: SignalsResult,
+) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
+    """Route the stage to its planner; invalid stages fail closed."""
+    if stage == 1:
+        allowed, actions, stop_class, reason = _stage1_plan(
+            ledger,
+            config,
+            signals=signals_result.signals,
+            signals_status=signals_result.status,
+        )
+        return allowed, actions, stop_class, reason, {}
+    if stage == 2:
+        return _stage2_plan(ledger, config)
+    if stage == 3:
+        allowed, actions, stop_class, reason = _stage3_plan(
+            ledger, signals=signals_result.signals
+        )
+        return allowed, actions, stop_class, reason, {}
+    return [], [], "LOGIC_STOP", f"invalid stage {stage}", {}
+
+
+def _annotate_degraded_signals(actions: list[dict[str, Any]], status: str) -> None:
+    """Append the informational SIGNALS_DEGRADED action once per plan."""
+    if status not in {"DEGRADED", "PARTIAL"}:
+        return
+    if any(
+        isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
+    ):
+        return
+    actions.append(
+        {
+            "action": "SIGNALS_DEGRADED",
+            "status": status,
+            "note": (
+                "ledger fallbacks in effect; "
+                "title-gated items invisible for failed keys"
+            ),
+        }
+    )
+
+
 def build_stage_plan(
     stage: int,
     ledger: dict[str, Any],
     config: dict[str, Any],
     *,
-    signals: health.ReselectSignals | None = None,
-    signals_status: str | None = None,
+    signals_result: SignalsResult | None = None,
 ) -> dict[str, Any]:
     """Build a stage plan with health, permitted commands, and planned actions.
 
-    Signals inform the health reselect count and Stage 1/3 action selection.
-    signals_status is descriptive: PARTIAL/DEGRADED adds an informational
-    action and condition without changing stop classification or discarding
-    supplied signals. Invalid stages return LOGIC_STOP. Proposed commands and
-    actions are not executed.
+    signals_result informs the health reselect count and Stage 1/3 action
+    selection. Its status is descriptive: PARTIAL/DEGRADED adds an
+    informational action and condition without changing stop classification
+    or discarding supplied signals. Invalid stages return LOGIC_STOP.
+    Proposed commands and actions are not executed.
     """
-    # Signals apply only to Stage 1 and Stage 3; an invalid stage yields LOGIC_STOP with no
-    # permitted commands or actions.
-    report = health.summarize(ledger, signals=signals)
-    extras: dict[str, Any] = {}
-    if stage == 1:
-        allowed, actions, stop_class, reason = _stage1_plan(
-            ledger, config, signals=signals, signals_status=signals_status
-        )
-    elif stage == 2:
-        allowed, actions, stop_class, reason, extras = _stage2_plan(ledger, config)
-    elif stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan(ledger, signals=signals)
-    else:
-        allowed, actions = [], []
-        stop_class = "LOGIC_STOP"
-        reason = f"invalid stage {stage}"
-
-    if signals_status in {"DEGRADED", "PARTIAL"}:
-        if not any(
-            isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED"
-            for a in actions
-        ):
-            actions.append(
-                {
-                    "action": "SIGNALS_DEGRADED",
-                    "status": signals_status,
-                    "note": (
-                        "ledger fallbacks in effect; "
-                        "title-gated items invisible for failed keys"
-                    ),
-                }
-            )
+    # Signals apply only to Stage 1 and Stage 3; an invalid stage yields
+    # LOGIC_STOP with no permitted commands or actions.
+    result = signals_result or SignalsResult(status="SKIPPED")
+    signals_status = result.status
+    report = health.summarize(ledger, signals=result.signals)
+    allowed, actions, stop_class, reason, extras = _dispatch_stage_plan(
+        stage, ledger, config, result
+    )
+    _annotate_degraded_signals(actions, signals_status)
 
     plan = {
         "stage": stage,
@@ -490,7 +511,7 @@ def build_stage_plan(
         "actions": actions,
         "calibration_enabled": False,
         "stage2_may_merge": False,
-        "signals_status": signals_status or "SKIPPED",
+        "signals_status": signals_status,
         "stop_class": stop_class,
         "reason": reason,
     }
@@ -648,8 +669,7 @@ def run_stage(
                 stage,
                 ledger,
                 config,
-                signals=signals_result.signals,
-                signals_status=signals_result.status,
+                signals_result=signals_result,
             )
             plan["signals_status"] = signals_result.status
             plan["signals_queried"] = signals_result.queried_count

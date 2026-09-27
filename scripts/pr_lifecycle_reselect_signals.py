@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Produce live GitHub PR reselect signals for Stage 1 and Stage 3 planning.
 
-Queries live PR state, title, mergeability, headRefOid, author, and changed files
-for prefiltered candidate items. Fully fail-open: errors degrade to empty signals
-or ledger fallback without failing the planner.
+Queries live PR state, title, mergeability, head/base SHAs, author, and changed
+files for prefiltered candidate items. Fully fail-open: errors degrade to
+partial or empty signals with ledger fallback; the planner never hard-fails.
 """
 
 from __future__ import annotations
@@ -25,23 +25,10 @@ import pr_lifecycle_pipeline_health as health
 
 LOGGER = logging.getLogger(__name__)
 CLOSED_PR_STATES = frozenset({"CLOSED", "MERGED"})
-
-NON_SALVAGE_OUTCOMES = getattr(
-    health,
-    "NON_SALVAGE_OUTCOMES",
-    frozenset(
-        {
-            "REVIEW_SECURITY",
-            "HOLD_PLATFORM",
-            "HOLD_CANONICAL",
-            "PASS_ROUTINE",
-            "CLOSE_NONSECURITY_NOOP",
-            "ANALYSIS_ERROR",
-        }
-    ),
-)
-STAGE2_OWNED_STATES = getattr(
-    health, "STAGE2_OWNED_STATES", frozenset({"STAGE2_QUEUED", "STAGE2_ACTIVE"})
+MAX_CONSECUTIVE_FAILURES = 3
+FILE_LIST_TRUNCATION = 100
+PR_JSON_FIELDS = (
+    "state,mergeable,mergeStateStatus,title,headRefOid,baseRefOid,author,files"
 )
 
 __all__ = [
@@ -77,50 +64,57 @@ def _default_runner(
     )
 
 
+def _query_argv(item: dict[str, Any]) -> list[str]:
+    """Return the fixed gh argv for one ledger item's live PR lookup."""
+    return [
+        "gh",
+        "pr",
+        "view",
+        str(item.get("pr")),
+        "--repo",
+        str(item.get("repository") or ""),
+        "--json",
+        PR_JSON_FIELDS,
+    ]
+
+
 def prefilter_ledger_items(
     ledger: dict[str, Any],
     *,
     max_prs: int = 40,
+    author_gate: health.ReselectAuthorGate | None = None,
 ) -> list[dict[str, Any]]:
     """Return ledger candidates for live queries, prioritizing Stage 1/3 owners.
 
-    Exclude records missing key/repository/PR anchors, never-touch sources,
-    terminal or Stage 2-owned items, blocked outcomes, and sources with usable
-    queued work. Do not filter on author_type, next_action, or paths.
+    Only records that can pass the non-live reselect gates are kept: anchors
+    (key/repository/PR plus nonempty base/head SHAs), no usable queued work,
+    and every ledger-evaluable eligibility gate (never-touch, lifecycle,
+    owner, outcome, identity author, paths) via health.is_reselect_plausible.
+    Ledger records carry no title field, so title-gated items stay plausible
+    on an allowlisted ledger author. Live signals can only narrow the result.
     Preserve ledger order within each priority group and return the original
     item dictionaries. Apply max_prs as a Python slice stop: zero returns no
     items, and a negative value omits that many items from the end.
     """
-    queued_prefixes = health.existing_wi_prefixes(ledger)
     raw_items = ledger.get("items")
     if not isinstance(raw_items, list):
         return []
 
+    gate = (author_gate or health.ReselectAuthorGate()).resolved()
+    queued_prefixes = health.existing_wi_prefixes(ledger)
     survivors: list[dict[str, Any]] = []
     for item in raw_items:
         if not isinstance(item, dict):
             continue
-        key = item.get("key")
-        repo = item.get("repository")
-        pr = item.get("pr")
-        if not key or not repo or pr is None:
+        if not _prefilter_anchors(item):
             continue
-        if health.is_never_touch_key(key):
+        if health.source_pr_prefix(item.get("key")) in queued_prefixes:
             continue
-        if item.get("lifecycle_state") == "TERMINAL":
-            continue
-        if (
-            item.get("current_owner") == "stage2"
-            or item.get("lifecycle_state") in STAGE2_OWNED_STATES
-        ):
-            continue
-        if (item.get("guardrail_outcome") or "") in NON_SALVAGE_OUTCOMES:
-            continue
-        if health.source_pr_prefix(key) in queued_prefixes:
+        if not health.is_reselect_plausible(item, author_gate=gate):
             continue
         survivors.append(item)
 
-    # Order: keep ledger order, but put current_owner in {stage1, stage3} items first
+    # Order: keep ledger order, but put current_owner in {stage1, stage3} first
     stage1_3 = [
         item for item in survivors if item.get("current_owner") in {"stage1", "stage3"}
     ]
@@ -130,6 +124,162 @@ def prefilter_ledger_items(
         if item.get("current_owner") not in {"stage1", "stage3"}
     ]
     return (stage1_3 + others)[:max_prs]
+
+
+def _prefilter_anchors(item: dict[str, Any]) -> bool:
+    """Ledger records need key, repository, and PR anchors to be queried."""
+    return bool(
+        item.get("key") and item.get("repository") and item.get("pr") is not None
+    )
+
+
+@dataclass
+class _SignalsAccum:
+    """Per-key signal maps collected while scanning candidates."""
+
+    live_mergeable: dict[str, str] = field(default_factory=dict)
+    titles: dict[str, str] = field(default_factory=dict)
+    unique_paths: dict[str, list[str]] = field(default_factory=dict)
+    live_head_sha: dict[str, str] = field(default_factory=dict)
+    live_base_sha: dict[str, str] = field(default_factory=dict)
+    author_login: dict[str, str] = field(default_factory=dict)
+    closed: set[str] = field(default_factory=set)
+    failed: list[str] = field(default_factory=list)
+    truncated: list[str] = field(default_factory=list)
+
+    def to_signals(self) -> health.ReselectSignals:
+        """Materialize collected maps into the immutable signal bundle."""
+        return health.ReselectSignals(
+            live_mergeable_by_key=self.live_mergeable or None,
+            titles_by_key=self.titles or None,
+            unique_paths_by_key=self.unique_paths or None,
+            live_head_sha_by_key=self.live_head_sha or None,
+            live_base_sha_by_key=self.live_base_sha or None,
+            author_login_by_key=self.author_login or None,
+            closed_keys=frozenset(self.closed) or None,
+        )
+
+
+def _fetch_payload(
+    run_cmd: Callable[[list[str], float], subprocess.CompletedProcess[str]],
+    item: dict[str, Any],
+    per_call_timeout_s: float,
+) -> dict[str, Any] | None:
+    """Run one live query; return the JSON payload or None on failure.
+
+    FileNotFoundError (missing gh) propagates for the caller's immediate
+    DEGRADED exit. Every other failure — nonzero exit, invalid JSON,
+    non-object payload, or a runner exception — yields None so the caller can
+    mark the key failed and keep scanning. Only the exception type is logged;
+    messages can echo gh output.
+    """
+    try:
+        completed = run_cmd(_query_argv(item), per_call_timeout_s)
+    except FileNotFoundError:
+        raise
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        LOGGER.warning(
+            "reselect signals: query failed for one PR (%s)",
+            type(exc).__name__,
+        )
+        return None
+    if completed.returncode != 0:
+        return None
+    try:
+        parsed = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _record_mergeable(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
+    """Map live mergeability into the per-key signal map."""
+    mergeable = str(payload.get("mergeable") or "").strip().upper()
+    merge_state_status = str(payload.get("mergeStateStatus") or "").strip().upper()
+    if mergeable == "CONFLICTING":
+        acc.live_mergeable[key] = "CONFLICTING"
+    elif merge_state_status == "DIRTY":
+        acc.live_mergeable[key] = "DIRTY"
+    elif mergeable == "MERGEABLE":
+        acc.live_mergeable[key] = "MERGEABLE"
+    elif merge_state_status in health.AUTHORITATIVE_MERGEABLE_STATES:
+        # e.g. UNKNOWN + BLOCKED: still authoritative; never let stale
+        # ledger text resurrect CONFLICTING/DIRTY.
+        acc.live_mergeable[key] = merge_state_status
+
+
+def _record_identity_fields(
+    acc: _SignalsAccum, key: str, payload: dict[str, Any]
+) -> None:
+    """Map live title, head/base SHAs, and author login into signal maps."""
+    title = payload.get("title")
+    if isinstance(title, str) and title.strip():
+        acc.titles[key] = title
+    head_ref_oid = payload.get("headRefOid")
+    if isinstance(head_ref_oid, str) and head_ref_oid.strip():
+        acc.live_head_sha[key] = head_ref_oid.strip()
+    base_ref_oid = payload.get("baseRefOid")
+    if isinstance(base_ref_oid, str) and base_ref_oid.strip():
+        acc.live_base_sha[key] = base_ref_oid.strip()
+    author = payload.get("author")
+    if isinstance(author, dict):
+        login = str(author.get("login") or "").strip()
+        if login:
+            acc.author_login[key] = login
+
+
+def _record_paths(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
+    """Map the changed-file list into unique paths, or mark the key truncated."""
+    files = payload.get("files")
+    if not isinstance(files, list):
+        return
+    if len(files) >= FILE_LIST_TRUNCATION or any(
+        not isinstance(f, dict) or not f.get("path") for f in files
+    ):
+        acc.truncated.append(key)
+        return
+    paths = [str(f["path"]) for f in files]
+    acc.unique_paths[key] = health.non_journal_paths(paths)
+
+
+def _fold_payload(acc: _SignalsAccum, key: str, payload: dict[str, Any]) -> None:
+    """Fold one successful OPEN payload into the accumulators."""
+    state = str(payload.get("state") or "").strip().upper()
+    if state in CLOSED_PR_STATES:
+        # Authoritative terminal state: exclude from reselect.
+        acc.closed.add(key)
+        return
+    if state != "OPEN":
+        # Missing/unknown state: emit nothing; ledger fallback stays active.
+        return
+    _record_mergeable(acc, key, payload)
+    _record_identity_fields(acc, key, payload)
+    _record_paths(acc, key, payload)
+
+
+def _finish(
+    start_time: float,
+    acc: _SignalsAccum,
+    queried_count: int,
+    *,
+    status: str | None = None,
+    timed_out: bool = False,
+) -> SignalsResult:
+    """Assemble the SignalsResult from accumulated state.
+
+    Every signal collected so far is retained — including on DEGRADED — so a
+    later query failure cannot resurrect an already-excluded ledger candidate;
+    ledger fallback applies only to failed or unqueried keys.
+    """
+    resolved = status or ("PARTIAL" if (timed_out or acc.failed) else "OK")
+    return SignalsResult(
+        signals=acc.to_signals(),
+        status=resolved,
+        queried_count=queried_count,
+        failed_keys=tuple(acc.failed),
+        truncated_keys=tuple(acc.truncated),
+        elapsed_s=round(time.monotonic() - start_time, 4),
+    )
 
 
 def produce_reselect_signals(
@@ -158,187 +308,47 @@ def produce_reselect_signals(
 
     Return OK if the scan finishes without query failures, including when
     there are no candidates. Query failures or budget exhaustion yield
-    PARTIAL with accumulated signals. Missing gh or producer-level exceptions
-    yield DEGRADED with empty signals; three consecutive query failures yield
-    DEGRADED retaining only collected closed keys and head SHAs. Query and
-    processing exceptions are caught for ledger fallback. Truncated files and
-    the candidate cap alone do not change status; SKIPPED is never returned.
+    PARTIAL with accumulated signals. Missing gh, producer-level exceptions,
+    or MAX_CONSECUTIVE_FAILURES straight failures yield DEGRADED; the
+    consecutive-failure and missing-gh exits retain every signal collected so
+    far while producer-level exceptions emit none. Truncated files and the
+    candidate cap alone do not change status; SKIPPED is never returned.
     """
     start_time = time.monotonic()
     run_cmd = runner or _default_runner
 
     try:
         candidates = prefilter_ledger_items(ledger, max_prs=max_prs)
-        if not candidates:
-            return SignalsResult(
-                signals=health.ReselectSignals(),
-                status="OK",
-                queried_count=0,
-                failed_keys=(),
-                truncated_keys=(),
-                elapsed_s=round(time.monotonic() - start_time, 4),
-            )
-
-        live_mergeable_by_key: dict[str, str] = {}
-        titles_by_key: dict[str, str] = {}
-        unique_paths_by_key: dict[str, list[str]] = {}
-        live_head_sha_by_key: dict[str, str] = {}
-        author_login_by_key: dict[str, str] = {}
-        closed_keys: set[str] = set()
-
-        failed_keys: list[str] = []
-        truncated_keys: list[str] = []
+        acc = _SignalsAccum()
         queried_count = 0
         consecutive_failures = 0
         timed_out = False
 
         for item in candidates:
-            elapsed = time.monotonic() - start_time
-            if elapsed >= total_budget_s:
+            if time.monotonic() - start_time >= total_budget_s:
                 timed_out = True
                 break
-
             key = str(item.get("key") or "")
-            repo = str(item.get("repository") or "")
-            pr = item.get("pr")
-
-            cmd = [
-                "gh",
-                "pr",
-                "view",
-                str(pr),
-                "--repo",
-                repo,
-                "--json",
-                "state,mergeable,mergeStateStatus,title,headRefOid,author,files",
-            ]
-
             queried_count += 1
-            payload: dict[str, Any] | None = None
             try:
-                completed = run_cmd(cmd, per_call_timeout_s)
-                if completed.returncode != 0:
-                    failed_keys.append(key)
-                    consecutive_failures += 1
-                else:
-                    try:
-                        parsed = json.loads(completed.stdout)
-                        if isinstance(parsed, dict):
-                            payload = parsed
-                            consecutive_failures = 0
-                        else:
-                            failed_keys.append(key)
-                            consecutive_failures += 1
-                    except json.JSONDecodeError:
-                        failed_keys.append(key)
-                        consecutive_failures += 1
+                payload = _fetch_payload(run_cmd, item, per_call_timeout_s)
             except FileNotFoundError:
-                # gh missing -> global degradation immediately
-                return SignalsResult(
-                    signals=health.ReselectSignals(),
-                    status="DEGRADED",
-                    queried_count=queried_count,
-                    failed_keys=tuple(failed_keys + [key]),
-                    truncated_keys=tuple(truncated_keys),
-                    elapsed_s=round(time.monotonic() - start_time, 4),
-                )
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                # Fail open per key. Log the type only: messages can echo gh output.
-                LOGGER.warning(
-                    "reselect signals: query failed for one PR (%s)",
-                    type(exc).__name__,
-                )
-                failed_keys.append(key)
-                consecutive_failures += 1
-
-            if consecutive_failures >= 3:
-                # Preserve known exclusions while other signals fall back to ledger.
-                return SignalsResult(
-                    signals=health.ReselectSignals(
-                        closed_keys=frozenset(closed_keys) or None,
-                        live_head_sha_by_key=live_head_sha_by_key or None,
-                    ),
-                    status="DEGRADED",
-                    queried_count=queried_count,
-                    failed_keys=tuple(failed_keys),
-                    truncated_keys=tuple(truncated_keys),
-                    elapsed_s=round(time.monotonic() - start_time, 4),
-                )
-
+                # gh missing -> global degradation immediately.
+                acc.failed.append(key)
+                return _finish(start_time, acc, queried_count, status="DEGRADED")
             if payload is None:
-                continue
+                acc.failed.append(key)
+                consecutive_failures += 1
+            else:
+                consecutive_failures = 0
+            if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                # Retain collected exclusions so failed keys alone fall back
+                # to ledger values.
+                return _finish(start_time, acc, queried_count, status="DEGRADED")
+            if payload is not None:
+                _fold_payload(acc, key, payload)
 
-            state = str(payload.get("state") or "").strip().upper()
-            if state in CLOSED_PR_STATES:
-                # Authoritative terminal state: exclude from reselect.
-                closed_keys.add(key)
-                continue
-            if state != "OPEN":
-                # Missing/unknown state: emit nothing; ledger fallback stays active.
-                continue
-
-            # Mergeability mapping
-            mergeable = str(payload.get("mergeable") or "").strip().upper()
-            merge_state_status = (
-                str(payload.get("mergeStateStatus") or "").strip().upper()
-            )
-            if mergeable == "CONFLICTING":
-                live_mergeable_by_key[key] = "CONFLICTING"
-            elif merge_state_status == "DIRTY":
-                live_mergeable_by_key[key] = "DIRTY"
-            elif mergeable == "MERGEABLE":
-                live_mergeable_by_key[key] = "MERGEABLE"
-            elif merge_state_status in health.AUTHORITATIVE_MERGEABLE_STATES:
-                # e.g. UNKNOWN + BLOCKED: still authoritative; never let stale
-                # ledger text resurrect CONFLICTING/DIRTY.
-                live_mergeable_by_key[key] = merge_state_status
-
-            # Title mapping
-            title = payload.get("title")
-            if isinstance(title, str) and title.strip():
-                titles_by_key[key] = title
-
-            # Head SHA mapping
-            head_ref_oid = payload.get("headRefOid")
-            if isinstance(head_ref_oid, str) and head_ref_oid.strip():
-                live_head_sha_by_key[key] = head_ref_oid.strip()
-
-            # Author login mapping
-            author = payload.get("author")
-            if isinstance(author, dict):
-                login = str(author.get("login") or "").strip()
-                if login:
-                    author_login_by_key[key] = login
-
-            # Unique paths mapping
-            files = payload.get("files")
-            if isinstance(files, list):
-                if len(files) >= 100 or any(
-                    not isinstance(f, dict) or not f.get("path") for f in files
-                ):
-                    truncated_keys.append(key)
-                else:
-                    paths = [str(f["path"]) for f in files]
-                    unique_paths_by_key[key] = health.non_journal_paths(paths)
-
-        elapsed_total = round(time.monotonic() - start_time, 4)
-        status = "PARTIAL" if (timed_out or len(failed_keys) > 0) else "OK"
-        signals = health.ReselectSignals(
-            live_mergeable_by_key=live_mergeable_by_key or None,
-            titles_by_key=titles_by_key or None,
-            unique_paths_by_key=unique_paths_by_key or None,
-            live_head_sha_by_key=live_head_sha_by_key or None,
-            author_login_by_key=author_login_by_key or None,
-            closed_keys=frozenset(closed_keys) or None,
-        )
-        return SignalsResult(
-            signals=signals,
-            status=status,
-            queried_count=queried_count,
-            failed_keys=tuple(failed_keys),
-            truncated_keys=tuple(truncated_keys),
-            elapsed_s=elapsed_total,
-        )
+        return _finish(start_time, acc, queried_count, timed_out=timed_out)
 
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.

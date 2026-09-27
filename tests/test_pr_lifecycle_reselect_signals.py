@@ -30,6 +30,17 @@ from tests.pr_lifecycle_helpers import (  # noqa: E402
 )
 
 
+def _queryable_item(**overrides: Any) -> dict[str, Any]:
+    """Ledger item plausible enough to consume a live query slot."""
+    defaults = {
+        "base_sha": "b" * 40,
+        "head_sha": "c" * 40,
+        "changed_paths": ["src/demo.py"],
+    }
+    defaults.update(overrides)
+    return make_item(**defaults)
+
+
 def _make_completed_proc(
     stdout_dict: dict[str, Any] | str, returncode: int = 0
 ) -> subprocess.CompletedProcess[str]:
@@ -62,12 +73,12 @@ class TestPrefilterLedgerItems(unittest.TestCase):
     def test_priority_is_applied_before_cap_without_mutating_ledger(self) -> None:
         """Verify owner priority precedes the cap and leaves the ledger intact."""
         items = [
-            make_item(
+            _queryable_item(
                 key=f"demo#{n}@sha", repository="demo", pr=n, current_owner="human"
             )
             for n in range(1, 42)
         ]
-        priority = make_item(
+        priority = _queryable_item(
             key="demo#42@sha", repository="demo", pr=42, current_owner="stage1"
         )
         ledger = make_ledger([*items, priority], [])
@@ -79,7 +90,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
     def test_unusable_work_items_do_not_hide_candidates(self) -> None:
         """Verify expired or invalid work items do not suppress candidate PRs."""
-        item = make_item(repository="abhimehro/demo", pr=1)
+        item = _queryable_item(repository="abhimehro/demo", pr=1)
         cases = (
             {"expiry_utc": "2000-01-01T00:00:00Z"},
             {"expiry_utc": "not-a-date"},
@@ -97,11 +108,12 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
     def test_prefilter_excludes_ineligible_records(self) -> None:
         """Prefilter excludes never-touch, TERMINAL, stage2-owned, NON_SALVAGE, and already-queued items."""
-        valid_candidate = make_item(
+        valid_candidate = _queryable_item(
             key="abhimehro/demo#1@abc",
             repository="abhimehro/demo",
             pr=1,
-            author_type="HUMAN",  # Keeping non-BOT items!
+            author="abhimehro",
+            author_type="HUMAN",  # Non-BOT kept on an allowlisted ledger author.
             next_action="Some routine action without conflicting",  # No CONFLICTING in next_action kept!
         )
         never_touch = make_item(
@@ -164,18 +176,106 @@ class TestPrefilterLedgerItems(unittest.TestCase):
         self.assertEqual(len(survivors), 1)
         self.assertEqual(survivors[0]["key"], valid_candidate["key"])
 
+    def test_prefilter_drops_records_failing_non_live_gates(self) -> None:
+        """Records that cannot pass non-live gates never consume a query slot."""
+        base = {
+            "repository": "abhimehro/demo",
+            "next_action": "CONFLICTING",
+        }
+        outsider_author = _queryable_item(
+            key="abhimehro/demo#11@abc",
+            pr=11,
+            author="random-external-user",
+            author_type="HUMAN",
+            **base,
+        )
+        no_paths = _queryable_item(
+            key="abhimehro/demo#12@abc",
+            pr=12,
+            changed_paths=[],
+            **base,
+        )
+        journal_only = _queryable_item(
+            key="abhimehro/demo#13@abc",
+            pr=13,
+            changed_paths=[".jules/journal.md"],
+            **base,
+        )
+        missing_base = _queryable_item(
+            key="abhimehro/demo#14@abc",
+            pr=14,
+            base_sha="",
+            **base,
+        )
+        missing_head = _queryable_item(
+            key="abhimehro/demo#15@abc",
+            pr=15,
+            head_sha="  ",
+            **base,
+        )
+        plausible = _queryable_item(
+            key="abhimehro/demo#16@abc",
+            pr=16,
+            **base,
+        )
+        ledger = make_ledger(
+            [
+                outsider_author,
+                no_paths,
+                journal_only,
+                missing_base,
+                missing_head,
+                plausible,
+            ],
+            [],
+        )
+        self.assertEqual(prefilter_ledger_items(ledger), [plausible])
+
+    def test_prefilter_cap_spends_lookups_only_on_plausible_records(self) -> None:
+        """Non-candidates ahead in ledger order must not consume the live cap."""
+        implausible = [
+            _queryable_item(
+                key=f"abhimehro/demo#{n}@abc",
+                repository="abhimehro/demo",
+                pr=n,
+                author="random-external-user",
+                author_type="HUMAN",
+            )
+            for n in range(1, 41)
+        ]
+        # A BOT item with a non-conflicting ledger action still gains
+        # eligibility from a live DIRTY state once it is queried.
+        plausible_bot = _queryable_item(
+            key="abhimehro/demo#41@abc",
+            repository="abhimehro/demo",
+            pr=41,
+            next_action="needs verification",
+        )
+        ledger = make_ledger([*implausible, plausible_bot], [])
+        self.assertEqual(prefilter_ledger_items(ledger), [plausible_bot])
+        runner = mock.Mock(
+            return_value=_make_completed_proc(
+                {"state": "OPEN", "mergeable": "UNKNOWN", "mergeStateStatus": "DIRTY"}
+            )
+        )
+        result = produce_reselect_signals(ledger, runner=runner)
+        self.assertEqual(runner.call_count, 1)
+        self.assertEqual(
+            result.signals.live_mergeable_by_key, {plausible_bot["key"]: "DIRTY"}
+        )
+
     def test_prefilter_orders_stage1_and_stage3_items_first(self) -> None:
         """Prefilter keeps ledger order but places stage1 and stage3 owned items first."""
-        other1 = make_item(
+        other1 = _queryable_item(
             key="demo#1@a", repository="demo", pr=1, current_owner="human"
         )
-        stage3_item = make_item(
+        stage3_item = _queryable_item(
             key="demo#2@b", repository="demo", pr=2, current_owner="stage3"
         )
-        other2 = make_item(
+        other2 = _queryable_item(
             key="demo#3@c", repository="demo", pr=3, current_owner="none"
         )
-        stage1_item = make_item(
+        stage1_item = _queryable_item(
             key="demo#4@d", repository="demo", pr=4, current_owner="stage1"
         )
 
@@ -187,7 +287,8 @@ class TestPrefilterLedgerItems(unittest.TestCase):
     def test_prefilter_honors_max_prs_cap(self) -> None:
         """Prefilter applies max_prs limit."""
         items = [
-            make_item(key=f"demo#{n}@a", repository="demo", pr=n) for n in range(10)
+            _queryable_item(key=f"demo#{n}@a", repository="demo", pr=n)
+            for n in range(10)
         ]
         ledger = make_ledger(items, [])
         survivors = prefilter_ledger_items(ledger, max_prs=3)
@@ -199,7 +300,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         """Verify successful non-open lookups reset consecutive query failures."""
         # A successful lookup still counts as recovery when it yields no open PR.
         items = [
-            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            _queryable_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
             for n in range(1, 7)
         ]
         for state in ("CLOSED", "MERGED", "UNKNOWN"):
@@ -231,7 +332,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_last_inflight_query_can_finish_after_total_budget(self) -> None:
         """Verify a final query started within budget can finish with OK status."""
-        item = make_item(repository="owner/repo", pr=1)
+        item = _queryable_item(repository="owner/repo", pr=1)
         runner = mock.Mock(
             return_value=_make_completed_proc({"state": "OPEN", "title": "collected"})
         )
@@ -256,7 +357,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_later_scan_does_not_reuse_closed_state_or_query_failures(self) -> None:
         """Verify scans collect fresh signals and failures without ledger mutation."""
         items = [
-            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            _queryable_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
             for n in (1, 2)
         ]
         ledger = make_ledger(items, [])
@@ -289,7 +390,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_nonpositive_budget_does_not_attempt_queries(self) -> None:
         """Verify zero or negative budgets return PARTIAL without querying gh."""
-        ledger = make_ledger([make_item(repository="owner/repo", pr=1)], [])
+        ledger = make_ledger([_queryable_item(repository="owner/repo", pr=1)], [])
         for budget in (0, -1):
             with self.subTest(budget=budget):
                 runner = mock.Mock()
@@ -308,7 +409,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_producer_queries_only_prioritized_candidates_within_cap(self) -> None:
         """Verify producer queries respect owner priority, order, and the PR cap."""
         items = [
-            make_item(
+            _queryable_item(
                 key=f"owner/repo#{n}@abc",
                 repository="owner/repo",
                 pr=n,
@@ -332,7 +433,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_nonzero_exit_discards_even_valid_stdout(self) -> None:
         """Verify failed gh calls cannot contribute authoritative live signals."""
-        item = make_item(repository="owner/repo", pr=1)
+        item = _queryable_item(repository="owner/repo", pr=1)
         # A failed gh call must not supply an authoritative exclusion.
         runner = mock.Mock(
             return_value=_make_completed_proc({"state": "CLOSED"}, returncode=1)
@@ -346,7 +447,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_mixed_failure_types_share_consecutive_failure_limit(self) -> None:
         """Verify command and payload failures share the degradation threshold."""
         items = [
-            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            _queryable_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
             for n in range(1, 5)
         ]
         runner = mock.Mock(
@@ -366,7 +467,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_blank_optional_fields_do_not_override_ledger_fallbacks(self) -> None:
         """Verify invalid optional fields preserve fallback to ledger values."""
-        item = make_item(repository="owner/repo", pr=1)
+        item = _queryable_item(repository="owner/repo", pr=1)
         for title, head, author in (
             (None, None, None),
             ("  ", "\t", {"login": "  "}),
@@ -397,7 +498,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_default_runner_uses_fixed_argv_and_configured_timeout(self) -> None:
         """Verify the default runner passes fixed gh arguments and the timeout."""
-        item = make_item(repository="abhimehro/demo", pr=1)
+        item = _queryable_item(repository="abhimehro/demo", pr=1)
         with mock.patch(
             "pr_lifecycle_reselect_signals.subprocess.run",
             return_value=_make_completed_proc({"state": "OPEN"}),
@@ -414,7 +515,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 "--repo",
                 "abhimehro/demo",
                 "--json",
-                "state,mergeable,mergeStateStatus,title,headRefOid,author,files",
+                "state,mergeable,mergeStateStatus,title,headRefOid,baseRefOid,author,files",
             ],
             check=False,
             capture_output=True,
@@ -428,7 +529,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     ) -> None:
         """Verify malformed payloads do not prevent later PRs from contributing."""
         items = [
-            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+            _queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in (1, 2)
         ]
         for payload in ("{invalid", "", "[]", "null", "42", '"OPEN"', "true"):
             with self.subTest(payload=payload):
@@ -450,7 +552,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_timeout_is_sanitized_and_next_candidate_is_still_queried(self) -> None:
         """Verify timeouts log no private output and allow the next query."""
         items = [
-            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+            _queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in (1, 2)
         ]
         runner = mock.Mock(
             side_effect=[
@@ -474,7 +577,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_success_resets_consecutive_failure_threshold(self) -> None:
         """Verify an intervening success prevents degradation across failure runs."""
         items = [
-            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in range(6)
+            _queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in range(6)
         ]
         runner = mock.Mock(
             side_effect=[
@@ -500,7 +604,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_budget_boundary_preserves_successful_signals(self) -> None:
         """Verify budget exhaustion retains signals from completed queries."""
         items = [
-            make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
+            _queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in (1, 2)
         ]
         runner = mock.Mock(
             return_value=_make_completed_proc(
@@ -527,7 +632,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_files_boundary_and_missing_files_preserve_ledger_fallback(self) -> None:
         """Verify only complete file lists override ledger paths and eligibility."""
-        item = make_item(
+        item = _queryable_item(
             repository="abhimehro/demo",
             pr=1,
             changed_paths=["src/ledger.py"],
@@ -569,14 +674,14 @@ class TestProduceReselectSignals(unittest.TestCase):
                     health.list_reselect_candidates(
                         make_ledger([item], []),
                         signals=result.signals,
-                        allowed_authors=(),
+                        author_gate=health.ReselectAuthorGate(allowed_authors=()),
                     ),
                     [item] if eligible else [],
                 )
 
     def test_unknown_pr_state_does_not_leak_other_payload_fields(self) -> None:
         """Verify unrecognized PR states contribute no other response fields."""
-        item = make_item(repository="abhimehro/demo", pr=1)
+        item = _queryable_item(repository="abhimehro/demo", pr=1)
         for state in (None, "", "DRAFT", "unknown"):
             with self.subTest(state=state):
                 payload = {
@@ -596,7 +701,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_merge_state_precedence_and_normalization(self) -> None:
         """Verify mergeability normalization, conflict precedence, and fallback."""
-        item = make_item(repository="abhimehro/demo", pr=1)
+        item = _queryable_item(repository="abhimehro/demo", pr=1)
         cases = (
             (" mergeable ", " dirty ", "DIRTY"),
             (" conflicting ", " blocked ", "CONFLICTING"),
@@ -626,7 +731,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_successful_mapping_of_all_fields(self) -> None:
         """Live PR response populates mergeable, title, headRefOid, author, and non-journal files."""
-        item = make_item(
+        item = _queryable_item(
             key="abhimehro/personal-config#100@old-sha",
             repository="abhimehro/personal-config",
             pr=100,
@@ -680,7 +785,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         )
         for mergeable, m_status, expected in cases:
             with self.subTest(mergeable=mergeable, m_status=m_status):
-                item = make_item(key="demo#1@sha", repository="demo", pr=1)
+                item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
                 ledger = make_ledger([item], [])
                 resp = {
                     "state": "OPEN",
@@ -701,7 +806,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_files_truncation_and_journal_only(self) -> None:
         """Files >= 100 -> omitted from unique_paths_by_key, in truncated_keys; journal only -> []."""
         # Truncated case
-        item1 = make_item(key="demo#1@sha", repository="demo", pr=1)
+        item1 = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
         resp1 = {
             "state": "OPEN",
             "mergeable": "CONFLICTING",
@@ -714,7 +819,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(res1.truncated_keys, (item1["key"],))
 
         # Journal-only case
-        item2 = make_item(key="demo#2@sha", repository="demo", pr=2)
+        item2 = _queryable_item(key="demo#2@sha", repository="demo", pr=2)
         resp2 = {
             "state": "OPEN",
             "mergeable": "CONFLICTING",
@@ -727,7 +832,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(res2.truncated_keys, ())
 
         # Corrupted / incomplete file entry case
-        item3 = make_item(key="demo#3@sha", repository="demo", pr=3)
+        item3 = _queryable_item(key="demo#3@sha", repository="demo", pr=3)
         resp3 = {
             "state": "OPEN",
             "mergeable": "CONFLICTING",
@@ -741,7 +846,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_closed_or_merged_pr_emits_no_signals(self) -> None:
         """Closed or merged PR emits no signals for that key."""
-        item = make_item(key="demo#1@sha", repository="demo", pr=1)
+        item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
         resp = {
             "state": "MERGED",
             "mergeable": "MERGEABLE",
@@ -764,7 +869,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         cases = (("CLOSED", True), ("merged", True), ("", False), ("DRAFT", False))
         for state, closed in cases:
             with self.subTest(state=state):
-                item = make_item(key="demo#1@sha", repository="demo", pr=1)
+                item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
                 resp = {"state": state, "mergeable": "CONFLICTING"}
                 result = produce_reselect_signals(
                     make_ledger([item], []),
@@ -780,8 +885,8 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_per_pr_failure_results_in_partial_status(self) -> None:
         """Per-PR failure -> PARTIAL, and failed key absent from every map."""
-        item1 = make_item(key="demo#1@sha", repository="demo", pr=1)
-        item2 = make_item(key="demo#2@sha", repository="demo", pr=2)
+        item1 = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
+        item2 = _queryable_item(key="demo#2@sha", repository="demo", pr=2)
         ledger = make_ledger([item1, item2], [])
 
         def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
@@ -806,7 +911,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_file_not_found_causes_immediate_degraded(self) -> None:
         """FileNotFoundError (gh CLI missing) causes immediate DEGRADED with empty signals."""
-        item = make_item(key="demo#1@sha", repository="demo", pr=1)
+        item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
 
         def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
             raise FileNotFoundError("gh not found")
@@ -819,7 +924,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_three_consecutive_failures_cause_degraded(self) -> None:
         """3 consecutive failures -> DEGRADED with empty signals."""
         items = [
-            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(4)
+            _queryable_item(key=f"demo#{i}@sha", repository="demo", pr=i)
+            for i in range(4)
         ]
         ledger = make_ledger(items, [])
 
@@ -839,7 +945,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_three_failures_preserve_collected_exclusions(self) -> None:
         """Degradation must not reselect known closed or changed-head PRs."""
         items = [
-            make_item(
+            _queryable_item(
                 key=f"demo#{i}@sha",
                 repository="demo",
                 pr=i,
@@ -878,14 +984,20 @@ class TestProduceReselectSignals(unittest.TestCase):
             health.ReselectSignals(
                 closed_keys=frozenset({items[0]["key"]}),
                 live_head_sha_by_key={items[1]["key"]: "new-sha"},
+                live_mergeable_by_key={items[1]["key"]: "CONFLICTING"},
             ),
         )
         self.assertEqual(
-            health.list_reselect_candidates(ledger, allowed_authors=()), items
+            health.list_reselect_candidates(
+                ledger, author_gate=health.ReselectAuthorGate(allowed_authors=())
+            ),
+            items,
         )
         self.assertEqual(
             health.list_reselect_candidates(
-                ledger, signals=result.signals, allowed_authors=()
+                ledger,
+                signals=result.signals,
+                author_gate=health.ReselectAuthorGate(allowed_authors=()),
             ),
             items[2:],
         )
@@ -893,7 +1005,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_budget_exhaustion_results_in_partial_status(self) -> None:
         """Budget exhaustion stops querying and returns PARTIAL with accumulated signals."""
         items = [
-            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(5)
+            _queryable_item(key=f"demo#{i}@sha", repository="demo", pr=i)
+            for i in range(5)
         ]
         ledger = make_ledger(items, [])
 
@@ -920,7 +1033,8 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_budget_exhaustion_preserves_accumulated_signals(self) -> None:
         """Budget exhaustion after some queries returns PARTIAL with accumulated signals."""
         items = [
-            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(3)
+            _queryable_item(key=f"demo#{i}@sha", repository="demo", pr=i)
+            for i in range(3)
         ]
         ledger = make_ledger(items, [])
 
@@ -967,7 +1081,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_producer_never_raises_on_arbitrary_runner_exception(self) -> None:
         """Producer never raises, even when runner raises an unhandled exception."""
-        item = make_item(key="demo#1@sha", repository="demo", pr=1)
+        item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
 
         def bad_runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
             raise RuntimeError("unexpected failure")
@@ -984,7 +1098,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_global_failure_logs_type_only_and_degrades(self) -> None:
         """An unexpected producer-level error degrades and logs only its type."""
-        item = make_item(key="demo#1@sha", repository="demo", pr=1)
+        item = _queryable_item(key="demo#1@sha", repository="demo", pr=1)
         with mock.patch(
             "pr_lifecycle_reselect_signals.prefilter_ledger_items",
             side_effect=KeyError("secret-ish detail"),
