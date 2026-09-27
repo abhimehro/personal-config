@@ -1,5 +1,24 @@
 # Lessons Learned
 
+## Lesson 0hs: A check must never mutate files (2026-09-26)
+
+**Pattern:** A plain, non-interactive `trunk check <files>` applied deno
+formatter autofixes. It reflowed `docs/cursor-automations/prompts/*.md`, which
+are embedded verbatim in `exports/*.json`, breaking
+`sync_cursor_export_prompts.py --check` and two export-authority tests. The
+pre-push hook was never affected: the pinned `trunk-check-pre-push` action
+already runs `trunk check -n` (`--no-fix`).
+
+**Rule:** (1) Agents and manual runs use `trunk check --no-fix` (or `-n`); fixes
+are explicit via `make lint-fix` / `trunk fmt`. `make lint` runs
+`trunk check --all --no-fix`. (2) Keep the pre-push hook on the built-in
+`trunk-check-pre-push` action (`-n`); do not override it with a fixing variant.
+(3) Prompt sources are excluded from deno in `.trunk/trunk.yaml`; after any
+formatting pass run `python3 scripts/sync_cursor_export_prompts.py --check`.
+
+**Detection cost:** Low: `git status --short` after a check should be unchanged;
+the export sync check and `tests/` catch prompt drift.
+
 ## Lesson 0hr: Three-stage PR pipeline rebalance (2026-09-21)
 
 **Option 3 addendum (2026-09-24):** Keep three stages. Stage 1 reselects live

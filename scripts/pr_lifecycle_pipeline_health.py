@@ -495,7 +495,13 @@ def is_reselect_salvage_candidate(
     author_gate: bool = True,
     allowed_authors: Sequence[str] | None = None,
 ) -> bool:
-    """Return whether Stage 1 may plan a unique-source reselect for this item."""
+    """Return whether Stage 1 may plan a unique-source reselect for this item.
+
+    With ``author_gate`` on and ``allowed_authors`` None, every call reloads
+    the allowlist YAML via ``_load_reselect_allowed_authors``. Callers
+    evaluating many items should resolve it once and pass ``allowed_authors``
+    on each call, as ``list_reselect_candidates`` does.
+    """
     # Accept a nonterminal BOT item or one with an allowed title prefix and
     # author when its supplied mergeability, or a state inferred from
     # next_action, is CONFLICTING or DIRTY. An explicit unique_remaining_paths

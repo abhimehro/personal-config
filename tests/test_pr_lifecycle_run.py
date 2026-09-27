@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import types
@@ -657,11 +658,24 @@ class TestDependencyPreflight(unittest.TestCase):
     """Missing runtime deps fail fast with an install hint, not a traceback."""
 
     def test_missing_yaml_exits_2_with_hint(self) -> None:
-        """Run with -S (no site-packages) to simulate a bare interpreter."""
+        """Run isolated (-I) without site-packages (-S) as a bare interpreter."""
+        # -I ignores PYTHON* env vars and user site; drop PYTHONPATH as well.
+        env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+        flags = [sys.executable, "-I", "-S"]
+        probe = subprocess.run(
+            [*flags, "-c", "import yaml"],
+            capture_output=True,
+            env=env,
+            check=False,
+            timeout=60,
+        )
+        if probe.returncode == 0:
+            self.skipTest("yaml importable under -I -S; cannot simulate missing deps")
         proc = subprocess.run(
-            [sys.executable, "-S", str(SCRIPTS / "pr_lifecycle_run.py"), "--help"],
+            [*flags, str(SCRIPTS / "pr_lifecycle_run.py"), "--help"],
             capture_output=True,
             text=True,
+            env=env,
             check=False,
             timeout=60,
         )
