@@ -56,15 +56,8 @@ def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _find_pinned_issue() -> int | None:
-    """Return the pinned issue's number; raise on a failed or malformed list.
-
-    Only a well-formed listing with no exact-title row returns None, so
-    update_pinned_issue can safely create the issue. Anything else — a gh
-    failure, unparseable JSON, a non-list payload, non-dict rows, or an
-    exact-title row without an integer number — is raised as OSError rather
-    than risk a duplicate pinned issue. Process exceptions propagate.
-    """
+def _list_pinned_rows() -> list[Any]:
+    """Return the bounded issue-list payload; raise on any failed listing."""
     listed = _gh_issue(
         [
             "list",
@@ -85,14 +78,31 @@ def _find_pinned_issue() -> int | None:
         rows = None
     if not isinstance(rows, list):
         raise OSError("gh issue list returned a malformed payload")
-    for row in rows:
+    return rows
+
+
+def _pinned_row_number(row: dict[str, Any]) -> int:
+    """Return the matched row's issue number; a missing one fails closed."""
+    number = row.get("number")
+    if not isinstance(number, int) or isinstance(number, bool):
+        raise OSError("gh issue list matched the pinned title without a number")
+    return number
+
+
+def _find_pinned_issue() -> int | None:
+    """Return the pinned issue's number; raise on a failed or malformed list.
+
+    Only a well-formed listing with no exact-title row returns None, so
+    update_pinned_issue can safely create the issue. Anything else — a gh
+    failure, unparseable JSON, a non-list payload, non-dict rows, or an
+    exact-title row without an integer number — is raised as OSError rather
+    than risk a duplicate pinned issue. Process exceptions propagate.
+    """
+    for row in _list_pinned_rows():
         if not isinstance(row, dict):
             raise OSError("gh issue list returned a malformed payload")
         if row.get("title") == PINNED_ISSUE_TITLE:
-            number = row.get("number")
-            if not isinstance(number, int) or isinstance(number, bool):
-                raise OSError("gh issue list matched the pinned title without a number")
-            return number
+            return _pinned_row_number(row)
     return None
 
 

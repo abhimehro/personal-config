@@ -303,10 +303,13 @@ def _resolved_status(acc: SignalsAccum, clipped: bool) -> str:
     """Resolve the scan status; coverage gaps floor at PARTIAL."""
     if acc.hard_status is not None:
         return acc.hard_status
-    if acc.timed_out or acc.failed or clipped:
+    if acc.timed_out:
         return "PARTIAL"
-    if acc.open_scanned > 0 and acc.base_enriched == 0:
+    if acc.failed or clipped:
         return "PARTIAL"
+    if acc.open_scanned > 0:
+        if acc.base_enriched == 0:
+            return "PARTIAL"
     return "OK"
 
 
