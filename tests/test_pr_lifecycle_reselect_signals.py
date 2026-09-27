@@ -848,7 +848,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertIn(items[1]["key"], result.signals.live_mergeable_by_key)
         self.assertIn(items[0]["key"], result.signals.live_head_sha_by_key)
         self.assertIn(items[1]["key"], result.signals.live_head_sha_by_key)
-        self.assertIn(items[0]["key"], result.signals.titles_by_key)
+        self.assertEqual(result.signals.live_mergeable_by_key, {items[0]["key"]: "CONFLICTING", items[1]["key"]: "CONFLICTING"})
         self.assertIn(items[1]["key"], result.signals.titles_by_key)
         self.assertIn(items[0]["key"], result.signals.author_login_by_key)
         self.assertIn(items[1]["key"], result.signals.author_login_by_key)
