@@ -33,6 +33,7 @@ from tests.pr_lifecycle_helpers import (  # noqa: E402
 def _make_completed_proc(
     stdout_dict: dict[str, Any] | str, returncode: int = 0
 ) -> subprocess.CompletedProcess[str]:
+    """Build a gh result from a JSON object or raw stdout and an exit code."""
     stdout = (
         json.dumps(stdout_dict) if isinstance(stdout_dict, dict) else str(stdout_dict)
     )
@@ -46,6 +47,7 @@ def _make_completed_proc(
 
 class TestPrefilterLedgerItems(unittest.TestCase):
     def test_malformed_items_and_empty_ledgers_do_not_query_github(self) -> None:
+        """Verify unusable ledger entries yield empty signals without gh calls."""
         for items in (None, {}, "invalid", [None, "invalid", {}]):
             with self.subTest(items=items):
                 runner = mock.Mock()
@@ -58,6 +60,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
                 self.assertEqual(result.signals, health.ReselectSignals())
 
     def test_priority_is_applied_before_cap_without_mutating_ledger(self) -> None:
+        """Verify owner priority precedes the cap and leaves the ledger intact."""
         items = [
             make_item(
                 key=f"demo#{n}@sha", repository="demo", pr=n, current_owner="human"
@@ -75,6 +78,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
         self.assertEqual(ledger, original)
 
     def test_unusable_work_items_do_not_hide_candidates(self) -> None:
+        """Verify expired or invalid work items do not suppress candidate PRs."""
         item = make_item(repository="abhimehro/demo", pr=1)
         cases = (
             {"expiry_utc": "2000-01-01T00:00:00Z"},
@@ -192,6 +196,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
 class TestProduceReselectSignals(unittest.TestCase):
     def test_non_open_success_resets_failure_streak(self) -> None:
+        """Verify successful non-open lookups reset consecutive query failures."""
         # A successful lookup still counts as recovery when it yields no open PR.
         items = [
             make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
@@ -225,6 +230,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 )
 
     def test_last_inflight_query_can_finish_after_total_budget(self) -> None:
+        """Verify a final query started within budget can finish with OK status."""
         item = make_item(repository="owner/repo", pr=1)
         runner = mock.Mock(
             return_value=_make_completed_proc({"state": "OPEN", "title": "collected"})
@@ -248,6 +254,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(result.signals.titles_by_key, {item["key"]: "collected"})
 
     def test_later_scan_does_not_reuse_closed_state_or_query_failures(self) -> None:
+        """Verify scans collect fresh signals and failures without ledger mutation."""
         items = [
             make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
             for n in (1, 2)
@@ -281,6 +288,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(ledger, original)
 
     def test_nonpositive_budget_does_not_attempt_queries(self) -> None:
+        """Verify zero or negative budgets return PARTIAL without querying gh."""
         ledger = make_ledger([make_item(repository="owner/repo", pr=1)], [])
         for budget in (0, -1):
             with self.subTest(budget=budget):
@@ -298,6 +306,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 self.assertEqual(result.signals, health.ReselectSignals())
 
     def test_producer_queries_only_prioritized_candidates_within_cap(self) -> None:
+        """Verify producer queries respect owner priority, order, and the PR cap."""
         items = [
             make_item(
                 key=f"owner/repo#{n}@abc",
@@ -322,6 +331,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(ledger, original)
 
     def test_nonzero_exit_discards_even_valid_stdout(self) -> None:
+        """Verify failed gh calls cannot contribute authoritative live signals."""
         item = make_item(repository="owner/repo", pr=1)
         # A failed gh call must not supply an authoritative exclusion.
         runner = mock.Mock(
@@ -334,6 +344,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(result.signals, health.ReselectSignals())
 
     def test_mixed_failure_types_share_consecutive_failure_limit(self) -> None:
+        """Verify command and payload failures share the degradation threshold."""
         items = [
             make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
             for n in range(1, 5)
@@ -354,6 +365,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(result.signals, health.ReselectSignals())
 
     def test_blank_optional_fields_do_not_override_ledger_fallbacks(self) -> None:
+        """Verify invalid optional fields preserve fallback to ledger values."""
         item = make_item(repository="owner/repo", pr=1)
         for title, head, author in (
             (None, None, None),
@@ -384,6 +396,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 )
 
     def test_default_runner_uses_fixed_argv_and_configured_timeout(self) -> None:
+        """Verify the default runner passes fixed gh arguments and the timeout."""
         item = make_item(repository="abhimehro/demo", pr=1)
         with mock.patch(
             "pr_lifecycle_reselect_signals.subprocess.run",
@@ -413,6 +426,7 @@ class TestProduceReselectSignals(unittest.TestCase):
     def test_invalid_json_and_non_object_payloads_fail_only_the_affected_key(
         self,
     ) -> None:
+        """Verify malformed payloads do not prevent later PRs from contributing."""
         items = [
             make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
         ]
@@ -434,6 +448,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 )
 
     def test_timeout_is_sanitized_and_next_candidate_is_still_queried(self) -> None:
+        """Verify timeouts log no private output and allow the next query."""
         items = [
             make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
         ]
@@ -457,6 +472,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertNotIn("private-", "\n".join(logs.output))
 
     def test_success_resets_consecutive_failure_threshold(self) -> None:
+        """Verify an intervening success prevents degradation across failure runs."""
         items = [
             make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in range(6)
         ]
@@ -482,6 +498,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(result.signals.closed_keys, frozenset({items[5]["key"]}))
 
     def test_budget_boundary_preserves_successful_signals(self) -> None:
+        """Verify budget exhaustion retains signals from completed queries."""
         items = [
             make_item(key=f"demo#{n}@sha", repository="demo", pr=n) for n in (1, 2)
         ]
@@ -509,6 +526,7 @@ class TestProduceReselectSignals(unittest.TestCase):
         )
 
     def test_files_boundary_and_missing_files_preserve_ledger_fallback(self) -> None:
+        """Verify only complete file lists override ledger paths and eligibility."""
         item = make_item(
             repository="abhimehro/demo",
             pr=1,
@@ -557,6 +575,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 )
 
     def test_unknown_pr_state_does_not_leak_other_payload_fields(self) -> None:
+        """Verify unrecognized PR states contribute no other response fields."""
         item = make_item(repository="abhimehro/demo", pr=1)
         for state in (None, "", "DRAFT", "unknown"):
             with self.subTest(state=state):
@@ -576,6 +595,7 @@ class TestProduceReselectSignals(unittest.TestCase):
                 self.assertEqual(result.signals, health.ReselectSignals())
 
     def test_merge_state_precedence_and_normalization(self) -> None:
+        """Verify mergeability normalization, conflict precedence, and fallback."""
         item = make_item(repository="abhimehro/demo", pr=1)
         cases = (
             (" mergeable ", " dirty ", "DIRTY"),

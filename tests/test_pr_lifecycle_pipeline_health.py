@@ -276,6 +276,7 @@ class TestPredicateHardening(unittest.TestCase):
     """Tests for #2298: title normalization, UNKNOWN mergeable, head-SHA, author gate."""
 
     def test_exact_title_signal_overrides_prefix_even_when_empty(self) -> None:
+        """Verify exact-key titles override PR prefixes, including empty titles."""
         item = make_item(
             author_type="HUMAN",
             author_login="maintainer",
@@ -301,6 +302,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_live_path_override_rechecks_sensitive_path_allowlist(self) -> None:
+        """Verify live paths must satisfy the sensitive-path allowlist."""
         item = make_item(
             next_action="DIRTY Palette wrap",
             sensitive_paths=["shell_execution"],
@@ -327,6 +329,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_disabling_author_gate_preserves_other_exclusions(self) -> None:
+        """Verify bypassing author checks retains title, head, and state gates."""
         cases = (
             ({}, "chore(qa): tests", "abc", True),
             ({}, "feat: unrelated", "abc", False),
@@ -364,6 +367,7 @@ class TestPredicateHardening(unittest.TestCase):
                 self.assertEqual(candidates, [item] if expected else [])
 
     def test_live_exclusions_do_not_consume_candidate_limit(self) -> None:
+        """Verify excluded PRs leave room for eligible candidates under the cap."""
         items = [
             make_item(
                 key=f"owner/repo#{n}@abc",
@@ -386,6 +390,7 @@ class TestPredicateHardening(unittest.TestCase):
         )
 
     def test_queued_prefixes_expire_at_the_supplied_clock(self) -> None:
+        """Verify queued PR prefixes stop blocking at their exact expiry time."""
         for expiry, expected in (
             ("2026-08-30T11:59:59Z", set()),
             ("2026-08-30T12:00:00Z", set()),
@@ -401,6 +406,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_all_authoritative_nonconflict_states_override_stale_ledger(self) -> None:
+        """Verify known live nonconflict states override stale conflict text."""
         item = make_item(changed_paths=["src/demo.py"], next_action="CONFLICTING")
         for state in (
             "MERGEABLE",
@@ -418,6 +424,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_live_head_requires_nonempty_matching_ledger_head(self) -> None:
+        """Verify supplied live heads require a nonempty, normalized SHA match."""
         for ledger_head, live_head, expected in (
             (None, "abc", False),
             ("", "abc", False),
@@ -441,6 +448,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_ledger_author_formats_and_precedence(self) -> None:
+        """Verify author formats, fallback order, and rejection of missing logins."""
         cases = (
             ({"author": {"login": " maintainer "}}, True),
             ({"author": " maintainer "}, True),
@@ -470,6 +478,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_live_author_overrides_ledger_author_in_both_directions(self) -> None:
+        """Verify live authors can grant or revoke title-based eligibility."""
         for ledger_author, live_author, expected in (
             ("maintainer", "outsider", False),
             ("outsider", "maintainer", True),
@@ -495,6 +504,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_full_key_head_and_author_signals_override_prefix_values(self) -> None:
+        """Verify exact-key head and author signals take precedence over prefixes."""
         item = make_item(
             head_sha="abc",
             author_type="HUMAN",
@@ -528,6 +538,7 @@ class TestPredicateHardening(unittest.TestCase):
                 )
 
     def test_closed_signal_does_not_exclude_another_head_or_pr(self) -> None:
+        """Verify closed signals do not exclude unrelated PR keys or revisions."""
         item = make_item(changed_paths=["src/demo.py"], next_action="CONFLICTING")
         for closed_key in (
             "abhimehro/demo#1@old-head",
@@ -549,6 +560,7 @@ class TestPredicateHardening(unittest.TestCase):
     def test_author_allowlist_reloads_between_batches_but_not_between_items(
         self,
     ) -> None:
+        """Verify each candidate batch loads one fresh author allowlist."""
         items = [
             make_item(
                 key=f"demo#{n}@abc",
@@ -583,6 +595,7 @@ class TestPredicateHardening(unittest.TestCase):
             self.assertEqual(loader.call_count, 2)
 
     def test_explicit_empty_allowlist_does_not_fall_back_to_config(self) -> None:
+        """Verify an explicit empty allowlist rejects authors without loading config."""
         item = make_item(
             author_type="HUMAN",
             author="abhimehro",
@@ -606,6 +619,7 @@ class TestPredicateHardening(unittest.TestCase):
         loader.assert_not_called()
 
     def test_explicit_config_authors_take_precedence_over_disk(self) -> None:
+        """Verify supplied author configuration avoids reading the disk config."""
         config = {
             "bot_authors": ["custom[bot]"],
             "identity_classification": {"maintainer_token_logins": ["maintainer"]},
@@ -618,6 +632,7 @@ class TestPredicateHardening(unittest.TestCase):
         load.assert_not_called()
 
     def test_disk_allowlist_supports_bot_only_and_maintainer_only_config(self) -> None:
+        """Verify disk config can supply either bots or maintainers independently."""
         cases = (
             (
                 {"bot_authors": ["custom[bot]"], "identity_classification": []},
@@ -866,6 +881,7 @@ class TestReselectRound2(unittest.TestCase):
     """Closed-key exclusion and allowlist-loader error handling."""
 
     def _conflicting_bot_item(self) -> dict[str, Any]:
+        """Build a conflicting bot candidate for testing live closed signals."""
         return make_item(
             key="abhimehro/demo#9@abc",
             author_type="BOT",
