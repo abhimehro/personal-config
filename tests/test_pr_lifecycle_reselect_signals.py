@@ -191,6 +191,95 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
 
 class TestProduceReselectSignals(unittest.TestCase):
+    def test_non_open_success_resets_failure_streak(self) -> None:
+        # A successful lookup still counts as recovery when it yields no open PR.
+        items = [
+            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            for n in range(1, 7)
+        ]
+        for state in ("CLOSED", "MERGED", "UNKNOWN"):
+            with self.subTest(state=state):
+                runner = mock.Mock(
+                    side_effect=[
+                        _make_completed_proc("error", returncode=1),
+                        _make_completed_proc("error", returncode=1),
+                        _make_completed_proc({"state": state}),
+                        _make_completed_proc("error", returncode=1),
+                        _make_completed_proc("error", returncode=1),
+                        _make_completed_proc({"state": "OPEN", "title": "recovered"}),
+                    ]
+                )
+                result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+                self.assertEqual(result.status, "PARTIAL")
+                self.assertEqual(result.queried_count, 6)
+                self.assertEqual(runner.call_count, 6)
+                self.assertEqual(
+                    result.failed_keys, tuple(items[n]["key"] for n in (0, 1, 3, 4))
+                )
+                self.assertEqual(
+                    result.signals.titles_by_key, {items[5]["key"]: "recovered"}
+                )
+                self.assertEqual(
+                    result.signals.closed_keys,
+                    None if state == "UNKNOWN" else frozenset({items[2]["key"]}),
+                )
+
+    def test_last_inflight_query_can_finish_after_total_budget(self) -> None:
+        item = make_item(repository="owner/repo", pr=1)
+        runner = mock.Mock(
+            return_value=_make_completed_proc({"state": "OPEN", "title": "collected"})
+        )
+        # The budget gates starting a query; completing the final query is a full scan.
+        with mock.patch(
+            "pr_lifecycle_reselect_signals.time.monotonic",
+            side_effect=[10.0, 14.0, 20.0],
+        ):
+            result = produce_reselect_signals(
+                make_ledger([item], []),
+                runner=runner,
+                per_call_timeout_s=8.0,
+                total_budget_s=5.0,
+            )
+        runner.assert_called_once()
+        self.assertEqual(runner.call_args.args[1], 8.0)
+        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.queried_count, 1)
+        self.assertEqual(result.elapsed_s, 10.0)
+        self.assertEqual(result.signals.titles_by_key, {item["key"]: "collected"})
+
+    def test_later_scan_does_not_reuse_closed_state_or_query_failures(self) -> None:
+        items = [
+            make_item(key=f"owner/repo#{n}@abc", repository="owner/repo", pr=n)
+            for n in (1, 2)
+        ]
+        ledger = make_ledger(items, [])
+        original = copy.deepcopy(ledger)
+        runner = mock.Mock(
+            side_effect=[
+                _make_completed_proc({"state": "CLOSED"}),
+                _make_completed_proc("error", returncode=1),
+                _make_completed_proc({"state": "OPEN", "headRefOid": "new-head"}),
+                _make_completed_proc({"state": "OPEN", "files": []}),
+            ]
+        )
+        first = produce_reselect_signals(ledger, runner=runner)
+        second = produce_reselect_signals(ledger, runner=runner)
+        self.assertEqual(first.status, "PARTIAL")
+        self.assertEqual(first.failed_keys, (items[1]["key"],))
+        self.assertEqual(first.signals.closed_keys, frozenset({items[0]["key"]}))
+        self.assertEqual(second.status, "OK")
+        self.assertEqual(second.queried_count, 2)
+        self.assertEqual(second.failed_keys, ())
+        self.assertEqual(
+            second.signals,
+            health.ReselectSignals(
+                live_head_sha_by_key={items[0]["key"]: "new-head"},
+                unique_paths_by_key={items[1]["key"]: []},
+            ),
+        )
+        self.assertEqual(runner.call_count, 4)
+        self.assertEqual(ledger, original)
+
     def test_nonpositive_budget_does_not_attempt_queries(self) -> None:
         ledger = make_ledger([make_item(repository="owner/repo", pr=1)], [])
         for budget in (0, -1):
@@ -835,9 +924,7 @@ class TestProduceReselectSignals(unittest.TestCase):
 
         with mock.patch("time.monotonic", side_effect=lambda: mock_time[0]):
             # total_budget_s = 0.1 allows ~2 calls (0.05 each) before timeout
-            result = produce_reselect_signals(
-                ledger, runner=runner, total_budget_s=0.1
-            )
+            result = produce_reselect_signals(ledger, runner=runner, total_budget_s=0.1)
 
         self.assertEqual(result.status, "PARTIAL")
         # Should have queried 2 items before budget exhausted
@@ -848,7 +935,10 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertIn(items[1]["key"], result.signals.live_mergeable_by_key)
         self.assertIn(items[0]["key"], result.signals.live_head_sha_by_key)
         self.assertIn(items[1]["key"], result.signals.live_head_sha_by_key)
-        self.assertEqual(result.signals.live_mergeable_by_key, {items[0]["key"]: "CONFLICTING", items[1]["key"]: "CONFLICTING"})
+        self.assertEqual(
+            result.signals.live_mergeable_by_key,
+            {items[0]["key"]: "CONFLICTING", items[1]["key"]: "CONFLICTING"},
+        )
         self.assertIn(items[1]["key"], result.signals.titles_by_key)
         self.assertIn(items[0]["key"], result.signals.author_login_by_key)
         self.assertIn(items[1]["key"], result.signals.author_login_by_key)

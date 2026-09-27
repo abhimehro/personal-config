@@ -275,6 +275,57 @@ class TestPipelineHealthSummarize(unittest.TestCase):
 class TestPredicateHardening(unittest.TestCase):
     """Tests for #2298: title normalization, UNKNOWN mergeable, head-SHA, author gate."""
 
+    def test_exact_title_signal_overrides_prefix_even_when_empty(self) -> None:
+        item = make_item(
+            author_type="HUMAN",
+            author_login="maintainer",
+            next_action="CONFLICTING",
+            changed_paths=["src/demo.py"],
+        )
+        prefix = "abhimehro/demo#1"
+        cases = (
+            ({prefix: "chore(qa): tests"}, True),
+            ({prefix: "chore(qa): tests", item["key"]: ""}, False),
+            ({prefix: "chore(qa): tests", item["key"]: "feat: unrelated"}, False),
+            ({prefix: "feat: unrelated", item["key"]: "chore(qa): tests"}, True),
+        )
+        for titles, expected in cases:
+            with self.subTest(titles=titles):
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=health.ReselectSignals(titles_by_key=titles),
+                        allowed_authors=("maintainer",),
+                    ),
+                    [item] if expected else [],
+                )
+
+    def test_live_path_override_rechecks_sensitive_path_allowlist(self) -> None:
+        item = make_item(
+            next_action="DIRTY Palette wrap",
+            sensitive_paths=["shell_execution"],
+            changed_paths=["scripts/analytics_dashboard.sh"],
+        )
+        cases = (
+            (["scripts/analytics_dashboard.sh"], True),
+            ([".jules/notes.md", "scripts/analytics_dashboard.sh"], True),
+            (["scripts/unrelated.sh"], False),
+            (["scripts/analytics_dashboard.sh", "scripts/unrelated.sh"], False),
+            ([], False),
+        )
+        for paths, expected in cases:
+            with self.subTest(paths=paths):
+                self.assertEqual(
+                    health.list_reselect_candidates(
+                        make_ledger([item], []),
+                        signals=health.ReselectSignals(
+                            unique_paths_by_key={item["key"]: paths}
+                        ),
+                        allowed_authors=(),
+                    ),
+                    [item] if expected else [],
+                )
+
     def test_disabling_author_gate_preserves_other_exclusions(self) -> None:
         cases = (
             ({}, "chore(qa): tests", "abc", True),
@@ -319,7 +370,7 @@ class TestPredicateHardening(unittest.TestCase):
                 head_sha="abc",
                 next_action="CONFLICTING",
                 changed_paths=["src/demo.py"],
-            closed_keys=frozenset({items[0]["key"]}),
+            )
             for n in range(1, 6)
         ]
         signals = health.ReselectSignals(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
 import subprocess
 import sys
 import types
@@ -358,6 +359,76 @@ def _exec_stage(
 
 class ReselectSignalsTests(unittest.TestCase):
     """Integration and unit tests for live reselect signal wiring."""
+
+    def test_consecutive_query_failures_preserve_exclusions_in_stage_plans(
+        self,
+    ) -> None:
+        for stage, action_name in (
+            (1, "ENQUEUE_STAGE2_WI"),
+            (3, "HANDOFF_MECHANICAL_TO_STAGE2"),
+        ):
+            with self.subTest(stage=stage):
+                items = [
+                    make_item(
+                        key=f"owner/repo#{n}@abc",
+                        repository="owner/repo",
+                        pr=n,
+                        head_sha="abc",
+                        base_sha="def",
+                        current_owner=f"stage{stage}",
+                        changed_paths=["src/ledger.py"],
+                        next_action="CONFLICTING",
+                    )
+                    for n in range(1, 7)
+                ]
+                payloads = [
+                    {"state": "MERGED"},
+                    {"state": "OPEN", "headRefOid": "new-head"},
+                ]
+                runner = mock.Mock(
+                    side_effect=[
+                        *[
+                            subprocess.CompletedProcess(
+                                args=["gh"], returncode=0, stdout=json.dumps(payload)
+                            )
+                            for payload in payloads
+                        ],
+                        *[
+                            subprocess.CompletedProcess(
+                                args=["gh"], returncode=1, stdout=""
+                            )
+                            for _ in range(3)
+                        ],
+                    ]
+                )
+                ledger = make_ledger(items, [])
+                result = produce_reselect_signals(ledger, runner=runner)
+                with mock.patch.object(run.health, "summarize", real_health.summarize):
+                    code, plan = _exec_stage(stage, ledger, producer_override=result)
+                self.assertEqual(runner.call_count, 5)
+                self.assertEqual(code, 0)
+                self.assertIsNone(plan["stop_class"])
+                self.assertEqual(plan["signals_status"], "DEGRADED")
+                self.assertEqual(plan["signals_queried"], 5)
+                self.assertEqual(
+                    plan["signals_failed_keys"], [item["key"] for item in items[2:5]]
+                )
+                self.assertEqual(plan["pipeline_health"]["reselect_candidate_count"], 4)
+                actions = [a for a in plan["actions"] if a["action"] == action_name]
+                # Failed and unqueried keys use the ledger; known exclusions survive.
+                self.assertEqual(
+                    [a["source_key"] for a in actions],
+                    [item["key"] for item in items[2:]],
+                )
+                self.assertEqual(
+                    [a["allowed_paths"] for a in actions], [["src/ledger.py"]] * 4
+                )
+                if stage == 1:
+                    feed = next(
+                        a for a in plan["actions"] if a["action"] == "FEED_CHECK"
+                    )
+                    self.assertEqual(feed["grade"], "PASS")
+                    self.assertEqual(feed["enqueued"], 4)
 
     def test_live_file_completeness_controls_stage1_and_stage3_actions(self) -> None:
         cases = (
@@ -885,6 +956,37 @@ class ReselectSignalsTests(unittest.TestCase):
 
 class TestDependencyPreflight(unittest.TestCase):
     """Missing runtime deps fail fast with an install hint, not a traceback."""
+
+    def test_each_missing_dependency_is_reported_without_importing_planner(
+        self,
+    ) -> None:
+        for missing, packages in (
+            ({"yaml"}, "pyyaml"),
+            ({"jsonschema"}, "jsonschema"),
+            ({"yaml", "jsonschema"}, "pyyaml, jsonschema"),
+        ):
+            with self.subTest(missing=missing):
+                stderr = StringIO()
+                with (
+                    mock.patch(
+                        "importlib.util.find_spec",
+                        side_effect=lambda name, missing=missing: (
+                            None if name in missing else mock.sentinel.spec
+                        ),
+                    ),
+                    redirect_stderr(stderr),
+                    self.assertRaises(SystemExit) as raised,
+                ):
+                    runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn(
+                    f"missing Python dependencies: {packages} (", stderr.getvalue()
+                )
+                self.assertIn(sys.executable, stderr.getvalue())
+                self.assertIn(
+                    "python3 -m pip install -r requirements.txt", stderr.getvalue()
+                )
+                self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_missing_yaml_exits_2_with_hint(self) -> None:
         """Run isolated (-I) without site-packages (-S) as a bare interpreter."""
