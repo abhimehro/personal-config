@@ -274,6 +274,7 @@ def is_never_touch_key(key: object) -> bool:
 def _load_reselect_allowed_authors(
     config: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
+    """Load bot and maintainer logins from config, disk, then built-in defaults."""
     if config:
         bots = list(config.get("bot_authors") or [])
         maintainers = list(
@@ -312,6 +313,7 @@ def _load_reselect_allowed_authors(
 
 
 def _normalize_title_for_prefix(title: str) -> str:
+    """Normalize NFC and lowercase, removing whitespace and invisible markers."""
     text = unicodedata.normalize("NFC", title)
     # Strip variation selectors and invisible format characters (ZWSP, ZWNJ, ZWJ, etc.)
     chars = [
@@ -573,6 +575,7 @@ def existing_wi_prefixes(
 
 
 def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
+    """Delegate to the public helper for source PR prefixes of usable work items."""
     return existing_wi_prefixes(ledger)
 
 
