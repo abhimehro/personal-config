@@ -319,7 +319,7 @@ class TestPredicateHardening(unittest.TestCase):
                 head_sha="abc",
                 next_action="CONFLICTING",
                 changed_paths=["src/demo.py"],
-            )
+            closed_keys=frozenset({items[0]["key"]}),
             for n in range(1, 6)
         ]
         signals = health.ReselectSignals(
