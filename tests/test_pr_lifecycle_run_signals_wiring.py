@@ -112,54 +112,65 @@ class ProducerWiringTests(unittest.TestCase):
         self.assertEqual(status.get("condition"), "SIGNALS_DEGRADED")
         self.assertEqual(status.get("signals_error"), "RuntimeError")
 
-    def test_base_enrichment_gap_partial_reports_missing_base_note(self):
-        """Zero base enrichments across clean views -> PARTIAL with a
-        missing-base note (not the failed-keys note, which would mislead)."""
-        result_payload = SignalsResult(
-            signals=real_health.ReselectSignals(),
-            status="PARTIAL",
-            queried_count=3,
-            failed_keys=(),
-            truncated_keys=(),
-            elapsed_s=0.5,
-            base_enriched_count=0,
-        )
+    def _degraded_plan(self, result_payload):
+        """Run stage 1 under a producer stub; return (plan, degraded note)."""
         ledger = {"ledger_revision": 1, "items": []}
         code, plan = _exec_stage(
             1, ledger, producer_override=mock.Mock(return_value=result_payload)
         )
         self.assertEqual(code, 0)
+        note = next(
+            a["note"] for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
+        )
+        return plan, note
+
+    def test_base_enrichment_gap_partial_reports_missing_base_note(self):
+        """Zero base enrichments across clean views -> PARTIAL with a
+        missing-base note (not the failed-keys note, which would mislead)."""
+        plan, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=3,
+                base_enriched_count=0,
+            )
+        )
         self.assertEqual(plan["signals_status"], "PARTIAL")
         self.assertEqual(plan["signals_base_enriched"], 0)
-        degraded = next(
-            a for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
-        )
-        self.assertIn("live base anchors missing", degraded["note"])
-        self.assertNotIn("failed keys", degraded["note"])
+        self.assertIn("live base anchors missing", note)
+        self.assertNotIn("failed keys", note)
 
     def test_budget_truncation_partial_reports_truncated_scan_note(self):
         """Budget elapsed mid-scan -> PARTIAL with a truncation note, not the
         failed-keys note (nothing failed; keys were simply never queried)."""
-        result_payload = SignalsResult(
-            signals=real_health.ReselectSignals(),
-            status="PARTIAL",
-            queried_count=1,
-            failed_keys=(),
-            truncated_keys=(),
-            elapsed_s=120.0,
-            timed_out=True,
+        plan, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=1,
+                elapsed_s=120.0,
+                timed_out=True,
+            )
         )
-        ledger = {"ledger_revision": 1, "items": []}
-        code, plan = _exec_stage(
-            1, ledger, producer_override=mock.Mock(return_value=result_payload)
-        )
-        self.assertEqual(code, 0)
         self.assertEqual(plan["signals_status"], "PARTIAL")
-        degraded = next(
-            a for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
+        self.assertTrue(plan["signals_timed_out"])
+        self.assertIn("truncated by total budget", note)
+        self.assertNotIn("failed keys", note)
+
+    def test_mixed_truncation_and_failures_name_both_causes(self):
+        """Budget elapsed *and* queries failed -> the note mentions both so
+        real failures are not hidden behind the truncation wording."""
+        _, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=3,
+                failed_keys=("owner/repo#1",),
+                timed_out=True,
+            )
         )
-        self.assertIn("truncated by total budget", degraded["note"])
-        self.assertNotIn("failed keys", degraded["note"])
+        self.assertIn("failed keys", note)
+        self.assertIn("truncated by total budget", note)
 
     def test_no_live_signals_flag_skips_producer(self):
         """--no-live-signals skips live fetch and reports status SKIPPED."""

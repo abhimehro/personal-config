@@ -80,8 +80,10 @@ decisions:
   or alters standard process exit codes. If `gh` is missing or 3 consecutive
   queries fail, the producer drops gracefully to ledger fallbacks.
 - **Signals Status (`signals_status`):**
-  - `OK`: All candidate PRs queried successfully with live signals attached and
-    at least one base-SHA enrichment succeeded (or nothing was scanned).
+  - `OK`: Every queried candidate PR returned live signals successfully and at
+    least one base-SHA enrichment succeeded (or nothing was scanned). The
+    `max_prs` cap drops surplus candidates silently — it does not change the
+    status — so `OK` does not imply every plausible ledger item was queried.
   - `PARTIAL`: One or more individual PR queries timed out or failed, the total
     budget elapsed, or every `gh api` base-SHA enrichment failed across
     otherwise-successful queries (the observable signature of a systemic REST

@@ -429,14 +429,16 @@ def _degraded_note(result: SignalsResult) -> str:
     values, a full base-enrichment gap signals a systemic REST outage, and a
     hard DEGRADED means the view query itself was unavailable.
     """
+    if result.failed_keys:
+        note = "ledger fallbacks in effect; title-gated items invisible for failed keys"
+        if result.timed_out:
+            note += "; live scan also truncated by total budget"
+        return note
     if result.timed_out:
         return (
-            f"live scan truncated by total budget ({result.queried_count} "
-            "queried); unqueried keys use ledger values"
-        )
-    if result.failed_keys:
-        return (
-            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
+            "live scan truncated by total budget after "
+            f"{result.queried_count} attempted queries; unqueried keys use "
+            "ledger values"
         )
     if result.queried_count > 0 and result.base_enriched_count == 0:
         return (
@@ -446,15 +448,18 @@ def _degraded_note(result: SignalsResult) -> str:
     return "live signal query unavailable; all keys use ledger values"
 
 
+def _has_degraded_action(actions: list[dict[str, Any]]) -> bool:
+    """True when the plan already carries a SIGNALS_DEGRADED action."""
+    return any(
+        isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
+    )
+
+
 def _annotate_degraded_signals(
     actions: list[dict[str, Any]], result: SignalsResult
 ) -> None:
     """Append the informational SIGNALS_DEGRADED action once per plan."""
-    if result.status not in {"DEGRADED", "PARTIAL"}:
-        return
-    if any(
-        isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
-    ):
+    if result.status not in {"DEGRADED", "PARTIAL"} or _has_degraded_action(actions):
         return
     actions.append(
         {

@@ -102,6 +102,7 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "signals_status": plan.get("signals_status"),
         "signals_queried": plan.get("signals_queried"),
         "signals_base_enriched": plan.get("signals_base_enriched"),
+        "signals_timed_out": plan.get("signals_timed_out"),
         "action_count": len(plan.get("actions") or []),
         "calibration_enabled": False,
     }
@@ -139,6 +140,7 @@ def _attach_signal_fields(
     plan["signals_status"] = result.status
     plan["signals_queried"] = result.queried_count
     plan["signals_base_enriched"] = result.base_enriched_count
+    plan["signals_timed_out"] = result.timed_out
     plan["signals_failed_keys"] = list(result.failed_keys)
     plan["signals_truncated_keys"] = list(result.truncated_keys)
     plan["signals_elapsed_s"] = result.elapsed_s
