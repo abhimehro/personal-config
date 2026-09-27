@@ -84,17 +84,21 @@ decisions:
   - `PARTIAL`: One or more individual PR queries timed out or failed; successful
     queries attach live signals, while failed keys fall back to ledger values.
   - `DEGRADED`: Global failure (CLI missing, consecutive failures, or caught
-    exception). Live signals map is empty, planner uses ledger fallbacks, and an
-    informational `SIGNALS_DEGRADED` action is emitted without halting
-    execution.
+    exception). The planner uses ledger fallbacks; after consecutive failures,
+    already-collected closed keys and live head SHAs still exclude ineligible
+    items. The informational `SIGNALS_DEGRADED` action adds no signal-specific
+    stop. Other planner stops, including `FEED_CHECK_FAIL` from `FEED_CHECK`,
+    still apply.
   - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals`
     flag).
 - **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or
   `mergeStateStatus` values of `CONFLICTING`, `DIRTY`, `MERGEABLE`, `CLEAN`,
   `BLOCKED`, `BEHIND`, `UNSTABLE`, or `HAS_HOOKS` take precedence over ledger
   state; only `CONFLICTING` and `DIRTY` qualify an item for reselect. If GitHub
-  returns `UNKNOWN` or empty mergeability, the planner safely falls back to the
-  ledger item's recorded `next_action`.
+  returns `UNKNOWN` or missing `mergeable`, the producer uses `mergeStateStatus`
+  when it is in `health.AUTHORITATIVE_MERGEABLE_STATES`. The planner falls back
+  to the ledger item's recorded `next_action` only when both fields are
+  `UNKNOWN` or missing.
 - **Head-SHA Drift Exclusion:** If a live PR's `headRefOid` does not match the
   ledger's recorded `head_sha`, the item is excluded from candidate reselection
   to avoid operating against unanalyzed commits.

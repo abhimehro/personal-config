@@ -471,7 +471,10 @@ class TestPredicateHardening(unittest.TestCase):
             )
         )
 
-    def test_summarize_threads_signals(self) -> None:
+    @mock.patch.object(
+        health, "_load_reselect_allowed_authors", return_value=("abhimehro",)
+    )
+    def test_summarize_threads_signals(self, _allowed_authors: mock.Mock) -> None:
         """summarize() with signals reflects live candidate count."""
         # Non-BOT item that qualifies only with title signal
         item = make_item(

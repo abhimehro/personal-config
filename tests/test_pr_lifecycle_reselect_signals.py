@@ -356,6 +356,62 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(call_count, 3)  # stopped after 3 failures
         self.assertEqual(len(result.failed_keys), 3)
 
+    def test_three_failures_preserve_collected_exclusions(self) -> None:
+        """Degradation must not reselect known closed or changed-head PRs."""
+        items = [
+            make_item(
+                key=f"demo#{i}@sha",
+                repository="demo",
+                pr=i,
+                head_sha="sha",
+                changed_paths=["src/demo.py"],
+                next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+            )
+            for i in range(6)
+        ]
+        ledger = make_ledger(items, [])
+        runner = mock.Mock(
+            side_effect=[
+                _make_completed_proc({"state": "CLOSED"}),
+                _make_completed_proc(
+                    {
+                        "state": "OPEN",
+                        "headRefOid": "new-sha",
+                        "mergeable": "CONFLICTING",
+                        "files": [{"path": f"src/{i}.py"} for i in range(100)],
+                    }
+                ),
+                *[_make_completed_proc("error", returncode=1) for _ in range(3)],
+            ]
+        )
+
+        result = produce_reselect_signals(ledger, runner=runner)
+
+        self.assertEqual(result.status, "DEGRADED")
+        self.assertEqual(result.queried_count, 5)
+        self.assertEqual(runner.call_count, 5)
+        self.assertEqual(
+            result.failed_keys, tuple(item["key"] for item in items[2:5])
+        )
+        self.assertEqual(result.truncated_keys, (items[1]["key"],))
+        self.assertGreaterEqual(result.elapsed_s, 0)
+        self.assertEqual(
+            result.signals,
+            health.ReselectSignals(
+                closed_keys=frozenset({items[0]["key"]}),
+                live_head_sha_by_key={items[1]["key"]: "new-sha"},
+            ),
+        )
+        self.assertEqual(
+            health.list_reselect_candidates(ledger, allowed_authors=()), items
+        )
+        self.assertEqual(
+            health.list_reselect_candidates(
+                ledger, signals=result.signals, allowed_authors=()
+            ),
+            items[2:],
+        )
+
     def test_budget_exhaustion_results_in_partial_status(self) -> None:
         """Budget exhaustion stops querying and returns PARTIAL with accumulated signals."""
         items = [

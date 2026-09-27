@@ -221,9 +221,12 @@ def produce_reselect_signals(
                 consecutive_failures += 1
 
             if consecutive_failures >= 3:
-                # 3 consecutive failures -> DEGRADED with empty signals
+                # Preserve known exclusions while other signals fall back to ledger.
                 return SignalsResult(
-                    signals=health.ReselectSignals(),
+                    signals=health.ReselectSignals(
+                        closed_keys=frozenset(closed_keys) or None,
+                        live_head_sha_by_key=live_head_sha_by_key or None,
+                    ),
                     status="DEGRADED",
                     queried_count=queried_count,
                     failed_keys=tuple(failed_keys),
