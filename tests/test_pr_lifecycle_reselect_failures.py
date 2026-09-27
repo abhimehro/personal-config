@@ -98,7 +98,7 @@ class TestReselectFailureStatuses(unittest.TestCase):
     def test_missing_gh_mid_scan_preserves_signals_and_stops_immediately(self) -> None:
         items = [
             make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
-            for n in range(4)
+            for n in range(1, 5)
         ]
         runner = mock.Mock(
             side_effect=stub_gh_runner(
@@ -106,7 +106,10 @@ class TestReselectFailureStatuses(unittest.TestCase):
                     make_gh_proc({"state": "MERGED"}),
                     make_gh_proc({"state": "OPEN", "headRefOid": "new-head"}),
                     FileNotFoundError("gh disappeared"),
-                ]
+                ],
+                # Distinct from the ledger anchor ("b"*40) so the recorded
+                # live base provably came from the `gh api` enrichment.
+                base_sha="d" * 40,
             )
         )
         result = produce_reselect_signals(make_ledger(items, []), runner=runner)
@@ -123,7 +126,7 @@ class TestReselectFailureStatuses(unittest.TestCase):
             health.ReselectSignals(
                 closed_keys=frozenset({items[0]["key"]}),
                 live_head_sha_by_key={items[1]["key"]: "new-head"},
-                live_base_sha_by_key={items[1]["key"]: "b" * 40},
+                live_base_sha_by_key={items[1]["key"]: "d" * 40},
             ),
         )
 

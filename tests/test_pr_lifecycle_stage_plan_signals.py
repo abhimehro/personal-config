@@ -24,14 +24,10 @@ class StagePlanSignalTests(unittest.TestCase):
     def setUp(self) -> None:
         # Exercise the real selector while preserving the runner fixture's
         # module isolation and avoiding any reconciliation network calls.
+        # BOT fixtures never reach the author allowlist, so no gate patch.
         self.enterContext(
             mock.patch.object(
                 run.health, "list_reselect_candidates", health.list_reselect_candidates
-            )
-        )
-        self.enterContext(
-            mock.patch.object(
-                health, "_load_reselect_allowed_authors", return_value=("maintainer",)
             )
         )
 
@@ -81,12 +77,18 @@ class StagePlanSignalTests(unittest.TestCase):
                 with self.subTest(stage=stage, field=field):
                     item = self.candidate(stage)
                     item[field] = ""
+                    # A sibling with intact anchors stays selected, so an
+                    # empty result here is not a vacuous pass.
+                    control = self.candidate(stage, pr=9)
                     signals = health.ReselectSignals(
                         live_base_sha_by_key={item["key"]: "d" * 40},
                         live_head_sha_by_key={item["key"]: "c" * 40},
                     )
+                    actions = self.actions(
+                        stage, make_ledger([item, control], []), signals
+                    )
                     self.assertEqual(
-                        self.actions(stage, make_ledger([item], []), signals), []
+                        [a["source_key"] for a in actions], [control["key"]]
                     )
 
     def test_planning_and_editing_action_paths_do_not_mutate_inputs(self) -> None:
@@ -117,6 +119,9 @@ class StagePlanSignalTests(unittest.TestCase):
     def test_live_signals_preserve_exclusive_stage_ownership(self) -> None:
         items = [self.candidate(1, 1), self.candidate(3, 2)]
         ledger = make_ledger(items, [])
+        # The stage-1 item's ledger action does not qualify on its own, so
+        # its selection depends on the live DIRTY mergeable signal.
+        items[0]["next_action"] = "needs verification"
         signals = health.ReselectSignals(
             live_mergeable_by_key={item["key"]: "DIRTY" for item in items},
             live_base_sha_by_key={item["key"]: "d" * 40 for item in items},

@@ -51,6 +51,11 @@ class IssueStatusTests(unittest.TestCase):
         encoded = body.split("```json\n", 1)[1].rsplit("\n```", 1)[0]
         self.assertEqual(json.loads(encoded), original)
         self.assertEqual(self.status, original)
+        # The calibration line is a hardcoded invariant, not a field echo.
+        self.status["calibration_enabled"] = True
+        self.assertIn(
+            "calibration_enabled: false\n", issue_status.issue_body(self.status)
+        )
         self.command.assert_not_called()
 
     def test_body_handles_minimal_status_without_condition(self) -> None:
@@ -77,46 +82,31 @@ class IssueStatusTests(unittest.TestCase):
         self.status["reason"] = "$(touch sentinel); 'quoted'\n--repo other/repo"
         self.command.side_effect = [self.result(json.dumps(rows)), self.result()]
         issue_status.update_pinned_issue(self.status)
+        list_argv = self.command.call_args_list[0].args[0]
+        edit_argv = self.command.call_args_list[1].args[0]
         self.assertEqual(
-            self.command.call_args_list,
+            list_argv,
             [
-                mock.call(
-                    [
-                        "gh",
-                        "issue",
-                        "list",
-                        "--search",
-                        'in:title "PR pipeline status"',
-                        "--json",
-                        "number,title",
-                        "--limit",
-                        "20",
-                        "--repo",
-                        "abhimehro/personal-config",
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                ),
-                mock.call(
-                    [
-                        "gh",
-                        "issue",
-                        "edit",
-                        "17",
-                        "--body",
-                        issue_status.issue_body(self.status),
-                        "--repo",
-                        "abhimehro/personal-config",
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                ),
+                "gh",
+                "issue",
+                "list",
+                "--search",
+                'in:title "PR pipeline status"',
+                "--json",
+                "number,title",
+                "--limit",
+                "20",
+                "--repo",
+                "abhimehro/personal-config",
             ],
         )
+        self.assertEqual(edit_argv[:4], ["gh", "issue", "edit", "17"])
+        # The body must carry the rendered status, not just any string.
+        sent_body = edit_argv[edit_argv.index("--body") + 1]
+        self.assertIn("<!-- pr-lifecycle-status -->", sent_body)
+        self.assertIn(self.status["reason"], sent_body)
+        self.assertIn('"run_id": "test-status"', sent_body)
+        self.assertEqual(edit_argv[-2:], ["--repo", "abhimehro/personal-config"])
 
     def test_unmatched_listing_creates_status_issue(self) -> None:
         """A well-formed listing with no exact-title row is the only create path."""
@@ -130,22 +120,16 @@ class IssueStatusTests(unittest.TestCase):
                 self.command.side_effect = [listed, self.result()]
                 issue_status.update_pinned_issue(self.status)
                 self.assertEqual(self.command.call_count, 2)
-                self.command.assert_called_with(
-                    [
-                        "gh",
-                        "issue",
-                        "create",
-                        "--title",
-                        "PR pipeline status",
-                        "--body",
-                        issue_status.issue_body(self.status),
-                        "--repo",
-                        "abhimehro/personal-config",
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
+                create_argv = self.command.call_args.args[0]
+                self.assertEqual(
+                    create_argv[:5],
+                    ["gh", "issue", "create", "--title", "PR pipeline status"],
+                )
+                sent_body = create_argv[create_argv.index("--body") + 1]
+                self.assertIn("<!-- pr-lifecycle-status -->", sent_body)
+                self.assertIn('"run_id": "test-status"', sent_body)
+                self.assertEqual(
+                    create_argv[-2:], ["--repo", "abhimehro/personal-config"]
                 )
 
     def test_failed_or_malformed_listing_raises_before_any_create(self) -> None:

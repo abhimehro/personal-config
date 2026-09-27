@@ -88,6 +88,16 @@ class SignalAccumTests(unittest.TestCase):
             signals.live_mergeable_by_key,
             {"open": "CONFLICTING", "truncated": "CONFLICTING"},
         )
+        # Closed and unknown payloads contribute no head/base/author evidence.
+        self.assertEqual(
+            signals.live_head_sha_by_key, {"open": "head", "truncated": "head"}
+        )
+        self.assertEqual(
+            signals.live_base_sha_by_key, {"open": "base", "truncated": "base"}
+        )
+        self.assertEqual(
+            signals.author_login_by_key, {"open": "bot", "truncated": "bot"}
+        )
         # Truncated keys pin an explicit empty path signal (fail closed).
         self.assertEqual(
             signals.unique_paths_by_key, {"open": ["src/demo.py"], "truncated": []}
@@ -119,6 +129,8 @@ class SignalAccumTests(unittest.TestCase):
                 self.assertEqual(signals.live_base_sha_by_key, {"key": "new-base"})
                 self.assertEqual(signals.live_mergeable_by_key, {"key": "MERGEABLE"})
                 self.assertEqual(acc.truncated, ["key"])
+                # The valid sibling entry is still discarded with the list.
+                self.assertNotIn("src/valid.py", signals.unique_paths_by_key["key"])
 
     def test_file_cap_counts_journals_before_filtering(self) -> None:
         """Apply the file-list cap before removing journal paths."""
