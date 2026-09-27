@@ -66,6 +66,8 @@ class SignalsResult:
     # Successful `gh api` base-SHA enrichments; zero after view successes means
     # a systemic REST outage (missing scope, rate limit, GHES) is in play.
     base_enriched_count: int = 0
+    # Total budget elapsed mid-scan; unqueried candidates keep ledger values.
+    timed_out: bool = False
 
 
 def _default_runner(
@@ -270,6 +272,7 @@ def _finish(
         truncated_keys=tuple(acc.truncated),
         elapsed_s=round(time.monotonic() - start_time, 4),
         base_enriched_count=acc.base_enriched,
+        timed_out=acc.timed_out,
     )
 
 

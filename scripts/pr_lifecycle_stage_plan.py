@@ -424,20 +424,26 @@ def _dispatch_stage_plan(
 def _degraded_note(result: SignalsResult) -> str:
     """Describe the degradation for the SIGNALS_DEGRADED action note.
 
-    A PARTIAL with no failed keys means every `gh api` base lookup failed —
-    a systemic REST outage — which needs its own wording; a note about
-    failed keys would send operators hunting for failures that do not exist.
+    Each cause gets distinct wording so operators are not pointed at failures
+    that did not occur: budget truncation leaves unqueried keys on ledger
+    values, a full base-enrichment gap signals a systemic REST outage, and a
+    hard DEGRADED means the view query itself was unavailable.
     """
-    fallback = "ledger fallbacks in effect; title-gated items invisible for failed keys"
-    scanned_ok = result.queried_count - len(result.failed_keys)
-    if result.failed_keys or scanned_ok <= 0:
-        return fallback
-    if result.base_enriched_count > 0:
-        return fallback
-    return (
-        f"live base anchors missing (0/{scanned_ok} enriched); "
-        "view signals otherwise complete"
-    )
+    if result.timed_out:
+        return (
+            f"live scan truncated by total budget ({result.queried_count} "
+            "queried); unqueried keys use ledger values"
+        )
+    if result.failed_keys:
+        return (
+            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
+        )
+    if result.queried_count > 0 and result.base_enriched_count == 0:
+        return (
+            f"live base anchors missing (0/{result.queried_count} enriched); "
+            "view signals otherwise complete"
+        )
+    return "live signal query unavailable; all keys use ledger values"
 
 
 def _annotate_degraded_signals(

@@ -137,6 +137,30 @@ class ProducerWiringTests(unittest.TestCase):
         self.assertIn("live base anchors missing", degraded["note"])
         self.assertNotIn("failed keys", degraded["note"])
 
+    def test_budget_truncation_partial_reports_truncated_scan_note(self):
+        """Budget elapsed mid-scan -> PARTIAL with a truncation note, not the
+        failed-keys note (nothing failed; keys were simply never queried)."""
+        result_payload = SignalsResult(
+            signals=real_health.ReselectSignals(),
+            status="PARTIAL",
+            queried_count=1,
+            failed_keys=(),
+            truncated_keys=(),
+            elapsed_s=120.0,
+            timed_out=True,
+        )
+        ledger = {"ledger_revision": 1, "items": []}
+        code, plan = _exec_stage(
+            1, ledger, producer_override=mock.Mock(return_value=result_payload)
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(plan["signals_status"], "PARTIAL")
+        degraded = next(
+            a for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
+        )
+        self.assertIn("truncated by total budget", degraded["note"])
+        self.assertNotIn("failed keys", degraded["note"])
+
     def test_no_live_signals_flag_skips_producer(self):
         """--no-live-signals skips live fetch and reports status SKIPPED."""
         mock_producer = mock.Mock()
