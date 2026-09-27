@@ -266,13 +266,14 @@ def _stage1_plan(
     """Plan Stage 1 reconciliation and reselect enqueues plus a FEED_CHECK grade.
 
     Return permitted commands, action proposals, stop class, and reason.
-    Candidates with no enqueue proposals yield LOGIC_STOP/FEED_CHECK_FAIL.
-    PARTIAL or DEGRADED signals_status annotates the feed check without
-    independently changing its grade or stop class.
+    If candidate_count > 0 with enqueued_count == 0, yield LOGIC_STOP/FEED_CHECK_FAIL.
+    Individual skipped/incomplete candidates are counted in skipped_incomplete
+    but do not independently trigger the stop. PARTIAL or DEGRADED signals_status
+    annotates the feed check without independently changing its grade or stop class.
     """
     # Signals supply live mergeability, titles, and unique paths for the
-    # reselect planner; candidates yielding no enqueue actions grade
-    # FEED_CHECK FAIL with LOGIC_STOP.
+    # reselect planner; aggregate candidate_count > 0 with enqueued_count == 0
+    # grades FEED_CHECK FAIL with LOGIC_STOP.
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
         "python3 scripts/pr_lifecycle_feed.py --json (read-only verification)",

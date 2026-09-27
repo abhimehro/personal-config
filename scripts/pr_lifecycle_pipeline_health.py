@@ -370,9 +370,10 @@ def _identity_allows_reselect(
 
     Ledger BOT authors bypass title and login checks. Other items need an
     allowed title prefix; author_gate=False bypasses only the login check.
-    Prefer a nonblank author_login over ledger author fields, rejecting missing
-    identity when the gate is enabled. Use allowed_authors when supplied;
-    otherwise load the allowlist, propagating errors not handled by the loader.
+    A nonblank author_login argument wins over the ledger record; inside the
+    record, author precedes author_login. Missing identity fails the author
+    gate when enabled. Use allowed_authors when supplied; otherwise load the
+    allowlist, propagating errors not handled by the loader.
     """
     if item.get("lifecycle_state") == "TERMINAL":
         return False
@@ -519,8 +520,9 @@ def is_reselect_salvage_candidate(
     Exclude terminal, Stage 2-owned, never-touch, and blocked-outcome items.
     Ledger BOT authors bypass title and author checks. Other items need an
     allowed title prefix and, with author_gate enabled, an allowed login.
-    Prefer a nonblank author_login over the ledger author fields; missing
-    identity fails the author gate. Disabling it still requires the title.
+    A nonblank author_login argument wins over the ledger record; inside the
+    record, author precedes author_login. Missing identity fails the author
+    gate; disabling it still requires the title.
 
     Known live mergeability overrides next_action; unknown or absent values
     fall back to its first CONFLICTING/DIRTY marker. Only those two states

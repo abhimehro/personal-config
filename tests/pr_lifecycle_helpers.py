@@ -140,15 +140,6 @@ _RUN_STUB_NAMES = (
 )
 
 
-def _signal_value_stub(mapping: Any, key: str) -> Any:
-    """Resolve a signal by full item key or source PR prefix."""
-    if not mapping:
-        return None
-    if key in mapping:
-        return mapping[key]
-    return mapping.get(str(key or "").split("@", 1)[0])
-
-
 def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
     """Provide health module attributes required by runner tests."""
     return {

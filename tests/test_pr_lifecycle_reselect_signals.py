@@ -808,6 +808,53 @@ class TestProduceReselectSignals(unittest.TestCase):
         self.assertEqual(call_count, 0)
         self.assertEqual(result.queried_count, 0)
 
+    def test_budget_exhaustion_preserves_accumulated_signals(self) -> None:
+        """Budget exhaustion after some queries returns PARTIAL with accumulated signals."""
+        items = [
+            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(3)
+        ]
+        ledger = make_ledger(items, [])
+
+        call_count = 0
+        mock_time = [0.0]  # Use list for mutable closure
+
+        def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
+            nonlocal call_count
+            call_count += 1
+            # Simulate 50ms per call by advancing mock time
+            mock_time[0] += 0.05
+            return _make_completed_proc(
+                {
+                    "state": "OPEN",
+                    "mergeable": "CONFLICTING",
+                    "title": f"PR {call_count}",
+                    "headRefOid": f"head{call_count}",
+                    "author": {"login": "testuser"},
+                }
+            )
+
+        with mock.patch("time.monotonic", side_effect=lambda: mock_time[0]):
+            # total_budget_s = 0.1 allows ~2 calls (0.05 each) before timeout
+            result = produce_reselect_signals(
+                ledger, runner=runner, total_budget_s=0.1
+            )
+
+        self.assertEqual(result.status, "PARTIAL")
+        # Should have queried 2 items before budget exhausted
+        self.assertEqual(call_count, 2)
+        self.assertEqual(result.queried_count, 2)
+        # Accumulated signals should be preserved
+        self.assertIn(items[0]["key"], result.signals.live_mergeable_by_key)
+        self.assertIn(items[1]["key"], result.signals.live_mergeable_by_key)
+        self.assertIn(items[0]["key"], result.signals.live_head_sha_by_key)
+        self.assertIn(items[1]["key"], result.signals.live_head_sha_by_key)
+        self.assertIn(items[0]["key"], result.signals.titles_by_key)
+        self.assertIn(items[1]["key"], result.signals.titles_by_key)
+        self.assertIn(items[0]["key"], result.signals.author_login_by_key)
+        self.assertIn(items[1]["key"], result.signals.author_login_by_key)
+        # Third item should not have signals
+        self.assertNotIn(items[2]["key"], result.signals.live_mergeable_by_key)
+
     def test_producer_never_raises_on_arbitrary_runner_exception(self) -> None:
         """Producer never raises, even when runner raises an unhandled exception."""
         item = make_item(key="demo#1@sha", repository="demo", pr=1)
