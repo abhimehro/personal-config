@@ -39,6 +39,11 @@ def issue_body(status: dict[str, Any]) -> str:
 
 
 def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run gh issue arguments against the fixed repository with a 60-second timeout.
+
+    Capture text output and return nonzero exit codes without raising.
+    Process launch errors and timeouts propagate to the caller.
+    """
     return subprocess.run(
         ["gh", "issue", *cmd, "--repo", _ISSUE_REPO],
         check=False,
@@ -49,6 +54,11 @@ def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def _find_pinned_issue() -> int | None:
+    """Return the first exact-title issue number from the bounded GitHub search.
+
+    Return None on a failed command, empty output, invalid JSON, or no match.
+    Process exceptions and malformed decoded rows propagate to the caller.
+    """
     listed = _gh_issue(
         [
             "list",
@@ -74,6 +84,11 @@ def _find_pinned_issue() -> int | None:
 
 
 def _upsert_pinned_issue(issue_number: int | None, body: str) -> None:
+    """Edit the supplied issue or create the status issue when its number is None.
+
+    Raise OSError on a nonzero exit code, including at most 200 characters of
+    stderr. Process launch errors and timeouts propagate without retry.
+    """
     if issue_number is not None:
         result = _gh_issue(["edit", str(issue_number), "--body", body])
     else:

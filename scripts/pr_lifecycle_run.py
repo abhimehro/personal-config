@@ -137,6 +137,7 @@ def _live_signals_result(
 def _attach_signal_fields(
     plan: dict[str, Any], result: SignalsResult, signals_error: str | None
 ) -> None:
+    """Add signal collection metrics and any supplied error to the plan in place."""
     plan["signals_status"] = result.status
     plan["signals_queried"] = result.queried_count
     plan["signals_base_enriched"] = result.base_enriched_count

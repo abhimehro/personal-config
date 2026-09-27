@@ -35,6 +35,7 @@ NONEMPTY_WORK_ITEM_LISTS = ("allowed_paths", "acceptance_criteria", "provenance_
 
 
 def _load_required_work_item_fields() -> tuple[str, ...]:
+    """Read the required Stage 2 work-item field names from the ledger schema."""
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     required = schema["$defs"]["stage2WorkItem"]["required"]
     return tuple(required)
@@ -44,12 +45,14 @@ REQUIRED_WORK_ITEM_FIELDS = _load_required_work_item_fields()
 
 
 def _clock(now: datetime | None) -> datetime:
+    """Return the supplied clock value, or the current aware UTC time."""
     if now is not None:
         return now
     return datetime.now(timezone.utc)
 
 
 def _as_item_list(raw: Any) -> list[dict[str, Any]]:
+    """Keep dictionary entries from a list, returning an empty list otherwise."""
     if not isinstance(raw, list):
         return []
     items: list[dict[str, Any]] = []
@@ -60,10 +63,12 @@ def _as_item_list(raw: Any) -> list[dict[str, Any]]:
 
 
 def _ledger_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return dictionary entries from the ledger's items list."""
     return _as_item_list(ledger.get("items"))
 
 
 def _raw_work_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return dictionary work items without checking completeness or expiry."""
     return _as_item_list(ledger.get("stage2_work_items"))
 
 
@@ -87,6 +92,7 @@ def parse_expiry_utc(value: object) -> datetime | None:
 
 
 def _has_required_work_item_fields(item: dict[str, Any]) -> bool:
+    """Check that required fields exist and are neither None nor empty strings."""
     # SECURITY: empty required strings are not usable intake. Do not use
     # truthiness on non-strings: attempt_count 0 and empty optional lists
     # remain complete.
@@ -99,6 +105,7 @@ def _has_required_work_item_fields(item: dict[str, Any]) -> bool:
 
 
 def _has_required_work_item_lists(item: dict[str, Any]) -> bool:
+    """Require nonempty lists for paths, acceptance criteria, and provenance."""
     for field in NONEMPTY_WORK_ITEM_LISTS:
         value = item.get(field)
         if not isinstance(value, list) or len(value) < 1:
@@ -122,6 +129,7 @@ def work_item_is_usable(item: dict[str, Any], now: datetime | None = None) -> bo
 
 
 def _stage2_owned(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Select items owned by Stage 2 or in a Stage 2 queued or active state."""
     owned: list[dict[str, Any]] = []
     for item in items:
         owner = item.get("current_owner") == "stage2"
@@ -132,6 +140,7 @@ def _stage2_owned(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _usable_work_items(ledger: dict[str, Any], clock: datetime) -> list[dict[str, Any]]:
+    """Select complete Stage 2 work items that have not expired at clock."""
     usable: list[dict[str, Any]] = []
     for item in _raw_work_items(ledger):
         if work_item_is_usable(item, clock):
@@ -140,6 +149,7 @@ def _usable_work_items(ledger: dict[str, Any], clock: datetime) -> list[dict[str
 
 
 def _ledger_revision(ledger: dict[str, Any]) -> int:
+    """Convert the ledger revision to an integer, defaulting falsey values to zero."""
     return int(ledger.get("ledger_revision") or 0)
 
 
@@ -175,6 +185,7 @@ def _print_report(report: PipelineHealth, as_json: bool) -> None:
 
 
 def _print_pointer_refusal() -> int:
+    """Report a bootstrap-pointer refusal to stderr and return exit status 1."""
     print(
         "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
         "(fetch automation/pr-lifecycle-ledger)",
@@ -184,15 +195,18 @@ def _print_pointer_refusal() -> int:
 
 
 def _print_health_error(exc: BaseException) -> int:
+    """Print a health-check exception to stderr and return exit status 1."""
     print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
     return 1
 
 
 def _path_is_bootstrap_pointer(pointer: Path) -> bool:
+    """Identify a pr-lifecycle-ledger.yaml path under a tasks component."""
     return pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts
 
 
 def _is_bootstrap_pointer_document(data: dict[str, Any]) -> bool:
+    """Detect an explicit pointer marker or runtime reference without items."""
     if data.get("pointer_kind") == "runtime_lifecycle_ledger":
         return True
     runtime = data.get("runtime_ledger")
@@ -200,10 +214,12 @@ def _is_bootstrap_pointer_document(data: dict[str, Any]) -> bool:
 
 
 def _is_list_or_missing(value: Any) -> bool:
+    """Return whether a value is None or a list."""
     return value is None or isinstance(value, list)
 
 
 def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
+    """Require an items key and list-or-None values for both item collections."""
     if "items" not in data:
         return False
     items_ok = _is_list_or_missing(data.get("items"))
@@ -212,6 +228,11 @@ def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
 
 
 def _require_valid_runtime_ledger(ledger: dict[str, Any]) -> None:
+    """Strip transient item fields in place, then validate schema and runtime records.
+
+    Validate the loaded configuration before using it to check runtime records.
+    Propagate loading and validation errors to the caller.
+    """
     strip_in_memory_item_fields(ledger)
     validate_schema(ledger)
     config = load_yaml(CONFIG_PATH)
@@ -220,6 +241,7 @@ def _require_valid_runtime_ledger(ledger: dict[str, Any]) -> None:
 
 
 def _parse_ledger_file(path: Path) -> tuple[dict[str, Any] | None, int]:
+    """Load a YAML mapping with status 0, or report load errors with status 1."""
     try:
         return load_yaml(path), 0
     except (OSError, ValueError, KeyError) as exc:
@@ -227,6 +249,11 @@ def _parse_ledger_file(path: Path) -> tuple[dict[str, Any] | None, int]:
 
 
 def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | None, int]:
+    """Validate a runtime ledger, returning it with status 0 or None with status 1.
+
+    Reject pointer documents and invalid collection shapes before validation.
+    Validation strips transient item fields from the supplied mapping in place.
+    """
     if _is_bootstrap_pointer_document(ledger):
         return None, _print_pointer_refusal()
     if not _has_runtime_ledger_shape(ledger):
@@ -244,6 +271,11 @@ def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | Non
 
 
 def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
+    """Load and validate a runtime ledger, refusing bootstrap pointers.
+
+    Return the accepted mapping and status 0, or None and a reported error's
+    status when loading or validation fails.
+    """
     if _path_is_bootstrap_pointer(path.resolve()):
         return None, _print_pointer_refusal()
     ledger, status = _parse_ledger_file(path)

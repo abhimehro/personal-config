@@ -43,6 +43,11 @@ class SignalsAccum:
     base_enriched: int = 0
 
     def to_signals(self) -> health.ReselectSignals:
+        """Build planner signals, using None for empty collections.
+
+        Reuse nonempty maps and copy closed keys into a frozenset; retain keys
+        whose path lists are empty as evidence of no remaining source paths.
+        """
         return health.ReselectSignals(
             live_mergeable_by_key=_non_empty(self.live_mergeable),
             titles_by_key=_non_empty(self.titles),
@@ -58,10 +63,12 @@ _T = TypeVar("_T")
 
 
 def _non_empty(collection: _T) -> _T | None:
+    """Return the collection unchanged when truthy, or None otherwise."""
     return collection or None
 
 
 def _record_mergeable(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> None:
+    """Record a known mergeability state, prioritizing CONFLICTING then DIRTY."""
     mergeable = str(payload.get("mergeable") or "").strip().upper()
     merge_state_status = str(payload.get("mergeStateStatus") or "").strip().upper()
     if mergeable == "CONFLICTING":
@@ -75,6 +82,7 @@ def _record_mergeable(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> N
 
 
 def _record_text(target: dict[str, str], key: str, raw: Any) -> None:
+    """Store a stripped nonblank string under key, ignoring all other values."""
     if isinstance(raw, str) and raw.strip():
         target[key] = raw.strip()
 
@@ -92,6 +100,7 @@ def _record_identity_fields(
 
 
 def _file_entry_ok(entry: Any) -> bool:
+    """Return whether a file entry is a dictionary with a truthy path value."""
     return isinstance(entry, dict) and bool(entry.get("path"))
 
 

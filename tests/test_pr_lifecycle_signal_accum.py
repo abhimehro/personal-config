@@ -12,6 +12,7 @@ from pr_lifecycle_signal_accum import SignalsAccum, fold_payload
 
 class SignalAccumTests(unittest.TestCase):
     def test_instances_do_not_share_mutable_signal_or_failure_state(self) -> None:
+        """Verify mutations to one accumulator leave a second instance empty."""
         first, second = SignalsAccum(), SignalsAccum()
         fold_payload(
             first,
@@ -36,6 +37,7 @@ class SignalAccumTests(unittest.TestCase):
         self.assertEqual(second.truncated, [])
 
     def test_empty_path_evidence_is_distinct_from_no_path_evidence(self) -> None:
+        """Preserve explicit empty or journal-only paths while omitting absent evidence."""
         acc = SignalsAccum()
         for key, payload in (
             ("empty", {"files": []}),
@@ -54,6 +56,7 @@ class SignalAccumTests(unittest.TestCase):
     def test_mixed_payloads_keep_exclusions_and_evidence_on_their_own_keys(
         self,
     ) -> None:
+        """Keep mixed PR states and path evidence isolated without mutating payloads."""
         acc = SignalsAccum()
         payload = {
             "state": "OPEN",
@@ -90,6 +93,7 @@ class SignalAccumTests(unittest.TestCase):
         self.assertEqual(payloads, original)
 
     def test_malformed_file_entry_discards_entire_path_list_only(self) -> None:
+        """Reject all paths for a malformed entry while retaining SHA and merge signals."""
         for entry in (None, "src/not-a-dict.py", {}, {"path": None}, {"path": ""}):
             with self.subTest(entry=entry):
                 acc = SignalsAccum()
@@ -112,6 +116,7 @@ class SignalAccumTests(unittest.TestCase):
                 self.assertEqual(acc.truncated, ["key"])
 
     def test_file_cap_counts_journals_before_filtering(self) -> None:
+        """Apply the file-list cap before removing journal paths."""
         for count in (99, 100, 101):
             with self.subTest(count=count):
                 acc = SignalsAccum()
@@ -137,6 +142,7 @@ class SignalAccumTests(unittest.TestCase):
                     self.assertEqual(acc.truncated, ["key"])
 
     def test_non_string_identity_values_are_not_coerced_into_evidence(self) -> None:
+        """Ignore non-string titles, SHAs, and author logins instead of coercing them."""
         for raw in (None, False, 17, ["value"], {"value": "value"}):
             with self.subTest(raw=raw):
                 acc = SignalsAccum()

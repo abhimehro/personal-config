@@ -32,6 +32,7 @@ def _utc_now() -> datetime:
 
 
 def _stage_cap(config: dict[str, Any], name: str, default: int) -> int:
+    """Read a named lifecycle stage cap, falling back for nonpositive or non-int values."""
     raw = (config.get("lifecycle") or {}).get("stage_caps") or {}
     value = raw.get(name, default)
     if not isinstance(value, int) or value < 1:
