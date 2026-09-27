@@ -56,7 +56,11 @@ from pr_lifecycle_config import validate_config
 from pr_lifecycle_issue_status import issue_body as _issue_body  # noqa: F401
 from pr_lifecycle_issue_status import update_pinned_issue
 from pr_lifecycle_reselect_signals import SignalsResult, produce_reselect_signals
-from pr_lifecycle_stage_plan import build_stage_plan  # noqa: F401
+from pr_lifecycle_stage_plan import build_stage_plan
+
+# Re-exports for tests that call run.plan_*/run._issue_body. Patching these
+# names has no effect on the planner — it resolves them inside
+# pr_lifecycle_stage_plan / pr_lifecycle_issue_status globals; patch there.
 from pr_lifecycle_stage_plan import plan_stage2_enqueues  # noqa: F401
 from pr_lifecycle_stage_plan import plan_stage3_mechanical_handoffs  # noqa: F401
 from pr_lifecycle_support import ROOT
@@ -65,7 +69,6 @@ from pr_lifecycle_yaml import load_yaml
 LOGGER = logging.getLogger(__name__)
 LOG_DIR = Path(tempfile.gettempdir()) / "pr-lifecycle"
 STATUS_PATH_ON_BRANCH = "status.json"
-PINNED_ISSUE_TITLE = "PR pipeline status"
 
 
 def _utc_now() -> datetime:
@@ -133,6 +136,7 @@ def _attach_signal_fields(
 ) -> None:
     plan["signals_status"] = result.status
     plan["signals_queried"] = result.queried_count
+    plan["signals_base_enriched"] = result.base_enriched_count
     plan["signals_failed_keys"] = list(result.failed_keys)
     plan["signals_truncated_keys"] = list(result.truncated_keys)
     plan["signals_elapsed_s"] = result.elapsed_s

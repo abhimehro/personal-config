@@ -63,6 +63,9 @@ class SignalsResult:
     failed_keys: tuple[str, ...] = ()
     truncated_keys: tuple[str, ...] = ()
     elapsed_s: float = 0.0
+    # Successful `gh api` base-SHA enrichments; zero after view successes means
+    # a systemic REST outage (missing scope, rate limit, GHES) is in play.
+    base_enriched_count: int = 0
 
 
 def _default_runner(
@@ -197,8 +200,8 @@ def _fetch_payload(
     run_cmd: Callable[[list[str], float], subprocess.CompletedProcess[str]],
     item: dict[str, Any],
     per_call_timeout_s: float,
-) -> dict[str, Any] | None:
-    """Run the live queries for one item; return the payload or None.
+) -> tuple[dict[str, Any] | None, bool]:
+    """Run the live queries for one item; return (payload, base_enriched).
 
     `gh pr view` supplies the bulk fields, then a `gh api` REST call enriches
     baseRefOid (unavailable on gh older than v2.63.0) matching the pattern in
@@ -209,9 +212,9 @@ def _fetch_payload(
 
     FileNotFoundError (missing gh) propagates for the caller's immediate
     DEGRADED exit. Every other failure — nonzero exit, invalid JSON,
-    non-object payload, or a runner exception — yields None so the caller can
-    mark the key failed and keep scanning. Only the exception type is logged;
-    messages can echo gh output.
+    non-object payload, or a runner exception — yields (None, False) so the
+    caller can mark the key failed and keep scanning. Only the exception type
+    is logged; messages can echo gh output.
     """
     try:
         completed = run_cmd(_query_argv(item), per_call_timeout_s)
@@ -222,19 +225,19 @@ def _fetch_payload(
             "reselect signals: query failed for one PR (%s)",
             type(exc).__name__,
         )
-        return None
+        return None, False
     if completed.returncode != 0:
-        return None
+        return None, False
     try:
         parsed = json.loads(completed.stdout)
     except json.JSONDecodeError:
-        return None
+        return None, False
     if not isinstance(parsed, dict):
-        return None
+        return None, False
     base_sha = _fetch_base_sha(run_cmd, item, per_call_timeout_s)
     if base_sha is not None:
         parsed["baseRefOid"] = base_sha
-    return parsed
+    return parsed, base_sha is not None
 
 
 def _finish(
@@ -246,9 +249,15 @@ def _finish(
 
     Every signal collected so far is retained — including on DEGRADED — so a
     later query failure cannot resurrect an already-excluded ledger candidate;
-    ledger fallback applies only to failed or unqueried keys.
+    ledger fallback applies only to failed or unqueried keys. View successes
+    with zero base enrichments also floor at PARTIAL so a systemic REST outage
+    is visible instead of reading as a clean scan.
     """
-    resolved = acc.hard_status or ("PARTIAL" if (acc.timed_out or acc.failed) else "OK")
+    scanned_ok = queried_count - len(acc.failed)
+    base_gap = scanned_ok > 0 and acc.base_enriched == 0
+    resolved = acc.hard_status or (
+        "PARTIAL" if (acc.timed_out or acc.failed or base_gap) else "OK"
+    )
     return SignalsResult(
         signals=acc.to_signals(),
         status=resolved,
@@ -256,6 +265,7 @@ def _finish(
         failed_keys=tuple(acc.failed),
         truncated_keys=tuple(acc.truncated),
         elapsed_s=round(time.monotonic() - start_time, 4),
+        base_enriched_count=acc.base_enriched,
     )
 
 
@@ -273,7 +283,7 @@ def _scan_item(
     """
     key = str(item.get("key") or "")
     try:
-        payload = _fetch_payload(run_cmd, item, per_call_timeout_s)
+        payload, base_enriched = _fetch_payload(run_cmd, item, per_call_timeout_s)
     except FileNotFoundError:
         # gh missing -> global degradation immediately.
         acc.failed.append(key)
@@ -286,6 +296,7 @@ def _scan_item(
             acc.hard_status = "DEGRADED"
         return
     acc.consecutive_failures = 0
+    acc.base_enriched += int(base_enriched)
     fold_payload(acc, key, payload)
 
 
@@ -312,10 +323,12 @@ def produce_reselect_signals(
     path signals; accepted lists omit .jules paths and may be empty. These
     paths are changed-file proxies, not verified unique remaining source.
 
-    Return OK if the scan finishes without primary-query failures, including
-    when there are no candidates or every base enrichment failed (base is
-    advisory). View-call failures or budget exhaustion yield PARTIAL with
-    accumulated signals. Missing gh on a view call, producer-level
+    Return OK if the scan finishes without primary-query failures and at
+    least one base enrichment succeeded (or nothing was scanned). View-call
+    failures, budget exhaustion, or a full base-enrichment gap — every view
+    succeeded yet no `gh api` base SHA came back, the observable signature of
+    a systemic REST outage — yield PARTIAL with accumulated signals. The base
+    enrichment itself stays advisory: failures never fail a key. Missing gh on a view call, producer-level
     exceptions, or MAX_CONSECUTIVE_FAILURES straight view failures yield
     DEGRADED; the consecutive-failure and missing-gh exits retain every
     signal collected so far while producer-level exceptions emit none.

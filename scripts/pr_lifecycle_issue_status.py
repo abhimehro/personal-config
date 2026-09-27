@@ -3,8 +3,9 @@
 
 Best-effort gh issue helpers: locate the pinned status issue by exact title
 match, create or edit its body, and render the status payload. Every gh call
-uses a fixed argv with --repo pinned; failures raise OSError for callers to
-classify (run_stage maps them to TRANSIENT_RETRY).
+uses a fixed argv with --repo pinned; failures raise OSError. The only caller
+is main()'s --status branch, which maps them to a plain exit-1 error — no
+TRANSIENT_RETRY classification.
 """
 
 from __future__ import annotations

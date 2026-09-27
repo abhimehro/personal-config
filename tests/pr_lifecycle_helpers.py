@@ -196,6 +196,12 @@ def make_health_report(**overrides: object) -> types.SimpleNamespace:
     return types.SimpleNamespace(**values)
 
 
+# pr_lifecycle_stage_plan is deliberately absent: run imports it inside the
+# stub window, so it binds the same stub dep objects run does — keeping
+# mock.patch.object(run.health/feed_mod/reconcile_mod, ...) effective inside
+# the planner. Do NOT eagerly import it before the stubs (it would bind real
+# modules and bypass those patches) and do NOT pop it on restore (a second
+# import would create a divergent module instance for patch targets).
 _RUN_STUB_NAMES = (
     "pr_lifecycle_ledger_cas",
     "pr_lifecycle_pipeline_health",

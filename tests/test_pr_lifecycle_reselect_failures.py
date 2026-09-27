@@ -119,7 +119,10 @@ class TestReselectFailureStatuses(unittest.TestCase):
 
         result = produce_reselect_signals(make_ledger(items, []), runner=runner)
         # Nonzero exit and non-SHA stdout both drop just the base field.
-        self.assertEqual(result.status, "OK")
+        # Keys stay out of failed_keys, but a full enrichment gap is PARTIAL
+        # so a systemic REST outage is visible in run artifacts.
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.base_enriched_count, 0)
         self.assertEqual(result.queried_count, 2)
         self.assertEqual(result.failed_keys, ())
         self.assertEqual(
@@ -142,7 +145,10 @@ class TestReselectFailureStatuses(unittest.TestCase):
             return make_gh_proc(payload)
 
         result = produce_reselect_signals(make_ledger(items, []), runner=runner)
-        self.assertEqual(result.status, "OK")
+        # The breaker stays out (no DEGRADED, keys not failed), but a scan
+        # with zero base enrichments reports PARTIAL, not a clean OK.
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.base_enriched_count, 0)
         self.assertEqual(result.queried_count, 5)
         self.assertEqual(result.failed_keys, ())
         self.assertEqual(len(result.signals.live_mergeable_by_key), 5)
@@ -158,7 +164,8 @@ class TestReselectFailureStatuses(unittest.TestCase):
             return make_gh_proc({"state": "OPEN", "title": "kept"})
 
         result = produce_reselect_signals(make_ledger([item], []), runner=runner)
-        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.status, "PARTIAL")
+        self.assertEqual(result.base_enriched_count, 0)
         self.assertEqual(result.failed_keys, ())
         self.assertEqual(result.signals.titles_by_key, {item["key"]: "kept"})
         self.assertIsNone(result.signals.live_base_sha_by_key)

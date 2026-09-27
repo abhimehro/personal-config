@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -40,6 +40,7 @@ class SignalsAccum:
     consecutive_failures: int = 0
     timed_out: bool = False
     hard_status: str | None = None
+    base_enriched: int = 0
 
     def to_signals(self) -> health.ReselectSignals:
         return health.ReselectSignals(
@@ -53,7 +54,10 @@ class SignalsAccum:
         )
 
 
-def _non_empty(collection: Any) -> Any:
+_T = TypeVar("_T")
+
+
+def _non_empty(collection: _T) -> _T | None:
     return collection or None
 
 
