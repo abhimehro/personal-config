@@ -12,11 +12,13 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_item,
     make_ledger,
     make_work_item,
 )
+
 
 class ReselectCandidateTests(unittest.TestCase):
     def test_reselect_rejects_terminal_and_non_salvage_outcomes(self) -> None:
@@ -138,7 +140,9 @@ class ReselectCandidateTests(unittest.TestCase):
             changed_paths=["src/demo.py"],
             next_action="Needs live verification",
         )
-        ledger = make_ledger([item, make_item(key="", changed_paths=["src/other.py"])], [])
+        ledger = make_ledger(
+            [item, make_item(key="", changed_paths=["src/other.py"])], []
+        )
         selected = health.list_reselect_candidates(
             ledger,
             signals=health.ReselectSignals(

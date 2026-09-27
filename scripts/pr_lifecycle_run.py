@@ -96,9 +96,7 @@ RESELECT_ENQUEUE_REASON = "CONFLICTING_UNIQUE_RESELECT"
 
 def _wi_source_key(work_item: dict[str, Any]) -> str:
     """Get a feed item's source_key or source_item_key, or an empty string."""
-    return str(
-        work_item.get("source_key") or work_item.get("source_item_key") or ""
-    )
+    return str(work_item.get("source_key") or work_item.get("source_item_key") or "")
 
 
 def _filter_never_touch_work_items(
@@ -209,9 +207,7 @@ def _stage3_handoff_eligible(item: dict[str, Any]) -> bool:
     )
 
 
-def _handoff_action(
-    item: dict[str, Any], allowed_paths: list[str]
-) -> dict[str, Any]:
+def _handoff_action(item: dict[str, Any], allowed_paths: list[str]) -> dict[str, Any]:
     """Build one HANDOFF_MECHANICAL_TO_STAGE2 plan action with WI anchors."""
     return {
         "action": "HANDOFF_MECHANICAL_TO_STAGE2",
@@ -286,9 +282,7 @@ def _stage1_plan(
     actions.extend(planned["enqueue_actions"])
     stop_class = None
     reason = "OK"
-    feed_ok = not (
-        planned["candidate_count"] > 0 and not planned["enqueued_count"]
-    )
+    feed_ok = not (planned["candidate_count"] > 0 and not planned["enqueued_count"])
     if not feed_ok:
         stop_class = "LOGIC_STOP"
         reason = "FEED_CHECK_FAIL"
@@ -445,9 +439,7 @@ def build_stage_plan(
     elif stage == 2:
         allowed, actions, stop_class, reason, extras = _stage2_plan(ledger, config)
     elif stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan(
-            ledger, signals=signals
-        )
+        allowed, actions, stop_class, reason = _stage3_plan(ledger, signals=signals)
     else:
         allowed, actions = [], []
         stop_class = "LOGIC_STOP"

@@ -11,6 +11,7 @@ from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 from unittest import mock
 
 from tests.pr_lifecycle_helpers import SCRIPTS, import_lifecycle_run, make_health_report
@@ -371,9 +372,7 @@ class ReselectSignalsTests(unittest.TestCase):
         mock_producer.assert_called_with(ledger)
         self.assertEqual(plan["signals_status"], "OK")
         self.assertEqual(plan["signals_queried"], 2)
-        feed_check = next(
-            a for a in plan["actions"] if a.get("action") == "FEED_CHECK"
-        )
+        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check["signals_status"], "OK")
 
         # Stage 3
@@ -408,9 +407,7 @@ class ReselectSignalsTests(unittest.TestCase):
         self.assertEqual(plan["signals_error"], "RuntimeError")
         self.assertEqual(plan["signals_status"], "DEGRADED")
         self.assertEqual(plan.get("condition"), "SIGNALS_DEGRADED")
-        feed_check = next(
-            a for a in plan["actions"] if a.get("action") == "FEED_CHECK"
-        )
+        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check.get("condition"), "SIGNALS_DEGRADED")
         action_names = [a.get("action") for a in plan["actions"]]
         self.assertIn("SIGNALS_DEGRADED", action_names)
@@ -476,8 +473,8 @@ class ReselectSignalsTests(unittest.TestCase):
         code, plan = _exec_stage(
             1,
             ledger,
-            producer_override=lambda l: produce_reselect_signals(
-                l, runner=stub_runner
+            producer_override=lambda ledger_in: produce_reselect_signals(
+                ledger_in, runner=stub_runner
             ),
         )
         self.assertEqual(code, 0)
@@ -488,9 +485,7 @@ class ReselectSignalsTests(unittest.TestCase):
         self.assertEqual(len(enqueues), 1)
         self.assertEqual(enqueues[0]["source_key"], item["key"])
         self.assertEqual(enqueues[0]["allowed_paths"], ["src/foo.py"])
-        feed_check = next(
-            a for a in plan["actions"] if a.get("action") == "FEED_CHECK"
-        )
+        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check["grade"], "PASS")
         self.assertEqual(feed_check["reselect_candidates"], 1)
         self.assertEqual(feed_check["enqueued"], 1)
@@ -502,9 +497,7 @@ class ReselectSignalsTests(unittest.TestCase):
             queried_count=1,
             failed_keys=(item["key"],),
         )
-        code, plan_degraded = _exec_stage(
-            1, ledger, producer_override=degraded_result
-        )
+        code, plan_degraded = _exec_stage(1, ledger, producer_override=degraded_result)
         self.assertEqual(code, 0)
         self.assertEqual(plan_degraded["signals_status"], "DEGRADED")
         degraded_enqueues = [
@@ -514,18 +507,13 @@ class ReselectSignalsTests(unittest.TestCase):
         ]
         self.assertEqual(len(degraded_enqueues), 0)
         feed_check_deg = next(
-            a
-            for a in plan_degraded["actions"]
-            if a.get("action") == "FEED_CHECK"
+            a for a in plan_degraded["actions"] if a.get("action") == "FEED_CHECK"
         )
         self.assertEqual(feed_check_deg["grade"], "PASS")
         self.assertEqual(feed_check_deg["reselect_candidates"], 0)
         self.assertEqual(feed_check_deg["enqueued"], 0)
         self.assertTrue(
-            any(
-                a.get("action") == "SIGNALS_DEGRADED"
-                for a in plan_degraded["actions"]
-            )
+            any(a.get("action") == "SIGNALS_DEGRADED" for a in plan_degraded["actions"])
         )
 
     def test_ledger_conflicting_live_mergeable_no_enqueue(self):
@@ -566,8 +554,8 @@ class ReselectSignalsTests(unittest.TestCase):
         code, plan = _exec_stage(
             1,
             ledger,
-            producer_override=lambda l: produce_reselect_signals(
-                l, runner=stub_runner_clean
+            producer_override=lambda ledger_in: produce_reselect_signals(
+                ledger_in, runner=stub_runner_clean
             ),
         )
         self.assertEqual(code, 0)
@@ -575,9 +563,7 @@ class ReselectSignalsTests(unittest.TestCase):
             a for a in plan["actions"] if a.get("action") == "ENQUEUE_STAGE2_WI"
         ]
         self.assertEqual(len(enqueues), 0)
-        feed_check = next(
-            a for a in plan["actions"] if a.get("action") == "FEED_CHECK"
-        )
+        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check["reselect_candidates"], 0)
         self.assertEqual(feed_check["enqueued"], 0)
 
@@ -637,8 +623,8 @@ class ReselectSignalsTests(unittest.TestCase):
         code, plan_merg = _exec_stage(
             3,
             ledger,
-            producer_override=lambda l: produce_reselect_signals(
-                l, runner=stub_runner_merg
+            producer_override=lambda ledger_in: produce_reselect_signals(
+                ledger_in, runner=stub_runner_merg
             ),
         )
         self.assertEqual(code, 0)
@@ -653,8 +639,8 @@ class ReselectSignalsTests(unittest.TestCase):
         code, plan_conf = _exec_stage(
             3,
             ledger,
-            producer_override=lambda l: produce_reselect_signals(
-                l, runner=stub_runner_conf
+            producer_override=lambda ledger_in: produce_reselect_signals(
+                ledger_in, runner=stub_runner_conf
             ),
         )
         self.assertEqual(code, 0)
@@ -680,7 +666,9 @@ class TestDependencyPreflight(unittest.TestCase):
             timeout=60,
         )
         self.assertEqual(proc.returncode, 2, proc.stderr)
-        self.assertIn("PR_LIFECYCLE_RUN_ERROR: missing Python dependencies", proc.stderr)
+        self.assertIn(
+            "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies", proc.stderr
+        )
         self.assertIn("pyyaml", proc.stderr)
         self.assertIn("requirements.txt", proc.stderr)
         self.assertNotIn("Traceback", proc.stderr)

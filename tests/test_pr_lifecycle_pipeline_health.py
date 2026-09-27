@@ -11,8 +11,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
 from typing import Any
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -20,6 +20,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     NOW,
     make_item,
@@ -129,7 +130,6 @@ CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
         True,
     ),
 )
-
 
 
 class TestSalvageEligibleClassifier(unittest.TestCase):
@@ -331,12 +331,8 @@ class TestPredicateHardening(unittest.TestCase):
             health.is_reselect_salvage_candidate(item, live_mergeable="UNKNOWN")
         )
         # empty or None should fall back to next_action -> candidate
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="")
-        )
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable=None)
-        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item, live_mergeable=""))
+        self.assertTrue(health.is_reselect_salvage_candidate(item, live_mergeable=None))
         # MERGEABLE is authoritative -> excluded (not in CONFLICTING/DIRTY)
         self.assertFalse(
             health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
@@ -370,9 +366,7 @@ class TestPredicateHardening(unittest.TestCase):
             health.is_reselect_salvage_candidate(item, live_head_sha="ABC1234")
         )
         # No signal (None) -> unchanged candidate
-        self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_head_sha=None)
-        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item, live_head_sha=None))
         # Mismatch -> excluded
         self.assertFalse(
             health.is_reselect_salvage_candidate(item, live_head_sha="def5678")
@@ -394,7 +388,7 @@ class TestPredicateHardening(unittest.TestCase):
         )
 
     def test_author_gate_for_title_only_identity(self) -> None:
-        """Title-only with author gate on: maintainer -> candidate; human -> excluded; no login -> candidate."""
+        """Title-only with author gate on: maintainer/bot -> candidate; human -> excluded; no live login -> ledger author decides; no login at all -> excluded (fails closed)."""
         item = make_item(
             key="abhimehro/demo#1@abc1234",
             author="abhimehro",
@@ -424,14 +418,10 @@ class TestPredicateHardening(unittest.TestCase):
         )
         # Missing login signal with maintainer in ledger -> candidate (ledger fallback)
         self.assertTrue(
-            health.is_reselect_salvage_candidate(
-                item, title=title, author_login=None
-            )
+            health.is_reselect_salvage_candidate(item, title=title, author_login=None)
         )
         self.assertTrue(
-            health.is_reselect_salvage_candidate(
-                item, title=title, author_login=""
-            )
+            health.is_reselect_salvage_candidate(item, title=title, author_login="")
         )
         # Missing login signal with external human in ledger -> rejected (never for humans)
         human_item = make_item(

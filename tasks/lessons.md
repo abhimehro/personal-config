@@ -2,41 +2,43 @@
 
 ## Lesson 0hr: Three-stage PR pipeline rebalance (2026-09-21)
 
-**Option 3 addendum (2026-09-24):** Keep three stages. Stage 1 reselects
-live CONFLICTING/DIRTY unique-remaining ledger-BOT into ≤5 complete
-`stage2_work_items` (`ENQUEUE_STAGE2_WI`); feed is read-only. Stage 3
-hands mechanical CONFLICTING HOLD_CONTRACT to Stage 2
-(`HANDOFF_MECHANICAL_TO_STAGE2`) and defers CLOSED_NOOP Observed-CLOSED
-off the daily completion cap. Stage 2 / Cursor skip-if-empty when usable
-mechanical WI == 0. Never-touch unchanged. Calibration stays DISABLED.
+**Option 3 addendum (2026-09-24):** Keep three stages. Stage 1 reselects live
+CONFLICTING/DIRTY unique-remaining ledger-BOT into ≤5 complete
+`stage2_work_items` (`ENQUEUE_STAGE2_WI`); feed is read-only. Stage 3 hands
+mechanical CONFLICTING HOLD_CONTRACT to Stage 2 (`HANDOFF_MECHANICAL_TO_STAGE2`)
+and defers CLOSED_NOOP Observed-CLOSED off the daily completion cap. Stage 2 /
+Cursor skip-if-empty when usable mechanical WI == 0. Never-touch unchanged.
+Calibration stays DISABLED.
 
 **Live reselect signals addendum (2026-09-26):** FEED_CHECK previously relied on
 offline ledger predicates alone, creating blind spots where stale ledger states
 (e.g., recorded CONFLICTING when live PR is already MERGEABLE, or unrecorded
 `⚡bolt` titles) caused incorrect enqueue decisions or starved reachable items.
-Live reselect signals query `gh pr view` for live title, mergeability, headRefOid,
-author, and paths in Stages 1 & 3. Fail-open with ledger fallback on `DEGRADED`;
-author gate enforces maintainer/bot for title prefixes; drifted head-SHA is
-excluded; executor live-verifies unique paths at CAS time.
+Live reselect signals query `gh pr view` for live title, mergeability,
+headRefOid, author, and paths in Stages 1 & 3. Fail-open with ledger fallback on
+`DEGRADED`; author gate enforces maintainer/bot for title prefixes; drifted
+head-SHA is excluded; executor live-verifies unique paths at CAS time.
 
 **Pattern:** Cursor scheduled automations paused (usage exhausted). Long
 calibration prompts + Notion packets + Stage 2 empty-intake while salvage stock
 remained caused drain failure. Bot review threads (Codacy/qodo/CodeRabbit) with
 no human reply were treated as merge blockers.
 
-**Rule:** (1) Stage agents bootstrap via `python3 scripts/pr_lifecycle_run.py
---stage N` and execute only the emitted plan. (2) Schema-aware CAS only —
-`pr_lifecycle_reconcile.py` / ledger helpers; never raw YAML replace. (3)
-`packet_expiry_close_days: 7` — expired WAITING_HUMAN BOT non-REVIEW_SECURITY →
-salvage-eligible **or** CLOSE_STALE. (4) Stage 2 never merges; Stage 2 intake is
-`self_fed` minimal WIs. (5) Codacy/qodo/CodeRabbit threads with no human reply
-are advisory; Stage 3 may resolve before `/trunk` (Abhi 2026-09-21). (6)
-Calibration stays DISABLED; completion is live Stage 3. (7) Weekly GitHub issue
-digest replaces Notion packets for this path. (8) Archive TERMINAL >30d so the
-active ledger stays under 1MB.
+**Rule:** (1) Stage agents bootstrap via
+`python3 scripts/pr_lifecycle_run.py
+--stage N` and execute only the emitted
+plan. (2) Schema-aware CAS only — `pr_lifecycle_reconcile.py` / ledger helpers;
+never raw YAML replace. (3) `packet_expiry_close_days: 7` — expired
+WAITING_HUMAN BOT non-REVIEW_SECURITY → salvage-eligible **or** CLOSE_STALE. (4)
+Stage 2 never merges; Stage 2 intake is `self_fed` minimal WIs. (5)
+Codacy/qodo/CodeRabbit threads with no human reply are advisory; Stage 3 may
+resolve before `/trunk` (Abhi 2026-09-21). (6) Calibration stays DISABLED;
+completion is live Stage 3. (7) Weekly GitHub issue digest replaces Notion
+packets for this path. (8) Archive TERMINAL >30d so the active ledger stays
+under 1MB.
 
-**Detection cost:** Low — `pr_lifecycle_run.py --stage 1 --dry-run` prints a JSON
-plan; `pr_lifecycle_feed.py` exits 2 on EMPTY_FEED_WITH_ELIGIBLE_STOCK.
+**Detection cost:** Low — `pr_lifecycle_run.py --stage 1 --dry-run` prints a
+JSON plan; `pr_lifecycle_feed.py` exits 2 on EMPTY_FEED_WITH_ELIGIBLE_STOCK.
 
 ## Lesson 0hb: Persisted projection fields halt scheduled Cursor (2026-09-08)
 
@@ -3116,7 +3118,8 @@ commit `0cf4928e` on `origin/main`.
 
 ## Lesson 0hl: HOLD_CANONICAL vs an already-MERGED twin is unique-source salvage (2026-09-18)
 
-**Pattern:** series_correction [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+**Pattern:** series_correction
+[#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
 stayed `HOLD_CANONICAL` / Stage 3 because ledger evidence still named open twin
 [#405](https://github.com/abhimehro/series_correction_project_updated/pull/405).
 Live GitHub showed #405 **MERGED** and #409 still CONFLICTING/DIRTY with unique
@@ -3126,18 +3129,20 @@ canonical hold sat idle. Stage 1 would have failed the feed if it left salvage
 unqueued and called the remainder empty.
 
 **Rule:** (1) SHA_MATCH a Stage 3 `HOLD_CANONICAL` item against **live** twin
-state. If every overlap twin is MERGED/CLOSED and unique source remains, that
-is Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
+state. If every overlap twin is MERGED/CLOSED and unique source remains, that is
+Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
 complete work item. (2) `.jules/` / `.Jules/` journal path alone is not sticky
 `generated_output` (**0cs**); prohibit copying the journal into the replacement
 draft. (3) Do not invent a work item without a matching ledger key and live
 CONFLICTING/DIRTY unique source. (4) Do not leave the item on Stage 3 for
 another packet when the canonical reason is gone. (5) Keeper of an still-open
-overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins;
-do not queue N salvage WIs for non-keepers.
+overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins; do
+not queue N salvage WIs for non-keepers.
 
-**Detection cost:** Low — `gh pr view` on the named twin; `lifecycle_state:
-STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
+**Detection cost:** Low — `gh pr view` on the named twin;
+`lifecycle_state:
+STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin
+`state: MERGED`.
 
 ## Lesson 0hm: Do not replay a weaker source processor over a stronger main (2026-09-18)
 
@@ -3146,35 +3151,34 @@ STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
 already used `copy(deep=False)` plus per-column copies / `new_col.loc` /
 `to_numpy(copy=True)`. The CONFLICTING #409 processor was the older unique
 remainder, not a strict upgrade. Wholesale-copying it would have regressed
-isolation. The unique remainder that still failed-closed on current main was
-the three shallow-copy tests.
+isolation. The unique remainder that still failed-closed on current main was the
+three shallow-copy tests.
 
 **Rule:** (1) Diff allowed paths against **current main**, not only against the
 source head. (2) If main already contains a stronger contract, salvage the
 unique tests (or the still-missing hunks) only. (3) Do not wholesale-checkout
-the source processor, journal, workflow, or lockfile. (4) Adapt tests to
-current `main`; do not copy an obsolete test that asserts the weaker API.
-(5) Record the live replacement head after review-bot follow-ons (**0gx**).
+the source processor, journal, workflow, or lockfile. (4) Adapt tests to current
+`main`; do not copy an obsolete test that asserts the weaker API. (5) Record the
+live replacement head after review-bot follow-ons (**0gx**).
 
 **Detection cost:** Low — `git diff origin/main...source -- allowed_paths`;
-search current main for `copy(deep=False)` / column-copy; pytest the named
-file.
+search current main for `copy(deep=False)` / column-copy; pytest the named file.
 
 ## Lesson 0hn: Re-poll UNKNOWN mergeable after a sibling squash (2026-09-18)
 
 **Pattern:** Hydro Dependabot #670 squash-merged first. Immediate re-read of
 siblings #671 and #669 returned `mergeable=UNKNOWN` (GitHub GraphQL lag), not
-CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine
-patch PRs that became CLEAN within ~8–12s and merged with the original head
-SHAs.
+CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine patch
+PRs that became CLEAN within ~8–12s and merged with the original head SHAs.
 
 **Rule:** (1) After a sibling merge in the same repo, `mergeable=UNKNOWN` is
 transient evidence, not `CONFLICTING`. (2) Re-poll for a bounded window before
 recording HOLD or skipping. (3) Only act when the re-read is OPEN, non-draft,
 CLEAN/MERGEABLE, required checks readable, and `expectedHeadSha` still matches.
 (4) If the re-read becomes CONFLICTING or UNSTABLE, stop; do not squash-bypass.
-(5) Each re-poll that then mutates still counts toward the state-changing
-action cap.
+(5) Each re-poll that then mutates still counts toward the state-changing action
+cap.
 
-**Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
-twice ~10s apart after a sibling squash.
+**Detection cost:** Low —
+`gh pr view --json mergeable,mergeStateStatus,headRefOid` twice ~10s apart after
+a sibling squash.

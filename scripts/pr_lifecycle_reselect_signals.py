@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess
+import subprocess  # nosec B404 - only the fixed gh argv below, never shell=True
 import sys
 import time
 from dataclasses import dataclass, field
@@ -66,7 +66,8 @@ class SignalsResult:
 def _default_runner(
     cmd: list[str], timeout_s: float
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    # argv list, no shell; repository/pr are schema-constrained ledger fields.
+    return subprocess.run(  # nosec B603
         cmd, check=False, capture_output=True, text=True, timeout=timeout_s
     )
 
@@ -307,9 +308,7 @@ def produce_reselect_signals(
 
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.
-        LOGGER.warning(
-            "reselect signals: producer DEGRADED (%s)", type(exc).__name__
-        )
+        LOGGER.warning("reselect signals: producer DEGRADED (%s)", type(exc).__name__)
         return SignalsResult(
             signals=health.ReselectSignals(),
             status="DEGRADED",

@@ -174,7 +174,6 @@ MECHANICAL_RESELECT_NA = (
 )
 
 
-
 @dataclass(frozen=True)
 class PipelineHealth:
     """Starvation report. stage2_work_item_count is complete unexpired WIs."""
@@ -278,9 +277,7 @@ def _load_reselect_allowed_authors(
     if config:
         bots = list(config.get("bot_authors") or [])
         maintainers = list(
-            (config.get("identity_classification") or {}).get(
-                "maintainer_token_logins"
-            )
+            (config.get("identity_classification") or {}).get("maintainer_token_logins")
             or []
         )
         if bots or maintainers:
@@ -768,9 +765,7 @@ def _health_report(
         stage2_owned_item_count=owned_count,
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
-        reselect_candidate_count=len(
-            list_reselect_candidates(ledger, signals=signals)
-        ),
+        reselect_candidate_count=len(list_reselect_candidates(ledger, signals=signals)),
         starvation=starvation,
         reason=_starvation_reason(starvation, usable_count, eligible_count),
     )

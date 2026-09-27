@@ -8,8 +8,8 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from unittest import mock
 from typing import Any
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -18,10 +18,10 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 from pr_lifecycle_reselect_signals import (  # noqa: E402
-    SignalsResult,
     prefilter_ledger_items,
     produce_reselect_signals,
 )
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_item,
     make_ledger,
@@ -29,8 +29,12 @@ from tests.pr_lifecycle_helpers import (  # noqa: E402
 )
 
 
-def _make_completed_proc(stdout_dict: dict[str, Any] | str, returncode: int = 0) -> subprocess.CompletedProcess[str]:
-    stdout = json.dumps(stdout_dict) if isinstance(stdout_dict, dict) else str(stdout_dict)
+def _make_completed_proc(
+    stdout_dict: dict[str, Any] | str, returncode: int = 0
+) -> subprocess.CompletedProcess[str]:
+    stdout = (
+        json.dumps(stdout_dict) if isinstance(stdout_dict, dict) else str(stdout_dict)
+    )
     return subprocess.CompletedProcess(
         args=["gh", "pr", "view"],
         returncode=returncode,
@@ -111,10 +115,18 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
     def test_prefilter_orders_stage1_and_stage3_items_first(self) -> None:
         """Prefilter keeps ledger order but places stage1 and stage3 owned items first."""
-        other1 = make_item(key="demo#1@a", repository="demo", pr=1, current_owner="human")
-        stage3_item = make_item(key="demo#2@b", repository="demo", pr=2, current_owner="stage3")
-        other2 = make_item(key="demo#3@c", repository="demo", pr=3, current_owner="none")
-        stage1_item = make_item(key="demo#4@d", repository="demo", pr=4, current_owner="stage1")
+        other1 = make_item(
+            key="demo#1@a", repository="demo", pr=1, current_owner="human"
+        )
+        stage3_item = make_item(
+            key="demo#2@b", repository="demo", pr=2, current_owner="stage3"
+        )
+        other2 = make_item(
+            key="demo#3@c", repository="demo", pr=3, current_owner="none"
+        )
+        stage1_item = make_item(
+            key="demo#4@d", repository="demo", pr=4, current_owner="stage1"
+        )
 
         ledger = make_ledger([other1, stage3_item, other2, stage1_item], [])
         survivors = prefilter_ledger_items(ledger, max_prs=10)
@@ -124,8 +136,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
     def test_prefilter_honors_max_prs_cap(self) -> None:
         """Prefilter applies max_prs limit."""
         items = [
-            make_item(key=f"demo#{n}@a", repository="demo", pr=n)
-            for n in range(10)
+            make_item(key=f"demo#{n}@a", repository="demo", pr=n) for n in range(10)
         ]
         ledger = make_ledger(items, [])
         survivors = prefilter_ledger_items(ledger, max_prs=3)
@@ -155,7 +166,9 @@ class TestProduceReselectSignals(unittest.TestCase):
             ],
         }
 
-        def fake_runner(cmd: list[str], timeout_s: float) -> subprocess.CompletedProcess[str]:
+        def fake_runner(
+            cmd: list[str], timeout_s: float
+        ) -> subprocess.CompletedProcess[str]:
             self.assertIn("100", cmd)
             self.assertIn("abhimehro/personal-config", cmd)
             return _make_completed_proc(fake_resp)
@@ -196,10 +209,12 @@ class TestProduceReselectSignals(unittest.TestCase):
                     "title": "demo title",
                 }
                 result = produce_reselect_signals(
-                    ledger, runner=lambda cmd, t: _make_completed_proc(resp)
+                    ledger, runner=lambda cmd, t, resp=resp: _make_completed_proc(resp)
                 )
                 if expected:
-                    self.assertEqual(result.signals.live_mergeable_by_key, {item["key"]: expected})
+                    self.assertEqual(
+                        result.signals.live_mergeable_by_key, {item["key"]: expected}
+                    )
                 else:
                     self.assertIsNone(result.signals.live_mergeable_by_key)
 
@@ -276,7 +291,9 @@ class TestProduceReselectSignals(unittest.TestCase):
                     runner=lambda cmd, t, resp=resp: _make_completed_proc(resp),
                 )
                 if closed:
-                    self.assertEqual(result.signals.closed_keys, frozenset({item["key"]}))
+                    self.assertEqual(
+                        result.signals.closed_keys, frozenset({item["key"]})
+                    )
                 else:
                     self.assertIsNone(result.signals.closed_keys)
                 self.assertIsNone(result.signals.live_mergeable_by_key)
@@ -290,11 +307,13 @@ class TestProduceReselectSignals(unittest.TestCase):
         def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
             if "1" in cmd:
                 return _make_completed_proc("", returncode=1)
-            return _make_completed_proc({
-                "state": "OPEN",
-                "mergeable": "CONFLICTING",
-                "title": "Good PR",
-            })
+            return _make_completed_proc(
+                {
+                    "state": "OPEN",
+                    "mergeable": "CONFLICTING",
+                    "title": "Good PR",
+                }
+            )
 
         result = produce_reselect_signals(ledger, runner=runner)
         self.assertEqual(result.status, "PARTIAL")
@@ -319,7 +338,9 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_three_consecutive_failures_cause_degraded(self) -> None:
         """3 consecutive failures -> DEGRADED with empty signals."""
-        items = [make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(4)]
+        items = [
+            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(4)
+        ]
         ledger = make_ledger(items, [])
 
         call_count = 0
@@ -337,7 +358,9 @@ class TestProduceReselectSignals(unittest.TestCase):
 
     def test_budget_exhaustion_results_in_partial_status(self) -> None:
         """Budget exhaustion stops querying and returns PARTIAL with accumulated signals."""
-        items = [make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(5)]
+        items = [
+            make_item(key=f"demo#{i}@sha", repository="demo", pr=i) for i in range(5)
+        ]
         ledger = make_ledger(items, [])
 
         call_count = 0
@@ -345,11 +368,13 @@ class TestProduceReselectSignals(unittest.TestCase):
         def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
             nonlocal call_count
             call_count += 1
-            return _make_completed_proc({
-                "state": "OPEN",
-                "mergeable": "CONFLICTING",
-                "title": f"PR {call_count}",
-            })
+            return _make_completed_proc(
+                {
+                    "state": "OPEN",
+                    "mergeable": "CONFLICTING",
+                    "title": f"PR {call_count}",
+                }
+            )
 
         # total_budget_s = 0.0 forces timeout before subsequent items
         result = produce_reselect_signals(ledger, runner=runner, total_budget_s=0.0)
@@ -366,7 +391,9 @@ class TestProduceReselectSignals(unittest.TestCase):
             raise RuntimeError("unexpected failure")
 
         with self.assertLogs("pr_lifecycle_reselect_signals", level="WARNING") as logs:
-            result = produce_reselect_signals(make_ledger([item], []), runner=bad_runner)
+            result = produce_reselect_signals(
+                make_ledger([item], []), runner=bad_runner
+            )
         self.assertEqual(result.status, "PARTIAL")
         self.assertEqual(result.failed_keys, (item["key"],))
         output = "\n".join(logs.output)
