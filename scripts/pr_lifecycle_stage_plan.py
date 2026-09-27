@@ -421,30 +421,40 @@ def _dispatch_stage_plan(
     return (*plan, {})
 
 
-def _degraded_note(result: SignalsResult) -> str:
-    """Describe the degradation for the SIGNALS_DEGRADED action note.
+def _cause_clauses(result: SignalsResult) -> list[str]:
+    """Accumulate one clause per degradation cause actually present.
 
-    Each cause gets distinct wording so operators are not pointed at failures
-    that did not occur: budget truncation leaves unqueried keys on ledger
-    values, a full base-enrichment gap signals a systemic REST outage, and a
-    hard DEGRADED means the view query itself was unavailable.
+    Causes co-occur (failed queries burn the budget; a hard abort leaves
+    survivors unqueried; view successes can coincide with a total `gh api`
+    outage), so first-match-wins would hide whichever cause sorts second.
     """
+    clauses: list[str] = []
     if result.failed_keys:
-        note = "ledger fallbacks in effect; title-gated items invisible for failed keys"
-        if result.timed_out:
-            note += "; live scan also truncated by total budget"
-        return note
+        clauses.append(
+            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
+        )
     if result.timed_out:
-        return (
+        clauses.append(
             "live scan truncated by total budget after "
             f"{result.queried_count} attempted queries; unqueried keys use "
             "ledger values"
         )
-    if result.queried_count > 0 and result.base_enriched_count == 0:
-        return (
-            f"live base anchors missing (0/{result.queried_count} enriched); "
+    if result.status == "DEGRADED":
+        clauses.append("scan aborted; all unqueried keys use ledger values")
+    scanned_ok = result.queried_count - len(result.failed_keys)
+    if scanned_ok > 0 and result.base_enriched_count == 0:
+        clauses.append(
+            f"live base anchors missing (0/{scanned_ok} enriched); "
             "view signals otherwise complete"
         )
+    return clauses
+
+
+def _degraded_note(result: SignalsResult) -> str:
+    """Join the degradation causes into the SIGNALS_DEGRADED action note."""
+    clauses = _cause_clauses(result)
+    if clauses:
+        return "; ".join(clauses)
     return "live signal query unavailable; all keys use ledger values"
 
 
