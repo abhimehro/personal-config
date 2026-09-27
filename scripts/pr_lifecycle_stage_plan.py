@@ -445,7 +445,7 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
     if scanned_ok > 0 and result.base_enriched_count == 0:
         clauses.append(
             f"live base anchors missing (0/{scanned_ok} enriched), "
-            "no view failures among them"
+            "no view failures among the views that returned"
         )
     return clauses
 
