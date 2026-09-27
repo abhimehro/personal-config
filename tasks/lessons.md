@@ -10,6 +10,15 @@ hands mechanical CONFLICTING HOLD_CONTRACT to Stage 2
 off the daily completion cap. Stage 2 / Cursor skip-if-empty when usable
 mechanical WI == 0. Never-touch unchanged. Calibration stays DISABLED.
 
+**Live reselect signals addendum (2026-09-26):** FEED_CHECK previously relied on
+offline ledger predicates alone, creating blind spots where stale ledger states
+(e.g., recorded CONFLICTING when live PR is already MERGEABLE, or unrecorded
+`⚡bolt` titles) caused incorrect enqueue decisions or starved reachable items.
+Live reselect signals query `gh pr view` for live title, mergeability, headRefOid,
+author, and paths in Stages 1 & 3. Fail-open with ledger fallback on `DEGRADED`;
+author gate enforces maintainer/bot for title prefixes; drifted head-SHA is
+excluded; executor live-verifies unique paths at CAS time.
+
 **Pattern:** Cursor scheduled automations paused (usage exhausted). Long
 calibration prompts + Notion packets + Stage 2 empty-intake while salvage stock
 remained caused drain failure. Bot review threads (Codacy/qodo/CodeRabbit) with

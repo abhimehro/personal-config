@@ -62,6 +62,23 @@ not proceed to inventory, merge, or close.
    `pr_lifecycle_feed.py` verifies intake; it does not enqueue. `FEED_CHECK`
    fails the Stage 1 throughput grade when reselect candidates > 0 and
    enqueued == 0.
+
+### Live Reselect Signals (Stage 1 & Stage 3)
+
+Stage 1 (enqueue) and Stage 3 (mechanical handoff) planners query live GitHub PR state before generating action plans so stale ledger records do not drive decisions:
+
+- **Signal Producer (`scripts/pr_lifecycle_reselect_signals.py`):** Queries `gh pr view <pr> --repo <repo> --json state,mergeable,mergeStateStatus,title,headRefOid,author,files` across candidate PRs. Prefilters ledger stock cheaply (skipping never-touch, terminal, stage2-owned, and already-queued items), prioritizes Stage 1 and Stage 3 ownership, capped by `max_prs=40` and bounded by per-call and total timeouts.
+- **Fail-Open Semantics:** Live signal production is strictly best-effort and fail-open. It never raises unhandled exceptions, introduces new stop classes, or alters standard process exit codes. If `gh` is missing or 3 consecutive queries fail, the producer drops gracefully to ledger fallbacks.
+- **Signals Status (`signals_status`):**
+  - `OK`: All candidate PRs queried successfully with live signals attached.
+  - `PARTIAL`: One or more individual PR queries timed out or failed; successful queries attach live signals, while failed keys fall back to ledger values.
+  - `DEGRADED`: Global failure (CLI missing, consecutive failures, or caught exception). Live signals map is empty, planner uses ledger fallbacks, and an informational `SIGNALS_DEGRADED` action is emitted without halting execution.
+  - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals` flag).
+- **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or `mergeStateStatus` values of `CONFLICTING`, `DIRTY`, `MERGEABLE`, `CLEAN`, `BLOCKED`, `BEHIND`, `UNSTABLE`, or `HAS_HOOKS` take precedence over ledger state; only `CONFLICTING` and `DIRTY` qualify an item for reselect. If GitHub returns `UNKNOWN` or empty mergeability, the planner safely falls back to the ledger item's recorded `next_action`.
+- **Head-SHA Drift Exclusion:** If a live PR's `headRefOid` does not match the ledger's recorded `head_sha`, the item is excluded from candidate reselection to avoid operating against unanalyzed commits.
+- **Title-Gate Author Requirement:** Non-bot ledger items can qualify for reselection via normalized title prefixes (`⚡bolt`, `🎨palette`, `salvage(`, `chore(qa)`, `chore(repo-health)`), but only when authored by an allowed maintainer (`abhimehro`) or recognized bot identity. Arbitrary human authors cannot bypass guardrails via title prefixes; missing author logins fail open.
+- **Executor Authority:** Unique paths in plan actions are advisory; the CAS executor live-verifies unique remaining paths at CAS-commit time.
+
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,

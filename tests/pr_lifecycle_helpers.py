@@ -121,6 +121,7 @@ def make_health_report(**overrides: object) -> types.SimpleNamespace:
     values: dict[str, object] = {
         "salvage_eligible_count": 0,
         "stage2_work_item_count": 0,
+        "reselect_candidate_count": 0,
         "starvation": False,
         "reason": "ok",
     }
@@ -148,38 +149,36 @@ def _signal_value_stub(mapping: Any, key: str) -> Any:
     return mapping.get(str(key or "").split("@", 1)[0])
 
 
-def _health_stub_attrs() -> dict[str, Any]:
+def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
     """Provide health module attributes required by runner tests."""
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
-        "signal_value": _signal_value_stub,
-        "is_never_touch_key": lambda *_a, **_k: False,
+        "signal_value": real_health.signal_value,
+        "is_never_touch_key": real_health.is_never_touch_key,
         "list_reselect_candidates": lambda *_a, **_k: [],
-        "MECHANICAL_RESELECT_NA": (
-            "Recover unique source only on a new focused draft."
-        ),
-        "ReselectSignals": lambda **kw: types.SimpleNamespace(
-            **{
-                "live_mergeable_by_key": None,
-                "titles_by_key": None,
-                "unique_paths_by_key": None,
-                **kw,
-            }
-        ),
-        "source_pr_prefix": lambda key: str(key or "").split("@", 1)[0],
-        "non_journal_paths": lambda paths: list(paths or []),
-        "SALVAGE_OUTCOMES": frozenset(
-            {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
-        ),
+        "MECHANICAL_RESELECT_NA": real_health.MECHANICAL_RESELECT_NA,
+        "ReselectSignals": real_health.ReselectSignals,
+        "source_pr_prefix": real_health.source_pr_prefix,
+        "non_journal_paths": real_health.non_journal_paths,
+        "SALVAGE_OUTCOMES": real_health.SALVAGE_OUTCOMES,
+        "NON_SALVAGE_OUTCOMES": real_health.NON_SALVAGE_OUTCOMES,
+        "STAGE2_OWNED_STATES": real_health.STAGE2_OWNED_STATES,
+        "existing_wi_prefixes": real_health.existing_wi_prefixes,
     }
 
 
 def _install_run_stubs() -> dict[str, Any]:
     """Install stub modules; return the previous sys.modules entries."""
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    import pr_lifecycle_pipeline_health as real_health
+    import pr_lifecycle_reselect_signals  # noqa: F401
+
+    attrs = _health_stub_attrs(real_health)
     saved = {name: sys.modules.get(name) for name in _RUN_STUB_NAMES}
     for name in _RUN_STUB_NAMES:
         sys.modules[name] = types.ModuleType(name)
-    for attr, value in _health_stub_attrs().items():
+    for attr, value in attrs.items():
         setattr(sys.modules["pr_lifecycle_pipeline_health"], attr, value)
     sys.modules["pr_lifecycle_support"].ROOT = ROOT
     sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None

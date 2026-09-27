@@ -14,7 +14,9 @@ Calibration stays disabled. Stage 2 never merges. Stage 3 re-reads predicates.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import logging
 import subprocess
 import sys
 import tempfile
@@ -27,15 +29,36 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# Fail fast with an install hint instead of a deep ModuleNotFoundError when
+# the interpreter lacks requirements.txt (e.g. PEP 668 Homebrew python3).
+_MISSING_DEPS = [
+    package
+    for module, package in (("yaml", "pyyaml"), ("jsonschema", "jsonschema"))
+    if importlib.util.find_spec(module) is None
+]
+if _MISSING_DEPS:
+    print(
+        "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies: "
+        + ", ".join(_MISSING_DEPS)
+        + f" (interpreter: {sys.executable}). Install requirements.txt, e.g. "
+        "`python3 -m pip install -r requirements.txt`, or run via "
+        "`uv run --with-requirements requirements.txt python3 "
+        "scripts/pr_lifecycle_run.py ...`",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
 # pylint: disable=wrong-import-position
 import pr_lifecycle_feed as feed_mod
 import pr_lifecycle_ledger_cas as cas
 import pr_lifecycle_pipeline_health as health
 import pr_lifecycle_reconcile as reconcile_mod
 from pr_lifecycle_config import validate_config
+from pr_lifecycle_reselect_signals import SignalsResult, produce_reselect_signals
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
 
+LOGGER = logging.getLogger(__name__)
 LOG_DIR = Path(tempfile.gettempdir()) / "pr-lifecycle"
 STATUS_PATH_ON_BRANCH = "status.json"
 PINNED_ISSUE_TITLE = "PR pipeline status"
@@ -242,6 +265,7 @@ def _stage1_plan(
     config: dict[str, Any],
     *,
     signals: health.ReselectSignals | None = None,
+    signals_status: str | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
     """Plan Stage 1 reconciliation and reselect enqueues plus a FEED_CHECK grade."""
     # Signals supply live mergeability, titles, and unique paths for the
@@ -268,24 +292,27 @@ def _stage1_plan(
     if not feed_ok:
         stop_class = "LOGIC_STOP"
         reason = "FEED_CHECK_FAIL"
-    actions.append(
-        {
-            "action": "FEED_CHECK",
-            "reselect_candidates": planned["candidate_count"],
-            "enqueued": planned["enqueued_count"],
-            "skipped_incomplete": planned["skipped_incomplete"],
-            "grade": "PASS" if feed_ok else "FAIL",
-            "reason": (
-                "CAS-write complete stage2_work_items when reselect stock exists; "
-                "pr_lifecycle_feed.py is read-only — not enqueue"
-                if feed_ok
-                else (
-                    "FEED_CHECK FAIL: reselect candidates > 0 but enqueued == 0 "
-                    "(do not leave Stage 2 EMPTY_INTAKE theater)"
-                )
-            ),
-        }
-    )
+    feed_check_action: dict[str, Any] = {
+        "action": "FEED_CHECK",
+        "reselect_candidates": planned["candidate_count"],
+        "enqueued": planned["enqueued_count"],
+        "skipped_incomplete": planned["skipped_incomplete"],
+        "grade": "PASS" if feed_ok else "FAIL",
+        "reason": (
+            "CAS-write complete stage2_work_items when reselect stock exists; "
+            "pr_lifecycle_feed.py is read-only — not enqueue"
+            if feed_ok
+            else (
+                "FEED_CHECK FAIL: reselect candidates > 0 but enqueued == 0 "
+                "(do not leave Stage 2 EMPTY_INTAKE theater)"
+            )
+        ),
+    }
+    if signals_status is not None:
+        feed_check_action["signals_status"] = signals_status
+    if signals_status in {"DEGRADED", "PARTIAL"}:
+        feed_check_action["condition"] = "SIGNALS_DEGRADED"
+    actions.append(feed_check_action)
     return allowed, actions, stop_class, reason
 
 
@@ -404,15 +431,16 @@ def build_stage_plan(
     config: dict[str, Any],
     *,
     signals: health.ReselectSignals | None = None,
+    signals_status: str | None = None,
 ) -> dict[str, Any]:
     """Build a stage plan with health, permitted commands, and planned actions."""
-    # Signals apply only to Stage 1; an invalid stage yields LOGIC_STOP with no
+    # Signals apply only to Stage 1 and Stage 3; an invalid stage yields LOGIC_STOP with no
     # permitted commands or actions.
-    report = health.summarize(ledger)
+    report = health.summarize(ledger, signals=signals)
     extras: dict[str, Any] = {}
     if stage == 1:
         allowed, actions, stop_class, reason = _stage1_plan(
-            ledger, config, signals=signals
+            ledger, config, signals=signals, signals_status=signals_status
         )
     elif stage == 2:
         allowed, actions, stop_class, reason, extras = _stage2_plan(ledger, config)
@@ -425,6 +453,22 @@ def build_stage_plan(
         stop_class = "LOGIC_STOP"
         reason = f"invalid stage {stage}"
 
+    if signals_status in {"DEGRADED", "PARTIAL"}:
+        if not any(
+            isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED"
+            for a in actions
+        ):
+            actions.append(
+                {
+                    "action": "SIGNALS_DEGRADED",
+                    "status": signals_status,
+                    "note": (
+                        "ledger fallbacks in effect; "
+                        "title-gated items invisible for failed keys"
+                    ),
+                }
+            )
+
     plan = {
         "stage": stage,
         "generated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -432,6 +476,7 @@ def build_stage_plan(
         "pipeline_health": {
             "salvage_eligible_count": report.salvage_eligible_count,
             "stage2_work_item_count": report.stage2_work_item_count,
+            "reselect_candidate_count": getattr(report, "reselect_candidate_count", 0),
             "starvation": report.starvation,
             "reason": report.reason,
         },
@@ -439,16 +484,19 @@ def build_stage_plan(
         "actions": actions,
         "calibration_enabled": False,
         "stage2_may_merge": False,
+        "signals_status": signals_status or "SKIPPED",
         "stop_class": stop_class,
         "reason": reason,
     }
+    if signals_status in {"DEGRADED", "PARTIAL"}:
+        plan["condition"] = "SIGNALS_DEGRADED"
     plan.update(extras)
     return plan
 
 
 def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
     """Build the compact status document for a stage plan."""
-    return {
+    doc = {
         "updated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "run_id": run_id,
         "stage": plan.get("stage"),
@@ -456,13 +504,22 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "reason": plan.get("reason"),
         "stop_class": plan.get("stop_class"),
         "pipeline_health": plan.get("pipeline_health"),
+        "signals_status": plan.get("signals_status"),
         "action_count": len(plan.get("actions") or []),
         "calibration_enabled": False,
     }
+    if plan.get("signals_status") in {"DEGRADED", "PARTIAL"}:
+        doc["condition"] = "SIGNALS_DEGRADED"
+    if plan.get("signals_error"):
+        doc["signals_error"] = plan["signals_error"]
+    return doc
 
 
 def _issue_body(status: dict[str, Any]) -> str:
     """Render the pinned status-issue body for a stage status dict."""
+    condition_line = (
+        f"condition: {status['condition']}\n" if status.get("condition") else ""
+    )
     return (
         f"<!-- pr-lifecycle-status -->\n"
         f"updated_at_utc: {status['updated_at_utc']}\n"
@@ -471,6 +528,8 @@ def _issue_body(status: dict[str, Any]) -> str:
         f"ledger_revision: {status.get('ledger_revision') or ''}\n"
         f"reason: {status.get('reason') or ''}\n"
         f"stop_class: {status.get('stop_class') or ''}\n"
+        f"signals_status: {status.get('signals_status') or ''}\n"
+        f"{condition_line}"
         f"calibration_enabled: false\n"
         f"\n```json\n{json.dumps(status, indent=2, sort_keys=True)}\n```\n"
     )
@@ -526,7 +585,13 @@ def update_pinned_issue(status: dict[str, Any]) -> None:
     _upsert_pinned_issue(_find_pinned_issue(), _issue_body(status))
 
 
-def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
+def run_stage(
+    stage: int,
+    *,
+    dry_run: bool,
+    write_status: bool,
+    no_live_signals: bool = False,
+) -> int:
     """Fetch the ledger, emit and log a plan, and optionally write status."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
@@ -537,7 +602,43 @@ def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
             out = Path(tmp) / "ledger.yaml"
             fetch = cas.run_preflight(out)
             ledger = load_yaml(Path(fetch["ledger_path"]))
-            plan = build_stage_plan(stage, ledger, config)
+
+            signals_error: str | None = None
+            if stage in (1, 3) and not no_live_signals:
+                try:
+                    signals_result = produce_reselect_signals(ledger)
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    # Fail open: degrade to ledger fallbacks. Log only the type,
+                    # never the message (may echo gh output / tokens).
+                    signals_error = type(exc).__name__
+                    LOGGER.warning(
+                        "PR_LIFECYCLE_RUN_WARNING: live signals DEGRADED (%s)",
+                        signals_error,
+                    )
+                    signals_result = SignalsResult(
+                        signals=health.ReselectSignals(),
+                        status="DEGRADED",
+                    )
+            else:
+                signals_result = SignalsResult(
+                    signals=health.ReselectSignals(),
+                    status="SKIPPED",
+                )
+
+            plan = build_stage_plan(
+                stage,
+                ledger,
+                config,
+                signals=signals_result.signals,
+                signals_status=signals_result.status,
+            )
+            plan["signals_status"] = signals_result.status
+            plan["signals_queried"] = signals_result.queried_count
+            plan["signals_failed_keys"] = list(signals_result.failed_keys)
+            plan["signals_truncated_keys"] = list(signals_result.truncated_keys)
+            plan["signals_elapsed_s"] = signals_result.elapsed_s
+            if signals_error:
+                plan["signals_error"] = signals_error
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         # OSError covers fetch/service failures (recoverable); data-shape and
         # validation failures are repo-owned and cannot heal by retrying.
@@ -590,6 +691,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write /tmp/pr-lifecycle/status.json for this run",
     )
     parser.add_argument(
+        "--no-live-signals",
+        action="store_true",
+        help="Skip live GitHub signals fetch; use ledger fallbacks (status SKIPPED)",
+    )
+    parser.add_argument(
         "--status",
         action="store_true",
         help="Update the pinned PR pipeline status GitHub issue",
@@ -607,6 +713,7 @@ def main(argv: list[str] | None = None) -> int:
                 "run_id": _run_id(),
                 "stage": None,
                 "reason": "manual --status refresh",
+                "signals_status": "SKIPPED",
                 "calibration_enabled": False,
             }
             update_pinned_issue(status)
@@ -616,7 +723,10 @@ def main(argv: list[str] | None = None) -> int:
             print("PR_LIFECYCLE_RUN_ERROR: --stage is required", file=sys.stderr)
             return 1
         return run_stage(
-            args.stage, dry_run=args.dry_run, write_status=args.write_status
+            args.stage,
+            dry_run=args.dry_run,
+            write_status=args.write_status,
+            no_live_signals=args.no_live_signals,
         )
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"PR_LIFECYCLE_RUN_ERROR: {type(exc).__name__}", file=sys.stderr)

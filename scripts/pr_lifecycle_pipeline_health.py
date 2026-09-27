@@ -39,18 +39,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import sys
+import unicodedata
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position
+from pr_identity import identities_match
 from pr_lifecycle_config import validate_config
 from pr_lifecycle_ledger import validate_runtime_records
 from pr_lifecycle_persist import strip_in_memory_item_fields
@@ -58,13 +61,18 @@ from pr_lifecycle_schema import validate_schema
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_yaml import load_yaml
 
+LOGGER = logging.getLogger(__name__)
+
 __all__ = [
+    "AUTHORITATIVE_MERGEABLE_STATES",
     "MECHANICAL_RESELECT_NA",
     "NON_SALVAGE_OUTCOMES",
     "REQUIRED_WORK_ITEM_FIELDS",
     "SALVAGE_OUTCOMES",
+    "STAGE2_OWNED_STATES",
     "PipelineHealth",
     "ReselectSignals",
+    "existing_wi_prefixes",
     "is_never_touch_key",
     "is_reselect_salvage_candidate",
     "is_salvage_eligible",
@@ -132,6 +140,26 @@ RESELECT_TITLE_PREFIXES = (
     "chore(qa)",
     "chore(repo-health)",
 )
+AUTHORITATIVE_MERGEABLE_STATES = frozenset(
+    {
+        "CONFLICTING",
+        "DIRTY",
+        "MERGEABLE",
+        "CLEAN",
+        "BLOCKED",
+        "BEHIND",
+        "UNSTABLE",
+        "HAS_HOOKS",
+    }
+)
+NORMALIZED_RESELECT_TITLE_PREFIXES = (
+    "⚡bolt",
+    "🎨palette",
+    "salvage(",
+    "chore(qa)",
+    "chore(repo-health)",
+)
+_TITLE_VARIATION_SELECTORS = ("\ufe0f", "\ufe0e")
 # Soft shell_execution only when every non-journal path matches Palette wrap.
 PALETTE_WRAP_PATH_ALLOW = (
     re.compile(r"(^|/)analytics_dashboard\.sh$"),
@@ -244,16 +272,92 @@ def is_never_touch_key(key: object) -> bool:
     return source_pr_prefix(key) in NEVER_TOUCH_PR_PREFIXES
 
 
+def _load_reselect_allowed_authors(
+    config: dict[str, Any] | None = None,
+) -> tuple[str, ...]:
+    if config:
+        bots = list(config.get("bot_authors") or [])
+        maintainers = list(
+            (config.get("identity_classification") or {}).get(
+                "maintainer_token_logins"
+            )
+            or []
+        )
+        if bots or maintainers:
+            return tuple(bots + maintainers)
+    try:
+        if CONFIG_PATH.is_file():
+            loaded = load_yaml(CONFIG_PATH)
+            if isinstance(loaded, dict):
+                bots = list(loaded.get("bot_authors") or [])
+                identity = loaded.get("identity_classification")
+                if not isinstance(identity, dict):
+                    identity = {}
+                maintainers = list(identity.get("maintainer_token_logins") or [])
+                if bots or maintainers:
+                    return tuple(bots + maintainers)
+    # ArtifactValidationError subclasses ValueError; other errors propagate.
+    except (OSError, ValueError) as exc:
+        LOGGER.warning(
+            "reselect allowlist: config unreadable (%s); using built-in list",
+            type(exc).__name__,
+        )
+    return (
+        "dependabot[bot]",
+        "renovate[bot]",
+        "google-labs-jules[bot]",
+        "cursor[bot]",
+        "devin[bot]",
+        "copilot[bot]",
+        "app/copilot-swe-agent",
+        "abhimehro",
+    )
+
+
+def _normalize_title_for_prefix(title: str) -> str:
+    text = unicodedata.normalize("NFC", title)
+    # Strip variation selectors and invisible format characters (ZWSP, ZWNJ, ZWJ, etc.)
+    chars = [
+        ch
+        for ch in text
+        if ch not in _TITLE_VARIATION_SELECTORS and unicodedata.category(ch) != "Cf"
+    ]
+    text = "".join("".join(chars).split())
+    return text.lower()
+
+
 def _title_is_reselect_bot(title: str | None) -> bool:
     """Return whether a stripped title starts with an allowed reselect prefix."""
     if not title:
         return False
-    stripped = title.strip()
-    return any(stripped.startswith(prefix) for prefix in RESELECT_TITLE_PREFIXES)
+    norm = _normalize_title_for_prefix(title)
+    return any(norm.startswith(prefix) for prefix in NORMALIZED_RESELECT_TITLE_PREFIXES)
 
 
-def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
-    """Accept nonterminal items with BOT authorship or an allowed title."""
+def _extract_item_author_login(item: dict[str, Any]) -> str | None:
+    """Extract candidate author login from ledger item author or author_login fields."""
+    author = item.get("author")
+    if isinstance(author, dict):
+        login = author.get("login")
+        if isinstance(login, str) and login.strip():
+            return login.strip()
+    elif isinstance(author, str) and author.strip():
+        return author.strip()
+    author_login = item.get("author_login")
+    if isinstance(author_login, str) and author_login.strip():
+        return author_login.strip()
+    return None
+
+
+def _identity_allows_reselect(
+    item: dict[str, Any],
+    title: str | None,
+    *,
+    author_login: str | None = None,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
+) -> bool:
+    """Accept nonterminal items with BOT authorship or an allowed title and author."""
     if item.get("lifecycle_state") == "TERMINAL":
         return False
     # Already Stage 2 owned/queued: reselecting it would emit a duplicate
@@ -265,13 +369,27 @@ def _identity_allows_reselect(item: dict[str, Any], title: str | None) -> bool:
         return False
     if item.get("author_type") == "BOT":
         return True
-    return _title_is_reselect_bot(title)
+    if not _title_is_reselect_bot(title):
+        return False
+    if not author_gate:
+        return True
+    login = (author_login or "").strip() or _extract_item_author_login(item)
+    if not login:
+        return False
+    allowed = (
+        allowed_authors
+        if allowed_authors is not None
+        else _load_reselect_allowed_authors()
+    )
+    return identities_match(login, allowed)
 
 
 def _infer_live_mergeable(item: dict[str, Any], live_mergeable: str | None) -> str:
-    """Return the supplied state, else the first CONFLICTING/DIRTY in next_action."""
+    """Return the authoritative supplied state, else the first CONFLICTING/DIRTY in next_action."""
     if live_mergeable:
-        return str(live_mergeable).upper()
+        cand = str(live_mergeable).strip().upper()
+        if cand in AUTHORITATIVE_MERGEABLE_STATES:
+            return cand
     next_action = item.get("next_action") or ""
     match = LIVE_STATE_IN_TEXT.search(next_action)
     return match.group(1).upper() if match else ""
@@ -319,11 +437,24 @@ def _unique_remaining_ok(
     return (bool(cleaned), cleaned)
 
 
-def _reselect_identity_ok(item: dict[str, Any], title: str | None) -> bool:
+def _reselect_identity_ok(
+    item: dict[str, Any],
+    title: str | None,
+    *,
+    author_login: str | None = None,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
+) -> bool:
     """Check never-touch, identity, and guardrail-outcome exclusions."""
     if is_never_touch_key(item.get("key")):
         return False
-    if not _identity_allows_reselect(item, title):
+    if not _identity_allows_reselect(
+        item,
+        title,
+        author_login=author_login,
+        author_gate=author_gate,
+        allowed_authors=allowed_authors,
+    ):
         return False
     outcome = item.get("guardrail_outcome") or ""
     # Empty outcome allowed during intake; NON_SALVAGE blocks REVIEW_SECURITY /
@@ -362,18 +493,33 @@ def is_reselect_salvage_candidate(
     live_mergeable: str | None = None,
     title: str | None = None,
     unique_remaining_paths: list[str] | None = None,
+    live_head_sha: str | None = None,
+    author_login: str | None = None,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
 ) -> bool:
     """Return whether Stage 1 may plan a unique-source reselect for this item."""
-    # Accept a nonterminal BOT item or one with an allowed title prefix when its
-    # supplied mergeability, or a state inferred from next_action, is
-    # CONFLICTING or DIRTY. An explicit unique_remaining_paths list must contain
-    # a non-journal path; when omitted, changed_paths (then paths) is a proxy.
+    # Accept a nonterminal BOT item or one with an allowed title prefix and
+    # author when its supplied mergeability, or a state inferred from
+    # next_action, is CONFLICTING or DIRTY. An explicit unique_remaining_paths
+    # list must contain a non-journal path; when omitted, changed_paths (then
+    # paths) is a proxy. A live_head_sha must match ledger head_sha.
     # Never-touch sources and NON_SALVAGE outcomes are excluded first.
     # generated_output is the only unrestricted sensitive label; shell_execution
     # additionally requires a Palette action and wrap-allowlist paths. Separate
     # from ``is_salvage_eligible``.
-    if not _reselect_identity_ok(item, title):
+    if not _reselect_identity_ok(
+        item,
+        title,
+        author_login=author_login,
+        author_gate=author_gate,
+        allowed_authors=allowed_authors,
+    ):
         return False
+    if live_head_sha is not None:
+        ledger_head = str(item.get("head_sha") or "").strip().lower()
+        if not ledger_head or str(live_head_sha).strip().lower() != ledger_head:
+            return False
     state = _infer_live_mergeable(item, live_mergeable)
     if state not in RESELECT_LIVE_STATES:
         return False
@@ -387,6 +533,17 @@ class ReselectSignals:
     live_mergeable_by_key: dict[str, str] | None = None
     titles_by_key: dict[str, str] | None = None
     unique_paths_by_key: dict[str, list[str]] | None = None
+    live_head_sha_by_key: dict[str, str] | None = None
+    author_login_by_key: dict[str, str] | None = None
+    # Keys whose live PR state is authoritatively CLOSED/MERGED.
+    closed_keys: frozenset[str] | None = None
+
+
+def signal_contains(keys: frozenset[str] | None, key: str) -> bool:
+    """Check key-set membership by full key or @sha-stripped prefix."""
+    if not keys:
+        return False
+    return key in keys or source_pr_prefix(key) in keys
 
 
 def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
@@ -398,11 +555,13 @@ def signal_value(mapping: dict[str, Any] | None, key: str) -> Any:
     return mapping.get(source_pr_prefix(key))
 
 
-def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
+def existing_wi_prefixes(
+    ledger: dict[str, Any], now: datetime | None = None
+) -> set[str]:
     """Return repo#PR prefixes of sources with a usable Stage 2 WI."""
     prefixes: set[str] = set()
     for work_item in _raw_work_items(ledger):
-        if not work_item_is_usable(work_item):
+        if not work_item_is_usable(work_item, now):
             continue
         source = work_item.get("source_item_key") or work_item.get("source_key")
         if source:
@@ -410,11 +569,17 @@ def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
     return prefixes
 
 
+def _existing_wi_prefixes(ledger: dict[str, Any]) -> set[str]:
+    return existing_wi_prefixes(ledger)
+
+
 def list_reselect_candidates(
     ledger: dict[str, Any],
     *,
     signals: ReselectSignals | None = None,
     limit: int | None = None,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Return eligible keyed ledger items in their original order."""
     # Signal maps are looked up by full key then repository#PR prefix; a key
@@ -422,10 +587,20 @@ def list_reselect_candidates(
     # None limit is unbounded; the limit is
     # checked after appending, so a nonpositive limit still returns one item.
     signals = signals or ReselectSignals()
-    queued_prefixes = _existing_wi_prefixes(ledger)
+    # Resolve the allowlist once per call; deliberately not cached across
+    # calls so config edits stay visible.
+    if author_gate and allowed_authors is None:
+        allowed_authors = _load_reselect_allowed_authors()
+    queued_prefixes = existing_wi_prefixes(ledger)
     selected: list[dict[str, Any]] = []
     for item in _ledger_items(ledger):
-        if not _reselect_item_key(item, queued_prefixes, signals):
+        if not _reselect_item_key(
+            item,
+            queued_prefixes,
+            signals,
+            author_gate=author_gate,
+            allowed_authors=allowed_authors,
+        ):
             continue
         selected.append(item)
         if limit is not None and len(selected) >= limit:
@@ -434,26 +609,49 @@ def list_reselect_candidates(
 
 
 def _reselect_item_key(
-    item: dict[str, Any], queued_prefixes: set[str], signals: ReselectSignals
+    item: dict[str, Any],
+    queued_prefixes: set[str],
+    signals: ReselectSignals,
+    *,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
 ) -> str:
     """Return the item's key when it survives dedupe and the predicate."""
     key = str(item.get("key") or "")
     if not key or source_pr_prefix(key) in queued_prefixes:
         return ""
-    if not _reselect_item_ok(item, key, signals):
+    if signal_contains(signals.closed_keys, key):
+        return ""
+    if not _reselect_item_ok(
+        item,
+        key,
+        signals,
+        author_gate=author_gate,
+        allowed_authors=allowed_authors,
+    ):
         return ""
     return key
 
 
 def _reselect_item_ok(
-    item: dict[str, Any], key: str, signals: ReselectSignals
+    item: dict[str, Any],
+    key: str,
+    signals: ReselectSignals,
+    *,
+    author_gate: bool = True,
+    allowed_authors: Sequence[str] | None = None,
 ) -> bool:
     """Apply the signal-resolved reselect predicate to one ledger item."""
+    # Head-SHA drift is enforced inside is_reselect_salvage_candidate.
     return is_reselect_salvage_candidate(
         item,
         live_mergeable=signal_value(signals.live_mergeable_by_key, key),
         title=signal_value(signals.titles_by_key, key),
         unique_remaining_paths=signal_value(signals.unique_paths_by_key, key),
+        live_head_sha=signal_value(signals.live_head_sha_by_key, key),
+        author_login=signal_value(signals.author_login_by_key, key),
+        author_gate=author_gate,
+        allowed_authors=allowed_authors,
     )
 
 
@@ -557,6 +755,8 @@ def _health_report(
     usable: list[dict[str, Any]],
     owned: list[dict[str, Any]],
     eligible: list[dict[str, Any]],
+    *,
+    signals: ReselectSignals | None = None,
 ) -> PipelineHealth:
     usable_count = len(usable)
     owned_count = len(owned)
@@ -568,20 +768,27 @@ def _health_report(
         stage2_owned_item_count=owned_count,
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
-        reselect_candidate_count=len(list_reselect_candidates(ledger)),
+        reselect_candidate_count=len(
+            list_reselect_candidates(ledger, signals=signals)
+        ),
         starvation=starvation,
         reason=_starvation_reason(starvation, usable_count, eligible_count),
     )
 
 
-def summarize(ledger: dict[str, Any], now: datetime | None = None) -> PipelineHealth:
+def summarize(
+    ledger: dict[str, Any],
+    now: datetime | None = None,
+    *,
+    signals: ReselectSignals | None = None,
+) -> PipelineHealth:
     """Build a starvation report from a runtime ledger dict."""
     clock = _clock(now)
     items = _ledger_items(ledger)
     usable = _usable_work_items(ledger, clock)
     owned = _stage2_owned(items)
     eligible = _eligible_items(items)
-    return _health_report(ledger, usable, owned, eligible)
+    return _health_report(ledger, usable, owned, eligible, signals=signals)
 
 
 def _print_report(report: PipelineHealth, as_json: bool) -> None:

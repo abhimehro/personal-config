@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -268,3 +270,283 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         expected = tuple(schema["$defs"]["stage2WorkItem"]["required"])
         self.assertEqual(health.REQUIRED_WORK_ITEM_FIELDS, expected)
+
+
+class TestPredicateHardening(unittest.TestCase):
+    """Tests for #2298: title normalization, UNKNOWN mergeable, head-SHA, author gate."""
+
+    def test_title_prefix_normalization(self) -> None:
+        """Titles with FE0F, no space, extra spaces, and lowercase all match; feat: Bolt and Bolted do not."""
+        matching_titles = (
+            "⚡ Bolt: test something",
+            "⚡Bolt: test something",
+            "⚡\ufe0f Bolt: test variation selector",
+            "⚡\ufe0e Bolt: test variation selector",
+            "⚡\ufe0fBolt: test compact",
+            "⚡\u200bBolt: zero width space",
+            "⚡\u200c\u200dBolt: zwnj and zwj",
+            "⚡\u2060Bolt: word joiner",
+            "⚡   bolt: extra spaces and lowercase",
+            "🎨 Palette: update css",
+            "🎨Palette: update css",
+            "🎨\ufe0f Palette: variation selector",
+            "🎨\ufe0fPalette: variation selector",
+            "🎨\u200bPalette: zero width space",
+            "salvage(pc-100): test salvage",
+            "chore(qa): update tests",
+            "chore(repo-health): clean up repo",
+        )
+        non_matching_titles = (
+            "feat: Bolt",
+            "Bolted",
+            "feat: ⚡ Bolt",
+            "fix: palette",
+            "chore: qa",
+            "random title",
+            "",
+            None,
+        )
+        for title in matching_titles:
+            with self.subTest(matching_title=title):
+                self.assertTrue(
+                    health._title_is_reselect_bot(title),
+                    f"Expected title to match: {title!r}",
+                )
+        for title in non_matching_titles:
+            with self.subTest(non_matching_title=title):
+                self.assertFalse(
+                    health._title_is_reselect_bot(title),
+                    f"Expected title NOT to match: {title!r}",
+                )
+
+    def test_live_mergeable_unknown_falls_back_to_next_action(self) -> None:
+        """live_mergeable='UNKNOWN' falls back to next_action; 'MERGEABLE' excludes."""
+        item = make_item(
+            key="abhimehro/demo#1@abc",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        # UNKNOWN should fall back to next_action (which has CONFLICTING) -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="UNKNOWN")
+        )
+        # empty or None should fall back to next_action -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="")
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable=None)
+        )
+        # MERGEABLE is authoritative -> excluded (not in CONFLICTING/DIRTY)
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
+        )
+        # CLEAN is authoritative -> excluded
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(item, live_mergeable="CLEAN")
+        )
+        # DIRTY and CONFLICTING are authoritative -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="DIRTY")
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_mergeable="CONFLICTING")
+        )
+
+    def test_head_sha_mismatch_excludes_item(self) -> None:
+        """Head-SHA mismatch excludes item; matching or omitted signal is unchanged."""
+        item = make_item(
+            key="abhimehro/demo#1@abc1234",
+            head_sha="abc1234",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        # Matching head SHA -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_head_sha="abc1234")
+        )
+        # Case-insensitive match -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_head_sha="ABC1234")
+        )
+        # No signal (None) -> unchanged candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(item, live_head_sha=None)
+        )
+        # Mismatch -> excluded
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(item, live_head_sha="def5678")
+        )
+
+        # In list_reselect_candidates with ReselectSignals
+        ledger = make_ledger([item], [])
+        match_signals = health.ReselectSignals(
+            live_head_sha_by_key={item["key"]: "abc1234"}
+        )
+        self.assertEqual(
+            len(health.list_reselect_candidates(ledger, signals=match_signals)), 1
+        )
+        mismatch_signals = health.ReselectSignals(
+            live_head_sha_by_key={item["key"]: "drifted_sha"}
+        )
+        self.assertEqual(
+            len(health.list_reselect_candidates(ledger, signals=mismatch_signals)), 0
+        )
+
+    def test_author_gate_for_title_only_identity(self) -> None:
+        """Title-only with author gate on: maintainer -> candidate; human -> excluded; no login -> candidate."""
+        item = make_item(
+            key="abhimehro/demo#1@abc1234",
+            author="abhimehro",
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        title = "⚡ Bolt: fix something"
+
+        # Maintainer login -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, title=title, author_login="abhimehro"
+            )
+        )
+        # Bot login -> candidate
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, title=title, author_login="google-labs-jules[bot]"
+            )
+        )
+        # Arbitrary human login -> excluded
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                item, title=title, author_login="random-external-user"
+            )
+        )
+        # Missing login signal with maintainer in ledger -> candidate (ledger fallback)
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, title=title, author_login=None
+            )
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item, title=title, author_login=""
+            )
+        )
+        # Missing login signal with external human in ledger -> rejected (never for humans)
+        human_item = make_item(
+            key="abhimehro/demo#1@abc1234",
+            author="random-external-user",
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                human_item, title=title, author_login=None
+            )
+        )
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                human_item, title=title, author_login=""
+            )
+        )
+        # No login signal and no ledger author -> rejected (gate fails closed)
+        anon_item = {k: v for k, v in item.items() if k != "author"}
+        self.assertFalse(
+            health.is_reselect_salvage_candidate(
+                anon_item, title=title, author_login=None
+            )
+        )
+        # Author gate disabled -> candidate even with random human
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                item,
+                title=title,
+                author_login="random-external-user",
+                author_gate=False,
+            )
+        )
+
+        # Ledger-BOT item bypasses author gate and title check
+        bot_item = make_item(
+            key="abhimehro/demo#2@abc1234",
+            author_type="BOT",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        self.assertTrue(
+            health.is_reselect_salvage_candidate(
+                bot_item, title="non-matching title", author_login="random-user"
+            )
+        )
+
+    def test_summarize_threads_signals(self) -> None:
+        """summarize() with signals reflects live candidate count."""
+        # Non-BOT item that qualifies only with title signal
+        item = make_item(
+            key="abhimehro/demo#1@abc1234",
+            author_type="HUMAN",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+        ledger = make_ledger([item], [])
+
+        # Without signals: titles_by_key is empty, title=None -> 0 reselect candidates
+        report_default = health.summarize(ledger)
+        self.assertEqual(report_default.reselect_candidate_count, 0)
+
+        # With title signal: qualifies as candidate
+        signals = health.ReselectSignals(
+            titles_by_key={item["key"]: "⚡ Bolt: live title"},
+            author_login_by_key={item["key"]: "abhimehro"},
+        )
+        report_with_signals = health.summarize(ledger, signals=signals)
+        self.assertEqual(report_with_signals.reselect_candidate_count, 1)
+
+
+class TestReselectRound2(unittest.TestCase):
+    """Closed-key exclusion and allowlist-loader error handling."""
+
+    def _conflicting_bot_item(self) -> dict[str, Any]:
+        return make_item(
+            key="abhimehro/demo#9@abc",
+            author_type="BOT",
+            changed_paths=["src/demo.py"],
+            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
+        )
+
+    def test_closed_keys_exclude_stale_ledger_candidates(self) -> None:
+        """A live CLOSED/MERGED key is excluded even if ledger text says CONFLICTING."""
+        item = self._conflicting_bot_item()
+        ledger = make_ledger([item], [])
+        self.assertEqual(len(health.list_reselect_candidates(ledger)), 1)
+        for closed in (item["key"], "abhimehro/demo#9"):
+            with self.subTest(closed=closed):
+                signals = health.ReselectSignals(closed_keys=frozenset({closed}))
+                self.assertEqual(
+                    health.list_reselect_candidates(ledger, signals=signals), []
+                )
+
+    def test_allowlist_invalid_yaml_warns_and_uses_builtin(self) -> None:
+        """Unreadable config logs a warning and falls back to the built-in list."""
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "config.yaml"
+            bad.write_text("bot_authors: [unclosed\n", encoding="utf-8")
+            with mock.patch.object(health, "CONFIG_PATH", bad), self.assertLogs(
+                "pr_lifecycle_pipeline_health", level="WARNING"
+            ) as logs:
+                authors = health._load_reselect_allowed_authors()
+        self.assertIn("dependabot[bot]", authors)
+        self.assertIn("ValueError", "\n".join(logs.output))
+
+    def test_allowlist_unrelated_errors_propagate(self) -> None:
+        """Errors outside OSError/ValueError are not swallowed."""
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Path(tmp) / "config.yaml"
+            cfg.write_text("bot_authors: []\n", encoding="utf-8")
+            with mock.patch.object(health, "CONFIG_PATH", cfg), mock.patch.object(
+                health, "load_yaml", side_effect=RuntimeError("boom")
+            ):
+                with self.assertRaises(RuntimeError):
+                    health._load_reselect_allowed_authors()

@@ -104,6 +104,7 @@ class ReselectCandidateTests(unittest.TestCase):
     def test_title_bot_prefixes_do_not_admit_arbitrary_human_titles(self) -> None:
         """Verify bot title prefixes reject unrelated human titles."""
         item = make_item(
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
@@ -132,6 +133,7 @@ class ReselectCandidateTests(unittest.TestCase):
         key = "abhimehro/demo#7@abc"
         item = make_item(
             key=key,
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="Needs live verification",
@@ -352,6 +354,7 @@ class ReselectCandidateTests(unittest.TestCase):
     def test_title_allowlist_for_non_bot_ledger_author(self) -> None:
         """Verify the title allowlist can classify a non-bot ledger author."""
         item = make_item(
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["maintenance/bin/analytics_dashboard.sh"],
             sensitive_paths=["shell_execution", "generated_output"],
@@ -445,6 +448,7 @@ class ReselectCandidateTests(unittest.TestCase):
         """An explicit empty live title must not inherit stale BOT metadata."""
         source = make_item(
             key="abhimehro/demo#7@new-head",
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
