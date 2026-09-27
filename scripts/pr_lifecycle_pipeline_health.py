@@ -564,32 +564,25 @@ def _reselect_structural_ok(item: dict[str, Any]) -> bool:
     )
 
 
-def is_reselect_plausible(
-    item: dict[str, Any],
-    *,
-    author_gate: ReselectAuthorGate | None = None,
-) -> bool:
+def is_reselect_plausible(item: dict[str, Any]) -> bool:
     """Return whether a ledger item can pass every non-live reselect gate.
 
     Used by the live-signals prefilter so that records which can never yield
     a salvage action do not consume the live query cap. Requires nonempty
-    base/head anchors (a complete work item cannot be assembled without them),
-    passes never-touch, lifecycle, outcome, and path gates, and for non-BOT
-    authors requires an allowlisted ledger author login. Ledger records carry
-    no title field, so title-gated items stay plausible when their ledger
-    author is allowed; the selector evaluates the live title later. The gate
-    is resolved once per call, as with the resolved gates call sites pass in.
+    base/head anchors (a complete work item cannot be assembled without them)
+    and passes never-touch, lifecycle, and outcome gates.
+
+    Identity and path eligibility are deliberately not part of this gate.
+    Ledger records carry no title, and a nonblank live author login wins over
+    the ledger record, so a stale ledger author cannot disprove live
+    authorship — the selector evaluates title and author on the live signals.
+    The same holds for paths: an empty or stale ledger changed_paths cannot
+    prove live scope either way, so the selector applies _reselect_paths_ok
+    to the live file list and only falls back to the ledger paths when the
+    live lookup did not produce one. An unreliable live file list records an
+    explicit empty path signal that fails closed.
     """
-    if not _reselect_structural_ok(item):
-        return False
-    if item.get("author_type") != "BOT":
-        login = _extract_item_author_login(item)
-        if not login:
-            return False
-        gate = (author_gate or ReselectAuthorGate()).resolved()
-        if not gate.allows(login):
-            return False
-    return _reselect_paths_ok(item, None)
+    return _reselect_structural_ok(item)
 
 
 def _has_anchors(item: dict[str, Any]) -> bool:

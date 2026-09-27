@@ -3,8 +3,9 @@
 
 Per-key maps plus closed/truncated/failed bookkeeping, folded from successful
 gh payloads. Closed or merged PRs populate only closed_keys; truncated file
-lists (page cap or malformed entries) mark the key and omit path signals;
-accepted file lists omit .jules paths and may be empty.
+lists (page cap or malformed entries) mark the key and pin an empty path
+signal so the sticky-path gate fails closed instead of trusting stale ledger
+paths; accepted file lists omit .jules paths and may be empty.
 """
 
 from __future__ import annotations
@@ -41,6 +42,8 @@ class SignalsAccum:
     timed_out: bool = False
     hard_status: str | None = None
     base_enriched: int = 0
+    # Open payloads seen; the base-enrichment floor applies only to them.
+    open_scanned: int = 0
 
     def to_signals(self) -> health.ReselectSignals:
         """Build planner signals, using None for empty collections.
@@ -112,12 +115,19 @@ def _files_unreliable(files: list[Any]) -> bool:
 
 
 def _record_paths(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> None:
-    """Map the changed-file list into unique paths, or mark the key truncated."""
+    """Map the changed-file list into unique paths, or mark the key truncated.
+
+    A truncated or malformed file list cannot prove live scope, so the key
+    gets an explicit empty path signal: the sticky-path gate then fails
+    closed rather than letting stale ledger paths stand in for unverified
+    live scope.
+    """
     files = payload.get("files")
     if not isinstance(files, list):
         return
     if _files_unreliable(files):
         acc.truncated.append(key)
+        acc.unique_paths[key] = []
         return
     acc.unique_paths[key] = health.non_journal_paths([str(f["path"]) for f in files])
 
@@ -130,6 +140,7 @@ def fold_payload(acc: SignalsAccum, key: str, payload: dict[str, Any]) -> None:
         return
     if state != "OPEN":
         return
+    acc.open_scanned += 1
     _record_mergeable(acc, key, payload)
     _record_identity_fields(acc, key, payload)
     _record_paths(acc, key, payload)

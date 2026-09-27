@@ -400,8 +400,9 @@ class TestReselectFailureStatuses(unittest.TestCase):
 
         self.assertEqual(result.status, "DEGRADED")
         self.assertEqual(result.queried_count, 5)
-        # Two calls per successful item; failures never reach the api call.
-        self.assertEqual(runner.call_count, 7)
+        # View+base for the OPEN item, view only for CLOSED; failures never
+        # reach the api call.
+        self.assertEqual(runner.call_count, 6)
         self.assertEqual(result.failed_keys, tuple(item["key"] for item in items[2:5]))
         self.assertEqual(result.truncated_keys, (items[1]["key"],))
         self.assertGreaterEqual(result.elapsed_s, 0)
@@ -412,6 +413,8 @@ class TestReselectFailureStatuses(unittest.TestCase):
                 live_head_sha_by_key={items[1]["key"]: "new-sha"},
                 live_base_sha_by_key={items[1]["key"]: "b" * 40},
                 live_mergeable_by_key={items[1]["key"]: "CONFLICTING"},
+                # Truncated live files pin an empty path signal (fail closed).
+                unique_paths_by_key={items[1]["key"]: []},
             ),
         )
         self.assertEqual(
@@ -565,7 +568,7 @@ class TestReselectFailureStatuses(unittest.TestCase):
         """An unexpected producer-level error degrades and logs only its type."""
         item = make_queryable_item(key="demo#1@sha", repository="demo", pr=1)
         with mock.patch(
-            "pr_lifecycle_reselect_signals.prefilter_ledger_items",
+            "pr_lifecycle_reselect_signals._ledger_survivors",
             side_effect=KeyError("secret-ish detail"),
         ), self.assertLogs("pr_lifecycle_reselect_signals", level="WARNING") as logs:
             result = produce_reselect_signals(make_ledger([item], []))

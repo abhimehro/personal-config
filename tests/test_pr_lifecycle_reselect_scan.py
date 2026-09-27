@@ -61,8 +61,9 @@ class TestReselectScanMechanics(unittest.TestCase):
                 result = produce_reselect_signals(make_ledger(items, []), runner=runner)
                 self.assertEqual(result.status, "PARTIAL")
                 self.assertEqual(result.queried_count, 6)
-                # Failures fail on the view call alone; successes also fetch base.
-                self.assertEqual(runner.call_count, 8)
+                # Failures fail on the view call alone; only the OPEN payload
+                # also fetches base — non-OPEN states skip the api call.
+                self.assertEqual(runner.call_count, 7)
                 self.assertEqual(
                     result.failed_keys, tuple(items[n]["key"] for n in (0, 1, 3, 4))
                 )
@@ -137,9 +138,40 @@ class TestReselectScanMechanics(unittest.TestCase):
                 unique_paths_by_key={items[1]["key"]: []},
             ),
         )
-        # 2 view calls per successful item, 1 for the failed one, across scans.
-        self.assertEqual(runner.call_count, 7)
+        # 2 calls per OPEN item (view + base), view only for CLOSED, 1 for
+        # the failed one, across scans.
+        self.assertEqual(runner.call_count, 6)
         self.assertEqual(ledger, original)
+
+    def test_missing_ledger_paths_still_get_a_live_lookup(self) -> None:
+        """Empty changed_paths stays plausible; the live file list decides."""
+        item = make_queryable_item(
+            repository="owner/repo", pr=1, changed_paths=[]
+        )
+        runner = mock.Mock(
+            side_effect=stub_gh_runner(
+                {
+                    "state": "OPEN",
+                    "mergeable": "CONFLICTING",
+                    "files": [{"path": "src/fix.py"}],
+                }
+            )
+        )
+        ledger = make_ledger([item], [])
+        result = produce_reselect_signals(ledger, runner=runner)
+        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.queried_count, 1)
+        self.assertEqual(
+            result.signals.unique_paths_by_key, {item["key"]: ["src/fix.py"]}
+        )
+        self.assertEqual(
+            health.list_reselect_candidates(
+                ledger,
+                signals=result.signals,
+                author_gate=health.ReselectAuthorGate(allowed_authors=()),
+            ),
+            [item],
+        )
 
     def test_nonpositive_budget_does_not_attempt_queries(self) -> None:
         """Verify zero or negative budgets return PARTIAL without querying gh."""
@@ -179,8 +211,11 @@ class TestReselectScanMechanics(unittest.TestCase):
             ledger, runner=runner, limits=SignalQueryLimits(max_prs=2)
         )
         self.assertEqual(_view_calls(runner), ["2", "3"])
-        self.assertEqual(result.status, "OK")
+        # The cap clipped one candidate, so coverage is PARTIAL even though
+        # every queried PR resolved cleanly.
+        self.assertEqual(result.status, "PARTIAL")
         self.assertEqual(result.queried_count, 2)
+        self.assertEqual(result.candidate_count, 3)
         self.assertEqual(
             result.signals.closed_keys, frozenset(item["key"] for item in items[1:])
         )

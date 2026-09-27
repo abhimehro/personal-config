@@ -63,11 +63,20 @@ class SignalsResult:
     failed_keys: tuple[str, ...] = ()
     truncated_keys: tuple[str, ...] = ()
     elapsed_s: float = 0.0
-    # Successful `gh api` base-SHA enrichments; zero after view successes means
-    # a systemic REST outage (missing scope, rate limit, GHES) is in play.
+    # Successful `gh api` base-SHA enrichments; zero after open-PR view
+    # successes means a systemic REST outage (missing scope, rate limit,
+    # GHES) is in play. Non-OPEN payloads skip the enrichment entirely.
     base_enriched_count: int = 0
     # Total budget elapsed mid-scan; unqueried candidates keep ledger values.
     timed_out: bool = False
+    # Plausible ledger candidates before the max_prs cap; when it exceeds
+    # queried_count the cap clipped coverage and unqueried keys use ledger
+    # values, which floors the status at PARTIAL so surplus records are not
+    # silently acted on from stale ledger state.
+    candidate_count: int = 0
+    # Open-PR payloads folded; the base-enrichment floor and the degraded
+    # note's enriched denominator count only these keys.
+    open_count: int = 0
 
 
 def _default_runner(
@@ -119,7 +128,6 @@ def _prefilter_anchors(item: dict[str, Any]) -> bool:
 def _prefilter_survivors(
     raw_items: list[Any],
     queued_prefixes: set[str],
-    gate: health.ReselectAuthorGate,
 ) -> list[dict[str, Any]]:
     """Keep records able to yield a query and a salvage action, in order."""
     survivors: list[dict[str, Any]] = []
@@ -130,37 +138,27 @@ def _prefilter_survivors(
             continue
         if health.source_pr_prefix(item.get("key")) in queued_prefixes:
             continue
-        if not health.is_reselect_plausible(item, author_gate=gate):
+        if not health.is_reselect_plausible(item):
             continue
         survivors.append(item)
     return survivors
 
 
-def prefilter_ledger_items(
-    ledger: dict[str, Any],
-    *,
-    max_prs: int = 40,
-    author_gate: health.ReselectAuthorGate | None = None,
-) -> list[dict[str, Any]]:
-    """Return ledger candidates for live queries, prioritizing Stage 1/3 owners.
+def _ledger_survivors(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return every plausible record in owner-priority order, before the cap.
 
     Only records that can pass the non-live reselect gates are kept: anchors
     (key/repository/PR plus nonempty base/head SHAs), no usable queued work,
     and every ledger-evaluable eligibility gate (never-touch, lifecycle,
-    owner, outcome, identity author, paths) via health.is_reselect_plausible.
-    Ledger records carry no title field, so title-gated items stay plausible
-    on an allowlisted ledger author. Live signals can only narrow the result.
-    Preserve ledger order within each priority group and return the original
-    item dictionaries. Apply max_prs as a Python slice stop: zero returns no
-    items, and a negative value omits that many items from the end.
+    owner, outcome) via health.is_reselect_plausible. Path eligibility and
+    title/author identity defer to the selector: an empty or stale ledger
+    changed_paths or author cannot disprove what the live file list and
+    author login may show. Live signals can only narrow the result.
     """
     raw_items = ledger.get("items")
     if not isinstance(raw_items, list):
         return []
-    gate = (author_gate or health.ReselectAuthorGate()).resolved()
-    survivors = _prefilter_survivors(
-        raw_items, health.existing_wi_prefixes(ledger), gate
-    )
+    survivors = _prefilter_survivors(raw_items, health.existing_wi_prefixes(ledger))
     stage1_3 = [
         item for item in survivors if item.get("current_owner") in {"stage1", "stage3"}
     ]
@@ -169,7 +167,21 @@ def prefilter_ledger_items(
         for item in survivors
         if item.get("current_owner") not in {"stage1", "stage3"}
     ]
-    return (stage1_3 + others)[:max_prs]
+    return stage1_3 + others
+
+
+def prefilter_ledger_items(
+    ledger: dict[str, Any],
+    *,
+    max_prs: int = 40,
+) -> list[dict[str, Any]]:
+    """Return ledger candidates for live queries, prioritizing Stage 1/3 owners.
+
+    Candidates are the first max_prs of _ledger_survivors. Apply max_prs as a
+    Python slice stop: zero returns no items, and a negative value omits that
+    many items from the end.
+    """
+    return _ledger_survivors(ledger)[:max_prs]
 
 
 def _fetch_base_sha(
@@ -231,6 +243,12 @@ def _fetch_payload(
     parsed = _parse_payload(completed)
     if parsed is None:
         return None, False
+    if str(parsed.get("state") or "").strip().upper() != "OPEN":
+        # Closed or unknown-state payloads emit no signals, so their base SHA
+        # is never used; skipping the enrichment keeps the budget for open
+        # candidates, and open_scanned keeps closed-only scans off the
+        # base-enrichment floor.
+        return parsed, False
     base_sha = _fetch_base_sha(run_cmd, item, per_call_timeout_s)
     if base_sha is not None:
         parsed["baseRefOid"] = base_sha
@@ -254,35 +272,40 @@ def _finish(
     start_time: float,
     acc: SignalsAccum,
     queried_count: int,
+    candidate_count: int,
 ) -> SignalsResult:
     """Assemble the SignalsResult from accumulated state.
 
     Every signal collected so far is retained — including on DEGRADED — so a
     later query failure cannot resurrect an already-excluded ledger candidate;
     ledger fallback applies only to failed or unqueried keys. View successes
-    with zero base enrichments also floor at PARTIAL so a systemic REST outage
-    is visible instead of reading as a clean scan.
+    with zero base enrichments on open PRs also floor at PARTIAL so a systemic
+    REST outage is visible instead of reading as a clean scan, and a
+    candidate_count that
+    exceeds the queried count floors at PARTIAL so a capped scan does not
+    silently act on surplus records from stale ledger state.
     """
-    scanned_ok = queried_count - len(acc.failed)
     return SignalsResult(
         signals=acc.to_signals(),
-        status=_resolved_status(acc, scanned_ok),
+        status=_resolved_status(acc, candidate_count > queried_count),
         queried_count=queried_count,
         failed_keys=tuple(acc.failed),
         truncated_keys=tuple(acc.truncated),
         elapsed_s=round(time.monotonic() - start_time, 4),
         base_enriched_count=acc.base_enriched,
         timed_out=acc.timed_out,
+        candidate_count=candidate_count,
+        open_count=acc.open_scanned,
     )
 
 
-def _resolved_status(acc: SignalsAccum, scanned_ok: int) -> str:
-    """Resolve the scan status; a full base-enrichment gap floors at PARTIAL."""
+def _resolved_status(acc: SignalsAccum, clipped: bool) -> str:
+    """Resolve the scan status; coverage gaps floor at PARTIAL."""
     if acc.hard_status is not None:
         return acc.hard_status
-    if acc.timed_out or acc.failed:
+    if acc.timed_out or acc.failed or clipped:
         return "PARTIAL"
-    if scanned_ok > 0 and acc.base_enriched == 0:
+    if acc.open_scanned > 0 and acc.base_enriched == 0:
         return "PARTIAL"
     return "OK"
 
@@ -341,24 +364,28 @@ def produce_reselect_signals(
     path signals; accepted lists omit .jules paths and may be empty. These
     paths are changed-file proxies, not verified unique remaining source.
 
-    Return OK if the scan finishes without primary-query failures and at
-    least one base enrichment succeeded (or nothing was scanned). View-call
-    failures, budget exhaustion, or a full base-enrichment gap — every view
-    succeeded yet no `gh api` base SHA came back, the observable signature of
-    a systemic REST outage — yield PARTIAL with accumulated signals.
-    The base enrichment itself stays advisory: failures never fail a key.
+    Return OK if the scan finishes without primary-query failures, queried
+    every candidate within limits.max_prs, and at least one base enrichment
+    succeeded (or nothing was scanned). View-call failures, budget
+    exhaustion, the max_prs cap clipping the candidate set, or a full
+    base-enrichment gap — every open-PR view succeeded yet no `gh api` base
+    SHA came back, the observable signature of a systemic REST outage —
+    yield PARTIAL with accumulated signals. Non-OPEN payloads emit no
+    signals and skip the base enrichment entirely, so a scan of closed PRs
+    is not miscounted as a REST outage. The base enrichment itself stays
+    advisory: failures never fail a key.
     Missing gh on a view call, producer-level exceptions, or
     MAX_CONSECUTIVE_FAILURES straight view failures yield DEGRADED; the
     consecutive-failure and missing-gh exits retain every signal collected
-    so far while producer-level exceptions emit none. Truncated files and
-    the candidate cap alone do not change status; SKIPPED is never
-    returned.
+    so far while producer-level exceptions emit none. Truncated files alone
+    do not change status; SKIPPED is never returned.
     """
     start_time = time.monotonic()
     run_cmd = runner or _default_runner
 
     try:
-        candidates = prefilter_ledger_items(ledger, max_prs=limits.max_prs)
+        survivors = _ledger_survivors(ledger)
+        candidates = survivors[: limits.max_prs]
         acc = SignalsAccum()
         queried_count = 0
         for item in candidates:
@@ -369,7 +396,7 @@ def produce_reselect_signals(
             _scan_item(acc, run_cmd, item, limits.per_call_timeout_s)
             if acc.hard_status is not None:
                 break
-        return _finish(start_time, acc, queried_count)
+        return _finish(start_time, acc, queried_count, len(survivors))
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Global fail-open. Log the type only, no message/traceback.
         LOGGER.warning("reselect signals: producer DEGRADED (%s)", type(exc).__name__)

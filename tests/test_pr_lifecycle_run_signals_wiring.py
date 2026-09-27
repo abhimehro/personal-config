@@ -50,6 +50,7 @@ class ProducerWiringTests(unittest.TestCase):
             truncated_keys=(),
             elapsed_s=0.5,
             base_enriched_count=2,
+            candidate_count=2,
         )
         mock_producer = mock.Mock(return_value=result_payload)
 
@@ -60,10 +61,12 @@ class ProducerWiringTests(unittest.TestCase):
         mock_producer.assert_called_with(ledger)
         self.assertEqual(plan["signals_status"], "OK")
         self.assertEqual(plan["signals_queried"], 2)
+        self.assertEqual(plan["signals_candidates"], 2)
         self.assertEqual(plan["signals_base_enriched"], 2)
         status_doc = run.write_status_doc(plan, "rid")
         self.assertEqual(status_doc["signals_base_enriched"], 2)
         self.assertEqual(status_doc["signals_queried"], 2)
+        self.assertEqual(status_doc["signals_candidates"], 2)
         feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
         self.assertEqual(feed_check["signals_status"], "OK")
 
@@ -133,11 +136,29 @@ class ProducerWiringTests(unittest.TestCase):
                 status="PARTIAL",
                 queried_count=3,
                 base_enriched_count=0,
+                open_count=3,
             )
         )
         self.assertEqual(plan["signals_status"], "PARTIAL")
         self.assertEqual(plan["signals_base_enriched"], 0)
         self.assertIn("live base anchors missing", note)
+        self.assertNotIn("failed keys", note)
+
+    def test_candidate_cap_clip_partial_reports_coverage_note(self):
+        """A clean scan clipped by max_prs -> PARTIAL naming the clipped
+        coverage so unqueried surplus keys are not invisible."""
+        plan, note = self._degraded_plan(
+            SignalsResult(
+                signals=real_health.ReselectSignals(),
+                status="PARTIAL",
+                queried_count=2,
+                candidate_count=5,
+            )
+        )
+        self.assertEqual(plan["signals_status"], "PARTIAL")
+        self.assertEqual(plan["signals_candidates"], 5)
+        self.assertIn("candidate cap clipped", note)
+        self.assertIn("2 of 5", note)
         self.assertNotIn("failed keys", note)
 
     def test_budget_truncation_partial_reports_truncated_scan_note(self):
@@ -183,6 +204,7 @@ class ProducerWiringTests(unittest.TestCase):
                 queried_count=4,
                 failed_keys=("a#1", "b#2", "c#3"),
                 base_enriched_count=0,
+                open_count=1,
             )
         )
         self.assertEqual(plan["signals_status"], "DEGRADED")

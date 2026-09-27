@@ -17,6 +17,7 @@ import argparse
 import importlib.util
 import json
 import logging
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -30,12 +31,17 @@ if str(SCRIPT_DIR) not in sys.path:
 
 # Fail fast with an install hint instead of a deep ModuleNotFoundError when
 # the interpreter lacks requirements.txt (e.g. PEP 668 Homebrew python3).
+# --status refreshes the pinned issue and -h/--help print usage without
+# loading the ledger, so those dep-free entry points skip both the gate and
+# the ledger-side imports below — the alternative is a traceback anyway.
+_DEP_FREE_FLAGS = frozenset({"--status", "-h", "--help"})
+_DEP_FREE_REQUEST = bool(_DEP_FREE_FLAGS.intersection(sys.argv[1:]))
 _MISSING_DEPS = [
     package
     for module, package in (("yaml", "pyyaml"), ("jsonschema", "jsonschema"))
     if importlib.util.find_spec(module) is None
 ]
-if _MISSING_DEPS:
+if _MISSING_DEPS and not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
     print(
         "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies: "
         + ", ".join(_MISSING_DEPS)
@@ -48,23 +54,30 @@ if _MISSING_DEPS:
     raise SystemExit(2)
 
 # pylint: disable=wrong-import-position
-import pr_lifecycle_feed as feed_mod  # noqa: F401
-import pr_lifecycle_ledger_cas as cas
-import pr_lifecycle_pipeline_health as health
-import pr_lifecycle_reconcile as reconcile_mod  # noqa: F401
-from pr_lifecycle_config import validate_config
+# The issue mirror is dep-free (json + subprocess only), so it imports in
+# both modes; --status needs nothing else.
 from pr_lifecycle_issue_status import issue_body as _issue_body  # noqa: F401
 from pr_lifecycle_issue_status import update_pinned_issue
-from pr_lifecycle_reselect_signals import SignalsResult, produce_reselect_signals
-from pr_lifecycle_stage_plan import build_stage_plan
 
-# Re-exports for tests that call run.plan_*/run._issue_body. Patching these
-# names has no effect on the planner — it resolves them inside
-# pr_lifecycle_stage_plan / pr_lifecycle_issue_status globals; patch there.
-from pr_lifecycle_stage_plan import plan_stage2_enqueues  # noqa: F401
-from pr_lifecycle_stage_plan import plan_stage3_mechanical_handoffs  # noqa: F401
-from pr_lifecycle_support import ROOT
-from pr_lifecycle_yaml import load_yaml
+if not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
+    import pr_lifecycle_feed as feed_mod  # noqa: F401
+    import pr_lifecycle_ledger_cas as cas
+    import pr_lifecycle_pipeline_health as health
+    import pr_lifecycle_reconcile as reconcile_mod  # noqa: F401
+    from pr_lifecycle_config import validate_config
+    from pr_lifecycle_reselect_signals import (
+        SignalsResult,
+        produce_reselect_signals,
+    )
+    from pr_lifecycle_stage_plan import build_stage_plan
+
+    # Re-exports for tests that call run.plan_*/run._issue_body. Patching these
+    # names has no effect on the planner — it resolves them inside
+    # pr_lifecycle_stage_plan / pr_lifecycle_issue_status globals; patch there.
+    from pr_lifecycle_stage_plan import plan_stage2_enqueues  # noqa: F401
+    from pr_lifecycle_stage_plan import plan_stage3_mechanical_handoffs  # noqa: F401
+    from pr_lifecycle_support import ROOT
+    from pr_lifecycle_yaml import load_yaml
 
 LOGGER = logging.getLogger(__name__)
 LOG_DIR = Path(tempfile.gettempdir()) / "pr-lifecycle"
@@ -101,6 +114,7 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "pipeline_health": plan.get("pipeline_health"),
         "signals_status": plan.get("signals_status"),
         "signals_queried": plan.get("signals_queried"),
+        "signals_candidates": plan.get("signals_candidates"),
         "signals_base_enriched": plan.get("signals_base_enriched"),
         "signals_timed_out": plan.get("signals_timed_out"),
         "action_count": len(plan.get("actions") or []),
@@ -140,6 +154,7 @@ def _attach_signal_fields(
     """Add signal collection metrics and any supplied error to the plan in place."""
     plan["signals_status"] = result.status
     plan["signals_queried"] = result.queried_count
+    plan["signals_candidates"] = result.candidate_count
     plan["signals_base_enriched"] = result.base_enriched_count
     plan["signals_timed_out"] = result.timed_out
     plan["signals_failed_keys"] = list(result.failed_keys)
@@ -252,9 +267,10 @@ def main(argv: list[str] | None = None) -> int:
     return 0. Otherwise delegate planning and local output to run_stage and
     return its exit code (0, 1, or 2).
 
-    Return 1 for a missing stage or caught OSError, TypeError, ValueError, or
-    KeyError during execution. Other exceptions propagate; argument parsing
-    raises SystemExit for help or invalid arguments.
+    Return 1 for a missing stage or caught OSError, subprocess.SubprocessError
+    (a gh call exceeding its timeout), TypeError, ValueError, or KeyError
+    during execution. Other exceptions propagate; argument parsing raises
+    SystemExit for help or invalid arguments.
     """
     args = build_parser().parse_args(argv)
     try:
@@ -279,7 +295,14 @@ def main(argv: list[str] | None = None) -> int:
             write_status=args.write_status,
             no_live_signals=args.no_live_signals,
         )
-    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+    except (
+        OSError,
+        subprocess.SubprocessError,
+        TypeError,
+        ValueError,
+        KeyError,
+        json.JSONDecodeError,
+    ) as exc:
         print(f"PR_LIFECYCLE_RUN_ERROR: {type(exc).__name__}", file=sys.stderr)
         return 1
 

@@ -12,7 +12,7 @@ can re-export these helpers without a cycle.
 from __future__ import annotations
 
 import json
-import sys
+import logging
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,6 +27,8 @@ from pr_lifecycle_yaml import load_yaml
 
 if TYPE_CHECKING:
     from pr_lifecycle_pipeline_health import PipelineHealth
+
+LOGGER = logging.getLogger(__name__)
 
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 SCHEMA_PATH = ROOT / "schemas/pr-lifecycle-ledger.schema.json"
@@ -186,17 +188,16 @@ def _print_report(report: PipelineHealth, as_json: bool) -> None:
 
 def _print_pointer_refusal() -> int:
     """Report a bootstrap-pointer refusal to stderr and return exit status 1."""
-    print(
+    LOGGER.error(
         "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
-        "(fetch automation/pr-lifecycle-ledger)",
-        file=sys.stderr,
+        "(fetch automation/pr-lifecycle-ledger)"
     )
     return 1
 
 
 def _print_health_error(exc: BaseException) -> int:
     """Print a health-check exception to stderr and return exit status 1."""
-    print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
+    LOGGER.error("PR_LIFECYCLE_HEALTH_ERROR: %s", exc)
     return 1
 
 
@@ -257,10 +258,9 @@ def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | Non
     if _is_bootstrap_pointer_document(ledger):
         return None, _print_pointer_refusal()
     if not _has_runtime_ledger_shape(ledger):
-        print(
+        LOGGER.error(
             "PR_LIFECYCLE_HEALTH: not a runtime ledger mapping "
-            "(expected items list)",
-            file=sys.stderr,
+            "(expected items list)"
         )
         return None, 1
     try:

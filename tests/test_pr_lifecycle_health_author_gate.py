@@ -279,25 +279,26 @@ class TestReselectAuthorGate(unittest.TestCase):
             )
         )
 
-    def test_plausible_rejects_loginless_item_without_loading_config(self) -> None:
-        """is_reselect_plausible fails login-less items before any disk read."""
-        item = make_queryable_item(author_type="HUMAN")
-        with mock.patch.object(
-            health,
-            "_load_reselect_allowed_authors",
-            side_effect=AssertionError("loader must not run"),
-        ) as loader:
-            self.assertFalse(health.is_reselect_plausible(item))
-        loader.assert_not_called()
+    def test_plausible_defers_identity_without_loading_config(self) -> None:
+        """is_reselect_plausible keeps login-less items for the live lookup.
 
-    def test_plausible_resolves_lazy_gate_for_login_items(self) -> None:
-        """An unpinned gate resolves once when the item actually has a login."""
-        item = make_queryable_item(author_type="HUMAN", author="maintainer")
-        with mock.patch.object(
-            health, "_load_reselect_allowed_authors", return_value=["maintainer"]
-        ) as loader:
-            self.assertTrue(health.is_reselect_plausible(item))
-            loader.assert_called_once()
+        A nonblank live author login wins over the ledger record, so the
+        pre-query gate cannot disprove authorship and never loads the
+        allowlist — the selector applies it once live signals exist.
+        """
+        for item in (
+            make_queryable_item(author_type="HUMAN"),
+            make_queryable_item(author_type="HUMAN", author="maintainer"),
+            make_queryable_item(author_type="HUMAN", author="random-external-user"),
+        ):
+            with self.subTest(item=item["key"]):
+                with mock.patch.object(
+                    health,
+                    "_load_reselect_allowed_authors",
+                    side_effect=AssertionError("loader must not run"),
+                ) as loader:
+                    self.assertTrue(health.is_reselect_plausible(item))
+                loader.assert_not_called()
 
 
 if __name__ == "__main__":

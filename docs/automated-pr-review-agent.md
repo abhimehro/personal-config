@@ -80,15 +80,17 @@ decisions:
   or alters standard process exit codes. If `gh` is missing or 3 consecutive
   queries fail, the producer drops gracefully to ledger fallbacks.
 - **Signals Status (`signals_status`):**
-  - `OK`: Every queried candidate PR returned live signals successfully and at
-    least one base-SHA enrichment succeeded (or nothing was scanned). The
-    `max_prs` cap drops surplus candidates silently — it does not change the
-    status — so `OK` does not imply every plausible ledger item was queried.
+  - `OK`: Every queried candidate PR returned live signals successfully, the
+    `max_prs` cap covered every plausible candidate, and at least one base-SHA
+    enrichment succeeded (or nothing was scanned — closed/unknown-state PRs
+    emit no signals and skip the enrichment call entirely).
   - `PARTIAL`: One or more individual PR queries timed out or failed, the total
-    budget elapsed, or every `gh api` base-SHA enrichment failed across
-    otherwise-successful queries (the observable signature of a systemic REST
-    outage). Successful queries attach live signals, while failed keys fall
-    back to ledger values; a full enrichment gap reports
+    budget elapsed, the `max_prs` cap clipped the plausible candidate set
+    (`signals_candidates > signals_queried` — surplus keys keep acting on
+    ledger values, surfaced rather than silent), or every `gh api` base-SHA
+    enrichment failed across queried open PRs (the observable signature of a
+    systemic REST outage). Successful queries attach live signals, while
+    failed keys fall back to ledger values; a full enrichment gap reports
     `signals_base_enriched: 0`.
   - `DEGRADED`: Global failure (CLI missing, consecutive failures, or caught
     exception). The planner uses ledger fallbacks; after consecutive failures,

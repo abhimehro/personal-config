@@ -253,8 +253,9 @@ class ReselectSignalsTests(unittest.TestCase):
         result = produce_reselect_signals(ledger, runner=runner)
         with mock.patch.object(run.health, "summarize", real_health.summarize):
             code, plan = _exec_stage(stage, ledger, producer_override=result)
-        # Successful items run a view plus a base-sha call; failures stop early.
-        self.assertEqual(runner.call_count, 7)
+        # The OPEN item runs a view plus a base-sha call; the CLOSED item
+        # skips base enrichment; failures stop after the view call.
+        self.assertEqual(runner.call_count, 6)
         self._assert_degraded_plan(code, plan, items)
         self._assert_fallback_actions(plan, action_name, items)
         if stage == 1:
@@ -277,7 +278,8 @@ class ReselectSignalsTests(unittest.TestCase):
             ([], [], False),
             ([{"path": ".jules/bolt.md"}], [], False),
             ([{"path": "src/live.py"}], ["src/live.py"], False),
-            ([{"path": f"src/{n}.py"} for n in range(100)], ["src/ledger.py"], True),
+            # Truncated live files pin an empty path signal (fail closed).
+            ([{"path": f"src/{n}.py"} for n in range(100)], [], True),
         )
         for stage, action_name in (
             (1, "ENQUEUE_STAGE2_WI"),

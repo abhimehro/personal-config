@@ -440,11 +440,18 @@ def _cause_clauses(result: SignalsResult) -> list[str]:
             f"{result.queried_count} attempted queries, unqueried keys use "
             "ledger values"
         )
+    if result.candidate_count > result.queried_count:
+        clauses.append(
+            "candidate cap clipped live coverage to "
+            f"{result.queried_count} of {result.candidate_count} plausible "
+            "records, surplus keys use ledger values"
+        )
     if result.status == "DEGRADED":
         clauses.append("scan aborted, all unqueried keys use ledger values")
-    scanned_ok = result.queried_count - len(result.failed_keys)
-    if scanned_ok > 0 and result.base_enriched_count == 0:
-        clauses.append(f"live base anchors missing (0/{scanned_ok} enriched)")
+    if result.open_count > 0 and result.base_enriched_count == 0:
+        clauses.append(
+            f"live base anchors missing (0/{result.open_count} enriched)"
+        )
     return clauses
 
 

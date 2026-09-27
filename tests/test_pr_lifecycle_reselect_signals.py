@@ -27,8 +27,6 @@ from tests.pr_lifecycle_helpers import (  # noqa: E402
     stub_gh_runner,
 )
 
-ALLOWED_GATE = health.ReselectAuthorGate(allowed_authors=("abhimehro",))
-
 
 class TestPrefilterLedgerItems(unittest.TestCase):
     def test_malformed_items_and_empty_ledgers_do_not_query_github(self) -> None:
@@ -87,7 +85,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
             repository="abhimehro/demo",
             pr=1,
             author="abhimehro",
-            author_type="HUMAN",  # Non-BOT kept on an allowlisted ledger author.
+            author_type="HUMAN",  # Non-BOT stays plausible; identity is a live check.
             next_action="Some routine action without conflicting",  # No CONFLICTING in next_action kept!
         )
         # Each negative is otherwise fully queryable so only its named gate
@@ -147,13 +145,19 @@ class TestPrefilterLedgerItems(unittest.TestCase):
             missing_pr,
         ]
         ledger = make_ledger(items, [existing_wi])
-        survivors = prefilter_ledger_items(ledger, author_gate=ALLOWED_GATE)
+        survivors = prefilter_ledger_items(ledger)
 
         self.assertEqual(len(survivors), 1)
         self.assertEqual(survivors[0]["key"], valid_candidate["key"])
 
     def test_prefilter_drops_records_failing_non_live_gates(self) -> None:
-        """Records that cannot pass non-live gates never consume a query slot."""
+        """Records that cannot pass non-live gates never consume a query slot.
+
+        Identity- and path-dependent failures (non-allowlisted ledger author,
+        empty or journal-only changed_paths) are the deliberate exception:
+        they stay plausible because the live author login and file list, not
+        the ledger proxies, decide eligibility downstream.
+        """
         base = {
             "repository": "abhimehro/demo",
             "next_action": "CONFLICTING",
@@ -205,8 +209,12 @@ class TestPrefilterLedgerItems(unittest.TestCase):
             ],
             [],
         )
+        # Path- and author-gated items stay plausible so a live lookup can
+        # re-scope/re-author them; the selector applies _reselect_paths_ok
+        # and the author gate to the live fields.
         self.assertEqual(
-            prefilter_ledger_items(ledger, author_gate=ALLOWED_GATE), [plausible]
+            prefilter_ledger_items(ledger),
+            [outsider_author, no_paths, journal_only, plausible],
         )
 
     def test_prefilter_cap_spends_lookups_only_on_plausible_records(self) -> None:
@@ -216,8 +224,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
                 key=f"abhimehro/demo#{n}@abc",
                 repository="abhimehro/demo",
                 pr=n,
-                author="random-external-user",
-                author_type="HUMAN",
+                guardrail_outcome="PASS_ROUTINE",
             )
             for n in range(1, 41)
         ]
@@ -231,7 +238,7 @@ class TestPrefilterLedgerItems(unittest.TestCase):
         )
         ledger = make_ledger([*implausible, plausible_bot], [])
         self.assertEqual(
-            prefilter_ledger_items(ledger, author_gate=ALLOWED_GATE),
+            prefilter_ledger_items(ledger),
             [plausible_bot],
         )
         runner = mock.Mock(

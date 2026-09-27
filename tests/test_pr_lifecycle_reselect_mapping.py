@@ -71,9 +71,11 @@ class TestReselectSignalMapping(unittest.TestCase):
                 False,
                 True,
             ),
-            ([{"path": f"src/{n}.py"} for n in range(100)], None, True, True),
-            ([{"path": "src/ok.py"}, {}], None, True, True),
-            ([{"path": ""}], None, True, True),
+            # Unreliable file lists pin an explicit empty path signal so the
+            # sticky-path gate fails closed instead of trusting ledger paths.
+            ([{"path": f"src/{n}.py"} for n in range(100)], [], True, False),
+            ([{"path": "src/ok.py"}, {}], [], True, False),
+            ([{"path": ""}], [], True, False),
             (None, None, False, True),
             ({}, None, False, True),
         )
@@ -225,7 +227,7 @@ class TestReselectSignalMapping(unittest.TestCase):
                     self.assertIsNone(result.signals.live_mergeable_by_key)
 
     def test_files_truncation_and_journal_only(self) -> None:
-        """Files >= 100 -> omitted from unique_paths_by_key, in truncated_keys; journal only -> []."""
+        """Files >= 100 -> truncated_keys with an explicit empty path signal; journal only -> []."""
         # Truncated case
         item1 = make_queryable_item(key="demo#1@sha", repository="demo", pr=1)
         resp1 = {
@@ -236,7 +238,7 @@ class TestReselectSignalMapping(unittest.TestCase):
         res1 = produce_reselect_signals(
             make_ledger([item1], []), runner=stub_gh_runner(resp1)
         )
-        self.assertIsNone(res1.signals.unique_paths_by_key)
+        self.assertEqual(res1.signals.unique_paths_by_key, {item1["key"]: []})
         self.assertEqual(res1.truncated_keys, (item1["key"],))
 
         # Journal-only case
@@ -262,7 +264,7 @@ class TestReselectSignalMapping(unittest.TestCase):
         res3 = produce_reselect_signals(
             make_ledger([item3], []), runner=stub_gh_runner(resp3)
         )
-        self.assertIsNone(res3.signals.unique_paths_by_key)
+        self.assertEqual(res3.signals.unique_paths_by_key, {item3["key"]: []})
         self.assertEqual(res3.truncated_keys, (item3["key"],))
 
     def test_closed_or_merged_pr_emits_no_signals(self) -> None:

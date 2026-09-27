@@ -3,8 +3,11 @@
 
 Best-effort gh issue helpers: locate the pinned status issue by exact title
 match, create or edit its body, and render the status payload. Every gh call
-uses a fixed argv with --repo pinned; failures raise OSError. The only caller
-is main()'s --status branch, which maps them to a plain exit-1 error — no
+uses a fixed argv with --repo pinned; failures raise OSError. A failed or
+malformed issue listing also raises OSError rather than falling through to
+issue creation, which would pile up duplicate pinned issues whenever `gh
+issue list` errors while a status issue already exists. The only caller is
+main()'s --status branch, which maps them to a plain exit-1 error — no
 TRANSIENT_RETRY classification.
 """
 
@@ -54,10 +57,13 @@ def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def _find_pinned_issue() -> int | None:
-    """Return the first exact-title issue number from the bounded GitHub search.
+    """Return the pinned issue's number; raise on a failed or malformed list.
 
-    Return None on a failed command, empty output, invalid JSON, or no match.
-    Process exceptions and malformed decoded rows propagate to the caller.
+    Only a well-formed listing with no exact-title row returns None, so
+    update_pinned_issue can safely create the issue. Anything else — a gh
+    failure, unparseable JSON, a non-list payload, non-dict rows, or an
+    exact-title row without an integer number — is raised as OSError rather
+    than risk a duplicate pinned issue. Process exceptions propagate.
     """
     listed = _gh_issue(
         [
@@ -70,16 +76,23 @@ def _find_pinned_issue() -> int | None:
             "20",
         ]
     )
-    if listed.returncode != 0 or not listed.stdout.strip():
-        return None
+    if listed.returncode != 0:
+        stderr = (listed.stderr or "").strip()[:200]
+        raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
     try:
         rows = json.loads(listed.stdout)
     except json.JSONDecodeError:
-        return None
+        rows = None
+    if not isinstance(rows, list):
+        raise OSError("gh issue list returned a malformed payload")
     for row in rows:
+        if not isinstance(row, dict):
+            raise OSError("gh issue list returned a malformed payload")
         if row.get("title") == PINNED_ISSUE_TITLE:
             number = row.get("number")
-            return int(number) if number is not None else None
+            if not isinstance(number, int) or isinstance(number, bool):
+                raise OSError("gh issue list matched the pinned title without a number")
+            return number
     return None
 
 

@@ -255,8 +255,27 @@ class RunExecutionTests(unittest.TestCase):
         self.assertEqual(argv[2:4], ["edit", "17"])
         self.assertIn("--repo", argv)
 
-    def test_update_pinned_issue_creates_when_listing_is_malformed(self):
+    def test_update_pinned_issue_raises_when_listing_is_malformed(self):
+        # A malformed listing must not fall through to issue creation, which
+        # would duplicate the pinned issue while a status issue already exists.
         listed = types.SimpleNamespace(returncode=0, stdout="not-json")
+        with (
+            mock.patch("subprocess.run", side_effect=[listed]) as command,
+            self.assertRaises(OSError),
+        ):
+            run.update_pinned_issue(
+                {
+                    "updated_at_utc": "2026-09-21T18:00:00Z",
+                    "run_id": "run-fixed",
+                    "stage": None,
+                    "reason": "manual --status refresh",
+                    "stop_class": None,
+                }
+            )
+        self.assertEqual(command.call_count, 1)
+
+    def test_update_pinned_issue_creates_only_on_clean_no_match(self):
+        listed = types.SimpleNamespace(returncode=0, stdout="[]")
         created = types.SimpleNamespace(returncode=0, stdout="")
         with mock.patch("subprocess.run", side_effect=[listed, created]) as command:
             run.update_pinned_issue(
@@ -312,6 +331,20 @@ class TestDependencyPreflight(unittest.TestCase):
                 )
                 self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_status_and_help_flags_skip_the_dependency_gate(self) -> None:
+        """--status/-h/--help never load the ledger, so they run without deps."""
+        for flag in ("--status", "-h", "--help"):
+            with self.subTest(flag=flag):
+                with (
+                    mock.patch(
+                        "importlib.util.find_spec",
+                        side_effect=lambda name, package=None: None,
+                    ),
+                    mock.patch.object(sys, "argv", ["pr_lifecycle_run.py", flag]),
+                ):
+                    namespace = runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
+                self.assertIn("main", namespace)
+
     def test_missing_yaml_exits_2_with_hint(self) -> None:
         """Run isolated (-I) without site-packages (-S) as a bare interpreter."""
         # -I ignores PYTHON* env vars and user site; drop PYTHONPATH as well.
@@ -327,7 +360,7 @@ class TestDependencyPreflight(unittest.TestCase):
         if probe.returncode == 0:
             self.skipTest("yaml importable under -I -S; cannot simulate missing deps")
         proc = subprocess.run(
-            [*flags, str(SCRIPTS / "pr_lifecycle_run.py"), "--help"],
+            [*flags, str(SCRIPTS / "pr_lifecycle_run.py"), "--stage", "1"],
             capture_output=True,
             text=True,
             env=env,
