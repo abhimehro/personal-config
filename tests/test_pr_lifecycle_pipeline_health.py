@@ -374,7 +374,7 @@ class TestPredicateHardening(unittest.TestCase):
             for n in range(1, 6)
         ]
         signals = health.ReselectSignals(
-            closed_keys=frozenset({"owner/repo#1"}),
+            closed_keys=frozenset({items[0]["key"]}),
             live_head_sha_by_key={items[1]["key"]: "new-head"},
             live_mergeable_by_key={items[2]["key"]: "MERGEABLE"},
         )
