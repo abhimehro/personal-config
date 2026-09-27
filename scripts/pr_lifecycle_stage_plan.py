@@ -421,6 +421,25 @@ def _dispatch_stage_plan(
     return (*plan, {})
 
 
+def _degraded_note(result: SignalsResult) -> str:
+    """Describe the degradation for the SIGNALS_DEGRADED action note.
+
+    A PARTIAL with no failed keys means every `gh api` base lookup failed —
+    a systemic REST outage — which needs its own wording; a note about
+    failed keys would send operators hunting for failures that do not exist.
+    """
+    fallback = "ledger fallbacks in effect; title-gated items invisible for failed keys"
+    scanned_ok = result.queried_count - len(result.failed_keys)
+    if result.failed_keys or scanned_ok <= 0:
+        return fallback
+    if result.base_enriched_count > 0:
+        return fallback
+    return (
+        f"live base anchors missing (0/{scanned_ok} enriched); "
+        "view signals otherwise complete"
+    )
+
+
 def _annotate_degraded_signals(
     actions: list[dict[str, Any]], result: SignalsResult
 ) -> None:
@@ -431,21 +450,11 @@ def _annotate_degraded_signals(
         isinstance(a, dict) and a.get("action") == "SIGNALS_DEGRADED" for a in actions
     ):
         return
-    scanned_ok = result.queried_count - len(result.failed_keys)
-    if scanned_ok > 0 and not result.failed_keys and result.base_enriched_count == 0:
-        note = (
-            f"live base anchors missing (0/{scanned_ok} enriched); "
-            "view signals otherwise complete"
-        )
-    else:
-        note = (
-            "ledger fallbacks in effect; title-gated items invisible " "for failed keys"
-        )
     actions.append(
         {
             "action": "SIGNALS_DEGRADED",
             "status": result.status,
-            "note": note,
+            "note": _degraded_note(result),
         }
     )
 
