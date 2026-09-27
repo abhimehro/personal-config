@@ -1,0 +1,224 @@
+"""Unit tests for the extracted status issue renderer and GitHub boundary."""
+
+from __future__ import annotations
+
+import copy
+import json
+import subprocess
+import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
+from unittest import mock
+
+from tests.pr_lifecycle_helpers import NOW, import_lifecycle_run
+
+import pr_lifecycle_issue_status as issue_status
+
+run = import_lifecycle_run()
+
+
+class IssueStatusTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.status = {
+            "updated_at_utc": "2026-08-30T12:00:00Z",
+            "run_id": "test-status",
+            "stage": 3,
+            "ledger_revision": 12,
+            "reason": "OK",
+            "stop_class": None,
+            "signals_status": "PARTIAL",
+            "condition": "SIGNALS_DEGRADED",
+            "calibration_enabled": False,
+        }
+        # Every test mocks the process boundary, including unexpected calls.
+        self.command = self.enterContext(
+            mock.patch.object(issue_status.subprocess, "run")
+        )
+
+    @staticmethod
+    def result(
+        stdout: str = "", returncode: int = 0, stderr: str = ""
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(["gh"], returncode, stdout, stderr)
+
+    def test_body_preserves_status_json_and_does_not_mutate_input(self) -> None:
+        self.status["reason"] = "needs review\nwith Unicode: café"
+        original = copy.deepcopy(self.status)
+        body = issue_status.issue_body(self.status)
+        self.assertTrue(body.startswith("<!-- pr-lifecycle-status -->\n"))
+        self.assertIn("signals_status: PARTIAL\ncondition: SIGNALS_DEGRADED\n", body)
+        self.assertIn("calibration_enabled: false\n", body)
+        encoded = body.split("```json\n", 1)[1].rsplit("\n```", 1)[0]
+        self.assertEqual(json.loads(encoded), original)
+        self.assertEqual(self.status, original)
+        self.command.assert_not_called()
+
+    def test_body_handles_minimal_status_without_condition(self) -> None:
+        body = issue_status.issue_body({"updated_at_utc": "2026-08-30T12:00:00Z"})
+        header = body.split("```json", 1)[0]
+        for field in (
+            "run_id",
+            "stage",
+            "ledger_revision",
+            "reason",
+            "stop_class",
+            "signals_status",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(f"{field}: \n", header)
+        self.assertNotIn("condition:", header)
+
+    def test_only_exact_title_match_is_edited_with_fixed_argv(self) -> None:
+        rows = [
+            {"number": 8, "title": "PR pipeline status archive"},
+            {"number": 9, "title": "pr pipeline status"},
+            {"number": 17, "title": "PR pipeline status"},
+        ]
+        self.status["reason"] = "$(touch sentinel); 'quoted'\n--repo other/repo"
+        self.command.side_effect = [self.result(json.dumps(rows)), self.result()]
+        issue_status.update_pinned_issue(self.status)
+        self.assertEqual(
+            self.command.call_args_list,
+            [
+                mock.call(
+                    [
+                        "gh",
+                        "issue",
+                        "list",
+                        "--search",
+                        'in:title "PR pipeline status"',
+                        "--json",
+                        "number,title",
+                        "--limit",
+                        "20",
+                        "--repo",
+                        "abhimehro/personal-config",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                ),
+                mock.call(
+                    [
+                        "gh",
+                        "issue",
+                        "edit",
+                        "17",
+                        "--body",
+                        issue_status.issue_body(self.status),
+                        "--repo",
+                        "abhimehro/personal-config",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                ),
+            ],
+        )
+
+    def test_unavailable_or_unmatched_listing_creates_status_issue(self) -> None:
+        for listed in (
+            self.result("[]"),
+            self.result(" \n"),
+            self.result("not-json"),
+            self.result('[{"number": 7, "title": "PR pipeline status old"}]'),
+            self.result('[{"number": 7, "title": "PR pipeline status"}]', returncode=1),
+        ):
+            with self.subTest(stdout=listed.stdout, returncode=listed.returncode):
+                self.command.reset_mock()
+                self.command.side_effect = [listed, self.result()]
+                issue_status.update_pinned_issue(self.status)
+                self.assertEqual(self.command.call_count, 2)
+                self.command.assert_called_with(
+                    [
+                        "gh",
+                        "issue",
+                        "create",
+                        "--title",
+                        "PR pipeline status",
+                        "--body",
+                        issue_status.issue_body(self.status),
+                        "--repo",
+                        "abhimehro/personal-config",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+    def test_failed_create_and_edit_raise_bounded_error_without_retry(self) -> None:
+        for rows, operation in (
+            ([], "create"),
+            ([{"number": 17, "title": "PR pipeline status"}], "edit"),
+        ):
+            with self.subTest(operation=operation):
+                self.command.reset_mock()
+                self.command.side_effect = [
+                    self.result(json.dumps(rows)),
+                    self.result(returncode=2, stderr="  " + "x" * 250 + "  "),
+                ]
+                with self.assertRaises(OSError) as caught:
+                    issue_status.update_pinned_issue(self.status)
+                self.assertEqual(
+                    str(caught.exception), "gh issue update failed rc=2: " + "x" * 200
+                )
+                self.assertEqual(self.command.call_count, 2)
+                self.assertEqual(self.command.call_args.args[0][2], operation)
+
+    def test_process_exception_stops_before_any_issue_mutation(self) -> None:
+        for error in (
+            FileNotFoundError("gh missing"),
+            subprocess.TimeoutExpired(["gh"], 60),
+        ):
+            with self.subTest(error=type(error).__name__):
+                self.command.reset_mock()
+                self.command.side_effect = error
+                with self.assertRaises(type(error)):
+                    issue_status.update_pinned_issue(self.status)
+                self.command.assert_called_once()
+                self.assertEqual(self.command.call_args.args[0][2], "list")
+
+    def test_status_cli_takes_precedence_over_stage(self) -> None:
+        output = StringIO()
+        with (
+            mock.patch.object(run, "update_pinned_issue") as update,
+            mock.patch.object(run, "run_stage") as stage,
+            mock.patch.object(run, "_utc_now", return_value=NOW),
+            mock.patch.object(run, "_run_id", return_value="manual-status"),
+            redirect_stdout(output),
+        ):
+            code = run.main(["--status", "--stage", "1"])
+        self.assertEqual(code, 0)
+        status = json.loads(output.getvalue())
+        self.assertEqual(status["updated_at_utc"], "2026-08-30T12:00:00Z")
+        self.assertEqual(status["run_id"], "manual-status")
+        self.assertIsNone(status["stage"])
+        self.assertEqual(status["signals_status"], "SKIPPED")
+        self.assertFalse(status["calibration_enabled"])
+        update.assert_called_once_with(status)
+        stage.assert_not_called()
+
+    def test_status_cli_failure_reports_type_without_provider_details(self) -> None:
+        error_output, output = StringIO(), StringIO()
+        with (
+            mock.patch.object(
+                run,
+                "update_pinned_issue",
+                side_effect=OSError("provider-private-details"),
+            ),
+            mock.patch.object(run, "run_stage") as stage,
+            redirect_stderr(error_output),
+            redirect_stdout(output),
+        ):
+            code = run.main(["--status"])
+        self.assertEqual(code, 1)
+        self.assertEqual(error_output.getvalue(), "PR_LIFECYCLE_RUN_ERROR: OSError\n")
+        self.assertEqual(output.getvalue(), "")
+        stage.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()
