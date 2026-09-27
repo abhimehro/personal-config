@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import unittest
@@ -29,8 +30,18 @@ class TestReselectFailureStatuses(unittest.TestCase):
     def test_nonzero_exit_discards_even_valid_stdout(self) -> None:
         """Verify failed gh calls cannot contribute authoritative live signals."""
         item = make_queryable_item(repository="owner/repo", pr=1)
-        # A failed gh call must not supply an authoritative exclusion.
-        runner = stub_gh_runner(make_gh_proc({"state": "CLOSED"}, returncode=1))
+        # A nonzero exit with well-formed JSON stdout must still be rejected:
+        # results entries pass through verbatim (unlike the payload kwarg).
+        runner = stub_gh_runner(
+            results=[
+                subprocess.CompletedProcess(
+                    args=["gh", "pr", "view"],
+                    returncode=1,
+                    stdout=json.dumps({"state": "CLOSED"}),
+                    stderr="",
+                )
+            ]
+        )
         result = produce_reselect_signals(make_ledger([item], []), runner=runner)
         self.assertEqual(result.status, "PARTIAL")
         self.assertEqual(result.queried_count, 1)
@@ -88,8 +99,8 @@ class TestReselectFailureStatuses(unittest.TestCase):
                     {items[1]["key"]: "healthy"},
                 )
 
-    def test_base_sha_enrichment_failures_fail_closed(self) -> None:
-        """A failed `gh api` base lookup fails the key, fail-closed."""
+    def test_base_sha_enrichment_failures_are_advisory(self) -> None:
+        """A failed `gh api` base lookup drops only the enrichment, not the key."""
         items = [
             make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
             for n in (1, 2)
@@ -104,11 +115,50 @@ class TestReselectFailureStatuses(unittest.TestCase):
             return make_gh_proc(payload)
 
         result = produce_reselect_signals(make_ledger(items, []), runner=runner)
-        # Item 1 fails on a nonzero exit; item 2 fails on non-SHA stdout.
-        self.assertEqual(result.status, "PARTIAL")
+        # Nonzero exit and non-SHA stdout both drop just the base field.
+        self.assertEqual(result.status, "OK")
         self.assertEqual(result.queried_count, 2)
-        self.assertEqual(result.failed_keys, (items[0]["key"], items[1]["key"]))
-        self.assertEqual(result.signals, health.ReselectSignals())
+        self.assertEqual(result.failed_keys, ())
+        self.assertEqual(
+            result.signals.titles_by_key,
+            {items[0]["key"]: "healthy", items[1]["key"]: "healthy"},
+        )
+        self.assertIsNone(result.signals.live_base_sha_by_key)
+
+    def test_consecutive_base_failures_do_not_degrade(self) -> None:
+        """A systemic `gh api` outage cannot trip the consecutive-failure breaker."""
+        items = [
+            make_queryable_item(key=f"demo#{n}@sha", repository="demo", pr=n)
+            for n in range(1, 6)
+        ]
+        payload = {"state": "OPEN", "mergeable": "CONFLICTING", "title": "ok"}
+
+        def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
+            if "api" in cmd:
+                return make_gh_proc("error", returncode=1)
+            return make_gh_proc(payload)
+
+        result = produce_reselect_signals(make_ledger(items, []), runner=runner)
+        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.queried_count, 5)
+        self.assertEqual(result.failed_keys, ())
+        self.assertEqual(len(result.signals.live_mergeable_by_key), 5)
+        self.assertIsNone(result.signals.live_base_sha_by_key)
+
+    def test_base_lookup_missing_gh_is_advisory(self) -> None:
+        """FileNotFoundError on the api call drops the enrichment, not the key."""
+        item = make_queryable_item(key="demo#1@sha", repository="demo", pr=1)
+
+        def runner(cmd: list[str], t: float) -> subprocess.CompletedProcess[str]:
+            if "api" in cmd:
+                raise FileNotFoundError("gh vanished mid-scan")
+            return make_gh_proc({"state": "OPEN", "title": "kept"})
+
+        result = produce_reselect_signals(make_ledger([item], []), runner=runner)
+        self.assertEqual(result.status, "OK")
+        self.assertEqual(result.failed_keys, ())
+        self.assertEqual(result.signals.titles_by_key, {item["key"]: "kept"})
+        self.assertIsNone(result.signals.live_base_sha_by_key)
 
     def test_per_pr_failure_results_in_partial_status(self) -> None:
         """Per-PR failure -> PARTIAL, and failed key absent from every map."""

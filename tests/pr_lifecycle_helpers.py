@@ -106,6 +106,15 @@ def make_gh_proc(
     )
 
 
+class StubRunnerExhausted(BaseException):
+    """The stub gh runner was called more times than scripted.
+
+    BaseException subclass: it must escape the producer's ``except Exception``
+    guards so an under-scripted test fails loudly instead of degrading into a
+    misleading PARTIAL/DEGRADED result.
+    """
+
+
 def stub_gh_runner(
     payload: dict[str, Any] | str | None = None,
     *,
@@ -117,7 +126,8 @@ def stub_gh_runner(
     The producer issues two calls per candidate: `gh pr view --json` for the
     bulk fields and `gh api ... --jq .base.sha` for the live base anchor. This
     stub returns base_sha for every api call and consumes `results` (or repeats
-    `payload`) for pr-view calls, raising AssertionError once results run out.
+    `payload`) for pr-view calls, raising StubRunnerExhausted once results run
+    out — a loud test failure, not a swallowed producer-level degradation.
     """
     queue = list(results or [])
 
@@ -130,7 +140,7 @@ def stub_gh_runner(
                 raise result
             return result
         if payload is None:
-            raise AssertionError("gh pr view called more times than expected")
+            raise StubRunnerExhausted("gh pr view called more times than expected")
         return make_gh_proc(payload)
 
     return runner

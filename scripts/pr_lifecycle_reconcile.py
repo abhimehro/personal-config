@@ -159,9 +159,7 @@ def _classify_live_merge(
         item.get("lifecycle_state") == "STAGE3_RECONCILIATION"
         or item.get("current_owner") == "stage3"
     )
-    disposition = (
-        "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
-    )
+    disposition = "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
     return {
         "action": "TERMINAL_MERGED",
         "key": key,
@@ -185,9 +183,7 @@ def _classify_live_close(
         None,
     )
     if disposition is None:
-        return _pending_terminal(
-            item, key, "CLOSED", "no disposition-bearing label"
-        )
+        return _pending_terminal(item, key, "CLOSED", "no disposition-bearing label")
     return {
         "action": "TERMINAL_CLOSED",
         "key": key,

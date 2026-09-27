@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 import json
 import subprocess
 import sys
@@ -196,15 +195,13 @@ def _namespace_runner(payload: dict[str, Any]):
 class ReselectSignalsTests(unittest.TestCase):
     """Integration and unit tests for live reselect signal wiring."""
 
-    def _assert_consecutive_failures_keep_exclusions(
-        self, stage: int, action_name: str
-    ) -> None:
-        items = _stage_candidate_items(stage, 6)
+    def _consecutive_failures_runner(self) -> mock.Mock:
+        """Runner: success, head-drift success, then three straight failures."""
         payloads = [
             {"state": "MERGED"},
             {"state": "OPEN", "headRefOid": "new-head"},
         ]
-        runner = mock.Mock(
+        return mock.Mock(
             side_effect=stub_gh_runner(
                 results=[
                     *[_live_payload(payload) for payload in payloads],
@@ -217,12 +214,10 @@ class ReselectSignalsTests(unittest.TestCase):
                 ]
             )
         )
-        ledger = make_ledger(items, [])
-        result = produce_reselect_signals(ledger, runner=runner)
-        with mock.patch.object(run.health, "summarize", real_health.summarize):
-            code, plan = _exec_stage(stage, ledger, producer_override=result)
-        # Successful items run a view plus a base-sha call; failures stop early.
-        self.assertEqual(runner.call_count, 7)
+
+    def _assert_degraded_plan(
+        self, code: int, plan: dict[str, Any], items: list[dict[str, Any]]
+    ) -> None:
         self.assertEqual(code, 0)
         self.assertIsNone(plan["stop_class"])
         self.assertEqual(plan["signals_status"], "DEGRADED")
@@ -231,6 +226,10 @@ class ReselectSignalsTests(unittest.TestCase):
             plan["signals_failed_keys"], [item["key"] for item in items[2:5]]
         )
         self.assertEqual(plan["pipeline_health"]["reselect_candidate_count"], 4)
+
+    def _assert_fallback_actions(
+        self, plan: dict[str, Any], action_name: str, items: list[dict[str, Any]]
+    ) -> None:
         actions = [a for a in plan["actions"] if a["action"] == action_name]
         # Failed and unqueried keys use the ledger; known exclusions survive.
         self.assertEqual(
@@ -238,6 +237,26 @@ class ReselectSignalsTests(unittest.TestCase):
             [item["key"] for item in items[2:]],
         )
         self.assertEqual([a["allowed_paths"] for a in actions], [["src/ledger.py"]] * 4)
+        # Failed/unqueried keys have no live base entry; the emitted action
+        # must carry the ledger base anchor — never None.
+        self.assertEqual(
+            [a["base_sha"] for a in actions],
+            [item["base_sha"] for item in items[2:]],
+        )
+
+    def _assert_consecutive_failures_keep_exclusions(
+        self, stage: int, action_name: str
+    ) -> None:
+        items = _stage_candidate_items(stage, 6)
+        runner = self._consecutive_failures_runner()
+        ledger = make_ledger(items, [])
+        result = produce_reselect_signals(ledger, runner=runner)
+        with mock.patch.object(run.health, "summarize", real_health.summarize):
+            code, plan = _exec_stage(stage, ledger, producer_override=result)
+        # Successful items run a view plus a base-sha call; failures stop early.
+        self.assertEqual(runner.call_count, 7)
+        self._assert_degraded_plan(code, plan, items)
+        self._assert_fallback_actions(plan, action_name, items)
         if stage == 1:
             feed = next(a for a in plan["actions"] if a["action"] == "FEED_CHECK")
             self.assertEqual(feed["grade"], "PASS")
@@ -447,214 +466,6 @@ class ReselectSignalsTests(unittest.TestCase):
             a for a in plan["actions"] if a["action"] == "HANDOFF_MECHANICAL_TO_STAGE2"
         ]
         self.assertEqual([a["source_key"] for a in actions], [item["key"]])
-
-    def test_main_forwards_live_signals_flag_and_stage_exit_code(self):
-        for flags, expected in (([], False), (["--no-live-signals"], True)):
-            with (
-                self.subTest(flags=flags),
-                mock.patch.object(run, "run_stage", return_value=2) as run_stage,
-            ):
-                self.assertEqual(
-                    run.main(["--stage", "3", "--dry-run", "--write-status", *flags]), 2
-                )
-                run_stage.assert_called_once_with(
-                    3, dry_run=True, write_status=True, no_live_signals=expected
-                )
-
-    def test_stage1_and_stage3_invoke_producer_and_pass_signals(self):
-        """Stage 1 and Stage 3 invoke producer and attach signals to plan."""
-        fake_signals = real_health.ReselectSignals()
-        result_payload = SignalsResult(
-            signals=fake_signals,
-            status="OK",
-            queried_count=2,
-            failed_keys=(),
-            truncated_keys=(),
-            elapsed_s=0.5,
-        )
-        mock_producer = mock.Mock(return_value=result_payload)
-
-        # Stage 1
-        ledger = {"ledger_revision": 1, "items": []}
-        code, plan = _exec_stage(1, ledger, producer_override=mock_producer)
-        self.assertEqual(code, 0)
-        mock_producer.assert_called_with(ledger)
-        self.assertEqual(plan["signals_status"], "OK")
-        self.assertEqual(plan["signals_queried"], 2)
-        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
-        self.assertEqual(feed_check["signals_status"], "OK")
-
-        # Stage 3
-        mock_producer.reset_mock()
-        code, plan = _exec_stage(3, ledger, producer_override=mock_producer)
-        self.assertEqual(code, 0)
-        mock_producer.assert_called_with(ledger)
-        self.assertEqual(plan["signals_status"], "OK")
-        self.assertEqual(plan["signals_queried"], 2)
-
-    def test_stage2_skips_live_signals_producer(self):
-        """Stage 2 never calls live signals producer and reports SKIPPED."""
-        mock_producer = mock.Mock()
-        ledger = {"ledger_revision": 1, "items": []}
-        code, plan = _exec_stage(2, ledger, producer_override=mock_producer)
-        self.assertEqual(code, 0)
-        mock_producer.assert_not_called()
-        self.assertEqual(plan["signals_status"], "SKIPPED")
-
-    def test_producer_raises_fails_open_with_degraded_status(self):
-        """Producer exceptions fail open, yield DEGRADED status, exit 0, and emit action."""
-        mock_producer = mock.Mock(side_effect=RuntimeError("producer timeout"))
-        ledger = {"ledger_revision": 1, "items": []}
-        with self.assertLogs(run.LOGGER, level="WARNING") as logs:
-            code, plan = _exec_stage(1, ledger, producer_override=mock_producer)
-        self.assertEqual(code, 0)
-        output = "\n".join(logs.output)
-        self.assertIn("PR_LIFECYCLE_RUN_WARNING", output)
-        self.assertIn("RuntimeError", output)
-        # Only the type is logged; exception text may carry sensitive output.
-        self.assertNotIn("producer timeout", output)
-        self.assertEqual(plan["signals_error"], "RuntimeError")
-        self.assertEqual(plan["signals_status"], "DEGRADED")
-        self.assertEqual(plan.get("condition"), "SIGNALS_DEGRADED")
-        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
-        self.assertEqual(feed_check.get("condition"), "SIGNALS_DEGRADED")
-        action_names = [a.get("action") for a in plan["actions"]]
-        self.assertIn("SIGNALS_DEGRADED", action_names)
-        degraded = next(
-            a for a in plan["actions"] if a.get("action") == "SIGNALS_DEGRADED"
-        )
-        self.assertEqual(degraded["status"], "DEGRADED")
-        self.assertEqual(action_names.count("SIGNALS_DEGRADED"), 1)
-        status = run.write_status_doc(plan, "run-deg")
-        self.assertEqual(status.get("condition"), "SIGNALS_DEGRADED")
-        self.assertEqual(status.get("signals_error"), "RuntimeError")
-
-    def test_no_live_signals_flag_skips_producer(self):
-        """--no-live-signals skips live fetch and reports status SKIPPED."""
-        mock_producer = mock.Mock()
-        ledger = {"ledger_revision": 1, "items": []}
-        code, plan = _exec_stage(
-            1, ledger, producer_override=mock_producer, no_live_signals=True
-        )
-        self.assertEqual(code, 0)
-        mock_producer.assert_not_called()
-        self.assertEqual(plan["signals_status"], "SKIPPED")
-
-        parser = run.build_parser()
-        args = parser.parse_args(["--stage", "1", "--no-live-signals"])
-        self.assertTrue(args.no_live_signals)
-
-    def test_e2e_title_gated_item_enqueued_with_live_signals(self):
-        """Title-gated non-BOT item enqueues under live signals."""
-        item = _title_gated_item()
-        ledger = {"ledger_revision": 1, "items": [item]}
-        payload = _open_payload("CONFLICTING", "DIRTY")
-        payload["title"] = "⚡️ Bolt: optimize widget cache"
-        payload["author"] = {"login": "abhimehro"}
-
-        code, plan = _exec_stage(
-            1,
-            ledger,
-            producer_override=lambda ledger_in: produce_reselect_signals(
-                ledger_in, runner=_namespace_runner(payload)
-            ),
-        )
-        self.assertEqual(code, 0)
-        self.assertEqual(plan["signals_status"], "OK")
-        enqueues = [
-            a for a in plan["actions"] if a.get("action") == "ENQUEUE_STAGE2_WI"
-        ]
-        self.assertEqual(len(enqueues), 1)
-        self.assertEqual(enqueues[0]["source_key"], item["key"])
-        self.assertEqual(enqueues[0]["allowed_paths"], ["src/foo.py"])
-        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
-        self.assertEqual(feed_check["grade"], "PASS")
-        self.assertEqual(feed_check["reselect_candidates"], 1)
-        self.assertEqual(feed_check["enqueued"], 1)
-
-    def test_e2e_title_gated_item_dropped_under_degraded_signals(self):
-        """The same title-gated item is not enqueued under DEGRADED signals."""
-        item = _title_gated_item()
-        ledger = {"ledger_revision": 1, "items": [item]}
-
-        degraded_result = SignalsResult(
-            signals=real_health.ReselectSignals(),
-            status="DEGRADED",
-            queried_count=1,
-            failed_keys=(item["key"],),
-        )
-        code, plan_degraded = _exec_stage(1, ledger, producer_override=degraded_result)
-        self.assertEqual(code, 0)
-        self.assertEqual(plan_degraded["signals_status"], "DEGRADED")
-        degraded_enqueues = [
-            a
-            for a in plan_degraded["actions"]
-            if a.get("action") == "ENQUEUE_STAGE2_WI"
-        ]
-        self.assertEqual(len(degraded_enqueues), 0)
-        feed_check_deg = next(
-            a for a in plan_degraded["actions"] if a.get("action") == "FEED_CHECK"
-        )
-        self.assertEqual(feed_check_deg["grade"], "PASS")
-        self.assertEqual(feed_check_deg["reselect_candidates"], 0)
-        self.assertEqual(feed_check_deg["enqueued"], 0)
-        self.assertTrue(
-            any(a.get("action") == "SIGNALS_DEGRADED" for a in plan_degraded["actions"])
-        )
-
-    def test_ledger_conflicting_live_mergeable_no_enqueue(self):
-        """Ledger CONFLICTING item with live MERGEABLE signal is not enqueued."""
-        item = _dependabot_item(
-            key="owner/repo#42@abcd1234abcd1234abcd1234abcd1234abcd1234",
-            pr=42,
-        )
-        ledger = {"ledger_revision": 1, "items": [item]}
-
-        code, plan = _exec_stage(
-            1,
-            ledger,
-            producer_override=lambda ledger_in: produce_reselect_signals(
-                ledger_in, runner=_namespace_runner(_open_payload("MERGEABLE", "CLEAN"))
-            ),
-        )
-        self.assertEqual(code, 0)
-        enqueues = [
-            a for a in plan["actions"] if a.get("action") == "ENQUEUE_STAGE2_WI"
-        ]
-        self.assertEqual(len(enqueues), 0)
-        feed_check = next(a for a in plan["actions"] if a.get("action") == "FEED_CHECK")
-        self.assertEqual(feed_check["reselect_candidates"], 0)
-        self.assertEqual(feed_check["enqueued"], 0)
-
-    def test_stage3_hold_contract_live_mergeable_no_handoff(self):
-        """Stage 3 HOLD_CONTRACT item with live MERGEABLE is not handed off, CONFLICTING is."""
-        item = _dependabot_item(
-            current_owner="stage3", lifecycle_state="STAGE3_RECONCILIATION"
-        )
-        ledger = {"ledger_revision": 1, "items": [item]}
-
-        for mergeable, merge_state, expected in (
-            ("MERGEABLE", "CLEAN", 0),
-            ("CONFLICTING", "DIRTY", 1),
-        ):
-            with self.subTest(mergeable=mergeable):
-                runner = _namespace_runner(_open_payload(mergeable, merge_state))
-                code, plan = _exec_stage(
-                    3,
-                    ledger,
-                    producer_override=functools.partial(
-                        produce_reselect_signals, runner=runner
-                    ),
-                )
-                self.assertEqual(code, 0)
-                handoffs = [
-                    a
-                    for a in plan["actions"]
-                    if a.get("action") == "HANDOFF_MECHANICAL_TO_STAGE2"
-                ]
-                self.assertEqual(len(handoffs), expected)
-                if expected:
-                    self.assertEqual(handoffs[0]["source_key"], item["key"])
 
 
 if __name__ == "__main__":

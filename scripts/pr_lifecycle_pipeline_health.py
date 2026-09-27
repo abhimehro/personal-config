@@ -554,6 +554,16 @@ def is_reselect_salvage_candidate(
     return _reselect_paths_ok(item, live.unique_paths)
 
 
+def _reselect_structural_ok(item: dict[str, Any]) -> bool:
+    """Require anchors and pass lifecycle, never-touch, and outcome gates."""
+    return (
+        _has_anchors(item)
+        and not _lifecycle_blocks_reselect(item)
+        and not is_never_touch_key(item.get("key"))
+        and (item.get("guardrail_outcome") or "") not in NON_SALVAGE_OUTCOMES
+    )
+
+
 def is_reselect_plausible(
     item: dict[str, Any],
     *,
@@ -570,17 +580,14 @@ def is_reselect_plausible(
     author is allowed; the selector evaluates the live title later. The gate
     is resolved once per call, as with the resolved gates call sites pass in.
     """
-    if not _has_anchors(item):
-        return False
-    if _lifecycle_blocks_reselect(item):
-        return False
-    if is_never_touch_key(item.get("key")):
-        return False
-    if (item.get("guardrail_outcome") or "") in NON_SALVAGE_OUTCOMES:
+    if not _reselect_structural_ok(item):
         return False
     if item.get("author_type") != "BOT":
+        login = _extract_item_author_login(item)
+        if not login:
+            return False
         gate = (author_gate or ReselectAuthorGate()).resolved()
-        if not gate.allows(_extract_item_author_login(item)):
+        if not gate.allows(login):
             return False
     return _reselect_paths_ok(item, None)
 

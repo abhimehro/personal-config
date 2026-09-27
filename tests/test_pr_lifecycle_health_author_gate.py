@@ -19,6 +19,7 @@ import pr_lifecycle_pipeline_health as health  # noqa: E402
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_item,
     make_ledger,
+    make_queryable_item,
 )
 
 ALLOWED_MAINTAINER = health.ReselectAuthorGate(allowed_authors=("maintainer",))
@@ -277,6 +278,26 @@ class TestReselectAuthorGate(unittest.TestCase):
                 ),
             )
         )
+
+    def test_plausible_rejects_loginless_item_without_loading_config(self) -> None:
+        """is_reselect_plausible fails login-less items before any disk read."""
+        item = make_queryable_item(author_type="HUMAN")
+        with mock.patch.object(
+            health,
+            "_load_reselect_allowed_authors",
+            side_effect=AssertionError("loader must not run"),
+        ) as loader:
+            self.assertFalse(health.is_reselect_plausible(item))
+        loader.assert_not_called()
+
+    def test_plausible_resolves_lazy_gate_for_login_items(self) -> None:
+        """An unpinned gate resolves once when the item actually has a login."""
+        item = make_queryable_item(author_type="HUMAN", author="maintainer")
+        with mock.patch.object(
+            health, "_load_reselect_allowed_authors", return_value=["maintainer"]
+        ) as loader:
+            self.assertTrue(health.is_reselect_plausible(item))
+            loader.assert_called_once()
 
 
 if __name__ == "__main__":
