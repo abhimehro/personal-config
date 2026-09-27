@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import subprocess
 import sys
 import types
@@ -79,6 +80,72 @@ def make_ledger(
     }
 
 
+def make_queryable_item(**overrides: Any) -> dict[str, Any]:
+    """Ledger item plausible enough to consume a live query slot."""
+    defaults: dict[str, Any] = {
+        "base_sha": "b" * 40,
+        "head_sha": "c" * 40,
+        "changed_paths": ["src/demo.py"],
+    }
+    defaults.update(overrides)
+    return make_item(**defaults)
+
+
+def make_gh_proc(
+    stdout_dict: dict[str, Any] | str, returncode: int = 0
+) -> subprocess.CompletedProcess[str]:
+    """Build a gh result from a JSON object or raw stdout and an exit code."""
+    stdout = (
+        json.dumps(stdout_dict) if isinstance(stdout_dict, dict) else str(stdout_dict)
+    )
+    return subprocess.CompletedProcess(
+        args=["gh", "pr", "view"],
+        returncode=returncode,
+        stdout=stdout,
+        stderr="",
+    )
+
+
+class StubRunnerExhausted(BaseException):
+    """The stub gh runner was called more times than scripted.
+
+    BaseException subclass: it must escape the producer's ``except Exception``
+    guards so an under-scripted test fails loudly instead of degrading into a
+    misleading PARTIAL/DEGRADED result.
+    """
+
+
+def stub_gh_runner(
+    payload: dict[str, Any] | str | None = None,
+    *,
+    results: list[Any] | None = None,
+    base_sha: str = "b" * 40,
+) -> Any:
+    """Runner answering `gh pr view` with payload/queued results and `gh api`.
+
+    The producer issues two calls per candidate: `gh pr view --json` for the
+    bulk fields and `gh api ... --jq .base.sha` for the live base anchor. This
+    stub returns base_sha for every api call and consumes `results` (or repeats
+    `payload`) for pr-view calls, raising StubRunnerExhausted once results run
+    out — a loud test failure, not a swallowed producer-level degradation.
+    """
+    queue = list(results or [])
+
+    def runner(cmd: list[str], timeout: float | None = None) -> Any:
+        if "api" in cmd:
+            return make_gh_proc(base_sha)
+        if queue:
+            result = queue.pop(0)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+        if payload is None:
+            raise StubRunnerExhausted("gh pr view called more times than expected")
+        return make_gh_proc(payload)
+
+    return runner
+
+
 def schema_valid_starved_ledger() -> dict[str, Any]:
     """Create a valid ledger with eligible work and no Stage 2 intake."""
     ledger = copy.deepcopy(yaml.safe_load(EXAMPLE_LEDGER.read_text(encoding="utf-8")))
@@ -121,6 +188,7 @@ def make_health_report(**overrides: object) -> types.SimpleNamespace:
     values: dict[str, object] = {
         "salvage_eligible_count": 0,
         "stage2_work_item_count": 0,
+        "reselect_candidate_count": 0,
         "starvation": False,
         "reason": "ok",
     }
@@ -128,6 +196,12 @@ def make_health_report(**overrides: object) -> types.SimpleNamespace:
     return types.SimpleNamespace(**values)
 
 
+# pr_lifecycle_stage_plan is deliberately absent: run imports it inside the
+# stub window, so it binds the same stub dep objects run does — keeping
+# mock.patch.object(run.health/feed_mod/reconcile_mod, ...) effective inside
+# the planner. Do NOT eagerly import it before the stubs (it would bind real
+# modules and bypass those patches) and do NOT pop it on restore (a second
+# import would create a divergent module instance for patch targets).
 _RUN_STUB_NAMES = (
     "pr_lifecycle_ledger_cas",
     "pr_lifecycle_pipeline_health",
@@ -139,47 +213,36 @@ _RUN_STUB_NAMES = (
 )
 
 
-def _signal_value_stub(mapping: Any, key: str) -> Any:
-    """Resolve a signal by full item key or source PR prefix."""
-    if not mapping:
-        return None
-    if key in mapping:
-        return mapping[key]
-    return mapping.get(str(key or "").split("@", 1)[0])
-
-
-def _health_stub_attrs() -> dict[str, Any]:
+def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
     """Provide health module attributes required by runner tests."""
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
-        "signal_value": _signal_value_stub,
-        "is_never_touch_key": lambda *_a, **_k: False,
+        "signal_value": real_health.signal_value,
+        "is_never_touch_key": real_health.is_never_touch_key,
         "list_reselect_candidates": lambda *_a, **_k: [],
-        "MECHANICAL_RESELECT_NA": (
-            "Recover unique source only on a new focused draft."
-        ),
-        "ReselectSignals": lambda **kw: types.SimpleNamespace(
-            **{
-                "live_mergeable_by_key": None,
-                "titles_by_key": None,
-                "unique_paths_by_key": None,
-                **kw,
-            }
-        ),
-        "source_pr_prefix": lambda key: str(key or "").split("@", 1)[0],
-        "non_journal_paths": lambda paths: list(paths or []),
-        "SALVAGE_OUTCOMES": frozenset(
-            {"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"}
-        ),
+        "MECHANICAL_RESELECT_NA": real_health.MECHANICAL_RESELECT_NA,
+        "ReselectSignals": real_health.ReselectSignals,
+        "source_pr_prefix": real_health.source_pr_prefix,
+        "non_journal_paths": real_health.non_journal_paths,
+        "SALVAGE_OUTCOMES": real_health.SALVAGE_OUTCOMES,
+        "NON_SALVAGE_OUTCOMES": real_health.NON_SALVAGE_OUTCOMES,
+        "STAGE2_OWNED_STATES": real_health.STAGE2_OWNED_STATES,
+        "existing_wi_prefixes": real_health.existing_wi_prefixes,
     }
 
 
 def _install_run_stubs() -> dict[str, Any]:
     """Install stub modules; return the previous sys.modules entries."""
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    import pr_lifecycle_pipeline_health as real_health
+    import pr_lifecycle_reselect_signals  # noqa: F401
+
+    attrs = _health_stub_attrs(real_health)
     saved = {name: sys.modules.get(name) for name in _RUN_STUB_NAMES}
     for name in _RUN_STUB_NAMES:
         sys.modules[name] = types.ModuleType(name)
-    for attr, value in _health_stub_attrs().items():
+    for attr, value in attrs.items():
         setattr(sys.modules["pr_lifecycle_pipeline_health"], attr, value)
     sys.modules["pr_lifecycle_support"].ROOT = ROOT
     sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
