@@ -3,7 +3,7 @@
 Completion is **live Stage 3** (not calibration). Calibration stays **DISABLED**. Re-read predicates before every merge/close.
 
 1. Read `docs/automated-pr-lifecycle.md`, `REVIEW.md` bot-thread policy (2026-09-21), and lessons 0hr.
-2. Run: `python3 scripts/pr_lifecycle_run.py --stage 3 --dry-run` (plan includes live signals; `SIGNALS_DEGRADED` adds no signal-specific stop; other planner stops, including `FEED_CHECK_FAIL` from `FEED_CHECK`, still apply; executor live-verifies unique paths at CAS time).
+2. Run: `python3 scripts/pr_lifecycle_run.py --stage 3 --dry-run` (plan includes live signals; `SIGNALS_DEGRADED` adds no signal-specific stop; other planner stops still apply; executor live-verifies unique paths at CAS time).
 3. Execute **only** the emitted plan / allowed commands.
 4. **Bot-thread advisory (Abhi 2026-09-21):** Codacy / qodo / CodeRabbit threads with no human reply are advisory; Stage 3 may resolve them with a standard comment before `/trunk`.
 5. Never merge REVIEW_SECURITY / HUMAN sticky without Desk exception. Builder ≠ merger.

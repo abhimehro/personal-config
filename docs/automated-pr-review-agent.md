@@ -87,8 +87,8 @@ decisions:
     exception). The planner uses ledger fallbacks; after consecutive failures,
     already-collected closed keys and live head SHAs still exclude ineligible
     items. The informational `SIGNALS_DEGRADED` action adds no signal-specific
-    stop. Other planner stops, including `FEED_CHECK_FAIL` from `FEED_CHECK`,
-    still apply.
+    stop. Other planner stops still apply. In Stage 1, this includes
+    `FEED_CHECK_FAIL` from `FEED_CHECK`.
   - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals`
     flag).
 - **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or
