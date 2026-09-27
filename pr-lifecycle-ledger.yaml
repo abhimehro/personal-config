@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 166
+ledger_revision: 181
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -8181,13 +8181,14 @@ items:
   - shell_execution
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not Trunk-queue Palette PRs that rewrite lifecycle export JSON.
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2069. Salvage draft #2317
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2069 vs salvage draft #2317; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2069
   - https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
@@ -8203,13 +8204,15 @@ items:
   - maintenance/bin/analytics_dashboard.sh
   attempts:
     evidence: 3
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260823-personalconf-2069-h
   - evt-reconcile-20260927233910-ff1336e6
-  revision: 2
-  updated_at_utc: '2026-09-27T23:39:10Z'
+  - evt-reconcile-20260927234506-8e36ac98
+  - evt-reconcile-20260927234506-382fa987
+  revision: 4
+  updated_at_utc: '2026-09-27T23:45:06Z'
 - key: abhimehro/personal-config#2067@5093a4fa6fd9817accf82331bac37d9b772c5998
   repository: abhimehro/personal-config
   pr: 2067
@@ -9706,14 +9709,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge or salvage across scripts/pr_lifecycle_config.py or stale
-    Cursor exports.
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2090. Salvage draft #2318
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2090 vs salvage draft #2318; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2090
   changed_paths:
@@ -9726,7 +9729,7 @@ items:
   - tests/benchmarks/benchmark_infuse_auth.py
   attempts:
     evidence: 6
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260825-personalconf-2090-h
@@ -9734,8 +9737,10 @@ items:
   - evt-s2-20260831-personalconf-2090-h
   - evt-s1-20260906-personal-con-2090-stale
   - evt-reconcile-20260927233910-7b527006
-  revision: 5
-  updated_at_utc: '2026-09-27T23:39:10Z'
+  - evt-reconcile-20260927234506-519723de
+  - evt-reconcile-20260927234506-f565d999
+  revision: 7
+  updated_at_utc: '2026-09-27T23:45:06Z'
 - key: abhimehro/personal-config#2088@e1cc0bd810346ca8c6324ce15bcb4acc8090236d
   repository: abhimehro/personal-config
   pr: 2088
@@ -17685,15 +17690,14 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Do not merge, approve, or close original #2030. Keep .jules/bolt.md
-    on the original (lesson 0cs). Do not touch run_merges.py (2116 keeper). Draft
-    #2246 stays pr_reference.py only (0gd).'
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2030. Salvage draft #2319
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2030 vs salvage draft #2319; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2030
   - https://github.com/abhimehro/personal-config/pull/2246
@@ -17704,7 +17708,7 @@ items:
   - run_merges.py
   attempts:
     evidence: 5
-    recovery: 1
+    recovery: 2
     mutations: 0
   handoffs:
   - evt-s1-20260906b-personal-con-2030-reingest
@@ -17713,8 +17717,10 @@ items:
   - evt-s2-20260920-personalconfig-2030-q
   - evt-s2-20260920-personalconfig-2030-h
   - evt-reconcile-20260927233910-1b503474
-  revision: 6
-  updated_at_utc: '2026-09-27T23:39:10Z'
+  - evt-reconcile-20260927234506-105e2f96
+  - evt-reconcile-20260927234506-b08d47fa
+  revision: 8
+  updated_at_utc: '2026-09-27T23:45:06Z'
 - key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
   repository: abhimehro/personal-config
   pr: 2029
@@ -19526,6 +19532,151 @@ items:
   - evt-s1-20260921-seriescorre-467-t
   revision: 1
   updated_at_utc: '2026-09-21T15:14:31Z'
+- key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  repository: abhimehro/personal-config
+  pr: 2317
+  url: https://github.com/abhimehro/personal-config/pull/2317
+  base_sha: 0ff9ee2125b56ea268bb34b3d474778c1cdecf0a
+  head_sha: 722bf655f38402290fce813b0e255e6220d7b3b4
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2317 (isDraft verified); originals #2069
+    remain OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2317
+  - https://github.com/abhimehro/personal-config/pull/2069
+  changed_paths:
+  - docs/cursor-automations/exports/daily-pr-completion.calibration.json
+  - docs/cursor-automations/exports/daily-pr-completion.json
+  - docs/cursor-automations/exports/daily-pr-review.json
+  - docs/cursor-automations/exports/daily-pr-salvage.json
+  - docs/cursor-automations/prompts/daily-pr-completion.calibration.md
+  - docs/cursor-automations/prompts/daily-pr-completion.md
+  - docs/cursor-automations/prompts/daily-pr-review.md
+  - docs/cursor-automations/prompts/daily-pr-salvage.md
+  - maintenance/bin/analytics_dashboard.sh
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260927-personalconfig-2317-i
+  - evt-reconcile-20260927234506-84ce848d
+  - evt-reconcile-20260927234506-fff06252
+  revision: 3
+  updated_at_utc: '2026-09-27T23:45:06Z'
+- key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  repository: abhimehro/personal-config
+  pr: 2318
+  url: https://github.com/abhimehro/personal-config/pull/2318
+  base_sha: 0ff9ee2125b56ea268bb34b3d474778c1cdecf0a
+  head_sha: 96730f6c399fd23379c66fca08e1b8c3eed340e1
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2318 (isDraft verified); originals #2090
+    remain OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2318
+  - https://github.com/abhimehro/personal-config/pull/2090
+  changed_paths:
+  - scripts/pr_lifecycle_config.py
+  - tests/benchmarks/benchmark_infuse_auth.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260927-personalconfig-2318-i
+  - evt-reconcile-20260927234506-59f738fb
+  - evt-reconcile-20260927234506-f55ddded
+  revision: 3
+  updated_at_utc: '2026-09-27T23:45:06Z'
+- key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
+  repository: abhimehro/personal-config
+  pr: 2319
+  url: https://github.com/abhimehro/personal-config/pull/2319
+  base_sha: 0ff9ee2125b56ea268bb34b3d474778c1cdecf0a
+  head_sha: d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2319 (isDraft verified); originals #2030
+    remain OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2319
+  - https://github.com/abhimehro/personal-config/pull/2030
+  changed_paths:
+  - pr_reference.py
+  - run_merges.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260927-personalconfig-2319-i
+  - evt-reconcile-20260927234506-e2a720fc
+  - evt-reconcile-20260927234506-2b1cce85
+  revision: 3
+  updated_at_utc: '2026-09-27T23:45:06Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -44892,102 +45043,309 @@ events:
     salvage (weekend lift incl. stage3-owned; cap raised 10 vs code ≤5)'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20260927-personalconf-2069-reselect
-  source_item_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72
-  repository: abhimehro/personal-config
-  pr: 2069
-  base_sha: a95371e253e0c89c12594da306d4ab403ba9539d
-  head_sha: 7a0560fddc5aed738621d722b1296764f5a20f72
-  allowed_paths:
-  - docs/cursor-automations/exports/daily-pr-completion.calibration.json
-  - docs/cursor-automations/exports/daily-pr-completion.json
-  - docs/cursor-automations/exports/daily-pr-review.json
-  - docs/cursor-automations/exports/daily-pr-salvage.json
-  - docs/cursor-automations/prompts/daily-pr-completion.calibration.md
-  - docs/cursor-automations/prompts/daily-pr-completion.md
-  - docs/cursor-automations/prompts/daily-pr-review.md
-  - docs/cursor-automations/prompts/daily-pr-salvage.md
-  - maintenance/bin/analytics_dashboard.sh
-  prohibited_paths:
-  - .github/workflows/
-  - .jules/
-  repair_description: 'Weekend Stage1 ENQUEUE_STAGE2_WI: mechanical unique-path salvage
-    for abhimehro/personal-config#2069 (CONFLICTING_UNIQUE_RESELECT). Recover unique
-    source only on a new focused draft; do not merge/approve/close the original.'
-  required_test_command: python3 -m pytest -q --tb=no
-  expected_test_result: pass (or scoped unit subset green)
-  acceptance_criteria:
-  - Unique allowed_paths recovered onto a new focused draft without journals.
-  - Original PR left open (Stage 2 never merges/approves/closes originals).
-  - Never-touch and REVIEW_SECURITY holds unchanged.
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2069
-  expiry_utc: '2026-10-04T23:39:10Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-reconcile-20260927233910-ff1336e6
-  history: []
-- work_item_id: s2-20260927-personalconf-2090-reselect
-  source_item_key: abhimehro/personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48
-  repository: abhimehro/personal-config
-  pr: 2090
-  base_sha: d006e33e2697ba9b716f6dfa558d6aec143daa28
-  head_sha: e28c6218b624f4da9f19f82076160ed9213c5d48
-  allowed_paths:
-  - docs/cursor-automations/exports/daily-pr-completion.calibration.json
-  - docs/cursor-automations/exports/daily-pr-completion.json
-  - docs/cursor-automations/exports/daily-pr-review.json
-  - docs/cursor-automations/exports/daily-pr-salvage.json
-  - scripts/pr_lifecycle_config.py
-  - tests/benchmarks/benchmark_infuse_auth.py
-  prohibited_paths:
-  - .github/workflows/
-  - .jules/
-  repair_description: 'Weekend Stage1 ENQUEUE_STAGE2_WI: mechanical unique-path salvage
-    for abhimehro/personal-config#2090 (CONFLICTING_UNIQUE_RESELECT). Recover unique
-    source only on a new focused draft; do not merge/approve/close the original.'
-  required_test_command: python3 -m pytest -q --tb=no
-  expected_test_result: pass (or scoped unit subset green)
-  acceptance_criteria:
-  - Unique allowed_paths recovered onto a new focused draft without journals.
-  - Original PR left open (Stage 2 never merges/approves/closes originals).
-  - Never-touch and REVIEW_SECURITY holds unchanged.
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2090
-  expiry_utc: '2026-10-04T23:39:10Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-reconcile-20260927233910-7b527006
-  history: []
-- work_item_id: s2-20260927-personalconf-2030-reselect
-  source_item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
-  repository: abhimehro/personal-config
-  pr: 2030
-  base_sha: abb33b2726df40e777f14826dd069f1ea1b0477e
-  head_sha: 48de37d8bd5c210ec10c9941381933db72458125
-  allowed_paths:
-  - pr_reference.py
-  - run_merges.py
-  prohibited_paths:
-  - .github/workflows/
-  - .jules/
-  repair_description: 'Weekend Stage1 ENQUEUE_STAGE2_WI: mechanical unique-path salvage
-    for abhimehro/personal-config#2030 (CONFLICTING_UNIQUE_RESELECT). Recover unique
-    source only on a new focused draft; do not merge/approve/close the original.'
-  required_test_command: python3 -m pytest -q --tb=no
-  expected_test_result: pass (or scoped unit subset green)
-  acceptance_criteria:
-  - Unique allowed_paths recovered onto a new focused draft without journals.
-  - Original PR left open (Stage 2 never merges/approves/closes originals).
-  - Never-touch and REVIEW_SECURITY holds unchanged.
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2030
-  expiry_utc: '2026-10-04T23:39:10Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-reconcile-20260927233910-1b503474
-  history: []
+- event_id: evt-reconcile-20260927234506-8e36ac98
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72:evt-reconcile-20260927234506-8e36ac98
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: activate WI s2-20260927-personalconf-2069-reselect before
+    salvage draft #2317 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-382fa987
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72:evt-reconcile-20260927234506-382fa987
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: tested draft #2317 recovered unique remainder (Palette
+    exports/prompts + analytics_dashboard.sh). Original #2069 stays OPEN; Stage 3
+    reconciles canonical relationship. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20260927-personalconfig-2317-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-s2-20260927-personalconfig-2317-i
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2317 provenance to #2069. Head 722bf655f384; 0gd
+    draft=true on create (re-verified after create).'
+- event_id: evt-reconcile-20260927234506-84ce848d
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-reconcile-20260927234506-84ce848d
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2317 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-fff06252
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-reconcile-20260927234506-fff06252
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (Palette exports/prompts + analytics_dashboard.sh).
+    Stage 1 re-ingests draft #2317. Merge authority is never Stage 2.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-519723de
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 5
+  resulting_item_revision: 6
+  idempotency_key: abhimehro/personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48:evt-reconcile-20260927234506-519723de
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: activate WI s2-20260927-personalconf-2090-reselect before
+    salvage draft #2318 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-f565d999
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 6
+  resulting_item_revision: 7
+  idempotency_key: abhimehro/personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48:evt-reconcile-20260927234506-f565d999
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: tested draft #2318 recovered unique remainder (pr_lifecycle_config.py
+    + benchmark_infuse_auth.py (export JSON conflicts skipped)). Original #2090 stays
+    OPEN; Stage 3 reconciles canonical relationship. Do not close. Skipped conflicting
+    export paths already claimed by earlier WI (4 files); unique remainder only.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20260927-personalconfig-2318-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-s2-20260927-personalconfig-2318-i
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2318 provenance to #2090. Head 96730f6c399f; 0gd
+    draft=true on create (re-verified after create).'
+- event_id: evt-reconcile-20260927234506-59f738fb
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-reconcile-20260927234506-59f738fb
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2318 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-f55ddded
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-reconcile-20260927234506-f55ddded
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (pr_lifecycle_config.py + benchmark_infuse_auth.py
+    (export JSON conflicts skipped)). Stage 1 re-ingests draft #2318. Merge authority
+    is never Stage 2.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-105e2f96
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 6
+  resulting_item_revision: 7
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-reconcile-20260927234506-105e2f96
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: activate WI s2-20260927-personalconf-2030-reselect before
+    salvage draft #2319 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-b08d47fa
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 7
+  resulting_item_revision: 8
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-reconcile-20260927234506-b08d47fa
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2: tested draft #2319 recovered unique remainder (pr_reference.py
+    + run_merges.py). Original #2030 stays OPEN; Stage 3 reconciles canonical relationship.
+    Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20260927-personalconfig-2319-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3:evt-s2-20260927-personalconfig-2319-i
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2319 provenance to #2030. Head d8da67d30f7b; 0gd
+    draft=true on create (re-verified after create).'
+- event_id: evt-reconcile-20260927234506-e2a720fc
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3:evt-reconcile-20260927234506-e2a720fc
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2319 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260927234506-2b1cce85
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3:evt-reconcile-20260927234506-2b1cce85
+  status: PROJECTED
+  created_at_utc: '2026-09-27T23:45:06Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (pr_reference.py + run_merges.py). Stage 1
+    re-ingests draft #2319. Merge authority is never Stage 2.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
