@@ -466,6 +466,10 @@ EOF
 		avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$metrics_report")
 		local total_warnings
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
+		# total_warnings is an unbounded running sum, so scale the meter to the
+		# observed total instead of clamping at a fixed 20.
+		local warnings_meter_max=20
+		((total_warnings > warnings_meter_max)) && warnings_meter_max=$total_warnings
 
 		cat >>"$dashboard_file" <<EOF
             <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
@@ -485,7 +489,7 @@ EOF
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">
                     ${total_warnings}
-                    <meter value="${total_warnings}" min="0" max="20" low="3" high="10" optimum="0" aria-label="Total Warnings: ${total_warnings}"></meter>
+                    <meter value="${total_warnings}" min="0" max="${warnings_meter_max}" low="3" high="10" optimum="0" aria-label="Total Warnings: ${total_warnings}"></meter>
                 </div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
