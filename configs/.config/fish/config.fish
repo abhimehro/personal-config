@@ -113,7 +113,6 @@ set -gx NM_ROOT $HOME/dev/personal-config
 # Homebrew
 set -gx HOMEBREW_NO_REQUIRE_TAP_TRUST 1
 set -gx HOMEBREW_NO_ENV_HINTS 1
-set -gx HOMEBREW_CASK_OPTS "--no-quarantine"
 
 set -q EDITOR; or set -gx EDITOR nvim
 set -q BAT_THEME; or set -gx BAT_THEME Dracula

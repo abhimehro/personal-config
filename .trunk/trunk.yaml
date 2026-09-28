@@ -23,12 +23,6 @@ lint:
     - linters: [bandit]
       paths:
         - tests/**
-    # Cursor automation prompts are embedded verbatim in exports/*.json;
-    # deno fmt reflow breaks sync_cursor_export_prompts.py --check and the
-    # export-authority tests.
-    - linters: [deno]
-      paths:
-        - docs/cursor-automations/prompts/**
   disabled:
     - markdownlint
     - prettier
