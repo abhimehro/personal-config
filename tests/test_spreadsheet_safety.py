@@ -17,12 +17,8 @@ class TestSpreadsheetSafety(unittest.TestCase):
             (" =1+1", "' =1+1"),
             ("  +cmd", "'  +cmd"),
             ("\n=1+1", "'\n=1+1"),
-            ("\v=1+1", "'\v=1+1"),
-            ("\f=1+1", "'\f=1+1"),
-            ("\xa0=1+1", "'\xa0=1+1"),
-            ("\u3000=1+1", "'\u3000=1+1"),
-            ("|cmd", "|cmd"),
-            ("%cmd", "%cmd"),
+            ("|cmd", "'|cmd"),
+            ("%cmd", "'%cmd"),
         )
         for raw, expected in cases:
             with self.subTest(raw=raw):

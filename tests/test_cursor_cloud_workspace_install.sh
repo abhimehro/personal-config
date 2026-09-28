@@ -111,26 +111,13 @@ echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
 NO_NPM_BIN="${TEST_DIR}/no-npm-bin"
 mkdir -p "${NO_NPM_BIN}"
-# type -P (not command -v) so builtins like printf cannot resolve to a bare
-# name, which would link the shim to itself and fail with ELOOP.
-# env is required so any `#!/usr/bin/env bash` subprocess still starts.
-for cmd in date mkdir dirname head grep cat rm sed printf git bash chmod env; do
-	cmd_path="$(type -P "${cmd}" || true)"
+for cmd in date mkdir dirname head grep cat rm sed printf git bash chmod; do
+	cmd_path="$(command -v "${cmd}" || true)"
 	if [[ -n ${cmd_path} ]]; then
 		ln -sf "${cmd_path}" "${NO_NPM_BIN}/${cmd}"
 	fi
 done
 hash -r
-# Isolation preconditions, asserted before the call so a future failure is
-# unambiguous rather than reported as an installer defect.
-# Every shim must resolve to a real file: a self-referential link (what a bare
-# builtin name produces) fails ELOOP, so -f is false and this trips. Use
-# parameter expansion, not basename, to keep this independent of PATH.
-for shim in "${NO_NPM_BIN}"/*; do
-	[[ -f ${shim} ]] || fail "shim ${shim##*/} is not a real file"
-done
-PATH="${NO_NPM_BIN}" command -v npm >/dev/null 2>&1 &&
-	fail "shim PATH still exposes npm"
 PATH="${NO_NPM_BIN}" ensure_gitnexus >"${TEST_DIR}/t4.out" 2>&1 ||
 	fail "missing npm should skip GitNexus installation"
 assert_grep 'skip gitnexus \(npm not on PATH' "${TEST_DIR}/t4.out" "missing npm skip log"

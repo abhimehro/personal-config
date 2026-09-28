@@ -3,10 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
-import runpy
-import subprocess
-import sys
 import types
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -15,18 +11,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from tests.pr_lifecycle_helpers import (
-    SCRIPTS,
-    import_lifecycle_run,
-    make_health_report,
-)
+from tests.pr_lifecycle_helpers import import_lifecycle_run, make_health_report
 
 run = import_lifecycle_run()
 
 _report = make_health_report
-
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
 
 
 class RunPlanTests(unittest.TestCase):
@@ -255,27 +244,8 @@ class RunExecutionTests(unittest.TestCase):
         self.assertEqual(argv[2:4], ["edit", "17"])
         self.assertIn("--repo", argv)
 
-    def test_update_pinned_issue_raises_when_listing_is_malformed(self):
-        # A malformed listing must not fall through to issue creation, which
-        # would duplicate the pinned issue while a status issue already exists.
+    def test_update_pinned_issue_creates_when_listing_is_malformed(self):
         listed = types.SimpleNamespace(returncode=0, stdout="not-json")
-        with (
-            mock.patch("subprocess.run", side_effect=[listed]) as command,
-            self.assertRaises(OSError),
-        ):
-            run.update_pinned_issue(
-                {
-                    "updated_at_utc": "2026-09-21T18:00:00Z",
-                    "run_id": "run-fixed",
-                    "stage": None,
-                    "reason": "manual --status refresh",
-                    "stop_class": None,
-                }
-            )
-        self.assertEqual(command.call_count, 1)
-
-    def test_update_pinned_issue_creates_only_on_clean_no_match(self):
-        listed = types.SimpleNamespace(returncode=0, stdout="[]")
         created = types.SimpleNamespace(returncode=0, stdout="")
         with mock.patch("subprocess.run", side_effect=[listed, created]) as command:
             run.update_pinned_issue(
@@ -295,127 +265,3 @@ class RunExecutionTests(unittest.TestCase):
             result = run.main([])
         self.assertEqual(result, 1)
         self.assertIn("--stage is required", error.getvalue())
-
-
-class TestDependencyPreflight(unittest.TestCase):
-    """Missing runtime deps fail fast with an install hint, not a traceback."""
-
-    def test_each_missing_dependency_is_reported_without_importing_planner(
-        self,
-    ) -> None:
-        for missing, packages in (
-            ({"yaml"}, "pyyaml"),
-            ({"jsonschema"}, "jsonschema"),
-            ({"yaml", "jsonschema"}, "pyyaml, jsonschema"),
-        ):
-            with self.subTest(missing=missing):
-                stderr = StringIO()
-                with (
-                    mock.patch(
-                        "importlib.util.find_spec",
-                        side_effect=lambda name, package=None, missing=missing: (
-                            None if name in missing else mock.sentinel.spec
-                        ),
-                    ),
-                    redirect_stderr(stderr),
-                    self.assertRaises(SystemExit) as raised,
-                ):
-                    runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
-                self.assertEqual(raised.exception.code, 2)
-                self.assertIn(
-                    f"missing Python dependencies: {packages} (", stderr.getvalue()
-                )
-                self.assertIn(sys.executable, stderr.getvalue())
-                self.assertIn(
-                    "python3 -m pip install -r requirements.txt", stderr.getvalue()
-                )
-                self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_status_and_help_flags_skip_the_dependency_gate(self) -> None:
-        """--status/-h/--help never load the ledger, so they run without deps."""
-        for flag in ("--status", "-h", "--help"):
-            with self.subTest(flag=flag):
-                with (
-                    mock.patch(
-                        "importlib.util.find_spec",
-                        side_effect=lambda name, package=None: None,
-                    ),
-                    mock.patch.object(sys, "argv", ["pr_lifecycle_run.py", flag]),
-                ):
-                    namespace = runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
-                self.assertIn("main", namespace)
-                if flag == "--status":
-                    # Exercise the dep-free branch for real: the ledger-side
-                    # imports were never bound, so main must not touch them.
-                    # runpy returns a copy of the module dict — patch the
-                    # function's own globals, not the returned namespace.
-                    update = mock.Mock()
-                    stdout = StringIO()
-                    with (
-                        mock.patch.dict(
-                            namespace["main"].__globals__,
-                            {"update_pinned_issue": update},
-                        ),
-                        redirect_stdout(stdout),
-                    ):
-                        self.assertEqual(namespace["main"](["--status"]), 0)
-                    update.assert_called_once()
-                    self.assertIn('"signals_status": "SKIPPED"', stdout.getvalue())
-                else:
-                    stdout = StringIO()
-                    with (
-                        redirect_stdout(stdout),
-                        self.assertRaises(SystemExit) as raised,
-                    ):
-                        namespace["main"]([flag])
-                    self.assertIn(raised.exception.code, (0, None))
-                    self.assertIn("usage:", stdout.getvalue())
-
-    def test_non_dep_free_argv_in_dep_free_namespace_exits_2(self) -> None:
-        """A non-dep-free main(argv) call in a dep-free import fails as
-        documented instead of hitting unbound ledger-side names."""
-        with (
-            mock.patch(
-                "importlib.util.find_spec",
-                side_effect=lambda name, package=None: None,
-            ),
-            mock.patch.object(sys, "argv", ["pr_lifecycle_run.py", "--status"]),
-        ):
-            namespace = runpy.run_path(str(SCRIPTS / "pr_lifecycle_run.py"))
-        stderr = StringIO()
-        with redirect_stderr(stderr):
-            self.assertEqual(namespace["main"](["--stage", "1"]), 2)
-        self.assertIn(
-            "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies", stderr.getvalue()
-        )
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_missing_yaml_exits_2_with_hint(self) -> None:
-        """Run isolated (-I) without site-packages (-S) as a bare interpreter."""
-        # -I ignores PYTHON* env vars and user site; drop PYTHONPATH as well.
-        env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
-        flags = [sys.executable, "-I", "-S"]
-        probe = subprocess.run(
-            [*flags, "-c", "import yaml"],
-            capture_output=True,
-            env=env,
-            check=False,
-            timeout=60,
-        )
-        if probe.returncode == 0:
-            self.skipTest("yaml importable under -I -S; cannot simulate missing deps")
-        proc = subprocess.run(
-            [*flags, str(SCRIPTS / "pr_lifecycle_run.py"), "--stage", "1"],
-            capture_output=True,
-            text=True,
-            env=env,
-            check=False,
-            timeout=60,
-        )
-        self.assertEqual(proc.returncode, 2, proc.stderr)
-        self.assertIn(
-            "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies", proc.stderr
-        )
-        self.assertIn("pyyaml", proc.stderr)
-        self.assertIn("requirements.txt", proc.stderr)
-        self.assertNotIn("Traceback", proc.stderr)

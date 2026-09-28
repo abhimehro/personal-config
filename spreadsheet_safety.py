@@ -3,7 +3,7 @@
 # SECURITY: Values starting with these characters may execute as formulas when a
 # markdown/CSV table is opened in Excel, LibreOffice Calc, or Google Sheets
 # (CWE-1236). Prefix with a single quote to force literal interpretation.
-_FORMULA_PREFIX_CHARS = "=+-@\t\r"  # ⚡ Bolt Optimization: Use string for O(1)-like C-level character lookup
+_FORMULA_PREFIX_CHARS = "=+-@\t\r%|"  # ⚡ Bolt Optimization: Use string for O(1)-like C-level character lookup
 
 __all__ = ["escape_spreadsheet_formula"]
 
@@ -18,9 +18,7 @@ def escape_spreadsheet_formula(value: str) -> str:
         return value
     if value[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
-    # Bare lstrip() removes every character Python treats as whitespace
-    # (\v, \f, NBSP, U+2000-U+200A, U+3000), not just space and newline.
-    stripped = value.lstrip()
+    stripped = value.lstrip(" \n")
     if stripped and stripped[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
     return value

@@ -18,8 +18,4 @@ ignore = ["E501"]
 "scripts/pr_lifecycle_reconcile.py" = ["E402"]
 "scripts/pr_lifecycle_feed.py" = ["E402"]
 "scripts/pr_lifecycle_run.py" = ["E402"]
-"scripts/pr_lifecycle_reselect_signals.py" = ["E402"]
-# Tests insert scripts/ on sys.path before importing lifecycle modules.
-"tests/test_pr_lifecycle_run.py" = ["E402"]
-"tests/test_pr_lifecycle_run_signals.py" = ["E402"]
 "scripts/pr_lifecycle_ledger_archive.py" = ["E402"]

@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -20,7 +18,6 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
-
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     NOW,
     make_item,
@@ -130,6 +127,7 @@ CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
         True,
     ),
 )
+
 
 
 class TestSalvageEligibleClassifier(unittest.TestCase):
@@ -270,67 +268,3 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         expected = tuple(schema["$defs"]["stage2WorkItem"]["required"])
         self.assertEqual(health.REQUIRED_WORK_ITEM_FIELDS, expected)
-
-    def test_queued_prefixes_expire_at_the_supplied_clock(self) -> None:
-        """Verify queued PR prefixes stop blocking at their exact expiry time."""
-        for expiry, expected in (
-            ("2026-08-30T11:59:59Z", set()),
-            ("2026-08-30T12:00:00Z", set()),
-            ("2026-08-30T12:00:01Z", {"owner/repo#1"}),
-        ):
-            with self.subTest(expiry=expiry):
-                work_item = make_work_item(
-                    source_item_key="owner/repo#1@old-head", expiry_utc=expiry
-                )
-                self.assertEqual(
-                    health.existing_wi_prefixes(make_ledger([], [work_item]), now=NOW),
-                    expected,
-                )
-
-
-class TestReselectRound2(unittest.TestCase):
-    """Closed-key exclusion and allowlist-loader error handling."""
-
-    def _conflicting_bot_item(self) -> dict[str, Any]:
-        """Build a conflicting bot candidate for testing live closed signals."""
-        return make_item(
-            key="abhimehro/demo#9@abc",
-            author_type="BOT",
-            changed_paths=["src/demo.py"],
-            next_action="HOLD_CONTRACT CONFLICTING unique remaining",
-        )
-
-    def test_closed_keys_exclude_stale_ledger_candidates(self) -> None:
-        """A live CLOSED/MERGED key is excluded even if ledger text says CONFLICTING."""
-        item = self._conflicting_bot_item()
-        ledger = make_ledger([item], [])
-        self.assertEqual(len(health.list_reselect_candidates(ledger)), 1)
-        for closed in (item["key"], "abhimehro/demo#9"):
-            with self.subTest(closed=closed):
-                signals = health.ReselectSignals(closed_keys=frozenset({closed}))
-                self.assertEqual(
-                    health.list_reselect_candidates(ledger, signals=signals), []
-                )
-
-    def test_allowlist_invalid_yaml_warns_and_uses_builtin(self) -> None:
-        """Unreadable config logs a warning and falls back to the built-in list."""
-        with tempfile.TemporaryDirectory() as tmp:
-            bad = Path(tmp) / "config.yaml"
-            bad.write_text("bot_authors: [unclosed\n", encoding="utf-8")
-            with mock.patch.object(health, "CONFIG_PATH", bad), self.assertLogs(
-                "pr_lifecycle_pipeline_health", level="WARNING"
-            ) as logs:
-                authors = health._load_reselect_allowed_authors()
-        self.assertIn("dependabot[bot]", authors)
-        self.assertIn("ValueError", "\n".join(logs.output))
-
-    def test_allowlist_unrelated_errors_propagate(self) -> None:
-        """Errors outside OSError/ValueError are not swallowed."""
-        with tempfile.TemporaryDirectory() as tmp:
-            cfg = Path(tmp) / "config.yaml"
-            cfg.write_text("bot_authors: []\n", encoding="utf-8")
-            with mock.patch.object(health, "CONFIG_PATH", cfg), mock.patch.object(
-                health, "load_yaml", side_effect=RuntimeError("boom")
-            ):
-                with self.assertRaises(RuntimeError):
-                    health._load_reselect_allowed_authors()

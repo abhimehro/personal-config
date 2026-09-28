@@ -68,9 +68,8 @@ def _expiry_days(config: dict[str, Any]) -> int:
 def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
     """Fetch live PR fields, returning None when the command or payload fails.
 
-    Note: base SHA is enriched via REST ``gh api`` rather than folding
-    ``baseRefOid`` into the ``--json`` field list, so a missing base SHA
-    fails closed as None instead of silently omitting the drift check.
+    Note: ``gh pr view --json`` has no ``baseRefOid`` field (local dry-run
+    fix 2026-09-24); base SHA is enriched via REST ``gh api``.
     """
     cmd = [
         "gh",
@@ -159,7 +158,9 @@ def _classify_live_merge(
         item.get("lifecycle_state") == "STAGE3_RECONCILIATION"
         or item.get("current_owner") == "stage3"
     )
-    disposition = "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
+    disposition = (
+        "MERGED_BOUNDED_COMPLETION" if completion_owned else "MERGED_ROUTINE"
+    )
     return {
         "action": "TERMINAL_MERGED",
         "key": key,
@@ -183,7 +184,9 @@ def _classify_live_close(
         None,
     )
     if disposition is None:
-        return _pending_terminal(item, key, "CLOSED", "no disposition-bearing label")
+        return _pending_terminal(
+            item, key, "CLOSED", "no disposition-bearing label"
+        )
     return {
         "action": "TERMINAL_CLOSED",
         "key": key,
