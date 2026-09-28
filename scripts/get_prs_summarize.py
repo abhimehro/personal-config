@@ -92,40 +92,52 @@ _TITLE_KW_PAIRS = tuple(
 )
 
 
+def _add_author_hints(author: dict | None, hints: set[str]) -> None:
+    if not author:
+        return
+    if author.get("is_bot"):
+        hints.add("author_is_bot")
+    login = author.get("login")
+    if login and login.endswith("[bot]"):
+        hints.add("bot_login")
+
+
+def _add_branch_hints(branch: str | None, hints: set[str]) -> None:
+    if not branch:
+        return
+    branch_lower = branch.lower()
+    for sig, label in _BRANCH_SIGNAL_PAIRS:
+        if sig in branch_lower:
+            hints.add(label)
+            return
+
+
+def _add_title_hints(title: str | None, hints: set[str]) -> None:
+    if not title:
+        return
+    title_lower = title.lower()
+    for kw, label in _TITLE_KW_PAIRS:
+        if kw in title_lower:
+            hints.add(label)
+            return
+
+
+def _add_body_hints(body: str | None, hints: set[str]) -> None:
+    if not body:
+        return
+    body_lower = body.lower()
+    for m in BODY_MARKERS:
+        if m in body_lower:
+            hints.add("body:automation_marker")
+            return
+
+
 def automation_hints(pr: dict) -> str:
     hints: set[str] = set()
-
-    author = pr.get("author")
-    if author:
-        if author.get("is_bot"):
-            hints.add("author_is_bot")
-        login = author.get("login")
-        if login and login.endswith("[bot]"):
-            hints.add("bot_login")
-
-    branch = pr.get("headRefName")
-    if branch:
-        branch_lower = branch.lower()
-        for sig, label in _BRANCH_SIGNAL_PAIRS:
-            if sig in branch_lower:
-                hints.add(label)
-                break
-
-    title = pr.get("title")
-    if title:
-        title_lower = title.lower()
-        for kw, label in _TITLE_KW_PAIRS:
-            if kw in title_lower:
-                hints.add(label)
-                break
-
-    body = pr.get("body")
-    if body:
-        body_lower = body.lower()
-        for m in BODY_MARKERS:
-            if m in body_lower:
-                hints.add("body:automation_marker")
-                break
+    _add_author_hints(pr.get("author"), hints)
+    _add_branch_hints(pr.get("headRefName"), hints)
+    _add_title_hints(pr.get("title"), hints)
+    _add_body_hints(pr.get("body"), hints)
 
     if not hints:
         return "(none — treat as human unless reviews say otherwise)"
