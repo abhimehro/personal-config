@@ -141,7 +141,11 @@ drafts and zero structured failed-recovery records is a failed run when
 salvageable bot work existed. True empty intake (zero Stage-2-owned items, zero
 queued work items, and zero salvage-eligible remainder) is a short record and
 stop. If salvage-eligible items exist, label `EMPTY_INTAKE_STARVATION` and still
-do not invent recoveries. A PR already merged, closed, deleted, or changed since
+do not invent recoveries. **Option 3 skip-if-empty (2026-09-24):** when dry-run
+`stage2_work_item_count == 0` and post never-touch mechanical candidates == 0,
+exit success (`EMPTY_INTAKE_SKIP`); do not open/push a docs lineage PR and do
+not launch further Cursor agents. Stage 1 CAS-enqueues ≤5
+`CONFLICTING_UNIQUE_RESELECT` work items; Stage 2 still never merges originals. A PR already merged, closed, deleted, or changed since
 its immutable anchors becomes a structured Stage 3 reconciliation handoff, not a
 recovery branch.
 

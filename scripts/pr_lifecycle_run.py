@@ -14,7 +14,9 @@ Calibration stays disabled. Stage 2 never merges. Stage 3 re-reads predicates.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import logging
 import subprocess
 import sys
 import tempfile
@@ -27,18 +29,65 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-# pylint: disable=wrong-import-position
-import pr_lifecycle_feed as feed_mod
-import pr_lifecycle_ledger_cas as cas
-import pr_lifecycle_pipeline_health as health
-import pr_lifecycle_reconcile as reconcile_mod
-from pr_lifecycle_config import validate_config
-from pr_lifecycle_support import ROOT
-from pr_lifecycle_yaml import load_yaml
+# Fail fast with an install hint instead of a deep ModuleNotFoundError when
+# the interpreter lacks requirements.txt (e.g. PEP 668 Homebrew python3).
+# --status refreshes the pinned issue and -h/--help print usage without
+# loading the ledger, so those dep-free entry points skip both the gate and
+# the ledger-side imports below — the alternative is a traceback anyway.
+_DEP_FREE_FLAGS = frozenset({"--status", "-h", "--help"})
+_DEP_FREE_REQUEST = bool(_DEP_FREE_FLAGS.intersection(sys.argv[1:]))
+_MISSING_DEPS = [
+    package
+    for module, package in (("yaml", "pyyaml"), ("jsonschema", "jsonschema"))
+    if importlib.util.find_spec(module) is None
+]
 
+
+def _missing_deps_message() -> str:
+    """Render the install hint emitted when runtime deps are absent."""
+    return (
+        "PR_LIFECYCLE_RUN_ERROR: missing Python dependencies: "
+        + ", ".join(_MISSING_DEPS)
+        + f" (interpreter: {sys.executable}). Install requirements.txt, e.g. "
+        "`python3 -m pip install -r requirements.txt`, or run via "
+        "`uv run --with-requirements requirements.txt python3 "
+        "scripts/pr_lifecycle_run.py ...`"
+    )
+
+
+if _MISSING_DEPS and not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
+    print(_missing_deps_message(), file=sys.stderr)
+    raise SystemExit(2)
+
+# pylint: disable=wrong-import-position
+# The issue mirror is dep-free (json + subprocess only), so it imports in
+# both modes; --status needs nothing else.
+from pr_lifecycle_issue_status import issue_body as _issue_body  # noqa: F401
+from pr_lifecycle_issue_status import update_pinned_issue
+
+if not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
+    import pr_lifecycle_feed as feed_mod  # noqa: F401
+    import pr_lifecycle_ledger_cas as cas
+    import pr_lifecycle_pipeline_health as health
+    import pr_lifecycle_reconcile as reconcile_mod  # noqa: F401
+    from pr_lifecycle_config import validate_config
+    from pr_lifecycle_reselect_signals import (
+        SignalsResult,
+        produce_reselect_signals,
+    )
+    from pr_lifecycle_stage_plan import build_stage_plan
+
+    # Re-exports for tests that call run.plan_*/run._issue_body. Patching these
+    # names has no effect on the planner — it resolves them inside
+    # pr_lifecycle_stage_plan / pr_lifecycle_issue_status globals; patch there.
+    from pr_lifecycle_stage_plan import plan_stage2_enqueues  # noqa: F401
+    from pr_lifecycle_stage_plan import plan_stage3_mechanical_handoffs  # noqa: F401
+    from pr_lifecycle_support import ROOT
+    from pr_lifecycle_yaml import load_yaml
+
+LOGGER = logging.getLogger(__name__)
 LOG_DIR = Path(tempfile.gettempdir()) / "pr-lifecycle"
 STATUS_PATH_ON_BRANCH = "status.json"
-PINNED_ISSUE_TITLE = "PR pipeline status"
 
 
 def _utc_now() -> datetime:
@@ -59,131 +108,9 @@ def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
 
 
-def _stage_cap(config: dict[str, Any], name: str, default: int) -> int:
-    raw = (config.get("lifecycle") or {}).get("stage_caps") or {}
-    value = raw.get(name, default)
-    if not isinstance(value, int) or value < 1:
-        return default
-    return value
-
-
-def _stage1_plan(
-    ledger: dict[str, Any], config: dict[str, Any]
-) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    allowed = [
-        "python3 scripts/pr_lifecycle_reconcile.py --json",
-        "python3 scripts/pr_lifecycle_feed.py --json",
-        "gh pr view / gh pr list (read-only inventory)",
-        "routine approve/squash-merge/close per lifecycle predicates",
-        "CAS handoff via pr_lifecycle_ledger_cas (schema-aware only)",
-    ]
-    cap = _stage_cap(config, "stage1_actions", 40)
-    actions = reconcile_mod.collect_actions(ledger, config, limit=cap)
-    actions.append(
-        {
-            "action": "FEED_CHECK",
-            "reason": "ensure Stage 2 intake is non-empty when eligible stock exists",
-        }
-    )
-    return allowed, actions, None, "OK"
-
-
-def _stage2_plan(
-    ledger: dict[str, Any], config: dict[str, Any]
-) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    allowed = [
-        "python3 scripts/pr_lifecycle_feed.py --json",
-        "open/update draft salvage PRs only (never merge/approve/close originals)",
-        "CAS write complete Stage 2 work items + handoff events",
-    ]
-    feed = feed_mod.build_feed(
-        ledger, config, limit=_stage_cap(config, "stage2_salvage_candidates", 10)
-    )
-    stop_class = None
-    reason = "OK"
-    if feed.get("empty_with_stock"):
-        stop_class = "LOGIC_STOP"
-        reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
-    actions = [
-        {
-            "action": "FEED_SUMMARY",
-            "feed": {
-                "reason": feed["reason"],
-                "work_item_count": feed["work_item_count"],
-                "eligible_stock_count": feed["eligible_stock_count"],
-            },
-        }
-    ]
-    actions.extend(
-        {"action": "SALVAGE_WI", "wi": wi} for wi in feed.get("work_items") or []
-    )
-    return allowed, actions, stop_class, reason
-
-
-def _stage3_plan() -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    allowed = [
-        "python3 scripts/pr_lifecycle_reconcile.py --json",
-        "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
-        "bounded non-security completion / close per Stage 3 predicates",
-        "CAS terminal transitions; never force-push",
-        "calibration remains DISABLED — do not reset or enable it",
-    ]
-    actions = [
-        {
-            "action": "RECONCILE_REMAINDER",
-            "reason": "re-read predicates; builder ≠ merger",
-        },
-        {
-            "action": "ADVISORY_BOT_THREADS",
-            "reason": (
-                "Codacy/qodo/CodeRabbit threads with no human reply are "
-                "advisory; may resolve before /trunk (Abhi 2026-09-21)"
-            ),
-        },
-    ]
-    return allowed, actions, None, "OK"
-
-
-def build_stage_plan(
-    stage: int,
-    ledger: dict[str, Any],
-    config: dict[str, Any],
-) -> dict[str, Any]:
-    """Build the exact action plan a stage agent may execute."""
-    report = health.summarize(ledger)
-    if stage == 1:
-        allowed, actions, stop_class, reason = _stage1_plan(ledger, config)
-    elif stage == 2:
-        allowed, actions, stop_class, reason = _stage2_plan(ledger, config)
-    elif stage == 3:
-        allowed, actions, stop_class, reason = _stage3_plan()
-    else:
-        allowed, actions = [], []
-        stop_class = "LOGIC_STOP"
-        reason = f"invalid stage {stage}"
-
-    return {
-        "stage": stage,
-        "generated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "ledger_revision": ledger.get("ledger_revision"),
-        "pipeline_health": {
-            "salvage_eligible_count": report.salvage_eligible_count,
-            "stage2_work_item_count": report.stage2_work_item_count,
-            "starvation": report.starvation,
-            "reason": report.reason,
-        },
-        "allowed_commands": allowed,
-        "actions": actions,
-        "calibration_enabled": False,
-        "stage2_may_merge": False,
-        "stop_class": stop_class,
-        "reason": reason,
-    }
-
-
 def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
     """Build the compact status document for a stage plan."""
-    return {
+    doc = {
         "updated_at_utc": _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "run_id": run_id,
         "stage": plan.get("stage"),
@@ -191,78 +118,81 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
         "reason": plan.get("reason"),
         "stop_class": plan.get("stop_class"),
         "pipeline_health": plan.get("pipeline_health"),
+        "signals_status": plan.get("signals_status"),
+        "signals_queried": plan.get("signals_queried"),
+        "signals_candidates": plan.get("signals_candidates"),
+        "signals_base_enriched": plan.get("signals_base_enriched"),
+        "signals_timed_out": plan.get("signals_timed_out"),
+        "signals_truncated_keys": plan.get("signals_truncated_keys"),
         "action_count": len(plan.get("actions") or []),
         "calibration_enabled": False,
     }
+    if plan.get("signals_status") in {"DEGRADED", "PARTIAL"}:
+        doc["condition"] = "SIGNALS_DEGRADED"
+    if plan.get("signals_error"):
+        doc["signals_error"] = plan["signals_error"]
+    return doc
 
 
-def _issue_body(status: dict[str, Any]) -> str:
-    """Render the pinned status-issue body for a stage status dict."""
-    return (
-        f"<!-- pr-lifecycle-status -->\n"
-        f"updated_at_utc: {status['updated_at_utc']}\n"
-        f"run_id: {status.get('run_id') or ''}\n"
-        f"stage: {status.get('stage') or ''}\n"
-        f"ledger_revision: {status.get('ledger_revision') or ''}\n"
-        f"reason: {status.get('reason') or ''}\n"
-        f"stop_class: {status.get('stop_class') or ''}\n"
-        f"calibration_enabled: false\n"
-        f"\n```json\n{json.dumps(status, indent=2, sort_keys=True)}\n```\n"
-    )
+def _live_signals_result(
+    ledger: dict[str, Any], enabled: bool
+) -> tuple[SignalsResult, str | None]:
+    """Fetch live signals fail-open; return (result, error_type_or_None).
 
-
-def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["gh", "issue", *cmd, "--repo", "abhimehro/personal-config"],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-
-
-def _find_pinned_issue() -> int | None:
-    listed = _gh_issue(
-        [
-            "list",
-            "--search",
-            f'in:title "{PINNED_ISSUE_TITLE}"',
-            "--json",
-            "number,title",
-            "--limit",
-            "20",
-        ]
-    )
-    if listed.returncode != 0 or not listed.stdout.strip():
-        return None
+    A producer exception degrades to empty signals with the exception type
+    logged (never the message, which can echo gh output or tokens).
+    """
+    if not enabled:
+        return SignalsResult(signals=health.ReselectSignals(), status="SKIPPED"), None
     try:
-        rows = json.loads(listed.stdout)
-    except json.JSONDecodeError:
-        return None
-    for row in rows:
-        if row.get("title") == PINNED_ISSUE_TITLE:
-            number = row.get("number")
-            return int(number) if number is not None else None
-    return None
+        return produce_reselect_signals(ledger), None
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        name = type(exc).__name__
+        LOGGER.warning("PR_LIFECYCLE_RUN_WARNING: live signals DEGRADED (%s)", name)
+        return (
+            SignalsResult(signals=health.ReselectSignals(), status="DEGRADED"),
+            name,
+        )
 
 
-def _upsert_pinned_issue(issue_number: int | None, body: str) -> None:
-    if issue_number is not None:
-        result = _gh_issue(["edit", str(issue_number), "--body", body])
-    else:
-        result = _gh_issue(["create", "--title", PINNED_ISSUE_TITLE, "--body", body])
-    if result.returncode != 0:
-        stderr = (result.stderr or "").strip()[:200]
-        raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
+def _attach_signal_fields(
+    plan: dict[str, Any], result: SignalsResult, signals_error: str | None
+) -> None:
+    """Add signal collection metrics and any supplied error to the plan in place."""
+    plan["signals_status"] = result.status
+    plan["signals_queried"] = result.queried_count
+    plan["signals_candidates"] = result.candidate_count
+    plan["signals_base_enriched"] = result.base_enriched_count
+    plan["signals_timed_out"] = result.timed_out
+    plan["signals_failed_keys"] = list(result.failed_keys)
+    plan["signals_truncated_keys"] = list(result.truncated_keys)
+    plan["signals_unqueried_keys"] = sorted(result.signals.unqueried_keys or ())
+    plan["signals_elapsed_s"] = result.elapsed_s
+    if signals_error:
+        plan["signals_error"] = signals_error
 
 
-def update_pinned_issue(status: dict[str, Any]) -> None:
-    """Best-effort update of the pinned PR pipeline status issue."""
-    _upsert_pinned_issue(_find_pinned_issue(), _issue_body(status))
+def run_stage(
+    stage: int,
+    *,
+    dry_run: bool,
+    write_status: bool,
+    no_live_signals: bool = False,
+) -> int:
+    """Fetch the ledger, emit and log a plan, and optionally write local status.
 
+    Query live signals for Stages 1/3 unless no_live_signals is set. Producer
+    exceptions degrade to ledger fallbacks. dry_run only labels the plan:
+    reads and local writes still occur, and proposed actions are never applied.
+    Append run records under LOG_DIR and, with write_status, replace its
+    status.json mirror.
 
-def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
-    """Fetch the ledger, emit and log a plan, and optionally write status."""
+    Return 0 for a plan without LOGIC_STOP, 2 for LOGIC_STOP, or 1 for caught
+    preflight/planning OSError, TypeError, ValueError, or KeyError failures.
+    OSError failures are classified TRANSIENT_RETRY; other caught failures
+    are LOGIC_STOP. Initial config loading/validation errors and local output
+    I/O errors propagate, as do exceptions outside those caught classes.
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     run_id = _run_id()
@@ -272,7 +202,14 @@ def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
             out = Path(tmp) / "ledger.yaml"
             fetch = cas.run_preflight(out)
             ledger = load_yaml(Path(fetch["ledger_path"]))
-            plan = build_stage_plan(stage, ledger, config)
+
+            signals_result, signals_error = _live_signals_result(
+                ledger, enabled=stage in (1, 3) and not no_live_signals
+            )
+            plan = build_stage_plan(
+                stage, ledger, config, signals_result=signals_result
+            )
+            _attach_signal_fields(plan, signals_result, signals_error)
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         # OSError covers fetch/service failures (recoverable); data-shape and
         # validation failures are repo-owned and cannot heal by retrying.
@@ -310,14 +247,9 @@ def run_stage(stage: int, *, dry_run: bool, write_status: bool) -> int:
 def build_parser() -> argparse.ArgumentParser:
     """Build the lifecycle stage-runner command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stage", type=int, choices=[1, 2, 3], help="Stage")
     parser.add_argument(
-        "--stage", type=int, choices=[1, 2, 3], help="Stage to preflight"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=True,
-        help="Print plan only (default)",
+        "--dry-run", action="store_true", default=True, help="Print plan only"
     )
     parser.add_argument(
         "--write-status",
@@ -325,16 +257,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write /tmp/pr-lifecycle/status.json for this run",
     )
     parser.add_argument(
-        "--status",
+        "--no-live-signals",
         action="store_true",
-        help="Update the pinned PR pipeline status GitHub issue",
+        help="Skip live GitHub signals fetch; use ledger fallbacks (status SKIPPED)",
+    )
+    parser.add_argument(
+        "--status", action="store_true", help="Update pinned status issue"
     )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run a stage preflight or refresh the pinned status issue."""
+    """Run a stage preflight or refresh the pinned status issue.
+
+    Parse argv, defaulting to process arguments. --status takes precedence
+    over --stage: create or update the GitHub issue, print status JSON, and
+    return 0. Otherwise delegate planning and local output to run_stage and
+    return its exit code (0, 1, or 2).
+
+    Return 1 for a missing stage or caught OSError, subprocess.SubprocessError
+    (a gh call exceeding its timeout), TypeError, ValueError, or KeyError
+    during execution. Other exceptions propagate; argument parsing raises
+    SystemExit for help or invalid arguments.
+    """
     args = build_parser().parse_args(argv)
+    # The import-time dep gate keys off sys.argv; a caller passing argv whose
+    # request is not dep-free would otherwise hit unbound ledger imports.
+    if _MISSING_DEPS and not args.status:
+        print(_missing_deps_message(), file=sys.stderr)
+        return 2
     try:
         if args.status:
             status = {
@@ -342,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
                 "run_id": _run_id(),
                 "stage": None,
                 "reason": "manual --status refresh",
+                "signals_status": "SKIPPED",
                 "calibration_enabled": False,
             }
             update_pinned_issue(status)
@@ -351,9 +303,19 @@ def main(argv: list[str] | None = None) -> int:
             print("PR_LIFECYCLE_RUN_ERROR: --stage is required", file=sys.stderr)
             return 1
         return run_stage(
-            args.stage, dry_run=args.dry_run, write_status=args.write_status
+            args.stage,
+            dry_run=args.dry_run,
+            write_status=args.write_status,
+            no_live_signals=args.no_live_signals,
         )
-    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+    except (
+        OSError,
+        subprocess.SubprocessError,
+        TypeError,
+        ValueError,
+        KeyError,
+        json.JSONDecodeError,
+    ) as exc:
         print(f"PR_LIFECYCLE_RUN_ERROR: {type(exc).__name__}", file=sys.stderr)
         return 1
 
