@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 192
+ledger_revision: 197
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19752,14 +19752,15 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Do not squash-merge CONFLICTING #1269. Salvage unique test wrap/lint
-    remainder onto a new focused draft; leave original open.'
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #1269. Salvage draft #1287
+    holds unique test wraps; #1279 already merged sibling gh_client content. Stage
+    1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #1269 vs salvage draft #1287 + merged
+    sibling #1279; leave original OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1269
   - https://github.com/abhimehro/ctrld-sync/pull/1279
@@ -19772,12 +19773,63 @@ items:
   - tests/test_ux.py
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-reconcile-20260928004431-45787b6f
-  revision: 1
-  updated_at_utc: '2026-09-28T00:44:31Z'
+  - evt-reconcile-20260928004904-f632acba
+  - evt-reconcile-20260928004904-dd2a1a87
+  revision: 3
+  updated_at_utc: '2026-09-28T00:49:04Z'
+- key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
+  repository: abhimehro/ctrld-sync
+  pr: 1287
+  url: https://github.com/abhimehro/ctrld-sync/pull/1287
+  base_sha: b190cb318be59bb754ab38a7702f28d4834a8578
+  head_sha: 516f2896fb3d647e0119c84072937e7b0995f9d1
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #1287 (isDraft verified); original #1269
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1287
+  - https://github.com/abhimehro/ctrld-sync/pull/1269
+  - https://github.com/abhimehro/ctrld-sync/pull/1279
+  changed_paths:
+  - tests/test_dataclasses.py
+  - tests/test_folder_validation.py
+  - tests/test_retry_jitter.py
+  - tests/test_ux.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20260928-ctrldsync-1287-i
+  - evt-reconcile-20260928004904-0f934a71
+  - evt-reconcile-20260928004904-09548e6d
+  revision: 3
+  updated_at_utc: '2026-09-28T00:49:04Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -45649,39 +45701,108 @@ events:
     unique wrap/lint tests vs merged #1279 (FEED fail-closed on pc draft theater)'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20260928-ctrldsync-1269-reselect
-  source_item_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334
-  repository: abhimehro/ctrld-sync
-  pr: 1269
-  base_sha: b190cb318be59bb754ab38a7702f28d4834a8578
-  head_sha: 50025d34f876c1d658a85c9b97a5dda58fe67334
-  allowed_paths:
-  - tests/test_dataclasses.py
-  - tests/test_folder_validation.py
-  - tests/test_retry_jitter.py
-  - tests/test_ux.py
-  prohibited_paths:
-  - .github/workflows/
-  - .jules/
-  repair_description: 'Weekend Stage1 hop4 ENQUEUE_STAGE2_WI: mechanical unique-path
-    salvage for abhimehro/ctrld-sync#1269 (CONFLICTING_UNIQUE_RESELECT). Unique wrap/lint
-    test remainder vs merged sibling #1279; do not merge/approve/close the original.'
-  required_test_command: python3 -m pytest -q --tb=no
-  expected_test_result: pass (or scoped unit subset green)
-  acceptance_criteria:
-  - Unique allowed_paths recovered onto a new focused draft without journals.
-  - Original PR left open (Stage 2 never merges/approves/closes originals).
-  - Never-touch and REVIEW_SECURITY holds unchanged.
-  - 'Do not re-apply gh_client.py / tests/test_gh_client.py (already in #1279).'
-  provenance_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1269
-  - https://github.com/abhimehro/ctrld-sync/pull/1279
-  expiry_utc: '2026-10-05T00:44:31Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-reconcile-20260928004431-45787b6f
-  history: []
+- event_id: evt-reconcile-20260928004904-f632acba
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334:evt-reconcile-20260928004904-f632acba
+  status: PROJECTED
+  created_at_utc: '2026-09-28T00:49:04Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2 hop3: activate WI s2-20260928-ctrldsync-1269-reselect before
+    salvage draft #1287 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260928004904-dd2a1a87
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334:evt-reconcile-20260928004904-dd2a1a87
+  status: PROJECTED
+  created_at_utc: '2026-09-28T00:49:04Z'
+  acknowledged_at_utc: null
+  reason: 'Weekend Stage2 hop3: draft #1287 recovered unique wrap/lint test remainder
+    from #1269. Sibling #1279 already landed gh_client.py + tests/test_gh_client.py.
+    Original #1269 stays OPEN; Stage 3 reconciles vs #1287+#1279. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20260928-ctrldsync-1287-i
+  kind: IMPORT
+  item_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1:evt-s2-20260928-ctrldsync-1287-i
+  status: PROJECTED
+  created_at_utc: '2026-09-28T00:49:04Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1287 provenance to #1269 (unique wrap/lint tests
+    hop3 remainder vs #1279). Head 516f2896fb3d; 0gd draft=true after ready --undo.'
+- event_id: evt-reconcile-20260928004904-0f934a71
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1:evt-reconcile-20260928004904-0f934a71
+  status: PROJECTED
+  created_at_utc: '2026-09-28T00:49:04Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #1287 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260928004904-09548e6d
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1:evt-reconcile-20260928004904-09548e6d
+  status: PROJECTED
+  created_at_utc: '2026-09-28T00:49:04Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (unique wrap/lint test remainder vs merged
+    sibling #1279). Stage 1 re-ingests draft #1287. Merge authority is never Stage
+    2.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
