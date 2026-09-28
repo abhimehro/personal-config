@@ -1,0 +1,6 @@
+# Placeholder rule file to prevent action failure on empty dir
+rules:
+  - id: "placeholder"
+    message: "Placeholder rule"
+    level: "info"
+    pattern: "TODO"

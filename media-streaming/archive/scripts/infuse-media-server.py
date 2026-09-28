@@ -287,7 +287,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         ]
         if not items_html:
             items_html.append(
-                '<li class="empty-state"><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>\n'
+                '<li class="empty-state"><span class="file" role="status" style="color: #666;"><em>Directory is empty</em></span></li>\n'
             )
         html_parts.extend(items_html)
 
