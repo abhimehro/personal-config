@@ -7,6 +7,7 @@ from spreadsheet_safety import escape_spreadsheet_formula
 
 class TestSpreadsheetSafety(unittest.TestCase):
     def test_escapes_formula_prefixes(self) -> None:
+        """Escape formula prefixes, including those after leading spaces or newlines."""
         cases = (
             ("=1+1", "'=1+1"),
             ("+cmd", "'+cmd"),
