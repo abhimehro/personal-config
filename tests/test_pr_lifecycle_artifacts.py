@@ -283,6 +283,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             validator.validate_config(config)
 
     def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
+        """Accept supported rebalance settings and reject unknown lifecycle keys."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         lifecycle = config["lifecycle"]
         self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
@@ -295,6 +296,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             validator.validate_config(config)
 
     def test_stage_prompts_require_each_runtime_continuity_marker(self):
+        """Reject each stage prompt when any runtime continuity marker is missing."""
         markers = (
             "docs/automated-pr-lifecycle.md",
             "docs/pr-lifecycle-runtime-ledger.md",
@@ -325,6 +327,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     )
 
     def test_calibration_prompt_keeps_legacy_continuity_markers(self):
+        """Require the full continuity contract for calibration prompts."""
         calibration = " ".join(
             (
                 "docs/automated-pr-lifecycle.md",
@@ -344,12 +347,14 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             )
 
     def test_enabled_memory_is_required_for_all_cursor_exports(self):
+        """Verify every Cursor automation export enables memory."""
         exports = ROOT / "docs/cursor-automations/exports"
         for path in sorted(exports.glob("*.json")):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertTrue(data["memoryEnabled"], path.name)
 
     def test_stage_prompts_bind_runtime_ledger_and_stage(self):
+        """Require stage identity, runtime ledger authority, and revision checks."""
         prompts = ROOT / "docs/cursor-automations/prompts"
         for name, stage in (
             ("daily-pr-review.md", "Stage 1"),
@@ -368,6 +373,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                 self.assertIn("docs/automated-pr-lifecycle.md", text)
 
     def test_identity_policy_versions_hyphen_and_slash_prefixes(self):
+        """Verify agent branch prefixes and aligned identity policy revisions."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         prefixes = config["identity_classification"]["branch_prefixes"]
         for agent in ("jules", "bolt", "palette", "sentinel"):
@@ -384,6 +390,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         )
 
     def test_stage_prompts_name_role_based_tools(self):
+        """Verify each stage names its tools, handoffs, and action limits."""
         review = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
         ).read_text(encoding="utf-8")
@@ -413,6 +420,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         )
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
+        """Verify discovered merge methods clear holds and retain check evidence."""
         ledger = self.example()
         verified = ledger["repository_merge_methods"]
         self.assertTrue(
@@ -430,15 +438,18 @@ class TestStagePromptSafeguards(unittest.TestCase):
     """Expanded stage prompts preserve execution and handoff safeguards."""
 
     def _prompt(self, name: str) -> str:
+        """Return the expanded source of a named lifecycle automation prompt."""
         return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
 
     def test_review_prompt_routes_mechanical_repairs(self):
+        """Require bounded Stage 2 repair handoffs and replacement PR re-ingestion."""
         review = " ".join(self._prompt("daily-pr-review.md").split())
         self.assertIn("bounded mechanical repair", review)
         self.assertIn("create exactly one complete Stage 2 work item", review)
         self.assertIn("Re-ingest Stage 2 salvage replacement PRs", review)
 
     def test_review_prompt_guardrails(self):
+        """Require validated runtime state and protection for sensitive human work."""
         review = " ".join(self._prompt("daily-pr-review.md").split())
         self.assertIn("take no lifecycle action or calibration step", review)
         self.assertIn("selected CAS path", review)
@@ -453,6 +464,7 @@ class TestStagePromptSafeguards(unittest.TestCase):
         self.assertIn("run record", review)
 
     def test_salvage_prompt_draft_only_and_structured_outcome(self):
+        """Require draft verification, provenance, and structured failure records."""
         salvage = " ".join(self._prompt("daily-pr-salvage.md").split())
         self.assertIn(
             "Never approve, request review, mark ready, merge, close",
@@ -463,6 +475,7 @@ class TestStagePromptSafeguards(unittest.TestCase):
         self.assertIn("provenance to the original before handing off", salvage)
 
     def test_completion_calibration_requires_progress(self):
+        """Require bounded repair progress before counting calibration success."""
         calibration = " ".join(
             self._prompt("daily-pr-completion.calibration.md").split()
         )
@@ -478,6 +491,7 @@ class TestStagePromptSafeguards(unittest.TestCase):
         self.assertIn("must not increment `successful_run_count`", calibration)
 
     def test_completion_prompt_rechecks_queue_predicates(self):
+        """Require fresh queue evidence and a stop after queue submission failure."""
         completion = " ".join(self._prompt("daily-pr-completion.md").split())
         self.assertIn(
             "Re-read every predicate independently of Stage 2's recovery notes",
@@ -494,6 +508,7 @@ class TestStagePromptSafeguards(unittest.TestCase):
         )
 
     def test_lifecycle_contract_sha_match_exception(self):
+        """Preserve documented exceptions to skipping unchanged PR revisions."""
         contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
         self.assertIn("SHA_MATCH skip applies only", contract)
         self.assertIn("canonical-pick", contract)

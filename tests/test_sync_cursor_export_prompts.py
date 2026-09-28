@@ -53,6 +53,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             )
 
     def test_stage_prompts_have_no_includes_to_expand(self) -> None:
+        """Verify stage prompts are self-contained lifecycle contract sources."""
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
@@ -67,6 +68,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 self.assertIn("docs/automated-pr-lifecycle.md", expanded)
 
     def test_exports_store_expanded_prompt(self) -> None:
+        """Verify exports match expanded sources with one trailing newline."""
         for export_name in (
             "daily-pr-review.json",
             "daily-pr-salvage.json",
@@ -82,6 +84,7 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 self.assertIn("docs/automated-pr-lifecycle.md", prompt)
 
     def test_rejects_path_traversal(self) -> None:
+        """Reject include directives that attempt parent directory traversal."""
         with self.assertRaises(PromptIncludeError):
             expand_prompt_includes("{{include:_../secrets.md}}\n", PROMPTS)
 
