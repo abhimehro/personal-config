@@ -14,10 +14,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_config as config_validator  # noqa: E402
-import pr_lifecycle_validation as validator  # noqa: E402
-from pr_lifecycle_ledger import validate_transition_table  # noqa: E402
-from sync_cursor_export_prompts import (  # noqa: E402
+import pr_lifecycle_config as config_validator
+import pr_lifecycle_validation as validator
+from pr_lifecycle_ledger import validate_transition_table
+from sync_cursor_export_prompts import (
     PromptIncludeError,
     expand_prompt_source,
 )
@@ -109,12 +109,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             config_validator,
             "expand_prompt_includes",
             side_effect=PromptIncludeError("include missing: _shared.md"),
+        ), self.assertRaisesRegex(
+            ValueError,
+            r"daily-pr-review\.json: include missing: _shared\.md",
         ):
-            with self.assertRaisesRegex(
-                ValueError,
-                r"daily-pr-review\.json: include missing: _shared\.md",
-            ):
-                config_validator.validate_exports_and_prompts(config)
+            config_validator.validate_exports_and_prompts(config)
 
     def test_main_pointer_cannot_be_used_as_runtime_ledger(self) -> None:
         with self.assertRaisesRegex(ValueError, "schema root"):
@@ -318,24 +317,23 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     self.assertIn(marker, text)
                     with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
                         config_validator.validate_prompt(text.replace(marker, ""), name)
-            with self.subTest(name=name, bootstrap_only=True):
-                with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
-                    config_validator.validate_prompt(
-                        "docs/automated-pr-lifecycle.md "
-                        "scripts/pr_lifecycle_run.py --stage 1",
-                        name,
-                    )
+            with self.subTest(name=name, bootstrap_only=True), self.assertRaisesRegex(
+                ValueError, "runtime continuity marker"
+            ):
+                config_validator.validate_prompt(
+                    "docs/automated-pr-lifecycle.md "
+                    "scripts/pr_lifecycle_run.py --stage 1",
+                    name,
+                )
 
     def test_calibration_prompt_keeps_legacy_continuity_markers(self) -> None:
         """Require the full continuity contract for calibration prompts."""
-        calibration = " ".join(
-            (
-                "docs/automated-pr-lifecycle.md",
-                "docs/pr-lifecycle-runtime-ledger.md",
-                "Memory is enabled",
-                "Dashboard-referenced MCP set",
-                "ledger, run records, and lessons",
-            )
+        calibration = (
+            "docs/automated-pr-lifecycle.md "
+            "docs/pr-lifecycle-runtime-ledger.md "
+            "Memory is enabled "
+            "Dashboard-referenced MCP set "
+            "ledger, run records, and lessons"
         )
         config_validator.validate_prompt(
             calibration, "daily-pr-completion.calibration.md"
