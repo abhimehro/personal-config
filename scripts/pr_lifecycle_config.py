@@ -14,9 +14,14 @@ from pr_lifecycle_support import (
     require_list,
     require_mapping,
 )
+from sync_cursor_export_prompts import (
+    PromptIncludeError,
+    expand_prompt_includes,
+)
 
 
 def validate_config(config: dict[str, Any]) -> None:
+    """Validate required lifecycle settings and reject contract drift."""
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -42,7 +47,12 @@ def validate_config(config: dict[str, Any]) -> None:
         "stage_caps",
         "stages",
     }
-    require_fields(lifecycle, required, required, "config.lifecycle")
+    allowed = required | {
+        "packet_expiry_close_days",
+        "stage2_intake",
+        "lineage",
+    }
+    require_fields(lifecycle, allowed, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
     validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
@@ -273,7 +283,16 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
         path = directory / export_name
         data = json.loads(path.read_text(encoding="utf-8"))
         validate_export_shape(data, path, stages[stage]["schedule"], allow_approve)
-        source = (prompt_dir / prompt_name).read_text(encoding="utf-8").strip() + "\n"
+        try:
+            source = (
+                expand_prompt_includes(
+                    (prompt_dir / prompt_name).read_text(encoding="utf-8"),
+                    prompt_dir,
+                ).strip()
+                + "\n"
+            )
+        except PromptIncludeError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
         if data["prompts"][0].get("prompt") != source:
             raise ValueError(f"{path}: prompt differs from source")
         validate_prompt(source, prompt_name)
@@ -354,13 +373,17 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
+    """Require the runtime continuity markers appropriate to a named prompt."""
     normalized = " ".join(content.split())
-    required = {
-        "docs/automated-pr-lifecycle.md",
-        "docs/pr-lifecycle-runtime-ledger.md",
-        "Memory is enabled",
-        "Dashboard-referenced MCP set",
-        "ledger, run records, and lessons",
-    }
+    required = {"docs/automated-pr-lifecycle.md"}
+    if name == "daily-pr-completion.calibration.md":
+        required |= {
+            "docs/pr-lifecycle-runtime-ledger.md",
+            "Memory is enabled",
+            "Dashboard-referenced MCP set",
+            "ledger, run records, and lessons",
+        }
+    else:
+        required.add("scripts/pr_lifecycle_run.py --stage")
     if any(marker not in normalized for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")

@@ -526,6 +526,47 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<E
 </plist>
 EOF
 
+# GitNexus Auto Sync (Daily at 2:00 AM; wrapper skips delayed wake launches)
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.gitnexus-autosync.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maint.gitnexus-autosync</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/gitnexus_auto_sync_once.sh</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/gitnexus-auto-sync-launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/gitnexus-auto-sync-launchd.err</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>
+EOF
+
 # Keep checked-in launchd sources aligned with the generated agents.
 # install.sh is authoritative; maintenance/launchd/ is a snapshot.
 REPO_LAUNCHD="$SCRIPT_DIR/launchd"
@@ -567,6 +608,7 @@ echo "  • Google Drive Backup (Light): Daily at 3:15 AM (Tue-Sun)"
 echo "  • Google Drive Backup (Full): Monday at 4:00 AM"
 echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
+echo "  • GitNexus Auto Sync: Daily at 2:00 AM (background, one cycle, wake-time guarded)"
 echo ""
 echo "To test a script manually:"
 echo "  bash $INSTALL_DIR/bin/brew_maintenance.sh"

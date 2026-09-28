@@ -55,7 +55,73 @@ not proceed to inventory, merge, or close.
    CONFLICTING/DIRTY BOT) before spending the 80-item cap on NEW security twins.
    Hold five of those 80 slots for salvage keepers. Queue up to ten Stage 2 work
    items from the fetched ledger even when MERGEABLE/canonical candidates filled
-   the rest of the inventory.
+   the rest of the inventory. **Option 3 (2026-09-24):** prefer CAS-writing ≤5
+   complete `stage2_work_items` via `ENQUEUE_STAGE2_WI` /
+   `CONFLICTING_UNIQUE_RESELECT` for live CONFLICTING/DIRTY unique-remaining
+   ledger-BOT (soft `shell_execution` only for Palette wrap allowlist).
+   `pr_lifecycle_feed.py` verifies intake; it does not enqueue. `FEED_CHECK`
+   fails the Stage 1 throughput grade when reselect candidates > 0 and enqueued
+   == 0.
+
+### Live Reselect Signals (Stage 1 & Stage 3)
+
+Stage 1 (enqueue) and Stage 3 (mechanical handoff) planners query live GitHub PR
+state before generating action plans so stale ledger records do not drive
+decisions:
+
+- **Signal Producer (`scripts/pr_lifecycle_reselect_signals.py`):** Queries
+  `gh pr view <pr> --repo <repo> --json state,mergeable,mergeStateStatus,title,headRefOid,author,files`
+  across candidate PRs. Prefilters ledger stock cheaply (skipping never-touch,
+  terminal, stage2-owned, and already-queued items), prioritizes Stage 1 and
+  Stage 3 ownership, capped by `max_prs=40` and bounded by per-call and total
+  timeouts.
+- **Fail-Open Semantics:** Live signal production is strictly best-effort and
+  fail-open. It never raises unhandled exceptions, introduces new stop classes,
+  or alters standard process exit codes. If `gh` is missing or 3 consecutive
+  queries fail, the producer drops gracefully to ledger fallbacks.
+- **Signals Status (`signals_status`):**
+  - `OK`: Every queried candidate PR returned live signals successfully, the
+    `max_prs` cap covered every plausible candidate, and at least one base-SHA
+    enrichment succeeded (or nothing was scanned — closed/unknown-state PRs
+    emit no signals and skip the enrichment call entirely).
+  - `PARTIAL`: One or more individual PR queries timed out or failed, the total
+    budget elapsed, the `max_prs` cap clipped the plausible candidate set
+    (surplus keys land in `signals_unqueried_keys` and are excluded from
+    reselect — no live evidence, so ledger paths cannot authorize them), or
+    every `gh api` base-SHA enrichment failed across queried open PRs (the
+    observable signature of a
+    systemic REST outage). Successful queries attach live signals, while
+    failed keys fall back to ledger values; a full enrichment gap reports
+    `signals_base_enriched: 0`.
+  - `DEGRADED`: Global failure (CLI missing, consecutive failures, or caught
+    exception). The planner uses ledger fallbacks; after consecutive failures,
+    already-collected closed keys and live head SHAs still exclude ineligible
+    items. The informational `SIGNALS_DEGRADED` action adds no signal-specific
+    stop. Other planner stops still apply. In Stage 1, this includes
+    `FEED_CHECK_FAIL` from `FEED_CHECK`.
+  - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals`
+    flag).
+- **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or
+  `mergeStateStatus` values of `CONFLICTING`, `DIRTY`, `MERGEABLE`, `CLEAN`,
+  `BLOCKED`, `BEHIND`, `UNSTABLE`, or `HAS_HOOKS` take precedence over ledger
+  state; only `CONFLICTING` and `DIRTY` qualify an item for reselect. If GitHub
+  returns `UNKNOWN` or missing `mergeable`, the producer uses `mergeStateStatus`
+  when it is in `health.AUTHORITATIVE_MERGEABLE_STATES`. The planner falls back
+  to the ledger item's recorded `next_action` only when both fields are
+  `UNKNOWN` or missing.
+- **Head-SHA Drift Exclusion:** If a live PR's `headRefOid` does not match the
+  ledger's recorded `head_sha`, the item is excluded from candidate reselection
+  to avoid operating against unanalyzed commits.
+- **Title-Gate Author Requirement:** Non-bot ledger items can qualify for
+  reselection via normalized title prefixes (`⚡bolt`, `🎨palette`, `salvage(`,
+  `chore(qa)`, `chore(repo-health)`), but only when authored by an allowed
+  maintainer (`abhimehro`) or recognized bot identity. Arbitrary human authors
+  cannot bypass guardrails via title prefixes. A missing live login falls back
+  to the ledger author; if neither is available the gate fails closed and the
+  item is excluded.
+- **Executor Authority:** Unique paths in plan actions are advisory; the CAS
+  executor live-verifies unique remaining paths at CAS-commit time.
+
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,
@@ -125,6 +191,15 @@ close the rest) in this run.
 test/format work follows the current repository merge method. Security-sensitive
 work is never automatically merged and is routed to Stage 3/human decision.
 After each completion, re-check remaining PRs for new conflicts.
+
+**Trunk stale-vs-main (personal-config):** A `trunk-failed` label or "GitHub
+blocked Trunk from preparing the test branch" after `main` moved is the PR being
+behind `main`, not a GitHub App or ruleset misconfiguration. Update the PR from
+`main` (`update_pull_request_branch`), wait until it is up to date, then comment
+`/trunk merge` on the **new** head SHA. Do not re-comment `/trunk merge` on an
+unchanged SHA. Do not squash-bypass. Record `HOLD_PLATFORM` App/ruleset HITL
+only if Trunk still cannot enqueue after the PR is already up to date with
+`main`. See the lifecycle contract section "Trunk queue: stale vs main".
 
 ## Phase 4 — Reporting & Learning
 

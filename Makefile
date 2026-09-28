@@ -24,6 +24,9 @@ test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit veri
 	@bash tests/test_lib_common.sh
 	@bash tests/test_lib_dns_utils.sh
 	@python3 -m unittest tests.test_path_validation -v
+	@python3 scripts/validate_pr_lifecycle_artifacts.py \
+		tasks/pr-lifecycle-ledger.example.yaml --include-exports
+	@python3 scripts/sync_cursor_export_prompts.py --check
 
 control-d-regression:  ## Run full Control D regression test suite
 	./scripts/network-mode-regression.sh browsing
@@ -31,8 +34,8 @@ control-d-regression:  ## Run full Control D regression test suite
 benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 	./tests/benchmarks/benchmark_scripts.sh all
 
-lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
-	trunk check --all
+lint:  ## Run all linters, never mutating files (requires Trunk; runs: trunk check --all --no-fix)
+	trunk check --all --no-fix
 
 lint-errors:  ## Fail on SC2155/SC2145 correctness violations (run without Trunk; regression gate)
 	@echo "Checking for SC2155 (declare+assign) and SC2145 (arg mixing) violations..."

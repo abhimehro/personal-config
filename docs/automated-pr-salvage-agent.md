@@ -84,16 +84,17 @@ policy choice, canonical selection, platform proof, security contract, or broad
 redesign, do not start a branch. Set the indicated guardrail outcome and hand it
 to Stage 3.
 
-| Live evidence                                                                                             | Outcome                                                 | Next owner                                                              |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Change is already on `main` with a canonical PR/commit                                                    | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL`  | Stage 1 `CLOSE_NONSECURITY_NOOP` now; Stage 1 canonical-pick if overlap |
-| No valuable remaining functional/test/doc change                                                          | `CLOSE_NONSECURITY_NOOP` candidate                      | Stage 1                                                                 |
-| One mechanical recovery can be applied to trusted `main` with a named test                                | Draft recovery                                          | Stage 1 re-ingest if routine, else Stage 3 after creation               |
-| A required **local salvage** platform is unavailable (Swift/Xcode/`make guardrails` on Linux)             | `HOLD_PLATFORM`                                         | Stage 3. Do not treat GitHub-green BOT product PRs as this hold.        |
-| Competing source/replacement candidates overlap among sticky-security or HUMAN members                    | `HOLD_CANONICAL`                                        | Stage 3                                                                 |
-| Competing source overlap among BOT non-sensitive PRs                                                      | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                                                 |
-| Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved | `HOLD_CONTRACT` or `REVIEW_SECURITY`                    | Stage 3, then human packet if still irreducible                         |
-| Live checks/evidence cannot be obtained                                                                   | `HOLD_EVIDENCE`, one deterministic retry                | Stage 3 after retry failure                                             |
+| Live evidence                                                                                                                       | Outcome                                                 | Next owner                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Change is already on `main` with a canonical PR/commit                                                                              | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL`  | Stage 1 `CLOSE_NONSECURITY_NOOP` now; Stage 1 canonical-pick if overlap                                     |
+| No valuable remaining functional/test/doc change                                                                                    | `CLOSE_NONSECURITY_NOOP` candidate                      | Stage 1                                                                                                     |
+| One mechanical recovery can be applied to trusted `main` with a named test                                                          | Draft recovery                                          | Stage 1 re-ingest if routine, else Stage 3 after creation                                                   |
+| A required **local salvage** platform is unavailable (Swift/Xcode/`make guardrails` on Linux)                                       | `HOLD_PLATFORM`                                         | Stage 3. Do not treat GitHub-green BOT product PRs as this hold.                                            |
+| Competing source/replacement candidates overlap among sticky-security or HUMAN members                                              | `HOLD_CANONICAL`                                        | Stage 3                                                                                                     |
+| Competing source overlap among BOT non-sensitive PRs                                                                                | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                                                                                     |
+| Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved                           | `HOLD_CONTRACT` or `REVIEW_SECURITY`                    | Stage 3, then human packet if still irreducible                                                             |
+| Live checks/evidence cannot be obtained                                                                                             | `HOLD_EVIDENCE`, one deterministic retry                | Stage 3 after retry failure                                                                                 |
+| personal-config `trunk-failed` while the PR is behind `main` (or "blocked Trunk from preparing the test branch" after `main` moved) | Bounce to Stage 1 stale-vs-main retry                   | Stage 1. Not a salvage of Trunk App/ruleset config. Update from `main`, then `/trunk merge` on the new SHA. |
 
 ## Draft recovery procedure
 
@@ -140,7 +141,11 @@ drafts and zero structured failed-recovery records is a failed run when
 salvageable bot work existed. True empty intake (zero Stage-2-owned items, zero
 queued work items, and zero salvage-eligible remainder) is a short record and
 stop. If salvage-eligible items exist, label `EMPTY_INTAKE_STARVATION` and still
-do not invent recoveries. A PR already merged, closed, deleted, or changed since
+do not invent recoveries. **Option 3 skip-if-empty (2026-09-24):** when dry-run
+`stage2_work_item_count == 0` and post never-touch mechanical candidates == 0,
+exit success (`EMPTY_INTAKE_SKIP`); do not open/push a docs lineage PR and do
+not launch further Cursor agents. Stage 1 CAS-enqueues ≤5
+`CONFLICTING_UNIQUE_RESELECT` work items; Stage 2 still never merges originals. A PR already merged, closed, deleted, or changed since
 its immutable anchors becomes a structured Stage 3 reconciliation handoff, not a
 recovery branch.
 

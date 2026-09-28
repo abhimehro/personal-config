@@ -97,6 +97,7 @@ yarn-error.log*
 package-lock.json
 !copilot-demo/package-lock.json
 yarn.lock
+.gitnexus/
 
 # Ruby
 .bundle/
@@ -277,6 +278,7 @@ configs/.config/fish.backup.*/
 # Fisher-installed plugin files (generated on each machine via `fisher update`)
 configs/.config/fish/conf.d/*
 !configs/.config/fish/conf.d/zzz_tide_prompt_guard.fish
+!configs/.config/fish/conf.d/zzz_tide_prompt_reap.fish
 configs/.config/fish/completions/*
 configs/.config/fish/functions/*
 
