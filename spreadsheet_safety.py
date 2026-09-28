@@ -18,6 +18,8 @@ def escape_spreadsheet_formula(value: str) -> str:
         return value
     if value[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
+    # Bare lstrip() removes every character Python treats as whitespace
+    # (\v, \f, NBSP, U+2000-U+200A, U+3000), not just space and newline.
     stripped = value.lstrip()
     if stripped and stripped[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
