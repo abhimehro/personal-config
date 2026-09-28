@@ -96,7 +96,7 @@ class TestStagePromptContracts(unittest.TestCase):
             "calibration status `APPROVED` for the current scope and policy revision",
             completion,
         )
-        self.assertIn("five state-changing actions", completion)
+        self.assertIn("fifteen state-changing actions", completion)
         self.assertIn("Stop before exceeding the cap", completion)
 
     def test_pr_desk_flags_starvation(self) -> None:
