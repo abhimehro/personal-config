@@ -1,6 +1,6 @@
 # 📅 Maintenance Automation Schedule - FINAL
 
-**Updated:** 2026-08-13 (aligned with `maintenance/install.sh`)
+**Updated:** 2026-09-25 (aligned with `maintenance/install.sh`)
 
 **Status:** ✅ Schedule matches install-time LaunchAgents
 (`com.abhimehrotra.maint.*`)
@@ -16,6 +16,7 @@
 | **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                    |
 | **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                        |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                 |
+| **2:00 AM**  | 🧠 GitNexus Auto Sync    | Daily        | `gitnexus_auto_sync_once.sh`      | One low-priority clone/pull/analyze cycle; skips delayed wake launches |
 
 > ProtonDrive one-way backup is **archived**
 > (`maintenance/bin/archive/protondrive_backup.sh`) and is not installed by
@@ -29,6 +30,7 @@
 - `com.abhimehrotra.maint.healthcheck.plist` → **8:30 AM daily**
 - `com.abhimehrotra.maint.systemcleanup.plist` → **9:00 AM daily**
 - `com.abhimehrotra.maint.brew.plist` → **10:00 AM daily**
+- `com.abhimehrotra.maint.gitnexus-autosync.plist` → **2:00 AM daily** (Background, Nice 10; wrapper allows starts only through 2:04 AM)
 
 ### Weekly Agent
 
@@ -63,6 +65,14 @@
 - ✅ Log file cleanup (30+ days old)
 - ✅ Homebrew cleanup and autoremove
 - ✅ Language cache verification (npm, pip, gem)
+
+### 🧠 Daily GitNexus Auto Sync (2:00 AM)
+
+- Runs exactly one remote clone/pull/analyze cycle with `max_concurrency: 1`, then stops the watcher gracefully after its completion signal.
+- Runs as a launchd Background job at Nice 10; the wrapper also uses reduced priority.
+- A 2:00-2:04 AM start window prevents launchd delayed post-wake firing from starting GitNexus during the day.
+- Timeout behavior is non-destructive: log the issue and exit without terminating active analysis. Logs and per-repository outcomes are under `~/Library/Logs/maintenance/`.
+- Embeddings are enabled only for auto-sync clones `personal-config`, `ctrld-sync`, and `Seatek_Analysis`; RepoPrompt remains excluded.
 
 ### 🍺 Daily Homebrew Maintenance (10:00 AM)
 
