@@ -57,13 +57,13 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             "daily-pr-review.md",
             "daily-pr-salvage.md",
             "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
         ):
             with self.subTest(name):
                 raw = (PROMPTS / name).read_text(encoding="utf-8")
                 expanded = expand_prompt_source(PROMPTS / name)
                 self.assertNotIn("{{include:", raw)
                 self.assertEqual(expanded, raw)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", expanded)
                 self.assertIn("docs/automated-pr-lifecycle.md", expanded)
 
     def test_exports_store_expanded_prompt(self) -> None:
@@ -71,12 +71,14 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             "daily-pr-review.json",
             "daily-pr-salvage.json",
             "daily-pr-completion.json",
+            "daily-pr-completion.calibration.json",
         ):
             with self.subTest(export_name):
                 data = json.loads((EXPORTS / export_name).read_text(encoding="utf-8"))
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", prompt)
+                source = PROMPTS / export_name.replace(".json", ".md")
+                self.assertEqual(prompt, expand_prompt_source(source).strip() + "\n")
                 self.assertIn("docs/automated-pr-lifecycle.md", prompt)
 
     def test_rejects_path_traversal(self) -> None:

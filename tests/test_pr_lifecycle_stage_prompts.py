@@ -1,4 +1,4 @@
-"""Stage prompt contracts: prompts stay thin bootstraps over pr_lifecycle_run."""
+"""Contracts for the expanded lifecycle stage prompts."""
 
 from __future__ import annotations
 
@@ -14,55 +14,90 @@ if str(SCRIPTS) not in sys.path:
 import pr_lifecycle_validation as validator  # noqa: E402
 from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 
+
 class TestStagePromptContracts(unittest.TestCase):
-    """Stage prompts are thin bootstraps that defer to pr_lifecycle_run plans."""
+    """Stage prompts bind runtime authority, routing, and action limits."""
 
     def _prompt(self, name: str) -> str:
         """Read an automation prompt for contract assertions."""
-        return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
+        text = expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
+        return " ".join(text.split())
 
-    def test_review_prompt_feeds_stage2_via_runner(self) -> None:
-        """Verify the review prompt uses the runner to feed Stage 2."""
+    def test_review_prompt_routes_stage2_and_overflow(self) -> None:
+        """Mechanical work is owned even when a bounded review run fills up."""
         review = self._prompt("daily-pr-review.md")
-        self.assertIn("pr_lifecycle_run.py --stage 1", review)
-        self.assertIn("emitted plan", review)
-        self.assertIn("pr_lifecycle_feed.py", review)
+        self.assertIn("create exactly one complete Stage 2 work item", review)
+        self.assertIn(
+            "inventory cap filled as overflow, not as unowned",
+            review,
+        )
         self.assertIn("run record", review)
 
-    def test_salvage_prompt_heal_forward_without_merging(self) -> None:
-        """The salvage prompt must heal starvation without invented merges."""
+    def test_salvage_prompt_validates_work_and_preserves_drafts(self) -> None:
+        """Salvage requires bounded work, validation, and a draft handoff."""
         salvage = self._prompt("daily-pr-salvage.md")
-        self.assertIn("pr_lifecycle_run.py --stage 2", salvage)
-        self.assertIn("never merges", salvage)
-        self.assertIn("EMPTY_FEED_WITH_ELIGIBLE_STOCK", salvage)
-        self.assertIn("LOGIC_STOP", salvage)
-        self.assertIn("heal-forward", salvage)
-        self.assertIn("Minimal WI intake", salvage)
+        self.assertIn("complete unexpired work items", salvage)
+        self.assertIn("allowed and prohibited paths", salvage)
+        self.assertIn(
+            "Never approve, request review, mark ready, merge, close",
+            salvage,
+        )
+        self.assertIn("Run the named test", salvage)
+        self.assertIn("re-read `isDraft`", salvage)
+        self.assertIn(
+            "do not expand scope when a path was split or removed",
+            salvage,
+        )
 
-    def test_review_prompt_schema_aware_cas_only(self) -> None:
-        """Verify the review prompt requires schema-aware CAS writes."""
+    def test_review_prompt_requires_validated_cas(self) -> None:
+        """Unreadable or unwritable runtime state prevents lifecycle actions."""
         review = self._prompt("daily-pr-review.md")
-        self.assertIn("Schema-aware CAS", review)
-        self.assertIn("raw YAML", review)
+        self.assertIn(
+            "read, validated, or written through its selected CAS path",
+            review,
+        )
+        self.assertIn("take no lifecycle action or calibration step", review)
+        self.assertIn("revision-checked events", review)
 
     def test_completion_prompt_re_reads_predicates(self) -> None:
-        """Verify the completion prompt rechecks live predicates."""
+        """Completion independently verifies evidence before acting."""
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("pr_lifecycle_run.py --stage 3", completion)
-        self.assertIn("Re-read predicates", completion)
+        self.assertIn(
+            "immutable anchors immediately before every action",
+            completion,
+        )
+        self.assertIn(
+            "Re-read every predicate independently of Stage 2's recovery notes",
+            completion,
+        )
+        self.assertIn(
+            "Recheck every predicate after approval and before queue submission",
+            completion,
+        )
 
-    def test_completion_prompt_bot_thread_advisory(self) -> None:
-        """The completion prompt binds the Abhi-approved bot-thread policy."""
+    def test_completion_prompt_holds_without_required_evidence(self) -> None:
+        """Completion cannot treat missing check evidence as merge authority."""
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("advisory", completion)
-        self.assertIn("Codacy", completion)
-        self.assertIn("REVIEW.md", completion)
+        self.assertIn(
+            "Never act on human, unknown, security-sensitive",
+            completion,
+        )
+        self.assertIn(
+            "required-check configuration cannot be read, hold rather than act",
+            completion,
+        )
+        self.assertIn("TRUNK_QUEUE", completion)
 
-    def test_completion_prompt_live_stage3_not_calibration(self) -> None:
-        """Verify the completion prompt uses live Stage 3 rules."""
+    def test_completion_prompt_requires_approved_calibration(self) -> None:
+        """Bounded completion is conditional on approval for the current policy."""
         completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("live Stage 3", completion)
-        self.assertIn("Calibration stays", completion)
+        self.assertIn("bounded-completion variant", completion)
+        self.assertIn(
+            "calibration status `APPROVED` for the current scope and policy revision",
+            completion,
+        )
+        self.assertIn("five state-changing actions", completion)
+        self.assertIn("Stop before exceeding the cap", completion)
 
     def test_pr_desk_flags_starvation(self) -> None:
         """The PR Desk profile must expose starvation indicators."""
@@ -77,18 +112,21 @@ class TestStagePromptContracts(unittest.TestCase):
     def test_stage_prompts_shared_ownership(self) -> None:
         """Stage prompts bind the lifecycle contract; ownership prose lives there."""
         for name, stage in (
-            ("daily-pr-review.md", "--stage 1"),
-            ("daily-pr-salvage.md", "--stage 2"),
-            ("daily-pr-completion.md", "--stage 3"),
+            ("daily-pr-review.md", "Stage-1-owned"),
+            ("daily-pr-salvage.md", "Stage-2-owned"),
+            ("daily-pr-completion.md", "Stage-3-owned"),
         ):
             with self.subTest(name):
                 text = " ".join(self._prompt(name).split())
                 self.assertIn("docs/automated-pr-lifecycle.md", text)
-                self.assertIn(f"scripts/pr_lifecycle_run.py {stage}", text)
+                self.assertIn(stage, text)
                 self.assertIn("run record", text)
-                self.assertIn("Schema-aware CAS", text)
-                self.assertIn("force-push", text)
-                self.assertIn("Calibration stays", text)
+                self.assertIn("revision-checked events", text)
+                self.assertIn(
+                    "A changed anchor invalidates prior evidence",
+                    text,
+                )
+                self.assertIn("selected CAS path", text)
         contract = (ROOT / "docs" / "automated-pr-lifecycle.md").read_text(
             encoding="utf-8"
         )
@@ -98,13 +136,23 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertIn("`REVIEW.md`", contract)
         self.assertIn("Citing those files is not enough", contract)
 
-    def test_calibration_prompt_keeps_legacy_contract(self) -> None:
-        """The calibration prompt is unchanged by the bootstrap rebalance."""
+    def test_calibration_prompt_reset_is_not_success(self) -> None:
+        """Calibration resets stale policy without counting a successful run."""
         calibration = self._prompt("daily-pr-completion.calibration.md")
-        self.assertIn('--message "automated lifecycle ledger update"', calibration)
-        self.assertIn("docs/automated-pr-lifecycle.md", calibration)
-        self.assertIn("Memory is enabled", calibration)
-        self.assertNotIn("{{include:", calibration)
+        self.assertIn("rewrite `calibration` to `REPORT_ONLY`", calibration)
+        self.assertIn("`successful_run_count` 0", calibration)
+        self.assertIn(
+            "That reset is not a successful calibration run",
+            calibration,
+        )
+        self.assertIn(
+            "report-only for approve/merge/close/comment/branch mutations",
+            calibration,
+        )
+        self.assertIn(
+            "Never approve, merge, submit to a queue, close, comment",
+            calibration,
+        )
 
     def test_stage_caps_are_80_40_10_and_15(self) -> None:
         """Verify the documented intake, mutation, salvage, and completion caps."""
@@ -115,6 +163,3 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertEqual(caps["stage2_salvage_candidates"], 10)
         self.assertEqual(caps["stage3_completion_actions"], 15)
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
-
-
-
