@@ -34,8 +34,8 @@ control-d-regression:  ## Run full Control D regression test suite
 benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 	./tests/benchmarks/benchmark_scripts.sh all
 
-lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
-	trunk check --all
+lint:  ## Run all linters, never mutating files (requires Trunk; runs: trunk check --all --no-fix)
+	trunk check --all --no-fix
 
 lint-errors:  ## Fail on SC2155/SC2145 correctness violations (run without Trunk; regression gate)
 	@echo "Checking for SC2155 (declare+assign) and SC2145 (arg mixing) violations..."

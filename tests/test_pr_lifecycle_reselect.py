@@ -12,11 +12,13 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     make_item,
     make_ledger,
     make_work_item,
 )
+
 
 class ReselectCandidateTests(unittest.TestCase):
     def test_reselect_rejects_terminal_and_non_salvage_outcomes(self) -> None:
@@ -56,12 +58,15 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(paths=paths):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=paths
+                        item, live=health.LivePrSignals(unique_paths=paths)
                     )
                 )
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, unique_remaining_paths=[".jules/journal.md", "src/unique.py"]
+                item,
+                live=health.LivePrSignals(
+                    unique_paths=[".jules/journal.md", "src/unique.py"]
+                ),
             )
         )
 
@@ -80,7 +85,10 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(allowed=path):
                 self.assertTrue(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=[".jules/journal.md", path]
+                        item,
+                        live=health.LivePrSignals(
+                            unique_paths=[".jules/journal.md", path]
+                        ),
                     )
                 )
         for paths in (
@@ -91,23 +99,25 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(blocked=paths):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
-                        item, unique_remaining_paths=paths
+                        item, live=health.LivePrSignals(unique_paths=paths)
                     )
                 )
         self.assertFalse(
             health.is_reselect_salvage_candidate(
                 {**item, "next_action": "CONFLICTING unique remaining"},
-                unique_remaining_paths=["maintenance/bin/refresh.sh"],
+                live=health.LivePrSignals(unique_paths=["maintenance/bin/refresh.sh"]),
             )
         )
 
     def test_title_bot_prefixes_do_not_admit_arbitrary_human_titles(self) -> None:
         """Verify bot title prefixes reject unrelated human titles."""
         item = make_item(
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
         )
+        gate = health.ReselectAuthorGate(allowed_authors=("abhimehro",))
         for prefix in (
             "⚡ Bolt",
             "🎨 Palette",
@@ -118,13 +128,19 @@ class ReselectCandidateTests(unittest.TestCase):
             with self.subTest(prefix=prefix):
                 self.assertTrue(
                     health.is_reselect_salvage_candidate(
-                        item, title=f"  {prefix} focused repair"
+                        item,
+                        live=health.LivePrSignals(title=f"  {prefix} focused repair"),
+                        author_gate=gate,
                     )
                 )
         for title in (None, "Human repair", "Review ⚡ Bolt repair"):
             with self.subTest(title=title):
                 self.assertFalse(
-                    health.is_reselect_salvage_candidate(item, title=title)
+                    health.is_reselect_salvage_candidate(
+                        item,
+                        live=health.LivePrSignals(title=title),
+                        author_gate=gate,
+                    )
                 )
 
     def test_reselect_candidate_lookup_accepts_source_prefix_metadata(self) -> None:
@@ -132,11 +148,14 @@ class ReselectCandidateTests(unittest.TestCase):
         key = "abhimehro/demo#7@abc"
         item = make_item(
             key=key,
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="Needs live verification",
         )
-        ledger = make_ledger([item, make_item(key="", changed_paths=["src/other.py"])], [])
+        ledger = make_ledger(
+            [item, make_item(key="", changed_paths=["src/other.py"])], []
+        )
         selected = health.list_reselect_candidates(
             ledger,
             signals=health.ReselectSignals(
@@ -146,6 +165,23 @@ class ReselectCandidateTests(unittest.TestCase):
             ),
         )
         self.assertEqual([entry["key"] for entry in selected], [key])
+
+    def test_unqueried_keys_cannot_reselect_from_ledger_state(self) -> None:
+        """Cap-clipped keys carry no live evidence: they are excluded like
+        closed keys even when ledger fields alone would qualify them."""
+        item = make_item(
+            key="abhimehro/demo#8@abc",
+            changed_paths=["src/demo.py"],
+            next_action="CONFLICTING unique remaining",
+        )
+        self.assertTrue(health.is_reselect_salvage_candidate(item))
+        selected = health.list_reselect_candidates(
+            make_ledger([item], []),
+            signals=health.ReselectSignals(
+                unqueried_keys=frozenset({"abhimehro/demo#8@abc"})
+            ),
+        )
+        self.assertEqual(selected, [])
 
     def test_palette_conflicting_soft_shell_sticky_is_reselect(self) -> None:
         """Verify conflicting Palette shell work qualifies for reselection."""
@@ -215,11 +251,16 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertFalse(health.is_reselect_salvage_candidate(item))
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="CONFLICTING")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="CONFLICTING")
+            )
         )
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, live_mergeable="DIRTY", unique_remaining_paths=["src/demo.py"]
+                item,
+                live=health.LivePrSignals(
+                    mergeable="DIRTY", unique_paths=["src/demo.py"]
+                ),
             )
         )
 
@@ -230,10 +271,14 @@ class ReselectCandidateTests(unittest.TestCase):
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
         )
         self.assertFalse(
-            health.is_reselect_salvage_candidate(item, live_mergeable="MERGEABLE")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="MERGEABLE")
+            )
         )
         self.assertTrue(
-            health.is_reselect_salvage_candidate(item, live_mergeable="dirty")
+            health.is_reselect_salvage_candidate(
+                item, live=health.LivePrSignals(mergeable="dirty")
+            )
         )
 
     def test_explicit_empty_unique_signal_does_not_reselect_stale_paths(self) -> None:
@@ -292,7 +337,8 @@ class ReselectCandidateTests(unittest.TestCase):
         )
         self.assertFalse(
             health.is_reselect_salvage_candidate(
-                item, unique_remaining_paths=["maintenance/bin/refresh.sh"]
+                item,
+                live=health.LivePrSignals(unique_paths=["maintenance/bin/refresh.sh"]),
             )
         )
 
@@ -327,7 +373,9 @@ class ReselectCandidateTests(unittest.TestCase):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
                         item,
-                        unique_remaining_paths=["maintenance/bin/refresh.sh", path],
+                        live=health.LivePrSignals(
+                            unique_paths=["maintenance/bin/refresh.sh", path]
+                        ),
                     )
                 )
 
@@ -345,13 +393,16 @@ class ReselectCandidateTests(unittest.TestCase):
                 self.assertFalse(
                     health.is_reselect_salvage_candidate(
                         item,
-                        unique_remaining_paths=["maintenance/bin/refresh.sh"],
+                        live=health.LivePrSignals(
+                            unique_paths=["maintenance/bin/refresh.sh"]
+                        ),
                     )
                 )
 
     def test_title_allowlist_for_non_bot_ledger_author(self) -> None:
         """Verify the title allowlist can classify a non-bot ledger author."""
         item = make_item(
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["maintenance/bin/analytics_dashboard.sh"],
             sensitive_paths=["shell_execution", "generated_output"],
@@ -360,7 +411,8 @@ class ReselectCandidateTests(unittest.TestCase):
         self.assertFalse(health.is_reselect_salvage_candidate(item))
         self.assertTrue(
             health.is_reselect_salvage_candidate(
-                item, title="🎨 Palette: wrap analytics dashboard"
+                item,
+                live=health.LivePrSignals(title="🎨 Palette: wrap analytics dashboard"),
             )
         )
 
@@ -445,6 +497,7 @@ class ReselectCandidateTests(unittest.TestCase):
         """An explicit empty live title must not inherit stale BOT metadata."""
         source = make_item(
             key="abhimehro/demo#7@new-head",
+            author="abhimehro",
             author_type="HUMAN",
             changed_paths=["src/demo.py"],
             next_action="HOLD_CONTRACT CONFLICTING unique remaining",
