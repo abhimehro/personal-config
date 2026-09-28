@@ -111,8 +111,8 @@ echo "---"
 rm -f "${HOME}/.local/bin/gitnexus" "${MOCK_BIN}/gitnexus" "${MOCK_BIN}/npm"
 NO_NPM_BIN="${TEST_DIR}/no-npm-bin"
 mkdir -p "${NO_NPM_BIN}"
-for cmd in date mkdir dirname head grep cat rm sed printf git bash chmod; do
-	cmd_path="$(command -v "${cmd}" || true)"
+for cmd in env date mkdir dirname head grep cat rm sed git bash chmod; do
+	cmd_path="$(type -P "${cmd}" || true)"
 	if [[ -n ${cmd_path} ]]; then
 		ln -sf "${cmd_path}" "${NO_NPM_BIN}/${cmd}"
 	fi
