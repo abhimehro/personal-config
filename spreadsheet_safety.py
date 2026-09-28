@@ -18,7 +18,7 @@ def escape_spreadsheet_formula(value: str) -> str:
         return value
     if value[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
-    stripped = value.lstrip(" \n")
+    stripped = value.lstrip()
     if stripped and stripped[0] in _FORMULA_PREFIX_CHARS:
         return "'" + value
     return value
