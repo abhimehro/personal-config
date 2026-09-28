@@ -36,3 +36,5 @@ jobs:
           enable_approve: false
           dedupe: true
           large_pr_strategy: prioritize
+          rules_directory: ''
+          rules_directory: ''
