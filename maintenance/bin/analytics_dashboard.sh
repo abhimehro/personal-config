@@ -372,6 +372,18 @@ generate_dashboard() {
 	local cap_period
 	cap_period=$(echo "$period" | awk '{print toupper(substr($0,1,1))substr($0,2)}')
 
+	# A report can contain up to three warnings per day; scale the meter to
+	# the selected reporting period so larger aggregates remain distinguishable.
+	local warning_meter_max
+	case "$period" in
+	"daily") warning_meter_max=3 ;;
+	"weekly") warning_meter_max=21 ;;
+	"monthly") warning_meter_max=90 ;;
+	*) warning_meter_max=3 ;;
+	esac
+	local warning_meter_low=$((warning_meter_max / 3))
+	local warning_meter_high=$((warning_meter_max * 2 / 3))
+
 	log_info "Generating $period dashboard"
 
 	local dashboard_file
@@ -466,10 +478,9 @@ EOF
 		avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$metrics_report")
 		local total_warnings
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
-		# total_warnings is an unbounded running sum, so scale the meter to the
-		# observed total instead of clamping at a fixed 20.
-		local warnings_meter_max=20
-		((total_warnings > warnings_meter_max)) && warnings_meter_max=$total_warnings
+		# Expand the period-based range for larger observed totals while keeping
+		# the period's warning thresholds fixed.
+		((total_warnings > warning_meter_max)) && warning_meter_max=$total_warnings
 
 		cat >>"$dashboard_file" <<EOF
             <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
@@ -489,7 +500,7 @@ EOF
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">
                     ${total_warnings:-0}
-                    <meter value="${total_warnings:-0}" min="0" max="${warnings_meter_max}" low="3" high="10" optimum="0" aria-label="Total Warnings: ${total_warnings:-0}"></meter>
+                    <meter value="${total_warnings:-0}" min="0" max="${warning_meter_max}" low="${warning_meter_low}" high="${warning_meter_high}" optimum="0" aria-label="Total Warnings: ${total_warnings:-0}"></meter>
                 </div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
