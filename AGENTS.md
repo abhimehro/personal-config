@@ -256,8 +256,8 @@ make lint-errors
 # Auto-format (where supported)
 make lint-fix
 
-# Or invoke trunk directly
-trunk check --all
+# Or invoke trunk directly (--no-fix: non-interactive check applies autofixes otherwise)
+trunk check --all --no-fix
 trunk fmt
 ```
 
@@ -265,7 +265,8 @@ trunk fmt
 > (defaults, disables SC1091/SC1090) while Trunk/CI uses
 > `.trunk/configs/.shellcheckrc` (`enable=all`, disables SC2154/SC1091/SC1090),
 > so CI will report more issues than direct `shellcheck`. To match CI behavior
-> locally, run `trunk check <file>` instead of calling `shellcheck` directly.
+> locally, run `trunk check --no-fix <file>` instead of calling `shellcheck`
+> directly.
 
 ### Tests
 

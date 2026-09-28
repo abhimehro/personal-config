@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maint.gitnexus-autosync</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>/Users/speedybee/Library/Maintenance</string>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/gitnexus_auto_sync_once.sh</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/gitnexus-auto-sync-launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/gitnexus-auto-sync-launchd.err</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>
