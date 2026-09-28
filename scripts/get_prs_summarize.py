@@ -93,6 +93,7 @@ _TITLE_KW_PAIRS = tuple(
 
 
 def _add_author_hints(author: dict | None, hints: set[str]) -> None:
+    """Add bot-flag and bot-login hints to the supplied set in place."""
     if not author:
         return
     if author.get("is_bot"):
@@ -103,6 +104,7 @@ def _add_author_hints(author: dict | None, hints: set[str]) -> None:
 
 
 def _add_branch_hints(branch: str | None, hints: set[str]) -> None:
+    """Add the first configured signal matching the branch, ignoring case."""
     if not branch:
         return
     branch_lower = branch.lower()
@@ -113,6 +115,7 @@ def _add_branch_hints(branch: str | None, hints: set[str]) -> None:
 
 
 def _add_title_hints(title: str | None, hints: set[str]) -> None:
+    """Add the first configured keyword matching the title, ignoring case."""
     if not title:
         return
     title_lower = title.lower()
@@ -123,6 +126,7 @@ def _add_title_hints(title: str | None, hints: set[str]) -> None:
 
 
 def _add_body_hints(body: str | None, hints: set[str]) -> None:
+    """Add a body hint if any automation marker matches, ignoring case."""
     if not body:
         return
     body_lower = body.lower()
@@ -133,6 +137,12 @@ def _add_body_hints(body: str | None, hints: set[str]) -> None:
 
 
 def automation_hints(pr: dict) -> str:
+    """Return sorted, unique automation hints or a human-review fallback.
+
+    Inspect the PR's author, branch, title, and body, tolerating missing or
+    null fields. Join matching hints with semicolons; if none match, advise
+    treating the PR as human unless reviews indicate otherwise.
+    """
     hints: set[str] = set()
     _add_author_hints(pr.get("author"), hints)
     _add_branch_hints(pr.get("headRefName"), hints)
