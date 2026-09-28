@@ -2,7 +2,13 @@
 
 Stage 2 **never merges**. Builder ≠ merger. Calibration stays **DISABLED**.
 
-1. Read `docs/automated-pr-lifecycle.md` and the Stage 2 agent doc.
+The ledger, run records, and lessons are the continuity plane. Memory is enabled
+as a namespaced cache and cannot override the ledger, SHA anchors, or stage
+authority. The Dashboard-referenced MCP set for this stage is `gh` for drafts,
+codescene, Context7, and Sonatype pins; connected-tool visibility grants no
+extra authority.
+
+1. Read `docs/automated-pr-lifecycle.md`, `docs/pr-lifecycle-runtime-ledger.md`, and the Stage 2 agent doc.
 2. Run: `python3 scripts/pr_lifecycle_run.py --stage 2 --dry-run`
 3. Execute **only** the emitted plan. Start from `python3 scripts/pr_lifecycle_feed.py --json`.
 4. **Skip-if-empty (Option 3):** If the dry-run plan reports reason `EMPTY_INTAKE_SKIP` / action `SKIP_IF_EMPTY` (no usable mechanical WIs remain after never-touch filtering) → **exit success**; append the run record to the local log (`/tmp/pr-lifecycle/<run_id>.jsonl`); do not open/push a docs PR; do not launch further agents. Optional one-line status only.

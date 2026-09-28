@@ -2,7 +2,13 @@
 
 Completion is **live Stage 3** (not calibration). Calibration stays **DISABLED**. Re-read predicates before every merge/close.
 
-1. Read `docs/automated-pr-lifecycle.md`, `REVIEW.md` bot-thread policy (2026-09-21), and lessons 0hr.
+The ledger, run records, and lessons are the continuity plane. Memory is enabled
+as a namespaced cache and cannot override the ledger, SHA anchors, or stage
+authority. The Dashboard-referenced MCP set for this stage is `gh` for reads,
+Notion for packets, and scanners for hold evidence; `gh` mutations require
+ledger `APPROVED`. Connected-tool visibility grants no extra authority.
+
+1. Read `docs/automated-pr-lifecycle.md`, `docs/pr-lifecycle-runtime-ledger.md`, `REVIEW.md` bot-thread policy (2026-09-21), and lessons 0hr.
 2. Run: `python3 scripts/pr_lifecycle_run.py --stage 3 --dry-run` (plan includes live signals; `SIGNALS_DEGRADED` adds no signal-specific stop; other planner stops still apply; executor live-verifies unique paths at CAS time).
 3. Execute **only** the emitted plan / allowed commands.
 4. **Bot-thread advisory (Abhi 2026-09-21):** Codacy / qodo / CodeRabbit threads with no human reply are advisory; Stage 3 may resolve them with a standard comment before `/trunk`.

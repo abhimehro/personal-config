@@ -2,7 +2,13 @@
 
 Calibration stays **DISABLED**. Do not merge REVIEW_SECURITY / HUMAN sticky without a Desk exception.
 
-1. Read `docs/automated-pr-lifecycle.md`, `REVIEW.md` (bot-thread advisory policy), and `tasks/lessons.md` (0hr).
+The ledger, run records, and lessons are the continuity plane. Memory is enabled
+as a namespaced cache and cannot override the ledger, SHA anchors, or stage
+authority. The Dashboard-referenced MCP set for this stage is `gh` plus
+codescene, Sonatype, and Snyk as needed; connected-tool visibility grants no
+extra authority.
+
+1. Read `docs/automated-pr-lifecycle.md`, `docs/pr-lifecycle-runtime-ledger.md`, `REVIEW.md` (bot-thread advisory policy), and `tasks/lessons.md` (0hr).
 2. Run: `python3 scripts/pr_lifecycle_run.py --stage 1 --dry-run` (plan includes live signals; `SIGNALS_DEGRADED` adds no signal-specific stop; other planner stops, including `FEED_CHECK_FAIL` from `FEED_CHECK`, still apply; executor live-verifies unique paths at CAS time).
 3. Execute **only** the emitted plan / allowed commands. Prefer `python3 scripts/pr_lifecycle_reconcile.py --json` before mutations.
 4. Schema-aware CAS only via `pr_lifecycle_ledger_cas` / ledger helpers — never raw YAML string replace.
