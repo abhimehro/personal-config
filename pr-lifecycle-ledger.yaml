@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 197
+ledger_revision: 199
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19803,14 +19803,13 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #1287 (isDraft verified); original #1269
-    remains OPEN under Stage 3 reconciliation.'
+  next_action: TERMINAL MERGED_ROUTINE (hop5 squash)
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1287
   - https://github.com/abhimehro/ctrld-sync/pull/1269
@@ -19828,8 +19827,9 @@ items:
   - evt-s2-20260928-ctrldsync-1287-i
   - evt-reconcile-20260928004904-0f934a71
   - evt-reconcile-20260928004904-09548e6d
-  revision: 3
-  updated_at_utc: '2026-09-28T00:49:04Z'
+  - evt-reconcile-20260928010859-1c72cea8
+  revision: 4
+  updated_at_utc: '2026-09-28T01:08:59Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -45800,6 +45800,25 @@ events:
   reason: 'Routine BOT salvage complete (unique wrap/lint test remainder vs merged
     sibling #1279). Stage 1 re-ingests draft #1287. Merge authority is never Stage
     2.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260928010859-1c72cea8
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1:evt-reconcile-20260928010859-1c72cea8
+  status: PROJECTED
+  created_at_utc: '2026-09-28T01:08:59Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro (Stage1 hop5 undraft+squash)
   successful: null
   policy_revision: null
 stage2_work_items: []
