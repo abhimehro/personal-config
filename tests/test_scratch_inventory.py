@@ -73,6 +73,32 @@ class TestScratchInventory(unittest.TestCase):
         self.assertIn("'=branch", md)
         self.assertIn("'=HYPERLINK", md)
 
+    def test_generate_markdown_keeps_untrusted_text_in_its_cells(self) -> None:
+        """Untrusted pipes/newlines in author, branch, and title stay in their own cells."""
+        prs = [
+            {
+                "repo": "personal-config",
+                "number": 1,
+                "author": {"login": "bot|admin"},
+                "headRefName": "fix|SECURITY|C",
+                "title": "Fix \\| CI\r\nREADY",
+                "mergeStateStatus": "DIRTY",
+                "createdAt": "2026-05-24T00:00:00Z",
+            }
+        ]
+
+        row = generate_markdown(prs)[-1]
+        cells = [cell.strip() for cell in row.strip("|").split("|")]
+
+        self.assertEqual(len(cells), 9)
+        self.assertEqual(cells[2], "bot&#124;admin")
+        self.assertEqual(cells[3], "fix&#124;SECURITY&#124;C")
+        self.assertEqual(cells[5], "D")
+        self.assertEqual(cells[6], "yes")
+        self.assertEqual(cells[8], "Fix \\&#124; CI READY")
+        self.assertNotIn("\n", row)
+        self.assertNotIn("\r", row)
+
     @patch("scratch_inventory.subprocess.run")
     def test_fetch_repo_prs_success(self, mock_run):
         mock_result = MagicMock()
