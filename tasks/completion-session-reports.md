@@ -2417,3 +2417,42 @@ already on this lineage; no new lesson.
 Per-item table: see `tasks/pr-completion-2026-09-08.md` (run-level ledger row
 only). Cloud run:
 https://cursor.com/agents/bc-32d4237b-49d0-4942-b186-b9c9a14e8e68
+
+## Stage Run Record — 2026-09-18
+
+Scheduled fire `2026-09-18T19:14:05Z` (automation `66a8e7a8`, run
+<https://cursor.com/agents/bc-e77ace12-3cb2-4d71-8942-83d9d4460d52>). Runtime
+ledger CAS preflight **PASS** at revision **71** (commit
+`d26175996109e542cce9d588c3a90cb3e8ea1f9c`, blob
+`9d432619bce8f04dffd4bc2c6bf0ab313a3d0cda`), then Git Data API FF **72**
+(commit `bc458a040aabc48d968e3291084d5e38eb153498`, blob
+`4bf6689b2335b3b66191c8ed79fe34317babb795`). Remote re-preflight **PASS**.
+Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4`, **not** reset. GitHub identity
+REST login `abhimehro`. Heal-forward: Stage 1 15:00 fingerprint **EXISTS**
+`stage2_queued_count=1` / `salvage_eligible_count=0` / `throughput_grade=PASS`;
+health `starvation=false`; Stage 2 not `FEED_FAIL` → **PROCEED COMPLETE**.
+Overflow squash-merged Hydro #670/#671/#669 (3/15). ACK series #409 vs draft
+#460 (do not merge). Bounce HOLD_CANONICAL personal-config #2030 → Stage 1.
+Eleven cheap TERMINAL projections of overnight GitHub MERGED/CLOSED. Packets
+**0**. Stage 2 WI **0**. Docs lineage
+[#2231](https://github.com/abhimehro/personal-config/pull/2231)
+(`pr-lifecycle-docs-20260918`). Do **not** `/trunk merge` this lineage in the
+appending run (**0gj**). Never merge drafts #460/#2231. Full record:
+`tasks/pr-completion-2026-09-18.md`. Lesson **0hn**.
+
+| Metric                        | Count |
+| ----------------------------- | ----: |
+| Reconciliations (live, acted) |    16 |
+| Product mutations             |     3 |
+| Merged                        |     3 |
+| Closed                        |     0 |
+| Decision packets              |     0 |
+| Stage 2 work items            |     0 |
+| Ledger file CAS writes        |     1 |
+| Analysis errors               |     0 |
+| Calibration change            |  none |
+
+Per-item table: see `tasks/pr-completion-2026-09-18.md`. Downstream: Stage 1
+canonical-pick #2030 vs #2116 and re-ingest draft #460; Stage 2 empty remainder;
+keep completion enabled and calibration disabled.
+

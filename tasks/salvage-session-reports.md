@@ -2212,3 +2212,64 @@ it from memory.
 3. Trunk-merge this lineage only after validation and routine predicates pass.
 
 Full record: `tasks/pr-salvage-2026-09-08-1700.md`.
+
+---
+
+## Run — 2026-09-18 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **70** (`python3 scripts/pr_lifecycle_ledger_cas.py`);
+  blob `5f9fa9b993dfe0529c726d8d6cd2630ae02bc94e`; data-branch commit
+  `4eae60147d1560031a01a3332473f09b95499764`
+- Preflight PASS; health `ledger_revision=70` `stage2_work_items=1`
+  `salvage_eligible=0` `starvation=false`. Calibration `APPROVED` 7/7
+  `pr-lifecycle-v1.4` (not reset).
+- Live: complete unexpired WI `s2-20260918-seriescorre-409` (expire
+  `2026-09-25T15:30:00Z`). Stage 1 fingerprint
+  `stage2_queued_count: 1` / `salvage_eligible_count: 0` /
+  `throughput_grade: PASS` on `tasks/pr-review-2026-09-18-1500.md`.
+- CodeScene MCP `namespaceStatus=error` (unused; tests-only salvage).
+  Sonatype-mcp unavailable (not a pin).
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| ---- | -----: | ----------- | ------ | ----- |
+| series_correction_project_updated | 409 | unique remainder recovered; original stays OPEN CONFLICTING | [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460) | tests-only; `draft=true` after 0gd (twice); live head `e5af43e4` |
+
+- Salvage drafts opened: **1** (product). Infra-fix drafts: **0**
+- Closed via API / autonomous merges / `request_reviewers`: **0 / 0 / skipped**
+- New lessons: **0hm**
+- Ledger CAS: rev **70 → 71**, commit `d26175996109e542cce9d588c3a90cb3e8ea1f9c`,
+  blob `9d432619bce8f04dffd4bc2c6bf0ab313a3d0cda` (Git Data API FF, attempt 1)
+- Cap 10; completed **1** eligible item. Remaining `stage2_work_items`: **[]**.
+  Unused 9/10 is empty remainder after the only WI, not skipped salvage.
+
+### Verification
+
+- `python3 -m pytest scripts/tests/test_processor.py -q` → **20 passed** on
+  live head `e5af43e4ab2cbfce2bb8e93c8f60b68da50c4d3e`.
+- Original #409 still OPEN CONFLICTING; base/head unchanged
+  `d5f92cf0` / `15621ef6`. Twin #405 MERGED. Journal not copied (**0cs**).
+- `processor.py` not replayed: current main already uses `copy(deep=False)` plus
+  per-column copies (**0hm**).
+- Create landed ready; Qodo follow-on also left ready; both converted to draft
+  (**0gd**). Re-read `isDraft=true` before CAS.
+- Post-CAS health: `ledger_revision=71` `stage2_work_items=0`
+  `salvage_eligible=0` `starvation=false` (empty remainder).
+- Calibration untouched. Docs lineage this PR; no sibling; not marked ready;
+  no `/trunk merge`.
+
+### Handoff
+
+1. Stage 1: re-ingest draft
+   [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460)
+   head `e5af43e4…` (`isDraft` true). Merge authority is never Stage 2.
+2. Stage 3: ACK `evt-s2-20260918-seriescorre-409-h`. Keep original
+   [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+   open. Do not close because a replacement exists.
+3. Do not salvage rpce Swift on Linux. Do not Trunk-merge this lineage from
+   Stage 2.
+
+Full record: `tasks/pr-salvage-2026-09-18-1700.md`.

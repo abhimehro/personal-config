@@ -72,10 +72,23 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 - Monthly Maintenance: 1st of month 6:00 AM - Deep system maintenance
 - Google Drive Backup (Light): 3:15 AM Tue–Sun — home backup light mode
 - Google Drive Backup (Full): Monday 4:00 AM — fuller Google Drive backup
+- GitNexus Auto Sync: daily at 2:00 AM, one cycle only; low-priority background job with a 2:00-2:04 AM wake-time window
 - ProtonDrive Backup: **archived** (`bin/archive/protondrive_backup.sh`); not
   installed by `install.sh` (use
   `macos/com.abhimehrotra.protondrive-backup.plist` only if you intentionally
   re-enable it)
+
+
+### GitNexus Auto Sync (Daily at 2:00 AM)
+
+- Runs one clone/pull/analyze cycle with `max_concurrency: 1`, then requests a graceful watcher stop only after GitNexus publishes its cycle-finished signal.
+- Launchd classifies it as `Background` and applies `Nice=10`; the wrapper also starts GitNexus at reduced priority.
+- Launchd can coalesce a scheduled event while the Mac sleeps. The wrapper starts only between 2:00 and 2:04 AM; a later wake-triggered launch is logged as skipped.
+- A six-hour timeout logs an alert and exits without stopping or killing an active watcher/analyzer. A later run recovers a completed prior cycle before starting new work.
+- Each run writes `gitnexus-auto-sync-<timestamp>.log` under `~/Library/Logs/maintenance/`, including start/end times and analyzed/skipped outcomes. Review timeout or recovery logs manually.
+- Embeddings are enabled in the auto-sync clones only for `personal-config`, `ctrld-sync`, and `Seatek_Analysis` via each `.gitnexusrc`. RepoPrompt stays out of `watch_config.yml`.
+- Manual one-cycle command: `~/Library/Maintenance/bin/gitnexus_auto_sync_once.sh --manual`. To deliberately force embeddings again, add `--force-target-embeddings`; this clears only those three analysis commit markers and creates a state backup.
+- The wrapper requires `sync_interval_minutes: 35791` to prevent an automatic follow-up cycle and verifies `max_concurrency: 1`. Keep both settings intact unless the one-cycle design is updated.
 
 ### 🏥 Health Monitoring
 
@@ -390,5 +403,4 @@ Schedules & Settings**
 
 ---
 
-_Last Updated: August 2026 - Align docs with `install.sh` labels; ProtonDrive
-archived_
+_Last Updated: September 2026 - Align docs with `install.sh` labels; document GitNexus one-cycle auto-sync; ProtonDrive archived_
