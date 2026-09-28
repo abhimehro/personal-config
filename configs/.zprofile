@@ -19,3 +19,7 @@ fpath[1,0]="/opt/homebrew/share/zsh/site-functions";
 eval "$(/usr/bin/env PATH_HELPER_ROOT="/opt/homebrew" /usr/libexec/path_helper -s)"
 [ -z "${MANPATH-}" ] || export MANPATH=":${MANPATH#:}";
 export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/speedybee/.local/bin:$PATH"

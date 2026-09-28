@@ -16,7 +16,7 @@ sys.path.append(
     )
 )
 
-from repository_automation_tasks import run_workflow_updater
+from repository_automation_tasks import run_workflow_updater  # noqa: E402
 
 
 class TestRunWorkflowUpdater(TestCase):

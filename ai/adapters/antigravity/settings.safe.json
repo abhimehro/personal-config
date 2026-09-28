@@ -1,0 +1,10 @@
+{
+  "comment": "Portable Antigravity CLI defaults. Live ~/.gemini/antigravity-cli/settings.json currently uses always-proceed. Do not overwrite live settings without approval.",
+  "agentMode": "accept-edits",
+  "allowNonWorkspaceAccess": false,
+  "artifactReviewPolicy": "asks-for-review",
+  "enableTelemetry": false,
+  "enableTerminalSandbox": true,
+  "toolPermission": "request-review",
+  "verbosity": "low"
+}

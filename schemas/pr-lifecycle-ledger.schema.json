@@ -1,0 +1,557 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/abhimehro/personal-config/schemas/pr-lifecycle-ledger.schema.json",
+  "title": "PR Lifecycle Ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "schema_path",
+    "ledger_revision",
+    "calibration",
+    "items",
+    "events",
+    "stage2_work_items",
+    "imports",
+    "repository_merge_methods"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.2" },
+    "schema_path": { "const": "schemas/pr-lifecycle-ledger.schema.json" },
+    "ledger_revision": { "type": "integer", "minimum": 0 },
+    "calibration": { "$ref": "#/$defs/calibration" },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "stage2_work_items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stage2WorkItem" }
+    },
+    "imports": { "type": "array", "items": { "$ref": "#/$defs/import" } },
+    "repository_merge_methods": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mergeMethod" }
+    }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "url": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "repository",
+        "pr",
+        "url",
+        "base_sha",
+        "head_sha",
+        "author",
+        "author_type",
+        "classification",
+        "risk_class",
+        "sensitive_paths",
+        "guardrail_outcome",
+        "lifecycle_state",
+        "current_owner",
+        "next_owner",
+        "safe_default",
+        "next_action",
+        "evidence_urls",
+        "changed_paths",
+        "attempts",
+        "handoffs",
+        "revision",
+        "updated_at_utc"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "pr": { "type": "integer", "minimum": 1 },
+        "url": { "$ref": "#/$defs/url" },
+        "base_sha": { "$ref": "#/$defs/sha" },
+        "head_sha": { "$ref": "#/$defs/sha" },
+        "author": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["login", "identity_source"],
+          "properties": {
+            "login": { "type": "string", "minLength": 1 },
+            "identity_source": { "const": "github_api" },
+            "app_slug": { "type": ["string", "null"] },
+            "identity_provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["method"],
+              "properties": {
+                "method": {
+                  "enum": [
+                    "allowlist_login",
+                    "allowlist_app_slug",
+                    "token_authored_signals"
+                  ]
+                },
+                "signals": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
+        "author_type": { "enum": ["BOT", "HUMAN", "UNKNOWN"] },
+        "classification": {
+          "enum": [
+            "SECURITY",
+            "DEPENDENCY",
+            "CI_INFRA",
+            "REFACTOR",
+            "FEATURE",
+            "PERFORMANCE",
+            "UI",
+            "UNKNOWN"
+          ]
+        },
+        "risk_class": {
+          "enum": ["ROUTINE", "SENSITIVE", "HUMAN_REVIEW", "UNKNOWN"]
+        },
+        "sensitive_paths": { "type": "array", "items": { "type": "string" } },
+        "guardrail_outcome": {
+          "enum": [
+            "PASS_ROUTINE",
+            "REVIEW_SECURITY",
+            "HOLD_CONTRACT",
+            "HOLD_EVIDENCE",
+            "HOLD_PLATFORM",
+            "HOLD_CANONICAL",
+            "CLOSE_NONSECURITY_NOOP",
+            "ANALYSIS_ERROR",
+            "NOT_RUN"
+          ]
+        },
+        "lifecycle_state": {
+          "enum": [
+            "STAGE1_INTAKE",
+            "STAGE2_QUEUED",
+            "STAGE2_ACTIVE",
+            "STAGE3_RECONCILIATION",
+            "WAITING_HUMAN",
+            "TERMINAL"
+          ]
+        },
+        "terminal_disposition": {
+          "enum": [
+            "MERGED_ROUTINE",
+            "MERGED_BOUNDED_COMPLETION",
+            "CLOSED_NOOP",
+            "CLOSED_DUPLICATE",
+            "CLOSED_STALE",
+            "CLOSED_SUPERSEDED",
+            "HUMAN_REJECTED",
+            "HUMAN_DEFERRED",
+            null
+          ]
+        },
+        "current_owner": {
+          "enum": ["stage1", "stage2", "stage3", "human", "none"]
+        },
+        "next_owner": {
+          "enum": ["stage1", "stage2", "stage3", "human", "none"]
+        },
+        "safe_default": { "type": "string", "minLength": 1 },
+        "next_action": { "type": "string", "minLength": 1 },
+        "evidence_urls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/url" }
+        },
+        "changed_paths": { "type": "array", "items": { "type": "string" } },
+        "attempts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence", "recovery", "mutations"],
+          "properties": {
+            "evidence": { "type": "integer", "minimum": 0 },
+            "recovery": { "type": "integer", "minimum": 0 },
+            "mutations": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "handoffs": { "type": "array", "items": { "type": "string" } },
+        "revision": { "type": "integer", "minimum": 0 },
+        "updated_at_utc": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "kind",
+        "item_key",
+        "from_owner",
+        "to_owner",
+        "from_state",
+        "to_state",
+        "next_owner",
+        "terminal_disposition",
+        "parent_event_id",
+        "expected_item_revision",
+        "resulting_item_revision",
+        "idempotency_key",
+        "status",
+        "created_at_utc",
+        "acknowledged_at_utc"
+      ],
+      "properties": {
+        "event_id": { "type": "string", "pattern": "^evt-[A-Za-z0-9._-]+$" },
+        "kind": {
+          "enum": [
+            "HANDOFF",
+            "ACKNOWLEDGEMENT",
+            "CANCELLATION",
+            "IMPORT",
+            "CALIBRATION",
+            "TERMINAL"
+          ]
+        },
+        "item_key": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$"
+        },
+        "from_owner": {
+          "enum": ["stage1", "stage2", "stage3", "human", "none"]
+        },
+        "to_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
+        "from_state": {
+          "type": ["string", "null"],
+          "enum": [
+            "STAGE1_INTAKE",
+            "STAGE2_QUEUED",
+            "STAGE2_ACTIVE",
+            "STAGE3_RECONCILIATION",
+            "WAITING_HUMAN",
+            "TERMINAL",
+            null
+          ]
+        },
+        "to_state": {
+          "type": ["string", "null"],
+          "enum": [
+            "STAGE1_INTAKE",
+            "STAGE2_QUEUED",
+            "STAGE2_ACTIVE",
+            "STAGE3_RECONCILIATION",
+            "WAITING_HUMAN",
+            "TERMINAL",
+            null
+          ]
+        },
+        "next_owner": {
+          "enum": ["stage1", "stage2", "stage3", "human", "none"]
+        },
+        "terminal_disposition": {
+          "enum": [
+            "MERGED_ROUTINE",
+            "MERGED_BOUNDED_COMPLETION",
+            "CLOSED_NOOP",
+            "CLOSED_DUPLICATE",
+            "CLOSED_STALE",
+            "CLOSED_SUPERSEDED",
+            "HUMAN_REJECTED",
+            "HUMAN_DEFERRED",
+            null
+          ]
+        },
+        "parent_event_id": {
+          "type": ["string", "null"],
+          "pattern": "^evt-[A-Za-z0-9._-]+$"
+        },
+        "expected_item_revision": { "type": "integer", "minimum": 0 },
+        "resulting_item_revision": { "type": "integer", "minimum": 0 },
+        "idempotency_key": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["PROJECTED", "ACKNOWLEDGED", "CANCELLED"] },
+        "created_at_utc": { "$ref": "#/$defs/timestamp" },
+        "acknowledged_at_utc": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "policy_revision": { "type": ["string", "null"] },
+        "successful": { "type": ["boolean", "null"] },
+        "reason": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": { "enum": ["HANDOFF", "IMPORT", "TERMINAL"] }
+            }
+          },
+          "then": {
+            "properties": {
+              "item_key": { "type": "string" },
+              "from_state": { "type": "string" },
+              "to_state": { "type": "string" },
+              "parent_event_id": { "const": null },
+              "status": { "const": "PROJECTED" },
+              "acknowledged_at_utc": { "const": null }
+            },
+            "required": ["from_state", "to_state"]
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "kind": { "enum": ["ACKNOWLEDGEMENT", "CANCELLATION"] }
+              }
+            },
+            "then": {
+              "properties": {
+                "item_key": { "type": "string" },
+                "from_state": { "type": "string" },
+                "to_state": { "type": "string" },
+                "parent_event_id": { "type": "string" },
+                "acknowledged_at_utc": { "$ref": "#/$defs/timestamp" }
+              },
+              "required": ["parent_event_id"]
+            },
+            "else": {
+              "properties": {
+                "item_key": { "const": null },
+                "from_state": { "const": null },
+                "to_state": { "const": null },
+                "parent_event_id": { "const": null },
+                "expected_item_revision": { "const": 0 },
+                "resulting_item_revision": { "const": 0 },
+                "policy_revision": { "type": "string", "minLength": 1 },
+                "successful": { "const": true }
+              },
+              "required": ["policy_revision", "successful"]
+            }
+          }
+        }
+      ]
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "successful_run_count",
+        "required_successful_runs",
+        "scope",
+        "policy_revision",
+        "coverage",
+        "approved_by",
+        "approved_at_utc",
+        "approval_evidence_urls",
+        "invalidated_by_revision",
+        "revoked_at_utc",
+        "rollback_conditions",
+        "completion_authority"
+      ],
+      "properties": {
+        "status": { "enum": ["REPORT_ONLY", "APPROVED", "REVOKED"] },
+        "successful_run_count": { "type": "integer", "minimum": 0 },
+        "required_successful_runs": { "const": 7 },
+        "scope": { "enum": ["configured-repo-set", "per-repository"] },
+        "policy_revision": { "type": "string", "minLength": 1 },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "identity_classes",
+            "risk_classes",
+            "merge_methods",
+            "required_check_sources"
+          ],
+          "properties": {
+            "identity_classes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "risk_classes": { "type": "array", "items": { "type": "string" } },
+            "merge_methods": { "type": "array", "items": { "type": "string" } },
+            "required_check_sources": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "approved_by": { "type": ["string", "null"] },
+        "approved_at_utc": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "approval_evidence_urls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/url" }
+        },
+        "invalidated_by_revision": { "type": ["string", "null"] },
+        "revoked_at_utc": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "rollback_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "completion_authority": { "const": "approve-merge-close-nonsecurity" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "APPROVED" } } },
+          "then": {
+            "properties": {
+              "successful_run_count": { "minimum": 7 },
+              "approved_by": { "type": "string", "minLength": 1 },
+              "approved_at_utc": { "$ref": "#/$defs/timestamp" },
+              "approval_evidence_urls": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "stage2WorkItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_item_id",
+        "source_item_key",
+        "repository",
+        "pr",
+        "base_sha",
+        "head_sha",
+        "allowed_paths",
+        "prohibited_paths",
+        "repair_description",
+        "required_test_command",
+        "expected_test_result",
+        "acceptance_criteria",
+        "provenance_urls",
+        "expiry_utc",
+        "attempt_count",
+        "current_owner",
+        "creation_event_id",
+        "history"
+      ],
+      "properties": {
+        "work_item_id": { "type": "string", "pattern": "^s2-[A-Za-z0-9._-]+$" },
+        "source_item_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "pr": { "type": "integer", "minimum": 1 },
+        "base_sha": { "$ref": "#/$defs/sha" },
+        "head_sha": { "$ref": "#/$defs/sha" },
+        "allowed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "prohibited_paths": { "type": "array", "items": { "type": "string" } },
+        "repair_description": { "type": "string", "minLength": 1 },
+        "required_test_command": { "type": "string", "minLength": 1 },
+        "expected_test_result": { "type": "string", "minLength": 1 },
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "provenance_urls": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/url" }
+        },
+        "expiry_utc": { "$ref": "#/$defs/timestamp" },
+        "attempt_count": { "type": "integer", "minimum": 0 },
+        "current_owner": { "const": "stage2" },
+        "creation_event_id": {
+          "type": "string",
+          "pattern": "^evt-[A-Za-z0-9._-]+$"
+        },
+        "history": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "import": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "import_id",
+        "source_path",
+        "source_fingerprint",
+        "status",
+        "created_at_utc"
+      ],
+      "properties": {
+        "import_id": { "type": "string", "pattern": "^imp-[A-Za-z0-9._-]+$" },
+        "source_path": { "type": "string" },
+        "source_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "status": { "enum": ["EVIDENCE_ONLY", "RECONCILED", "SKIPPED"] },
+        "created_at_utc": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "mergeMethod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "method",
+        "required_checks_source",
+        "required_checks",
+        "required_checks_verified_zero",
+        "discovery_status",
+        "evidence_url",
+        "observed_at_utc",
+        "updated_at_utc",
+        "hold_reason"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "method": {
+          "enum": [
+            "TRUNK_QUEUE",
+            "GITHUB_SQUASH",
+            "GITHUB_MERGE_QUEUE",
+            "UNKNOWN"
+          ]
+        },
+        "required_checks_source": {
+          "enum": [
+            "TRUNK",
+            "GITHUB_RULESETS",
+            "GITHUB_BRANCH_PROTECTION",
+            "UNKNOWN"
+          ]
+        },
+        "required_checks": { "type": "array", "items": { "type": "string" } },
+        "required_checks_verified_zero": { "type": "boolean" },
+        "discovery_status": { "enum": ["VERIFIED", "PENDING"] },
+        "evidence_url": {
+          "type": ["string", "null"],
+          "pattern": "^https://[^\\s]+$"
+        },
+        "observed_at_utc": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "updated_at_utc": { "$ref": "#/$defs/timestamp" },
+        "hold_reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

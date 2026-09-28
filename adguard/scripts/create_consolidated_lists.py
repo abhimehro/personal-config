@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AdGuard List Consolidation Script
+AdGuard List Consolidation Script.
 
 This script consolidates various ad-blocking lists into two comprehensive sets:
 1. Denylist - All tracker blocking rules
@@ -56,7 +56,7 @@ def process_allowlist_files(base_dir):
         allowlist_domains.update(domains)
         print(f"    Added {len(domains)} bypass domains")
     else:
-        print(f"  ⚠️  File not found: CD-Control-D-Bypass.json")
+        print("  ⚠️  File not found: CD-Control-D-Bypass.json")
 
     # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
     tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
@@ -68,7 +68,7 @@ def process_allowlist_files(base_dir):
         allowlist_domains.update(domains)
         print(f"    Added {len(domains)} legitimate TLD domains")
     else:
-        print(f"  ⚠️  File not found: CD-Most-Abused-TLDs.json")
+        print("  ⚠️  File not found: CD-Most-Abused-TLDs.json")
 
     print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
     return allowlist_domains
@@ -199,10 +199,10 @@ def print_summary(num_denylist, num_allowlist):
     print(f"📊 Total processed: {num_denylist + num_allowlist:,} domains")
 
     print("\n📁 Files created:")
-    print(f"  • Consolidated-Denylist.txt (Text format for AdGuard import)")
-    print(f"  • Consolidated-Allowlist.txt (Text format for AdGuard import)")
-    print(f"  • Consolidated-Denylist.json (JSON reference)")
-    print(f"  • Consolidated-Allowlist.json (JSON reference)")
+    print("  • Consolidated-Denylist.txt (Text format for AdGuard import)")
+    print("  • Consolidated-Allowlist.txt (Text format for AdGuard import)")
+    print("  • Consolidated-Denylist.json (JSON reference)")
+    print("  • Consolidated-Allowlist.json (JSON reference)")
 
     print("\n🚀 Next steps:")
     print("  1. Import Consolidated-Denylist.txt into AdGuard as your denylist")

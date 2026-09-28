@@ -1,0 +1,398 @@
+{
+  "version": 1,
+  "notes": [
+    "Secret-free inventory. Live keys stay in 1Password op:// refs and generated 0600 files outside git.",
+    "Default student-budget profile is core-safe: one provider per capability, no duplicate paid search, no macOS automation.",
+    "Vibe does not support OAuth MCP servers. Skip those for vibe even if they appear in the JSON template."
+  ],
+  "profiles": {
+    "core-safe": {
+      "description": "Default coding loop. Local or included-quota tools only.",
+      "servers": ["Context7", "GitHub", "paste", "deepwiki"]
+    },
+    "research": {
+      "description": "Paid/deep research. Enable explicitly. One crawl/search provider.",
+      "servers": ["Context7", "GitHub", "paste", "deepwiki", "firecrawl-mcp"]
+    },
+    "browser": {
+      "description": "Browser automation. Approval required at runtime.",
+      "servers": ["Context7", "GitHub", "paste", "deepwiki", "Playwright"]
+    },
+    "productivity": {
+      "description": "Issue/docs connectors. Often OAuth. Not for Vibe.",
+      "servers": ["Context7", "GitHub", "paste", "deepwiki", "Linear", "Notion"]
+    },
+    "macos-automation": {
+      "description": "Opt-in AppleScript. High risk. Never a default.",
+      "servers": [
+        "Context7",
+        "GitHub",
+        "paste",
+        "deepwiki",
+        "applescript_execute"
+      ]
+    },
+    "cloud": {
+      "description": "Cloud/database. Approval required. Antigravity/Devin only.",
+      "servers": [
+        "cloudrun",
+        "firebase-mcp-server",
+        "prisma",
+        "prisma-mcp-server"
+      ]
+    },
+    "full": {
+      "description": "Legacy complete template. Do not use as a portable default.",
+      "servers": ["*"]
+    }
+  },
+  "servers": {
+    "Brave Search": {
+      "capability": "web-search",
+      "provider": "brave",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "ara", "windsurf", "raycast"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate of firecrawl/tavily/perplexity. Keep disabled unless Brave is the only search key."
+    },
+    "Context7": {
+      "capability": "library-docs",
+      "provider": "upstash",
+      "cost": "free-tier",
+      "auth": "none",
+      "risk": "low",
+      "startup": "npx",
+      "clients": [
+        "cursor",
+        "vibe",
+        "devin",
+        "antigravity",
+        "ara",
+        "windsurf",
+        "raycast"
+      ],
+      "vibe_supported": true,
+      "default_profile": "core-safe"
+    },
+    "GitHub": {
+      "capability": "git-host",
+      "provider": "github-copilot-mcp",
+      "cost": "included-if-copilot",
+      "auth": "oauth",
+      "risk": "medium",
+      "startup": "remote",
+      "clients": [
+        "cursor",
+        "devin",
+        "antigravity",
+        "ara",
+        "windsurf",
+        "raycast"
+      ],
+      "vibe_supported": false,
+      "default_profile": "core-safe",
+      "reason": "Remote Copilot MCP needs OAuth. Vibe cannot use it. Prefer gh CLI plus local git."
+    },
+    "Linear": {
+      "capability": "issues",
+      "provider": "linear",
+      "cost": "saas",
+      "auth": "oauth",
+      "risk": "medium",
+      "startup": "remote",
+      "clients": ["cursor", "devin", "antigravity"],
+      "vibe_supported": false,
+      "default_profile": "productivity"
+    },
+    "Exa": {
+      "capability": "web-search",
+      "provider": "exa",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "ara", "windsurf", "raycast"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate paid search."
+    },
+    "Filesystem": {
+      "capability": "filesystem",
+      "provider": "mcp-filesystem",
+      "cost": "local",
+      "auth": "none",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["cursor", "vibe", "devin"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Current template grants ~/dev/. Too broad. Prefer native tools plus project roots."
+    },
+    "firecrawl-mcp": {
+      "capability": "web-crawl",
+      "provider": "firecrawl",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "vibe", "devin", "ara", "windsurf", "raycast"],
+      "vibe_supported": true,
+      "default_profile": "research",
+      "reason": "Single paid research provider when a research profile is enabled."
+    },
+    "gen-pdf": {
+      "capability": "pdf",
+      "provider": "gen-pdf",
+      "cost": "remote",
+      "auth": "none",
+      "risk": "low",
+      "startup": "npx-remote",
+      "clients": ["cursor", "ara"],
+      "vibe_supported": true,
+      "default_profile": null
+    },
+    "Memory": {
+      "capability": "memory",
+      "provider": "mcp-memory",
+      "cost": "local",
+      "auth": "none",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "vibe"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate of repo notes/skills. Extra tokens on every session."
+    },
+    "Notion": {
+      "capability": "docs",
+      "provider": "notion",
+      "cost": "saas",
+      "auth": "oauth",
+      "risk": "medium",
+      "startup": "remote",
+      "clients": ["cursor", "devin", "antigravity"],
+      "vibe_supported": false,
+      "default_profile": "productivity"
+    },
+    "Perplexity": {
+      "capability": "web-search",
+      "provider": "perplexity",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "antigravity", "ara"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate paid search. Use research profile firecrawl or native web tools."
+    },
+    "Playwright": {
+      "capability": "browser",
+      "provider": "playwright",
+      "cost": "local",
+      "auth": "none",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["cursor", "vibe", "devin"],
+      "vibe_supported": true,
+      "default_profile": "browser"
+    },
+    "prisma": {
+      "capability": "database",
+      "provider": "prisma",
+      "cost": "saas",
+      "auth": "oauth",
+      "risk": "high",
+      "startup": "npx-remote",
+      "clients": ["cursor", "antigravity"],
+      "vibe_supported": false,
+      "default_profile": "cloud"
+    },
+    "Sequential_thinking": {
+      "capability": "reasoning",
+      "provider": "mcp-sequential-thinking",
+      "cost": "local-tokens",
+      "auth": "none",
+      "risk": "low",
+      "startup": "npx",
+      "clients": ["cursor", "vibe", "antigravity"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "High token overhead. Models already plan. Keep off by default."
+    },
+    "Tavily_Expert": {
+      "capability": "web-search",
+      "provider": "tavily",
+      "cost": "paid-api",
+      "auth": "remote",
+      "risk": "medium",
+      "startup": "remote",
+      "clients": ["cursor", "ara"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate Tavily plus opaque hosted URL."
+    },
+    "Tavily": {
+      "capability": "web-search",
+      "provider": "tavily",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["cursor", "vibe", "ara"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Duplicate paid search."
+    },
+    "applescript_execute": {
+      "capability": "macos-automation",
+      "provider": "applescript",
+      "cost": "local",
+      "auth": "none",
+      "risk": "critical",
+      "startup": "npx",
+      "clients": ["cursor", "vibe"],
+      "vibe_supported": true,
+      "default_profile": "macos-automation"
+    },
+    "paste": {
+      "capability": "clipboard",
+      "provider": "paste-local",
+      "cost": "local",
+      "auth": "none",
+      "risk": "medium",
+      "startup": "remote-local",
+      "clients": ["cursor", "vibe", "devin", "antigravity"],
+      "vibe_supported": true,
+      "default_profile": "core-safe",
+      "reason": "Local HTTP. Fine if Paste app is running. Do not expose beyond localhost."
+    },
+    "deepwiki": {
+      "capability": "repo-docs",
+      "provider": "deepwiki",
+      "cost": "free-remote",
+      "auth": "none",
+      "risk": "low",
+      "startup": "remote",
+      "clients": ["cursor", "vibe", "devin", "antigravity"],
+      "vibe_supported": true,
+      "default_profile": "core-safe"
+    },
+    "devin": {
+      "capability": "devin-bridge",
+      "provider": "devin",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "high",
+      "startup": "remote",
+      "clients": ["cursor", "antigravity"],
+      "vibe_supported": true,
+      "default_profile": null,
+      "reason": "Bridge into another paid agent. Enable only when orchestrating Devin on purpose."
+    },
+    "chrome-devtools-mcp": {
+      "capability": "browser",
+      "provider": "chrome-devtools",
+      "cost": "local",
+      "auth": "none",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": "browser"
+    },
+    "cloudrun": {
+      "capability": "cloud",
+      "provider": "gcp",
+      "cost": "cloud",
+      "auth": "adc",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": "cloud"
+    },
+    "firebase-mcp-server": {
+      "capability": "cloud",
+      "provider": "firebase",
+      "cost": "cloud",
+      "auth": "adc",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": "cloud"
+    },
+    "github-mcp-server": {
+      "capability": "git-host",
+      "provider": "github-docker",
+      "cost": "api",
+      "auth": "pat",
+      "risk": "high",
+      "startup": "docker",
+      "clients": ["antigravity"],
+      "vibe_supported": false,
+      "default_profile": null,
+      "reason": "Docker plus PAT. Prefer gh CLI. Duplicate of GitHub remote MCP."
+    },
+    "linear-mcp-server": {
+      "capability": "issues",
+      "provider": "linear",
+      "cost": "saas",
+      "auth": "oauth",
+      "risk": "medium",
+      "startup": "npx-remote",
+      "clients": ["antigravity"],
+      "vibe_supported": false,
+      "default_profile": "productivity"
+    },
+    "notion-mcp-server": {
+      "capability": "docs",
+      "provider": "notion",
+      "cost": "saas",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": "productivity"
+    },
+    "perplexity-ask": {
+      "capability": "web-search",
+      "provider": "perplexity",
+      "cost": "paid-api",
+      "auth": "api-key",
+      "risk": "medium",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": null
+    },
+    "prisma-mcp-server": {
+      "capability": "database",
+      "provider": "prisma",
+      "cost": "saas",
+      "auth": "oauth",
+      "risk": "high",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": false,
+      "default_profile": "cloud"
+    },
+    "sequential-thinking": {
+      "capability": "reasoning",
+      "provider": "mcp-sequential-thinking",
+      "cost": "local-tokens",
+      "auth": "none",
+      "risk": "low",
+      "startup": "npx",
+      "clients": ["antigravity"],
+      "vibe_supported": true,
+      "default_profile": null
+    }
+  }
+}

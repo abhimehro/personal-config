@@ -88,7 +88,7 @@ test_smoke_status() {
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -q "Service Status"; then
+	if ! grep -q "Service Status" <<<"$output"; then
 		echo "Fail: 'status' should output 'Service Status'. Output:"
 		echo "$output"
 		return 1
@@ -111,7 +111,7 @@ test_smoke_help() {
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -qiE "usage|commands"; then
+	if ! grep -qiE "usage|commands" <<<"$output"; then
 		echo "Fail: '--help' should display usage/commands. Output:"
 		echo "$output"
 		return 1
@@ -137,7 +137,7 @@ test_smoke_stop_requires_root() {
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -qi "root"; then
+	if ! grep -qi "root" <<<"$output"; then
 		echo "Fail: 'stop' (as non-root) should mention root requirement. Output:"
 		echo "$output"
 		return 1
@@ -152,7 +152,7 @@ test_switch_profile_valid() {
 	local output
 	output=$(switch_profile "privacy" "doh3" 2>&1)
 
-	if ! echo "$output" | grep -q "Successfully switched to privacy profile"; then
+	if ! grep -q "Successfully switched to privacy profile" <<<"$output"; then
 		echo "Fail: switch_profile failed to output success message. Output:"
 		echo "$output"
 		return 1
@@ -165,7 +165,7 @@ test_switch_profile_invalid() {
 	local output
 	output=$(switch_profile "bad_profile" "doh3" 2>&1)
 
-	if ! echo "$output" | grep -q "Unknown profile"; then
+	if ! grep -q "Unknown profile" <<<"$output"; then
 		echo "Fail: switch_profile should fail for unknown profile. Output:"
 		echo "$output"
 		return 1
@@ -180,7 +180,7 @@ test_switch_profile_doh_protocol() {
 	local output
 	output=$(switch_profile "gaming" "doh" 2>&1)
 
-	if ! echo "$output" | grep -q "Successfully switched to gaming profile"; then
+	if ! grep -q "Successfully switched to gaming profile" <<<"$output"; then
 		echo "Fail: switch_profile with doh protocol failed. Output:"
 		echo "$output"
 		return 1
@@ -202,7 +202,7 @@ test_switch_profile_invalid_protocol() {
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -q "Invalid profile ID or protocol"; then
+	if ! grep -q "Invalid profile ID or protocol" <<<"$output"; then
 		echo "Fail: switch_profile should reject invalid protocol. Output:"
 		echo "$output"
 		return 1
@@ -299,12 +299,12 @@ EOF
 		return 0
 	}
 
-	if echo "$output" | grep -q "Already running"; then
+	if grep -q "Already running" <<<"$output"; then
 		echo "Fail: doh3→doh incorrectly short-circuited. Output:"
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -q "mock_restart_with_native_profile"; then
+	if ! grep -q "mock_restart_with_native_profile" <<<"$output"; then
 		echo "Fail: doh3→doh should call restart_with_native_profile. Output:"
 		echo "$output"
 		return 1
@@ -339,12 +339,12 @@ EOF
 		return 0
 	}
 
-	if ! echo "$output" | grep -q "Already running privacy profile with doh3"; then
+	if ! grep -q "Already running privacy profile with doh3" <<<"$output"; then
 		echo "Fail: exact match should short-circuit. Output:"
 		echo "$output"
 		return 1
 	fi
-	if echo "$output" | grep -q "mock_restart_with_native_profile"; then
+	if grep -q "mock_restart_with_native_profile" <<<"$output"; then
 		echo "Fail: exact match should not restart. Output:"
 		echo "$output"
 		return 1
@@ -357,14 +357,14 @@ test_main_commands() {
 	local output
 
 	output=$(main "status" 2>&1)
-	if ! echo "$output" | grep -q "mock_show_status"; then
+	if ! grep -q "mock_show_status" <<<"$output"; then
 		echo "Fail: main 'status' didn't call show_status. Output:"
 		echo "$output"
 		return 1
 	fi
 
 	output=$(main "stop" 2>&1)
-	if ! echo "$output" | grep -q "mock_safe_stop"; then
+	if ! grep -q "mock_safe_stop" <<<"$output"; then
 		echo "Fail: main 'stop' didn't call safe_stop. Output:"
 		echo "$output"
 		return 1
@@ -391,7 +391,7 @@ test_switch_missing_profile() {
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -qiE "usage|available profiles"; then
+	if ! grep -qiE "usage|available profiles" <<<"$output"; then
 		echo "Fail: 'main switch' (no profile arg) should show usage. Output:"
 		echo "$output"
 		return 1
@@ -404,12 +404,12 @@ test_init_command() {
 	local output
 	output=$(main "init" 2>&1)
 
-	if ! echo "$output" | grep -q "mock_setup_directories"; then
+	if ! grep -q "mock_setup_directories" <<<"$output"; then
 		echo "Fail: main 'init' didn't call setup_directories. Output:"
 		echo "$output"
 		return 1
 	fi
-	if ! echo "$output" | grep -q "mock_backup_network_settings"; then
+	if ! grep -q "mock_backup_network_settings" <<<"$output"; then
 		echo "Fail: main 'init' didn't call backup_network_settings. Output:"
 		echo "$output"
 		return 1
@@ -422,7 +422,7 @@ test_emergency_command() {
 	local output
 	output=$(main "emergency" 2>&1)
 
-	if ! echo "$output" | grep -q "mock_emergency_recovery"; then
+	if ! grep -q "mock_emergency_recovery" <<<"$output"; then
 		echo "Fail: main 'emergency' didn't call emergency_recovery. Output:"
 		echo "$output"
 		return 1
@@ -435,7 +435,7 @@ test_test_command() {
 	local output
 	output=$(main "test" 2>&1)
 
-	if ! echo "$output" | grep -q "DNS"; then
+	if ! grep -q "DNS" <<<"$output"; then
 		echo "Fail: main 'test' should output DNS status. Output:"
 		echo "$output"
 		return 1
@@ -448,7 +448,7 @@ test_unknown_command() {
 	local output
 	output=$(main "unknown_cmd" 2>&1)
 
-	if ! echo "$output" | grep -qiE "usage|commands"; then
+	if ! grep -qiE "usage|commands" <<<"$output"; then
 		echo "Fail: unknown command should display usage. Output:"
 		echo "$output"
 		return 1

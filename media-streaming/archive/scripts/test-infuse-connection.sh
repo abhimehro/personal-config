@@ -47,7 +47,7 @@ fi
 # Test network connection
 echo
 echo "🌐 Testing Network Connection:"
-if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://$LOCAL_IP:8088/ | grep -q "<!DOCTYPE html>"; then
+if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://"$LOCAL_IP":8088/ | grep -q "<!DOCTYPE html>"; then
 	echo "✅ Network connection works (http://$LOCAL_IP:8088)"
 else
 	echo "❌ Network connection failed - likely firewall issue"
@@ -82,7 +82,7 @@ echo "Method 1: localhost:8088"
 curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://localhost:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
 
 echo "Method 2: $LOCAL_IP:8088"
-curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://$LOCAL_IP:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
+curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://"$LOCAL_IP":8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
 
 echo "Method 3: 127.0.0.1:8088"
 curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://127.0.0.1:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
