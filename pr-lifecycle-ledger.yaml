@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 199
+ledger_revision: 201
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19752,15 +19752,13 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #1269. Salvage draft #1287
-    holds unique test wraps; #1279 already merged sibling gh_client content. Stage
-    1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #1269 vs salvage draft #1287 + merged
-    sibling #1279; leave original OPEN (Stage 2 never merges/approves/closes originals).'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Terminal. Unique tests landed via #1287; gh_client via #1279. Do
+    not reopen for ROUTINE path.'
+  next_action: 'TERMINAL CLOSED_SUPERSEDED (hop4; superseded-by #1287)'
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1269
   - https://github.com/abhimehro/ctrld-sync/pull/1279
@@ -19779,8 +19777,9 @@ items:
   - evt-reconcile-20260928004431-45787b6f
   - evt-reconcile-20260928004904-f632acba
   - evt-reconcile-20260928004904-dd2a1a87
-  revision: 3
-  updated_at_utc: '2026-09-28T00:49:04Z'
+  - evt-reconcile-20260928011719-5df200f2
+  revision: 4
+  updated_at_utc: '2026-09-28T01:17:19Z'
 - key: abhimehro/ctrld-sync#1287@516f2896fb3d647e0119c84072937e7b0995f9d1
   repository: abhimehro/ctrld-sync
   pr: 1287
@@ -45819,6 +45818,26 @@ events:
   created_at_utc: '2026-09-28T01:08:59Z'
   acknowledged_at_utc: null
   reason: live PR state=MERGED mergedBy=abhimehro (Stage1 hop5 undraft+squash)
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20260928011719-5df200f2
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/ctrld-sync#1269@50025d34f876c1d658a85c9b97a5dda58fe67334:evt-reconcile-20260928011719-5df200f2
+  status: PROJECTED
+  created_at_utc: '2026-09-28T01:17:19Z'
+  acknowledged_at_utc: null
+  reason: 'GH CLOSED superseded-by #1287 (MERGED_ROUTINE) + sibling #1279 on main;
+    SHA_MATCH unique wrap/lint tests; Desk hop4 CLOSE_NONSECURITY_NOOP-class'
   successful: null
   policy_revision: null
 stage2_work_items: []
