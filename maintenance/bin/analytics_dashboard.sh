@@ -488,8 +488,8 @@ EOF
             </li>
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">
-                    ${total_warnings}
-                    <meter value="${total_warnings}" min="0" max="${warnings_meter_max}" low="3" high="10" optimum="0" aria-label="Total Warnings: ${total_warnings}"></meter>
+                    ${total_warnings:-0}
+                    <meter value="${total_warnings:-0}" min="0" max="${warnings_meter_max}" low="3" high="10" optimum="0" aria-label="Total Warnings: ${total_warnings:-0}"></meter>
                 </div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
