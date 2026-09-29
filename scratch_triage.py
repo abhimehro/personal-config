@@ -4,6 +4,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_pr_reference, parse_repo_name
 
 repos = [
     "abhimehro/personal-config",
@@ -110,6 +111,10 @@ def group_prs(all_prs, triage_md):
 
 
 def _fetch_repo_prs(repo):
+    # SECURITY: Validate repository name to prevent option injection (CWE-88)
+    repo = parse_repo_name(repo, loc=("scratch_triage.py", None), strict=False)
+    if not repo:
+        return []
     repo_prs = []
     success, stdout, _ = run_cmd(
         [
@@ -139,8 +144,17 @@ def _fetch_repo_prs(repo):
 
 
 def _process_pr(pr):
-    repo = pr["full_repo"]
-    num = pr["number"]
+    # SECURITY: Validate repo and PR reference before executing gh commands (CWE-88)
+    ref = parse_pr_reference(
+        pr.get("full_repo", ""),
+        str(pr.get("number", "")),
+        loc=("scratch_triage.py", None),
+        strict=False,
+    )
+    if not ref:
+        return pr, "escalated"
+    repo = ref.repo
+    num = ref.number
     if pr.get("status_action") == "CLOSE":
         print(f"Closing {repo}#{num} (duplicate)")
         run_cmd(
