@@ -63,6 +63,9 @@ BRANCH_SIGNALS = (
     "copilot",
 )
 
+# ⚡ Bolt Optimization: Pre-compute formatted tuple to avoid repeated string slicing and allocations during loop evaluation
+_BRANCH_SIGNAL_TUPLES = tuple((sig, f"branch:{sig.rstrip('/')}") for sig in BRANCH_SIGNALS)
+
 TITLE_KW = (
     "jules",
     "sentinel",
@@ -73,6 +76,9 @@ TITLE_KW = (
     "palette",
     "automation",
 )
+
+# ⚡ Bolt Optimization: Pre-compute formatted tuple to avoid repeated string formatting during loop evaluation
+_TITLE_KW_TUPLES = tuple((kw, f"title:{kw}") for kw in TITLE_KW)
 
 BODY_MARKERS = (
     "jules.google.com",
@@ -110,9 +116,9 @@ def _get_branch_hints(branch: str | None) -> list[str]:
     if not branch:
         return []
     branch_lower = branch.lower()
-    for sig in BRANCH_SIGNALS:
+    for sig, formatted in _BRANCH_SIGNAL_TUPLES:
         if sig in branch_lower:
-            return [f"branch:{sig.rstrip('/')}"]
+            return [formatted]
     return []
 
 
@@ -120,9 +126,9 @@ def _get_title_hints(title: str | None) -> list[str]:
     if not title:
         return []
     title_lower = title.lower()
-    for kw in TITLE_KW:
+    for kw, formatted in _TITLE_KW_TUPLES:
         if kw in title_lower:
-            return [f"title:{kw}"]
+            return [formatted]
     return []
 
 
