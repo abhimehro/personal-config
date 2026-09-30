@@ -77,10 +77,11 @@ esac
         path.write_text(content)
         path.chmod(0o755)
 
-    def _tokens(self, line: str, needle: str, document: int) -> list:
+    def _tokens(self, line: str, needle: str, document: int, skipped: list) -> list:
         try:
             return shlex.split(line)
         except ValueError:
+            skipped.append(line)
             if needle in line:
                 self.fail(
                     f"unparseable maintenance line in document " f"{document}: {line!r}"
@@ -111,6 +112,7 @@ esac
         expected = ["git", "submodule", "deinit", "-f", "devin-handoff"]
         for index, document in enumerate(self.documents):
             with self.subTest(document=index):
+                skipped = []
                 lines = [
                     line
                     for line in document["maintenance"].splitlines()
@@ -118,27 +120,32 @@ esac
                 ]
                 self.assertTrue(
                     any(
-                        self._tokens(line, "submodule", index)[:5] == expected
+                        self._tokens(line, "submodule", index, skipped)[:5] == expected
                         for line in lines
                     ),
                     "maintenance must unregister devin-handoff so later "
-                    "in-session pulls cannot fetch it",
+                    "in-session pulls cannot fetch it"
+                    + (f"; unparseable lines skipped: {skipped!r}" if skipped else ""),
                 )
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        def pip_line(text: str, document: int) -> list[str]:
+        def pip_line(text: str, document: int, skipped: list) -> list[str]:
             for line in text.splitlines():
                 if line.lstrip().startswith("#"):
                     continue
-                tokens = self._tokens(line, "pip", document)
+                tokens = self._tokens(line, "pip", document, skipped)
                 if "install" not in tokens:
                     continue
                 if any(t == "pip" or t.endswith("/pip") for t in tokens):
                     return tokens
-            self.fail("no pip install line in maintenance block")
+            self.fail(
+                "no pip install line in maintenance block"
+                + (f"; unparseable lines skipped: {skipped!r}" if skipped else "")
+            )
 
-        linux = pip_line(self.documents[0]["maintenance"], 0)
-        macos = pip_line(self.documents[1]["maintenance"], 1)
+        skipped = []
+        linux = pip_line(self.documents[0]["maintenance"], 0, skipped)
+        macos = pip_line(self.documents[1]["maintenance"], 1, skipped)
         self.assertEqual(linux[:4], ["python3.12", "-m", "pip", "install"])
         self.assertEqual(macos[:2], ["$HOME/.venv-pc/bin/pip", "install"])
         self.assertEqual(linux[4:], macos[2:])
