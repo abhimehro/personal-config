@@ -88,8 +88,10 @@ esac
                 )
             return []
 
-    def _parse_maintenance(self, text: str, needle: str, document: int) -> list:
-        skipped = []
+    def _parse_maintenance(
+        self, text: str, needle: str, document: int
+    ) -> list[list[str]]:
+        skipped: list[str] = []
         parsed = [
             self._tokens(line, needle, document, skipped)
             for line in text.splitlines()
