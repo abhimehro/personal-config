@@ -9,7 +9,6 @@ from pathlib import Path
 
 import yaml
 
-
 REPO = Path(__file__).resolve().parents[1]
 BLUEPRINT = REPO / ".devin" / "blueprint.yaml"
 
@@ -118,7 +117,9 @@ esac
             f"# existing session settings\nPATH={self.home}/.venv-pc/bin:{self.environment['PATH']}\n",
         )
 
-    def test_missing_brew_python_is_installed_and_repeated_setup_does_not_duplicate_path(self):
+    def test_missing_brew_python_is_installed_and_repeated_setup_does_not_duplicate_path(
+        self,
+    ):
         for _ in range(2):
             result = self._run(self.documents[1]["initialize"])
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -164,7 +165,12 @@ esac
                 self.assertEqual(
                     self.pip_calls.read_text().splitlines(),
                     [
-                        "install", "-r", "requirements.txt", "ruff==0.16.8",
-                        "bandit", "black", "radon",
+                        "install",
+                        "-r",
+                        "requirements.txt",
+                        "ruff==0.16.8",
+                        "bandit",
+                        "black",
+                        "radon",
                     ],
                 )

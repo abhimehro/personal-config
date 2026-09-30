@@ -30,7 +30,7 @@ export LESS="${LESS:--FRX}"
 export AGENT_WORKSPACE="${AGENT_WORKSPACE:-$HOME/dev/abhimehro}"
 export PERSONAL_CONFIG="${PERSONAL_CONFIG:-$HOME/dev/personal-config}"
 
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$HOME/bin:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$HOME/bin:$HOME/.local/bin:$HOME/.octopus/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 # Auto-cd for common agent launch dirs
 case "$PWD" in

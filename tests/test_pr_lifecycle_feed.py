@@ -40,9 +40,7 @@ sys.modules["pr_lifecycle_pipeline_health"].summarize = (
         reason="ok",
     )
 )
-sys.modules["pr_lifecycle_pipeline_health"].is_never_touch_key = (
-    lambda *_a, **_k: False
-)
+sys.modules["pr_lifecycle_pipeline_health"].is_never_touch_key = lambda *_a, **_k: False
 
 
 def _parse_utc_stub(value):
@@ -136,9 +134,7 @@ class FeedTests(unittest.TestCase):
     def test_expired_packet_rejects_boundary_and_ineligible_records(self):
         cases = (
             _item(
-                updated_at_utc=(NOW - timedelta(days=7)).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
+                updated_at_utc=(NOW - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
             ),
             _item(author_type="HUMAN"),
             _item(guardrail_outcome="REVIEW_SECURITY"),
@@ -207,17 +203,13 @@ class FeedTests(unittest.TestCase):
 
     def test_build_feed_counts_stock_excluding_never_touch(self):
         never_touch = _item(key="abhimehro/Seatek_Analysis#692@" + "a" * 40)
-        usable = _item(
-            key="abhimehro/personal-config#2@" + "c" * 40, pr=2
-        )
+        usable = _item(key="abhimehro/personal-config#2@" + "c" * 40, pr=2)
         ledger = {
             "ledger_revision": 8,
             "items": [never_touch, usable],
         }
         fake_health = types.SimpleNamespace(
-            summarize=lambda *_a, **_k: types.SimpleNamespace(
-                salvage_eligible_count=2
-            ),
+            summarize=lambda *_a, **_k: types.SimpleNamespace(salvage_eligible_count=2),
             is_salvage_eligible=lambda *_a, **_k: True,
             is_never_touch_key=lambda key, **_k: str(key or "").startswith(
                 "abhimehro/Seatek_Analysis#692"
@@ -233,18 +225,16 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(payload["eligible_stock_count"], 2)
         self.assertEqual(payload["non_never_touch_stock_count"], 1)
 
-    def test_non_never_touch_stock_includes_expired_packets_beyond_feed_limit(self) -> None:
+    def test_non_never_touch_stock_includes_expired_packets_beyond_feed_limit(
+        self,
+    ) -> None:
         """Stock diagnostics count eligible records even after feed truncation."""
-        regular = _item(
-            key="abhimehro/demo#1@head", lifecycle_state="STAGE1_INTAKE"
-        )
+        regular = _item(key="abhimehro/demo#1@head", lifecycle_state="STAGE1_INTAKE")
         expired = _item(key="abhimehro/demo#2@head")
         protected = _item(key="abhimehro/Seatek_Analysis#692@head")
         recent = _item(
             key="abhimehro/demo#3@head",
-            updated_at_utc=(NOW - timedelta(days=7)).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            ),
+            updated_at_utc=(NOW - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
         security = _item(
             key="abhimehro/demo#4@head", guardrail_outcome="REVIEW_SECURITY"
@@ -254,9 +244,7 @@ class FeedTests(unittest.TestCase):
             "items": [regular, expired, protected, recent, security],
         }
         fake_health = types.SimpleNamespace(
-            summarize=lambda *_a, **_k: types.SimpleNamespace(
-                salvage_eligible_count=1
-            ),
+            summarize=lambda *_a, **_k: types.SimpleNamespace(salvage_eligible_count=1),
             is_salvage_eligible=lambda item: item is regular,
             is_never_touch_key=lambda key: str(key or "").split("@", 1)[0]
             == "abhimehro/Seatek_Analysis#692",
@@ -288,9 +276,7 @@ class FeedTests(unittest.TestCase):
             ],
         }
         fake_health = types.SimpleNamespace(
-            summarize=lambda *_a, **_k: types.SimpleNamespace(
-                salvage_eligible_count=0
-            ),
+            summarize=lambda *_a, **_k: types.SimpleNamespace(salvage_eligible_count=0),
             is_salvage_eligible=lambda *_a, **_k: False,
             is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,
@@ -307,9 +293,7 @@ class FeedTests(unittest.TestCase):
 
     def test_empty_feed_without_stock_is_a_successful_empty_feed(self):
         fake_health = types.SimpleNamespace(
-            summarize=lambda *_a, **_k: types.SimpleNamespace(
-                salvage_eligible_count=0
-            ),
+            summarize=lambda *_a, **_k: types.SimpleNamespace(salvage_eligible_count=0),
             is_salvage_eligible=lambda *_a, **_k: False,
             is_never_touch_key=lambda *_a, **_k: False,
             parse_expiry_utc=_parse_utc_stub,

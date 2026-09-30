@@ -6,15 +6,15 @@ import copy
 import unittest
 from unittest import mock
 
+import pr_lifecycle_feed as real_feed
+import pr_lifecycle_pipeline_health as real_health
+
 from tests.pr_lifecycle_helpers import (
     import_lifecycle_run,
     make_health_report,
     make_ledger,
     make_work_item,
 )
-
-import pr_lifecycle_feed as real_feed
-import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
 
@@ -178,10 +178,7 @@ class Option3Stage2IntakeTests(unittest.TestCase):
             {"source_key": f"abhimehro/Seatek_Analysis#692@{index}"}
             for index in range(11)
         ]
-        mechanical = [
-            {"source_item_key": f"abhimehro/demo#{pr}@head"}
-            for pr in (7, 8)
-        ]
+        mechanical = [{"source_item_key": f"abhimehro/demo#{pr}@head"} for pr in (7, 8)]
         feed_payload = {
             "reason": "FEED_OK",
             "work_item_count": 13,
@@ -239,7 +236,9 @@ class Option3Stage2IntakeTests(unittest.TestCase):
         ):
             return run.build_stage_plan(2, {"ledger_revision": 1}, {})
 
-    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(self) -> None:
+    def test_stage2_stop_with_stock_takes_precedence_over_never_touch_filter(
+        self,
+    ) -> None:
         """Verify eligible stock blocks an empty-intake skip despite filtering."""
         plan = self._stage2_plan_with_feed(
             self._never_touch_stock_feed(

@@ -1,3 +1,14 @@
+# ABHI-2208 — Python 3.9 daily-QA compatibility (2026-09-24)
+
+T2 — Keep the media directory-listing module importable by the Python used in
+Linux automation while preserving its rendered HTML.
+
+- [x] Reproduce the `make test-quick` syntax failure on Python 3.9
+- [x] Run GitNexus impact analysis for `generate_directory_listing`
+- [x] Remove the pre-3.12-incompatible f-string expression
+- [x] Run focused and repository verification gates
+- [x] Run GitNexus change analysis and prepare a linked PR
+
 # Exclusive docs lineage 0hk (2026-09-18, this Stage 1 session)
 
 T5 — Stage 2/3 must not think heal-forward is still Trunk-queued, and must not
@@ -227,3 +238,11 @@ plane (packets + personal notes).
 - [x] Merge `origin/main` (#2051 Learned*) into #2052 so Trunk can prepare a
       test branch; remaining `AGENTS.md` delta is the salvage stacked-PR bullet
       only — no Learned* rewrite
+
+## Issue #2277 — restore Linux security-manager test coverage (2026-09-24)
+
+- [x] Reproduce the reported Linux skip and trace the test entrypoints
+- [x] Replace BSD-only test patching with platform-aware `sed`
+- [x] Remove the obsolete expected-failure suppression and update test docs
+- [x] Run focused/full shell tests, lint, and GitNexus change analysis
+- [x] Commit the focused fix on `coderabbit/issue-2277-security-test`

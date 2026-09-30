@@ -75,13 +75,13 @@ if not _DEP_FREE_REQUEST:  # pragma: no cover - import guard
         SignalsResult,
         produce_reselect_signals,
     )
-    from pr_lifecycle_stage_plan import build_stage_plan
 
     # Re-exports for tests that call run.plan_*/run._issue_body. Patching these
     # names has no effect on the planner — it resolves them inside
     # pr_lifecycle_stage_plan / pr_lifecycle_issue_status globals; patch there.
     from pr_lifecycle_stage_plan import plan_stage2_enqueues  # noqa: F401
     from pr_lifecycle_stage_plan import plan_stage3_mechanical_handoffs  # noqa: F401
+    from pr_lifecycle_stage_plan import build_stage_plan
     from pr_lifecycle_support import ROOT
     from pr_lifecycle_yaml import load_yaml
 

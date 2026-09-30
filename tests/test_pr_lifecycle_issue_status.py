@@ -10,9 +10,9 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from unittest import mock
 
-from tests.pr_lifecycle_helpers import NOW, import_lifecycle_run
-
 import pr_lifecycle_issue_status as issue_status
+
+from tests.pr_lifecycle_helpers import NOW, import_lifecycle_run
 
 run = import_lifecycle_run()
 

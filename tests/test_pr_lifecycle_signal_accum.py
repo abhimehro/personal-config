@@ -5,9 +5,9 @@ from __future__ import annotations
 import copy
 import unittest
 
-from tests.pr_lifecycle_helpers import make_ledger  # Sets up scripts imports.
-
 from pr_lifecycle_signal_accum import SignalsAccum, fold_payload
+
+from tests.pr_lifecycle_helpers import make_ledger  # Sets up scripts imports.
 
 
 class SignalAccumTests(unittest.TestCase):

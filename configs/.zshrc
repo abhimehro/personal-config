@@ -26,3 +26,6 @@ fix-dns() {
 if [[ -f "$HOME/.config/op/plugins.sh" ]]; then
   source "$HOME/.config/op/plugins.sh"
 fi
+
+# Octopus CLI
+export PATH="/Users/speedybee/.octopus/bin:$PATH"
