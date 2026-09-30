@@ -113,7 +113,9 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
         (self.upstream / SUBMODULE).mkdir(exist_ok=True)
 
     def clone(self) -> None:
-        self.git(self.root, "clone", "--no-local", str(self.upstream), str(self.checkout))
+        self.git(
+            self.root, "clone", "--no-local", str(self.upstream), str(self.checkout)
+        )
 
     def opt_in(self) -> None:
         self.git(
@@ -139,7 +141,11 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
 
     def test_gitmodules_is_parseable(self) -> None:
         result = self.git(
-            self.root, "config", "-f", str(ROOT / ".gitmodules"), "--list",
+            self.root,
+            "config",
+            "-f",
+            str(ROOT / ".gitmodules"),
+            "--list",
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -177,7 +183,9 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
 
         self.startup_chain()
 
-        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD").stdout.strip(), target)
+        self.assertEqual(
+            self.git(self.checkout, "rev-parse", "HEAD").stdout.strip(), target
+        )
         self.assert_uninitialized(self.second)
 
     def test_startup_chain_can_pull_the_opt_out_policy_itself(self) -> None:
@@ -199,7 +207,9 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
 
         self.startup_chain()
 
-        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD").stdout.strip(), target)
+        self.assertEqual(
+            self.git(self.checkout, "rev-parse", "HEAD").stdout.strip(), target
+        )
         self.assertEqual((self.checkout / ".gitmodules").read_bytes(), policy)
         self.assert_uninitialized(self.second)
 
@@ -215,11 +225,15 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
         self.opt_in()
 
         handoff = self.checkout / SUBMODULE
-        self.assertEqual(self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.first)
+        self.assertEqual(
+            self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.first
+        )
         self.assertEqual((handoff / "handoff.txt").read_text(), "first revision\n")
         self.assertEqual((self.checkout / ".gitmodules").read_bytes(), policy)
         self.assertEqual(
-            self.git(self.checkout, "config", "--get", f"{POLICY}.update").stdout.strip(),
+            self.git(
+                self.checkout, "config", "--get", f"{POLICY}.update"
+            ).stdout.strip(),
             "none",
         )
 
@@ -228,9 +242,13 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
         self.git(self.checkout, "fetch", "origin")
         self.git(self.checkout, "merge", "--ff-only", "origin/main")
         self.git(self.checkout, "submodule", "update", "--init", "--recursive")
-        self.assertEqual(self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.first)
+        self.assertEqual(
+            self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.first
+        )
         self.opt_in()
-        self.assertEqual(self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.second)
+        self.assertEqual(
+            self.git(handoff, "rev-parse", "HEAD").stdout.strip(), self.second
+        )
         self.assertEqual((handoff / "handoff.txt").read_text(), "second revision\n")
 
     def test_explicit_opt_in_reports_unavailable_repository(self) -> None:
@@ -262,7 +280,9 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
         self.set_gitlink(missing_revision)
         return self.commit(self.upstream)
 
-    def test_default_fetch_skips_unavailable_submodule_with_missing_commit(self) -> None:
+    def test_default_fetch_skips_unavailable_submodule_with_missing_commit(
+        self,
+    ) -> None:
         target = self.prepare_populated_checkout_with_unavailable_remote()
 
         self.git(self.checkout, "fetch", "origin")

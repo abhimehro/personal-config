@@ -98,7 +98,7 @@ esac
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
     def test_both_platforms_deinit_devin_handoff(self):
-        commands = "git submodule deinit -f devin-handoff"
+        expected = ["git", "submodule", "deinit", "-f", "devin-handoff"]
         for index, document in enumerate(self.documents):
             with self.subTest(document=index):
                 lines = [
@@ -107,7 +107,7 @@ esac
                     if not line.lstrip().startswith("#")
                 ]
                 self.assertTrue(
-                    any(line.strip().startswith(commands) for line in lines),
+                    any(shlex.split(line)[:5] == expected for line in lines),
                     "maintenance must unregister devin-handoff so later "
                     "in-session pulls cannot fetch it",
                 )
