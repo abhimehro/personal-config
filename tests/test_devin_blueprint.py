@@ -77,11 +77,15 @@ esac
         path.write_text(content)
         path.chmod(0o755)
 
-    def _tokens(self, line: str) -> list:
+    def _tokens(self, line: str, needle: str, document: int) -> list:
         try:
             return shlex.split(line)
         except ValueError:
-            self.fail(f"unparseable maintenance line: {line!r}")
+            if needle in line:
+                self.fail(
+                    f"unparseable maintenance line in document " f"{document}: {line!r}"
+                )
+            return []
 
     def _run(self, command, **env):
         return subprocess.run(
@@ -113,25 +117,28 @@ esac
                     if not line.lstrip().startswith("#")
                 ]
                 self.assertTrue(
-                    any(self._tokens(line)[:5] == expected for line in lines),
+                    any(
+                        self._tokens(line, "submodule", index)[:5] == expected
+                        for line in lines
+                    ),
                     "maintenance must unregister devin-handoff so later "
                     "in-session pulls cannot fetch it",
                 )
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        def pip_line(text: str) -> list[str]:
+        def pip_line(text: str, document: int) -> list[str]:
             for line in text.splitlines():
                 if line.lstrip().startswith("#"):
                     continue
-                tokens = self._tokens(line)
+                tokens = self._tokens(line, "pip", document)
                 if "install" not in tokens:
                     continue
                 if any(t == "pip" or t.endswith("/pip") for t in tokens):
                     return tokens
             self.fail("no pip install line in maintenance block")
 
-        linux = pip_line(self.documents[0]["maintenance"])
-        macos = pip_line(self.documents[1]["maintenance"])
+        linux = pip_line(self.documents[0]["maintenance"], 0)
+        macos = pip_line(self.documents[1]["maintenance"], 1)
         self.assertEqual(linux[:4], ["python3.12", "-m", "pip", "install"])
         self.assertEqual(macos[:2], ["$HOME/.venv-pc/bin/pip", "install"])
         self.assertEqual(linux[4:], macos[2:])
