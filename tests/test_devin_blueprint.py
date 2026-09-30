@@ -88,6 +88,20 @@ esac
                 )
             return []
 
+    def _parse_maintenance(self, text: str, needle: str, document: int) -> list:
+        skipped = []
+        parsed = [
+            self._tokens(line, needle, document, skipped)
+            for line in text.splitlines()
+            if not line.lstrip().startswith("#")
+        ]
+        self.assertEqual(
+            skipped,
+            [],
+            f"unparseable maintenance lines in document " f"{document}: {skipped!r}",
+        )
+        return parsed
+
     def _run(self, command, **env):
         return subprocess.run(
             ["bash", "-c", command],
@@ -112,17 +126,8 @@ esac
         expected = ["git", "submodule", "deinit", "-f", "devin-handoff"]
         for index, document in enumerate(self.documents):
             with self.subTest(document=index):
-                skipped = []
-                lines = [
-                    line
-                    for line in document["maintenance"].splitlines()
-                    if not line.lstrip().startswith("#")
-                ]
-                parsed = [
-                    self._tokens(line, "submodule", index, skipped) for line in lines
-                ]
-                self.assertEqual(
-                    skipped, [], f"unparseable maintenance lines: {skipped!r}"
+                parsed = self._parse_maintenance(
+                    document["maintenance"], "submodule", index
                 )
                 self.assertTrue(
                     any(tokens[:5] == expected for tokens in parsed),
@@ -132,19 +137,14 @@ esac
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
         def pip_line(text: str, document: int) -> list[str]:
-            skipped = []
-            parsed = [
-                self._tokens(line, "pip", document, skipped)
-                for line in text.splitlines()
-                if not line.lstrip().startswith("#")
-            ]
-            self.assertEqual(skipped, [], f"unparseable maintenance lines: {skipped!r}")
-            for tokens in parsed:
+            for tokens in self._parse_maintenance(text, "pip", document):
                 if "install" not in tokens:
                     continue
                 if any(t == "pip" or t.endswith("/pip") for t in tokens):
                     return tokens
-            self.fail("no pip install line in maintenance block")
+            self.fail(
+                f"no pip install line in maintenance block of document " f"{document}"
+            )
 
         linux = pip_line(self.documents[0]["maintenance"], 0)
         macos = pip_line(self.documents[1]["maintenance"], 1)
