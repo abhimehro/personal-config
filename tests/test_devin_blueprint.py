@@ -97,6 +97,16 @@ esac
         self.assertNotIn("runs-on", self.documents[0])
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
+    def test_both_platforms_deinit_devin_handoff(self):
+        for index, document in enumerate(self.documents):
+            with self.subTest(document=index):
+                self.assertIn(
+                    "git submodule deinit -f devin-handoff",
+                    document["maintenance"],
+                    "maintenance must unregister devin-handoff after the "
+                    "startup chain registers it",
+                )
+
     def test_both_platforms_install_the_same_pinned_dependencies(self):
         def pip_line(text: str) -> list[str]:
             for line in text.splitlines():
@@ -173,7 +183,7 @@ esac
             self.home / ".venv-pc" / "bin" / "pip",
             '#!/bin/sh\nprintf "%s\\n" "$@" > "$PIP_CALLS"\nexit "${PIP_EXIT_CODE:-0}"\n',
         )
-        for exit_code in (0, 7):
+        for index, exit_code in enumerate((0, 7)):
             with self.subTest(exit_code=exit_code):
                 result = self._run(
                     self.documents[1]["maintenance"], PIP_EXIT_CODE=str(exit_code)
@@ -191,7 +201,8 @@ esac
                         "radon",
                     ],
                 )
-        self.assertEqual(
-            self.git_calls.read_text().splitlines(),
-            ["submodule deinit -f devin-handoff"] * 2,
-        )
+                self.assertEqual(
+                    self.git_calls.read_text().splitlines(),
+                    ["submodule deinit -f devin-handoff"] * (index + 1),
+                    "maintenance should unregister devin-handoff once per run",
+                )
