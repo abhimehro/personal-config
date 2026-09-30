@@ -11,6 +11,7 @@ import unittest
 from unittest import mock
 
 from tests.test_pr_lifecycle_run_signals import (  # noqa: E402
+    SignalsResult,
     _dependabot_item,
     _exec_stage,
     _namespace_runner,
@@ -19,7 +20,6 @@ from tests.test_pr_lifecycle_run_signals import (  # noqa: E402
     produce_reselect_signals,
     real_health,
     run,
-    SignalsResult,
 )
 
 

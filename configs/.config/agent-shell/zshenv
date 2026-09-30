@@ -28,6 +28,7 @@ typeset -U path PATH
 path=(
   $HOME/bin
   $HOME/.local/bin
+  $HOME/.octopus/bin
   /opt/homebrew/bin
   /opt/homebrew/sbin
   /usr/local/bin

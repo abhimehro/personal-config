@@ -318,3 +318,6 @@ fish_add_path /Users/speedybee/.codeium/windsurf/bin
 # Added by Antigravity CLI installer
 set -gx PATH "/Users/speedybee/.local/bin" $PATH
 set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
+
+# Octopus CLI
+fish_add_path /Users/speedybee/.octopus/bin

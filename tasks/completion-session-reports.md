@@ -2424,8 +2424,8 @@ Scheduled fire `2026-09-18T19:14:05Z` (automation `66a8e7a8`, run
 <https://cursor.com/agents/bc-e77ace12-3cb2-4d71-8942-83d9d4460d52>). Runtime
 ledger CAS preflight **PASS** at revision **71** (commit
 `d26175996109e542cce9d588c3a90cb3e8ea1f9c`, blob
-`9d432619bce8f04dffd4bc2c6bf0ab313a3d0cda`), then Git Data API FF **72**
-(commit `bc458a040aabc48d968e3291084d5e38eb153498`, blob
+`9d432619bce8f04dffd4bc2c6bf0ab313a3d0cda`), then Git Data API FF **72** (commit
+`bc458a040aabc48d968e3291084d5e38eb153498`, blob
 `4bf6689b2335b3b66191c8ed79fe34317babb795`). Remote re-preflight **PASS**.
 Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4`, **not** reset. GitHub identity
 REST login `abhimehro`. Heal-forward: Stage 1 15:00 fingerprint **EXISTS**
@@ -2455,4 +2455,3 @@ appending run (**0gj**). Never merge drafts #460/#2231. Full record:
 Per-item table: see `tasks/pr-completion-2026-09-18.md`. Downstream: Stage 1
 canonical-pick #2030 vs #2116 and re-ingest draft #460; Stage 2 empty remainder;
 keep completion enabled and calibration disabled.
-

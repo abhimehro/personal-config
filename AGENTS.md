@@ -578,10 +578,10 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in
 **Tests that skip on Linux/CI** (not bugs — each file contains an early-exit
 skip guard that prints `SKIP:` and exits 77):
 
-| Test                               | Skip Reason                       | Guard                |
-| ---------------------------------- | --------------------------------- | -------------------- |
-| `test_config_fish.sh`              | Needs `fish` shell                | `command -v fish`    |
-| `test_ssh_config.sh`               | Needs 1Password agent socket      | `uname -s == Darwin` |
+| Test                  | Skip Reason                  | Guard                |
+| --------------------- | ---------------------------- | -------------------- |
+| `test_config_fish.sh` | Needs `fish` shell           | `command -v fish`    |
+| `test_ssh_config.sh`  | Needs 1Password agent socket | `uname -s == Darwin` |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a
 copy-paste test skeleton and a known-limitations table.
@@ -625,8 +625,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not
   run `npm install`.
 - **macOS-specific test skips on Linux**: `test_config_fish.sh` and
-  `test_ssh_config.sh` emit a `SKIP:` message and exit with code 77 on
-  Linux/CI. The test runner treats this as a skip, not a failure.
+  `test_ssh_config.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI.
+  The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
 - **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus CLI
