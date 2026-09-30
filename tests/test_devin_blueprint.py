@@ -32,6 +32,11 @@ class TestDevinBlueprint(unittest.TestCase):
         self.python_calls = self.root / "python-calls"
         self.brew_calls = self.root / "brew-calls"
         self.pip_calls = self.root / "pip-calls"
+        self.git_calls = self.root / "git-calls"
+        self._executable(
+            self.mock_bin / "git",
+            '#!/bin/sh\nprintf "%s\\n" "$*" >> "$GIT_CALLS"\n',
+        )
         self.fake_python = self.root / "fake-python3.12"
         self._executable(
             self.fake_python,
@@ -61,6 +66,7 @@ esac
             "PYTHON_CALLS": str(self.python_calls),
             "BREW_CALLS": str(self.brew_calls),
             "PIP_CALLS": str(self.pip_calls),
+            "GIT_CALLS": str(self.git_calls),
         }
         self.environment.pop("BASH_ENV", None)
         self.environment.pop("ENV", None)
@@ -92,10 +98,15 @@ esac
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        def pip_line(text):
+        def pip_line(text: str) -> list[str]:
             for line in text.splitlines():
-                if "pip" in line and " install" in line:
-                    return shlex.split(line)
+                if line.lstrip().startswith("#"):
+                    continue
+                tokens = shlex.split(line)
+                if "install" in tokens and any(
+                    t == "pip" or t.endswith("/pip") for t in tokens
+                ):
+                    return tokens
             self.fail("no pip install line in maintenance block")
 
         linux = pip_line(self.documents[0]["maintenance"])
@@ -180,3 +191,7 @@ esac
                         "radon",
                     ],
                 )
+        self.assertEqual(
+            self.git_calls.read_text().splitlines(),
+            ["submodule deinit -f devin-handoff"] * 2,
+        )

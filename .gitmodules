@@ -9,9 +9,14 @@
 #                                   submodule but never clones/fetches it.
 #   fetchRecurseSubmodules = false -> default/on-demand `git fetch` recursion
 #                                   skips it on already-populated clones.
-#   ignore = all                 -> keeps `git status`/`git submodule summary`
-#                                   clean for clones where it is checked out
-#                                   at a stale commit.
+#   ignore = all                 -> hides the submodule from `git status` and
+#                                   the diff family for clones where it stays
+#                                   checked out at a stale commit (update=none
+#                                   never re-aligns it). Trade-off: it also
+#                                   hides real drift (local commits/edits) in
+#                                   an opted-in checkout; standalone
+#                                   `git submodule status`/`summary` still
+#                                   report it regardless.
 #
 # Known git limitation: an explicit `git pull`/`git fetch --recurse-submodules`
 # still forces a fetch of this submodule once it is registered (active) or

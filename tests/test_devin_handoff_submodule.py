@@ -137,6 +137,12 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
         self.assertFalse((self.checkout / SUBMODULE / ".git").exists())
         self.assertFalse((self.checkout / ".git" / "modules" / SUBMODULE).exists())
 
+    def test_gitmodules_is_parseable(self) -> None:
+        result = self.git(
+            self.root, "config", "-f", str(ROOT / ".gitmodules"), "--list"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_git_parses_both_opt_out_settings(self) -> None:
         for key, flags, expected in (
             ("update", [], "none"),

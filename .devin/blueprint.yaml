@@ -14,7 +14,9 @@ initialize: |
   curl https://get.trunk.io -fsSL | bash
 # Install project dependencies (runs during builds, surfaced to agent at session start).
 maintenance: |
-  # Unregister devin-handoff so later `git pull --recurse-submodules` in this
+  # The startup chain's `submodule update --init` re-registers devin-handoff
+  # each session even though update=none skips the clone; deinit clears that
+  # registration so any *later* `git pull --recurse-submodules` in the same
   # session never tries to fetch it (session creds cannot reach its remote).
   git submodule deinit -f devin-handoff || true
   python3.12 -m pip install -r requirements.txt ruff==0.16.8 bandit black radon
