@@ -103,9 +103,9 @@ esac
                 if line.lstrip().startswith("#"):
                     continue
                 tokens = shlex.split(line)
-                if "install" in tokens and any(
-                    t == "pip" or t.endswith("/pip") for t in tokens
-                ):
+                if "install" not in tokens:
+                    continue
+                if any(t == "pip" or t.endswith("/pip") for t in tokens):
                     return tokens
             self.fail("no pip install line in maintenance block")
 
