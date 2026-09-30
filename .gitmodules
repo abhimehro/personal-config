@@ -1,3 +1,5 @@
 [submodule "devin-handoff"]
 	path = devin-handoff
 	url = https://github.com/club-cog/devin-handoff.git
+	update = none
+	fetchRecurseSubmodules = false
