@@ -92,8 +92,14 @@ esac
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        linux = shlex.split(self.documents[0]["maintenance"].splitlines()[0])
-        macos = shlex.split(self.documents[1]["maintenance"].strip())
+        def pip_line(text):
+            for line in text.splitlines():
+                if "pip" in line and " install" in line:
+                    return shlex.split(line)
+            self.fail("no pip install line in maintenance block")
+
+        linux = pip_line(self.documents[0]["maintenance"])
+        macos = pip_line(self.documents[1]["maintenance"])
         self.assertEqual(linux[:4], ["python3.12", "-m", "pip", "install"])
         self.assertEqual(macos[:2], ["$HOME/.venv-pc/bin/pip", "install"])
         self.assertEqual(linux[4:], macos[2:])

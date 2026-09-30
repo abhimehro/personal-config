@@ -15,15 +15,16 @@
 #
 # Known git limitation: an explicit `git pull`/`git fetch --recurse-submodules`
 # still forces a fetch of this submodule once it is registered (active) or
-# populated. Recover with `git submodule deinit -f devin-handoff`.
+# populated. Recover with `git submodule deinit -f devin-handoff` (also run
+# automatically by blueprint maintenance for populated checkouts/snapshots;
+# `active = false` in .git/config is the only full opt-out and cannot be set
+# from this file).
 #
 # To check it out explicitly:
 #   git -c submodule.devin-handoff.update=checkout submodule update --init devin-handoff
 [submodule "devin-handoff"]
 	path = devin-handoff
 	url = https://github.com/club-cog/devin-handoff.git
-	update = none
-Document (and ideally automate) a one-time `git submodule deinit -f devin-handoff` for existing populated checkouts or snapshots, or rebuild the snapshot after this lands. Optionally add `active = false` (or `submodule.active` config) if the chain should ignore the submodule entirely.
 	update = none
 	fetchRecurseSubmodules = false
 	ignore = all
