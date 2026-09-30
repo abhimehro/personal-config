@@ -77,12 +77,11 @@ esac
         path.write_text(content)
         path.chmod(0o755)
 
-    @staticmethod
-    def _tokens(line: str) -> list:
+    def _tokens(self, line: str) -> list:
         try:
             return shlex.split(line)
         except ValueError:
-            return []
+            self.fail(f"unparseable maintenance line: {line!r}")
 
     def _run(self, command, **env):
         return subprocess.run(
