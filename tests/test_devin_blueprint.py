@@ -118,34 +118,36 @@ esac
                     for line in document["maintenance"].splitlines()
                     if not line.lstrip().startswith("#")
                 ]
+                parsed = [
+                    self._tokens(line, "submodule", index, skipped) for line in lines
+                ]
+                self.assertEqual(
+                    skipped, [], f"unparseable maintenance lines: {skipped!r}"
+                )
                 self.assertTrue(
-                    any(
-                        self._tokens(line, "submodule", index, skipped)[:5] == expected
-                        for line in lines
-                    ),
+                    any(tokens[:5] == expected for tokens in parsed),
                     "maintenance must unregister devin-handoff so later "
-                    "in-session pulls cannot fetch it"
-                    + (f"; unparseable lines skipped: {skipped!r}" if skipped else ""),
+                    "in-session pulls cannot fetch it",
                 )
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        def pip_line(text: str, document: int, skipped: list) -> list[str]:
-            for line in text.splitlines():
-                if line.lstrip().startswith("#"):
-                    continue
-                tokens = self._tokens(line, "pip", document, skipped)
+        def pip_line(text: str, document: int) -> list[str]:
+            skipped = []
+            parsed = [
+                self._tokens(line, "pip", document, skipped)
+                for line in text.splitlines()
+                if not line.lstrip().startswith("#")
+            ]
+            self.assertEqual(skipped, [], f"unparseable maintenance lines: {skipped!r}")
+            for tokens in parsed:
                 if "install" not in tokens:
                     continue
                 if any(t == "pip" or t.endswith("/pip") for t in tokens):
                     return tokens
-            self.fail(
-                "no pip install line in maintenance block"
-                + (f"; unparseable lines skipped: {skipped!r}" if skipped else "")
-            )
+            self.fail("no pip install line in maintenance block")
 
-        skipped = []
-        linux = pip_line(self.documents[0]["maintenance"], 0, skipped)
-        macos = pip_line(self.documents[1]["maintenance"], 1, skipped)
+        linux = pip_line(self.documents[0]["maintenance"], 0)
+        macos = pip_line(self.documents[1]["maintenance"], 1)
         self.assertEqual(linux[:4], ["python3.12", "-m", "pip", "install"])
         self.assertEqual(macos[:2], ["$HOME/.venv-pc/bin/pip", "install"])
         self.assertEqual(linux[4:], macos[2:])
