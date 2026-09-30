@@ -77,7 +77,9 @@ esac
         path.write_text(content)
         path.chmod(0o755)
 
-    def _tokens(self, line: str, needle: str, document: int, skipped: list) -> list:
+    def _tokens(
+        self, line: str, needle: str, document: int, skipped: list[str]
+    ) -> list[str]:
         try:
             return shlex.split(line)
         except ValueError:
