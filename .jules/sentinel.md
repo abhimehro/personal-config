@@ -824,3 +824,7 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-08-01 - Option Injection Risk via pgrep in Watchdog Script
+
+**Vulnerability:** Option Injection ([CWE-88](https://cwe.mitre.org/data/definitions/88.html)) risk in `scripts/report-daemons-watchdog.sh`. The script passed process names to `pgrep -x` without the `--` argument separator. **Learning:** Passing positional arguments to process lookup tools like `pgrep` without `--` exposes scripts to option injection if the variable starts with a hyphen. **Prevention:** Always use the `--` argument delimiter before positional arguments when using `pgrep` or `pkill`.
