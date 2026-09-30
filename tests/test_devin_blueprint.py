@@ -32,6 +32,11 @@ class TestDevinBlueprint(unittest.TestCase):
         self.python_calls = self.root / "python-calls"
         self.brew_calls = self.root / "brew-calls"
         self.pip_calls = self.root / "pip-calls"
+        self.git_calls = self.root / "git-calls"
+        self._executable(
+            self.mock_bin / "git",
+            '#!/bin/sh\nprintf "%s\\n" "$*" >> "$GIT_CALLS"\n',
+        )
         self.fake_python = self.root / "fake-python3.12"
         self._executable(
             self.fake_python,
@@ -61,6 +66,7 @@ esac
             "PYTHON_CALLS": str(self.python_calls),
             "BREW_CALLS": str(self.brew_calls),
             "PIP_CALLS": str(self.pip_calls),
+            "GIT_CALLS": str(self.git_calls),
         }
         self.environment.pop("BASH_ENV", None)
         self.environment.pop("ENV", None)
@@ -70,6 +76,35 @@ esac
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
         path.chmod(0o755)
+
+    def _tokens(
+        self, line: str, needle: str, document: int, skipped: list[str]
+    ) -> list[str]:
+        try:
+            return shlex.split(line)
+        except ValueError:
+            skipped.append(line)
+            if needle in line:
+                self.fail(
+                    f"unparseable maintenance line in document " f"{document}: {line!r}"
+                )
+            return []
+
+    def _parse_maintenance(
+        self, text: str, needle: str, document: int
+    ) -> list[list[str]]:
+        skipped: list[str] = []
+        parsed = [
+            self._tokens(line, needle, document, skipped)
+            for line in text.splitlines()
+            if not line.lstrip().startswith("#")
+        ]
+        self.assertEqual(
+            skipped,
+            [],
+            f"unparseable maintenance lines in document " f"{document}: {skipped!r}",
+        )
+        return parsed
 
     def _run(self, command, **env):
         return subprocess.run(
@@ -91,9 +126,32 @@ esac
         self.assertNotIn("runs-on", self.documents[0])
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
+    def test_both_platforms_deinit_devin_handoff(self):
+        expected = ["git", "submodule", "deinit", "-f", "devin-handoff"]
+        for index, document in enumerate(self.documents):
+            with self.subTest(document=index):
+                parsed = self._parse_maintenance(
+                    document["maintenance"], "submodule", index
+                )
+                self.assertTrue(
+                    any(tokens[:5] == expected for tokens in parsed),
+                    "maintenance must unregister devin-handoff so later "
+                    "in-session pulls cannot fetch it",
+                )
+
     def test_both_platforms_install_the_same_pinned_dependencies(self):
-        linux = shlex.split(self.documents[0]["maintenance"].splitlines()[0])
-        macos = shlex.split(self.documents[1]["maintenance"].strip())
+        def pip_line(text: str, document: int) -> list[str]:
+            for tokens in self._parse_maintenance(text, "pip", document):
+                if "install" not in tokens:
+                    continue
+                if any(t == "pip" or t.endswith("/pip") for t in tokens):
+                    return tokens
+            self.fail(
+                f"no pip install line in maintenance block of document " f"{document}"
+            )
+
+        linux = pip_line(self.documents[0]["maintenance"], 0)
+        macos = pip_line(self.documents[1]["maintenance"], 1)
         self.assertEqual(linux[:4], ["python3.12", "-m", "pip", "install"])
         self.assertEqual(macos[:2], ["$HOME/.venv-pc/bin/pip", "install"])
         self.assertEqual(linux[4:], macos[2:])
@@ -156,7 +214,7 @@ esac
             self.home / ".venv-pc" / "bin" / "pip",
             '#!/bin/sh\nprintf "%s\\n" "$@" > "$PIP_CALLS"\nexit "${PIP_EXIT_CODE:-0}"\n',
         )
-        for exit_code in (0, 7):
+        for index, exit_code in enumerate((0, 7)):
             with self.subTest(exit_code=exit_code):
                 result = self._run(
                     self.documents[1]["maintenance"], PIP_EXIT_CODE=str(exit_code)
@@ -173,4 +231,9 @@ esac
                         "black",
                         "radon",
                     ],
+                )
+                self.assertEqual(
+                    self.git_calls.read_text().splitlines(),
+                    ["submodule deinit -f devin-handoff"] * (index + 1),
+                    "maintenance should unregister devin-handoff once per run",
                 )
