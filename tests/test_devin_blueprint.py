@@ -77,6 +77,13 @@ esac
         path.write_text(content)
         path.chmod(0o755)
 
+    @staticmethod
+    def _tokens(line: str) -> list:
+        try:
+            return shlex.split(line)
+        except ValueError:
+            return []
+
     def _run(self, command, **env):
         return subprocess.run(
             ["bash", "-c", command],
@@ -107,7 +114,7 @@ esac
                     if not line.lstrip().startswith("#")
                 ]
                 self.assertTrue(
-                    any(shlex.split(line)[:5] == expected for line in lines),
+                    any(self._tokens(line)[:5] == expected for line in lines),
                     "maintenance must unregister devin-handoff so later "
                     "in-session pulls cannot fetch it",
                 )
@@ -117,7 +124,7 @@ esac
             for line in text.splitlines():
                 if line.lstrip().startswith("#"):
                     continue
-                tokens = shlex.split(line)
+                tokens = self._tokens(line)
                 if "install" not in tokens:
                     continue
                 if any(t == "pip" or t.endswith("/pip") for t in tokens):
