@@ -98,13 +98,18 @@ esac
         self.assertEqual(self.documents[1]["runs-on"], "macos")
 
     def test_both_platforms_deinit_devin_handoff(self):
+        commands = "git submodule deinit -f devin-handoff"
         for index, document in enumerate(self.documents):
             with self.subTest(document=index):
-                self.assertIn(
-                    "git submodule deinit -f devin-handoff",
-                    document["maintenance"],
-                    "maintenance must unregister devin-handoff after the "
-                    "startup chain registers it",
+                lines = [
+                    line
+                    for line in document["maintenance"].splitlines()
+                    if not line.lstrip().startswith("#")
+                ]
+                self.assertTrue(
+                    any(line.strip().startswith(commands) for line in lines),
+                    "maintenance must unregister devin-handoff so later "
+                    "in-session pulls cannot fetch it",
                 )
 
     def test_both_platforms_install_the_same_pinned_dependencies(self):

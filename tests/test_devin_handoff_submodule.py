@@ -139,7 +139,8 @@ class TestDevinHandoffSubmodule(unittest.TestCase):
 
     def test_gitmodules_is_parseable(self) -> None:
         result = self.git(
-            self.root, "config", "-f", str(ROOT / ".gitmodules"), "--list"
+            self.root, "config", "-f", str(ROOT / ".gitmodules"), "--list",
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
