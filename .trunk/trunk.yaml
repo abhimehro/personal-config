@@ -40,7 +40,7 @@ lint:
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.5.1
-    - checkov@3.3.20
+    - checkov@3.3.22
     - deno@2.9.7
     - dotenv-linter@4.0.0
     - git-diff-check

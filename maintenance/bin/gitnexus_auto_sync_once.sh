@@ -45,10 +45,35 @@ on_exit() {
 trap on_exit EXIT
 log "Start time: $(date "+%Y-%m-%dT%H:%M:%S%z"); mode=$([[ $MANUAL -eq 1 ]] && printf manual || printf scheduled)"
 
+check_ssh_auth() {
+	(timeout 5 ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 || true) | grep -Fq "You've successfully authenticated"
+}
+
 if [[ $MANUAL -eq 0 ]]; then
 	scheduled_window="$(date "+%H%M")"
-	if ((10#$scheduled_window < 200 || 10#$scheduled_window > 204)); then
-		log "SKIPPED: outside the 2:00-2:04 AM start window; launchd may have fired after wake."
+	if ((10#$scheduled_window < 1230 || 10#$scheduled_window > 1234)); then
+		# Outside the 12:30-12:34 PM window (e.g. launchd fired after sleep/wake).
+		# If SSH authentication is active (1Password unlocked, network up), permit one catch-up run.
+		# If SSH is unavailable, skip cleanly to avoid any interactive prompts or delayed thrash.
+		if ! check_ssh_auth; then
+			log "SKIPPED: outside the 12:30-12:34 PM start window and SSH authentication is not active."
+			FINISHED=1
+			log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
+			exit 0
+		fi
+		log "Wake-triggered start: SSH authentication verified; proceeding with catch-up cycle."
+	fi
+fi
+
+# Pre-flight check: verify SSH authentication to GitHub is ready.
+# If 1Password SSH agent is locked, awaiting biometric approval, or network is down,
+# fail fast immediately rather than hanging for 9 minutes (60s x 9 repos) and corrupting sync state.
+if ! check_ssh_auth; then
+	if [[ $MANUAL -eq 1 ]]; then
+		log "ERROR: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
+		exit 1
+	else
+		log "SKIPPED: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
 		FINISHED=1
 		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
 		exit 0

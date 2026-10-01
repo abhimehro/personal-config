@@ -72,22 +72,22 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 - Monthly Maintenance: 1st of month 6:00 AM - Deep system maintenance
 - Google Drive Backup (Light): 3:15 AM Tue–Sun — home backup light mode
 - Google Drive Backup (Full): Monday 4:00 AM — fuller Google Drive backup
-- GitNexus Auto Sync: daily at 2:00 AM, one cycle only; low-priority background
-  job with a 2:00-2:04 AM wake-time window
+- GitNexus Auto Sync: daily at 12:30 PM, one cycle only; low-priority background
+  job with a 12:30-12:34 PM wake-time window
 - ProtonDrive Backup: **archived** (`bin/archive/protondrive_backup.sh`); not
   installed by `install.sh` (use
   `macos/com.abhimehrotra.protondrive-backup.plist` only if you intentionally
   re-enable it)
 
-### GitNexus Auto Sync (Daily at 2:00 AM)
+### GitNexus Auto Sync (Daily at 12:30 PM)
 
 - Runs one clone/pull/analyze cycle with `max_concurrency: 1`, then requests a
   graceful watcher stop only after GitNexus publishes its cycle-finished signal.
 - Launchd classifies it as `Background` and applies `Nice=10`; the wrapper also
   starts GitNexus at reduced priority.
 - Launchd can coalesce a scheduled event while the Mac sleeps. The wrapper
-  starts only between 2:00 and 2:04 AM; a later wake-triggered launch is logged
-  as skipped.
+  starts between 12:30 and 12:34 PM; a wake-triggered launch verifies active SSH
+  authentication before running a catch-up cycle.
 - A six-hour timeout logs an alert and exits without stopping or killing an
   active watcher/analyzer. A later run recovers a completed prior cycle before
   starting new work.
