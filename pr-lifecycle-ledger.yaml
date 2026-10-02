@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 201
+ledger_revision: 207
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -8181,14 +8181,12 @@ items:
   - shell_execution
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #2069. Salvage draft #2317
-    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #2069 vs salvage draft #2317; leave original
-    OPEN (Stage 2 never merges/approves/closes originals).'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: Terminal CLOSED_NOOP. Do not reopen.
+  next_action: TERMINAL CLOSED_NOOP (Stage3 hop1 Observed-CLOSED)
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2069
   - https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
@@ -8211,8 +8209,9 @@ items:
   - evt-reconcile-20260927233910-ff1336e6
   - evt-reconcile-20260927234506-8e36ac98
   - evt-reconcile-20260927234506-382fa987
-  revision: 4
-  updated_at_utc: '2026-09-27T23:45:06Z'
+  - evt-reconcile-20261002123432-d85d701b
+  revision: 5
+  updated_at_utc: '2026-10-02T12:34:32Z'
 - key: abhimehro/personal-config#2067@5093a4fa6fd9817accf82331bac37d9b772c5998
   repository: abhimehro/personal-config
   pr: 2067
@@ -11448,13 +11447,12 @@ items:
   - generated_output
   - shell_execution
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not Trunk-queue Palette wrap-source or shell-execution PRs.
-  next_action: HOLD_CONTRACT Palette wrap + shell-execution CONFLICTING. Do not Trunk-queue.
-    Expires 2026-09-25T19:36:00Z.
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: Terminal CLOSED_NOOP. Do not reopen.
+  next_action: TERMINAL CLOSED_NOOP (Stage3 hop1 Observed-CLOSED)
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2092
   changed_paths:
@@ -11471,8 +11469,9 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20260826-personalconf-2092-h
-  revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-reconcile-20261002123432-f14aa2ab
+  revision: 2
+  updated_at_utc: '2026-10-02T12:34:32Z'
 - key: abhimehro/personal-config#2091@26a3b301885a7dd19c9b150e2a4c31c219f0bf4e
   repository: abhimehro/personal-config
   pr: 2091
@@ -17191,14 +17190,12 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge a stale scratch inventory optimization with generated
-    journal output.
-  next_action: HOLD_CONTRACT MERGEABLE UNSTABLE (scratch_inventory.py + Jules journal).
-    Do not merge. Close-stale only with cooldown evidence by 2026-09-25T19:36:00Z.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: Terminal. Observed MERGED on GH. Do not reopen.
+  next_action: TERMINAL MERGED_BOUNDED_COMPLETION (Stage3 hop1 Observed-MERGED)
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2020
   changed_paths:
@@ -17210,8 +17207,9 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20260906-personal-con-2020-reingest
-  revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-reconcile-20261002123432-9f9e254f
+  revision: 2
+  updated_at_utc: '2026-10-02T12:34:32Z'
 - key: abhimehro/personal-config#2158@5cca02052794a6930cfa8db5321c73b562cc962b
   repository: abhimehro/personal-config
   pr: 2158
@@ -17694,14 +17692,13 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #2030. Unique paths already
-    on draft #2319; Stage 1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #2030 vs prior salvage draft #2319 (hop2
-    confirmed EMPTY unique remainder); leave original OPEN.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
+  safe_default: Terminal CLOSED_NOOP. Do not reopen; salvage path already drained.
+  next_action: TERMINAL CLOSED_NOOP (Stage3 hop1 Observed-CLOSED; theater handoff
+    skipped)
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2030
   - https://github.com/abhimehro/personal-config/pull/2246
@@ -17726,8 +17723,9 @@ items:
   - evt-reconcile-20260927235516-294e11a5
   - evt-reconcile-20260927235912-a99c6cc8
   - evt-reconcile-20260927235912-31ddb568
-  revision: 11
-  updated_at_utc: '2026-09-27T23:59:12Z'
+  - evt-reconcile-20261002123432-d14f47c7
+  revision: 12
+  updated_at_utc: '2026-10-02T12:34:32Z'
 - key: abhimehro/personal-config#2029@bd1d36a89c16cb90e345f501bb4bdb7f9a49749c
   repository: abhimehro/personal-config
   pr: 2029
@@ -18365,13 +18363,13 @@ items:
   - generated_output
   - workflows_and_permissions
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge venv-untrack PRs with failing CodeQL/Codacy.
-  next_action: HOLD_EVIDENCE MERGEABLE UNSTABLE (venv untrack + template; GHAS/Codacy).
-    Do not merge. Expires 2026-09-25T19:36:00Z.
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: Terminal. Landed via Stage1 hop1 squash. Do not reopen for ROUTINE
+    path.
+  next_action: TERMINAL MERGED_BOUNDED_COMPLETION (Stage3 hop1; Stage1 squash landed)
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/812
   changed_paths:
@@ -18388,8 +18386,9 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20260909-seatekanalys-812-h
-  revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-reconcile-20261002123432-b755c20a
+  revision: 2
+  updated_at_utc: '2026-10-02T12:34:32Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#631@5fcab2c417e2861312be3bf07d51cc18ffbf6223
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 631
@@ -45838,6 +45837,106 @@ events:
   acknowledged_at_utc: null
   reason: 'GH CLOSED superseded-by #1287 (MERGED_ROUTINE) + sibling #1279 on main;
     SHA_MATCH unique wrap/lint tests; Desk hop4 CLOSE_NONSECURITY_NOOP-class'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261002123432-b755c20a
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#812@648cb374a4865b9797699630854e072177536b76
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#812@648cb374a4865b9797699630854e072177536b76:evt-reconcile-20261002123432-b755c20a
+  status: PROJECTED
+  created_at_utc: '2026-10-02T12:34:32Z'
+  acknowledged_at_utc: null
+  reason: 'live PR state=MERGED mergedBy=abhimehro (Stage1 hop1 squash 2026-10-02T12:15:23Z;
+    mergeCommit 12cd90aea8ec437bfb3be5fb7423e05d3f598a42); supersedes CLOSED #643'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261002123432-9f9e254f
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2020@938b98783b9f55533b01e81f4ebb6505a393b0ad
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2020@938b98783b9f55533b01e81f4ebb6505a393b0ad:evt-reconcile-20261002123432-9f9e254f
+  status: PROJECTED
+  created_at_utc: '2026-10-02T12:34:32Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED (2026-09-28T13:24:41Z); STAGE3_RECON leftover head
+    938b98783b9f observed MERGED — book TERMINAL
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261002123432-d14f47c7
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 11
+  resulting_item_revision: 12
+  idempotency_key: abhimehro/personal-config#2030@48de37d8bd5c210ec10c9941381933db72458125:evt-reconcile-20261002123432-d14f47c7
+  status: PROJECTED
+  created_at_utc: '2026-10-02T12:34:32Z'
+  acknowledged_at_utc: null
+  reason: 'Observed-CLOSED unmerged (2026-09-28T12:59:55Z); prior salvage #2319 EMPTY
+    unique remainder; Stage3 hop1 CLOSED_NOOP bookkeeping'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261002123432-d85d701b
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72:evt-reconcile-20261002123432-d85d701b
+  status: PROJECTED
+  created_at_utc: '2026-10-02T12:34:32Z'
+  acknowledged_at_utc: null
+  reason: 'Observed-CLOSED unmerged (2026-09-28T13:00:06Z); salvage draft #2317 path;
+    Stage3 hop1 CLOSED_NOOP bookkeeping'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261002123432-f14aa2ab
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2092@d647ac87e8976781265516a039877857243d8170
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2092@d647ac87e8976781265516a039877857243d8170:evt-reconcile-20261002123432-f14aa2ab
+  status: PROJECTED
+  created_at_utc: '2026-10-02T12:34:32Z'
+  acknowledged_at_utc: null
+  reason: Observed-CLOSED unmerged (2026-09-28T13:00:04Z); Stage3 hop1 CLOSED_NOOP
+    bookkeeping
   successful: null
   policy_revision: null
 stage2_work_items: []
