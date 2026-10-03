@@ -237,7 +237,7 @@ run_with_timeout() {
 	set -e
 
 	if [[ -n $previous_int_trap ]]; then
-		mole_restore_trap "$previous_int_trap"
+		mole_restore_trap "$previous_int_trap" || true
 	else
 		trap - INT
 	fi
