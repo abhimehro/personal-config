@@ -584,7 +584,7 @@ scan_applications() {
 	# Reapply the INT trap saved before scanning, or reset INT to its default.
 	restore_scan_int_trap() {
 		if [[ -n $previous_int_trap ]]; then
-			if [[ $previous_int_trap == "trap -- "* ]]; then $previous_int_trap; fi
+			mole_restore_trap "$previous_int_trap"
 		else
 			trap - INT
 		fi

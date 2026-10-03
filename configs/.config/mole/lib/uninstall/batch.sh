@@ -348,12 +348,12 @@ batch_uninstall_applications() {
 	_restore_uninstall_traps() {
 		_cleanup_sudo_keepalive
 		if [[ -n $old_trap_int ]]; then
-			if [[ $old_trap_int == "trap -- "* ]]; then $old_trap_int; fi
+			mole_restore_trap "$old_trap_int"
 		else
 			trap - INT
 		fi
 		if [[ -n $old_trap_term ]]; then
-			if [[ $old_trap_term == "trap -- "* ]]; then $old_trap_term; fi
+			mole_restore_trap "$old_trap_term"
 		else
 			trap - TERM
 		fi
