@@ -5,8 +5,13 @@ mole_restore_trap() {
 	local declaration="$1"
 	local signal="${declaration##* }"
 	case "$signal" in
-	EXIT | SIGINT | SIGTERM) ;;
+	EXIT | SIGINT | INT | SIGTERM | TERM) ;;
 	*) return 1 ;;
+	esac
+	# Bash 3.2 prints the bare signal name; Bash 4.4+ prints the SIG* form.
+	case "$signal" in
+	INT) signal=SIGINT ;;
+	TERM) signal=SIGTERM ;;
 	esac
 
 	local prefix="trap -- '" suffix="' $signal"
