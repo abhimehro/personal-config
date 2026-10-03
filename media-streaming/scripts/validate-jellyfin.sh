@@ -11,6 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
+# Prefer repo venv python (has requests for lib.safe_http); Homebrew python
+# lacks it and previously shadowed the venv, breaking the SSRF check silently.
 _VENV_BIN="$REPO_ROOT/.venv/bin"
 if [ -x "$_VENV_BIN/python3" ]; then
 	export PATH="$_VENV_BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
