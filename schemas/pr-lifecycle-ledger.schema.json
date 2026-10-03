@@ -83,7 +83,7 @@
         "author": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["login", "identity_source", "identity_provenance"],
+          "required": ["login", "identity_source"],
           "properties": {
             "login": { "type": "string", "minLength": 1 },
             "identity_source": { "const": "github_api" },
