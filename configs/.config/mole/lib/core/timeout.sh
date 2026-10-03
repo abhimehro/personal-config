@@ -238,8 +238,10 @@ run_with_timeout() {
 
 	if [[ -n $previous_int_trap ]]; then
 		# Best-effort restore: an unparsable declaration must not abort the
-		# caller under set -e before the killer process is torn down.
-		mole_restore_trap "$previous_int_trap" || true
+		# caller under set -e before the killer process is torn down. Fall back
+		# to the default disposition instead of leaving the forwarder above
+		# installed with references to this frame's dead locals.
+		mole_restore_trap "$previous_int_trap" || trap - INT
 	else
 		trap - INT
 	fi

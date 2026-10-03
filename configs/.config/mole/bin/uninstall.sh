@@ -581,10 +581,12 @@ scan_applications() {
 	local previous_int_trap=""
 	previous_int_trap=$(trap -p INT || true)
 
-	# Reapply the INT trap saved before scanning, or reset INT to its default.
+	# Reapply the INT trap saved before scanning, or reset INT to its default
+	# when nothing was saved or the declaration cannot be parsed (the scan
+	# cleanup handler must not survive a reject with dead locals).
 	restore_scan_int_trap() {
 		if [[ -n $previous_int_trap ]]; then
-			mole_restore_trap "$previous_int_trap" || true
+			mole_restore_trap "$previous_int_trap" || trap - INT
 		else
 			trap - INT
 		fi

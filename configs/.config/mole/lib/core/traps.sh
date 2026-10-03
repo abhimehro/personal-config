@@ -12,7 +12,9 @@ fi
 readonly MOLE_TRAPS_LOADED=1
 
 mole_restore_trap() {
-	local declaration="$1"
+	# ${1-} keeps a zero-argument call a clean reject under set -u; the empty
+	# string fails the signal allowlist below like any other unparsable input.
+	local declaration="${1-}"
 	local signal="${declaration##* }"
 	# Bash serializes signals as SIGINT/SIGTERM, but older interpreters (macOS
 	# ships bash 3.2 as /bin/bash) print INT/TERM. Both spellings name the same

@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import unittest
@@ -27,6 +28,10 @@ def nested_function(path, name):
     # while the real function is never executed.
     if "mole_restore_trap" not in body:
         raise AssertionError(f"{path}: {name} no longer calls mole_restore_trap")
+    # The CWE-78 property this suite exists for: eval must not come back next
+    # to the helper. None of the sliced functions mention eval even in prose.
+    if "eval" in body:
+        raise AssertionError(f"{path}: {name} reintroduces eval of saved trap state")
     return body
 
 
@@ -97,6 +102,17 @@ if mole_restore_trap "$1"; then exit 1; fi
 [[ $(trap -p INT) == "$saved" && $mutated == 0 ]]
 ''', declaration,
                 )
+        # Zero arguments must be a clean reject under set -u, not an abort.
+        with self.subTest(declaration="<no argument>"):
+            self.run_bash(
+                '''
+mutated=0
+trap ':' INT
+saved=$(trap -p INT)
+if mole_restore_trap; then exit 1; fi
+[[ $(trap -p INT) == "$saved" && $mutated == 0 ]]
+''',
+            )
 
     def test_restoration_callers_preserve_saved_arguments(self):
         project = (MOLE / "lib/clean/project.sh").read_text()
@@ -118,34 +134,59 @@ if mole_restore_trap "$1"; then exit 1; fi
         for index, caller in enumerate(callers):
             for handler in (None, "", "printf '%s\\n' 'spaces and quotes'; : $HOME *"):
                 with self.subTest(caller=index, handler=handler):
+                    # Run inside a function so the preamble names are `local`,
+                    # matching the real nested-function scoping (bash is
+                    # dynamically scoped) instead of exercising globals.
                     self.run_bash(
                         '''
-show_cursor() { :; }
-_cleanup_sudo_keepalive() { :; }
-original_stty=""
-terminal_restored=false
-trap_installed_by_this_call=true
-if [[ $1 == set ]]; then
-    trap -- "$2" EXIT INT TERM
-else
-    trap - EXIT INT TERM
-fi
-previous_exit_trap=$(trap -p EXIT)
-previous_int_trap=$(trap -p INT)
-previous_term_trap=$(trap -p TERM)
-old_trap_int=$previous_int_trap
-old_trap_term=$previous_term_trap
+harness() {
+    show_cursor() { :; }
+    _cleanup_sudo_keepalive() { :; }
+    local original_stty="" terminal_restored=false
+    local trap_installed_by_this_call=true
+    if [[ $1 == set ]]; then
+        trap -- "$2" EXIT INT TERM
+    else
+        trap - EXIT INT TERM
+    fi
+    local previous_exit_trap previous_int_trap previous_term_trap
+    local old_trap_int old_trap_term
+    previous_exit_trap=$(trap -p EXIT)
+    previous_int_trap=$(trap -p INT)
+    previous_term_trap=$(trap -p TERM)
+    old_trap_int=$previous_int_trap
+    old_trap_term=$previous_term_trap
 '''
                         + caller
                         + '''
-actual_exit=$(trap -p EXIT)
-actual_int=$(trap -p INT)
-actual_term=$(trap -p TERM)
-trap - EXIT INT TERM
-[[ $actual_exit == "$previous_exit_trap" ]]
-[[ $actual_int == "$previous_int_trap" ]]
-[[ $actual_term == "$previous_term_trap" ]]
+    local actual_exit actual_int actual_term
+    actual_exit=$(trap -p EXIT)
+    actual_int=$(trap -p INT)
+    actual_term=$(trap -p TERM)
+    trap - EXIT INT TERM
+    [[ $actual_exit == "$previous_exit_trap" ]]
+    [[ $actual_int == "$previous_int_trap" ]]
+    [[ $actual_term == "$previous_term_trap" ]]
+}
+harness "$@"
 ''', "unset" if handler is None else "set", handler or "",
+                    )
+
+    def test_no_eval_remains_in_restore_path_files(self):
+        # Lock the security property repo-wide, not just inside the sliced
+        # functions: these files are eval-free today and must stay that way.
+        for path in (
+            "lib/core/traps.sh",
+            "lib/core/timeout.sh",
+            "lib/clean/project.sh",
+            "lib/uninstall/batch.sh",
+            "bin/uninstall.sh",
+        ):
+            for lineno, line in enumerate((MOLE / path).read_text().splitlines(), 1):
+                with self.subTest(path=path, lineno=lineno):
+                    self.assertIsNone(
+                        re.search(r"\beval\b", line),
+                        f"{path}:{lineno}: eval reintroduced in trap restore path",
                     )
 
     def test_restored_handlers_execute_only_on_signal(self):
