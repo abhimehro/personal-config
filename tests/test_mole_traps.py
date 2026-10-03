@@ -2,29 +2,74 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MOLE = REPO_ROOT / "configs/.config/mole"
+MIN_BASH = (4, 4)
 
 
-def nested_function(path, name):
+def resolve_bash():
+    """Prefer an explicit override, then Homebrew Bash, so `trap -p` spelling is stable."""
+    override = os.environ.get("MOLE_TEST_BASH")
+    if override:
+        return override
+    if sys.platform == "darwin" and shutil.which("brew"):
+        prefix = subprocess.run(
+            ["brew", "--prefix", "bash"], text=True, capture_output=True, check=False,
+        ).stdout.strip()
+        if prefix:
+            return str(Path(prefix) / "bin" / "bash")
+    return "bash"
+
+
+def bash_version(bash_bin):
+    result = subprocess.run(
+        [bash_bin, "-c", 'printf "%s.%s" "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}"'],
+        text=True, capture_output=True, check=False,
+    )
+    try:
+        major, minor = (int(part) for part in result.stdout.strip().split(".")[:2])
+    except ValueError:
+        return (0, 0)
+    return (major, minor)
+
+
+def nested_function(path, name, expected):
     """Load only a restoration function, avoiding interactive/destructive entrypoints."""
     source = (MOLE / path).read_text()
-    start = source.index(f"\t{name}() {{\n")
+    marker = f"\t{name}() {{\n"
+    if marker not in source:
+        raise AssertionError(f"{path}: missing function header for {name}")
+    start = source.index(marker)
     end = source.index("\n\t}", start) + len("\n\t}")
-    return source[start:end]
+    body = source[start:end]
+    if expected not in body:
+        raise AssertionError(f"{path}: {name} no longer calls {expected!r}")
+    return body
 
 
 class MoleTrapTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.bash_bin = resolve_bash()
+        version = bash_version(cls.bash_bin)
+        if version < MIN_BASH:
+            raise unittest.SkipTest(
+                f"bash >= 4.4 required (trap -p prints SIGINT, not INT); "
+                f"{cls.bash_bin} reports {version[0]}.{version[1]}"
+            )
+
     def run_bash(self, script, *args):
         env = os.environ.copy()
         env.pop("BASH_ENV", None)
         result = subprocess.run(
             [
-                "bash", "-c", 'set -euo pipefail\nsource "$1"\nshift\n' + script,
+                self.bash_bin, "-c", 'set -euo pipefail\nsource "$1"\nshift\n' + script,
                 "mole-trap-test", str(MOLE / "lib/core/timeout.sh"), *args,
             ],
             text=True, capture_output=True, timeout=10, env=env,
@@ -76,15 +121,27 @@ if mole_restore_trap "$1"; then exit 1; fi
 
     def test_restoration_callers_preserve_saved_arguments(self):
         project = (MOLE / "lib/clean/project.sh").read_text()
-        scan_restore = project.split(
-            "\t# Restore caller traps after this function completes.\n", 1
-        )[1].split('\n\tif [[ ${#all_found_items[@]}', 1)[0]
+        marker = "\t# Restore caller traps after this function completes.\n"
+        tail = '\n\tif [[ ${#all_found_items[@]}'
+        if marker not in project or tail not in project:
+            raise AssertionError("lib/clean/project.sh: clean_project_artifacts trap block moved")
+        scan_restore = project.split(marker, 1)[1].split(tail, 1)[0]
+        if "mole_restore_trap" not in scan_restore:
+            raise AssertionError(
+                "lib/clean/project.sh: clean_project_artifacts no longer calls mole_restore_trap"
+            )
         callers = [
-            nested_function("lib/clean/project.sh", "restore_terminal")
+            nested_function(
+                "lib/clean/project.sh", "restore_terminal", "mole_restore_trap"
+            )
             + "\ntrap ':' EXIT INT TERM\nrestore_terminal\nrestore_terminal",
-            nested_function("bin/uninstall.sh", "restore_scan_int_trap")
+            nested_function(
+                "bin/uninstall.sh", "restore_scan_int_trap", "mole_restore_trap"
+            )
             + "\ntrap ':' INT\nrestore_scan_int_trap",
-            nested_function("lib/uninstall/batch.sh", "_restore_uninstall_traps")
+            nested_function(
+                "lib/uninstall/batch.sh", "_restore_uninstall_traps", "mole_restore_trap"
+            )
             + "\ntrap ':' INT TERM\n_restore_uninstall_traps",
             "trap ':' INT TERM\n" + scan_restore,
             # Force the actual shell fallback without depending on bc/coreutils/Perl.
