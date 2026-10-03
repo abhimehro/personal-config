@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 207
+ledger_revision: 208
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19828,6 +19828,49 @@ items:
   - evt-reconcile-20260928010859-1c72cea8
   revision: 4
   updated_at_utc: '2026-09-28T01:08:59Z'
+- key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  repository: abhimehro/personal-config
+  pr: 2254
+  url: https://github.com/abhimehro/personal-config/pull/2254
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  author:
+    login: app/cursor
+    identity_source: github_api
+    app_slug: cursor
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: Do not merge the dirty original. Leave overlapping session logs to
+    the other open docs PRs.
+  next_action: Recover unique source only on a new focused draft that excludes journals
+    and sticky paths outside the work-item allowlist.
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2254
+  changed_paths:
+  - tasks/lessons.md
+  - tasks/pr-review-2026-09-21.md
+  - tasks/pr-salvage-2026-09-21-1700.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-pc-2254-h
+  revision: 1
+  updated_at_utc: '2026-10-03T09:05:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -45939,7 +45982,54 @@ events:
     bookkeeping
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s1-20261003-pc-2254-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-s1-20261003-pc-2254-h
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:05:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 hop 1: DIRTY cursor docs PR. Unique remaining paths are the dated
+    run records only; shared session logs overlap other open docs PRs.'
+stage2_work_items:
+- work_item_id: s2-20261003-pc-2254
+  source_item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  repository: abhimehro/personal-config
+  pr: 2254
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  allowed_paths:
+  - tasks/pr-review-2026-09-21.md
+  - tasks/pr-salvage-2026-09-21-1700.md
+  prohibited_paths:
+  - tasks/lessons.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  repair_description: Rebase only the unique 2026-09-21 dated run-record files onto
+    current main as one focused draft. Do not touch the overlapping session logs.
+  required_test_command: python3 -m unittest tests/test_pr_lifecycle_artifacts.py
+    -v
+  expected_test_result: OK
+  acceptance_criteria:
+  - Draft changes only tasks/pr-review-2026-09-21.md and tasks/pr-salvage-2026-09-21-1700.md.
+  - No edits to tasks/lessons.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md.
+  - python3 -m unittest tests/test_pr_lifecycle_artifacts.py -v exits 0.
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2254
+  expiry_utc: '2026-10-10T09:05:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-pc-2254-h
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
