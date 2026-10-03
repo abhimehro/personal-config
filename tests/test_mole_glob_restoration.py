@@ -70,7 +70,7 @@ shopt() {
         saved=$(builtin shopt "$@" || true)
         case "$STATE_MODE" in
             append) printf '%s%s\n' "$saved" "$STATE_SUFFIX" ;;
-            other_option) printf '%s extglob\n' "${saved% *}" ;;
+            other_option) printf 'shopt -u extglob\n' ;;
             invalid) printf '%s\n' "$STATE_SUFFIX" ;;
             *) printf '%s\n' "$saved" ;;
         esac
@@ -82,7 +82,11 @@ shopt() {
 builtin shopt -u nullglob dotglob extglob
 [[ $INITIAL_NULLGLOB == 0 ]] || builtin shopt -s nullglob
 [[ $INITIAL_DOTGLOB == 0 ]] || builtin shopt -s dotglob
-[[ $INITIAL_PIPEFAIL == 1 ]] || set +o pipefail
+if [[ $INITIAL_PIPEFAIL == 1 ]]; then
+    set -o pipefail
+else
+    set +o pipefail
+fi
 
 # Test the outer cache function separately from its group-container dependency.
 if [[ $1 == clean_app_caches ]]; then
@@ -414,10 +418,11 @@ class TestMoleGlobRestoration(unittest.TestCase):
             self.populate(directory)
         for function in FUNCTIONS:
             with self.subTest(function=function):
-                self.run_function(
+                observed = self.run_function(
                     function, *self.arguments(function), state=(True, True),
                     mode="other_option",
                 )
+                self.assert_restored(observed, (True, True))
 
     def test_predicate_empty_return_does_not_execute_saved_state(self):
         for state in STATES:

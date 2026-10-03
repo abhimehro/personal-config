@@ -787,8 +787,8 @@ cache_top_level_entry_count_capped() {
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then if [[ $_dotglob_state == *" -s "* ]]; then shopt -s dotglob; elif [[ $_dotglob_state == *" -u "* ]]; then shopt -u dotglob; fi; fi
+	if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
 
 	[[ $count =~ ^[0-9]+$ ]] || count=0
 	printf '%s\n' "$count"
@@ -809,14 +809,14 @@ directory_has_entries() {
 	local item
 	for item in "$dir"/*; do
 		if [[ -e $item ]]; then
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then if [[ $_dotglob_state == *" -s "* ]]; then shopt -s dotglob; elif [[ $_dotglob_state == *" -u "* ]]; then shopt -u dotglob; fi; fi
+			if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+			if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
 			return 0
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then if [[ $_dotglob_state == *" -s "* ]]; then shopt -s dotglob; elif [[ $_dotglob_state == *" -u "* ]]; then shopt -u dotglob; fi; fi
+	if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
 	return 1
 }
 
@@ -886,7 +886,7 @@ clean_app_caches() {
 		[[ -d "$container_dir/Data/Library/Caches" ]] || continue
 		process_container_cache "$container_dir"
 	done
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then if [[ $_ng_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_ng_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
+	if [[ $_ng_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_ng_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
 	stop_section_spinner
 
 	if [[ $found_any == "true" ]]; then
@@ -961,8 +961,8 @@ process_container_cache() {
 			[[ -e $item ]] || continue
 			safe_remove "$item" true || true
 		done
-		if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
-		if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then if [[ $_dotglob_state == *" -s "* ]]; then shopt -s dotglob; elif [[ $_dotglob_state == *" -u "* ]]; then shopt -u dotglob; fi; fi
+		if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+		if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
 	fi
 }
 
@@ -1092,8 +1092,8 @@ clean_group_container_caches() {
 					fi
 				done
 			fi
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then if [[ $_dotglob_state == *" -s "* ]]; then shopt -s dotglob; elif [[ $_dotglob_state == *" -u "* ]]; then shopt -u dotglob; fi; fi
+			if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+			if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
 
 			if [[ $candidate_changed == "true" ]]; then
 				total_size=$((total_size + candidate_size_kb))
@@ -1102,7 +1102,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_outer_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_outer_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_outer_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
+	if [[ $_outer_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_outer_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
 
 	stop_section_spinner
 
@@ -1799,7 +1799,7 @@ clean_application_support_logs() {
 	if [[ $pipefail_was_set == "true" ]]; then
 		set -o pipefail
 	fi
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then if [[ $_ng_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_ng_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
+	if [[ $_ng_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_ng_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
 	stop_section_spinner
 	if [[ $found_any == "true" ]]; then
 		local size_human
