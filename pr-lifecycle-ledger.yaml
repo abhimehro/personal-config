@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 233
+ledger_revision: 234
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -2284,14 +2284,14 @@ items:
   - deployment_and_infrastructure
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE2_QUEUED
-  terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #1502 open. Do not merge the conflicting original. Do not edit
-    requirements.txt or the diagnose script shared with #1661.'
-  next_action: 'Stage 2: salvage unique Python 3.13 docs from #1502. Do not take requirements.txt,
-    README.md, WARP.md, or the diagnose script relocate.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Leave #1502 open. Do not merge, close, comment, or edit it. Do not
+    requeue the Stage 2 work item.'
+  next_action: 'TERMINAL CLOSED_SUPERSEDED: EMPTY_INTAKE. Python 3.13 docs already
+    on main. Do not requeue s2-20261003-email-1502. GitHub #1502 stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1502
   changed_paths:
@@ -2313,8 +2313,10 @@ items:
   handoffs:
   - evt-s1-20260820b-emailsecuri-1502-h
   - evt-s3-20261003-email-1502-h
-  revision: 2
-  updated_at_utc: '2026-10-03T09:33:54Z'
+  - evt-s3-20261003-email-1502-reclaim
+  - evt-s3-20261003-email-1502-t
+  revision: 4
+  updated_at_utc: '2026-10-03T10:22:04Z'
 - key: abhimehro/Seatek_Analysis#695@a0c620406ee0ab45aac821663305c7ef7a648a08
   repository: abhimehro/Seatek_Analysis
   pr: 695
@@ -46834,47 +46836,49 @@ events:
     the session-report logs.'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261003-email-1502
-  source_item_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee
-  repository: abhimehro/email-security-pipeline
-  pr: 1502
-  base_sha: ca3775c5aa3607706bd94736318bb0fc475690ad
-  head_sha: 964515e6b576546a0443e87f993c05d16b78f6ee
-  allowed_paths:
-  - .github/ISSUE_TEMPLATE/custom.md
-  - AGENTS.md
-  - CONTAINERIZATION_SUMMARY.txt
-  - CONTRIBUTING.md
-  - DOCKER_SETUP.md
-  - QUICKSTART.md
-  prohibited_paths:
-  - requirements.txt
-  - README.md
-  - WARP.md
-  - diagnose_docker_connectivity.py
-  - scripts/diagnose_docker_connectivity.py
-  - .agents/skills/testing-email-security-pipeline-locally/SKILL.md
-  repair_description: 'Replay the Python 3.13 docs remainder from #1502 onto current
-    main. Allowed: AGENTS.md, CONTAINERIZATION_SUMMARY.txt, CONTRIBUTING.md, DOCKER_SETUP.md,
-    QUICKSTART.md, .github/ISSUE_TEMPLATE/custom.md. Prohibit requirements.txt (lockfile),
-    README.md and WARP.md (open on #1584), and the diagnose_docker_connectivity relocate
-    (source path also open on #1661).'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to the six allowed docs paths.
-  - No requirements.txt, README.md, WARP.md, or diagnose_docker_connectivity path
-    changes.
-  - git diff --check exits 0.
-  - 'Original #1502 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1502
-  expiry_utc: '2026-10-10T09:40:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s3-20261003-email-1502-h
-  history: []
+- event_id: evt-s3-20261003-email-1502-reclaim
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee:evt-s3-20261003-email-1502-reclaim
+  status: PROJECTED
+  created_at_utc: '2026-10-03T10:22:04Z'
+  acknowledged_at_utc: null
+  reason: Stage 2 EMPTY_INTAKE on s2-20261003-email-1502. Python 3.13 docs already
+    on main. No draft. Stage 3 takes the item back so it is not left STAGE2_QUEUED.
+  successful: null
+  policy_revision: null
+- event_id: evt-s3-20261003-email-1502-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee:evt-s3-20261003-email-1502-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T10:22:04Z'
+  acknowledged_at_utc: null
+  reason: 'EMPTY_INTAKE, not starvation. Python 3.13 docs already on main. Remaining
+    paths are prohibited overlaps (lockfile / README / WARP / #1661 diagnose relocate).
+    No draft was created. Work item s2-20261003-email-1502 retired CLOSED_SUPERSEDED
+    so it is not requeued. GitHub email-security-pipeline#1502 stays OPEN.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
