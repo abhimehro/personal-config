@@ -14,12 +14,6 @@ from pr_lifecycle_validation import validate
 
 
 def main() -> int:
-    """Validate the runtime-ledger CLI argument and print the validation result.
-
-    Return 0 on success or 1 after reporting OSError, ValueError, KeyError, or
-    IndexError to stderr. Other validation errors propagate. Argument parsing
-    raises SystemExit for help or invalid arguments.
-    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "runtime_ledger",

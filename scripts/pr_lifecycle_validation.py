@@ -16,12 +16,7 @@ from pr_lifecycle_yaml import load_yaml
 
 
 def validate(runtime_ledger: Path) -> None:
-    """Validate local policy, pointer, exports, and a fetched runtime-ledger file.
-
-    The caller must fetch runtime_ledger beforehand. No artifacts are written.
-    Validation and YAML-loading failures raise ValueError; export file-read and
-    malformed nested-data errors propagate from the validators.
-    """
+    """Validate source policy plus one fetched runtime ledger before an action."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")

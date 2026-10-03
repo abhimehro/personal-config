@@ -305,3 +305,9 @@ paths = [
   '''(?i)scripts/validate_repo_structure\.sh$''',
   '''(?i)scripts/lib/.*\.sh$''',
 ]
+
+[[allowlist.rules]]
+id = "sentinel-journal"
+paths = [
+  '''(?i)\.jules/sentinel\.md$''',
+]

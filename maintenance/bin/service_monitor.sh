@@ -144,9 +144,6 @@ count_widget_extensions() {
 	pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' '
 }
 
-# Print the recursive count of *.ips files under ~/Library/Logs/DiagnosticReports.
-# With pipefail enabled, a missing/unreadable directory returns nonzero even
-# though a count is printed; find diagnostics are suppressed.
 count_diagnostic_reports() {
 	find "$HOME/Library/Logs/DiagnosticReports" -type f -name "*.ips" 2>/dev/null | wc -l | tr -d ' '
 }

@@ -50,12 +50,6 @@ def _fetch_pr_diff_only(item, info):
 
 
 def _build_graphql_query(queue_items):
-    """Return a merge-status query with pr0, pr1, ... aliases in queue order.
-
-    Each item supplies an owner/repository string and PR number at indexes 0
-    and 1. Values are interpolated as supplied. A repository string without
-    exactly one slash raises ValueError; an empty queue yields "query {  }".
-    """
     parts = []
     for i, item in enumerate(queue_items):
         owner, name = item[0].split("/")
