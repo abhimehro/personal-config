@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 213
+ledger_revision: 216
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19919,6 +19919,126 @@ items:
   - evt-reconcile-20261003090641-9265c35c
   revision: 3
   updated_at_utc: '2026-10-03T09:06:41Z'
+- key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+  repository: abhimehro/email-security-pipeline
+  pr: 1627
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1627
+  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
+  head_sha: cc616e26933dee6c5438fd187353b9dcff20d811
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #1627 open. Do not merge over the palette.md conflict.'
+  next_action: 'Stage 2: salvage unique alert_recommendations paths from #1627; prohibit .jules/palette.md.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1627
+  changed_paths:
+  - .jules/palette.md
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_recommendations.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s2-20261003-1627
+  revision: 1
+  updated_at_utc: '2026-10-03T09:20:00Z'
+- key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  repository: abhimehro/repoprompt-ce
+  pr: 407
+  url: https://github.com/abhimehro/repoprompt-ce/pull/407
+  base_sha: 38be61210adba042d01d5ef7368b5f225bc78932
+  head_sha: 1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #407 open. Do not merge the overlapping AgentModelsSettingsView.swift or palette journal.'
+  next_action: 'Stage 2: salvage unique APISettingsView.swift from #407.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/407
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift
+  - Sources/RepoPrompt/Features/Settings/Views/AgentModelsSettingsView.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s2-20261003-407
+  revision: 1
+  updated_at_utc: '2026-10-03T09:20:00Z'
+- key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+  repository: abhimehro/repoprompt-ce
+  pr: 401
+  url: https://github.com/abhimehro/repoprompt-ce/pull/401
+  base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
+  head_sha: ec395389b239a34eec8d6201632e2a9b9d8cc364
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #401 open. Do not merge the overlapping SettingsButton.swift or palette journal.'
+  next_action: 'Stage 2: salvage unique Buttons.swift from #401.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/401
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/Chat/Views/Buttons.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s2-20261003-401
+  revision: 1
+  updated_at_utc: '2026-10-03T09:20:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -46151,7 +46271,139 @@ events:
     authority is never Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s2-20261003-1627
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811:evt-s2-20261003-1627
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Rebase the deepfake alert recommendation onto current main. Keep only the unique module and its test. Do not take .jules/palette.md (journal collision with merged #1643).'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-407
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e:evt-s2-20261003-407
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Carry the accessibility info-icon change in APISettingsView.swift onto current main. AgentModelsSettingsView.swift overlaps open #416 and .jules/palette.md collided with merged #411; both are prohibited.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-401
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364:evt-s2-20261003-401
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Carry the icon-button accessibility labels in Buttons.swift onto current main. SettingsButton.swift overlaps open #375 and .jules/palette.md collided with merged #411; both are prohibited.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+  - work_item_id: s2-20261003-email-1627
+    source_item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+    repository: abhimehro/email-security-pipeline
+    pr: 1627
+    base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
+    head_sha: cc616e26933dee6c5438fd187353b9dcff20d811
+    allowed_paths:
+    - src/modules/alert_recommendations.py
+    - tests/test_alert_recommendations.py
+    prohibited_paths:
+    - .jules/palette.md
+    repair_description: "Rebase the deepfake alert recommendation onto current main. Keep only the unique module and its test. Do not take .jules/palette.md (journal collision with merged #1643)."
+    required_test_command: "python3 -m pytest tests/test_alert_recommendations.py -q"
+    expected_test_result: "pytest exits 0"
+    acceptance_criteria:
+    - "Diff is limited to src/modules/alert_recommendations.py and tests/test_alert_recommendations.py."
+    - "tests/test_alert_recommendations.py passes."
+    - "No .jules/palette.md changes."
+    provenance_urls:
+    - https://github.com/abhimehro/email-security-pipeline/pull/1627
+    expiry_utc: '2026-10-10T09:20:00Z'
+    attempt_count: 0
+    current_owner: stage2
+    creation_event_id: evt-s2-20261003-1627
+    history: []
+  - work_item_id: s2-20261003-rp-407
+    source_item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+    repository: abhimehro/repoprompt-ce
+    pr: 407
+    base_sha: 38be61210adba042d01d5ef7368b5f225bc78932
+    head_sha: 1a7e30568a551664b636bd00c7bab8abe2b7c48e
+    allowed_paths:
+    - Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift
+    prohibited_paths:
+    - .jules/palette.md
+    - Sources/RepoPrompt/Features/Settings/Views/AgentModelsSettingsView.swift
+    repair_description: "Carry the accessibility info-icon change in APISettingsView.swift onto current main. AgentModelsSettingsView.swift overlaps open #416 and .jules/palette.md collided with merged #411; both are prohibited."
+    required_test_command: "git diff --check"
+    expected_test_result: "git diff --check exits 0 and the salvage diff names only APISettingsView.swift"
+    acceptance_criteria:
+    - "Only Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift changes."
+    - "AgentModelsSettingsView.swift and .jules/palette.md are untouched."
+    - "git diff --check passes."
+    provenance_urls:
+    - https://github.com/abhimehro/repoprompt-ce/pull/407
+    expiry_utc: '2026-10-10T09:20:00Z'
+    attempt_count: 0
+    current_owner: stage2
+    creation_event_id: evt-s2-20261003-407
+    history: []
+  - work_item_id: s2-20261003-rp-401
+    source_item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+    repository: abhimehro/repoprompt-ce
+    pr: 401
+    base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
+    head_sha: ec395389b239a34eec8d6201632e2a9b9d8cc364
+    allowed_paths:
+    - Sources/RepoPrompt/Features/Chat/Views/Buttons.swift
+    prohibited_paths:
+    - .jules/palette.md
+    - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
+    repair_description: "Carry the icon-button accessibility labels in Buttons.swift onto current main. SettingsButton.swift overlaps open #375 and .jules/palette.md collided with merged #411; both are prohibited."
+    required_test_command: "git diff --check"
+    expected_test_result: "git diff --check exits 0 and the salvage diff names only Buttons.swift"
+    acceptance_criteria:
+    - "Only Sources/RepoPrompt/Features/Chat/Views/Buttons.swift changes."
+    - "SettingsButton.swift and .jules/palette.md are untouched."
+    - "git diff --check passes."
+    provenance_urls:
+    - https://github.com/abhimehro/repoprompt-ce/pull/401
+    expiry_utc: '2026-10-10T09:20:00Z'
+    attempt_count: 0
+    current_owner: stage2
+    creation_event_id: evt-s2-20261003-401
+    history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
