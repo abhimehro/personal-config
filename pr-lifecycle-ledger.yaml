@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 231
+ledger_revision: 232
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -2284,13 +2284,14 @@ items:
   - deployment_and_infrastructure
   - lockfiles_and_major_dependencies
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: STAGE2_QUEUED
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge or mark ready a draft repo-health PR.
-  next_action: HOLD_CONTRACT CONFLICTING docs/relocated-script PR; not a draft. Do
-    not merge. Unique docs-only remainder vs main by 2026-09-25T19:36:00Z.
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #1502 open. Do not merge the conflicting original. Do not edit
+    requirements.txt or the diagnose script shared with #1661.'
+  next_action: 'Stage 2: salvage unique Python 3.13 docs from #1502. Do not take requirements.txt,
+    README.md, WARP.md, or the diagnose script relocate.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1502
   changed_paths:
@@ -2311,8 +2312,9 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20260820b-emailsecuri-1502-h
-  revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  - evt-s3-20261003-email-1502-h
+  revision: 2
+  updated_at_utc: '2026-10-03T09:33:54Z'
 - key: abhimehro/Seatek_Analysis#695@a0c620406ee0ab45aac821663305c7ef7a648a08
   repository: abhimehro/Seatek_Analysis
   pr: 695
@@ -46785,7 +46787,70 @@ events:
     Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s3-20261003-email-1502-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee
+  from_owner: stage3
+  to_owner: stage2
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee:evt-s3-20261003-email-1502-h
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:33:54Z'
+  acknowledged_at_utc: null
+  reason: 'Replay the Python 3.13 docs remainder from #1502 onto current main. Allowed:
+    AGENTS.md, CONTAINERIZATION_SUMMARY.txt, CONTRIBUTING.md, DOCKER_SETUP.md, QUICKSTART.md,
+    .github/ISSUE_TEMPLATE/custom.md. Prohibit requirements.txt (lockfile), README.md
+    and WARP.md (open on #1584), and the diagnose_docker_connectivity relocate (source
+    path also open on #1661).'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261003-email-1502
+  source_item_key: abhimehro/email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee
+  repository: abhimehro/email-security-pipeline
+  pr: 1502
+  base_sha: ca3775c5aa3607706bd94736318bb0fc475690ad
+  head_sha: 964515e6b576546a0443e87f993c05d16b78f6ee
+  allowed_paths:
+  - .github/ISSUE_TEMPLATE/custom.md
+  - AGENTS.md
+  - CONTAINERIZATION_SUMMARY.txt
+  - CONTRIBUTING.md
+  - DOCKER_SETUP.md
+  - QUICKSTART.md
+  prohibited_paths:
+  - requirements.txt
+  - README.md
+  - WARP.md
+  - diagnose_docker_connectivity.py
+  - scripts/diagnose_docker_connectivity.py
+  - .agents/skills/testing-email-security-pipeline-locally/SKILL.md
+  repair_description: 'Replay the Python 3.13 docs remainder from #1502 onto current
+    main. Allowed: AGENTS.md, CONTAINERIZATION_SUMMARY.txt, CONTRIBUTING.md, DOCKER_SETUP.md,
+    QUICKSTART.md, .github/ISSUE_TEMPLATE/custom.md. Prohibit requirements.txt (lockfile),
+    README.md and WARP.md (open on #1584), and the diagnose_docker_connectivity relocate
+    (source path also open on #1661).'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to the six allowed docs paths.
+  - No requirements.txt, README.md, WARP.md, or diagnose_docker_connectivity path
+    changes.
+  - git diff --check exits 0.
+  - 'Original #1502 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1502
+  expiry_utc: '2026-10-10T09:40:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s3-20261003-email-1502-h
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
