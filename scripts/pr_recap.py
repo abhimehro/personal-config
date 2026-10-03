@@ -1408,11 +1408,26 @@ def run_sync(args: argparse.Namespace) -> int:
     # 2. Resolve PR Context
     context = resolve_pr_context(args)
 
-    # 3. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
+    # 3. Extract Issue Keys & Relationships
+    issue_map = extract_issue_keys(
+        branch_name=context.branch_name,
+        commit_messages=context.commit_messages,
+        pr_title=context.pr_title,
+        pr_body=context.pr_body,
+        explicit_issues=getattr(args, "issue", None) or (),
+    )
+
+    # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
     key_timeout = float(os.getenv("PR_RECAP_KEY_TIMEOUT", "8.0"))
     linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
 
     if not linear_key:
+        if not issue_map and not args.dry_run:
+            logger.info(
+                "No Linear issue keys found and no Linear API key resolved. Exiting cleanly (safe no-op)."
+            )
+            return 0
+
         op_ref = config.secret_references.get(
             "onepassword", "op://Personal/LINEAR_API_KEY/credential"
         )
@@ -1462,15 +1477,6 @@ def run_sync(args: argparse.Namespace) -> int:
     else:
         logger.info("Resolved Linear API key via %s", key_source)
         linear_client = LinearClient(api_key=linear_key)
-
-    # 4. Extract Issue Keys & Relationships
-    issue_map = extract_issue_keys(
-        branch_name=context.branch_name,
-        commit_messages=context.commit_messages,
-        pr_title=context.pr_title,
-        pr_body=context.pr_body,
-        explicit_issues=getattr(args, "issue", None) or (),
-    )
 
     # 4b. Mirrored Linear Agent resolution fallback (when branch/commits link via GitHub issues or PR URLs)
     if not issue_map and linear_client:
