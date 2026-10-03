@@ -1,26 +1,5 @@
 # Lessons Learned
 
-## Lesson 0hr: Three-stage PR pipeline rebalance (2026-09-21)
-
-**Pattern:** Cursor scheduled automations paused (usage exhausted). Long
-calibration prompts + Notion packets + Stage 2 empty-intake while salvage stock
-remained caused drain failure. Bot review threads (Codacy/qodo/CodeRabbit) with
-no human reply were treated as merge blockers.
-
-**Rule:** (1) Stage agents bootstrap via `python3 scripts/pr_lifecycle_run.py
---stage N` and execute only the emitted plan. (2) Schema-aware CAS only —
-`pr_lifecycle_reconcile.py` / ledger helpers; never raw YAML replace. (3)
-`packet_expiry_close_days: 7` — expired WAITING_HUMAN BOT non-REVIEW_SECURITY →
-salvage-eligible **or** CLOSE_STALE. (4) Stage 2 never merges; Stage 2 intake is
-`self_fed` minimal WIs. (5) Codacy/qodo/CodeRabbit threads with no human reply
-are advisory; Stage 3 may resolve before `/trunk` (Abhi 2026-09-21). (6)
-Calibration stays DISABLED; completion is live Stage 3. (7) Weekly GitHub issue
-digest replaces Notion packets for this path. (8) Archive TERMINAL >30d so the
-active ledger stays under 1MB.
-
-**Detection cost:** Low — `pr_lifecycle_run.py --stage 1 --dry-run` prints a JSON
-plan; `pr_lifecycle_feed.py` exits 2 on EMPTY_FEED_WITH_ELIGIBLE_STOCK.
-
 ## Lesson 0hb: Persisted projection fields halt scheduled Cursor (2026-09-08)
 
 **Pattern:** `apply_transition()` writes `latest_transition` /

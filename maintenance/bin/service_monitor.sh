@@ -147,8 +147,6 @@ count_widget_extensions() {
 }
 
 count_diagnostic_reports() {
-	# Ensure the directory exists so find cannot exit 1 under set -euo pipefail
-	mkdir -p "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null || true
 	find "$HOME/Library/Logs/DiagnosticReports" -type f -name "*.ips" 2>/dev/null | wc -l | tr -d ' '
 }
 

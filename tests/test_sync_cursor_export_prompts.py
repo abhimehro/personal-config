@@ -52,7 +52,9 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 "before\nfirst shared block\nbetween\nsecond shared block\nafter\n",
             )
 
-    def test_stage_prompts_have_no_includes_to_expand(self) -> None:
+    def test_stage_prompts_expand_shared_frame(self) -> None:
+        partner = "{{include:_shared-partner-frame.md}}"
+        cas = "{{include:_shared-cas-bootstrap.md}}"
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
@@ -61,10 +63,13 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             with self.subTest(name):
                 raw = (PROMPTS / name).read_text(encoding="utf-8")
                 expanded = expand_prompt_source(PROMPTS / name)
-                self.assertNotIn("{{include:", raw)
-                self.assertEqual(expanded, raw)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", expanded)
-                self.assertIn("docs/automated-pr-lifecycle.md", expanded)
+                self.assertEqual(raw.count(partner), 1)
+                self.assertEqual(raw.count(cas), 1)
+                self.assertNotIn("{{include:", expanded)
+                self.assertIn("security-first development partner", expanded)
+                self.assertIn("stale-vs-main", expanded)
+                self.assertIn("This stage (Stage", expanded)
+                self.assertIn("pr_lifecycle_ledger_cas.py preflight", expanded)
 
     def test_exports_store_expanded_prompt(self) -> None:
         for export_name in (
@@ -76,8 +81,9 @@ class TestPromptIncludeExpansion(unittest.TestCase):
                 data = json.loads((EXPORTS / export_name).read_text(encoding="utf-8"))
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", prompt)
-                self.assertIn("docs/automated-pr-lifecycle.md", prompt)
+                self.assertIn("security-first development partner", prompt)
+                self.assertIn("stale-vs-main", prompt)
+                self.assertIn("pr_lifecycle_ledger_cas.py preflight", prompt)
 
     def test_rejects_path_traversal(self) -> None:
         with self.assertRaises(PromptIncludeError):

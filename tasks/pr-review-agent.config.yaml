@@ -113,11 +113,6 @@ lifecycle:
   routine_evidence_expiry_days: 7
   no_op_or_supersession_cooldown_hours: 24
   stale_close_cooldown_hours: 72
-  packet_expiry_close_days: 7
-  stage2_intake: self_fed
-  lineage:
-    open_as_draft: false
-  # Keep existing stage_caps / stages / calibration-disabled posture unchanged.
   stage_caps:
     stage1_inventory: 80
     stage1_actions: 40

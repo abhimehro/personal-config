@@ -21,7 +21,6 @@ from sync_cursor_export_prompts import (
 
 
 def validate_config(config: dict[str, Any]) -> None:
-    """Validate required lifecycle settings and reject contract drift."""
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -47,12 +46,7 @@ def validate_config(config: dict[str, Any]) -> None:
         "stage_caps",
         "stages",
     }
-    allowed = required | {
-        "packet_expiry_close_days",
-        "stage2_intake",
-        "lineage",
-    }
-    require_fields(lifecycle, allowed, required, "config.lifecycle")
+    require_fields(lifecycle, required, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
     validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
@@ -373,17 +367,13 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
-    """Require the runtime continuity markers appropriate to a named prompt."""
     normalized = " ".join(content.split())
-    required = {"docs/automated-pr-lifecycle.md"}
-    if name == "daily-pr-completion.calibration.md":
-        required |= {
-            "docs/pr-lifecycle-runtime-ledger.md",
-            "Memory is enabled",
-            "Dashboard-referenced MCP set",
-            "ledger, run records, and lessons",
-        }
-    else:
-        required.add("scripts/pr_lifecycle_run.py --stage")
+    required = {
+        "docs/automated-pr-lifecycle.md",
+        "docs/pr-lifecycle-runtime-ledger.md",
+        "Memory is enabled",
+        "Dashboard-referenced MCP set",
+        "ledger, run records, and lessons",
+    }
     if any(marker not in normalized for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
