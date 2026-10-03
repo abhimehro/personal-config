@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 236
+ledger_revision: 241
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19949,8 +19949,10 @@ items:
   terminal_disposition: CLOSED_DUPLICATE
   current_owner: none
   next_owner: none
-  safe_default: 'GitHub #1627 closed as duplicate of #1703. Do not reopen; leave #1703 open.'
-  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:17:25Z: Stage 1 closed #1627 as duplicate of open #1703 (comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942).'
+  safe_default: 'GitHub #1627 closed as duplicate of #1703. Do not reopen; leave #1703
+    open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:17:25Z: Stage 1 closed
+    #1627 as duplicate of open #1703 (comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942).'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1627
   changed_paths:
@@ -19992,8 +19994,10 @@ items:
   terminal_disposition: CLOSED_DUPLICATE
   current_owner: none
   next_owner: none
-  safe_default: 'GitHub #407 closed as duplicate of #417. Do not reopen; leave #417 open.'
-  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:33Z: Stage 1 closed #407 as duplicate of open #417 (comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234).'
+  safe_default: 'GitHub #407 closed as duplicate of #417. Do not reopen; leave #417
+    open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:33Z: Stage 1 closed
+    #407 as duplicate of open #417 (comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/407
   changed_paths:
@@ -20035,8 +20039,10 @@ items:
   terminal_disposition: CLOSED_DUPLICATE
   current_owner: none
   next_owner: none
-  safe_default: 'GitHub #401 closed as duplicate of #418. Do not reopen; leave #418 open.'
-  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:28Z: Stage 1 closed #401 as duplicate of open #418 (comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574).'
+  safe_default: 'GitHub #401 closed as duplicate of #418. Do not reopen; leave #418
+    open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:28Z: Stage 1 closed
+    #401 as duplicate of open #418 (comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/401
   changed_paths:
@@ -20205,12 +20211,14 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Leave #1633 open. Do not merge the conflicting original. Do not copy .jules/palette.md.
-  next_action: 'Stage 2: salvage the unique AppRunner cyan path highlight from #1633. Allowed src/app_runner.py and tests/test_app_runner.py only. Do not take .jules/palette.md.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #1633. Salvage draft #1704
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #1633 vs salvage draft #1704; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1633
   changed_paths:
@@ -20219,12 +20227,60 @@ items:
   - tests/test_app_runner.py
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-email-1633-i
-  revision: 1
-  updated_at_utc: '2026-10-03T12:55:00Z'
+  - evt-reconcile-20261003130038-2b43ddc8
+  - evt-reconcile-20261003130038-09eedd5a
+  revision: 3
+  updated_at_utc: '2026-10-03T13:00:38Z'
+- key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0
+  repository: abhimehro/email-security-pipeline
+  pr: 1704
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1704
+  base_sha: 1ea052a685ab8d3310fa20325b08ca82c16201e8
+  head_sha: 9ae63cd1865704efc51deb53bf8443b02f30a8f0
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #1704 (isDraft verified); original #1633
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1704
+  - https://github.com/abhimehro/email-security-pipeline/pull/1633
+  changed_paths:
+  - src/app_runner.py
+  - tests/test_app_runner.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-email-securi-1704-i
+  - evt-reconcile-20261003130038-b18dbd23
+  - evt-reconcile-20261003130038-289f4525
+  revision: 3
+  updated_at_utc: '2026-10-03T13:00:38Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -46926,8 +46982,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T12:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 duplicate close: GitHub #1627 closed as duplicate of
-    open #1703. Comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942. Canonical stays open.'
+  reason: 'Stage 1 duplicate close: GitHub #1627 closed as duplicate of open #1703.
+    Comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942.
+    Canonical stays open.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-rpce-401-dup-t
@@ -46946,8 +47003,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T12:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 duplicate close: GitHub #401 closed as duplicate of
-    open #418. Comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574. Canonical stays open.'
+  reason: 'Stage 1 duplicate close: GitHub #401 closed as duplicate of open #418.
+    Comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574.
+    Canonical stays open.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-rpce-407-dup-t
@@ -46966,8 +47024,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T12:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 duplicate close: GitHub #407 closed as duplicate of
-    open #417. Comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234. Canonical stays open.'
+  reason: 'Stage 1 duplicate close: GitHub #407 closed as duplicate of open #417.
+    Comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234.
+    Canonical stays open.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-email-1633-i
@@ -46986,36 +47045,113 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T12:55:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique product paths src/app_runner.py and tests/test_app_runner.py on open #1633 head 6c4f96863e50b05aa3eacde8e03e8233a8ddd234. Skip .jules/palette.md. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique product paths src/app_runner.py and
+    tests/test_app_runner.py on open #1633 head 6c4f96863e50b05aa3eacde8e03e8233a8ddd234.
+    Skip .jules/palette.md. Original stays OPEN. Do not merge.'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261003-email-1633
-  source_item_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
-  repository: abhimehro/email-security-pipeline
-  pr: 1633
-  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-  head_sha: 6c4f96863e50b05aa3eacde8e03e8233a8ddd234
-  allowed_paths:
-  - src/app_runner.py
-  - tests/test_app_runner.py
-  prohibited_paths:
-  - .jules/palette.md
-  repair_description: 'Replay the unique AppRunner cyan configuration-path highlight from #1633 onto current main. Allowed: src/app_runner.py and tests/test_app_runner.py. Prohibit .jules/palette.md. Original #1633 stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to src/app_runner.py and tests/test_app_runner.py.
-  - No .jules/palette.md changes.
-  - git diff --check exits 0.
-  - 'Original #1633 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1633
-  expiry_utc: '2026-10-10T12:55:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-email-1633-i
-  history: []
+- event_id: evt-reconcile-20261003130038-2b43ddc8
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234:evt-reconcile-20261003130038-2b43ddc8
+  status: PROJECTED
+  created_at_utc: '2026-10-03T13:00:38Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 email-1633: activate WI s2-20261003-email-1633 before salvage draft
+    #1704 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003130038-09eedd5a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234:evt-reconcile-20261003130038-09eedd5a
+  status: PROJECTED
+  created_at_utc: '2026-10-03T13:00:38Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 email-1633: draft #1704 recovered unique remainder (AppRunner cyan
+    configuration-path highlight; palette.md excluded). Original #1633 stays OPEN;
+    Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-email-securi-1704-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0:evt-s2-20261003-email-securi-1704-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T13:00:38Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1704 provenance to #1633. Head 9ae63cd18657; 0gd
+    draft restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003130038-b18dbd23
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0:evt-reconcile-20261003130038-b18dbd23
+  status: PROJECTED
+  created_at_utc: '2026-10-03T13:00:38Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #1704 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003130038-289f4525
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1704@9ae63cd1865704efc51deb53bf8443b02f30a8f0:evt-reconcile-20261003130038-289f4525
+  status: PROJECTED
+  created_at_utc: '2026-10-03T13:00:38Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (AppRunner cyan configuration-path highlight;
+    palette.md excluded). Stage 1 re-ingests draft #1704. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
