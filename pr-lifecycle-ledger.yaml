@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 234
+ledger_revision: 235
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19945,14 +19945,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #1627. Salvage draft #1703
-    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #1627 vs salvage draft #1703; leave original
-    OPEN (Stage 2 never merges/approves/closes originals).'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_DUPLICATE
+  current_owner: none
+  next_owner: none
+  safe_default: 'GitHub #1627 closed as duplicate of #1703. Do not reopen; leave #1703 open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:17:25Z: Stage 1 closed #1627 as duplicate of open #1703 (comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942).'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1627
   changed_paths:
@@ -19967,8 +19965,9 @@ items:
   - evt-s2-20261003-1627
   - evt-reconcile-20261003092353-6d6ced2c
   - evt-reconcile-20261003092353-1966d921
-  revision: 3
-  updated_at_utc: '2026-10-03T09:23:53Z'
+  - evt-s1-20261003-email-1627-dup-t
+  revision: 4
+  updated_at_utc: '2026-10-03T12:20:00Z'
 - key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
   repository: abhimehro/repoprompt-ce
   pr: 407
@@ -19989,14 +19988,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #407. Salvage draft #417 holds
-    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #407 vs salvage draft #417; leave original
-    OPEN (Stage 2 never merges/approves/closes originals).'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_DUPLICATE
+  current_owner: none
+  next_owner: none
+  safe_default: 'GitHub #407 closed as duplicate of #417. Do not reopen; leave #417 open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:33Z: Stage 1 closed #407 as duplicate of open #417 (comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/407
   changed_paths:
@@ -20011,8 +20008,9 @@ items:
   - evt-s2-20261003-407
   - evt-reconcile-20261003092353-27e057dd
   - evt-reconcile-20261003092353-62e37f6e
-  revision: 3
-  updated_at_utc: '2026-10-03T09:23:53Z'
+  - evt-s1-20261003-rpce-407-dup-t
+  revision: 4
+  updated_at_utc: '2026-10-03T12:20:00Z'
 - key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
   repository: abhimehro/repoprompt-ce
   pr: 401
@@ -20033,14 +20031,12 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Do not squash-merge or close original #401. Salvage draft #418 holds
-    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
-  next_action: 'Stage 3: reconcile original #401 vs salvage draft #418; leave original
-    OPEN (Stage 2 never merges/approves/closes originals).'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_DUPLICATE
+  current_owner: none
+  next_owner: none
+  safe_default: 'GitHub #401 closed as duplicate of #418. Do not reopen; leave #418 open.'
+  next_action: 'Terminal CLOSED_DUPLICATE at 2026-10-03T12:18:28Z: Stage 1 closed #401 as duplicate of open #418 (comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/401
   changed_paths:
@@ -20055,8 +20051,9 @@ items:
   - evt-s2-20261003-401
   - evt-reconcile-20261003092353-660c9d64
   - evt-reconcile-20261003092353-2d491790
-  revision: 3
-  updated_at_utc: '2026-10-03T09:23:53Z'
+  - evt-s1-20261003-rpce-401-dup-t
+  revision: 4
+  updated_at_utc: '2026-10-03T12:20:00Z'
 - key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009
   repository: abhimehro/email-security-pipeline
   pr: 1703
@@ -46876,6 +46873,66 @@ events:
     paths are prohibited overlaps (lockfile / README / WARP / #1661 diagnose relocate).
     No draft was created. Work item s2-20261003-email-1502 retired CLOSED_SUPERSEDED
     so it is not requeued. GitHub email-security-pipeline#1502 stays OPEN.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-email-1627-dup-t
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_DUPLICATE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811:evt-s1-20261003-email-1627-dup-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T12:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 duplicate close: GitHub #1627 closed as duplicate of
+    open #1703. Comment https://github.com/abhimehro/email-security-pipeline/pull/1627#issuecomment-5969076942. Canonical stays open.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-rpce-401-dup-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_DUPLICATE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364:evt-s1-20261003-rpce-401-dup-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T12:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 duplicate close: GitHub #401 closed as duplicate of
+    open #418. Comment https://github.com/abhimehro/repoprompt-ce/pull/401#issuecomment-5969084574. Canonical stays open.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-rpce-407-dup-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_DUPLICATE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e:evt-s1-20261003-rpce-407-dup-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T12:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 duplicate close: GitHub #407 closed as duplicate of
+    open #417. Comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234. Canonical stays open.'
   successful: null
   policy_revision: null
 stage2_work_items: []
