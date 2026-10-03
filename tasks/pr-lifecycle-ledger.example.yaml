@@ -34,7 +34,7 @@ items:
       app_slug: dependabot
       identity_provenance:
         method: allowlist_login
-        signals: [dependabot[bot]]
+        signals: ["dependabot[bot]"]
     author_type: BOT
     classification: DEPENDENCY
     risk_class: ROUTINE
@@ -69,7 +69,7 @@ items:
       app_slug: dependabot
       identity_provenance:
         method: allowlist_login
-        signals: [dependabot[bot]]
+        signals: ["dependabot[bot]"]
     author_type: BOT
     classification: DEPENDENCY
     risk_class: ROUTINE
