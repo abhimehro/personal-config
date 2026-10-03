@@ -7,8 +7,8 @@ Google Calendar events, Louisiana RSS feeds, and podcast episodes,
 then saves it to Readwise Reader.
 
 Usage:
-    python3.15 morning-brief.py              # Normal run → saves to Readwise
-    python3.15 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
+    python3 morning-brief.py              # Normal run → saves to Readwise
+    python3 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
 
 Required env vars:
     READWISE_TOKEN
@@ -618,7 +618,7 @@ def html_li(content: str) -> str:
 def html_ul(items: Iterable[str]) -> str:
     item_list = list(items)
     if not item_list:
-        return '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
+        return '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items <span class="hint" style="font-size: 0.9em; color: #6c757d; margin-left: 8px;">(Check <kbd>~/.config/morning-brief.env</kbd> configuration)</span></li></ul>'
     return f"<ul>{''.join(item_list)}</ul>"
 
 
@@ -1376,7 +1376,7 @@ def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -
         f"<div><strong>Baton Rouge Weather:</strong> "
         f"{sanitize_text(weather.high_temp)}°F High / "
         f"{sanitize_text(weather.current_temp)}°F Current "
-        f"(Rain: {sanitize_text(weather.rain_probability)}%)</div>"
+        f"(Rain: <meter aria-label='Rain Probability' min='0' max='100' low='30' high='70' optimum='0' value='{sanitize_text(weather.rain_probability)}'>{sanitize_text(weather.rain_probability)}%</meter>)</div>"
     )
     return html_section("🌅 Good Morning, Abhi", body)
 
