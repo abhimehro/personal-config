@@ -6,7 +6,8 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from get_prs_summarize import automation_hints, check_summary
+from unittest.mock import patch
+from get_prs_summarize import automation_hints, check_summary, fetch_details
 
 
 class TestAutomationHints(unittest.TestCase):
@@ -167,6 +168,24 @@ class TestCheckSummary(unittest.TestCase):
             {"status": "COMPLETED", "conclusion": "failure"},
         ]
         self.assertEqual(check_summary(rollup), "FAIL_1")
+
+
+class TestFetchDetails(unittest.TestCase):
+    @patch("subprocess.run")
+    def test_invalid_repo_rejected(self, mock_run):
+        invalid_repos = [
+            "-Rother/repo",
+            "--config=/tmp/bad",
+            "owner/repo;touch",
+            "owner/repo/extra",
+            "",
+        ]
+        for repo in invalid_repos:
+            with self.subTest(repo=repo):
+                mock_run.reset_mock()
+                res = fetch_details(repo, 1)
+                self.assertEqual(res, "_Could not load details_")
+                self.assertFalse(mock_run.called)
 
 
 if __name__ == "__main__":
