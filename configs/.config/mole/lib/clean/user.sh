@@ -951,11 +951,13 @@ process_container_cache() {
 	found_any=true
 	cleaned_count=$((cleaned_count + 1))
 	if [[ $DRY_RUN != "true" ]]; then
-		local _nullglob_state
-		local _dotglob_state
-		_nullglob_state=$(shopt -p nullglob || true)
-		_dotglob_state=$(shopt -p dotglob || true)
-		shopt -s nullglob dotglob
+	local _nullglob_state
+	local _dotglob_state
+	# `shopt -p` only ever emits `shopt -s|-u <name>` with plain word characters,
+	# so these saved commands are replayed directly instead of through eval.
+	_nullglob_state=$(shopt -p nullglob || true)
+	_dotglob_state=$(shopt -p dotglob || true)
+	shopt -s nullglob dotglob
 		local item
 		for item in "$cache_dir"/*; do
 			[[ -e $item ]] || continue
