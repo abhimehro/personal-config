@@ -31,6 +31,8 @@ def nested_function(path, name):
 
 
 class MoleTrapTests(unittest.TestCase):
+    """Verify safe trap restoration and its integration with Mole callers."""
+
     def bash_bin(self):
         """Resolve the interpreter explicitly so results do not depend on PATH."""
         override = os.environ.get("MOLE_TEST_BASH_BIN")
@@ -43,6 +45,7 @@ class MoleTrapTests(unittest.TestCase):
         self.skipTest("no bash interpreter available")
 
     def run_bash(self, script, *args):
+        """Run Bash with Mole's timeout helpers, assert success, and return stdout."""
         env = os.environ.copy()
         env.pop("BASH_ENV", None)
         result = subprocess.run(
@@ -57,6 +60,7 @@ class MoleTrapTests(unittest.TestCase):
         return result.stdout
 
     def test_round_trip_preserves_handler_data(self):
+        """Preserve handler quoting and shell syntax without executing it on restore."""
         handlers = [
             "", ":", "printf '%s %s\\n' 'hello world' \"quoted\"",
             "mutated=1; : $(mutated=2) `mutated=3` $HOME * ? [abc]",
@@ -80,6 +84,7 @@ trap - "$2"
                     )
 
     def test_rejects_malformed_declarations_without_execution(self):
+        """Reject invalid declarations without running them or changing the trap."""
         for declaration in (
             "trap -- ':' SIGINT; mutated=1",
             "trap -- 'ok'; mutated=1; 'more' SIGINT",
@@ -99,6 +104,7 @@ if mole_restore_trap "$1"; then exit 1; fi
                 )
 
     def test_restoration_callers_preserve_saved_arguments(self):
+        """Restore unset, empty, and quoted handlers through each Mole caller."""
         project = (MOLE / "lib/clean/project.sh").read_text()
         scan_restore = project.split(
             "\t# Restore caller traps after this function completes.\n", 1
@@ -149,6 +155,7 @@ trap - EXIT INT TERM
                     )
 
     def test_restored_handlers_execute_only_on_signal(self):
+        """Defer restored handlers until shell exit or delivery of INT or TERM."""
         for signal in ("EXIT", "INT", "TERM"):
             with self.subTest(signal=signal):
                 output = self.run_bash(
