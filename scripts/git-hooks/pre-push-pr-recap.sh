@@ -11,10 +11,32 @@ if [ "${PR_RECAP_SKIP:-0}" = "1" ] || [ "${SKIP_PR_RECAP:-0}" = "1" ]; then
 	exit 0
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RECAP_BIN="${SCRIPT_DIR}/pr-recap"
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -d "${HOOK_DIR}/../.." ]; then
+	REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+else
+	REPO_ROOT="$(pwd)"
+fi
 
-if [ ! -x "${RECAP_BIN}" ]; then
+# Discover pr-recap executable
+RECAP_BIN=""
+if [ -x "${REPO_ROOT}/pr-recap" ]; then
+	RECAP_BIN="${REPO_ROOT}/pr-recap"
+elif [ -x "${REPO_ROOT}/scripts/pr-recap" ]; then
+	RECAP_BIN="${REPO_ROOT}/scripts/pr-recap"
+elif command -v pr-recap >/dev/null 2>&1; then
+	RECAP_BIN="$(command -v pr-recap)"
+elif [ -x "${HOME}/bin/pr-recap" ]; then
+	RECAP_BIN="${HOME}/bin/pr-recap"
+elif [ -x "${HOME}/.local/bin/pr-recap" ]; then
+	RECAP_BIN="${HOME}/.local/bin/pr-recap"
+elif [ -x "${HOME}/.gemini/antigravity-cli/bin/pr-recap" ]; then
+	RECAP_BIN="${HOME}/.gemini/antigravity-cli/bin/pr-recap"
+elif [ -x "/Users/speedybee/dev/personal-config/scripts/pr-recap" ]; then
+	RECAP_BIN="/Users/speedybee/dev/personal-config/scripts/pr-recap"
+fi
+
+if [ -z "${RECAP_BIN}" ] || [ ! -x "${RECAP_BIN}" ]; then
 	exit 0
 fi
 
