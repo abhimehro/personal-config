@@ -9,14 +9,7 @@ echo "📦 Updating package managers..."
 # npm
 if command -v npm &>/dev/null; then
 	echo "🟢 Updating npm and global packages..."
-	was_gitnexus_rc=0
-	if npm list -g gitnexus 2>/dev/null | grep -Eq '1\.6\.13-rc|@rc'; then
-		was_gitnexus_rc=1
-	fi
 	npm update -g 2>/dev/null || true
-	if [[ $was_gitnexus_rc -eq 1 ]]; then
-		npm install -g gitnexus@1.6.13-rc.38 2>/dev/null || true
-	fi
 	npm_outdated=$(npm outdated -g --depth=0 2>/dev/null | wc -l | xargs)
 	echo "   npm: Updated global packages ($npm_outdated were outdated)"
 else

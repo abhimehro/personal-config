@@ -16,21 +16,7 @@ tests/
 
 ## Running Tests
 
-Prefer the Makefile targets (from repo root). They match CI and skip macOS-only
-scripts with `SKIP:` / exit 77 on Linux:
-
-```bash
-# Smoke tests (pre-commit)
-make test-quick
-
-# All shell tests (parallel)
-make test
-
-# Shell + Python
-make test-all
-```
-
-Each test script can also be run directly:
+Each test script can be run directly:
 
 ```bash
 # Run an individual test
@@ -38,7 +24,7 @@ Each test script can also be run directly:
 ./tests/test_sync_all_configs.sh
 ./tests/test_network_mode_manager.sh
 
-# Ad-hoc loop (not the CI runner; skips and parallelism differ)
+# Run all shell tests (from repo root)
 for f in tests/test_*.sh; do bash "$f"; done
 ```
 

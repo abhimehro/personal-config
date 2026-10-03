@@ -163,7 +163,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         return clean_path
 
     def do_GET(self):
-        """Handle GET requests by proxying to rclone."""
+        """Handle GET requests by proxying to rclone"""
         if not self.check_auth():
             return
 
@@ -214,7 +214,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             self.send_error(500, str(e))
 
     def stream_file(self, path):
-        """Stream a file from rclone."""
+        """Stream a file from rclone"""
         try:
             # Start rclone cat process
             process = subprocess.Popen(
@@ -245,7 +245,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             print(f"Failed to stream file: {e}")
 
     def generate_directory_listing(self, files, current_path):
-        """Generate HTML directory listing."""
+        """Generate HTML directory listing"""
         safe_path = html.escape(current_path)
 
         html_parts = [DIRECTORY_LISTING_HEADER_TEMPLATE.format(safe_path=safe_path)]
@@ -261,8 +261,6 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
 
         # ⚡ Performance: tuple for fast C-level endswith checking
         video_exts = (".mp4", ".mkv", ".avi", ".mov")
-        video_icon = "\U0001f3ac"
-        file_icon = "\U0001f4c4"
 
         # Add files and directories
         # ⚡ Performance: Use generator expression/list comprehension instead of for loop with .append
@@ -281,7 +279,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
                 if item.endswith("/")
                 else (
                     f'<li><a href="/{safe_base_path}{html.escape(item)}" class="file video">'
-                    f'<span aria-hidden="true">{video_icon if item.lower().endswith(video_exts) else file_icon}</span> {html.escape(item)}</a></li>\n'
+                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a></li>\n'
                 )
             )
             for item in files
@@ -289,7 +287,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         ]
         if not items_html:
             items_html.append(
-                '<li class="empty-state"><span class="file" style="color: #666;"><em>Directory is empty. <span style="font-size: 0.9em;">Add media files to this folder.</span></em></span></li>\n'
+                '<li class="empty-state"><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>\n'
             )
         html_parts.extend(items_html)
 
@@ -297,7 +295,7 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         return "".join(html_parts)
 
     def send_directory_response(self, content):
-        """Send directory listing response."""
+        """Send directory listing response"""
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(content.encode("utf-8"))))

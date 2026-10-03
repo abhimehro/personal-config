@@ -2,11 +2,11 @@
 
 ## Status and Authority
 
-This document defines the **runtime** storage model for the lifecycle ledger.
-The separately authorized bootstrap is complete: the orphan branch
-`automation/pr-lifecycle-ledger` contains the v1.2 baseline and manifest, and
-the selected primitive is `github_contents_api`. This document does not itself
-grant an automation permission or replace a live Dashboard configuration.
+This document defines the **runtime** storage model for the lifecycle ledger. It
+does not create a branch, push a commit, configure Cursor, or grant an
+automation permission. Those externally visible bootstrap actions occur only
+after PR #2026 receives human re-review and a separate operational
+authorization.
 
 The checked-in `tasks/pr-lifecycle-ledger.yaml` file on `main` is a
 **non-authoritative bootstrap pointer** once this model is activated. It must
@@ -67,19 +67,11 @@ silently defeat the ledger's stale-revision guarantee.
 ## Contents API Transaction
 
 When the selected primitive is the Contents API, the stage reads the current
-runtime ledger file and records its blob `sha`. GitHub Contents GET returns
-`encoding: none` (empty `content`) when the file is larger than 1 MB; the body
-must be fetched with `GET /git/blobs/<sha>`. Writes of a ledger that size must
-use the Git Data API fast-forward helper `scripts/pr_lifecycle_ledger_cas.py`
-(blob → tree → commit → ref update with `force=false`). GitHub GET uses singular
-`/git/ref/heads/<branch>`; PATCH uses plural `/git/refs/heads/<branch>`. Mixing
-them returns HTTP 404 after the blob and commit already exist. Contents PUT is
-not the write path above 1 MB. A stale-SHA or non-fast-forward conflict is a CAS
-loss. The stage re-reads, revalidates, and retries once at most. It never
-creates a working-tree merge, force-updates a ref, or bypasses the data branch.
-If `refs/heads/automation/pr-lifecycle-ledger` is missing, recreate it at
-`last_known_data_commit` from the main-branch pointer; never invent ledger
-bytes.
+runtime ledger file and records its blob `sha`. It validates and rebuilds the
+same bounded projection, then writes using that exact blob SHA precondition. A
+stale-SHA conflict is a CAS loss. The stage re-reads, revalidates, and retries
+once at most. It never creates a working-tree merge, force-updates a ref, or
+bypasses the data branch.
 
 ## Stage Eligibility, Inventory Exclusion, and Recovery
 
@@ -101,11 +93,10 @@ completion action may follow a failed runtime-ledger read or write.
 
 ## Rollout Sequence
 
-The authorized bootstrap created and seeded the orphan data branch, validated
-the Contents API read/write primitive, recorded its manifest, and proved the
-main-branch pointer cannot be used as runtime state. Stage 1 and Stage 2 may
-read the active ledger only through the recorded primitive. Both Stage 3
-variants are currently disabled for controlled manual testing; after the test,
-enable only the report-only calibration variant. The post-calibration completion
-variant remains disabled until the ledger contains the approved seven-run record
-and a dated written approval.
+After source re-review, the maintainer separately authorizes bootstrap: create
+and seed the orphan data branch; validate a read/write round trip with the
+selected primitive; record its manifest; and prove the main-branch pointer
+cannot be used as runtime state. Only then may the maintainer apply Stage 1 and
+Stage 2 dashboard exports, create **only** the Stage 3 calibration automation,
+and begin counting successful runs. The post-calibration Stage 3 export remains
+disabled until the approved seven-run record and dated written approval exist.

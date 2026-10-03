@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-export HOME="/Users/speedybee"
-
 # Self-contained Node.js maintenance script
 set -euo pipefail
 
@@ -82,19 +80,11 @@ if [[ -n $OUTDATED_OUTPUT ]]; then
 
 	if [[ ${UPDATE_NODE_GLOBAL:-1} == "1" ]]; then
 		log_info "Updating global packages..."
-		was_gitnexus_rc=0
-		if npm list -g gitnexus 2>/dev/null | grep -Eq '1\.6\.13-rc|@rc'; then
-			was_gitnexus_rc=1
-		fi
 		if npm -g update 2>&1 | tee -a "$LOG_DIR/node_maintenance.log"; then
 			log_info "Successfully updated ${OUTDATED_COUNT} global packages"
 			UPDATES_MADE=1
 		else
 			log_warn "Global package update encountered issues"
-		fi
-		if [[ $was_gitnexus_rc -eq 1 ]]; then
-			log_info "Preserving gitnexus release candidate..."
-			npm install -g gitnexus@1.6.13-rc.38 2>&1 | tee -a "$LOG_DIR/node_maintenance.log" || true
 		fi
 	else
 		log_info "Global package updates disabled (UPDATE_NODE_GLOBAL=0)"

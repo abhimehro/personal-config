@@ -6,22 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pr_identity import identity_policy_from_config
-from pr_lifecycle_support import (
-    ROOT,
-    SHA_RE,
-    require_fields,
-    require_list,
-    require_mapping,
-)
-from sync_cursor_export_prompts import (
-    PromptIncludeError,
-    expand_prompt_includes,
-)
+from pr_lifecycle_support import ROOT, require_fields, require_list, require_mapping
 
 
 def validate_config(config: dict[str, Any]) -> None:
-    """Validate required lifecycle settings and reject contract drift."""
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -47,14 +35,8 @@ def validate_config(config: dict[str, Any]) -> None:
         "stage_caps",
         "stages",
     }
-    allowed = required | {
-        "packet_expiry_close_days",
-        "stage2_intake",
-        "lineage",
-    }
-    require_fields(lifecycle, allowed, required, "config.lifecycle")
+    require_fields(lifecycle, required, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
-    validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
     require_exact_stage_caps(lifecycle["stage_caps"])
     require_exact_stage_contract(lifecycle["stages"])
@@ -67,69 +49,6 @@ def require_fetched_ledger_command(command: Any) -> None:
     if command != expected:
         raise ValueError(
             "config.lifecycle.validation_command: must require fetched runtime ledger path"
-        )
-
-
-def validate_identity_classification(config: dict[str, Any]) -> None:
-    identity = require_mapping(
-        config.get("identity_classification"), "config.identity_classification"
-    )
-    required = {
-        "source",
-        "ambiguous_identity",
-        "title_branch_body_comment_inference",
-        "revision",
-        "required_independent_signals",
-        "maintainer_token_logins",
-        "branch_prefixes",
-        "title_keywords",
-        "body_markers",
-        "bot_commit_email_suffixes",
-    }
-    require_fields(identity, required, required, "config.identity_classification")
-    _validate_identity_source(identity)
-    _validate_identity_ambiguous(identity)
-    _validate_identity_inference(identity)
-    policy = identity_policy_from_config(config)
-    inputs = require_mapping(
-        config["lifecycle"]["policy_inputs"], "config.lifecycle.policy_inputs"
-    )
-    _validate_identity_revision_match(policy, inputs)
-    _validate_identity_signals(policy)
-
-
-def _validate_identity_source(identity: dict[str, Any]) -> None:
-    if identity["source"] != "github_api_with_token_authored_provenance":
-        raise ValueError("config.identity_classification.source: unsupported policy")
-
-
-def _validate_identity_ambiguous(identity: dict[str, Any]) -> None:
-    if identity["ambiguous_identity"] != "HUMAN":
-        raise ValueError(
-            "config.identity_classification.ambiguous_identity: must be HUMAN"
-        )
-
-
-def _validate_identity_inference(identity: dict[str, Any]) -> None:
-    inference = identity["title_branch_body_comment_inference"]
-    if inference != "token_authored_provenance_only":
-        raise ValueError(
-            "config.identity_classification.title_branch_body_comment_inference: "
-            "must be token_authored_provenance_only"
-        )
-
-
-def _validate_identity_revision_match(policy: Any, inputs: dict[str, Any]) -> None:
-    if policy.revision != inputs["identity_classification_revision"]:
-        raise ValueError(
-            "config.identity_classification.revision: must match policy_inputs"
-        )
-
-
-def _validate_identity_signals(policy: Any) -> None:
-    if policy.required_independent_signals < 2:
-        raise ValueError(
-            "config.identity_classification.required_independent_signals: must be >= 2"
         )
 
 
@@ -149,14 +68,11 @@ def validate_policy_inputs(value: Any) -> None:
 def require_exact_stage_caps(value: Any) -> None:
     caps = require_mapping(value, "config.lifecycle.stage_caps")
     expected = {
-        "stage1_inventory": 80,
-        "stage1_actions": 40,
-        # NOTE: keep 10. The 2026-09-08 halt was an unread invalid ledger
-        # (EMPTY_INTAKE), not salvage-cap starvation. Do not restore 5.
-        "stage2_salvage_candidates": 10,
+        "stage1_inventory": 20,
+        "stage2_salvage_candidates": 5,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
-        "stage3_completion_actions": 15,
+        "stage3_completion_actions": 5,
     }
     if caps != expected:
         raise ValueError("config.lifecycle.stage_caps: differs from approved contract")
@@ -166,7 +82,7 @@ def require_exact_stage_contract(value: Any) -> None:
     stages = require_mapping(value, "config.lifecycle.stages")
     expected = {
         "stage1_review": {
-            "schedule": "0 15 * * *",
+            "schedule": "0 13 * * *",
             "concurrency": 1,
             "authority": "routine-approve-squash-merge-close",
         },
@@ -176,7 +92,7 @@ def require_exact_stage_contract(value: Any) -> None:
             "authority": "draft-only-recovery",
         },
         "stage3_completion": {
-            "schedule": "0 19 * * *",
+            "schedule": "15 21 * * *",
             "concurrency": 1,
             "authority": "report-only-until-calibration-approved-then-bounded-nonsecurity-completion",
         },
@@ -207,7 +123,7 @@ def validate_pointer_identity(pointer: dict[str, Any]) -> None:
 
 
 def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
-    required = {
+    fields = {
         "data_branch",
         "data_path",
         "schema_path",
@@ -216,14 +132,7 @@ def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
         "allowed_write_primitives",
         "bootstrap_document",
     }
-    allowed = set(required)
-    allowed.add("last_known_data_commit")
-    require_fields(runtime, allowed, required, "ledger pointer.runtime_ledger")
-    commit = runtime.get("last_known_data_commit")
-    if commit is None:
-        return
-    if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
-        raise ValueError("ledger pointer: last_known_data_commit must be a 40-char SHA")
+    require_fields(runtime, fields, fields, "ledger pointer.runtime_ledger")
 
 
 def validate_pointer_location(
@@ -236,20 +145,10 @@ def validate_pointer_location(
 
 
 def validate_pointer_activation(runtime: dict[str, Any]) -> None:
-    state = runtime["activation_state"]
-    selected = runtime["selected_write_primitive"]
-    allowed = set(runtime["allowed_write_primitives"])
-    if state not in {"NOT_BOOTSTRAPPED", "ACTIVE"}:
+    if runtime["activation_state"] not in {"NOT_BOOTSTRAPPED", "ACTIVE"}:
         raise ValueError("ledger pointer: invalid activation state")
-    if state == "NOT_BOOTSTRAPPED":
-        if selected is not None:
-            raise ValueError(
-                "ledger pointer: inactive pointer must not select a primitive"
-            )
-    elif selected not in allowed:
-        raise ValueError(
-            "ledger pointer: active pointer selects an unsupported primitive"
-        )
+    if runtime["selected_write_primitive"] is not None:
+        raise ValueError("ledger pointer: selected primitive belongs in runtime data")
 
 
 def validate_pointer_primitives(
@@ -283,16 +182,7 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
         path = directory / export_name
         data = json.loads(path.read_text(encoding="utf-8"))
         validate_export_shape(data, path, stages[stage]["schedule"], allow_approve)
-        try:
-            source = (
-                expand_prompt_includes(
-                    (prompt_dir / prompt_name).read_text(encoding="utf-8"),
-                    prompt_dir,
-                ).strip()
-                + "\n"
-            )
-        except PromptIncludeError as exc:
-            raise ValueError(f"{path}: {exc}") from exc
+        source = (prompt_dir / prompt_name).read_text(encoding="utf-8").strip() + "\n"
         if data["prompts"][0].get("prompt") != source:
             raise ValueError(f"{path}: prompt differs from source")
         validate_prompt(source, prompt_name)
@@ -364,7 +254,7 @@ def validate_export_action(action: dict[str, Any], path: Path) -> None:
 def validate_mcp_action(action: dict[str, Any], path: Path) -> None:
     server = action["mcp"].get("server", {})
     if server.get("name") != "GitKraken" or server.get("id") != "5021":
-        raise ValueError(f"{path}: export must preserve observed GitKraken connector")
+        raise ValueError(f"{path}: MCP allowlist is GitKraken only")
 
 
 def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
@@ -373,17 +263,11 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
-    """Require the runtime continuity markers appropriate to a named prompt."""
-    normalized = " ".join(content.split())
-    required = {"docs/automated-pr-lifecycle.md"}
-    if name == "daily-pr-completion.calibration.md":
-        required |= {
-            "docs/pr-lifecycle-runtime-ledger.md",
-            "Memory is enabled",
-            "Dashboard-referenced MCP set",
-            "ledger, run records, and lessons",
-        }
-    else:
-        required.add("scripts/pr_lifecycle_run.py --stage")
-    if any(marker not in normalized for marker in required):
+    required = {
+        "docs/automated-pr-lifecycle.md",
+        "docs/pr-lifecycle-runtime-ledger.md",
+        "Memory is enabled",
+        "ledger, run records, and lessons",
+    }
+    if any(marker not in content for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")

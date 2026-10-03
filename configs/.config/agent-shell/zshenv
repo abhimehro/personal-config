@@ -23,15 +23,14 @@ export LESS="${LESS:--FRX}"
 export AGENT_WORKSPACE="${AGENT_WORKSPACE:-$HOME/dev/abhimehro}"
 export PERSONAL_CONFIG="${PERSONAL_CONFIG:-$HOME/dev/personal-config}"
 
-# Prefer user bins (Antigravity CLI lives in ~/.local/bin) over Homebrew.
+# Prefer Homebrew + user bins without clobbering absolute agent paths later
 typeset -U path PATH
 path=(
-  $HOME/bin
-  $HOME/.local/bin
-  $HOME/.octopus/bin
   /opt/homebrew/bin
   /opt/homebrew/sbin
   /usr/local/bin
+  $HOME/bin
+  $HOME/.local/bin
   /usr/bin
   /bin
   /usr/sbin
@@ -57,46 +56,3 @@ case "$PWD" in
     fi
     ;;
 esac
-
-# Browserless + 1Password (refs only; resolve on demand with browserless-env)
-# SECURITY: These are op:// references, NOT secret values. Resolve with:
-#   browserless-env            # exports BROWSERLESS_API_KEY + SA token
-#   op read "$BROWSERLESS_API_KEY_REF"
-export BROWSERLESS_API_KEY_REF="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/credential"
-export BROWSERLESS_SA_TOKEN_REF="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/key"
-
-# On-demand resolver: exports live secrets into the current shell.
-# Fails softly if 1Password is locked (agents should retry after unlock).
-browserless-env() {
-  local api sa
-  api="$(op read "$BROWSERLESS_API_KEY_REF" 2>/dev/null)" || {
-    print -u2 "browserless-env: cannot resolve API key (1Password locked?)"
-    return 1
-  }
-  sa="$(op read "$BROWSERLESS_SA_TOKEN_REF" 2>/dev/null)" || {
-    print -u2 "browserless-env: cannot resolve SA token (1Password locked?)"
-    return 1
-  }
-  export BROWSERLESS_API_KEY="$api"
-  export OP_SERVICE_ACCOUNTS_TOKEN="$sa"
-  print "browserless-env: exported BROWSERLESS_API_KEY, OP_SERVICE_ACCOUNTS_TOKEN"
-}
-
-# ============================================
-# Proton Pass SSH Agent (auto-select when alive)
-# ============================================
-# Prefer the Proton Pass SSH agent socket when the agent is actually
-# responding; otherwise keep the platform / 1Password default.
-# - Dead-socket safe: only claims the socket if `ssh-add -l` answers
-#   (exit 0 = keys loaded, exit 1 = agent alive with no identities).
-# - Skipped for agent/CI contexts (CURSOR_AGENT, CI, GITHUB_ACTIONS)
-#   and when PROTON_AGENT_SKIP=1, matching the 1Password gating pattern.
-if [ "${PROTON_AGENT_SKIP:-}" != "1" ] && [ -z "${CURSOR_AGENT:-}" ] && [ -z "${CI:-}" ] && [ -z "${GITHUB_ACTIONS:-}" ] && [ -S "${HOME}/.ssh/proton-pass-ssh-agent.sock" ]; then
-  _PROTON_SOCK="${HOME}/.ssh/proton-pass-ssh-agent.sock"
-  SSH_AUTH_SOCK="$_PROTON_SOCK" ssh-add -l >/dev/null 2>&1
-  _PROTON_PROBE=$?
-  if [ "$_PROTON_PROBE" -eq 0 ] || [ "$_PROTON_PROBE" -eq 1 ]; then
-    export SSH_AUTH_SOCK="$_PROTON_SOCK"
-  fi
-  unset _PROTON_SOCK _PROTON_PROBE
-fi

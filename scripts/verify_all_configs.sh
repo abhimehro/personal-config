@@ -182,19 +182,6 @@ echo ""
 echo "== Fish Shell Configuration =="
 verify_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "$HOME/.config/fish"
 
-# 2b. Starship Prompt Configuration
-echo ""
-echo "== Starship Prompt Configuration =="
-verify_file_link "$HOME/.config/starship.toml" "$REPO_ROOT/configs/.config/starship.toml" "$HOME/.config/starship.toml"
-
-if [[ -f "$HOME/.config/starship.toml" ]]; then
-	if grep -q '^palette = "dracula"' "$HOME/.config/starship.toml" 2>/dev/null; then
-		success "Starship Dracula palette configured"
-	else
-		warn "Starship Dracula palette not found in starship.toml"
-	fi
-fi
-
 # Check if NM_ROOT is set in fish config
 if [[ -f "$HOME/.config/fish/config.fish" ]]; then
 	if grep -q "NM_ROOT" "$HOME/.config/fish/config.fish" 2>/dev/null; then

@@ -36,10 +36,8 @@ def require_fields(
     required: set[str],
     label: str,
 ) -> None:
-    # ⚡ Bolt Optimization: Instantiate set(value) once to avoid duplicate set allocation overhead
-    val_keys = set(value)
-    unknown = val_keys - allowed
-    missing = required - val_keys
+    unknown = set(value) - allowed
+    missing = required - set(value)
     if unknown:
         raise ValueError(f"{label}: unsupported fields: {sorted(unknown)}")
     if missing:

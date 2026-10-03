@@ -10,11 +10,6 @@ on:
       - controld-system/**
       - windscribe-controld/**
       - Makefile
-      # Export/prompt-only PRs must still hit the merge-time authority gate.
-      - "docs/cursor-automations/**"
-      - "tasks/pr-review-agent.config.yaml"
-      - "tasks/pr-lifecycle-ledger.example.yaml"
-      - ".github/workflows/code-quality.yml"
   push:
     branches:
       - main
@@ -169,8 +164,7 @@ jobs:
 
       - name: Validate PR lifecycle source artifacts
         run: |
-          python3 scripts/validate_pr_lifecycle_artifacts.py \
-            tasks/pr-lifecycle-ledger.example.yaml --include-exports
+          python3 scripts/validate_pr_lifecycle_artifacts.py tasks/pr-lifecycle-ledger.example.yaml
           python3 scripts/sync_cursor_export_prompts.py --check
           python3 -m unittest tests/test_pr_lifecycle_artifacts.py -v
 

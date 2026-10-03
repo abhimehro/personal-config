@@ -4,10 +4,9 @@ runtime_ledger:
   data_branch: automation/pr-lifecycle-ledger
   data_path: pr-lifecycle-ledger.yaml
   schema_path: schemas/pr-lifecycle-ledger.schema.json
-  activation_state: ACTIVE
-  selected_write_primitive: github_contents_api
+  activation_state: NOT_BOOTSTRAPPED
+  selected_write_primitive: null
   allowed_write_primitives:
     - git_fast_forward
     - github_contents_api
   bootstrap_document: docs/pr-lifecycle-runtime-ledger.md
-  last_known_data_commit: 300bf4fcc62532e35fac71fa588b2c4757827031
