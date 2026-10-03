@@ -2,6 +2,11 @@ import json
 import os
 from pathlib import Path
 
+if __package__:
+    from .domain_validation import InvalidDomainError, validate_pk
+else:
+    from domain_validation import InvalidDomainError, validate_pk
+
 
 def _is_allowlist_rule(rule):
     """Helper to efficiently check if a rule is an allowlist rule."""
@@ -24,7 +29,13 @@ def extract_domains_from_file(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
             if "rules" in data:
-                domains = [rule["PK"] for rule in data["rules"] if "PK" in rule]
+                domains = [
+                    validate_pk(rule["PK"], filepath)
+                    for rule in data["rules"]
+                    if "PK" in rule
+                ]
+    except InvalidDomainError:
+        raise
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
     return domains
@@ -40,8 +51,12 @@ def extract_allowlist_domains_from_file(filepath):
                 # ⚡ Bolt Optimization: Use helper function and list comprehension
                 # to balance performance and CodeScene cyclomatic complexity limits
                 domains = [
-                    rule["PK"] for rule in data["rules"] if _is_allowlist_rule(rule)
+                    validate_pk(rule["PK"], filepath, allow_wildcards=True)
+                    for rule in data["rules"]
+                    if _is_allowlist_rule(rule)
                 ]
+    except InvalidDomainError:
+        raise
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
     return domains
@@ -78,6 +93,8 @@ def process_denylist_files(base_dir):
             domains = extract_domains_from_file(filepath)
             denylist_domains.update(domains)
             print(f"{os.path.basename(filepath)}: {len(domains)} domains")
+        except InvalidDomainError:
+            raise
         except Exception as exc:
             print(f"{os.path.basename(filepath)} generated an exception: {exc}")
 
