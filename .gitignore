@@ -19,6 +19,7 @@
 # Environment files and secrets
 .env
 .env.*
+!.env.pr-recap.template
 .secrets/
 configs/.gemini/oauth_creds.json
 .sensitive-paths.txt
