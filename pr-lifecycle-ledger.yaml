@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 241
+ledger_revision: 242
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20281,6 +20281,75 @@ items:
   - evt-reconcile-20261003130038-289f4525
   revision: 3
   updated_at_utc: '2026-10-03T13:00:38Z'
+- key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
+  repository: abhimehro/repoprompt-ce
+  pr: 353
+  url: https://github.com/abhimehro/repoprompt-ce/pull/353
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: 04c29008d151b4b405ed516ee8b32ad9aff72b74
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: PERFORMANCE
+  risk_class: SENSITIVE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #353 open. Do not merge the conflicting original. Do not copy .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
+  next_action: 'Stage 2: salvage the unique static ISO8601DateFormatter reuse in Changelog.swift from #353. Allowed Sources/RepoPrompt/App/Changelog.swift only. Do not take .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/353
+  changed_paths:
+  - .jules/bolt.md
+  - Scripts/launch_startup_benchmark.py
+  - Sources/RepoPrompt/App/Changelog.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-rpce-353-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:22:00Z'
+- key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
+  repository: abhimehro/repoprompt-ce
+  pr: 396
+  url: https://github.com/abhimehro/repoprompt-ce/pull/396
+  base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
+  head_sha: 59e040fcf46433c5082516cc35763329b44fbd9d
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UI
+  risk_class: SENSITIVE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #396 open. Do not merge the conflicting original. Do not copy .jules/palette.md.'
+  next_action: 'Stage 2: salvage the unique CheckRecommendationsButton tooltip and accessibility label from #396. Allowed Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift only. Do not take .jules/palette.md.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/396
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-rpce-396-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:22:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -47151,7 +47220,96 @@ events:
     Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s1-20261003-rpce-353-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74:evt-s1-20261003-rpce-353-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:22:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/App/Changelog.swift on open #353 head 04c29008d151b4b405ed516ee8b32ad9aff72b74. Skip .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-rpce-396-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d:evt-s1-20261003-rpce-396-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:22:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift on open #396 head 59e040fcf46433c5082516cc35763329b44fbd9d. Skip .jules/palette.md. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261003-rpce-353
+  source_item_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
+  repository: abhimehro/repoprompt-ce
+  pr: 353
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: 04c29008d151b4b405ed516ee8b32ad9aff72b74
+  allowed_paths:
+  - Sources/RepoPrompt/App/Changelog.swift
+  prohibited_paths:
+  - .jules/bolt.md
+  - Scripts/launch_startup_benchmark.py
+  repair_description: 'Replay the unique static ISO8601DateFormatter reuse in Changelog.swift from #353 onto current main. Allowed: Sources/RepoPrompt/App/Changelog.swift. Prohibit .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original #353 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to Sources/RepoPrompt/App/Changelog.swift.
+  - No .jules/bolt.md or Scripts/launch_startup_benchmark.py changes.
+  - git diff --check exits 0.
+  - 'Original #353 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/353
+  expiry_utc: '2026-10-10T14:22:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-rpce-353-i
+  history: []
+- work_item_id: s2-20261003-rpce-396
+  source_item_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
+  repository: abhimehro/repoprompt-ce
+  pr: 396
+  base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
+  head_sha: 59e040fcf46433c5082516cc35763329b44fbd9d
+  allowed_paths:
+  - Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
+  prohibited_paths:
+  - .jules/palette.md
+  repair_description: 'Replay the unique CheckRecommendationsButton tooltip and accessibility label from #396 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift. Prohibit .jules/palette.md. Original #396 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift.
+  - No .jules/palette.md changes.
+  - git diff --check exits 0.
+  - 'Original #396 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/396
+  expiry_utc: '2026-10-10T14:22:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-rpce-396-i
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
