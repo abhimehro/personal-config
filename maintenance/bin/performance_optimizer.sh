@@ -708,7 +708,10 @@ EOF
 	log_info "Performance report generated: $report_file"
 }
 
-# Main execution
+# Dispatch the first action (default: help), initializing performance config.
+# --force anywhere in the arguments exports FORCE_RUN=1 for state checks.
+# monitor accepts a duration in seconds (default: 60). Optimization actions
+# modify system settings or caches; an unknown action exits the shell with 1.
 main() {
 	# Parse --force into FORCE_RUN before state checks
 	local args=()

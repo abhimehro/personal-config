@@ -134,7 +134,10 @@ assert_not_tracked() {
 	return 0
 }
 
-# Generic writer: resolves $TEMPLATE, transforms, writes 0600 to $dest.
+# Resolve and transform a template, backing up and replacing the destination.
+# Args: label, destination, wrapper (flat|mcpServers), URL key (url|serverUrl),
+# and optional template (defaults to TEMPLATE). Set the output mode to 0600.
+# A destination detected as Git-tracked is skipped with success status.
 write_config() {
 	local label="$1" dest="$2" wrapper="$3" urlkey="$4" tmpl="${5:-$TEMPLATE}"
 	mkdir -p "$(dirname "$dest")"
@@ -145,9 +148,10 @@ write_config() {
 	echo "  ✓ ${label}: ${dest}"
 }
 
-# Windsurf mirror-of-Cursor: keep the live config in the repo but GITIGNORED,
-# and symlink the app's real path to it (exactly how ~/.cursor/mcp.json works).
-# The committed artifact is a *.template placeholder; live keys never get tracked.
+# Write a live 0600 config and a template retaining secret references in .codeium.
+# Args: display label and variant (windsurf|windsurf-next). Ensure an ignore rule
+# exists, back up the app config, and replace its path with a symlink to the live
+# config. Existing Git tracking is not checked by this writer.
 write_windsurf_symlinked() {
 	local label="$1" variant="$2" # variant: windsurf | windsurf-next
 	local live="${REPO_DIR}/.codeium/${variant}/mcp_config.json"

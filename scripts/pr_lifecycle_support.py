@@ -36,6 +36,10 @@ def require_fields(
     required: set[str],
     label: str,
 ) -> None:
+    """Check mapping keys, raising ValueError labeled with label on a mismatch.
+
+    Unknown keys are reported before missing required keys. Values are unchecked.
+    """
     unknown = set(value) - allowed
     missing = required - set(value)
     if unknown:

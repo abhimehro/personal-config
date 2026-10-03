@@ -142,6 +142,11 @@ def _group_prs_by_files(ready_only):
 
 
 def _extract_duplicates_from_groups(file_groups):
+    """Return repo#number references for all but the highest PR in each group.
+
+    Keys are (repository, file-set) pairs. Lists with multiple PRs are sorted
+    in place by descending number; empty and singleton groups contribute nothing.
+    """
     duplicates = []
     for (repo, _), pr_list in file_groups.items():
         if len(pr_list) > 1:

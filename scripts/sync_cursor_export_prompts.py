@@ -54,6 +54,13 @@ def sync_one(export_path: Path, prompt_path: Path, write: bool) -> str | None:
 def load_prompt_reconciliation(
     export_path: Path, prompt_path: Path
 ) -> PromptReconciliation | str:
+    """Read an export and its prompt source without modifying either file.
+
+    Return reconciliation data with source whitespace stripped and one trailing
+    newline, or an error string for OSError, invalid JSON, or an invalid prompt
+    entry. Invalid UTF-8 raises UnicodeDecodeError; a non-object JSON root raises
+    AttributeError.
+    """
     try:
         export = json.loads(export_path.read_text(encoding="utf-8"))
         prompt = prompt_path.read_text(encoding="utf-8").strip() + "\n"

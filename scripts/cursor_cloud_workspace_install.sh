@@ -15,6 +15,7 @@ else
 	REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 fi
 
+# Print the joined arguments to stdout with the installer prefix and a newline.
 log() {
 	printf 'cursor_cloud_workspace_install: %s\n' "$*"
 }

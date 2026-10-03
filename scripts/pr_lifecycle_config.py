@@ -11,6 +11,12 @@ from pr_lifecycle_support import ROOT, require_fields, require_list, require_map
 
 
 def validate_config(config: dict[str, Any]) -> None:
+    """Check required lifecycle settings, identity policy, and stage contracts.
+
+    Raises ValueError for rejected settings, including legacy top-level keys
+    and missing or extra lifecycle fields. Missing nested policy inputs can
+    propagate KeyError.
+    """
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
@@ -131,6 +137,7 @@ def validate_policy_inputs(value: Any) -> None:
 
 
 def require_exact_stage_caps(value: Any) -> None:
+    """Raise ValueError unless value matches every approved stage cap exactly."""
     caps = require_mapping(value, "config.lifecycle.stage_caps")
     expected = {
         "stage1_inventory": 50,
@@ -189,6 +196,7 @@ def validate_pointer_identity(pointer: dict[str, Any]) -> None:
 
 
 def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
+    """Raise ValueError for missing or extra runtime-pointer keys; values are unchecked."""
     fields = {
         "data_branch",
         "data_path",
@@ -237,6 +245,13 @@ def validate_pointer_primitives(
 
 
 def validate_exports_and_prompts(config: dict[str, Any]) -> None:
+    """Check local Cursor exports against stage settings and Markdown prompts.
+
+    Prompt sources are stripped and given one trailing newline before comparison.
+    Raises ValueError for contract drift or invalid JSON. File-read errors and
+    KeyError, IndexError, TypeError, or AttributeError from malformed nested
+    export data propagate.
+    """
     expected = {
         "daily-pr-review.json": ("stage1_review", True, "daily-pr-review.md"),
         "daily-pr-salvage.json": ("stage2_salvage", False, "daily-pr-salvage.md"),
@@ -339,6 +354,10 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 
 def validate_prompt(content: str, name: str) -> None:
+    """Raise ValueError if any required continuity marker is absent verbatim.
+
+    Matching is case- and whitespace-sensitive; name labels the error only.
+    """
     required = {
         "docs/automated-pr-lifecycle.md",
         "docs/pr-lifecycle-runtime-ledger.md",

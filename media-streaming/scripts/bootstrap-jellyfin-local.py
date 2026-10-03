@@ -362,6 +362,14 @@ def wait_for_items(token: str, timeout_s: int = 180) -> int:
 
 
 def main() -> int:
+    """Bootstrap Jellyfin admin access and Movies/TV Shows libraries, then refresh.
+
+    May create credentials, writes an API token, and may reset the startup wizard
+    and restart Jellyfin. Return 1 for a missing or empty media mount, 0 when
+    polling finds media, or 2 when polling ends without items. Filesystem and
+    transport errors, URL-validation ValueError, and bootstrap RuntimeError
+    propagate rather than becoming exit codes.
+    """
     info = public_info()
     print("Public:", json.dumps(info))
     if not MOUNT.is_dir() or not any(MOUNT.iterdir()):

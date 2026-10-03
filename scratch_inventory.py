@@ -52,6 +52,12 @@ def fetch_prs(repos):
 
 
 def generate_markdown(all_prs):
+    """Return inventory Markdown lines sorted by repository, then PR number descending.
+
+    Preflight and config text is fixed report text, not a live verification.
+    Missing createdAt dates default to today. Author, branch, and title fields
+    receive spreadsheet-formula escaping; missing required fields raise KeyError.
+    """
     out_md = []
     out_md.append(
         f"# Automated PR inventory — backlog cleanup test ({datetime.date.today().isoformat()})\n"

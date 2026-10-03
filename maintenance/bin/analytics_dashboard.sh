@@ -366,7 +366,10 @@ calculate_health_score() {
 	echo "$health_score"
 }
 
-# Generate comprehensive dashboard report
+# Write an HTML dashboard and print its path in REPORTS_DIR.
+# $1 selects daily (1 day), weekly (7 days, default), or monthly (30 days).
+# Reuse today's report if metrics are unchanged; otherwise generate aggregates
+# and insights and update the analytics_dashboard last-run state.
 generate_dashboard() {
 	local period="${1:-weekly}"
 	local cap_period

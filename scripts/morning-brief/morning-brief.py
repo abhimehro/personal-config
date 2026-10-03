@@ -616,6 +616,10 @@ def html_li(content: str) -> str:
 
 
 def html_ul(items: Iterable[str]) -> str:
+    """Wrap pre-rendered list items in a ul, or show "No items" when empty.
+
+    Consumes the iterable and joins its contents without HTML escaping.
+    """
     item_list = list(items)
     if not item_list:
         return '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
@@ -1371,6 +1375,11 @@ def render_focus_item(label: str, item: FocusItem, today_iso: str) -> str:
 
 
 def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -> str:
+    """Return a greeting section with HTML-escaped greeting and weather values.
+
+    Weather values are displayed as Fahrenheit temperatures and rain percentage
+    without unit conversion.
+    """
     body = (
         f"<p>{sanitize_text(greeting_paragraph)}</p>"
         f"<div><strong>Baton Rouge Weather:</strong> "
