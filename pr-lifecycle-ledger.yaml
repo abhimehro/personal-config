@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 249
+ledger_revision: 264
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20419,12 +20419,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #2237 open. Do not merge the conflicting original. Do not copy tasks/lessons.md or the shared session-report files.'
-  next_action: 'Stage 2: salvage the unique 2026-09-19 dated run records from #2237. Allowed tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md only.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2237. Salvage draft #2406
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2237 vs salvage draft #2406; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2237
   changed_paths:
@@ -20437,12 +20439,14 @@ items:
   - tasks/salvage-session-reports.md
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-pc-2237-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:43:00Z'
+  - evt-reconcile-20261003145127-876ae8c3
+  - evt-reconcile-20261003145127-36759a53
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
 - key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
   repository: abhimehro/personal-config
   pr: 2244
@@ -20458,12 +20462,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #2244 open. Do not merge the conflicting original. Do not copy tasks/lessons.md or the shared session-report files.'
-  next_action: 'Stage 2: salvage the unique 2026-09-20 dated run records from #2244. Allowed tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md only.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2244. Salvage draft #2407
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2244 vs salvage draft #2407; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2244
   changed_paths:
@@ -20476,12 +20482,14 @@ items:
   - tasks/salvage-session-reports.md
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-pc-2244-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:43:00Z'
+  - evt-reconcile-20261003145127-39b0a01a
+  - evt-reconcile-20261003145127-feb494aa
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
 - key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
   repository: abhimehro/repoprompt-ce
   pr: 359
@@ -20497,12 +20505,14 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #359 open. Do not merge the conflicting original. Do not copy .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift.'
-  next_action: 'Stage 2: salvage the unique WorkspaceApprovalOverlayView and EnhancedMarkdownView changes from #359. Do not take .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #359. Salvage draft #425 holds
+    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #359 vs salvage draft #425; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/359
   changed_paths:
@@ -20513,12 +20523,14 @@ items:
   - Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-rpce-359-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:43:00Z'
+  - evt-reconcile-20261003145127-64fc3f4e
+  - evt-reconcile-20261003145127-cfad49c4
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
 - key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
   repository: abhimehro/repoprompt-ce
   pr: 360
@@ -20539,7 +20551,8 @@ items:
   current_owner: stage2
   next_owner: stage2
   safe_default: 'Leave #360 open. Do not merge the conflicting original.'
-  next_action: 'Stage 2: salvage the unique CLIProcessRunner and DirectHeadlessOracleGroupTests changes from #360. Allowed those two paths only.'
+  next_action: 'Stage 2: salvage the unique CLIProcessRunner and DirectHeadlessOracleGroupTests
+    changes from #360. Allowed those two paths only.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/360
   changed_paths:
@@ -20553,6 +20566,146 @@ items:
   - evt-s1-20261003-rpce-360-i
   revision: 1
   updated_at_utc: '2026-10-03T14:43:00Z'
+- key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187
+  repository: abhimehro/personal-config
+  pr: 2406
+  url: https://github.com/abhimehro/personal-config/pull/2406
+  base_sha: 3cdf5cbfce9e81f92e6077270aff68535198699f
+  head_sha: 6a1afcd8c178370db9274df7f836c8493d66d187
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2406 (isDraft verified); original #2237
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2406
+  - https://github.com/abhimehro/personal-config/pull/2237
+  changed_paths:
+  - tasks/pr-completion-2026-09-19.md
+  - tasks/pr-review-2026-09-19.md
+  - tasks/pr-salvage-2026-09-19-1700.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-personal-con-2406-i
+  - evt-reconcile-20261003145127-328bb0d7
+  - evt-reconcile-20261003145127-0ed426ba
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
+- key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea
+  repository: abhimehro/personal-config
+  pr: 2407
+  url: https://github.com/abhimehro/personal-config/pull/2407
+  base_sha: 3cdf5cbfce9e81f92e6077270aff68535198699f
+  head_sha: 4545eeee84355cf8008aa1d23adb12b11d1f2aea
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2407 (isDraft verified); original #2244
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2407
+  - https://github.com/abhimehro/personal-config/pull/2244
+  changed_paths:
+  - tasks/pr-completion-2026-09-20.md
+  - tasks/pr-review-2026-09-20.md
+  - tasks/pr-salvage-2026-09-20-1700.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-personal-con-2407-i
+  - evt-reconcile-20261003145127-552ca573
+  - evt-reconcile-20261003145127-eb124042
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
+- key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04
+  repository: abhimehro/repoprompt-ce
+  pr: 425
+  url: https://github.com/abhimehro/repoprompt-ce/pull/425
+  base_sha: 0efe107782e16367a71ce576e4d70ee7d55b11a5
+  head_sha: 9c4c2abdfa1bce16c84bf578ea21563164b64b04
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #425 (isDraft verified); original #359 remains
+    OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/425
+  - https://github.com/abhimehro/repoprompt-ce/pull/359
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-repoprompt-c-425-i
+  - evt-reconcile-20261003145127-824e87c1
+  - evt-reconcile-20261003145127-7f0d850e
+  revision: 3
+  updated_at_utc: '2026-10-03T14:51:27Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -47627,7 +47780,10 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:43:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md on open #2237 head c4ee150a9bbfe9339735dbe0f8be25b236b16bc4. Skip tasks/lessons.md and the shared session-report files. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-19.md,
+    tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md on open
+    #2237 head c4ee150a9bbfe9339735dbe0f8be25b236b16bc4. Skip tasks/lessons.md and
+    the shared session-report files. Original stays OPEN. Do not merge.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-pc-2244-i
@@ -47646,7 +47802,10 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:43:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md on open #2244 head 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd. Skip tasks/lessons.md and the shared session-report files. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-20.md,
+    tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md on open
+    #2244 head 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd. Skip tasks/lessons.md and
+    the shared session-report files. Original stays OPEN. Do not merge.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-rpce-359-i
@@ -47665,7 +47824,10 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:43:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique product paths WorkspaceApprovalOverlayView.swift and EnhancedMarkdownView.swift on open #359 head ab7e2b7262628aa886d7a50d16d04fb7c2321e0a. Skip .jules/palette.md, NotificationsButtonView.swift, and PreHighlightedCodeBlock.swift. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique product paths WorkspaceApprovalOverlayView.swift
+    and EnhancedMarkdownView.swift on open #359 head ab7e2b7262628aa886d7a50d16d04fb7c2321e0a.
+    Skip .jules/palette.md, NotificationsButtonView.swift, and PreHighlightedCodeBlock.swift.
+    Original stays OPEN. Do not merge.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-rpce-360-i
@@ -47684,98 +47846,315 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:43:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique product paths CLIProcessRunner.swift and DirectHeadlessOracleGroupTests.swift on open #360 head 90ec07d7f88b88f9180c5ac42629ab5e2171cfae. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique product paths CLIProcessRunner.swift
+    and DirectHeadlessOracleGroupTests.swift on open #360 head 90ec07d7f88b88f9180c5ac42629ab5e2171cfae.
+    Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-876ae8c3
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4:evt-reconcile-20261003145127-876ae8c3
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: activate WI s2-20261003-personal-config-2237 before
+    salvage draft #2406 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-36759a53
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4:evt-reconcile-20261003145127-36759a53
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: draft #2406 recovered unique remainder (dated
+    2026-09-19 run records; session logs and lessons.md excluded). Original #2237
+    stays OPEN; Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-personal-con-2406-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187:evt-s2-20261003-personal-con-2406-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2406 provenance to #2237. Head 6a1afcd8c178; 0gd
+    isDraft stayed true after create (no ready undo).'
+- event_id: evt-reconcile-20261003145127-328bb0d7
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187:evt-reconcile-20261003145127-328bb0d7
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2406 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-0ed426ba
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187:evt-reconcile-20261003145127-0ed426ba
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (dated 2026-09-19 run records; session logs
+    and lessons.md excluded). Stage 1 re-ingests draft #2406. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-39b0a01a
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd:evt-reconcile-20261003145127-39b0a01a
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: activate WI s2-20261003-personal-config-2244 before
+    salvage draft #2407 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-feb494aa
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd:evt-reconcile-20261003145127-feb494aa
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: draft #2407 recovered unique remainder (dated
+    2026-09-20 run records; session logs and lessons.md excluded). Original #2244
+    stays OPEN; Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-personal-con-2407-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea:evt-s2-20261003-personal-con-2407-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2407 provenance to #2244. Head 4545eeee8435; 0gd
+    isDraft stayed true after create (no ready undo).'
+- event_id: evt-reconcile-20261003145127-552ca573
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea:evt-reconcile-20261003145127-552ca573
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2407 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-eb124042
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2407@4545eeee84355cf8008aa1d23adb12b11d1f2aea:evt-reconcile-20261003145127-eb124042
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (dated 2026-09-20 run records; session logs
+    and lessons.md excluded). Stage 1 re-ingests draft #2407. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-64fc3f4e
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a:evt-reconcile-20261003145127-64fc3f4e
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: activate WI s2-20261003-repoprompt-ce-359 before
+    salvage draft #425 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-cfad49c4
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a:evt-reconcile-20261003145127-cfad49c4
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 conflict-draft-3: draft #425 recovered unique remainder (overlay
+    deny/allow and copy-code accessibility labels; palette and other buttons excluded).
+    Original #359 stays OPEN; Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-repoprompt-c-425-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04:evt-s2-20261003-repoprompt-c-425-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #425 provenance to #359. Head 9c4c2abdfa1b; 0gd isDraft
+    stayed true after create (no ready undo).'
+- event_id: evt-reconcile-20261003145127-824e87c1
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04:evt-reconcile-20261003145127-824e87c1
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #425 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003145127-7f0d850e
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#425@9c4c2abdfa1bce16c84bf578ea21563164b64b04:evt-reconcile-20261003145127-7f0d850e
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:51:27Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (overlay deny/allow and copy-code accessibility
+    labels; palette and other buttons excluded). Stage 1 re-ingests draft #425. Merge
+    authority is never Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
 stage2_work_items:
-- work_item_id: s2-20261003-personal-config-2237
-  source_item_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
-  repository: abhimehro/personal-config
-  pr: 2237
-  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
-  head_sha: c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
-  allowed_paths:
-  - tasks/pr-completion-2026-09-19.md
-  - tasks/pr-review-2026-09-19.md
-  - tasks/pr-salvage-2026-09-19-1700.md
-  prohibited_paths:
-  - tasks/lessons.md
-  - tasks/completion-session-reports.md
-  - tasks/review-session-reports.md
-  - tasks/salvage-session-reports.md
-  repair_description: 'Replay the unique 2026-09-19 dated run records from #2237 onto current main. Allowed: tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, tasks/pr-salvage-2026-09-19-1700.md. Prohibit tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, and tasks/salvage-session-reports.md. Original #2237 stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md.
-  - No tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md changes.
-  - git diff --check exits 0.
-  - 'Original #2237 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2237
-  expiry_utc: '2026-10-10T14:43:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-pc-2237-i
-  history: []
-- work_item_id: s2-20261003-personal-config-2244
-  source_item_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
-  repository: abhimehro/personal-config
-  pr: 2244
-  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
-  head_sha: 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
-  allowed_paths:
-  - tasks/pr-completion-2026-09-20.md
-  - tasks/pr-review-2026-09-20.md
-  - tasks/pr-salvage-2026-09-20-1700.md
-  prohibited_paths:
-  - tasks/lessons.md
-  - tasks/completion-session-reports.md
-  - tasks/review-session-reports.md
-  - tasks/salvage-session-reports.md
-  repair_description: 'Replay the unique 2026-09-20 dated run records from #2244 onto current main. Allowed: tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, tasks/pr-salvage-2026-09-20-1700.md. Prohibit tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, and tasks/salvage-session-reports.md. Original #2244 stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md.
-  - No tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md changes.
-  - git diff --check exits 0.
-  - 'Original #2244 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2244
-  expiry_utc: '2026-10-10T14:43:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-pc-2244-i
-  history: []
-- work_item_id: s2-20261003-repoprompt-ce-359
-  source_item_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
-  repository: abhimehro/repoprompt-ce
-  pr: 359
-  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
-  head_sha: ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
-  allowed_paths:
-  - Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift
-  - Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift
-  prohibited_paths:
-  - .jules/palette.md
-  - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
-  - Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift
-  repair_description: 'Replay the unique WorkspaceApprovalOverlayView and EnhancedMarkdownView changes from #359 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift and Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift. Prohibit .jules/palette.md, Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift, and Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift. Original #359 stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift and Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift.
-  - No .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift changes.
-  - git diff --check exits 0.
-  - 'Original #359 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/359
-  expiry_utc: '2026-10-10T14:43:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-rpce-359-i
-  history: []
 - work_item_id: s2-20261003-repoprompt-ce-360
   source_item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
   repository: abhimehro/repoprompt-ce
@@ -47786,11 +48165,15 @@ stage2_work_items:
   - Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
   - Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift
   prohibited_paths: []
-  repair_description: 'Replay the unique CLIProcessRunner and DirectHeadlessOracleGroupTests changes from #360 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift. Original #360 stays OPEN. Do not merge the conflicting original.'
+  repair_description: 'Replay the unique CLIProcessRunner and DirectHeadlessOracleGroupTests
+    changes from #360 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
+    and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift. Original #360
+    stays OPEN. Do not merge the conflicting original.'
   required_test_command: git diff --check
   expected_test_result: git diff --check exits 0
   acceptance_criteria:
-  - Diff is limited to Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift.
+  - Diff is limited to Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
+    and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift.
   - git diff --check exits 0.
   - 'Original #360 stays OPEN.'
   provenance_urls:
