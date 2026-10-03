@@ -47,10 +47,10 @@ playback once Jellyfin is verified.
    - **Plex**: Legacy server on **32400** until clients migrate; then optional
      retirement.
    - **WebDAV**: Backup Infuse-compatible server. `media-server-daemon.sh`
-     serves on stable internal TCP port **8080** by default.
+     serves HTTPS on stable internal TCP port **8080** by default.
    - **Windscribe WebDAV mapping**: External TCP **8088** -> internal TCP
-     **8080**. If Windscribe assigns a different external port, keep the
-     internal port at **8080** and update the client-side external port only.
+     **8080** after TLS is configured. If Windscribe assigns a different external
+     port, keep the internal port at **8080** and update the client-side port.
    - **VFS Cache**: Dedicated 10GB bounded cache folder.
 
 5. **🔌 Mount (Native macOS FSKit Filesystem)**
@@ -216,19 +216,34 @@ deletion occurs.
 
 ## 🔐 **Security Note**
 
-- **WebDAV** is password-protected via 1Password (Item: `MediaServer`).
-- **Password rotation**: `./scripts/rotate-media-webdav.sh` (see
-  `docs/CREDENTIAL_ROTATION.md`).
+- **WebDAV** uses Basic credentials from the local credentials file when it
+  contains both values, otherwise from 1Password (Item: `MediaServer`).
+- **WebDAV TLS**: Install a client-trusted PEM certificate chain and matching
+  private key at `~/.config/media-server/tls.crt` and `tls.key` (or set
+  `MEDIA_WEBDAV_CERT` and `MEDIA_WEBDAV_KEY` to readable file paths). Keep the
+  key private (`chmod 600 ~/.config/media-server/tls.key`); on macOS, remove
+  key ACLs with `chmod -N ~/.config/media-server/tls.key`. The certificate must
+  cover the DNS name or IP address entered in Infuse. The daemon refuses to
+  start without both files; rclone validates their contents. Use HTTPS in
+  Infuse, including on the LAN, and do not disable certificate verification.
+  For LAN clients, resolve the certificate hostname to the Mac's LAN IP with a
+  home-router DNS override; see the [Windscribe setup guide](WINDSCRIBE_SETUP_GUIDE.md).
+- **Password rotation**: Run `./scripts/rotate-media-webdav.sh` from the
+  `media-streaming` directory; see its `--help` output for options.
 - **Port Forwarding**: Use stable TCP mappings via Windscribe:
   - **Jellyfin** (default remote): External **8096** -> internal **8096** at
     `http://82.23.253.53:8096` (Published Server URI set in Dashboard →
     Networking).
   - **Plex** (legacy): External **32400** -> internal **32400** — remove when
     unused.
-  - **WebDAV backup**: External **8088** -> internal **8080**. Do not forward
-    dynamic fallback ports (`8081-8083`) for remote access. If Windscribe
-    assigns a different external port, keep the internal port fixed at **8080**
-    and update Infuse/client settings to the assigned external port.
+  - **WebDAV backup**: Remove the old HTTP forward until the HTTPS listener and
+    client certificate validation work. Replace old HTTP client entries and
+    rotate the WebDAV password before restoring public access; an old HTTP
+    client may send Basic credentials before the server rejects its request.
+    Then map external **8088** to internal **8080** and use
+    `https://YOUR_WEBDAV_HOST:8088/`. Do not forward dynamic
+    fallback ports (`8081-8083`). If Windscribe assigns a different external
+    port, keep internal **8080** and update the client port.
 
 ---
 
