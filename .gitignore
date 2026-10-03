@@ -19,6 +19,7 @@
 # Environment files and secrets
 .env
 .env.*
+!.env.pr-recap.template
 .secrets/
 configs/.gemini/oauth_creds.json
 .sensitive-paths.txt
@@ -146,6 +147,8 @@ mcp-configs/servers.local.json
 .mcp-config.local.json
 
 # Shell/Python sed backup artifacts
+*.bak
+*.bak.*
 *.sh.bak
 *.sh.bak-*
 *.py.bak
@@ -347,3 +350,5 @@ venv/
 browserless/browserless.env
 # Keep browserless lockfile for reproducible installs (matches copilot-demo)
 !browserless/package-lock.json
+# Causari local ledger — captured prompts, completions and reasoning.
+.causari/

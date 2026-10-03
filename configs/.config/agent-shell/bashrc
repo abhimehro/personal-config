@@ -50,3 +50,22 @@ case "$-" in
     alias ..='cd ..'
     ;;
 esac
+
+# ============================================
+# Proton Pass SSH Agent (auto-select when alive)
+# ============================================
+# Prefer the Proton Pass SSH agent socket when the agent is actually
+# responding; otherwise keep the platform / 1Password default.
+# - Dead-socket safe: only claims the socket if `ssh-add -l` answers
+#   (exit 0 = keys loaded, exit 1 = agent alive with no identities).
+# - Skipped for agent/CI contexts (CURSOR_AGENT, CI, GITHUB_ACTIONS)
+#   and when PROTON_AGENT_SKIP=1, matching the 1Password gating pattern.
+if [ "${PROTON_AGENT_SKIP:-}" != "1" ] && [ -z "${CURSOR_AGENT:-}" ] && [ -z "${CI:-}" ] && [ -z "${GITHUB_ACTIONS:-}" ] && [ -S "${HOME}/.ssh/proton-pass-ssh-agent.sock" ]; then
+  _PROTON_SOCK="${HOME}/.ssh/proton-pass-ssh-agent.sock"
+  SSH_AUTH_SOCK="$_PROTON_SOCK" ssh-add -l >/dev/null 2>&1
+  _PROTON_PROBE=$?
+  if [ "$_PROTON_PROBE" -eq 0 ] || [ "$_PROTON_PROBE" -eq 1 ]; then
+    export SSH_AUTH_SOCK="$_PROTON_SOCK"
+  fi
+  unset _PROTON_SOCK _PROTON_PROBE
+fi

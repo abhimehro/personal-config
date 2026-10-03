@@ -526,7 +526,7 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<E
 </plist>
 EOF
 
-# GitNexus Auto Sync (Daily at 2:00 AM; wrapper skips delayed wake launches)
+# GitNexus Auto Sync (Daily at 12:30 PM; wrapper skips delayed wake launches)
 cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.gitnexus-autosync.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -553,9 +553,9 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.gitnexus-autosync.plist" <<EOF
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>2</integer>
+        <integer>12</integer>
         <key>Minute</key>
-        <integer>0</integer>
+        <integer>30</integer>
     </dict>
     <key>RunAtLoad</key>
     <false/>
@@ -608,7 +608,7 @@ echo "  • Google Drive Backup (Light): Daily at 3:15 AM (Tue-Sun)"
 echo "  • Google Drive Backup (Full): Monday at 4:00 AM"
 echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
-echo "  • GitNexus Auto Sync: Daily at 2:00 AM (background, one cycle, wake-time guarded)"
+echo "  • GitNexus Auto Sync: Daily at 12:30 PM (background, one cycle, wake-time guarded)"
 echo ""
 echo "To test a script manually:"
 echo "  bash $INSTALL_DIR/bin/brew_maintenance.sh"

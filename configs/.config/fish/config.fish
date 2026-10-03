@@ -321,3 +321,21 @@ set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
 
 # Octopus CLI
 fish_add_path /Users/speedybee/.octopus/bin
+
+# ============================================
+# Proton Pass SSH Agent (auto-select when alive)
+# ============================================
+# Prefer the Proton Pass SSH agent socket when the agent is actually
+# responding; otherwise keep the 1Password / launchd default from above.
+# - Dead-socket safe: only claims the socket if `ssh-add -l` answers
+#   (exit 0 = keys loaded, exit 1 = agent alive with no identities).
+# - Skipped for non-interactive and agent/CI contexts, and when
+#   PROTON_AGENT_SKIP=1, matching the 1Password gating pattern above.
+if status is-interactive; and test "$PROTON_AGENT_SKIP" != "1"; and not set -q CURSOR_AGENT; and not set -q CI; and not set -q GITHUB_ACTIONS; and test -S "$HOME/.ssh/proton-pass-ssh-agent.sock"
+    set -l _proton_sock "$HOME/.ssh/proton-pass-ssh-agent.sock"
+    SSH_AUTH_SOCK=$_proton_sock ssh-add -l >/dev/null 2>&1
+    set -l _proton_probe $status
+    if test $_proton_probe -eq 0; or test $_proton_probe -eq 1
+        set -gx SSH_AUTH_SOCK $_proton_sock
+    end
+end
