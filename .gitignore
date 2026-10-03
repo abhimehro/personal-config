@@ -19,6 +19,7 @@
 # Environment files and secrets
 .env
 .env.*
+!.env.pr-recap.template
 .secrets/
 configs/.gemini/oauth_creds.json
 .sensitive-paths.txt
@@ -97,6 +98,7 @@ yarn-error.log*
 package-lock.json
 !copilot-demo/package-lock.json
 yarn.lock
+.gitnexus/
 
 # Ruby
 .bundle/
@@ -145,6 +147,8 @@ mcp-configs/servers.local.json
 .mcp-config.local.json
 
 # Shell/Python sed backup artifacts
+*.bak
+*.bak.*
 *.sh.bak
 *.sh.bak-*
 *.py.bak
@@ -238,6 +242,10 @@ patch.sh
 # Tracked helpers for safe GH_TOKEN loading (no secret values in repo)
 !gh_token_env.py
 !scripts/ensure_gh_token.sh
+
+# Browserless + 1Password integration (op:// refs only, no secret values)
+!browserless/templates/browserless-1password-login.mjs
+!scripts/browserless-register-1password.sh
 !scripts/verify_gh_auth.sh
 !tests/test_gh_token_env.py
 
@@ -273,6 +281,7 @@ configs/.config/fish.backup.*/
 # Fisher-installed plugin files (generated on each machine via `fisher update`)
 configs/.config/fish/conf.d/*
 !configs/.config/fish/conf.d/zzz_tide_prompt_guard.fish
+!configs/.config/fish/conf.d/zzz_tide_prompt_reap.fish
 configs/.config/fish/completions/*
 configs/.config/fish/functions/*
 
@@ -280,6 +289,10 @@ configs/.config/fish/functions/*
 !configs/.config/fish/config.fish
 !configs/.config/fish/fish_plugins
 !configs/.config/fish/RESTORE_CUSTOMIZATIONS.md
+!configs/.config/fish/completions/op.fish
+!configs/.config/fish/functions/op-ready.fish
+!configs/.config/fish/functions/cursor-op.fish
+!configs/.config/fish/functions/_op_inject.fish
 !configs/.config/fish/functions/nm-*.fish
 !configs/.config/fish/functions/__ensure_dracula_theme.fish
 !configs/.config/fish/functions/fix-dns.fish
@@ -315,6 +328,7 @@ GH_TOKEN.env
 patch_*.sh
 resolve_*.sh
 venv/
+.venv/
 
 # =============================================================================
 # TERRAFORM - Provider binaries and state
@@ -331,3 +345,10 @@ venv/
 
 # Local diagnostic incident reports
 /docs/RAYCAST_AUDIO_CPU_INCIDENT_2026-08-10.md
+
+# Browserless + 1Password (browserless/browserless.env holds live secrets)
+browserless/browserless.env
+# Keep browserless lockfile for reproducible installs (matches copilot-demo)
+!browserless/package-lock.json
+# Causari local ledger — captured prompts, completions and reasoning.
+.causari/
