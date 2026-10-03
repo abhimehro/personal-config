@@ -774,6 +774,9 @@ cache_top_level_entry_count_capped() {
 	local count=0
 	local _nullglob_state
 	local _dotglob_state
+	# shopt -p only ever emits "shopt -s NAME" or "shopt -u NAME", so these saved
+	# strings restore with plain word splitting (see the matching restores below
+	# and the other shopt sites in lib/clean/apps.sh).
 	_nullglob_state=$(shopt -p nullglob || true)
 	_dotglob_state=$(shopt -p dotglob || true)
 	shopt -s nullglob dotglob
