@@ -14,6 +14,7 @@ if str(SCRIPTS) not in sys.path:
 import pr_lifecycle_validation as validator  # noqa: E402
 from sync_cursor_export_prompts import expand_prompt_source  # noqa: E402
 
+
 class TestStagePromptContracts(unittest.TestCase):
     """Stage prompts are thin bootstraps that defer to pr_lifecycle_run plans."""
 
@@ -115,6 +116,3 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertEqual(caps["stage2_salvage_candidates"], 10)
         self.assertEqual(caps["stage3_completion_actions"], 15)
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
-
-
-

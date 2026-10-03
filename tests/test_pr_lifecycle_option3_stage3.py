@@ -58,8 +58,7 @@ class Option3Stage3HandoffTests(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                action["action"] == "HANDOFF_MECHANICAL_TO_STAGE2"
-                for action in actions
+                action["action"] == "HANDOFF_MECHANICAL_TO_STAGE2" for action in actions
             )
         )
         self.assertEqual(

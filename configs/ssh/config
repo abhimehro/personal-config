@@ -18,12 +18,12 @@ Host github.com
 #  Proton Pass SSH agent: GitHub alias 
 # Use Proton Pass SSH agent for GitHub under alias "github-proton".
 # Requires Proton's ssh-agent running (see pp_ssh_agent_start) OR
-# at least ~/.ssh/proton-pass-agent.sock pointing at a valid agent.
+# at least ~/.ssh/proton-pass-ssh-agent.sock pointing at a valid agent.
 Host github-proton
     HostName github.com
     User git
     IdentitiesOnly yes
-    IdentityAgent "~/.ssh/proton-pass-agent.sock"
+    IdentityAgent "~/.ssh/proton-pass-ssh-agent.sock"
 
 #  Generic Proton-host pattern (optional) 
 # Any host whose name matches "proton-*" will prefer Proton's agent.
@@ -33,7 +33,7 @@ Host github-proton
 #       User myuser
 Host proton-*
     IdentitiesOnly yes
-    IdentityAgent "~/.ssh/proton-pass-agent.sock"
+    IdentityAgent "~/.ssh/proton-pass-ssh-agent.sock"
 
 # ─ Dynamic configuration for primary development laptop ────────
 # NOTE: Host definitions for dev-vpn/dev-local/dev-mdns/dev-auto live in

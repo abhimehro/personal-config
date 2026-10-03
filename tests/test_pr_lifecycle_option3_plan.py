@@ -6,14 +6,14 @@ import copy
 import unittest
 from unittest import mock
 
+import pr_lifecycle_pipeline_health as real_health
+
 from tests.pr_lifecycle_helpers import (
     import_lifecycle_run,
     make_health_report,
     make_item,
     make_ledger,
 )
-
-import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
 
@@ -79,7 +79,6 @@ class Option3RebalancePlanTests(unittest.TestCase):
             planned["enqueue_actions"][0]["allowed_paths"], ["src/unique.py"]
         )
 
-
     def test_stage1_enqueue_cap_and_unique_path_override(self) -> None:
         """Verify Stage 1 caps complete enqueues and uses unique source paths."""
         candidates = [
@@ -113,9 +112,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(first["allowed_paths"], ["src/unique.py"])
         self.assertEqual(first["base_sha"], "a" * 40)
         self.assertEqual(first["head_sha"], "b" * 40)
-        self.assertEqual(
-            first["next_action"], run.health.MECHANICAL_RESELECT_NA
-        )
+        self.assertEqual(first["next_action"], run.health.MECHANICAL_RESELECT_NA)
         self.assertTrue(
             all(
                 action["action"] == "ENQUEUE_STAGE2_WI"
@@ -176,9 +173,7 @@ class Option3RebalancePlanTests(unittest.TestCase):
         with mock.patch.object(
             run.health, "list_reselect_candidates", return_value=candidates
         ):
-            planned = run.plan_stage2_enqueues(
-                {"items": candidates}, limit=2
-            )
+            planned = run.plan_stage2_enqueues({"items": candidates}, limit=2)
         self.assertEqual(planned["candidate_count"], 5)
         self.assertEqual(planned["enqueued_count"], 2)
         self.assertEqual(
@@ -215,9 +210,6 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["actions"][0]["enqueued"], 0)
         self.assertEqual(plan["stop_class"], "LOGIC_STOP")
         self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
-
-
-
 
     def test_stage1_emits_enqueue_when_reselect_candidates_exist(self) -> None:
         """Verify Stage 1 enqueues eligible reselection candidates."""
@@ -297,9 +289,8 @@ class Option3RebalancePlanTests(unittest.TestCase):
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
             mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
-            mock.patch.object(
-                run,
-                "plan_stage2_enqueues",
+            mock.patch(
+                "pr_lifecycle_stage_plan.plan_stage2_enqueues",
                 return_value={
                     "candidate_count": 2,
                     "enqueued_count": 0,
@@ -321,9 +312,8 @@ class Option3RebalancePlanTests(unittest.TestCase):
         with (
             mock.patch.object(run.health, "summarize", return_value=_report()),
             mock.patch.object(run.reconcile_mod, "collect_actions", return_value=[]),
-            mock.patch.object(
-                run,
-                "plan_stage2_enqueues",
+            mock.patch(
+                "pr_lifecycle_stage_plan.plan_stage2_enqueues",
                 return_value={
                     "candidate_count": 2,
                     "enqueued_count": 0,
@@ -342,10 +332,6 @@ class Option3RebalancePlanTests(unittest.TestCase):
         self.assertEqual(plan["reason"], "FEED_CHECK_FAIL")
         feed = plan["actions"][-1]
         self.assertEqual(feed["grade"], "FAIL")
-
-
-
-
 
 
 if __name__ == "__main__":

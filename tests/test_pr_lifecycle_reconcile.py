@@ -361,9 +361,7 @@ class ReconcileHelpersTests(unittest.TestCase):
 
     def test_apply_terminal_observed_notes_in_place_without_event(self):
         ledger = {"ledger_revision": 4, "events": []}
-        item = _item(
-            lifecycle_state="STAGE3_RECONCILIATION", current_owner="stage3"
-        )
+        item = _item(lifecycle_state="STAGE3_RECONCILIATION", current_owner="stage3")
         action = {
             "action": "TERMINAL_OBSERVED",
             "observed_state": "MERGED",
