@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 264
+ledger_revision: 265
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20546,13 +20546,19 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #360 open. Do not merge the conflicting original.'
-  next_action: 'Stage 2: salvage the unique CLIProcessRunner and DirectHeadlessOracleGroupTests
-    changes from #360. Allowed those two paths only.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Leave #360 open. Do not merge, close, comment, approve, label, or
+    edit it. Do not requeue s2-20261003-repoprompt-ce-360. Do not record the DirectHeadlessOracleGroupTests
+    cancel/sleep-30 line as landed.'
+  next_action: 'Cannot replay s2-20261003-repoprompt-ce-360 and this is not a replacement
+    merge: allowed paths no longer exist on main, and CLIProcessRunner already has
+    a later close/drain sequence (closeInput, keep output open, closeOutput on timeout,
+    then closeAll) so replaying the old hunk would drop that; the DirectHeadlessOracleGroupTests
+    cancel/sleep-30 line did not land and is not recorded as landed; repoprompt-ce#360
+    stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/360
   changed_paths:
@@ -20564,8 +20570,10 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20261003-rpce-360-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:43:00Z'
+  - evt-s3-20261003-rpce-360-reclaim
+  - evt-s3-20261003-rpce-360-t
+  revision: 3
+  updated_at_utc: '2026-10-03T14:57:25Z'
 - key: abhimehro/personal-config#2406@6a1afcd8c178370db9274df7f836c8493d66d187
   repository: abhimehro/personal-config
   pr: 2406
@@ -48154,35 +48162,53 @@ events:
     authority is never Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261003-repoprompt-ce-360
-  source_item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
-  repository: abhimehro/repoprompt-ce
-  pr: 360
-  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
-  head_sha: 90ec07d7f88b88f9180c5ac42629ab5e2171cfae
-  allowed_paths:
-  - Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
-  - Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift
-  prohibited_paths: []
-  repair_description: 'Replay the unique CLIProcessRunner and DirectHeadlessOracleGroupTests
-    changes from #360 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
-    and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift. Original #360
-    stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
-    and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift.
-  - git diff --check exits 0.
-  - 'Original #360 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/360
-  expiry_utc: '2026-10-10T14:43:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-rpce-360-i
-  history: []
+- event_id: evt-s3-20261003-rpce-360-reclaim
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae:evt-s3-20261003-rpce-360-reclaim
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:57:25Z'
+  acknowledged_at_utc: null
+  reason: Stage 3 reclaims s2-20261003-repoprompt-ce-360 because STAGE2_QUEUED cannot
+    go straight to TERMINAL. Allowed paths no longer exist on main. Not a replacement
+    merge. The DirectHeadlessOracleGroupTests cancel/sleep-30 line did not land and
+    is not recorded as landed.
+  successful: null
+  policy_revision: null
+- event_id: evt-s3-20261003-rpce-360-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae:evt-s3-20261003-rpce-360-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:57:25Z'
+  acknowledged_at_utc: null
+  reason: 'Cannot replay s2-20261003-repoprompt-ce-360 and this is not a replacement
+    merge: allowed paths no longer exist on main, and CLIProcessRunner already has
+    a later close/drain sequence (closeInput, keep output open, closeOutput on timeout,
+    then closeAll) so replaying the old hunk would drop that; the DirectHeadlessOracleGroupTests
+    cancel/sleep-30 line did not land and is not recorded as landed; repoprompt-ce#360
+    stays OPEN.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
