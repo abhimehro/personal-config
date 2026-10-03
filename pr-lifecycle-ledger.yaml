@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 247
+ledger_revision: 248
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20296,15 +20296,15 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #353 open. Do not merge the conflicting original. Do not copy
-    .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
-  next_action: 'Stage 2: salvage the unique static ISO8601DateFormatter reuse in Changelog.swift
-    from #353. Allowed Sources/RepoPrompt/App/Changelog.swift only. Do not take .jules/bolt.md
-    or Scripts/launch_startup_benchmark.py.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Leave #353 open. Do not merge, close, comment, approve, label, or
+    edit it. Do not requeue s2-20261003-rpce-353.'
+  next_action: 'TERMINAL CLOSED_SUPERSEDED: main Changelog.swift already has the static
+    iso8601Formatter. Not a replacement merge. Do not requeue s2-20261003-rpce-353.
+    GitHub repoprompt-ce#353 stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/353
   changed_paths:
@@ -20317,8 +20317,10 @@ items:
     mutations: 0
   handoffs:
   - evt-s1-20261003-rpce-353-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:22:00Z'
+  - evt-s3-20261003-rpce-353-reclaim
+  - evt-s3-20261003-rpce-353-t
+  revision: 3
+  updated_at_utc: '2026-10-03T14:31:33Z'
 - key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
   repository: abhimehro/repoprompt-ce
   pr: 396
@@ -47415,36 +47417,52 @@ events:
     Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261003-rpce-353
-  source_item_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
-  repository: abhimehro/repoprompt-ce
-  pr: 353
-  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
-  head_sha: 04c29008d151b4b405ed516ee8b32ad9aff72b74
-  allowed_paths:
-  - Sources/RepoPrompt/App/Changelog.swift
-  prohibited_paths:
-  - .jules/bolt.md
-  - Scripts/launch_startup_benchmark.py
-  repair_description: 'Replay the unique static ISO8601DateFormatter reuse in Changelog.swift
-    from #353 onto current main. Allowed: Sources/RepoPrompt/App/Changelog.swift.
-    Prohibit .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original #353
-    stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to Sources/RepoPrompt/App/Changelog.swift.
-  - No .jules/bolt.md or Scripts/launch_startup_benchmark.py changes.
-  - git diff --check exits 0.
-  - 'Original #353 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/353
-  expiry_utc: '2026-10-10T14:22:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-rpce-353-i
-  history: []
+- event_id: evt-s3-20261003-rpce-353-reclaim
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74:evt-s3-20261003-rpce-353-reclaim
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:31:33Z'
+  acknowledged_at_utc: null
+  reason: Stage 2 EMPTY_INTAKE on s2-20261003-rpce-353. Main Changelog.swift already
+    has the static iso8601Formatter. Replaying head 04c29008d151b4b405ed516ee8b32ad9aff72b74
+    would drop later changelog entries. Not a replacement merge. Stage 3 reclaims
+    so STAGE2_QUEUED is not left queued.
+  successful: null
+  policy_revision: null
+- event_id: evt-s3-20261003-rpce-353-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#353@04c29008d151b4b405ed516ee8b32ad9aff72b74:evt-s3-20261003-rpce-353-t
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:31:33Z'
+  acknowledged_at_utc: null
+  reason: Superseded, not a replacement merge. Main Changelog.swift already has private
+    static let iso8601Formatter. Replaying head 04c29008d151b4b405ed516ee8b32ad9aff72b74
+    would rewrite later changelog entries. No draft. Work item s2-20261003-rpce-353
+    retired CLOSED_SUPERSEDED so it is not requeued. GitHub repoprompt-ce#353 stays
+    OPEN.
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
