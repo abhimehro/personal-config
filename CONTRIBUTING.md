@@ -78,15 +78,16 @@ bash tests/test_lib_dns_utils.sh
 ### Python tests
 
 ```bash
-# All Python tests (mostly stdlib; install pyyaml for the full suite)
-#   pip install pyyaml
+# All Python tests (mostly stdlib; install pinned deps for the full suite)
+#   python3 -m pip install -r requirements.txt
 make test-python
 
 # All tests (shell + Python)
 make test-all
 
-# All Python tests directly (alternative)
-python3 -m unittest -v discover -s tests -p 'test_*.py'
+# All Python tests directly (alternative). `discover` must come before -s/-p;
+# `-v discover` is parsed as a test name and fails with unrecognized arguments.
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 # Single module
 python3 -m unittest tests.test_path_validation -v
@@ -186,6 +187,21 @@ section; delete sections that genuinely do not apply.
 - [ ] No secrets, tokens, or `.env` files are included
 - [ ] Documentation updated if behaviour changed
 - [ ] PR description filled out completely
+
+### Merging (Trunk queue)
+
+This repository merges through the Trunk merge queue, not GitHub squash.
+
+If Trunk fails with `trunk-failed` or "GitHub blocked Trunk from preparing the
+test branch" after `main` has moved, the PR is **stale-vs-main**, not a Trunk
+GitHub App or ruleset misconfiguration:
+
+1. Pull the latest `main` into the PR branch.
+2. Wait until GitHub shows the PR up to date (the head SHA changes).
+3. Comment `/trunk merge` again on the **new** head SHA.
+
+Do not re-comment `/trunk merge` on an unchanged SHA. Do not GitHub-squash as a
+bypass.
 
 ---
 

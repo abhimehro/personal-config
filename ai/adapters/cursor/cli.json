@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "comment": "Portable Cursor CLI defaults. Machine-local ~/.cursor/cli-config.json may differ. Do not copy unrestricted live settings.",
+  "approvalMode": "allowlist",
+  "sandbox": {
+    "mode": "enabled"
+  },
+  "networkAccess": "user_config_with_defaults",
+  "privacyMode": true,
+  "permissions": {
+    "allow": [
+      "Shell(ls)",
+      "Shell(pwd)",
+      "Shell(git status)",
+      "Shell(git diff)",
+      "Shell(git log)",
+      "Shell(git branch)",
+      "Read(**/*)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Write(.env*)",
+      "Shell(rm)",
+      "Shell(git reset)",
+      "Shell(git clean)",
+      "Shell(git push --force)"
+    ]
+  }
+}
