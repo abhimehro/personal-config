@@ -794,6 +794,8 @@ cache_top_level_entry_count_capped() {
 	printf '%s\n' "$count"
 }
 
+# Return 0 if $1 contains an existing entry (including hidden entries), else 1.
+# Preserve the caller's nullglob and dotglob settings while scanning.
 directory_has_entries() {
 	local dir="$1"
 	[[ -d $dir ]] || return 1
@@ -818,6 +820,8 @@ directory_has_entries() {
 	return 1
 }
 
+# Clean macOS and sandboxed app caches, then process shared group containers.
+# Honor dry-run mode and the protection checks in the cleanup helpers.
 clean_app_caches() {
 	start_section_spinner "Scanning app caches..."
 

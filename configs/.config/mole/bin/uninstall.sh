@@ -581,6 +581,7 @@ scan_applications() {
 	local previous_int_trap=""
 	previous_int_trap=$(trap -p INT || true)
 
+	# Reapply the INT trap saved before scanning, or reset INT to its default.
 	restore_scan_int_trap() {
 		if [[ -n $previous_int_trap ]]; then
 			if [[ $previous_int_trap == "trap -- "* ]]; then $previous_int_trap; fi

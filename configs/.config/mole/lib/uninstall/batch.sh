@@ -343,6 +343,8 @@ batch_uninstall_applications() {
 		fi
 	}
 
+	# Stop the sudo keepalive and reapply the saved INT/TERM traps, resetting
+	# either signal to its default when no previous trap was installed.
 	_restore_uninstall_traps() {
 		_cleanup_sudo_keepalive
 		if [[ -n $old_trap_int ]]; then
