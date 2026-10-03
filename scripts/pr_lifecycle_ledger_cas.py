@@ -20,18 +20,22 @@ if str(SCRIPT_DIR) not in sys.path:
 from pr_lifecycle_config import validate_bootstrap_pointer, validate_config
 from pr_lifecycle_github_git import (
     contained_output_path,
+    decode_github_blob,
+    is_stale_tip_error,
+    object_sha,
+    ref_path,
+    require_sha,
+    tree_sha,
+    update_ref_path,
 )
+from pr_lifecycle_github_git import contents_metadata as git_contents_metadata
 from pr_lifecycle_github_git import create_blob as git_create_blob
 from pr_lifecycle_github_git import create_commit as git_create_commit
 from pr_lifecycle_github_git import create_tree as git_create_tree
-from pr_lifecycle_github_git import decode_github_blob
 from pr_lifecycle_github_git import ensure_data_ref as git_ensure_data_ref
 from pr_lifecycle_github_git import fetch_runtime_ledger as git_fetch_runtime_ledger
-from pr_lifecycle_github_git import is_stale_tip_error, object_sha
 from pr_lifecycle_github_git import read_commit as git_read_commit
-from pr_lifecycle_github_git import ref_path, tree_sha
 from pr_lifecycle_github_git import update_ref as git_update_ref
-from pr_lifecycle_github_git import update_ref_path
 from pr_lifecycle_github_http import (
     _HTTPS_OPENER,
     GITHUB_API_ORIGIN,
@@ -104,6 +108,16 @@ def fetch_runtime_ledger(runtime: dict[str, Any], dest: Path) -> dict[str, Any]:
     return git_fetch_runtime_ledger(runtime, dest, github_request)
 
 
+def require_ledger_base(runtime: dict[str, Any], expected_blob_sha: str) -> None:
+    """Reject a ledger changed since preflight, including before this commit began."""
+    expected = require_sha(expected_blob_sha)
+    current = git_contents_metadata(
+        runtime, str(runtime["data_branch"]), github_request
+    )
+    if current["sha"] != expected:
+        raise CasError(OPERATOR_CONFLICT)
+
+
 def create_blob(content: str) -> str:
     """POST a utf-8 Git blob through the patchable request wrapper."""
     return git_create_blob(content, github_request)
@@ -147,12 +161,15 @@ def _fast_forward_or_conflict(
         raise
 
 
-def cas_commit(runtime: dict[str, Any], content: str, message: str) -> dict[str, Any]:
+def cas_commit(
+    runtime: dict[str, Any], content: str, message: str, expected_blob_sha: str
+) -> dict[str, Any]:
     """Fast-forward the data branch. Do not retry stale bytes onto a new tip."""
     branch = str(runtime["data_branch"])
     path = str(runtime["data_path"])
     ensured = ensure_data_ref(runtime)
     parent_sha = object_sha(ensured["ref"])
+    require_ledger_base(runtime, expected_blob_sha)
     parent = read_commit(parent_sha)
     blob_sha = create_blob(content)
     new_tree = create_tree(tree_sha(parent), path, blob_sha)
@@ -186,15 +203,20 @@ def run_preflight(out: Path) -> dict[str, Any]:
     }
 
 
-def run_commit(file_path: Path, message: str, *, bump_revision: bool) -> dict[str, Any]:
+def run_commit(
+    file_path: Path, message: str, *, base_blob_sha: str, bump_revision: bool
+) -> dict[str, Any]:
     """Sanitize then CAS-write a local ledger file onto the data branch."""
     runtime = pointer_runtime()
     contained = contained_output_path(file_path)
+    require_sha(base_blob_sha)
     # NOTE: export/prompt equality is CI `--check`, not this CAS write.
     # Always line-strip before validate+upload so projection keys cannot re-persist.
     sanitize_ledger_file(contained, bump_revision=bump_revision)
     stripped = validate(contained)
-    result = cas_commit(runtime, contained.read_text(encoding="utf-8"), message)
+    result = cas_commit(
+        runtime, contained.read_text(encoding="utf-8"), message, base_blob_sha
+    )
     result["validator_stripped_fields"] = stripped
     return result
 
@@ -212,6 +234,7 @@ def build_parser() -> argparse.ArgumentParser:
     preflight.add_argument("--out", type=Path, required=True)
     commit = sub.add_parser("commit")
     commit.add_argument("--file", type=Path, required=True)
+    commit.add_argument("--base-blob-sha", required=True)
     commit.add_argument("--message", default=DEFAULT_COMMIT_MESSAGE)
     commit.add_argument("--bump-revision", action="store_true")
     return parser
@@ -236,7 +259,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "preflight":
             print(json.dumps(run_preflight(args.out), indent=2))
             return 0
-        result = run_commit(args.file, args.message, bump_revision=args.bump_revision)
+        result = run_commit(
+            args.file,
+            args.message,
+            base_blob_sha=args.base_blob_sha,
+            bump_revision=args.bump_revision,
+        )
         print(json.dumps(result, indent=2))
         return 0
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
