@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 208
+ledger_revision: 213
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19847,14 +19847,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge the dirty original. Leave overlapping session logs to
-    the other open docs PRs.
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #2254. Salvage draft #2400
+    holds the unique dated run records; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #2254 vs salvage draft #2400; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2254
   changed_paths:
@@ -19865,12 +19865,60 @@ items:
   - tasks/salvage-session-reports.md
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-pc-2254-h
-  revision: 1
-  updated_at_utc: '2026-10-03T09:05:00Z'
+  - evt-reconcile-20261003090641-4f123842
+  - evt-reconcile-20261003090641-4b5a8f48
+  revision: 3
+  updated_at_utc: '2026-10-03T09:06:41Z'
+- key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
+  repository: abhimehro/personal-config
+  pr: 2400
+  url: https://github.com/abhimehro/personal-config/pull/2400
+  base_sha: 18233d63899591537158d03e916b0920ba508679
+  head_sha: 21ea3387b15a97237443238d7f55afc6cf38dd0d
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #2400 (isDraft verified); original #2254
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2400
+  - https://github.com/abhimehro/personal-config/pull/2254
+  changed_paths:
+  - tasks/pr-review-2026-09-21.md
+  - tasks/pr-salvage-2026-09-21-1700.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-personalconfig-2400-i
+  - evt-reconcile-20261003090641-61f396bb
+  - evt-reconcile-20261003090641-9265c35c
+  revision: 3
+  updated_at_utc: '2026-10-03T09:06:41Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -46000,36 +46048,110 @@ events:
   acknowledged_at_utc: null
   reason: 'Stage 1 hop 1: DIRTY cursor docs PR. Unique remaining paths are the dated
     run records only; shared session logs overlap other open docs PRs.'
-stage2_work_items:
-- work_item_id: s2-20261003-pc-2254
-  source_item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
-  repository: abhimehro/personal-config
-  pr: 2254
-  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
-  head_sha: f66ca9ff7218438acd7a51b0e83264c84d09c5c4
-  allowed_paths:
-  - tasks/pr-review-2026-09-21.md
-  - tasks/pr-salvage-2026-09-21-1700.md
-  prohibited_paths:
-  - tasks/lessons.md
-  - tasks/review-session-reports.md
-  - tasks/salvage-session-reports.md
-  repair_description: Rebase only the unique 2026-09-21 dated run-record files onto
-    current main as one focused draft. Do not touch the overlapping session logs.
-  required_test_command: python3 -m unittest tests/test_pr_lifecycle_artifacts.py
-    -v
-  expected_test_result: OK
-  acceptance_criteria:
-  - Draft changes only tasks/pr-review-2026-09-21.md and tasks/pr-salvage-2026-09-21-1700.md.
-  - No edits to tasks/lessons.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md.
-  - python3 -m unittest tests/test_pr_lifecycle_artifacts.py -v exits 0.
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2254
-  expiry_utc: '2026-10-10T09:05:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-pc-2254-h
-  history: []
+- event_id: evt-reconcile-20261003090641-4f123842
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-reconcile-20261003090641-4f123842
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:06:41Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop1: activate WI s2-20261003-pc-2254 before salvage draft
+    #2400 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003090641-4b5a8f48
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-reconcile-20261003090641-4b5a8f48
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:06:41Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop1: draft #2400 recovered unique dated run records (unique
+    dated run records tasks/pr-review-2026-09-21.md and tasks/pr-salvage-2026-09-21-1700.md).
+    Original #2254 stays OPEN; Stage 3 reconciles. Do not close. Overlapping session
+    logs (tasks/lessons.md, tasks/review-session-reports.md, tasks/salvage-session-reports.md)
+    were not copied.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-personalconfig-2400-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d:evt-s2-20261003-personalconfig-2400-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:06:41Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2400 provenance to #2254. Head 21ea3387b15a; 0gd
+    draft restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003090641-61f396bb
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d:evt-reconcile-20261003090641-61f396bb
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:06:41Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #2400 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003090641-9265c35c
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d:evt-reconcile-20261003090641-9265c35c
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:06:41Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (unique dated run records tasks/pr-review-2026-09-21.md
+    and tasks/pr-salvage-2026-09-21-1700.md). Stage 1 re-ingests draft #2400. Merge
+    authority is never Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
