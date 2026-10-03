@@ -1,6 +1,8 @@
 #!/bin/bash
 # User Data Cleanup Module
 set -euo pipefail
+declare -F restore_mole_shopt_state >/dev/null || source "$(cd "${BASH_SOURCE[0]%/*}" && pwd)/../core/shell-options.sh"
+
 clean_user_essentials() {
 	start_section_spinner "Scanning caches..."
 	safe_clean ~/Library/Caches/* "User app cache"
@@ -787,13 +789,15 @@ cache_top_level_entry_count_capped() {
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+	restore_mole_shopt_state nullglob "$_nullglob_state"
+	restore_mole_shopt_state dotglob "$_dotglob_state"
 
 	[[ $count =~ ^[0-9]+$ ]] || count=0
 	printf '%s\n' "$count"
 }
 
+# Return 0 if directory $1 has an existing entry (including hidden entries),
+# or 1 if missing or empty. Restore the caller's nullglob and dotglob settings.
 directory_has_entries() {
 	local dir="$1"
 	[[ -d $dir ]] || return 1
@@ -807,17 +811,19 @@ directory_has_entries() {
 	local item
 	for item in "$dir"/*; do
 		if [[ -e $item ]]; then
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+			restore_mole_shopt_state nullglob "$_nullglob_state"
+			restore_mole_shopt_state dotglob "$_dotglob_state"
 			return 0
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+	restore_mole_shopt_state nullglob "$_nullglob_state"
+	restore_mole_shopt_state dotglob "$_dotglob_state"
 	return 1
 }
 
+# Clean macOS and sandboxed app caches, then eligible Group Container data.
+# Honor dry-run mode and update cleanup totals for processed sandboxed caches.
 clean_app_caches() {
 	start_section_spinner "Scanning app caches..."
 
@@ -882,7 +888,7 @@ clean_app_caches() {
 		[[ -d "$container_dir/Data/Library/Caches" ]] || continue
 		process_container_cache "$container_dir"
 	done
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
+	restore_mole_shopt_state nullglob "$_ng_state"
 	stop_section_spinner
 
 	if [[ $found_any == "true" ]]; then
@@ -957,8 +963,8 @@ process_container_cache() {
 			[[ -e $item ]] || continue
 			safe_remove "$item" true || true
 		done
-		if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-		if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+		restore_mole_shopt_state nullglob "$_nullglob_state"
+		restore_mole_shopt_state dotglob "$_dotglob_state"
 	fi
 }
 
@@ -977,8 +983,8 @@ clean_group_container_caches() {
 	local found_any=false
 
 	local container_dir
-	local _nullglob_state
-	_nullglob_state=$(shopt -p nullglob || true)
+	local _outer_nullglob_state
+	_outer_nullglob_state=$(shopt -p nullglob || true)
 	shopt -s nullglob
 
 	for container_dir in "$group_containers_dir"/*; do
@@ -1088,8 +1094,8 @@ clean_group_container_caches() {
 					fi
 				done
 			fi
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
+			restore_mole_shopt_state nullglob "$_nullglob_state"
+			restore_mole_shopt_state dotglob "$_dotglob_state"
 
 			if [[ $candidate_changed == "true" ]]; then
 				total_size=$((total_size + candidate_size_kb))
@@ -1098,7 +1104,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+	restore_mole_shopt_state nullglob "$_outer_nullglob_state"
 
 	stop_section_spinner
 
@@ -1795,7 +1801,7 @@ clean_application_support_logs() {
 	if [[ $pipefail_was_set == "true" ]]; then
 		set -o pipefail
 	fi
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
+	restore_mole_shopt_state nullglob "$_ng_state"
 	stop_section_spinner
 	if [[ $found_any == "true" ]]; then
 		local size_human

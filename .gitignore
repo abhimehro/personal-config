@@ -149,6 +149,7 @@ mcp-configs/servers.local.json
 # Shell/Python sed backup artifacts
 *.bak
 *.bak.*
+*.bak-*
 *.sh.bak
 *.sh.bak-*
 *.py.bak
