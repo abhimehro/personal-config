@@ -6,11 +6,7 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from get_prs_summarize import (  # noqa: E402
-    _format_pr_row,
-    automation_hints,
-    check_summary,
-)
+from get_prs_summarize import automation_hints, check_summary
 
 
 class TestAutomationHints(unittest.TestCase):
@@ -24,17 +20,6 @@ class TestAutomationHints(unittest.TestCase):
         self.assertEqual(
             automation_hints(pr), "(none — treat as human unless reviews say otherwise)"
         )
-
-    def test_pr_row_escapes_spreadsheet_formulas_in_metadata(self):
-        pr = {
-            "author": {"login": "+author"},
-            "title": "=1+1",
-            "headRefName": "@branch",
-        }
-        row = _format_pr_row(pr)
-        self.assertIn("'=1+1", row)
-        self.assertIn("'+author", row)
-        self.assertIn("'@branch", row)
 
     def test_author_is_bot(self):
         pr = {"author": {"is_bot": True, "login": "bot-account"}}

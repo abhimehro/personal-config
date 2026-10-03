@@ -9,6 +9,8 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>/Users/speedybee/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
@@ -16,9 +18,15 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>-c</string>
-        <string>export MAINTENANCE_HOME="$HOME/Library/Maintenance" &amp;&amp; mkdir -p "$HOME/Library/Logs/maintenance" &amp;&amp; exec "$HOME/Library/Maintenance/bin/run_all_maintenance.sh" weekly &gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_weekly.out" 2&gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_weekly.err"</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/run_all_maintenance.sh</string>
+        <string>weekly</string>
     </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.err</string>
 
     <key>StartCalendarInterval</key>
     <dict>

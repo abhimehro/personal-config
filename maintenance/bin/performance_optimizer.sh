@@ -719,7 +719,7 @@ main() {
 			args+=("$arg")
 		fi
 	done
-	set -- "${args[@]}"
+	set -- "${args[@]:-}"
 
 	local action="${1:-help}"
 

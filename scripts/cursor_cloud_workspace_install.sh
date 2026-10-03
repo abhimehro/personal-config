@@ -5,6 +5,10 @@ set -euo pipefail
 
 export PATH="${HOME}/.local/bin:${PATH}"
 
+# Pin matches the in-session CLI that indexed this workspace. Engines: Node
+# ^22.18.0 (see .cursor/Dockerfile). Do not float to @latest.
+GITNEXUS_PINNED_VERSION="1.6.12"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PC_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -15,8 +19,15 @@ else
 	REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 fi
 
+# Write a UTC-timestamped message to stdout and the persistent installer log.
+# Resolve the log path at call time so sourced tests can isolate HOME.
 log() {
-	printf 'cursor_cloud_workspace_install: %s\n' "$*"
+	local message logfile
+	logfile="${HOME}/.local/state/cursor-cloud-workspace-install.log"
+	message="$(date -u '+%Y-%m-%dT%H:%M:%SZ') cursor_cloud_workspace_install: $*"
+	printf '%s\n' "${message}"
+	mkdir -p "$(dirname "${logfile}")"
+	printf '%s\n' "${message}" >>"${logfile}"
 }
 
 pip_user() {
@@ -201,7 +212,11 @@ install_seatek_analysis() {
 		cd "${repo}"
 		# Bootstrap renv into the project library layout renv/activate.R expects; verify with
 		# requireNamespace (install.packages returns invisible NULL on success).
+		# ${ppm_repo} is intentionally spliced into the single-quoted R code.
+		# shellcheck disable=SC2016
 		Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib); if (!requireNamespace("renv", lib.loc = lib, quietly = TRUE)) quit(status = 1)'
+		# ${ppm_repo} is intentionally spliced into the single-quoted R code.
+		# shellcheck disable=SC2016
 		Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); .libPaths(unique(c(lib, .libPaths()))); options(renv.config.repos.override = c(CRAN = "'"${ppm_repo}"'")); renv::restore()'
 	); then
 		# SECURITY: renv failure must not skip Series 27 — that path is Python-only
@@ -264,13 +279,152 @@ install_repoprompt_ce() {
 	log "repoprompt-ce: macOS Swift project — no Linux dependency install (see AGENTS.md / make dev-* on macOS)"
 }
 
-log "repos root: ${REPOS_ROOT}"
-install_personal_config
-install_anthropies
-install_ctrld_sync
-install_email_security_pipeline
-install_hydrograph
-install_series_correction
-install_seatek_analysis
-install_repoprompt_ce
-log "done"
+# Return success when the first three-component version in output matches the pin.
+gitnexus_version_matches() {
+	local reported="$1" version
+	version="$(printf '%s\n' "${reported}" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+	[[ ${version} == "${GITNEXUS_PINNED_VERSION}" ]]
+}
+
+# SECURITY: launch the pinned CLI with the snapshot Node, not `env node`
+# (the live exec-daemon may inject Node 22.14 ahead of /usr/local).
+gitnexus_wrap_with_image_node() {
+	local js="${HOME}/.local/lib/node_modules/gitnexus/dist/cli/index.js"
+	local node_bin="/usr/local/bin/node"
+	local dest="${HOME}/.local/bin/gitnexus"
+	if [[ -f ${js} && -x ${node_bin} ]]; then
+		# NOTE: npm installs the executable as a symlink, so remove it before writing.
+		# CAUTION: npm --prefix installs dest as a symlink into dist/cli/index.js.
+		# Writing through that symlink overwrites the CLI JS (build log:
+		# gitnexus version '' does not match 1.6.12). Replace the link first.
+		log "replacing GitNexus wrapper at ${dest} with image-Node wrapper"
+		rm -f "${dest}" || return 1
+		printf '#!/usr/bin/env bash\nexec %q %q "$@"\n' "${node_bin}" "${js}" >"${dest}" || return 1
+		chmod +x "${dest}" || return 1
+		# Fail closed if writing somehow still followed a symlink into the CLI.
+		if head -n1 "${js}" | grep -Eq '^#!/usr/bin/env bash'; then
+			return 1
+		fi
+		return 0
+	fi
+	return 0
+}
+
+# Add the user CLI directory to PATH and install or verify the pinned GitNexus CLI.
+ensure_gitnexus() {
+	export PATH="${HOME}/.local/bin:${PATH}"
+	local reported=""
+	if command -v gitnexus >/dev/null 2>&1; then
+		reported="$(gitnexus --version 2>/dev/null || true)"
+		if gitnexus_version_matches "${reported}"; then
+			log "gitnexus ${GITNEXUS_PINNED_VERSION} already present"
+			return 0
+		fi
+		log "gitnexus present but version '${reported}' != ${GITNEXUS_PINNED_VERSION}; reinstalling"
+	fi
+	if ! command -v npm >/dev/null 2>&1; then
+		log "skip gitnexus (npm not on PATH; needs Node 22.18+ from .cursor/Dockerfile)"
+		return 0
+	fi
+	log "installing gitnexus@${GITNEXUS_PINNED_VERSION} under ${HOME}/.local"
+	# SECURITY: pin exact CLI version; --prefix keeps the install in $HOME.
+	if ! npm install --global --prefix "${HOME}/.local" "gitnexus@${GITNEXUS_PINNED_VERSION}"; then
+		log "gitnexus npm install failed"
+		return 1
+	fi
+	export PATH="${HOME}/.local/bin:${PATH}"
+	if ! gitnexus_wrap_with_image_node; then
+		log "gitnexus image-Node wrapper failed (CLI entrypoint may be corrupted)"
+		return 1
+	fi
+	if ! command -v gitnexus >/dev/null 2>&1; then
+		log "gitnexus installed but not on PATH"
+		return 1
+	fi
+	reported="$(gitnexus --version 2>/dev/null || true)"
+	if ! gitnexus_version_matches "${reported}"; then
+		log "gitnexus version '${reported}' does not match ${GITNEXUS_PINNED_VERSION}"
+		return 1
+	fi
+	gitnexus --version || true
+}
+
+# Append the GitNexus index path once to a Git repository's local exclusions.
+exclude_gitnexus_index() {
+	local repo="$1"
+	local exclude_dir exclude_file
+	if [[ ! -d "${repo}/.git" ]]; then
+		return 0
+	fi
+	exclude_dir="${repo}/.git/info"
+	exclude_file="${exclude_dir}/exclude"
+	mkdir -p "${exclude_dir}"
+	if [[ -f ${exclude_file} ]] && grep -qxF '.gitnexus/' "${exclude_file}"; then
+		return 0
+	fi
+	printf '%s\n' '.gitnexus/' >>"${exclude_file}"
+}
+
+# Return success only for repository names excluded from cloud indexing.
+should_skip_gitnexus_index() {
+	local name="$1"
+	# NOTE: HOLD_PLATFORM: 16GB Linux cloud VMs OOM (~12GB heap) on this Swift tree.
+	[[ ${name} == "repoprompt-ce" ]]
+}
+
+# Best-effort index available sibling repositories without generated docs or FTS.
+index_gitnexus_repos() {
+	if ! command -v gitnexus >/dev/null 2>&1; then
+		log "skip gitnexus index (cli missing)"
+		return 0
+	fi
+	local repo name
+	for repo in \
+		"${REPOS_ROOT}/personal-config" \
+		"${REPOS_ROOT}/ctrld-sync" \
+		"${REPOS_ROOT}/email-security-pipeline" \
+		"${REPOS_ROOT}/Hydrograph_Versus_Seatek_Sensors_Project" \
+		"${REPOS_ROOT}/Seatek_Analysis" \
+		"${REPOS_ROOT}/series_correction_project_updated" \
+		"${REPOS_ROOT}/repoprompt-ce"; do
+		name="${repo##*/}"
+		if [[ ! -d ${repo} ]]; then
+			log "gitnexus: skip ${name} (missing)"
+			continue
+		fi
+		if should_skip_gitnexus_index "${name}"; then
+			log "gitnexus: skip ${name} (OOM on Linux cloud VMs; HOLD_PLATFORM)"
+			continue
+		fi
+		if ! exclude_gitnexus_index "${repo}"; then
+			log "gitnexus: skip ${name} (cannot update Git exclusion)"
+			continue
+		fi
+		log "gitnexus: analyze --index-only --skip-fts ${name}"
+		# --index-only: do not rewrite AGENTS.md / skills. --skip-fts: Ladybug
+		# FTS is optional and not installed in the snapshot.
+		if ! run_in_repo "${repo}" gitnexus analyze --index-only --skip-fts; then
+			log "gitnexus: analyze failed for ${name} (non-fatal)"
+		fi
+	done
+}
+
+# Install supported sibling dependencies, require GitNexus, and index repositories.
+cursor_cloud_workspace_install_main() {
+	log "repos root: ${REPOS_ROOT}"
+	install_personal_config
+	install_anthropies
+	install_ctrld_sync
+	install_email_security_pipeline
+	install_hydrograph
+	install_series_correction
+	install_seatek_analysis
+	install_repoprompt_ce
+	ensure_gitnexus
+	index_gitnexus_repos
+	log "done"
+}
+
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+	cursor_cloud_workspace_install_main "$@"
+fi

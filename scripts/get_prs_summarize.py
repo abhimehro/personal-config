@@ -208,9 +208,7 @@ def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
 
 def _format_pr_row(pr: dict) -> str:
     author = pr.get("author")
-    login = escape_spreadsheet_formula(
-        (author.get("login") if author else None) or "?"
-    )
+    login = escape_spreadsheet_formula((author.get("login") if author else None) or "?")
     draft = "yes" if pr.get("isDraft") else "no"
     checks = check_summary(pr.get("statusCheckRollup") or ())
     merge = f"{pr.get('mergeable') or '?'}"

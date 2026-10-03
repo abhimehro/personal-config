@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AdGuard List Consolidation Script
+AdGuard List Consolidation Script.
 
 This script consolidates various ad-blocking lists into two comprehensive sets:
 1. Denylist - All tracker blocking rules
@@ -170,10 +170,10 @@ def print_summary(denylist_domains, allowlist_domains, output_dir):
     )
 
     print("\n📁 Files created in {}:".format(output_dir))
-    print(f"  • Consolidated-Denylist.json (JSON format)")
-    print(f"  • Consolidated-Allowlist.json (JSON format)")
-    print(f"  • Consolidated-Denylist.txt (Text format)")
-    print(f"  • Consolidated-Allowlist.txt (Text format)")
+    print("  • Consolidated-Denylist.json (JSON format)")
+    print("  • Consolidated-Allowlist.json (JSON format)")
+    print("  • Consolidated-Denylist.txt (Text format)")
+    print("  • Consolidated-Allowlist.txt (Text format)")
 
     print("\n🚀 Next steps:")
     print("  1. Import Consolidated-Denylist.txt into AdGuard as your denylist")

@@ -1,0 +1,11 @@
+# Secret-free GitHub CLI defaults. Never commit hosts.yml.
+# Apply manually to ~/.config/gh/config.yml after review.
+
+git_protocol: ssh
+prompt: enabled
+prefer_editor_prompt: disabled
+color_labels: disabled
+accessible_colors: disabled
+accessible_prompter: disabled
+spinner: enabled
+telemetry: disabled
