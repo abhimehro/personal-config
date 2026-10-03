@@ -12,8 +12,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MOLE = REPO_ROOT / "configs/.config/mole"
 
 
-def nested_function(path, name):
-    """Load only a restoration function, avoiding interactive/destructive entrypoints."""
+def _slice_function_body(path, name):
+    """Cut one tab-indented function body out of a Mole library file."""
     source = (MOLE / path).read_text()
     opening = f"\t{name}() {{\n"
     if opening not in source:
@@ -23,7 +23,12 @@ def nested_function(path, name):
     if closing not in source[start:]:
         raise AssertionError(f"{path}: missing closing marker for {name}")
     end = source.index(closing, start) + len(closing)
-    body = source[start:end]
+    return source[start:end]
+
+
+def nested_function(path, name):
+    """Load only a restoration function, avoiding interactive/destructive entrypoints."""
+    body = _slice_function_body(path, name)
     # A silently truncated or renamed slice would make every assertion pass
     # while the real function is never executed.
     if "mole_restore_trap" not in body:
