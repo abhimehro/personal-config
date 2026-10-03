@@ -226,6 +226,22 @@ class TestMoleGlobRestoration(unittest.TestCase):
                 self.assert_restored(observed, state)
                 self.assertEqual((self.home / "result_file").read_text(), "0\n")
 
+    def test_count_default_cap_restores_options_at_large_cache_boundary(self):
+        for index in range(100):
+            (self.entries / f"entry-{index:03d}").touch()
+        for count in (100, 101, 102):
+            if count > 100:
+                (self.entries / f".hidden-{count}").touch()
+            for state in STATES:
+                with self.subTest(count=count, state=state):
+                    observed = self.run_function(
+                        "cache_top_level_entry_count_capped", self.entries, state=state,
+                    )
+                    self.assert_restored(observed, state)
+                    self.assertEqual(
+                        (self.home / "result_file").read_text(), f"{min(count, 101)}\n",
+                    )
+
     def test_predicate_restores_options_on_all_return_paths(self):
         hidden = self.home / "hidden only"
         hidden.mkdir()
@@ -310,14 +326,70 @@ class TestMoleGlobRestoration(unittest.TestCase):
                     self.recorded_paths("remove_log"), [] if dry_run else list(map(str, paths)),
                 )
 
-    @unittest.expectedFailure
     def test_group_cleanup_restores_disabled_nullglob_after_processing_items(self):
-        # Also fails at PR base 2bd4be53: the inner loop overwrites the outer
-        # saved nullglob state. Keep this executable regression until fixed;
-        # unittest will flag an unexpected success when the defect is resolved.
-        self.populate(self.group)
-        observed = self.run_function("clean_group_container_caches")
-        self.assert_restored(observed, (False, False))
+        # Repeated inner loops must not overwrite the caller's saved nullglob.
+        directories = (
+            self.group,
+            self.group.parent / "Logs",
+            self.group.parent.parent / "group.org.example.second/Library/Caches",
+        )
+        paths = []
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
+            paths.extend(self.populate(directory))
+        for dotglob, dry_run, remove_status in itertools.product(
+            (False, True), (False, True), (0, 1),
+        ):
+            with self.subTest(
+                dotglob=dotglob, dry_run=dry_run, remove_status=remove_status,
+            ):
+                state = (False, dotglob)
+                observed = self.run_function(
+                    "clean_group_container_caches", state=state, dry_run=dry_run,
+                    remove_status=remove_status,
+                )
+                self.assert_restored(observed, state)
+                self.assertCountEqual(
+                    self.recorded_paths("remove_log"), [] if dry_run else list(map(str, paths)),
+                )
+
+    def test_group_cleanup_restores_options_across_bulk_cleanup_boundary(self):
+        paths = [self.group / f"entry-{index:03d}" for index in range(100)]
+        for path in paths:
+            path.touch()
+        for count in (100, 101):
+            if count == 101:
+                hidden = self.group / ".hidden-entry"
+                hidden.touch()
+                paths.append(hidden)
+            for state, dry_run, remove_status in itertools.product(
+                STATES, (False, True), (0, 1),
+            ):
+                with self.subTest(
+                    count=count, state=state, dry_run=dry_run, remove_status=remove_status,
+                ):
+                    observed = self.run_function(
+                        "clean_group_container_caches", state=state, dry_run=dry_run,
+                        remove_status=remove_status,
+                    )
+                    self.assert_restored(observed, state)
+                    self.assertCountEqual(
+                        self.recorded_paths("remove_log"),
+                        [] if dry_run else list(map(str, paths)),
+                    )
+
+    def test_group_cleanup_restores_options_when_all_candidate_items_are_skipped(self):
+        target = self.entries / "keep me"
+        target.write_text("preserved\n")
+        # Live links pass the entry-count check, then are skipped during cleanup.
+        (self.group / "visible link").symlink_to(target)
+        (self.group / ".hidden link").symlink_to(self.entries, target_is_directory=True)
+        for state in STATES:
+            with self.subTest(state=state):
+                observed = self.run_function("clean_group_container_caches", state=state)
+                self.assert_restored(observed, state)
+                self.assertEqual(self.recorded_paths("remove_log"), [])
+                self.assertEqual(target.read_text(), "preserved\n")
 
     def test_saved_state_cannot_execute_commands(self):
         for directory in (self.entries, self.cache, self.group, self.support):
@@ -330,10 +402,11 @@ class TestMoleGlobRestoration(unittest.TestCase):
         )
         for function, state, payload in itertools.product(FUNCTIONS, STATES, payloads):
             with self.subTest(function=function, state=state, payload=payload):
-                self.run_function(
+                observed = self.run_function(
                     function, *self.arguments(function), state=state,
                     mode="append", suffix=payload,
                 )
+                self.assert_restored(observed, state)
                 self.assertIn("nullglob", (self.home / "capture_log").read_text())
 
     def test_saved_state_cannot_target_another_shell_option(self):
@@ -371,7 +444,10 @@ class TestMoleGlobRestoration(unittest.TestCase):
                 self.assertTrue((container / "Data").is_dir())
 
     def test_malformed_saved_state_is_ignored(self):
-        for payload in ("", "unrecognized", 'printf injected > "$INJECTION_MARKER"'):
+        for payload in (
+            "", "unrecognized", 'printf injected > "$INJECTION_MARKER"',
+            "shopt -u", "shopt -unullglob", "shopt -x nullglob", " shopt -u nullglob",
+        ):
             for function in ("cache_top_level_entry_count_capped", "directory_has_entries"):
                 with self.subTest(function=function, payload=payload):
                     observed = self.run_function(
