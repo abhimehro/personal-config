@@ -3221,4 +3221,4 @@ check `git diff --stat origin/main...HEAD` for unexpected file counts on
 bot-touched branches.
 
 **Detection cost:** Low — `git log --format='%an %h %s'` for bot committers;
-`git diff --stat origin/main...HEAD | wc -l` vs the claimed file list.
+`git diff --name-only origin/main...HEAD | wc -l` vs the claimed file list.
