@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 235
+ledger_revision: 236
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20190,6 +20190,41 @@ items:
   - evt-reconcile-20261003092353-c812ecde
   revision: 3
   updated_at_utc: '2026-10-03T09:23:53Z'
+- key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  repository: abhimehro/email-security-pipeline
+  pr: 1633
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1633
+  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
+  head_sha: 6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UI
+  risk_class: SENSITIVE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: Leave #1633 open. Do not merge the conflicting original. Do not copy .jules/palette.md.
+  next_action: 'Stage 2: salvage the unique AppRunner cyan path highlight from #1633. Allowed src/app_runner.py and tests/test_app_runner.py only. Do not take .jules/palette.md.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1633
+  changed_paths:
+  - .jules/palette.md
+  - src/app_runner.py
+  - tests/test_app_runner.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-email-1633-i
+  revision: 1
+  updated_at_utc: '2026-10-03T12:55:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -46935,7 +46970,52 @@ events:
     open #417. Comment https://github.com/abhimehro/repoprompt-ce/pull/407#issuecomment-5969085234. Canonical stays open.'
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s1-20261003-email-1633-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234:evt-s1-20261003-email-1633-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T12:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique product paths src/app_runner.py and tests/test_app_runner.py on open #1633 head 6c4f96863e50b05aa3eacde8e03e8233a8ddd234. Skip .jules/palette.md. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261003-email-1633
+  source_item_key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  repository: abhimehro/email-security-pipeline
+  pr: 1633
+  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
+  head_sha: 6c4f96863e50b05aa3eacde8e03e8233a8ddd234
+  allowed_paths:
+  - src/app_runner.py
+  - tests/test_app_runner.py
+  prohibited_paths:
+  - .jules/palette.md
+  repair_description: 'Replay the unique AppRunner cyan configuration-path highlight from #1633 onto current main. Allowed: src/app_runner.py and tests/test_app_runner.py. Prohibit .jules/palette.md. Original #1633 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to src/app_runner.py and tests/test_app_runner.py.
+  - No .jules/palette.md changes.
+  - git diff --check exits 0.
+  - 'Original #1633 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1633
+  expiry_utc: '2026-10-10T12:55:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-email-1633-i
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
