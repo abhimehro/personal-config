@@ -25,14 +25,14 @@ class TestProcessPrGroup(unittest.TestCase):
         group = groups[0]
         self.assertEqual(group["repo"], "my-repo")
         self.assertEqual(group["rationale"], "my-rationale")
-        self.assertEqual(group["keep"]["number"], 105)
-        self.assertEqual(group["keep"].get("status_action"), "KEEP")
+        self.assertEqual(group["newest"]["number"], 105)
+        self.assertEqual(group["newest"].get("status_action"), "REVIEW")
 
-        self.assertEqual(len(group["dups"]), 2)
-        dup_nums = [d["number"] for d in group["dups"]]
-        self.assertEqual(dup_nums, [102, 100])
-        for d in group["dups"]:
-            self.assertEqual(d.get("status_action"), "CLOSE")
+        self.assertEqual(len(group["others"]), 2)
+        other_nums = [pr["number"] for pr in group["others"]]
+        self.assertEqual(other_nums, [102, 100])
+        for pr in group["others"]:
+            self.assertEqual(pr.get("status_action"), "REVIEW")
 
     def test_process_pr_group_single_match(self):
         matches = [{"number": 100, "title": "fix: A"}]
@@ -140,14 +140,14 @@ class TestGroupPRs(unittest.TestCase):
         triage_md = ["# Initial Header\n"]
         scratch_triage.group_prs(all_prs, triage_md)
 
-        self.assertEqual(all_prs[0].get("status_action"), "KEEP")
-        self.assertEqual(all_prs[1].get("status_action"), "CLOSE")
+        self.assertEqual(all_prs[0].get("status_action"), "REVIEW")
+        self.assertEqual(all_prs[1].get("status_action"), "REVIEW")
         self.assertIsNone(all_prs[2].get("status_action"))
         self.assertIsNone(all_prs[3].get("status_action"))
 
         self.assertEqual(len(triage_md), 2)
         self.assertIn(
-            "personal-config **#101** | **#100** | Same CWE-78 eval injection theme; keep newest",
+            "personal-config **#101** | **#100** | CWE-78 eval title terms",
             triage_md[1],
         )
 
@@ -182,9 +182,33 @@ class TestGroupPRs(unittest.TestCase):
         triage_md = []
         scratch_triage.group_prs(all_prs, triage_md)
 
-        self.assertEqual(all_prs[0].get("status_action"), "KEEP")
-        self.assertEqual(all_prs[1].get("status_action"), "CLOSE")
-        self.assertEqual(all_prs[2].get("status_action"), "KEEP")
-        self.assertEqual(all_prs[3].get("status_action"), "CLOSE")
+        self.assertEqual(all_prs[0].get("status_action"), "REVIEW")
+        self.assertEqual(all_prs[1].get("status_action"), "REVIEW")
+        self.assertEqual(all_prs[2].get("status_action"), "REVIEW")
+        self.assertEqual(all_prs[3].get("status_action"), "REVIEW")
 
         self.assertEqual(len(triage_md), 2)
+
+    @patch("scratch_triage.run_cmd")
+    def test_matching_titles_cannot_close_or_merge_without_change_review(self, mock_run_cmd):
+        # A newer title can contain the same keywords without superseding either PR.
+        prs = [
+            {
+                "repo": "personal-config",
+                "full_repo": "abhimehro/personal-config",
+                "number": number,
+                "title": title,
+                "mergeStateStatus": "CLEAN",
+            }
+            for number, title in (
+                (100, "Fix eval in CWE-78 detector"),
+                (101, "Document eval CWE-78 examples"),
+            )
+        ]
+        scratch_triage.group_prs(prs, [])
+
+        for pr in prs:
+            _, outcome = scratch_triage._process_pr(pr)
+            self.assertEqual(outcome, "escalated")
+
+        mock_run_cmd.assert_not_called()

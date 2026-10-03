@@ -49,14 +49,12 @@ def _find_matching_prs(all_prs, repo, title_keywords):
 def _process_pr_group(matches, repo, rationale, groups):
     if len(matches) > 1:
         matches = sorted(matches, key=lambda x: x["number"], reverse=True)
-        keep = matches[0]
-        dups = matches[1:]
         groups.append(
-            {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
+            {"repo": repo, "newest": matches[0], "others": matches[1:], "rationale": rationale}
         )
-        for d in dups:
-            d["status_action"] = "CLOSE"
-        keep["status_action"] = "KEEP"
+        # Matching titles do not establish duplicate changes or a safe canonical PR.
+        for pr in matches:
+            pr["status_action"] = "REVIEW"
 
 
 GROUPING_RULES = [
@@ -64,32 +62,32 @@ GROUPING_RULES = [
     (
         "personal-config",
         ["eval", "cwe-78"],
-        "Same CWE-78 eval injection theme; keep newest",
+        "CWE-78 eval title terms",
     ),
-    ("personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"),
+    ("personal-config", ["qa & agentic review"], "QA review title terms"),
     (
         "personal-config",
         ["markdown table"],
-        "Bolt perf optimizations for markdown tables; keep newest",
+        "Markdown table title terms",
     ),
-    ("personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"),
+    ("personal-config", ["palette", "prompt"], "Palette prompt title terms"),
     # email-security-pipeline
-    ("email-security-pipeline", ["empty state"], "Palette empty states; keep newest"),
+    ("email-security-pipeline", ["empty state"], "Empty state title terms"),
     (
         "email-security-pipeline",
         ["video frame"],
-        "Bolt video frame performance; keep newest",
+        "Video frame title terms",
     ),
     # series_correction
     (
         "series_correction_project_updated",
         ["itertuples"],
-        "Bolt dataframe iteration perf; keep newest",
+        "itertuples title term",
     ),
     (
         "series_correction_project_updated",
         ["iteration", "performance"],
-        "Iteration optimizations; handled by above/keep newest",
+        "Iteration performance title terms",
     ),
 ]
 
@@ -103,9 +101,9 @@ def group_prs(all_prs, triage_md):
         _process_pr_group(matches, repo, rationale, groups)
 
     for g in groups:
-        dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
+        others_str = ", ".join(f"**#{p['number']}**" for p in g["others"])
         triage_md.append(
-            f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
+            f"| {g['repo']} **#{g['newest']['number']}** | {others_str} | {g['rationale']} |"
         )
 
 
@@ -141,21 +139,9 @@ def _fetch_repo_prs(repo):
 def _process_pr(pr):
     repo = pr["full_repo"]
     num = pr["number"]
-    if pr.get("status_action") == "CLOSE":
-        print(f"Closing {repo}#{num} (duplicate)")
-        run_cmd(
-            [
-                "gh",
-                "pr",
-                "close",
-                str(num),
-                "--repo",
-                repo,
-                "--comment",
-                "Closing as superseded/duplicate of newer PR.",
-            ]
-        )
-        return pr, "closed"
+    if pr.get("status_action") == "REVIEW":
+        print(f"Holding {repo}#{num} (title overlap requires review)")
+        return pr, "escalated"
     elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
         print(f"Merging {repo}#{num}")
         success, out, err = run_cmd(
@@ -189,7 +175,6 @@ if __name__ == "__main__":
             all_prs.extend(repo_prs)
 
     merged = []
-    closed = []
     escalated = []
 
     # ⚡ Bolt Optimization: Hoisted datetime.date.today().isoformat() out of formatting blocks to avoid redundant parsing overhead
@@ -198,8 +183,8 @@ if __name__ == "__main__":
     triage_md = [
         f"# PR triage — backlog cleanup test ({today_iso})\n",
         "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-        "## Duplicate / supersede groups\n",
-        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+        "## Possible overlap by title (review changes before action)\n",
+        "| Newest match | Other matches | Shared title terms |",
         "| --- | --- | --- |",
     ]
 
@@ -211,9 +196,7 @@ if __name__ == "__main__":
         for pr, action in executor.map(
             _process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))
         ):
-            if action == "closed":
-                closed.append(pr)
-            elif action == "merged":
+            if action == "merged":
                 merged.append(pr)
             elif action == "escalated":
                 escalated.append(pr)
@@ -226,14 +209,19 @@ if __name__ == "__main__":
         ]
     )
     for p in escalated:
+        reason = (
+            "Title overlap requires change review"
+            if p.get("status_action") == "REVIEW"
+            else f"{p['mergeStateStatus']} status - requires human review or CI fix"
+        )
         triage_md.append(
-            f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']} status - requires human review or CI fix |"
+            f"| {p['repo']} **#{p['number']}** | {reason} |"
         )
 
     triage_md.extend(
         [
             "\n## Outcomes\n",
-            f"- **Executed:** {len(closed)} duplicate closures, {len(merged)} squash merges.",
+            f"- **Executed:** {len(merged)} squash merges.",
             f"- **Deferred:** {len(escalated)} held.",
         ]
     )
@@ -256,7 +244,6 @@ if __name__ == "__main__":
             "| --- | ---: |",
             f"| PRs inventoried (open) | {len(all_prs)} |",
             f"| PRs merged (squash) | {len(merged)} |",
-            f"| PRs closed (duplicate) | {len(closed)} |",
             f"| PRs escalated / held | {len(escalated)} |\n",
             "### Merged (squash)\n",
         ]
@@ -269,19 +256,20 @@ if __name__ == "__main__":
             current_repo = p["repo"]
         report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
 
-    report_md.append("\n### Closed (duplicate / superseded / zero-diff)\n")
-    for p in closed:
-        report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
-
     report_md.append("\n### Held open / escalated\n")
     for p in escalated:
+        reason = (
+            "title overlap requires change review"
+            if p.get("status_action") == "REVIEW"
+            else p["mergeStateStatus"]
+        )
         report_md.append(
-            f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}"
+            f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {reason}"
         )
 
     with open("tasks/review-session-reports.md", "a") as f:
         f.write("\n".join(report_md) + "\n")
 
     print(
-        f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
+        f"Done. Merged: {len(merged)}, Escalated: {len(escalated)}"
     )
