@@ -824,6 +824,7 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
 ## 2026-08-19 - Command Injection Risk via eval in Trap Restoration
 **Vulnerability:** Command Injection (CWE-78 variant). Found that some scripts using `eval` to restore trap configurations and shell states (e.g. `eval "$previous_int_trap"`) were vulnerable to command injection.
 **Learning:** Unquoted expansion of a saved `trap -p` declaration performs word splitting and globbing; it does not parse the declaration's quotes, so handlers containing spaces are not preserved. Quoting the entire declaration as a command also does not restore it.
