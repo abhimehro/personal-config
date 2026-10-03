@@ -1408,62 +1408,7 @@ def run_sync(args: argparse.Namespace) -> int:
     # 2. Resolve PR Context
     context = resolve_pr_context(args)
 
-    # 3. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
-    key_timeout = float(os.getenv("PR_RECAP_KEY_TIMEOUT", "8.0"))
-    linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
-
-    if not linear_key:
-        op_ref = config.secret_references.get(
-            "onepassword", "op://Personal/LINEAR_API_KEY/credential"
-        )
-        proton_ref = config.secret_references.get("protonpass", {})
-        proton_vault = (
-            proton_ref.get("vault", "Personal")
-            if isinstance(proton_ref, dict)
-            else "Personal"
-        )
-        proton_item = (
-            proton_ref.get("item", "LINEAR_API_KEY")
-            if isinstance(proton_ref, dict)
-            else "LINEAR_API_KEY"
-        )
-        proton_field = (
-            proton_ref.get("field", "Secret")
-            if isinstance(proton_ref, dict)
-            else "Secret"
-        )
-
-        if args.dry_run:
-            logger.warning(
-                "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
-                "Dry-run mode will plan without network mutations.",
-                op_ref,
-            )
-            linear_client = None
-        else:
-            logger.error(
-                "Linear API key could not be resolved from any available provider:\n"
-                "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
-                "  2. 1Password CLI: %s\n"
-                "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
-                "Action items:\n"
-                "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
-                "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
-                "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
-                "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
-                "  - Shell/CI: Export LINEAR_API_KEY\n"
-                "  - Dry-run: Run with --dry-run to preview actions without mutations.",
-                op_ref,
-                proton_vault,
-                proton_item,
-                proton_field,
-            )
-            return 1
-    else:
-        logger.info("Resolved Linear API key via %s", key_source)
-        linear_client = LinearClient(api_key=linear_key)
-
-    # 4. Extract Issue Keys & Relationships
+    # 3. Extract Issue Keys & Relationships
     issue_map = extract_issue_keys(
         branch_name=context.branch_name,
         commit_messages=context.commit_messages,
@@ -1471,6 +1416,16 @@ def run_sync(args: argparse.Namespace) -> int:
         pr_body=context.pr_body,
         explicit_issues=getattr(args, "issue", None) or (),
     )
+
+    # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
+    key_timeout = float(os.getenv("PR_RECAP_KEY_TIMEOUT", "8.0"))
+    linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
+
+    if linear_key:
+        logger.info("Resolved Linear API key via %s", key_source)
+        linear_client = LinearClient(api_key=linear_key)
+    else:
+        linear_client = None
 
     # 4b. Mirrored Linear Agent resolution fallback (when branch/commits link via GitHub issues or PR URLs)
     if not issue_map and linear_client:
@@ -1510,6 +1465,53 @@ def run_sync(args: argparse.Namespace) -> int:
             context.branch_name,
         )
         return 0
+
+    if not linear_client:
+        op_ref = config.secret_references.get(
+            "onepassword", "op://Personal/LINEAR_API_KEY/credential"
+        )
+        proton_ref = config.secret_references.get("protonpass", {})
+        proton_vault = (
+            proton_ref.get("vault", "Personal")
+            if isinstance(proton_ref, dict)
+            else "Personal"
+        )
+        proton_item = (
+            proton_ref.get("item", "LINEAR_API_KEY")
+            if isinstance(proton_ref, dict)
+            else "LINEAR_API_KEY"
+        )
+        proton_field = (
+            proton_ref.get("field", "Secret")
+            if isinstance(proton_ref, dict)
+            else "Secret"
+        )
+
+        if args.dry_run:
+            logger.warning(
+                "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
+                "Dry-run mode will plan without network mutations.",
+                op_ref,
+            )
+        else:
+            logger.error(
+                "Linear API key could not be resolved from any available provider:\n"
+                "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
+                "  2. 1Password CLI: %s\n"
+                "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
+                "Action items:\n"
+                "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
+                "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
+                "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
+                "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
+                "  - Shell/CI: Export LINEAR_API_KEY\n"
+                "  - Dry-run: Run with --dry-run to preview actions without mutations.",
+                op_ref,
+                proton_vault,
+                proton_item,
+                proton_field,
+            )
+            return 1
 
     logger.info("Extracted %d linked issue(s): %s", len(issue_map), issue_map)
 
