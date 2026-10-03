@@ -824,8 +824,3 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
-
-## 2026-08-19 - Command Injection Risk via eval in Trap Restoration
-**Vulnerability:** Command Injection (CWE-78 variant). Found that some scripts using `eval` to restore trap configurations and shell states (e.g. `eval "$previous_int_trap"`) were vulnerable to command injection.
-**Learning:** Unquoted expansion of a saved `trap -p` declaration performs word splitting and globbing; it does not parse the declaration's quotes, so handlers containing spaces are not preserved. Quoting the entire declaration as a command also does not restore it.
-**Prevention:** Prefer isolating temporary traps in a subshell `( ... )` when the work allows it, as in the 2026-06-01 entry. When a trap must be saved and restored in the current shell, pass each saved declaration as one quoted argument to `mole_restore_trap "$previous_int_trap"`. This helper validates Bash's single-quoted serialization, decodes the handler as data, and calls `trap -- "$handler" "$signal"` without evaluating the declaration; a declaration it cannot parse is skipped rather than executed. Retain direct execution of trusted, fixed-format saved `shopt` commands such as `$_nullglob_state`; those commands contain only simple words and do not need shell quote parsing.

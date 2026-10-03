@@ -774,9 +774,6 @@ cache_top_level_entry_count_capped() {
 	local count=0
 	local _nullglob_state
 	local _dotglob_state
-	# shopt -p only ever emits "shopt -s NAME" or "shopt -u NAME", so these saved
-	# strings restore with plain word splitting (see the matching restores below
-	# and the other shopt sites in lib/clean/apps.sh).
 	_nullglob_state=$(shopt -p nullglob || true)
 	_dotglob_state=$(shopt -p dotglob || true)
 	shopt -s nullglob dotglob
@@ -790,15 +787,13 @@ cache_top_level_entry_count_capped() {
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then $_dotglob_state; fi
+	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
 
 	[[ $count =~ ^[0-9]+$ ]] || count=0
 	printf '%s\n' "$count"
 }
 
-# Return 0 if $1 contains an existing entry (including hidden entries), else 1.
-# Preserve the caller's nullglob and dotglob settings while scanning.
 directory_has_entries() {
 	local dir="$1"
 	[[ -d $dir ]] || return 1
@@ -812,19 +807,17 @@ directory_has_entries() {
 	local item
 	for item in "$dir"/*; do
 		if [[ -e $item ]]; then
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then $_dotglob_state; fi
+			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
 			return 0
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
-	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then $_dotglob_state; fi
+	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+	if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
 	return 1
 }
 
-# Clean macOS and sandboxed app caches, then process shared group containers.
-# Honor dry-run mode and the protection checks in the cleanup helpers.
 clean_app_caches() {
 	start_section_spinner "Scanning app caches..."
 
@@ -889,7 +882,7 @@ clean_app_caches() {
 		[[ -d "$container_dir/Data/Library/Caches" ]] || continue
 		process_container_cache "$container_dir"
 	done
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then $_ng_state; fi
+	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
 	stop_section_spinner
 
 	if [[ $found_any == "true" ]]; then
@@ -964,8 +957,8 @@ process_container_cache() {
 			[[ -e $item ]] || continue
 			safe_remove "$item" true || true
 		done
-		if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
-		if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then $_dotglob_state; fi
+		if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+		if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
 	fi
 }
 
@@ -1095,8 +1088,8 @@ clean_group_container_caches() {
 					fi
 				done
 			fi
-			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
-			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then $_dotglob_state; fi
+			if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
+			if [[ $_dotglob_state == "shopt -"[su]" "* ]]; then eval "$_dotglob_state"; fi
 
 			if [[ $candidate_changed == "true" ]]; then
 				total_size=$((total_size + candidate_size_kb))
@@ -1105,7 +1098,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then $_nullglob_state; fi
+	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
 
 	stop_section_spinner
 
@@ -1802,7 +1795,7 @@ clean_application_support_logs() {
 	if [[ $pipefail_was_set == "true" ]]; then
 		set -o pipefail
 	fi
-	if [[ $_ng_state == "shopt -"[su]" "* ]]; then $_ng_state; fi
+	if [[ $_ng_state == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
 	stop_section_spinner
 	if [[ $found_any == "true" ]]; then
 		local size_human

@@ -24,8 +24,8 @@
 [maintenance]
 	repo = /Users/speedybee/dev/personal-config
 [credential "https://origin.cursor.com/git"]
-	helper = 
+	helper =
 	helper = !/Users/speedybee/.local/bin/origin credential-helper
 [credential "https://origin.cursor.com"]
-	helper = 
+	helper =
 	helper = !/Users/speedybee/.local/bin/origin credential-helper
