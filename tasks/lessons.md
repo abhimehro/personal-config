@@ -3201,3 +3201,24 @@ cap.
 **Detection cost:** Low —
 `gh pr view --json mergeable,mergeStateStatus,headRefOid` twice ~10s apart after
 a sibling squash.
+
+## Lesson 0ho: Jules pushes its whole session workspace — never merge main into an active Jules branch (2026-10-03)
+
+**Pattern:** On personal-config#2100 (Sentinel CWE-78 eval removal), a human
+merged `main` into `sentinel-fix-cwe-78-eval-10659358181609819876` while the
+Jules session that owned the branch was still running. Jules' workspace had
+been built on an Aug-26 base, so its next push (`7f3dd9b2`) reverted ~314
+files / −40k lines to that stale snapshot — deleting the new helper, the test
+suite, and dozens of unrelated files, while GitHub still reported the PR as
+"Mergeable" (the branch contained main as an ancestor).
+
+**Rule:** (1) Don't merge main into a branch an active Jules session owns, and
+don't let other bots commit to it — end the Jules session first, or salvage
+onto a new branch. (2) A new branch name is also the only reliable way to take
+bots off the target: a force-push lands on the same branch and Jules will
+"re-fix" it. (3) "Mergeable" means only that the merge won't conflict — always
+check `git diff --stat origin/main...HEAD` for unexpected file counts on
+bot-touched branches.
+
+**Detection cost:** Low — `git log --format='%an %h %s'` for bot committers;
+`git diff --stat origin/main...HEAD | wc -l` vs the claimed file list.
