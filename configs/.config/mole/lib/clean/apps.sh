@@ -1,6 +1,7 @@
 #!/bin/bash
 # Application Data Cleanup Module
 set -euo pipefail
+source "${BASH_SOURCE[0]%/*}/../core/shell-options.sh"
 
 readonly ORPHAN_AGE_THRESHOLD=${ORPHAN_AGE_THRESHOLD:-${MOLE_ORPHAN_AGE_DAYS:-30}}
 readonly CLAUDE_VM_ORPHAN_AGE_THRESHOLD=${MOLE_CLAUDE_VM_ORPHAN_AGE_DAYS:-7}

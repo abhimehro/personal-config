@@ -1,17 +1,7 @@
 #!/bin/bash
 # User Data Cleanup Module
 set -euo pipefail
-
-restore_mole_shopt_state() {
-	local option="$1"
-	local saved_state="$2"
-	case "$option:$saved_state" in
-		nullglob:"shopt -s nullglob") shopt -s nullglob ;;
-		nullglob:"shopt -u nullglob") shopt -u nullglob ;;
-		dotglob:"shopt -s dotglob") shopt -s dotglob ;;
-		dotglob:"shopt -u dotglob") shopt -u dotglob ;;
-	esac
-}
+source "${BASH_SOURCE[0]%/*}/../core/shell-options.sh"
 
 clean_user_essentials() {
 	start_section_spinner "Scanning caches..."
