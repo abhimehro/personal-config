@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 242
+ledger_revision: 247
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20300,8 +20300,11 @@ items:
   terminal_disposition: null
   current_owner: stage2
   next_owner: stage2
-  safe_default: 'Leave #353 open. Do not merge the conflicting original. Do not copy .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
-  next_action: 'Stage 2: salvage the unique static ISO8601DateFormatter reuse in Changelog.swift from #353. Allowed Sources/RepoPrompt/App/Changelog.swift only. Do not take .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
+  safe_default: 'Leave #353 open. Do not merge the conflicting original. Do not copy
+    .jules/bolt.md or Scripts/launch_startup_benchmark.py.'
+  next_action: 'Stage 2: salvage the unique static ISO8601DateFormatter reuse in Changelog.swift
+    from #353. Allowed Sources/RepoPrompt/App/Changelog.swift only. Do not take .jules/bolt.md
+    or Scripts/launch_startup_benchmark.py.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/353
   changed_paths:
@@ -20331,12 +20334,14 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #396 open. Do not merge the conflicting original. Do not copy .jules/palette.md.'
-  next_action: 'Stage 2: salvage the unique CheckRecommendationsButton tooltip and accessibility label from #396. Allowed Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift only. Do not take .jules/palette.md.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #396. Salvage draft #424 holds
+    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #396 vs salvage draft #424; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/396
   changed_paths:
@@ -20344,12 +20349,59 @@ items:
   - Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261003-rpce-396-i
-  revision: 1
-  updated_at_utc: '2026-10-03T14:22:00Z'
+  - evt-reconcile-20261003142654-59fbd02f
+  - evt-reconcile-20261003142654-26fe1ced
+  revision: 3
+  updated_at_utc: '2026-10-03T14:26:54Z'
+- key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0
+  repository: abhimehro/repoprompt-ce
+  pr: 424
+  url: https://github.com/abhimehro/repoprompt-ce/pull/424
+  base_sha: 0efe107782e16367a71ce576e4d70ee7d55b11a5
+  head_sha: 7042333fece909677601fe3803caf2a07189e0e0
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #424 (isDraft verified); original #396 remains
+    OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/424
+  - https://github.com/abhimehro/repoprompt-ce/pull/396
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-repoprompt-c-424-i
+  - evt-reconcile-20261003142654-c70530e5
+  - evt-reconcile-20261003142654-16558fea
+  revision: 3
+  updated_at_utc: '2026-10-03T14:26:54Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -47236,7 +47288,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:22:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/App/Changelog.swift on open #353 head 04c29008d151b4b405ed516ee8b32ad9aff72b74. Skip .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/App/Changelog.swift
+    on open #353 head 04c29008d151b4b405ed516ee8b32ad9aff72b74. Skip .jules/bolt.md
+    and Scripts/launch_startup_benchmark.py. Original stays OPEN. Do not merge.'
   successful: null
   policy_revision: null
 - event_id: evt-s1-20261003-rpce-396-i
@@ -47255,7 +47309,110 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T14:22:00Z'
   acknowledged_at_utc: null
-  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift on open #396 head 59e040fcf46433c5082516cc35763329b44fbd9d. Skip .jules/palette.md. Original stays OPEN. Do not merge.'
+  reason: 'Stage 1 conflict salvage book: unique product path Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
+    on open #396 head 59e040fcf46433c5082516cc35763329b44fbd9d. Skip .jules/palette.md.
+    Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003142654-59fbd02f
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d:evt-reconcile-20261003142654-59fbd02f
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:26:54Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 rpce-396: activate WI s2-20261003-rpce-396 before salvage draft
+    #424 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003142654-26fe1ced
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d:evt-reconcile-20261003142654-26fe1ced
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:26:54Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 rpce-396: draft #424 recovered unique remainder (CheckRecommendationsButton
+    tooltip plus accessibilityHint; palette.md excluded). Original #396 stays OPEN;
+    Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-repoprompt-c-424-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0:evt-s2-20261003-repoprompt-c-424-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:26:54Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #424 provenance to #396. Head 7042333fece9; 0gd draft
+    restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003142654-c70530e5
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0:evt-reconcile-20261003142654-c70530e5
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:26:54Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #424 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003142654-16558fea
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#424@7042333fece909677601fe3803caf2a07189e0e0:evt-reconcile-20261003142654-16558fea
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:26:54Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (CheckRecommendationsButton tooltip plus accessibilityHint;
+    palette.md excluded). Stage 1 re-ingests draft #424. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
   successful: null
   policy_revision: null
 stage2_work_items:
@@ -47270,7 +47427,10 @@ stage2_work_items:
   prohibited_paths:
   - .jules/bolt.md
   - Scripts/launch_startup_benchmark.py
-  repair_description: 'Replay the unique static ISO8601DateFormatter reuse in Changelog.swift from #353 onto current main. Allowed: Sources/RepoPrompt/App/Changelog.swift. Prohibit .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original #353 stays OPEN. Do not merge the conflicting original.'
+  repair_description: 'Replay the unique static ISO8601DateFormatter reuse in Changelog.swift
+    from #353 onto current main. Allowed: Sources/RepoPrompt/App/Changelog.swift.
+    Prohibit .jules/bolt.md and Scripts/launch_startup_benchmark.py. Original #353
+    stays OPEN. Do not merge the conflicting original.'
   required_test_command: git diff --check
   expected_test_result: git diff --check exits 0
   acceptance_criteria:
@@ -47284,31 +47444,6 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20261003-rpce-353-i
-  history: []
-- work_item_id: s2-20261003-rpce-396
-  source_item_key: abhimehro/repoprompt-ce#396@59e040fcf46433c5082516cc35763329b44fbd9d
-  repository: abhimehro/repoprompt-ce
-  pr: 396
-  base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
-  head_sha: 59e040fcf46433c5082516cc35763329b44fbd9d
-  allowed_paths:
-  - Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift
-  prohibited_paths:
-  - .jules/palette.md
-  repair_description: 'Replay the unique CheckRecommendationsButton tooltip and accessibility label from #396 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift. Prohibit .jules/palette.md. Original #396 stays OPEN. Do not merge the conflicting original.'
-  required_test_command: git diff --check
-  expected_test_result: git diff --check exits 0
-  acceptance_criteria:
-  - Diff is limited to Sources/RepoPrompt/Infrastructure/UI/Components/CheckRecommendationsButton.swift.
-  - No .jules/palette.md changes.
-  - git diff --check exits 0.
-  - 'Original #396 stays OPEN.'
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/396
-  expiry_utc: '2026-10-10T14:22:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261003-rpce-396-i
   history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
