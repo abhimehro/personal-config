@@ -762,7 +762,8 @@ class TestLinearClientReliability(unittest.TestCase):
 class TestEndToEndSync(unittest.TestCase):
     """Test end-to-end sync, CLI invocation, and safe no-op handling."""
 
-    def test_sync_no_issue_keys_is_safe_noop(self) -> None:
+    @patch("pr_recap.resolve_linear_api_key", return_value=("fake-key", "env"))
+    def test_sync_no_issue_keys_is_safe_noop(self, mock_key: MagicMock) -> None:
         parser = pr_recap.build_parser()
         args = parser.parse_args(
             [
