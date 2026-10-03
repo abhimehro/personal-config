@@ -456,7 +456,8 @@ class TestMoleGlobRestoration(unittest.TestCase):
             for function in ("cache_top_level_entry_count_capped", "directory_has_entries"):
                 with self.subTest(function=function, payload=payload):
                     observed = self.run_function(
-                        function, self.entries, mode="invalid", suffix=payload,
+                        function, self.entries, state=(True, True),
+                        mode="invalid", suffix=payload,
                     )
                     self.assert_restored(observed, (True, True))
 
