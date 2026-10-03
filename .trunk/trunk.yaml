@@ -56,6 +56,13 @@ lint:
     - trufflehog@3.97.9
     - yamllint@1.38.0
 actions:
+  definitions:
+    - id: pr-recap-sync
+      display_name: PR Recap Sync
+      description: Synchronize Linear issue with PR lifecycle
+      run: scripts/git-hooks/pre-push-pr-recap.sh
+      triggers:
+        - git_hooks: [pre-push]
   disabled:
     - trufflehog-pre-commit
     - commitlint
@@ -64,6 +71,7 @@ actions:
   enabled:
     - git-lfs
     - trunk-check-pre-push
+    - pr-recap-sync
     - trunk-announce
     - trunk-upgrade-available
 plugins:
