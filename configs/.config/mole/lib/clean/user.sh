@@ -1,6 +1,18 @@
 #!/bin/bash
 # User Data Cleanup Module
 set -euo pipefail
+
+restore_mole_shopt_state() {
+	local option="$1"
+	local saved_state="$2"
+	case "$option:$saved_state" in
+		nullglob:"shopt -s nullglob") shopt -s nullglob ;;
+		nullglob:"shopt -u nullglob") shopt -u nullglob ;;
+		dotglob:"shopt -s dotglob") shopt -s dotglob ;;
+		dotglob:"shopt -u dotglob") shopt -u dotglob ;;
+	esac
+}
+
 clean_user_essentials() {
 	start_section_spinner "Scanning caches..."
 	safe_clean ~/Library/Caches/* "User app cache"
@@ -787,8 +799,8 @@ cache_top_level_entry_count_capped() {
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
-	if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
+	restore_mole_shopt_state nullglob "$_nullglob_state"
+	restore_mole_shopt_state dotglob "$_dotglob_state"
 
 	[[ $count =~ ^[0-9]+$ ]] || count=0
 	printf '%s\n' "$count"
@@ -809,14 +821,14 @@ directory_has_entries() {
 	local item
 	for item in "$dir"/*; do
 		if [[ -e $item ]]; then
-			if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
-			if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
+			restore_mole_shopt_state nullglob "$_nullglob_state"
+			restore_mole_shopt_state dotglob "$_dotglob_state"
 			return 0
 		fi
 	done
 
-	if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
-	if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
+	restore_mole_shopt_state nullglob "$_nullglob_state"
+	restore_mole_shopt_state dotglob "$_dotglob_state"
 	return 1
 }
 
@@ -886,7 +898,7 @@ clean_app_caches() {
 		[[ -d "$container_dir/Data/Library/Caches" ]] || continue
 		process_container_cache "$container_dir"
 	done
-	if [[ $_ng_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_ng_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	restore_mole_shopt_state nullglob "$_ng_state"
 	stop_section_spinner
 
 	if [[ $found_any == "true" ]]; then
@@ -961,8 +973,8 @@ process_container_cache() {
 			[[ -e $item ]] || continue
 			safe_remove "$item" true || true
 		done
-		if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
-		if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
+		restore_mole_shopt_state nullglob "$_nullglob_state"
+		restore_mole_shopt_state dotglob "$_dotglob_state"
 	fi
 }
 
@@ -1092,8 +1104,8 @@ clean_group_container_caches() {
 					fi
 				done
 			fi
-			if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
-			if [[ $_dotglob_state == "shopt -s dotglob" ]]; then shopt -s dotglob; elif [[ $_dotglob_state == "shopt -u dotglob" ]]; then shopt -u dotglob; fi
+			restore_mole_shopt_state nullglob "$_nullglob_state"
+			restore_mole_shopt_state dotglob "$_dotglob_state"
 
 			if [[ $candidate_changed == "true" ]]; then
 				total_size=$((total_size + candidate_size_kb))
@@ -1102,7 +1114,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_outer_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_outer_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	restore_mole_shopt_state nullglob "$_outer_nullglob_state"
 
 	stop_section_spinner
 
@@ -1799,7 +1811,7 @@ clean_application_support_logs() {
 	if [[ $pipefail_was_set == "true" ]]; then
 		set -o pipefail
 	fi
-	if [[ $_ng_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_ng_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	restore_mole_shopt_state nullglob "$_ng_state"
 	stop_section_spinner
 	if [[ $found_any == "true" ]]; then
 		local size_human

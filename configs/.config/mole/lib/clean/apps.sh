@@ -403,7 +403,7 @@ clean_orphaned_app_data() {
 					fi
 				done
 			done
-			if [[ $_nullglob_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_nullglob_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+			restore_mole_shopt_state nullglob "$_nullglob_state"
 		fi
 	done
 	stop_section_spinner
@@ -855,7 +855,7 @@ clean_orphaned_container_stubs() {
 		done
 	done
 
-	if [[ $_ng_state == "shopt -s nullglob" ]]; then shopt -s nullglob; elif [[ $_ng_state == "shopt -u nullglob" ]]; then shopt -u nullglob; fi
+	restore_mole_shopt_state nullglob "$_ng_state"
 
 	if [[ $removed_count -gt 0 ]]; then
 		if [[ $DRY_RUN == "true" ]]; then
