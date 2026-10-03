@@ -4,8 +4,11 @@
 mole_restore_trap() {
 	local declaration="$1"
 	local signal="${declaration##* }"
+	# Bash serializes signals as SIGINT/SIGTERM, but older interpreters (macOS
+	# ships bash 3.2 as /bin/bash) print INT/TERM. Both spellings name the same
+	# three signals, so accept either; trap treats them identically.
 	case "$signal" in
-	EXIT | SIGINT | SIGTERM) ;;
+	EXIT | SIGINT | INT | SIGTERM | TERM) ;;
 	*) return 1 ;;
 	esac
 
