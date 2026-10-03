@@ -53,33 +53,38 @@ class TestPromptIncludeExpansion(unittest.TestCase):
             )
 
     def test_stage_prompts_have_no_includes_to_expand(self) -> None:
+        """Verify stage prompts are self-contained lifecycle contract sources."""
         for name in (
             "daily-pr-review.md",
             "daily-pr-salvage.md",
             "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
         ):
             with self.subTest(name):
                 raw = (PROMPTS / name).read_text(encoding="utf-8")
                 expanded = expand_prompt_source(PROMPTS / name)
                 self.assertNotIn("{{include:", raw)
                 self.assertEqual(expanded, raw)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", expanded)
                 self.assertIn("docs/automated-pr-lifecycle.md", expanded)
 
     def test_exports_store_expanded_prompt(self) -> None:
+        """Verify exports match expanded sources with one trailing newline."""
         for export_name in (
             "daily-pr-review.json",
             "daily-pr-salvage.json",
             "daily-pr-completion.json",
+            "daily-pr-completion.calibration.json",
         ):
             with self.subTest(export_name):
                 data = json.loads((EXPORTS / export_name).read_text(encoding="utf-8"))
                 prompt = data["prompts"][0]["prompt"]
                 self.assertNotIn("{{include:", prompt)
-                self.assertIn("scripts/pr_lifecycle_run.py --stage", prompt)
+                source = PROMPTS / export_name.replace(".json", ".md")
+                self.assertEqual(prompt, expand_prompt_source(source).strip() + "\n")
                 self.assertIn("docs/automated-pr-lifecycle.md", prompt)
 
     def test_rejects_path_traversal(self) -> None:
+        """Reject include directives that attempt parent directory traversal."""
         with self.assertRaises(PromptIncludeError):
             expand_prompt_includes("{{include:_../secrets.md}}\n", PROMPTS)
 
