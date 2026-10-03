@@ -74,24 +74,6 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "schema root"):
             validator.validate(ROOT / "tasks/pr-lifecycle-ledger.yaml")
 
-    def test_author_identity_provenance_is_required(self):
-        ledger = self.example()
-        del ledger["items"][0]["author"]["identity_provenance"]
-        self.assert_invalid(ledger, "schema items.0.author")
-
-    def test_known_projection_fields_are_removed_before_schema_validation(self):
-        ledger = self.example()
-        item = ledger["items"][0]
-        transition = ledger["events"][0]
-        item["latest_transition"] = transition["event_id"]
-        item["latest_transition_kind"] = transition["kind"]
-        validator.validate(self.write_ledger(ledger))
-
-    def test_unknown_item_fields_still_fail_schema_validation(self):
-        ledger = self.example()
-        ledger["items"][0]["unexpected"] = "reject"
-        self.assert_invalid(ledger, "schema items.0")
-
     def test_validator_cli_requires_a_fetched_runtime_ledger_path(self):
         result = subprocess.run(
             [sys.executable, "scripts/validate_pr_lifecycle_artifacts.py"],

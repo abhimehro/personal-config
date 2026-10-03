@@ -10,8 +10,6 @@ if [[ -n ${MOLE_TIMEOUT_LOADED-} ]]; then
 fi
 readonly MOLE_TIMEOUT_LOADED=1
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/traps.sh"
-
 # ============================================================================
 # Timeout Command Initialization
 # ============================================================================
@@ -237,7 +235,7 @@ run_with_timeout() {
 	set -e
 
 	if [[ -n $previous_int_trap ]]; then
-		mole_restore_trap "$previous_int_trap" || true
+		if [[ $previous_int_trap == "trap -- "* ]]; then eval "$previous_int_trap"; fi
 	else
 		trap - INT
 	fi

@@ -97,7 +97,6 @@ yarn-error.log*
 package-lock.json
 !copilot-demo/package-lock.json
 yarn.lock
-.gitnexus/
 
 # Ruby
 .bundle/
@@ -146,8 +145,6 @@ mcp-configs/servers.local.json
 .mcp-config.local.json
 
 # Shell/Python sed backup artifacts
-*.bak
-*.bak.*
 *.sh.bak
 *.sh.bak-*
 *.py.bak
@@ -318,7 +315,6 @@ GH_TOKEN.env
 patch_*.sh
 resolve_*.sh
 venv/
-.venv/
 
 # =============================================================================
 # TERRAFORM - Provider binaries and state
