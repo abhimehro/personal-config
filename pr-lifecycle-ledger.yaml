@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 248
+ledger_revision: 249
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20404,6 +20404,155 @@ items:
   - evt-reconcile-20261003142654-16558fea
   revision: 3
   updated_at_utc: '2026-10-03T14:26:54Z'
+- key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  repository: abhimehro/personal-config
+  pr: 2237
+  url: https://github.com/abhimehro/personal-config/pull/2237
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: cursor
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #2237 open. Do not merge the conflicting original. Do not copy tasks/lessons.md or the shared session-report files.'
+  next_action: 'Stage 2: salvage the unique 2026-09-19 dated run records from #2237. Allowed tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md only.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2237
+  changed_paths:
+  - tasks/completion-session-reports.md
+  - tasks/lessons.md
+  - tasks/pr-completion-2026-09-19.md
+  - tasks/pr-review-2026-09-19.md
+  - tasks/pr-salvage-2026-09-19-1700.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-pc-2237-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:43:00Z'
+- key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  repository: abhimehro/personal-config
+  pr: 2244
+  url: https://github.com/abhimehro/personal-config/pull/2244
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: cursor
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #2244 open. Do not merge the conflicting original. Do not copy tasks/lessons.md or the shared session-report files.'
+  next_action: 'Stage 2: salvage the unique 2026-09-20 dated run records from #2244. Allowed tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md only.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2244
+  changed_paths:
+  - tasks/completion-session-reports.md
+  - tasks/lessons.md
+  - tasks/pr-completion-2026-09-20.md
+  - tasks/pr-review-2026-09-20.md
+  - tasks/pr-salvage-2026-09-20-1700.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-pc-2244-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:43:00Z'
+- key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  repository: abhimehro/repoprompt-ce
+  pr: 359
+  url: https://github.com/abhimehro/repoprompt-ce/pull/359
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UI
+  risk_class: SENSITIVE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #359 open. Do not merge the conflicting original. Do not copy .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift.'
+  next_action: 'Stage 2: salvage the unique WorkspaceApprovalOverlayView and EnhancedMarkdownView changes from #359. Do not take .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/359
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-rpce-359-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:43:00Z'
+- key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  repository: abhimehro/repoprompt-ce
+  pr: 360
+  url: https://github.com/abhimehro/repoprompt-ce/pull/360
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: 90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: CI_INFRA
+  risk_class: SENSITIVE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE2_QUEUED
+  terminal_disposition: null
+  current_owner: stage2
+  next_owner: stage2
+  safe_default: 'Leave #360 open. Do not merge the conflicting original.'
+  next_action: 'Stage 2: salvage the unique CLIProcessRunner and DirectHeadlessOracleGroupTests changes from #360. Allowed those two paths only.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/360
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
+  - Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20261003-rpce-360-i
+  revision: 1
+  updated_at_utc: '2026-10-03T14:43:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -47462,7 +47611,195 @@ events:
     OPEN.
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s1-20261003-pc-2237-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4:evt-s1-20261003-pc-2237-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:43:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md on open #2237 head c4ee150a9bbfe9339735dbe0f8be25b236b16bc4. Skip tasks/lessons.md and the shared session-report files. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-pc-2244-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd:evt-s1-20261003-pc-2244-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:43:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique dated run records tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md on open #2244 head 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd. Skip tasks/lessons.md and the shared session-report files. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-rpce-359-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a:evt-s1-20261003-rpce-359-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:43:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique product paths WorkspaceApprovalOverlayView.swift and EnhancedMarkdownView.swift on open #359 head ab7e2b7262628aa886d7a50d16d04fb7c2321e0a. Skip .jules/palette.md, NotificationsButtonView.swift, and PreHighlightedCodeBlock.swift. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-rpce-360-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae:evt-s1-20261003-rpce-360-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T14:43:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 1 conflict salvage book: unique product paths CLIProcessRunner.swift and DirectHeadlessOracleGroupTests.swift on open #360 head 90ec07d7f88b88f9180c5ac42629ab5e2171cfae. Original stays OPEN. Do not merge.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261003-personal-config-2237
+  source_item_key: abhimehro/personal-config#2237@c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  repository: abhimehro/personal-config
+  pr: 2237
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: c4ee150a9bbfe9339735dbe0f8be25b236b16bc4
+  allowed_paths:
+  - tasks/pr-completion-2026-09-19.md
+  - tasks/pr-review-2026-09-19.md
+  - tasks/pr-salvage-2026-09-19-1700.md
+  prohibited_paths:
+  - tasks/lessons.md
+  - tasks/completion-session-reports.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  repair_description: 'Replay the unique 2026-09-19 dated run records from #2237 onto current main. Allowed: tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, tasks/pr-salvage-2026-09-19-1700.md. Prohibit tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, and tasks/salvage-session-reports.md. Original #2237 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to tasks/pr-completion-2026-09-19.md, tasks/pr-review-2026-09-19.md, and tasks/pr-salvage-2026-09-19-1700.md.
+  - No tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md changes.
+  - git diff --check exits 0.
+  - 'Original #2237 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2237
+  expiry_utc: '2026-10-10T14:43:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-pc-2237-i
+  history: []
+- work_item_id: s2-20261003-personal-config-2244
+  source_item_key: abhimehro/personal-config#2244@9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  repository: abhimehro/personal-config
+  pr: 2244
+  base_sha: 6b39995dfb5f4a3e4b44d46b249b209aadb22310
+  head_sha: 9d5df9a2c0e21c453a4fed7e5a32aaac81ac38fd
+  allowed_paths:
+  - tasks/pr-completion-2026-09-20.md
+  - tasks/pr-review-2026-09-20.md
+  - tasks/pr-salvage-2026-09-20-1700.md
+  prohibited_paths:
+  - tasks/lessons.md
+  - tasks/completion-session-reports.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  repair_description: 'Replay the unique 2026-09-20 dated run records from #2244 onto current main. Allowed: tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, tasks/pr-salvage-2026-09-20-1700.md. Prohibit tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, and tasks/salvage-session-reports.md. Original #2244 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to tasks/pr-completion-2026-09-20.md, tasks/pr-review-2026-09-20.md, and tasks/pr-salvage-2026-09-20-1700.md.
+  - No tasks/lessons.md, tasks/completion-session-reports.md, tasks/review-session-reports.md, or tasks/salvage-session-reports.md changes.
+  - git diff --check exits 0.
+  - 'Original #2244 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2244
+  expiry_utc: '2026-10-10T14:43:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-pc-2244-i
+  history: []
+- work_item_id: s2-20261003-repoprompt-ce-359
+  source_item_key: abhimehro/repoprompt-ce#359@ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  repository: abhimehro/repoprompt-ce
+  pr: 359
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: ab7e2b7262628aa886d7a50d16d04fb7c2321e0a
+  allowed_paths:
+  - Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift
+  prohibited_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift
+  repair_description: 'Replay the unique WorkspaceApprovalOverlayView and EnhancedMarkdownView changes from #359 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift and Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift. Prohibit .jules/palette.md, Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift, and Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift. Original #359 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to Sources/RepoPrompt/Infrastructure/UI/Components/WorkspaceApprovalOverlayView.swift and Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift.
+  - No .jules/palette.md, NotificationsButtonView.swift, or PreHighlightedCodeBlock.swift changes.
+  - git diff --check exits 0.
+  - 'Original #359 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/359
+  expiry_utc: '2026-10-10T14:43:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-rpce-359-i
+  history: []
+- work_item_id: s2-20261003-repoprompt-ce-360
+  source_item_key: abhimehro/repoprompt-ce#360@90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  repository: abhimehro/repoprompt-ce
+  pr: 360
+  base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
+  head_sha: 90ec07d7f88b88f9180c5ac42629ab5e2171cfae
+  allowed_paths:
+  - Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift
+  - Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift
+  prohibited_paths: []
+  repair_description: 'Replay the unique CLIProcessRunner and DirectHeadlessOracleGroupTests changes from #360 onto current main. Allowed: Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift. Original #360 stays OPEN. Do not merge the conflicting original.'
+  required_test_command: git diff --check
+  expected_test_result: git diff --check exits 0
+  acceptance_criteria:
+  - Diff is limited to Sources/RepoPrompt/Infrastructure/Process/CLIProcessRunner.swift and Tests/RepoPromptTests/MCP/DirectHeadlessOracleGroupTests.swift.
+  - git diff --check exits 0.
+  - 'Original #360 stays OPEN.'
+  provenance_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/360
+  expiry_utc: '2026-10-10T14:43:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261003-rpce-360-i
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
