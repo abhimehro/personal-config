@@ -37,14 +37,7 @@ echo ""
 # npm
 if command_exists npm; then
 	echo "📗 Updating npm packages..."
-	was_gitnexus_rc=0
-	if npm list -g gitnexus 2>/dev/null | grep -Eq '1\.6\.13-rc|@rc'; then
-		was_gitnexus_rc=1
-	fi
 	safe_run "npm update -g" "Updating global npm packages"
-	if [[ $was_gitnexus_rc -eq 1 ]]; then
-		safe_run "npm install -g gitnexus@1.6.13-rc.38" "Preserving gitnexus release candidate"
-	fi
 	safe_run "npm cache clean --force" "Cleaning npm cache"
 else
 	echo "   ⚠️  npm not found"

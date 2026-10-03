@@ -1,35 +1,3 @@
-# devin-handoff is opt-in. Devin session credentials cannot fetch
-# github.com/club-cog/devin-handoff (the git-manager proxy returns 403), which
-# fails the platform startup chain
-#   git pull --ff-only --recurse-submodules && git submodule sync --recursive \
-#     && git submodule update --init --recursive
-# and leaves the checkout stale.
-#
-#   update = none                -> `git submodule update --init` registers the
-#                                   submodule but never clones/fetches it.
-#   fetchRecurseSubmodules = false -> default/on-demand `git fetch` recursion
-#                                   skips it on already-populated clones.
-#   ignore = all                 -> hides the submodule from `git status` and
-#                                   the diff family for clones where it stays
-#                                   checked out at a stale commit (update=none
-#                                   never re-aligns it). Trade-off: it also
-#                                   hides real drift (local commits/edits) in
-#                                   an opted-in checkout; standalone
-#                                   `git submodule status`/`summary` still
-#                                   report it regardless.
-#
-# Known git limitation: an explicit `git pull`/`git fetch --recurse-submodules`
-# still forces a fetch of this submodule once it is registered (active) or
-# populated. Recover with `git submodule deinit -f devin-handoff` (also run
-# automatically by blueprint maintenance for populated checkouts/snapshots;
-# `active = false` in .git/config is the only full opt-out and cannot be set
-# from this file).
-#
-# To check it out explicitly:
-#   git -c submodule.devin-handoff.update=checkout submodule update --init devin-handoff
 [submodule "devin-handoff"]
 	path = devin-handoff
 	url = https://github.com/club-cog/devin-handoff.git
-	update = none
-	fetchRecurseSubmodules = false
-	ignore = all

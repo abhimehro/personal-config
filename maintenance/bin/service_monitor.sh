@@ -3,8 +3,6 @@
 # Service Monitor - Check disabled background services stay disabled
 # Part of the macOS maintenance system
 set -euo pipefail
-# Ensure HOME is set in launchd environment (which lacks login shell context)
-export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
@@ -147,8 +145,6 @@ count_widget_extensions() {
 }
 
 count_diagnostic_reports() {
-	# Ensure the directory exists so find cannot exit 1 under set -euo pipefail
-	mkdir -p "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null || true
 	find "$HOME/Library/Logs/DiagnosticReports" -type f -name "*.ips" 2>/dev/null | wc -l | tr -d ' '
 }
 

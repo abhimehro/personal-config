@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# Prefer caller/test HOME; default only when unset (Linux CI must not mkdir /Users).
-export HOME="${HOME:-/Users/speedybee}"
-
 # Self-contained system cleanup script - DAILY VERSION
 set -euo pipefail
 
@@ -123,8 +120,7 @@ fi
 for TDIR in "${TMPDIR:-/tmp}" "/tmp"; do
 	if [[ -d $TDIR ]]; then
 		log_info "Cleaning temporary files older than ${TMP_CLEAN_DAYS:-7} days in $TDIR"
-		# launchd does not set USER; derive it so `set -u` cannot abort here.
-		TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +"${TMP_CLEAN_DAYS:-7}" -user "${USER:-$(id -un)}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+		TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +"${TMP_CLEAN_DAYS:-7}" -user "${USER}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 		if [[ $TEMP_FILES_CLEANED -gt 0 ]]; then
 			log_info "Cleaned $TEMP_FILES_CLEANED temporary files from $TDIR"
 			CLEANED_ITEMS=$((CLEANED_ITEMS + TEMP_FILES_CLEANED))
