@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 216
+ledger_revision: 231
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19939,12 +19939,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #1627 open. Do not merge over the palette.md conflict.'
-  next_action: 'Stage 2: salvage unique alert_recommendations paths from #1627; prohibit .jules/palette.md.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #1627. Salvage draft #1703
+    holds the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #1627 vs salvage draft #1703; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1627
   changed_paths:
@@ -19953,12 +19955,14 @@ items:
   - tests/test_alert_recommendations.py
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261003-1627
-  revision: 1
-  updated_at_utc: '2026-10-03T09:20:00Z'
+  - evt-reconcile-20261003092353-6d6ced2c
+  - evt-reconcile-20261003092353-1966d921
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
 - key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
   repository: abhimehro/repoprompt-ce
   pr: 407
@@ -19979,12 +19983,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #407 open. Do not merge the overlapping AgentModelsSettingsView.swift or palette journal.'
-  next_action: 'Stage 2: salvage unique APISettingsView.swift from #407.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #407. Salvage draft #417 holds
+    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #407 vs salvage draft #417; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/407
   changed_paths:
@@ -19993,12 +19999,14 @@ items:
   - Sources/RepoPrompt/Features/Settings/Views/AgentModelsSettingsView.swift
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261003-407
-  revision: 1
-  updated_at_utc: '2026-10-03T09:20:00Z'
+  - evt-reconcile-20261003092353-27e057dd
+  - evt-reconcile-20261003092353-62e37f6e
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
 - key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
   repository: abhimehro/repoprompt-ce
   pr: 401
@@ -20019,12 +20027,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Leave #401 open. Do not merge the overlapping SettingsButton.swift or palette journal.'
-  next_action: 'Stage 2: salvage unique Buttons.swift from #401.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or close original #401. Salvage draft #418 holds
+    the unique-path reselect; Stage 1 owns draft merge authority after ready.'
+  next_action: 'Stage 3: reconcile original #401 vs salvage draft #418; leave original
+    OPEN (Stage 2 never merges/approves/closes originals).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/401
   changed_paths:
@@ -20033,12 +20043,150 @@ items:
   - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261003-401
-  revision: 1
-  updated_at_utc: '2026-10-03T09:20:00Z'
+  - evt-reconcile-20261003092353-660c9d64
+  - evt-reconcile-20261003092353-2d491790
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
+- key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009
+  repository: abhimehro/email-security-pipeline
+  pr: 1703
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1703
+  base_sha: 1ea052a685ab8d3310fa20325b08ca82c16201e8
+  head_sha: 26a4a71c32d319ce63c393dfb3570a8516c50009
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #1703 (isDraft verified); original #1627
+    remains OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1703
+  - https://github.com/abhimehro/email-security-pipeline/pull/1627
+  changed_paths:
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_recommendations.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-email-securi-1703-i
+  - evt-reconcile-20261003092353-b7fd41d6
+  - evt-reconcile-20261003092353-51433ee2
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
+- key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  repository: abhimehro/repoprompt-ce
+  pr: 417
+  url: https://github.com/abhimehro/repoprompt-ce/pull/417
+  base_sha: 7d0fe9994397428c0c49efd348fa61adcd5fdd1b
+  head_sha: f995c9ae58ead8230a28748dcab18e555c036775
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #417 (isDraft verified); original #407 remains
+    OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/417
+  - https://github.com/abhimehro/repoprompt-ce/pull/407
+  changed_paths:
+  - Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-repoprompt-c-417-i
+  - evt-reconcile-20261003092353-208f633a
+  - evt-reconcile-20261003092353-f5aa2eac
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
+- key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  repository: abhimehro/repoprompt-ce
+  pr: 418
+  url: https://github.com/abhimehro/repoprompt-ce/pull/418
+  base_sha: 7d0fe9994397428c0c49efd348fa61adcd5fdd1b
+  head_sha: 3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
+    0gd). Stage 1 re-ingests when the draft is unmarked.
+  next_action: 'Stage 1: re-ingest draft #418 (isDraft verified); original #401 remains
+    OPEN under Stage 3 reconciliation.'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/418
+  - https://github.com/abhimehro/repoprompt-ce/pull/401
+  changed_paths:
+  - Sources/RepoPrompt/Features/Chat/Views/Buttons.swift
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261003-repoprompt-c-418-i
+  - evt-reconcile-20261003092353-0da55f3e
+  - evt-reconcile-20261003092353-c812ecde
+  revision: 3
+  updated_at_utc: '2026-10-03T09:23:53Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -46287,7 +46435,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T09:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Rebase the deepfake alert recommendation onto current main. Keep only the unique module and its test. Do not take .jules/palette.md (journal collision with merged #1643).'
+  reason: 'Rebase the deepfake alert recommendation onto current main. Keep only the
+    unique module and its test. Do not take .jules/palette.md (journal collision with
+    merged #1643).'
   successful: null
   policy_revision: null
 - event_id: evt-s2-20261003-407
@@ -46306,7 +46456,9 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T09:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Carry the accessibility info-icon change in APISettingsView.swift onto current main. AgentModelsSettingsView.swift overlaps open #416 and .jules/palette.md collided with merged #411; both are prohibited.'
+  reason: 'Carry the accessibility info-icon change in APISettingsView.swift onto
+    current main. AgentModelsSettingsView.swift overlaps open #416 and .jules/palette.md
+    collided with merged #411; both are prohibited.'
   successful: null
   policy_revision: null
 - event_id: evt-s2-20261003-401
@@ -46325,85 +46477,315 @@ events:
   status: PROJECTED
   created_at_utc: '2026-10-03T09:20:00Z'
   acknowledged_at_utc: null
-  reason: 'Carry the icon-button accessibility labels in Buttons.swift onto current main. SettingsButton.swift overlaps open #375 and .jules/palette.md collided with merged #411; both are prohibited.'
+  reason: 'Carry the icon-button accessibility labels in Buttons.swift onto current
+    main. SettingsButton.swift overlaps open #375 and .jules/palette.md collided with
+    merged #411; both are prohibited.'
   successful: null
   policy_revision: null
-stage2_work_items:
-  - work_item_id: s2-20261003-email-1627
-    source_item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
-    repository: abhimehro/email-security-pipeline
-    pr: 1627
-    base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-    head_sha: cc616e26933dee6c5438fd187353b9dcff20d811
-    allowed_paths:
-    - src/modules/alert_recommendations.py
-    - tests/test_alert_recommendations.py
-    prohibited_paths:
-    - .jules/palette.md
-    repair_description: "Rebase the deepfake alert recommendation onto current main. Keep only the unique module and its test. Do not take .jules/palette.md (journal collision with merged #1643)."
-    required_test_command: "python3 -m pytest tests/test_alert_recommendations.py -q"
-    expected_test_result: "pytest exits 0"
-    acceptance_criteria:
-    - "Diff is limited to src/modules/alert_recommendations.py and tests/test_alert_recommendations.py."
-    - "tests/test_alert_recommendations.py passes."
-    - "No .jules/palette.md changes."
-    provenance_urls:
-    - https://github.com/abhimehro/email-security-pipeline/pull/1627
-    expiry_utc: '2026-10-10T09:20:00Z'
-    attempt_count: 0
-    current_owner: stage2
-    creation_event_id: evt-s2-20261003-1627
-    history: []
-  - work_item_id: s2-20261003-rp-407
-    source_item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
-    repository: abhimehro/repoprompt-ce
-    pr: 407
-    base_sha: 38be61210adba042d01d5ef7368b5f225bc78932
-    head_sha: 1a7e30568a551664b636bd00c7bab8abe2b7c48e
-    allowed_paths:
-    - Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift
-    prohibited_paths:
-    - .jules/palette.md
-    - Sources/RepoPrompt/Features/Settings/Views/AgentModelsSettingsView.swift
-    repair_description: "Carry the accessibility info-icon change in APISettingsView.swift onto current main. AgentModelsSettingsView.swift overlaps open #416 and .jules/palette.md collided with merged #411; both are prohibited."
-    required_test_command: "git diff --check"
-    expected_test_result: "git diff --check exits 0 and the salvage diff names only APISettingsView.swift"
-    acceptance_criteria:
-    - "Only Sources/RepoPrompt/Features/Settings/Views/APISettingsView.swift changes."
-    - "AgentModelsSettingsView.swift and .jules/palette.md are untouched."
-    - "git diff --check passes."
-    provenance_urls:
-    - https://github.com/abhimehro/repoprompt-ce/pull/407
-    expiry_utc: '2026-10-10T09:20:00Z'
-    attempt_count: 0
-    current_owner: stage2
-    creation_event_id: evt-s2-20261003-407
-    history: []
-  - work_item_id: s2-20261003-rp-401
-    source_item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
-    repository: abhimehro/repoprompt-ce
-    pr: 401
-    base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
-    head_sha: ec395389b239a34eec8d6201632e2a9b9d8cc364
-    allowed_paths:
-    - Sources/RepoPrompt/Features/Chat/Views/Buttons.swift
-    prohibited_paths:
-    - .jules/palette.md
-    - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
-    repair_description: "Carry the icon-button accessibility labels in Buttons.swift onto current main. SettingsButton.swift overlaps open #375 and .jules/palette.md collided with merged #411; both are prohibited."
-    required_test_command: "git diff --check"
-    expected_test_result: "git diff --check exits 0 and the salvage diff names only Buttons.swift"
-    acceptance_criteria:
-    - "Only Sources/RepoPrompt/Features/Chat/Views/Buttons.swift changes."
-    - "SettingsButton.swift and .jules/palette.md are untouched."
-    - "git diff --check passes."
-    provenance_urls:
-    - https://github.com/abhimehro/repoprompt-ce/pull/401
-    expiry_utc: '2026-10-10T09:20:00Z'
-    attempt_count: 0
-    current_owner: stage2
-    creation_event_id: evt-s2-20261003-401
-    history: []
+- event_id: evt-reconcile-20261003092353-6d6ced2c
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811:evt-reconcile-20261003092353-6d6ced2c
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: activate WI s2-20261003-email-1627 before salvage
+    draft #1703 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-1966d921
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811:evt-reconcile-20261003092353-1966d921
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: draft #1703 recovered unique remainder (deepfake alert
+    recommendation module and test; palette.md excluded). Original #1627 stays OPEN;
+    Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-email-securi-1703-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009:evt-s2-20261003-email-securi-1703-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1703 provenance to #1627. Head 26a4a71c32d3; 0gd
+    draft restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003092353-b7fd41d6
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009:evt-reconcile-20261003092353-b7fd41d6
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #1703 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-51433ee2
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1703@26a4a71c32d319ce63c393dfb3570a8516c50009:evt-reconcile-20261003092353-51433ee2
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (deepfake alert recommendation module and
+    test; palette.md excluded). Stage 1 re-ingests draft #1703. Merge authority is
+    never Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-27e057dd
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e:evt-reconcile-20261003092353-27e057dd
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: activate WI s2-20261003-rp-407 before salvage draft
+    #417 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-62e37f6e
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#407@1a7e30568a551664b636bd00c7bab8abe2b7c48e:evt-reconcile-20261003092353-62e37f6e
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: draft #417 recovered unique remainder (APISettingsView
+    info-icon labels; AgentModelsSettingsView and palette excluded). Original #407
+    stays OPEN; Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-repoprompt-c-417-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-s2-20261003-repoprompt-c-417-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #417 provenance to #407. Head f995c9ae58ea; 0gd draft
+    restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003092353-208f633a
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-reconcile-20261003092353-208f633a
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #417 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-f5aa2eac
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-reconcile-20261003092353-f5aa2eac
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (APISettingsView info-icon labels; AgentModelsSettingsView
+    and palette excluded). Stage 1 re-ingests draft #417. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-660c9d64
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364:evt-reconcile-20261003092353-660c9d64
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: activate WI s2-20261003-rp-401 before salvage draft
+    #418 handoff.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-2d491790
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#401@ec395389b239a34eec8d6201632e2a9b9d8cc364:evt-reconcile-20261003092353-2d491790
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Stage2 backlog hop2: draft #418 recovered unique remainder (Buttons.swift
+    icon-button labels; SettingsButton and palette excluded). Original #401 stays
+    OPEN; Stage 3 reconciles. Do not close.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261003-repoprompt-c-418-i
+  kind: IMPORT
+  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-s2-20261003-repoprompt-c-418-i
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #418 provenance to #401. Head 3af6d4e6e622; 0gd draft
+    restored after create (isDraft flipped ready once; gh pr ready --undo).'
+- event_id: evt-reconcile-20261003092353-0da55f3e
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-reconcile-20261003092353-0da55f3e
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Activate replacement draft #418 before Stage 1 re-ingest.'
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261003092353-c812ecde
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-reconcile-20261003092353-c812ecde
+  status: PROJECTED
+  created_at_utc: '2026-10-03T09:23:53Z'
+  acknowledged_at_utc: null
+  reason: 'Routine BOT salvage complete (Buttons.swift icon-button labels; SettingsButton
+    and palette excluded). Stage 1 re-ingests draft #418. Merge authority is never
+    Stage 2. PASS_ROUTINE.'
+  successful: null
+  policy_revision: null
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
