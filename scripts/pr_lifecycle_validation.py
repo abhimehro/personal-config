@@ -22,6 +22,19 @@ def validate(runtime_ledger: Path) -> None:
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
     validate_bootstrap_pointer(pointer, config)
     ledger = load_yaml(runtime_ledger)
+    _strip_in_memory_item_fields(ledger)
     validate_schema(ledger)
     validate_runtime_records(ledger, config)
     validate_exports_and_prompts(config)
+
+
+def _strip_in_memory_item_fields(ledger: object) -> None:
+    if not isinstance(ledger, dict):
+        return
+    items = ledger.get("items")
+    if not isinstance(items, list):
+        return
+    for item in items:
+        if isinstance(item, dict):
+            item.pop("latest_transition", None)
+            item.pop("latest_transition_kind", None)

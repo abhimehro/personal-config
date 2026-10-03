@@ -1,4 +1,4 @@
-#!/Users/speedybee/dev/personal-config/scripts/morning-brief/venv/bin/python3.15
+#!/usr/bin/env python3
 """
 Morning Brief Generator for Raycast.
 

@@ -32,6 +32,9 @@ items:
       login: dependabot[bot]
       identity_source: github_api
       app_slug: dependabot
+      identity_provenance:
+        method: allowlist_login
+        signals: [dependabot[bot]]
     author_type: BOT
     classification: DEPENDENCY
     risk_class: ROUTINE
@@ -64,6 +67,9 @@ items:
       login: dependabot[bot]
       identity_source: github_api
       app_slug: dependabot
+      identity_provenance:
+        method: allowlist_login
+        signals: [dependabot[bot]]
     author_type: BOT
     classification: DEPENDENCY
     risk_class: ROUTINE

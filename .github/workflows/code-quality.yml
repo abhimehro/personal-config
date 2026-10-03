@@ -10,6 +10,10 @@ on:
       - controld-system/**
       - windscribe-controld/**
       - Makefile
+      - "docs/cursor-automations/**"
+      - "tasks/pr-review-agent.config.yaml"
+      - "tasks/pr-lifecycle-ledger.example.yaml"
+      - ".github/workflows/code-quality.yml"
   push:
     branches:
       - main
