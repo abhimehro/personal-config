@@ -13,9 +13,20 @@ MOLE = REPO_ROOT / "configs/.config/mole"
 def nested_function(path, name):
     """Load only a restoration function, avoiding interactive/destructive entrypoints."""
     source = (MOLE / path).read_text()
-    start = source.index(f"\t{name}() {{\n")
-    end = source.index("\n\t}", start) + len("\n\t}")
-    return source[start:end]
+    opening = f"\t{name}() {{\n"
+    if opening not in source:
+        raise AssertionError(f"{path}: missing opening marker for {name}")
+    start = source.index(opening)
+    closing = "\n\t}"
+    if closing not in source[start:]:
+        raise AssertionError(f"{path}: missing closing marker for {name}")
+    end = source.index(closing, start) + len(closing)
+    body = source[start:end]
+    # A silently truncated or renamed slice would make every assertion pass
+    # while the real function is never executed.
+    if "mole_restore_trap" not in body:
+        raise AssertionError(f"{path}: {name} no longer calls mole_restore_trap")
+    return body
 
 
 class MoleTrapTests(unittest.TestCase):
