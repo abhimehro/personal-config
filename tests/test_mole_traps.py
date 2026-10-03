@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import unittest
 
@@ -30,12 +31,24 @@ def nested_function(path, name):
 
 
 class MoleTrapTests(unittest.TestCase):
+    def bash_bin(self):
+        """Resolve the interpreter explicitly so results do not depend on PATH."""
+        override = os.environ.get("MOLE_TEST_BASH_BIN")
+        for candidate in (override, "bash"):
+            if not candidate:
+                continue
+            resolved = candidate if os.path.isabs(candidate) else shutil.which(candidate)
+            if resolved:
+                return resolved
+        self.skipTest("no bash interpreter available")
+
     def run_bash(self, script, *args):
         env = os.environ.copy()
         env.pop("BASH_ENV", None)
         result = subprocess.run(
             [
-                "bash", "-c", 'set -euo pipefail\nsource "$1"\nshift\n' + script,
+                self.bash_bin(), "-c",
+                'set -euo pipefail\nsource "$1"\nshift\n' + script,
                 "mole-trap-test", str(MOLE / "lib/core/timeout.sh"), *args,
             ],
             text=True, capture_output=True, timeout=10, env=env,
