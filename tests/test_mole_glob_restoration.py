@@ -71,6 +71,7 @@ shopt() {
         case "$STATE_MODE" in
             append) printf '%s%s\n' "$saved" "$STATE_SUFFIX" ;;
             other_option) printf 'shopt -u extglob\n' ;;
+            other_glob) printf 'shopt -u dotglob\n' ;;
             invalid) printf '%s\n' "$STATE_SUFFIX" ;;
             *) printf '%s\n' "$saved" ;;
         esac
@@ -423,6 +424,15 @@ class TestMoleGlobRestoration(unittest.TestCase):
                     mode="other_option",
                 )
                 self.assert_restored(observed, (True, True))
+
+    def test_saved_state_for_other_glob_option_is_ignored(self):
+        self.populate(self.entries)
+        observed = self.run_function(
+            "cache_top_level_entry_count_capped", self.entries,
+            state=(False, False), mode="other_glob",
+        )
+        self.assertEqual(observed["nullglob"], "1")
+        self.assertEqual(observed["dotglob"], "0")
 
     def test_predicate_empty_return_does_not_execute_saved_state(self):
         for state in STATES:
