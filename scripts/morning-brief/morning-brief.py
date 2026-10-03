@@ -7,8 +7,8 @@ Google Calendar events, Louisiana RSS feeds, and podcast episodes,
 then saves it to Readwise Reader.
 
 Usage:
-    python3.15 morning-brief.py              # Normal run → saves to Readwise
-    python3.15 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
+    python3 morning-brief.py              # Normal run → saves to Readwise
+    python3 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
 
 Required env vars:
     READWISE_TOKEN
