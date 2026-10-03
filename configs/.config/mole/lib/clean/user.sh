@@ -981,8 +981,8 @@ clean_group_container_caches() {
 	local found_any=false
 
 	local container_dir
-	local _nullglob_state
-	_nullglob_state=$(shopt -p nullglob || true)
+	local _outer_nullglob_state
+	_outer_nullglob_state=$(shopt -p nullglob || true)
 	shopt -s nullglob
 
 	for container_dir in "$group_containers_dir"/*; do
@@ -1102,7 +1102,7 @@ clean_group_container_caches() {
 			fi
 		done
 	done
-	if [[ $_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
+	if [[ $_outer_nullglob_state == "shopt -"[su]" "* ]]; then if [[ $_outer_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_outer_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi; fi
 
 	stop_section_spinner
 
