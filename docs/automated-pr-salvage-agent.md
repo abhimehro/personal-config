@@ -1,6 +1,6 @@
 # Automated PR Salvage & Recovery Agent
 
-**Version:** 1.2 **Role:** Stage 2 in the durable three-stage PR lifecycle.
+**Version:** 1.4 **Role:** Stage 2 in the durable three-stage PR lifecycle.
 **Scope:** Convert one bounded, valuable, nonterminal PR item into a focused,
 tested draft recovery, or record why recovery is not currently safe.
 
@@ -15,15 +15,20 @@ PR-automation policy.
 The Salvage Agent is a **draft builder**. It does not re-triage the whole
 backlog, approve, merge, force-push, alter a pre-existing branch, alter
 repository settings, or close a security-sensitive original simply because it
-opened a replacement draft. Stage 3 owns reconciliation, completion eligibility,
-close cooldowns, and the compact human decision inbox.
+opened a replacement draft. Merge authority for salvage outputs is Stage 1
+(routine re-ingest), Stage 3 after approved calibration with an independent
+predicate check, or a human — never this stage. Stage 3 owns reconciliation,
+completion eligibility, close cooldowns, and the compact human decision inbox.
 
 ## Mission
 
 Stage 1 processes routine PRs at throughput. Stage 2 recovers only an item with
-a clear mechanical repair path. Stage 3 owns every remaining nonterminal state.
-The Salvage Agent's success measure is a small, auditable recovery outcome, not
-the number of branches it creates.
+a clear mechanical repair path. Stage 3 owns remainder that Stage 1 cannot
+execute. The Salvage Agent's success measure is a small, auditable recovery
+outcome, not the number of branches it creates. If the ledger has zero
+`current_owner: stage2` items and Stage 1 queued none, this is **empty intake**:
+write a short run record, push onto today's docs lineage if it exists, and stop.
+Do not invent recoveries. Empty intake is not a failed run.
 
 > A Stage 2 run leaves each candidate as a tested draft, a verified handoff to
 > Stage 3, or a structured failed-recovery record. It never leaves prose-only
@@ -79,15 +84,17 @@ policy choice, canonical selection, platform proof, security contract, or broad
 redesign, do not start a branch. Set the indicated guardrail outcome and hand it
 to Stage 3.
 
-| Live evidence                                                                                             | Outcome                                                | Next owner                                      |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
-| Change is already on `main` with a canonical PR/commit                                                    | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL` | Stage 3                                         |
-| No valuable remaining functional/test/doc change                                                          | `CLOSE_NONSECURITY_NOOP` candidate                     | Stage 3                                         |
-| One mechanical recovery can be applied to trusted `main` with a named test                                | Draft recovery                                         | Stage 3 after creation                          |
-| A required target platform is unavailable                                                                 | `HOLD_PLATFORM`                                        | Stage 3                                         |
-| Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved | `HOLD_CONTRACT` or `REVIEW_SECURITY`                   | Stage 3, then human packet if still irreducible |
-| Live checks/evidence cannot be obtained                                                                   | `HOLD_EVIDENCE`, one deterministic retry               | Stage 3 after retry failure                     |
-| Competing source/replacement candidates overlap                                                           | `HOLD_CANONICAL`                                       | Stage 3                                         |
+| Live evidence                                                                                                                       | Outcome                                                 | Next owner                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Change is already on `main` with a canonical PR/commit                                                                              | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL`  | Stage 1 `CLOSE_NONSECURITY_NOOP` now; Stage 1 canonical-pick if overlap                                     |
+| No valuable remaining functional/test/doc change                                                                                    | `CLOSE_NONSECURITY_NOOP` candidate                      | Stage 1                                                                                                     |
+| One mechanical recovery can be applied to trusted `main` with a named test                                                          | Draft recovery                                          | Stage 1 re-ingest if routine, else Stage 3 after creation                                                   |
+| A required **local salvage** platform is unavailable (Swift/Xcode/`make guardrails` on Linux)                                       | `HOLD_PLATFORM`                                         | Stage 3. Do not treat GitHub-green BOT product PRs as this hold.                                            |
+| Competing source/replacement candidates overlap among sticky-security or HUMAN members                                              | `HOLD_CANONICAL`                                        | Stage 3                                                                                                     |
+| Competing source overlap among BOT non-sensitive PRs                                                                                | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                                                                                     |
+| Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved                           | `HOLD_CONTRACT` or `REVIEW_SECURITY`                    | Stage 3, then human packet if still irreducible                                                             |
+| Live checks/evidence cannot be obtained                                                                                             | `HOLD_EVIDENCE`, one deterministic retry                | Stage 3 after retry failure                                                                                 |
+| personal-config `trunk-failed` while the PR is behind `main` (or "blocked Trunk from preparing the test branch" after `main` moved) | Bounce to Stage 1 stale-vs-main retry                   | Stage 1. Not a salvage of Trunk App/ruleset config. Update from `main`, then `/trunk merge` on the new SHA. |
 
 ## Draft recovery procedure
 
@@ -107,17 +114,40 @@ paths, verification command and result, and the reason the original was not
 completed directly. The draft remains a draft. Stage 2 does not approve or mark
 it ready.
 
+After GitHub returns a PR number, **re-read `isDraft`**. Create APIs that accept
+`draft: true` can still land **ready** (lesson **0gd**). Convert back to draft
+before handoff. Then CAS-write a **new ledger item** for the replacement keyed
+`owner/repo#PR@head_sha`, with provenance URLs to the original, the work-item
+id, test evidence, and `next_owner` Stage 1 if the replacement is
+routine/non-sensitive, otherwise Stage 3. A salvage PR without that item is an
+incomplete handoff: no later stage can merge it without rediscovery.
+
+Before applying `allowed_paths`, live-stat them on current `main`. If a path was
+removed or split (lesson **0fv**), do not expand scope; hand off
+`HOLD_EVIDENCE`.
+
 ## Operational Stage 2 workflow
 
 ### Step 0: Refresh the recovery tail
 
-Stage 2 does not discover its own broad backlog. It reads only `STAGE2_QUEUED`
-entries and complete `stage2_work_items` whose current owner is `stage2`. It
-re-fetches live GitHub state for each source PR and its base before use. A PR
-already merged, closed, deleted, or changed since its immutable anchors becomes
-a structured Stage 3 reconciliation handoff, not a recovery branch. Historical
-reports are evidence only; no prose `DEFER`, `DIRTY`, or `ESCALATE` record can
-create a Stage 2 task without a current, complete work item.
+Stage 2 does not discover a fourth queue. It reads `STAGE2_QUEUED` entries and
+complete `stage2_work_items` whose current owner is `stage2`. Unused salvage
+capacity while complete unexpired work items exist is a failed run. If a
+Stage-2-owned ledger item lacks a complete work item, materialize one from that
+item’s `changed_paths`, `next_action`, and live GitHub evidence, then recover.
+Historical reports are hints requiring live verify; no prose `DEFER`, `DIRTY`,
+or `ESCALATE` record is a work item by itself. A docs-only session with zero
+drafts and zero structured failed-recovery records is a failed run when
+salvageable bot work existed. True empty intake (zero Stage-2-owned items, zero
+queued work items, and zero salvage-eligible remainder) is a short record and
+stop. If salvage-eligible items exist, label `EMPTY_INTAKE_STARVATION` and still
+do not invent recoveries. **Option 3 skip-if-empty (2026-09-24):** when dry-run
+`stage2_work_item_count == 0` and post never-touch mechanical candidates == 0,
+exit success (`EMPTY_INTAKE_SKIP`); do not open/push a docs lineage PR and do
+not launch further Cursor agents. Stage 1 CAS-enqueues ≤5
+`CONFLICTING_UNIQUE_RESELECT` work items; Stage 2 still never merges originals.
+A PR already merged, closed, deleted, or changed since its immutable anchors
+becomes a structured Stage 3 reconciliation handoff, not a recovery branch.
 
 ### Step 1: Group by repository and detect shared infrastructure failure
 
@@ -209,10 +239,14 @@ new evidence.
 ## Run records, lessons, and handoffs
 
 Append the Stage 2 run to `tasks/salvage-session-reports.md` using
-`tasks/pr-stage-run-record.example.md`. Update only Stage-2-owned ledger
-entries. Add a lesson only when it changes a future routing, verification, or
-safety rule. Do not turn raw logs, speculative model output, or repetitive
-failures into durable policy.
+`tasks/pr-stage-run-record.example.md`, on the **same** personal-config
+`pr-lifecycle-docs-YYYYMMDD` PR Stage 1 opened (create that lineage once only if
+Stage 1 missed it). Push to that branch; do not open a sibling docs PR. Optional
+bulky snapshot: `tasks/pr-salvage-YYYY-MM-DD*.md`. Update only Stage-2-owned
+ledger entries. Add a lesson only as an EOF append when it changes a future
+routing, verification, or safety rule. Do not edit `AGENTS.md`, `tasks/todo.md`,
+or another stage's report. Do not turn raw logs, speculative model output, or
+repetitive failures into durable policy.
 
 Every Stage 3 handoff must include the draft URL or failed-recovery reason,
 immutable anchors, current changed paths, verification output, prior attempts,
@@ -235,10 +269,13 @@ semantics.
 ## Cursor configuration
 
 The Stage 2 Cursor automation runs at `0 17 * * *` UTC with one concurrent run
-and a maximum of five recovery candidates. It may use only the least-privilege
-repository connector needed to create an agent-owned draft branch and PR. It
-must not attach approval, review-request, generic comment, browser-control, or
-general shell-execution actions.
+and a maximum of ten recovery candidates. The live Dashboard exposes a shared
+MCP workspace inventory; the Dashboard-referenced MCP set for this stage is
+named in `prompts/daily-pr-salvage.md` (`gh` drafts, codescene, Context7,
+Sonatype pins). Tool visibility is not authority: Stage 2 remains draft-only and
+must not approve, request review, mark ready, merge, close, force-push, alter
+rulesets or workflow permissions, or use a connected tool to bypass its
+bounded-recovery contract.
 
 See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)

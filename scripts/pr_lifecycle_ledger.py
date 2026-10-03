@@ -45,8 +45,12 @@ STATE_OWNERS = {
 }
 LEGAL_TRANSITIONS = {
     "STAGE1_INTAKE": {"TERMINAL", "STAGE2_QUEUED", "STAGE3_RECONCILIATION"},
-    "STAGE2_QUEUED": {"STAGE2_ACTIVE", "STAGE3_RECONCILIATION"},
-    "STAGE2_ACTIVE": {"STAGE3_RECONCILIATION"},
+    "STAGE2_QUEUED": {
+        "STAGE1_INTAKE",
+        "STAGE2_ACTIVE",
+        "STAGE3_RECONCILIATION",
+    },
+    "STAGE2_ACTIVE": {"STAGE1_INTAKE", "STAGE3_RECONCILIATION"},
     "STAGE3_RECONCILIATION": {
         "STAGE1_INTAKE",
         "STAGE2_QUEUED",
@@ -320,6 +324,9 @@ def validate_terminal_transition_kind(event: dict[str, Any]) -> None:
 
 
 def apply_transition(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    # latest_transition* exist only on the in-memory projection. Persisting them
+    # onto items fails JSON Schema (additionalProperties: false). Use
+    # persistable_item() / strip_in_memory_item_fields() before dump or CAS.
     projected.update(
         {
             "revision": event["resulting_item_revision"],

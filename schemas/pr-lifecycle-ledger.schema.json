@@ -87,7 +87,25 @@
           "properties": {
             "login": { "type": "string", "minLength": 1 },
             "identity_source": { "const": "github_api" },
-            "app_slug": { "type": ["string", "null"] }
+            "app_slug": { "type": ["string", "null"] },
+            "identity_provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["method"],
+              "properties": {
+                "method": {
+                  "enum": [
+                    "allowlist_login",
+                    "allowlist_app_slug",
+                    "token_authored_signals"
+                  ]
+                },
+                "signals": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
           }
         },
         "author_type": { "enum": ["BOT", "HUMAN", "UNKNOWN"] },

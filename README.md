@@ -7,6 +7,9 @@
 [![CodeScene Hotspot Code Health](https://codescene.io/projects/80825/status-badges/hotspot-code-health)](https://codescene.io/projects/80825)
 [![CodeScene System Mastery](https://codescene.io/projects/80825/status-badges/system-mastery)](https://codescene.io/projects/80825)
 [![CodeScene Missed Goals](https://codescene.io/projects/80825/status-badges/missed-goals)](https://codescene.io/projects/80825)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/abhimehro/personal-config?utm_source=oss&utm_medium=github&utm_campaign=abhimehro%2Fpersonal-config&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=abhimehro_personal-config)](https://sonarcloud.io/summary/new_code?id=abhimehro_personal-config)
 
 A comprehensive repository for personal system configurations, scripts, and
 documentation to make my macOS development and gaming setup reproducible and
@@ -776,6 +779,13 @@ System: v3.0_ _SSH Configuration: v2.0_
   - `github-proton` – same as `github.com` but bound to Proton’s
     `IdentityAgent`.
   - `proton-*` – any host matching this pattern prefers Proton’s agent.
+
+- Shell integration (fish / zsh / bash + agent-shell workspaces):
+  - `SSH_AUTH_SOCK` auto-selects `~/.ssh/proton-pass-ssh-agent.sock` when the
+    agent is actually responding (probed with `ssh-add -l`); falls back to the
+    1Password / launchd agent otherwise.
+  - Override with `PROTON_AGENT_SKIP=1`; skipped in agent/CI contexts
+    (`CURSOR_AGENT`, `CI`, `GITHUB_ACTIONS`) and non-interactive fish.
 
 **Usage examples:**
 
