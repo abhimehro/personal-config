@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 232
+ledger_revision: 233
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19897,17 +19897,18 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
-    0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #2400 (isDraft verified); original #2254
-    remains OPEN under Stage 3 reconciliation.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Terminal MERGED_ROUTINE. Do not reopen #2400.'
+  next_action: 'TERMINAL MERGED_ROUTINE via Trunk #2400 merge 2bd4be5396fdb08ca734d614d9b1c67942ef4f2d.
+    Do not re-queue.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2400
   - https://github.com/abhimehro/personal-config/pull/2254
+  - https://github.com/abhimehro/personal-config/pull/2400
+  - https://github.com/abhimehro/personal-config/commit/2bd4be5396fdb08ca734d614d9b1c67942ef4f2d
   changed_paths:
   - tasks/pr-review-2026-09-21.md
   - tasks/pr-salvage-2026-09-21-1700.md
@@ -19919,8 +19920,9 @@ items:
   - evt-s2-20261003-personalconfig-2400-i
   - evt-reconcile-20261003090641-61f396bb
   - evt-reconcile-20261003090641-9265c35c
-  revision: 3
-  updated_at_utc: '2026-10-03T09:06:41Z'
+  - evt-s1-20261003-pc-2400-merged
+  revision: 4
+  updated_at_utc: '2026-10-03T10:03:33Z'
 - key: abhimehro/email-security-pipeline#1627@cc616e26933dee6c5438fd187353b9dcff20d811
   repository: abhimehro/email-security-pipeline
   pr: 1627
@@ -46808,6 +46810,28 @@ events:
     .github/ISSUE_TEMPLATE/custom.md. Prohibit requirements.txt (lockfile), README.md
     and WARP.md (open on #1584), and the diagnose_docker_connectivity relocate (source
     path also open on #1661).'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261003-pc-2400-merged
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d:evt-s1-20261003-pc-2400-merged
+  status: PROJECTED
+  created_at_utc: '2026-10-03T10:03:33Z'
+  acknowledged_at_utc: null
+  reason: 'Trunk merged salvage draft #2400 at 2bd4be5396fdb08ca734d614d9b1c67942ef4f2d
+    (head 8985cb0ffdaf0dced7c5d408127a59af6d53bada, base 258f071555d6bfbc51d9a2a26d0e81170901cdf5).
+    Two dated run records only. Original #2254 reopened; it still has lessons.md and
+    the session-report logs.'
   successful: null
   policy_revision: null
 stage2_work_items:
