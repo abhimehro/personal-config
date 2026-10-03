@@ -6,7 +6,11 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from get_prs_summarize import _format_pr_row, automation_hints, check_summary
+from get_prs_summarize import (  # noqa: E402
+    _format_pr_row,
+    automation_hints,
+    check_summary,
+)
 
 
 class TestAutomationHints(unittest.TestCase):
