@@ -350,3 +350,5 @@ venv/
 browserless/browserless.env
 # Keep browserless lockfile for reproducible installs (matches copilot-demo)
 !browserless/package-lock.json
+# Causari local ledger — captured prompts, completions and reasoning.
+.causari/
