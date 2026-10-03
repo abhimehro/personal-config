@@ -115,9 +115,20 @@ def _execute_requests(num_requests, concurrency, url, auth_header):
 
 
 def _print_benchmark_results(scenario_name, results, total_time):
-    successes = [r for r in results if isinstance(r[2], int) and r[2] in (200, 401)]
-    rate_limited = [r for r in results if isinstance(r[2], int) and r[2] == 429]
-    failures = [r for r in results if r not in successes and r not in rate_limited]
+    successes = []
+    rate_limited = []
+    failures = []
+    for r in results:
+        status = r[2]
+        if isinstance(status, int):
+            if status in (200, 401):
+                successes.append(r)
+            elif status == 429:
+                rate_limited.append(r)
+            else:
+                failures.append(r)
+        else:
+            failures.append(r)
 
     if successes or rate_limited:
         valid_responses = successes + rate_limited
