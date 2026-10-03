@@ -794,6 +794,9 @@ cache_top_level_entry_count_capped() {
 	printf '%s\n' "$count"
 }
 
+# Return 0 if directory $1 has an existing entry, including hidden entries;
+# return 1 for a missing or empty directory. Dangling symlinks do not count.
+# Restore the caller's nullglob and dotglob settings before returning.
 directory_has_entries() {
 	local dir="$1"
 	[[ -d $dir ]] || return 1
@@ -818,6 +821,9 @@ directory_has_entries() {
 	return 1
 }
 
+# Clean system and sandboxed app caches under HOME using the safe cleanup helpers.
+# Takes no arguments; honors DRY_RUN and reports sandboxed cache totals through
+# files_cleaned, total_size_cleaned, and total_items before group-container cleanup.
 clean_app_caches() {
 	start_section_spinner "Scanning app caches..."
 
