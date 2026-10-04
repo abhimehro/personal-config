@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## Lesson 0ht: Reconcile head drift must stay schema-valid (2026-10-04)
+
+**Pattern:** `pr_lifecycle_reconcile.py --apply` wrote a live `head_sha` onto an
+item whose key was still `repository#pr@oldsha`, and `REANCHOR_HEAD` /
+`TERMINAL_OBSERVED` incremented `revision` with no transition event. Validation
+stops at the first bad item, so one sticky or drifted anchor aborted the whole
+CAS. A CLOSED PR already noted `Observed CLOSED unclassified` then fell through
+into `SHA_DRIFT_REINTAKE` because the pending classifier returned None.
+
+**Rule:** (1) Rekey `key`, event `item_key`, and `idempotency_key` before
+building a transition when the head changes; if that key is taken, skip the
+item. (2) Do not bump item revision without an event. (3) Skip
+`REVIEW_SECURITY` and non-bot head moves per item (`sticky_anchor`) so the rest
+of the batch can commit. (4) MERGED/CLOSED live state never falls through to
+SHA re-intake. (5) Do not treat a behind-main Trunk failure as permission to
+squash personal-config.
+
+**Detection cost:** Low — `python3 -m unittest tests.test_pr_lifecycle_reconcile`
+covers rekey, sticky skip, taken key, and closed-observation drift.
+
 ## Lesson 0hs: A check must never mutate files (2026-09-26)
 
 **Pattern:** A plain, non-interactive `trunk check <files>` applied deno

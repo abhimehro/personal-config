@@ -1,3 +1,35 @@
+# Stage 1 — 2026-10-04 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE**. Calibration **APPROVED** count
+**7/7** — **not** incremented and **not** reset. Run id
+`20261004T150556Z-9106a422`. Signals **OK** (queried 11, candidates 11).
+`FEED_CHECK` **PASS** (Stage-1 reselect candidates **0**, enqueued **0**).
+Pipeline health reselect count **6** is Stage-3-owned and was not re-queued.
+`salvage_eligible_count` **0**, starvation **false**. No `ENQUEUE_STAGE2_WI`.
+Product GitHub mutations **0** (no merges, closes, or `/trunk merge`).
+
+Ledger CAS **265 → 283** (18 schema-valid transitions; commit
+`d2f2d80dd1785165546c50732a72def3742a8d39`, blob
+`5b0d3f8c1358a113b7b968eecb77a951aa764f18`, parent
+`4aa3f6dfd6e0a7afe7a93cc23f7e0bc7cb7f17cd`), then **283 → 292** after the
+reconcile fix (9 transitions; commit `bc750012695e7896b80e7c2e802653ab837006ec`,
+blob `1d05385eae4f3b15ef04b2645cac28e5882eae96`, parent `d2f2d80d`). Code fix:
+personal-config #2416. Docs lineage: `pr-lifecycle-docs-20261004` (this PR).
+Do **not** `/trunk merge` today's lineage in the opening run (**0gj**). Do
+**not** Trunk conflicting docs **#2254**, **#2244**, or **#2237**. Full record:
+`tasks/pr-review-2026-10-04-1500.md`. Lesson **0ht**.
+
+| Metric                         | Count |
+| ------------------------------ | ----: |
+| Stage-1 reselect candidates    |     0 |
+| Stage 2 queued (this run)      |     0 |
+| Salvage-eligible remainder     |     0 |
+| First CAS transitions          |    18 |
+| Second CAS transitions         |     9 |
+| Sticky anchors left unchanged  |     4 |
+| GitHub PR mutations            |     0 |
+| Ledger CAS writes              |     2 |
+
 # Stage 1 — 2026-08-29 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
