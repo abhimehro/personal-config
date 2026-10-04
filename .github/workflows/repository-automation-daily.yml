@@ -131,8 +131,11 @@ jobs:
         with:
           python-version: "3.13"
 
+      # NOTE: this job runs `make test-quick` / `make test-all`. Those import
+      # jsonschema (PR-lifecycle artifacts) and requests. PyYAML alone fails
+      # the smoke step with ModuleNotFoundError. Pins stay in requirements.txt.
       - name: Install automation runner dependencies
-        run: python -m pip install --upgrade pip "pyyaml==6.0.3"
+        run: python -m pip install --upgrade pip -r requirements.txt
 
       - name: Setup ShellCheck (cached)
         uses: ./.github/actions/setup-shellcheck
