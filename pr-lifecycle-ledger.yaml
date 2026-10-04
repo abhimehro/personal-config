@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 283
+ledger_revision: 292
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -18248,8 +18248,7 @@ items:
   next_owner: stage3
   safe_default: HUMAN cannot be ROUTINE. Do not merge qodo cherry-pick PRs as bot
     work.
-  next_action: HUMAN_REVIEW qodo cherry-pick MERGEABLE UNSTABLE. Not bot identity.
-    Do not merge. Packet/human only. Expires 2026-09-25T19:36:00Z.
+  next_action: 'Observed CLOSED unclassified: no disposition-bearing label'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/821
   changed_paths:
@@ -18261,7 +18260,7 @@ items:
   handoffs:
   - evt-s1-20260909-seatekanalys-821-h
   revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/Seatek_Analysis#819@bf04caa0624f2f987a47d4c959cb2eba23212412
   repository: abhimehro/Seatek_Analysis
   pr: 819
@@ -18287,8 +18286,7 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge UNKNOWN-merge-state workflow PRs or failing CodeQL.
-  next_action: HOLD_EVIDENCE Copilot CI/docs (workflows). Mergeable UNKNOWN. Do not
-    merge workflow PRs. Expires 2026-09-25T19:36:00Z.
+  next_action: 'Observed CLOSED unclassified: no disposition-bearing label'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/819
   changed_paths:
@@ -18304,7 +18302,7 @@ items:
   handoffs:
   - evt-s1-20260909-seatekanalys-819-h
   revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/Seatek_Analysis#816@f5ea3a68b27df3ce4e1e0b13b1bc913b3e20c944
   repository: abhimehro/Seatek_Analysis
   pr: 816
@@ -18415,8 +18413,7 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: HUMAN cannot be ROUTINE. Do not merge qodo security.py edits.
-  next_action: REVIEW_SECURITY HUMAN qodo filename sanitization CONFLICTING. Do not
-    merge. Expires 2026-09-25T19:36:00Z.
+  next_action: 'Observed CLOSED unclassified: no disposition-bearing label'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/631
   changed_paths:
@@ -18429,7 +18426,7 @@ items:
   handoffs:
   - evt-s1-20260909-hydrographve-631-h
   revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#630@b9e2340010c78bf48ce003dd1221489f5a040661
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 630
@@ -18499,8 +18496,7 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge Sentinel security PRs with failing Codacy.
-  next_action: REVIEW_SECURITY Sentinel Unicode sanitization MERGEABLE UNSTABLE. Do
-    not merge sticky security. Expires 2026-09-25T19:36:00Z.
+  next_action: 'Observed CLOSED unclassified: no disposition-bearing label'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/629
   changed_paths:
@@ -18514,7 +18510,7 @@ items:
   handoffs:
   - evt-s1-20260909-hydrographve-629-h
   revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#626@923e9a7c659c779f2a829d2c4dbd9c2d3c4ac784
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 626
@@ -18582,8 +18578,7 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not merge Sentinel security PRs with failing Codacy.
-  next_action: REVIEW_SECURITY Sentinel filename sanitization MERGEABLE UNSTABLE.
-    Do not merge sticky security. Expires 2026-09-25T19:36:00Z.
+  next_action: 'Observed CLOSED unclassified: no disposition-bearing label'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/621
   changed_paths:
@@ -18596,7 +18591,7 @@ items:
   handoffs:
   - evt-s1-20260909-hydrographve-621-h
   revision: 1
-  updated_at_utc: '2026-09-18T19:36:30Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/series_correction_project_updated#440@949f8808f4c79b2839ad441e19931aad2f4a6fe6
   repository: abhimehro/series_correction_project_updated
   pr: 440
@@ -19543,12 +19538,12 @@ items:
   - evt-s1-20260921-seriescorre-467-t
   revision: 1
   updated_at_utc: '2026-09-21T15:14:31Z'
-- key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+- key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174
   repository: abhimehro/personal-config
   pr: 2317
   url: https://github.com/abhimehro/personal-config/pull/2317
-  base_sha: 0ff9ee2125b56ea268bb34b3d474778c1cdecf0a
-  head_sha: 722bf655f38402290fce813b0e255e6220d7b3b4
+  base_sha: db119b496bef42c0550866ff101978a895c02fbe
+  head_sha: e9f9490198f67ba54e17fecc702d78cd440b0174
   author:
     login: abhimehro
     identity_source: github_api
@@ -19571,8 +19566,8 @@ items:
   next_owner: stage1
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #2317 (isDraft verified); originals #2069
-    remain OPEN under Stage 3 reconciliation.'
+  next_action: Re-anchored to live head e9f9490198f67ba54e17fecc702d78cd440b0174;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2317
   - https://github.com/abhimehro/personal-config/pull/2069
@@ -19595,13 +19590,13 @@ items:
   - evt-reconcile-20260927234506-84ce848d
   - evt-reconcile-20260927234506-fff06252
   revision: 3
-  updated_at_utc: '2026-09-27T23:45:06Z'
-- key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  updated_at_utc: '2026-10-04T15:22:21Z'
+- key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab
   repository: abhimehro/personal-config
   pr: 2318
   url: https://github.com/abhimehro/personal-config/pull/2318
-  base_sha: 0ff9ee2125b56ea268bb34b3d474778c1cdecf0a
-  head_sha: 96730f6c399fd23379c66fca08e1b8c3eed340e1
+  base_sha: 40877efc3097262cd55b521f5cb456944aa40a0a
+  head_sha: 68469e1289eabf2c5ea01f61efe90abef4ffdbab
   author:
     login: abhimehro
     identity_source: github_api
@@ -19624,8 +19619,8 @@ items:
   next_owner: stage1
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #2318 (isDraft verified); originals #2090
-    remain OPEN under Stage 3 reconciliation.'
+  next_action: Re-anchored to live head 68469e1289eabf2c5ea01f61efe90abef4ffdbab;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2318
   - https://github.com/abhimehro/personal-config/pull/2090
@@ -19641,7 +19636,7 @@ items:
   - evt-reconcile-20260927234506-59f738fb
   - evt-reconcile-20260927234506-f55ddded
   revision: 3
-  updated_at_utc: '2026-09-27T23:45:06Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/personal-config#2319@d8da67d30f7b8fa2b6ba07cd8e8ded9d20a29bb3
   repository: abhimehro/personal-config
   pr: 2319
@@ -20108,12 +20103,12 @@ items:
   - evt-reconcile-20261003092353-51433ee2
   revision: 3
   updated_at_utc: '2026-10-03T09:23:53Z'
-- key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+- key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0
   repository: abhimehro/repoprompt-ce
   pr: 417
   url: https://github.com/abhimehro/repoprompt-ce/pull/417
-  base_sha: 7d0fe9994397428c0c49efd348fa61adcd5fdd1b
-  head_sha: f995c9ae58ead8230a28748dcab18e555c036775
+  base_sha: 8a5c9052bf7f36caea1ff6b0ed61bcf742712aa7
+  head_sha: 81d6e73543a19e056ad644886d33f1103fcfeef0
   author:
     login: abhimehro
     identity_source: github_api
@@ -20136,8 +20131,8 @@ items:
   next_owner: stage1
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #417 (isDraft verified); original #407 remains
-    OPEN under Stage 3 reconciliation.'
+  next_action: Re-anchored to live head 81d6e73543a19e056ad644886d33f1103fcfeef0;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/417
   - https://github.com/abhimehro/repoprompt-ce/pull/407
@@ -20152,13 +20147,13 @@ items:
   - evt-reconcile-20261003092353-208f633a
   - evt-reconcile-20261003092353-f5aa2eac
   revision: 3
-  updated_at_utc: '2026-10-03T09:23:53Z'
-- key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  updated_at_utc: '2026-10-04T15:22:21Z'
+- key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c
   repository: abhimehro/repoprompt-ce
   pr: 418
   url: https://github.com/abhimehro/repoprompt-ce/pull/418
-  base_sha: 7d0fe9994397428c0c49efd348fa61adcd5fdd1b
-  head_sha: 3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  base_sha: 8a5c9052bf7f36caea1ff6b0ed61bcf742712aa7
+  head_sha: 19e036b798ec52b8f802659f3a58ad632a018c9c
   author:
     login: abhimehro
     identity_source: github_api
@@ -20181,8 +20176,8 @@ items:
   next_owner: stage1
   safe_default: Do not merge the salvage draft unattended. Re-read isDraft (lesson
     0gd). Stage 1 re-ingests when the draft is unmarked.
-  next_action: 'Stage 1: re-ingest draft #418 (isDraft verified); original #401 remains
-    OPEN under Stage 3 reconciliation.'
+  next_action: Re-anchored to live head 19e036b798ec52b8f802659f3a58ad632a018c9c;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/418
   - https://github.com/abhimehro/repoprompt-ce/pull/401
@@ -20197,7 +20192,7 @@ items:
   - evt-reconcile-20261003092353-0da55f3e
   - evt-reconcile-20261003092353-c812ecde
   revision: 3
-  updated_at_utc: '2026-10-03T09:23:53Z'
+  updated_at_utc: '2026-10-04T15:22:21Z'
 - key: abhimehro/email-security-pipeline#1633@6c4f96863e50b05aa3eacde8e03e8233a8ddd234
   repository: abhimehro/email-security-pipeline
   pr: 1633
@@ -46125,7 +46120,7 @@ events:
   policy_revision: null
 - event_id: evt-s2-20260927-personalconfig-2317-i
   kind: IMPORT
-  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  item_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174
   from_owner: stage1
   to_owner: stage2
   from_state: STAGE1_INTAKE
@@ -46135,7 +46130,7 @@ events:
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-s2-20260927-personalconfig-2317-i
+  idempotency_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174:evt-s2-20260927-personalconfig-2317-i
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -46145,7 +46140,7 @@ events:
     draft=true on create (re-verified after create).'
 - event_id: evt-reconcile-20260927234506-84ce848d
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  item_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174
   from_owner: stage2
   to_owner: stage2
   from_state: STAGE2_QUEUED
@@ -46155,7 +46150,7 @@ events:
   parent_event_id: null
   expected_item_revision: 1
   resulting_item_revision: 2
-  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-reconcile-20260927234506-84ce848d
+  idempotency_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174:evt-reconcile-20260927234506-84ce848d
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -46164,7 +46159,7 @@ events:
   policy_revision: null
 - event_id: evt-reconcile-20260927234506-fff06252
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4
+  item_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174
   from_owner: stage2
   to_owner: stage1
   from_state: STAGE2_ACTIVE
@@ -46174,7 +46169,7 @@ events:
   parent_event_id: null
   expected_item_revision: 2
   resulting_item_revision: 3
-  idempotency_key: abhimehro/personal-config#2317@722bf655f38402290fce813b0e255e6220d7b3b4:evt-reconcile-20260927234506-fff06252
+  idempotency_key: abhimehro/personal-config#2317@e9f9490198f67ba54e17fecc702d78cd440b0174:evt-reconcile-20260927234506-fff06252
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -46226,7 +46221,7 @@ events:
   policy_revision: null
 - event_id: evt-s2-20260927-personalconfig-2318-i
   kind: IMPORT
-  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  item_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab
   from_owner: stage1
   to_owner: stage2
   from_state: STAGE1_INTAKE
@@ -46236,7 +46231,7 @@ events:
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-s2-20260927-personalconfig-2318-i
+  idempotency_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab:evt-s2-20260927-personalconfig-2318-i
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -46246,7 +46241,7 @@ events:
     draft=true on create (re-verified after create).'
 - event_id: evt-reconcile-20260927234506-59f738fb
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  item_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab
   from_owner: stage2
   to_owner: stage2
   from_state: STAGE2_QUEUED
@@ -46256,7 +46251,7 @@ events:
   parent_event_id: null
   expected_item_revision: 1
   resulting_item_revision: 2
-  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-reconcile-20260927234506-59f738fb
+  idempotency_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab:evt-reconcile-20260927234506-59f738fb
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -46265,7 +46260,7 @@ events:
   policy_revision: null
 - event_id: evt-reconcile-20260927234506-f55ddded
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1
+  item_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab
   from_owner: stage2
   to_owner: stage1
   from_state: STAGE2_ACTIVE
@@ -46275,7 +46270,7 @@ events:
   parent_event_id: null
   expected_item_revision: 2
   resulting_item_revision: 3
-  idempotency_key: abhimehro/personal-config#2318@96730f6c399fd23379c66fca08e1b8c3eed340e1:evt-reconcile-20260927234506-f55ddded
+  idempotency_key: abhimehro/personal-config#2318@68469e1289eabf2c5ea01f61efe90abef4ffdbab:evt-reconcile-20260927234506-f55ddded
   status: PROJECTED
   created_at_utc: '2026-09-27T23:45:06Z'
   acknowledged_at_utc: null
@@ -47155,7 +47150,7 @@ events:
   policy_revision: null
 - event_id: evt-s2-20261003-repoprompt-c-417-i
   kind: IMPORT
-  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  item_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0
   from_owner: stage1
   to_owner: stage2
   from_state: STAGE1_INTAKE
@@ -47165,7 +47160,7 @@ events:
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-s2-20261003-repoprompt-c-417-i
+  idempotency_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0:evt-s2-20261003-repoprompt-c-417-i
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
@@ -47175,7 +47170,7 @@ events:
     restored after create (isDraft flipped ready once; gh pr ready --undo).'
 - event_id: evt-reconcile-20261003092353-208f633a
   kind: HANDOFF
-  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  item_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0
   from_owner: stage2
   to_owner: stage2
   from_state: STAGE2_QUEUED
@@ -47185,7 +47180,7 @@ events:
   parent_event_id: null
   expected_item_revision: 1
   resulting_item_revision: 2
-  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-reconcile-20261003092353-208f633a
+  idempotency_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0:evt-reconcile-20261003092353-208f633a
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
@@ -47194,7 +47189,7 @@ events:
   policy_revision: null
 - event_id: evt-reconcile-20261003092353-f5aa2eac
   kind: HANDOFF
-  item_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775
+  item_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0
   from_owner: stage2
   to_owner: stage1
   from_state: STAGE2_ACTIVE
@@ -47204,7 +47199,7 @@ events:
   parent_event_id: null
   expected_item_revision: 2
   resulting_item_revision: 3
-  idempotency_key: abhimehro/repoprompt-ce#417@f995c9ae58ead8230a28748dcab18e555c036775:evt-reconcile-20261003092353-f5aa2eac
+  idempotency_key: abhimehro/repoprompt-ce#417@81d6e73543a19e056ad644886d33f1103fcfeef0:evt-reconcile-20261003092353-f5aa2eac
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
@@ -47256,7 +47251,7 @@ events:
   policy_revision: null
 - event_id: evt-s2-20261003-repoprompt-c-418-i
   kind: IMPORT
-  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  item_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c
   from_owner: stage1
   to_owner: stage2
   from_state: STAGE1_INTAKE
@@ -47266,7 +47261,7 @@ events:
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-s2-20261003-repoprompt-c-418-i
+  idempotency_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c:evt-s2-20261003-repoprompt-c-418-i
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
@@ -47276,7 +47271,7 @@ events:
     restored after create (isDraft flipped ready once; gh pr ready --undo).'
 - event_id: evt-reconcile-20261003092353-0da55f3e
   kind: HANDOFF
-  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  item_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c
   from_owner: stage2
   to_owner: stage2
   from_state: STAGE2_QUEUED
@@ -47286,7 +47281,7 @@ events:
   parent_event_id: null
   expected_item_revision: 1
   resulting_item_revision: 2
-  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-reconcile-20261003092353-0da55f3e
+  idempotency_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c:evt-reconcile-20261003092353-0da55f3e
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
@@ -47295,7 +47290,7 @@ events:
   policy_revision: null
 - event_id: evt-reconcile-20261003092353-c812ecde
   kind: HANDOFF
-  item_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29
+  item_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c
   from_owner: stage2
   to_owner: stage1
   from_state: STAGE2_ACTIVE
@@ -47305,7 +47300,7 @@ events:
   parent_event_id: null
   expected_item_revision: 2
   resulting_item_revision: 3
-  idempotency_key: abhimehro/repoprompt-ce#418@3af6d4e6e622be9c996e68eee6fc3104236d0a29:evt-reconcile-20261003092353-c812ecde
+  idempotency_key: abhimehro/repoprompt-ce#418@19e036b798ec52b8f802659f3a58ad632a018c9c:evt-reconcile-20261003092353-c812ecde
   status: PROJECTED
   created_at_utc: '2026-10-03T09:23:53Z'
   acknowledged_at_utc: null
