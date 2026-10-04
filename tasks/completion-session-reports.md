@@ -2455,3 +2455,54 @@ appending run (**0gj**). Never merge drafts #460/#2231. Full record:
 Per-item table: see `tasks/pr-completion-2026-09-18.md`. Downstream: Stage 1
 canonical-pick #2030 vs #2116 and re-ingest draft #460; Stage 2 empty remainder;
 keep completion enabled and calibration disabled.
+
+## Stage Run Record — 2026-10-04
+
+Scheduled fire `2026-10-04T19:01:07Z` (automation `66a8e7a8`, cron `0 19 * * *`).
+Planner run `20261004T190219Z-e33c97ce` at `2026-10-04T19:02:37Z`. Reason **OK**,
+`stop_class` null. Signals **OK** (queried 11, candidates 11, base enriched 8,
+elapsed 11.76s, no failed, truncated, or unqueried keys). Runtime ledger
+preflight **PASS** at revision **292** (commit
+`bc750012695e7896b80e7c2e802653ab837006ec`, blob
+`1d05385eae4f3b15ef04b2645cac28e5882eae96`). Resulting revision **292** —
+**no CAS write**. Calibration **APPROVED** 7/7 `pr-lifecycle-v1.4`, **not**
+reset. GitHub identity REST login `abhimehro`. Heal-forward: Stage 1 15:00
+fingerprint **EXISTS** on this lineage (`FEED_CHECK` **PASS**, Stage-1 reselect
+**0**, `salvage_eligible_count` **0**, starvation **false**). Stage 2 did not
+append a salvage record today; health reason is empty intake with zero
+salvage-eligible remainder, so this is **not** `FEED_FAIL`. **PROCEED COMPLETE**
+with product mutations **0/15**.
+
+Five planner `HANDOFF_MECHANICAL_TO_STAGE2` actions were **not** CAS-written
+(lesson **0hu**): each original already has an open salvage draft in
+`STAGE1_INTAKE`, and none of those drafts are `MERGEABLE`/`CLEAN`. Reconcile
+dry-run emitted 6 sticky `SHA_DRIFT_REINTAKE` / `REANCHOR_HEAD` actions;
+**not applied** (would re-intake `REVIEW_SECURITY` / human gitleaks anchors,
+including a two-key collision on personal-config #2077). `CLOSED_NOOP`
+Observed-CLOSED stays deferred. No advisory bot threads were resolved because
+no `/trunk` was eligible. Packets **0**. Stage 2 work items created **0**.
+Docs lineage
+[#2417](https://github.com/abhimehro/personal-config/pull/2417)
+(`pr-lifecycle-docs-20261004`, draft). Do **not** `/trunk merge` this lineage
+in the appending run (**0gj**). Do **not** Trunk conflicting docs **#2254**,
+**#2244**, or **#2237**. Do **not** merge draft **#2416**. Full record:
+`tasks/pr-completion-2026-10-04.md`. Lesson **0hu**.
+
+| Metric                        | Count |
+| ----------------------------- | ----: |
+| Reconciliations (live, acted) |     0 |
+| Reconcile dry-run (withheld)  |     6 |
+| Mechanical handoffs withheld  |     5 |
+| Product mutations             |     0 |
+| Merged                        |     0 |
+| Closed                        |     0 |
+| Decision packets              |     0 |
+| Stage 2 work items            |     0 |
+| Ledger file CAS writes        |     0 |
+| Analysis errors               |     0 |
+| Calibration change            |  none |
+
+Per-item table: see `tasks/pr-completion-2026-10-04.md`. Downstream: Stage 2
+owns the existing salvage drafts (#2318/#2320, #2406, #2407, email #1704,
+rpce #424) and must not open a second salvage of the same originals. Keep
+completion enabled and calibration disabled.

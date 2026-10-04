@@ -1,5 +1,32 @@
 # Lessons Learned
 
+## Lesson 0hu: Skip a mechanical Stage 2 handoff when salvage is already queued (2026-10-04)
+
+**Pattern:** Stage 3's planner emitted `HANDOFF_MECHANICAL_TO_STAGE2` for
+CONFLICTING originals that already had open salvage drafts in `STAGE1_INTAKE`
+(personal-config #2090 → #2318/#2320, #2237 → draft #2406, #2244 → draft #2407;
+email-security-pipeline #1633 → draft #1704; repoprompt-ce #396 → draft #424).
+CAS-writing another work item would make the next Stage 2 salvage the same
+original again. Those drafts were not `MERGEABLE`/`CLEAN`, so they were not
+overflow-completed. Reconcile dry-run also proposed `SHA_DRIFT_REINTAKE` /
+`REANCHOR_HEAD` for sticky `REVIEW_SECURITY` and human gitleaks anchors Stage 1
+had left frozen, including two keys for personal-config #2077 that share one
+live head.
+
+**Rule:** (1) Before applying `HANDOFF_MECHANICAL_TO_STAGE2`, if an open salvage
+draft for that original is already a `STAGE1_INTAKE` item, skip the handoff and
+leave the original OPEN. (2) Do not spend a Stage 2 work item on a duplicate
+salvage. (3) A replacement that is not `MERGEABLE`/`CLEAN` stays unmerged;
+RepoPrompt CE Swift salvage on Linux stays `HOLD_PLATFORM`. (4) Do not apply
+reconcile actions that move sticky `REVIEW_SECURITY` or human gitleaks anchors,
+or that would land two keys on the same live head. (5) Do not spend the daily
+cap on Observed-CLOSED `CLOSED_NOOP` when Stage 1 bookkeeping or the weekly
+archive can take them.
+
+**Detection cost:** Low — compare planner handoff PRs with `STAGE1_INTAKE`
+titles `salvage(<repo>#N)` before CAS. Reconcile stays a dry-run when every
+proposed action is a sticky anchor.
+
 ## Lesson 0ht: Reconcile head drift must stay schema-valid (2026-10-04)
 
 **Pattern:** `pr_lifecycle_reconcile.py --apply` wrote a live `head_sha` onto an
