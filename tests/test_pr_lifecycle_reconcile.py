@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import types
 import unittest
@@ -37,6 +38,7 @@ sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
 }
 sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
 sys.modules["pr_lifecycle_support"].ROOT = ROOT
+sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
 sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
 sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
@@ -249,6 +251,17 @@ class ClassifyItemTests(unittest.TestCase):
         )
         self.assertIsNone(action)
 
+    def test_closed_observation_does_not_reintake_on_head_drift(self):
+        action = _classify(
+            {
+                "lifecycle_state": "STAGE3_RECONCILIATION",
+                "next_action": "Observed CLOSED unclassified; Stage 3 classification required.",
+                "guardrail_outcome": "REVIEW_SECURITY",
+            },
+            {"state": "CLOSED", "headRefOid": "c" * 40},
+        )
+        self.assertIsNone(action)
+
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
             {"author_type": "HUMAN"},
@@ -332,14 +345,29 @@ class ReconcileHelpersTests(unittest.TestCase):
             "reason": "head changed",
             "live_head_sha": "c" * 40,
         }
+        old_key = item["key"]
+        prior = {
+            "event_id": "evt-prior",
+            "item_key": old_key,
+            "idempotency_key": f"{old_key}:evt-prior",
+        }
+        ledger["events"] = [prior]
+        ledger["stage2_work_items"] = [{"source_item_key": old_key}]
         event = _apply_with_mocks(ledger, item, action)
+        live_head = "c" * 40
         self.assertEqual(item["revision"], 2)
+        self.assertTrue(item["key"].endswith(live_head))
+        self.assertEqual(item["head_sha"], live_head)
+        self.assertEqual(prior["item_key"], item["key"])
+        self.assertEqual(prior["idempotency_key"], f"{item['key']}:evt-prior")
+        self.assertEqual(ledger["stage2_work_items"][0]["source_item_key"], item["key"])
+        self.assertEqual(event["item_key"], item["key"])
         self.assertEqual(item["lifecycle_state"], "STAGE1_INTAKE")
         self.assertEqual(item["current_owner"], "stage1")
         self.assertEqual(item["handoffs"], ["evt-fixed"])
-        self.assertIn("c" * 40, item["next_action"])
+        self.assertIn(live_head, item["next_action"])
         self.assertEqual(ledger["ledger_revision"], 5)
-        self.assertIs(ledger["events"][0], event)
+        self.assertIs(ledger["events"][1], event)
 
     def test_apply_terminal_pending_handoffs_to_stage3_with_marker(self):
         ledger = {"ledger_revision": 4, "events": []}
@@ -370,11 +398,86 @@ class ReconcileHelpersTests(unittest.TestCase):
         with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
             result = reconcile.apply_action_to_ledger(ledger, item, action)
         self.assertIsNone(result["event_id"])
-        self.assertEqual(item["revision"], 2)
+        self.assertEqual(item["revision"], 1)
         self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
         self.assertIn("Observed MERGED unclassified", item["next_action"])
         self.assertEqual(ledger["events"], [])
         self.assertEqual(ledger["ledger_revision"], 5)
+
+    def test_reanchor_rekeys_without_revision_bump(self):
+        ledger = {"ledger_revision": 4, "events": [], "items": []}
+        item = _item(lifecycle_state="STAGE1_INTAKE", current_owner="stage1")
+        ledger["items"].append(item)
+        action = {
+            "action": "REANCHOR_HEAD",
+            "live_head_sha": "d" * 40,
+            "live_base_sha": "e" * 40,
+        }
+        with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+            result = reconcile.apply_action_to_ledger(ledger, item, action)
+        self.assertIsNone(result["event_id"])
+        self.assertEqual(item["revision"], 1)
+        self.assertEqual(item["head_sha"], "d" * 40)
+        self.assertTrue(item["key"].endswith("d" * 40))
+        self.assertEqual(item["base_sha"], "e" * 40)
+        self.assertEqual(ledger["events"], [])
+        self.assertEqual(ledger["ledger_revision"], 5)
+
+    def test_apply_one_skips_sticky_and_taken_anchors(self):
+        sticky = _item(
+            pr=101,
+            key="abhimehro/personal-config#101@" + "a" * 40,
+            guardrail_outcome="REVIEW_SECURITY",
+            author_type="BOT",
+        )
+        human = _item(
+            pr=102,
+            key="abhimehro/personal-config#102@" + "a" * 40,
+            author_type="HUMAN",
+            guardrail_outcome="HOLD_EVIDENCE",
+        )
+        occupied_head = "f" * 40
+        mover = _item(
+            pr=103,
+            key="abhimehro/personal-config#103@" + "a" * 40,
+            lifecycle_state="STAGE1_INTAKE",
+            current_owner="stage1",
+        )
+        occupant = _item(
+            pr=103,
+            key=f"abhimehro/personal-config#103@{occupied_head}",
+            head_sha=occupied_head,
+        )
+        ledger = {
+            "ledger_revision": 4,
+            "events": [],
+            "items": [sticky, human, mover, occupant],
+        }
+        items_by_key = {item["key"]: item for item in ledger["items"]}
+        sticky_action = {
+            "action": "SHA_DRIFT_REINTAKE",
+            "key": sticky["key"],
+            "to_state": "STAGE1_INTAKE",
+            "live_head_sha": "1" * 40,
+        }
+        human_action = {
+            "action": "REANCHOR_HEAD",
+            "key": human["key"],
+            "live_head_sha": "2" * 40,
+        }
+        taken_action = {
+            "action": "REANCHOR_HEAD",
+            "key": mover["key"],
+            "live_head_sha": occupied_head,
+        }
+        self.assertIsNone(reconcile._apply_one(ledger, sticky_action, items_by_key))
+        self.assertEqual(sticky_action["skipped"], "sticky_anchor")
+        self.assertTrue(sticky["key"].endswith("a" * 40))
+        self.assertIsNone(reconcile._apply_one(ledger, human_action, items_by_key))
+        self.assertEqual(human_action["skipped"], "sticky_anchor")
+        self.assertIsNone(reconcile._apply_one(ledger, taken_action, items_by_key))
+        self.assertEqual(taken_action["skipped"], "anchor_key_taken")
+        self.assertEqual(mover["head_sha"], "a" * 40)
 
     def test_gh_pr_view_handles_success_bad_json_and_command_failure(self):
         # Success path uses two gh calls: pr view --json (no baseRefOid) then
