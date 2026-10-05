@@ -681,14 +681,16 @@ select_purge_categories() {
 		if [[ -n ${original_stty-} ]]; then
 			stty "${original_stty}" 2>/dev/null || stty sane 2>/dev/null || true
 		fi
+		# Best-effort restore: a declaration mole_restore_trap cannot parse
+		# must not abort the shell from inside this trap handler.
 		if [[ -n $previous_exit_trap ]]; then
-			if [[ $previous_exit_trap == "trap -- "* ]]; then eval "$previous_exit_trap"; fi
+			mole_restore_trap "$previous_exit_trap" || true
 		fi
 		if [[ -n $previous_int_trap ]]; then
-			if [[ $previous_int_trap == "trap -- "* ]]; then eval "$previous_int_trap"; fi
+			mole_restore_trap "$previous_int_trap" || true
 		fi
 		if [[ -n $previous_term_trap ]]; then
-			if [[ $previous_term_trap == "trap -- "* ]]; then eval "$previous_term_trap"; fi
+			mole_restore_trap "$previous_term_trap" || true
 		fi
 	}
 	# shellcheck disable=SC2329
@@ -1048,8 +1050,8 @@ clean_project_artifacts() {
 	# Restore caller traps after this function completes.
 	if [[ $trap_installed_by_this_call == "true" ]]; then
 		trap - INT TERM
-		[[ -n $previous_int_trap ]] && if [[ $previous_int_trap == "trap -- "* ]]; then eval "$previous_int_trap"; fi
-		[[ -n $previous_term_trap ]] && if [[ $previous_term_trap == "trap -- "* ]]; then eval "$previous_term_trap"; fi
+		[[ -n $previous_int_trap ]] && mole_restore_trap "$previous_int_trap" || true
+		[[ -n $previous_term_trap ]] && mole_restore_trap "$previous_term_trap" || true
 	fi
 	if [[ ${#all_found_items[@]} -eq 0 ]]; then
 		echo ""
