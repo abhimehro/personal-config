@@ -670,7 +670,7 @@ EOF
 	fi
 
 	if [[ $has_recs == false ]]; then
-		echo '            <li class="empty-state" style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="font-size: 1.2em;">✅</span> <span role="status">System is running smoothly. No specific recommendations at this time.</span></li>' >>"$report_file"
+		echo '            <li class="empty-state" style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="font-size: 1.2em;">✅</span> <span role="status">System is running smoothly. No specific recommendations at this time. Run <kbd style="background: #eee; padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid #ccc; color: #333; font-size: 0.9em;">maintenance/bin/performance_optimizer.sh optimize</kbd> to run a comprehensive performance optimization.</span></li>' >>"$report_file"
 	fi
 
 	cat >>"$report_file" <<EOF
