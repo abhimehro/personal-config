@@ -79,7 +79,7 @@ Continuity sources read before acting:
 - Last three Stage 2 records: `tasks/pr-salvage-2026-09-19-1700.md`
   (`EMPTY_INTAKE`), `tasks/salvage-session-reports.md`
 - Stage-3-owned runtime-ledger entries (rev 74 intake; 15 remaining after CAS)
-- `tasks/lessons.md` through **0ho**
+- `tasks/lessons.md` through **0hm**
 - Today's open docs lineage
   [#2237](https://github.com/abhimehro/personal-config/pull/2237)
   (`pr-lifecycle-docs-20260919`). No sibling docs PR opened. Do **not**
@@ -153,7 +153,7 @@ separately under **Overflow product mutations (not ledger rows)**.
 | ---------- | ------------------------ | ---------------------- | -------------------- | ------------------ | -------- | ----- |
 | `email-security-pipeline#1502@964515e6b576546a0443e87f993c05d16b78f6ee` | head `964515e6b576546a0443e87f993c05d16b78f6ee`; base `ca3775c5aa3607706bd94736318bb0fc475690ad` | head `964515e6b576546a0443e87f993c05d16b78f6ee`; base `ca3775c5aa3607706bd94736318bb0fc475690ad` | stage3 → stage3 | HOLD_CONTRACT docs relocate; do not merge; CONFLICTING DIRTY | <https://github.com/abhimehro/email-security-pipeline/pull/1502> | OPEN; rev 1; next_owner stage3 |
 | `personal-config#2069@7a0560fddc5aed738621d722b1296764f5a20f72` | head `7a0560fddc5aed738621d722b1296764f5a20f72`; base `a95371e253e0c89c12594da306d4ab403ba9539d` | head `7a0560fddc5aed738621d722b1296764f5a20f72`; base `a95371e253e0c89c12594da306d4ab403ba9539d` | stage3 → stage3 | HOLD_CONTRACT Palette wrap + analytics_dashboard.sh; do not Trunk-queue; CONFLICTING DIRTY | <https://github.com/abhimehro/personal-config/pull/2069> | OPEN; rev 1; next_owner stage3 |
-| `series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736` | head `15621ef64d18af14d82cec0ea9d3e004313ce736`; base `d5f92cf071029273c81c257301308821006bf31a` | head `15621ef64d18af14d82cec0ea9d3e004313ce736`; base `d5f92cf071029273c81c257301308821006bf31a` | stage3 → stage3 | ACK `evt-s1-20260919-seriescorre-409-b`; keep OPEN CONFLICTING vs draft #460 (0gd/0hm/0ho) | <https://github.com/abhimehro/series_correction_project_updated/pull/409> ; <https://github.com/abhimehro/series_correction_project_updated/pull/460> | OPEN; rev 6; next_owner stage3 |
+| `series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736` | head `15621ef64d18af14d82cec0ea9d3e004313ce736`; base `d5f92cf071029273c81c257301308821006bf31a` | head `15621ef64d18af14d82cec0ea9d3e004313ce736`; base `d5f92cf071029273c81c257301308821006bf31a` | stage3 → stage3 | ACK `evt-s1-20260919-seriescorre-409-b`; keep OPEN CONFLICTING vs draft #460 (0gd/0hm) | <https://github.com/abhimehro/series_correction_project_updated/pull/409> ; <https://github.com/abhimehro/series_correction_project_updated/pull/460> | OPEN; rev 6; next_owner stage3 |
 | `personal-config#2090@e28c6218b624f4da9f19f82076160ed9213c5d48` | head `e28c6218b624f4da9f19f82076160ed9213c5d48`; base `d006e33e2697ba9b716f6dfa558d6aec143daa28` | head `e28c6218b624f4da9f19f82076160ed9213c5d48`; base `d006e33e2697ba9b716f6dfa558d6aec143daa28` | stage3 → stage3 | HOLD_CONTRACT journal+exports+config+benchmark; CONFLICTING | <https://github.com/abhimehro/personal-config/pull/2090> | OPEN; rev 4; next_owner stage3 |
 | `personal-config#2092@d647ac87e8976781265516a039877857243d8170` | head `d647ac87e8976781265516a039877857243d8170`; base `76865381805faaccd711d4ec999044f8ba39a158` | head `d647ac87e8976781265516a039877857243d8170`; base `76865381805faaccd711d4ec999044f8ba39a158` | stage3 → stage3 | HOLD_CONTRACT Palette wrap + shell-execution; do not Trunk-queue; CONFLICTING | <https://github.com/abhimehro/personal-config/pull/2092> | OPEN; rev 1; next_owner stage3 |
 | `personal-config#2116@22c5c38bbec68a1df81e021450a1b3f9afedf029` | head `22c5c38bbec68a1df81e021450a1b3f9afedf029`; base `dd972eb83986fe0e67ab79efd9541ede369e0743` | head `22c5c38bbec68a1df81e021450a1b3f9afedf029`; base `dd972eb83986fe0e67ab79efd9541ede369e0743` | stage3 → stage3 | HOLD_EVIDENCE vs merged #2163; do not close; CONFLICTING | <https://github.com/abhimehro/personal-config/pull/2116> | OPEN; rev 4; next_owner stage3 |
@@ -211,7 +211,7 @@ recover-via-Stage-2 advice (WI remainder 0).
   calibration; treat `trunk-failed` behind main as App/ruleset HITL; open a
   third overlapping docs PR; `/trunk merge` the lineage from the appending run;
   ACK a superseded `to_owner=stage2` handoff.
-- New lesson: none (reuse **0ho** / **0hm** / **0gd** / **0cs** / **0hn**).
+- New lesson: none (reuse **0hm** / **0gd** / **0cs** / **0hn**).
 - Configuration or policy gap: none. Dashboard completion stays enabled;
   calibration stays disabled.
 - Historical-import sources or fingerprints processed: Stage 1 15:00
@@ -239,7 +239,7 @@ recover-via-Stage-2 advice (WI remainder 0).
    (`isDraft` true). Close rpce #347 / Seatek #865 only after cooldown. Do not
    bounce leftover MERGEABLE green BOT that Stage 1 already drained today.
 2. Stage 2: empty intake; `salvage_eligible=0`. Do not invent recoveries. Do
-   not replay series #409 `processor.py` (**0hm** / **0ho**).
+   not replay series #409 `processor.py` (**0hm**).
 3. Human / Notion: Seatek #643 parked; Hydro/Seatek HUMAN + Sentinel
    REVIEW_SECURITY; majors listed above. Desk-named exceptions only.
 4. Do **not** `/trunk merge`
