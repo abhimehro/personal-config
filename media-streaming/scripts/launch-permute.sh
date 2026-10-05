@@ -19,7 +19,7 @@ log() {
 mkdir -p "$WATCH_DIR" "$OUTPUT_DIR" "$(dirname "$LOG_FILE")"
 
 # Check if Permute 4 is running
-if pgrep -q "Permute 4"; then
+if pgrep -q -- "Permute 4"; then
 	log "Permute 4 is already running"
 	exit 0
 fi
@@ -41,7 +41,7 @@ open "$APP_PATH"
 sleep 5
 
 # Check if it's running
-if pgrep -q "Permute 4"; then
+if pgrep -q -- "Permute 4"; then
 	log "Permute 4 launched successfully"
 else
 	log "ERROR: Failed to launch Permute 4"
