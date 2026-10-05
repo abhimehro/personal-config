@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 301
+ledger_revision: 302
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19847,14 +19847,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
+  lifecycle_state: STAGE2_QUEUED
   terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  current_owner: stage2
+  next_owner: stage2
   safe_default: 'Do not squash-merge or close original #2254. Salvage draft #2400
     holds the unique dated run records; Stage 1 owns draft merge authority after ready.'
-  next_action: Re-anchor intake to live head f66ca9ff7218438acd7a51b0e83264c84d09c5c4;
-    prior evidence void.
+  next_action: Recover unique source only on a new focused draft that excludes journals
+    and sticky paths outside the work-item allowlist.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2254
   changed_paths:
@@ -19872,8 +19872,9 @@ items:
   - evt-reconcile-20261003090641-4f123842
   - evt-reconcile-20261003090641-4b5a8f48
   - evt-reconcile-20261004151408-15947924
-  revision: 4
-  updated_at_utc: '2026-10-04T15:14:08Z'
+  - evt-reconcile-20261005151243-f07f823c
+  revision: 5
+  updated_at_utc: '2026-10-05T15:12:43Z'
 - key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
   repository: abhimehro/personal-config
   pr: 2400
@@ -48640,7 +48641,58 @@ events:
   reason: live PR state=MERGED mergedBy=abhimehro
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-reconcile-20261005151243-f07f823c
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 4
+  resulting_item_revision: 5
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-reconcile-20261005151243-f07f823c
+  status: PROJECTED
+  created_at_utc: '2026-10-05T15:12:43Z'
+  acknowledged_at_utc: null
+  reason: CONFLICTING_UNIQUE_RESELECT
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261005-personalconfig-2254-docs
+  source_item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  repository: abhimehro/personal-config
+  pr: 2254
+  base_sha: 2bd4be5396fdb08ca734d614d9b1c67942ef4f2d
+  head_sha: f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  allowed_paths:
+  - tasks/lessons.md
+  - tasks/pr-review-2026-09-21.md
+  - tasks/pr-salvage-2026-09-21-1700.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  prohibited_paths:
+  - .jules/
+  - .github/workflows/
+  repair_description: Recover only the unique non-journal session-report deltas from
+    personal-config#2254 onto a new focused draft. Do not rebase the whole pull request.
+    Exclude journals and paths outside the allowlist.
+  required_test_command: git diff --check -- tasks/lessons.md tasks/review-session-reports.md
+    tasks/salvage-session-reports.md tasks/pr-review-2026-09-21.md tasks/pr-salvage-2026-09-21-1700.md
+  expected_test_result: exit 0 and no conflict-marker whitespace errors
+  acceptance_criteria:
+  - Draft diff is limited to the allowed session-report paths.
+  - Journals and sticky paths stay out of the draft.
+  - git diff --check is clean on those paths.
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2254
+  expiry_utc: '2026-10-12T15:12:43Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-reconcile-20261005151243-f07f823c
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
