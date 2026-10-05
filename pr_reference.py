@@ -43,7 +43,10 @@ def _validate_component(value: str, kind: str, regex: re.Pattern) -> None:
 
 
 def _split_repo(repo: str) -> tuple[str, str]:
-    """Split and validate an ``owner/name`` string."""
+    """Split and validate ``owner/name`` after stripping surrounding whitespace.
+
+    Raise InvalidPrReferenceError for malformed or unsafe references.
+    """
     repo = repo.strip()
     if not repo:
         raise InvalidPrReferenceError("repo reference is empty")
@@ -55,7 +58,8 @@ def _split_repo(repo: str) -> tuple[str, str]:
         raise InvalidPrReferenceError(
             f"repo must be exactly owner/name (got {repo.count('/')} '/'): {repo!r}"
         )
-    owner, name = repo.split("/", 1)
+    # NOTE: equivalent to split("/", 1) after the count("/") != 1 guard; partition avoids a list allocation.
+    owner, _, name = repo.partition("/")
     _validate_component(owner, "owner", _OWNER_NAME_RE)
     _validate_component(name, "repo name", _OWNER_NAME_RE)
     return owner, name
