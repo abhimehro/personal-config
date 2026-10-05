@@ -53,6 +53,7 @@ class MoleTrapTests(unittest.TestCase):
         self.skipTest("no bash interpreter available")
 
     def run_bash(self, script, *args):
+        """Run a strict Bash script with Mole loaded; assert success and return stdout."""
         env = os.environ.copy()
         env.pop("BASH_ENV", None)
         result = subprocess.run(
@@ -67,6 +68,7 @@ class MoleTrapTests(unittest.TestCase):
         return result.stdout
 
     def test_round_trip_preserves_handler_data(self):
+        """Verify restoration preserves handler text without executing shell syntax."""
         handlers = [
             "", ":", "printf '%s %s\\n' 'hello world' \"quoted\"",
             "mutated=1; : $(mutated=2) `mutated=3` $HOME * ? [abc]",
@@ -90,6 +92,7 @@ trap - "$2"
                     )
 
     def test_rejects_malformed_declarations_without_execution(self):
+        """Verify invalid declarations are rejected without changing traps or state."""
         for declaration in (
             "trap -- ':' SIGINT; mutated=1",
             "trap -- 'ok'; mutated=1; 'more' SIGINT",
@@ -120,6 +123,7 @@ if mole_restore_trap; then exit 1; fi
             )
 
     def test_restoration_callers_preserve_saved_arguments(self):
+        """Check callers restore unset, ignored, and quoted handlers in local scope."""
         project = (MOLE / "lib/clean/project.sh").read_text()
         scan_restore = project.split(
             "\t# Restore caller traps after this function completes.\n", 1
@@ -178,6 +182,7 @@ harness "$@"
                     )
 
     def test_no_eval_remains_in_restore_path_files(self):
+        """Guard the trap restoration files against reintroducing eval."""
         # Lock the security property repo-wide, not just inside the sliced
         # functions: these files are eval-free today and must stay that way.
         for path in (
@@ -195,6 +200,7 @@ harness "$@"
                     )
 
     def test_restored_handlers_execute_only_on_signal(self):
+        """Verify restored handlers run on exit or signal delivery, not restoration."""
         for signal in ("EXIT", "INT", "TERM"):
             with self.subTest(signal=signal):
                 output = self.run_bash(
