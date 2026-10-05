@@ -35,7 +35,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
         steps_by_name = {step["name"]: step for step in steps if "name" in step}
         approved_refactor_action = {
-            "uses": "codescene-oss/pr-refactoring-agent@abd82295d700c9e3b51f2692ac73710e00cdb601",
+            "uses": "codescene-oss/pr-refactoring-agent@65c5742190fa836cdb3ee55e96afef4a0d4c95c6",
             "version": "v1.1.1",
         }
 
@@ -70,6 +70,46 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         self.assertTrue(
             steps_by_name["Fail if both refactor attempts fail"]["if"]
             == "always() && steps.refactor-attempt-1.outcome == 'failure' && steps.refactor-attempt-2.outcome == 'failure'"
+        )
+
+    def test_upgraded_refactor_retry_preserves_request_and_provider_inputs(self) -> None:
+        steps = load_workflow()["jobs"]["refactor"]["steps"]
+        attempts = [
+            step
+            for step in steps
+            if step.get("uses", "").startswith("codescene-oss/pr-refactoring-agent@")
+        ]
+        self.assertEqual(
+            [step["id"] for step in attempts],
+            ["refactor-attempt-1", "refactor-attempt-2"],
+        )
+        first, retry = attempts
+        self.assertEqual(retry["with"], first["with"])
+        self.assertEqual(retry["env"], first["env"])
+        self.assertEqual(
+            first["with"]["pr_number"], "${{ github.event.issue.number }}"
+        )
+        self.assertEqual(
+            first["with"]["command"], "${{ steps.prepare-command.outputs.command }}"
+        )
+        self.assertEqual(first["with"]["model"], "${{ steps.providers.outputs.model }}")
+        self.assertEqual(
+            first["with"]["opencode_auth_json"], "${{ steps.opencode-auth.outputs.json }}"
+        )
+        # The action release and the requested tool version are independent.
+        self.assertEqual(first["with"]["version"], "v1.1.1")
+        self.assertEqual(
+            first["with"]["google_api_key"],
+            "${{ steps.providers.outputs.enable_google == 'true' "
+            "&& secrets.GOOGLE_API_KEY || '' }}",
+        )
+        for key in ("GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"):
+            with self.subTest(key=key):
+                self.assertEqual(first["env"][key], first["with"]["google_api_key"])
+        self.assertEqual(
+            first["env"]["MISTRAL_API_KEY"],
+            "${{ steps.providers.outputs.enable_mistral == 'true' "
+            "&& secrets.MISTRAL_API_KEY || '' }}",
         )
 
     def test_prepare_command_extracts_first_cs_agent_line_from_multiline_comment(self):
