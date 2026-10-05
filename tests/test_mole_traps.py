@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 
 
@@ -180,6 +181,203 @@ harness() {
 harness "$@"
 ''', "unset" if handler is None else "set", handler or "",
                     )
+
+    def test_accepts_legacy_and_prefixed_signal_names(self):
+        for signal in ("EXIT", "INT", "SIGINT", "TERM", "SIGTERM"):
+            with self.subTest(signal=signal):
+                self.run_bash(
+                    '''
+trap ':' EXIT INT TERM
+saved_exit=$(trap -p EXIT)
+saved_int=$(trap -p INT)
+saved_term=$(trap -p TERM)
+mole_restore_trap "trap -- 'handled=1' $1"
+actual=$(trap -p "$1")
+trap 'handled=1' "$1"
+[[ $actual == "$(trap -p "$1")" ]]
+case "$1" in
+    EXIT) [[ $(trap -p INT) == "$saved_int" && $(trap -p TERM) == "$saved_term" ]] ;;
+    *INT) [[ $(trap -p EXIT) == "$saved_exit" && $(trap -p TERM) == "$saved_term" ]] ;;
+    *TERM) [[ $(trap -p EXIT) == "$saved_exit" && $(trap -p INT) == "$saved_int" ]] ;;
+esac
+trap - EXIT INT TERM
+''', signal,
+                )
+
+    def test_rejects_noncanonical_serialization_without_changing_traps(self):
+        declarations = (
+            "trap -- ':' DEBUG", "trap -- ':' RETURN", "trap -- ':' ERR",
+            "trap -- ':' 2", "trap -- ':' SIGEXIT", "trap -- ':' sigint",
+            "trap -- ':' INT TERM", "trap ':' INT", "trap -- : INT",
+            'trap -- ":" INT', "trap -- $':' INT", "trap -- 'unterminated INT",
+            "trap -- 'a'b' INT", "trap -- 'a''b' INT",
+            " trap -- ':' INT", "trap -- ':'  INT", "trap -- ':'\tINT",
+            "trap -- ':' INT ", "trap -- ':' INT\n",
+            "trap -- ':' INT\ntrap -- ':' TERM",
+            "trap -- 'ok'; printf injected; 'more' INT",
+        )
+        for declaration in declarations:
+            with self.subTest(declaration=declaration):
+                output = self.run_bash(
+                    '''
+trap ':' EXIT INT TERM
+saved=$(trap -p EXIT INT TERM)
+status=0
+mole_restore_trap "$1" || status=$?
+[[ $status == 1 && $(trap -p EXIT INT TERM) == "$saved" ]]
+trap - EXIT INT TERM
+echo rejected
+''', declaration,
+                )
+                self.assertEqual(output, "rejected\n")
+
+    def test_substitutions_have_no_side_effect_until_signal(self):
+        # Files detect substitutions even when they execute in a subshell:
+        # a variable assignment alone would not be visible to the parent.
+        for signal in ("EXIT", "INT", "TERM"):
+            for handler in (
+                ': "$(printf executed > "$marker")"',
+                ': "`printf executed > "$marker"`"',
+            ):
+                with self.subTest(signal=signal, handler=handler):
+                    with tempfile.TemporaryDirectory() as directory:
+                        marker = Path(directory) / "handler marker"
+                        self.run_bash(
+                            '''
+marker=$1
+trap -- "$2" "$3"
+saved=$(trap -p "$3")
+trap - "$3"
+mole_restore_trap "$saved"
+[[ ! -e $marker ]]
+if [[ $3 != EXIT ]]; then kill -s "$3" "$$"; fi
+''', str(marker), handler, signal,
+                        )
+                        self.assertEqual(marker.read_text(), "executed")
+
+    def test_restore_uses_builtin_trap_even_when_trap_is_shadowed(self):
+        self.run_bash(
+            '''
+trap 'handled=1' INT
+saved=$(trap -p INT)
+trap - INT
+trap() { return 99; }
+mole_restore_trap "$saved"
+[[ $(builtin trap -p INT) == "$saved" ]]
+builtin trap - INT
+''',
+        )
+
+    def test_sourcing_trap_library_again_preserves_installed_handler(self):
+        self.run_bash(
+            '''
+trap ':' INT
+saved=$(trap -p INT)
+source "$1"
+source "$1"
+[[ $(trap -p INT) == "$saved" ]]
+mole_restore_trap "trap -- 'handled=1' INT"
+handled=0
+kill -s INT "$$"
+[[ $handled == 1 ]]
+''', str(MOLE / "lib/core/traps.sh"),
+        )
+
+    def test_callers_reset_rejected_trap_and_restore_other_signals(self):
+        project = (MOLE / "lib/clean/project.sh").read_text()
+        scan_restore = project.split(
+            "\t# Restore caller traps after this function completes.\n", 1
+        )[1].split('\n\tif [[ ${#all_found_items[@]}', 1)[0]
+        callers = (
+            ("terminal", ("EXIT", "INT", "TERM"),
+             nested_function("lib/clean/project.sh", "restore_terminal")
+             + "\nrestore_terminal\n[[ $cleanup_calls == 1 ]]"),
+            ("application scan", ("INT",),
+             nested_function("bin/uninstall.sh", "restore_scan_int_trap")
+             + "\nrestore_scan_int_trap"),
+            ("batch uninstall", ("INT", "TERM"),
+             nested_function("lib/uninstall/batch.sh", "_restore_uninstall_traps")
+             + "\n_restore_uninstall_traps\n[[ $cleanup_calls == 1 ]]"),
+            ("project scan", ("INT", "TERM"), scan_restore),
+        )
+        for name, signals, caller in callers:
+            for rejected_signal in signals:
+                with self.subTest(caller=name, rejected_signal=rejected_signal):
+                    self.run_bash(
+                        '''
+harness() {
+    local cleanup_calls=0 mutated=0
+    show_cursor() { cleanup_calls=$((cleanup_calls + 1)); }
+    _cleanup_sudo_keepalive() { cleanup_calls=$((cleanup_calls + 1)); }
+    local original_stty="" terminal_restored=false
+    local trap_installed_by_this_call=true
+    local previous_exit_trap previous_int_trap previous_term_trap
+    local old_trap_int old_trap_term
+    local expected_exit expected_int expected_term
+    trap 'exit_handler=1' EXIT
+    trap 'int_handler=1' INT
+    trap 'term_handler=1' TERM
+    previous_exit_trap=$(trap -p EXIT)
+    previous_int_trap=$(trap -p INT)
+    previous_term_trap=$(trap -p TERM)
+    expected_exit=$previous_exit_trap
+    expected_int=$previous_int_trap
+    expected_term=$previous_term_trap
+    local invalid="trap -- 'ok'; mutated=1; 'more' $1"
+    case "$1" in
+        EXIT) previous_exit_trap=$invalid; expected_exit="" ;;
+        INT) previous_int_trap=$invalid; expected_int="" ;;
+        TERM) previous_term_trap=$invalid; expected_term="" ;;
+    esac
+    old_trap_int=$previous_int_trap
+    old_trap_term=$previous_term_trap
+    shift
+    trap 'stale_handler=1' "$@"
+'''
+                        + caller
+                        + '''
+    [[ $(trap -p EXIT) == "$expected_exit" ]]
+    [[ $(trap -p INT) == "$expected_int" ]]
+    [[ $(trap -p TERM) == "$expected_term" ]]
+    [[ $mutated == 0 ]]
+    trap - EXIT INT TERM
+}
+harness "$@"
+''', rejected_signal, *signals,
+                    )
+
+    def test_timeout_reject_cleanup_preserves_command_status(self):
+        for command_status in (0, 7):
+            with self.subTest(command_status=command_status):
+                self.run_bash(
+                    '''
+MO_TIMEOUT_BIN=""
+MO_TIMEOUT_PERL_BIN=""
+bc() { cat >/dev/null; echo 0; }
+# Corrupt only the saved declaration, leaving actual trap operations intact.
+trap() {
+    if [[ $* == '-p INT' ]]; then
+        printf "%s\\n" "trap -- 'ok'; mutated=1; 'more' INT"
+    else
+        builtin trap "$@"
+    fi
+}
+mutated=0
+trap ':' INT TERM
+saved_term=$(builtin trap -p TERM)
+status=0
+if [[ $1 == 0 ]]; then
+    # A standalone call keeps errexit active inside restoration.
+    run_with_timeout 1 true
+else
+    run_with_timeout 1 "$BASH" -c 'exit 7' || status=$?
+fi
+[[ $status == "$1" && $mutated == 0 ]]
+[[ -z $(builtin trap -p INT) ]]
+[[ $(builtin trap -p TERM) == "$saved_term" ]]
+[[ -z $(jobs -pr) ]]
+''', str(command_status),
+                )
 
     def test_no_eval_remains_in_restore_path_files(self):
         """Guard the trap restoration files against reintroducing eval."""
