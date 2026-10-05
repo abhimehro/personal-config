@@ -76,8 +76,8 @@ Continuity sources read before acting:
   `tasks/completion-session-reports.md`
 - Last three Stage 1 records: `tasks/pr-review-2026-09-19.md` (PASS),
   merged lineage `#2231` / `3e86704a`, `tasks/review-session-reports.md`
-- Last three Stage 2 records: `tasks/pr-salvage-2026-09-19-1700.md`
-  (`EMPTY_INTAKE`), `tasks/salvage-session-reports.md`
+- Last Stage 2 records (2 cited): `tasks/pr-salvage-2026-09-19-1700.md`
+  (`EMPTY_INTAKE`) and the rolling `tasks/salvage-session-reports.md`
 - Stage-3-owned runtime-ledger entries (rev 74 intake; 15 remaining after CAS)
 - `tasks/lessons.md` through **0hm**
 - Today's open docs lineage
