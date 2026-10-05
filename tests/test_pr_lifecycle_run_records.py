@@ -182,5 +182,296 @@ class TestStage1RunRecord20260918(unittest.TestCase):
         self.assertIn("**disabled**", cal_line)
 
 
+class TestLifecycleRunRecords20261004(unittest.TestCase):
+    """Acceptance contracts for the documentation-only October 4 run.
+
+    These assert consistency of the recorded evidence, not live GitHub state
+    or the reconcile implementation shipped separately in PR #2416.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.review = (ROOT / "tasks/pr-review-2026-10-04-1500.md").read_text(
+            encoding="utf-8"
+        )
+        cls.completion = (ROOT / "tasks/pr-completion-2026-10-04.md").read_text(
+            encoding="utf-8"
+        )
+        cls.review_summary = _section(
+            SESSION_REPORTS.read_text(encoding="utf-8"), "# Stage 1 — 2026-10-04"
+        )
+        cls.completion_summary = _section(
+            (ROOT / "tasks/completion-session-reports.md").read_text(encoding="utf-8"),
+            "## Stage Run Record — 2026-10-04",
+        )
+        lessons = LESSONS.read_text(encoding="utf-8")
+        cls.reconcile_lesson = _section(lessons, "## Lesson 0ht:")
+        cls.handoff_lesson = _section(lessons, "## Lesson 0hu:")
+
+    def table_rows(self, document: str, heading: str) -> list[dict[str, str]]:
+        """Read a record table and fail clearly if a row loses a field."""
+        rows = [
+            [cell.strip().strip("`*") for cell in line.strip("|").split("|")]
+            for line in _section(document, heading).splitlines()
+            if line.startswith("|")
+        ]
+        self.assertGreaterEqual(len(rows), 3, heading)
+        header, separator, *data = rows
+        self.assertEqual(len(header), len(set(header)), "Duplicate table column")
+        self.assertEqual(len(separator), len(header))
+        for row in data:
+            self.assertEqual(len(row), len(header), f"Malformed row: {row}")
+            self.assertTrue(all(row), f"Missing evidence field: {row}")
+        return [dict(zip(header, row)) for row in data]
+
+    def evidence_rows(self) -> list[dict[str, str]]:
+        return self.table_rows(
+            self.completion,
+            "## Mandatory per-item evidence, action, and outcome record",
+        )
+
+    def test_cas_revision_deltas_and_parent_chain_match_summary(self) -> None:
+        rows = self.table_rows(self.review, "## Ledger CAS")
+        self.assertEqual(len(rows), 2)
+        summary = _two_column_table(self.review_summary)
+        for row, metric in zip(
+            rows, ("First CAS transitions", "Second CAS transitions")
+        ):
+            with self.subTest(step=row["Step"]):
+                before, after = map(int, row["Revision"].split(" → "))
+                self.assertEqual(after - before, int(row["Applied"]))
+                self.assertEqual(row["Applied"], summary[metric])
+                self.assertIn(row["Revision"], self.review_summary)
+                for field in ("Commit", "Blob", "Parent"):
+                    self.assertRegex(row[field], r"^[0-9a-f]{40}$")
+                for field in ("Commit", "Blob"):
+                    self.assertIn(row[field], self.review_summary)
+        self.assertEqual(
+            rows[0]["Revision"].split(" → ")[1],
+            rows[1]["Revision"].split(" → ")[0],
+        )
+        self.assertEqual(rows[1]["Parent"], rows[0]["Commit"])
+        self.assertEqual(int(summary["Ledger CAS writes"]), len(rows))
+
+    def test_completion_reads_the_final_review_tip_without_advancing_it(self) -> None:
+        final_cas = self.table_rows(self.review, "## Ledger CAS")[-1]
+        revision = final_cas["Revision"].split(" → ")[1]
+        identity = _section(self.completion, "## Identity")
+        self.assertIn(f"**{revision} / {revision}** (unchanged)", identity)
+        for document in (identity, self.completion_summary):
+            for field in ("Commit", "Blob"):
+                with self.subTest(field=field, document=document[:40]):
+                    self.assertIn(final_cas[field], document)
+        handoffs = self.table_rows(
+            self.completion, "## Revision-checked handoffs and human decisions"
+        )
+        self.assertEqual(len(handoffs), 2)
+        for row in handoffs:
+            self.assertEqual(
+                row["Expected → resulting revision"], f"{revision} → {revision}"
+            )
+            self.assertEqual(row["Event ID / idempotency key"], "none issued")
+
+    def test_run_ids_and_full_record_references_agree(self) -> None:
+        for record, summary, path in (
+            (self.review, self.review_summary, "tasks/pr-review-2026-10-04-1500.md"),
+            (
+                self.completion,
+                self.completion_summary,
+                "tasks/pr-completion-2026-10-04.md",
+            ),
+        ):
+            with self.subTest(path=path):
+                run_ids = set(re.findall(r"20261004T\d{6}Z-[0-9a-f]{8}", summary))
+                self.assertEqual(len(run_ids), 1)
+                self.assertIn(next(iter(run_ids)), record)
+                self.assertIn(f"`{path}`", summary)
+                self.assertTrue((ROOT / path).is_file())
+        review_id = re.search(r"20261004T\d{6}Z-[0-9a-f]{8}", self.review).group()
+        self.assertIn(
+            review_id, _section(self.completion, "## Inputs and reconciliation")
+        )
+
+    def test_empty_feed_is_not_confused_with_stage3_reselect_stock(self) -> None:
+        feed = " ".join(_section(self.review, "## Feed").split())
+        self.assertIn("`FEED_CHECK` grade PASS", feed)
+        self.assertIn("`reselect_candidates` 0", feed)
+        self.assertIn("`enqueued_count` 0", feed)
+        self.assertIn("`salvage_eligible_count` 0", feed)
+        self.assertIn("`reselect_candidate_count` 6 is Stage-3-owned", feed)
+        metrics = _two_column_table(self.review_summary)
+        for metric in (
+            "Stage-1 reselect candidates",
+            "Stage 2 queued (this run)",
+            "Salvage-eligible remainder",
+            "GitHub PR mutations",
+        ):
+            self.assertEqual(metrics[metric], "0", metric)
+        inputs = " ".join(
+            _section(self.completion, "## Inputs and reconciliation").split()
+        )
+        self.assertIn("`reselect_candidate_count` 7", inputs)
+        self.assertIn("not `FEED_FAIL` while salvage-eligible remainder is 0", inputs)
+        self.assertIn("does not invent a Stage 2 report", inputs)
+
+    def test_completion_zero_actions_agree_with_summary(self) -> None:
+        metrics = dict(
+            re.findall(
+                r"^- ([^:\n]+): (.+)$", _section(self.completion, "## Metrics"), re.M
+            )
+        )
+        summary = _two_column_table(self.completion_summary)
+        for detailed, summarized in (
+            ("Merged", "Merged"),
+            ("Closed", "Closed"),
+            ("Decision packets created", "Decision packets"),
+            ("Stage 2 work items created", "Stage 2 work items"),
+            ("Ledger CAS writes", "Ledger file CAS writes"),
+            ("Analysis errors", "Analysis errors"),
+        ):
+            with self.subTest(metric=detailed):
+                self.assertEqual(metrics[detailed], "0")
+                self.assertEqual(summary[summarized], metrics[detailed])
+        self.assertEqual(metrics["Drafts created"], "0")
+        self.assertEqual(
+            metrics["State-changing actions, including failed attempts and retries"],
+            "0 / 15",
+        )
+        self.assertEqual(summary["Product mutations"], "0")
+        self.assertEqual(metrics["Calibration change"], "none")
+        self.assertEqual(summary["Calibration change"], "none")
+
+    def test_handoffs_preserve_existing_salvage_and_open_originals(self) -> None:
+        expected = {
+            "personal-config #2090": (2318, 2320),
+            "email-security-pipeline #1633": (1704,),
+            "repoprompt-ce #396": (424,),
+            "personal-config #2237": (2406,),
+            "personal-config #2244": (2407,),
+        }
+        rows = [
+            row
+            for row in self.evidence_rows()
+            if "HANDOFF_MECHANICAL_TO_STAGE2" in row["Proposed route / actual action"]
+        ]
+        self.assertCountEqual([row["Repository / PR"] for row in rows], expected)
+        summary = _two_column_table(self.completion_summary)
+        self.assertEqual(len(rows), int(summary["Mechanical handoffs withheld"]))
+        for row in rows:
+            with self.subTest(pr=row["Repository / PR"]):
+                self.assertIn("not CAS-written", row["Proposed route / actual action"])
+                self.assertIn("handoff skipped (0hu)", row["Guardrail outcome"])
+                self.assertEqual(row["Owner before → after"], "stage3 → stage3")
+                self.assertEqual(
+                    row["Provenance or canonical relation"], "leave original OPEN"
+                )
+                outcome = row["Final observed outcome / calibration correctness"]
+                self.assertTrue(outcome.startswith("OPEN;"))
+                self.assertIn("`MERGEABLE`/`UNSTABLE", outcome)
+                self.assertEqual(
+                    set(map(int, re.findall(r"#(\d+)", outcome))),
+                    set(expected[row["Repository / PR"]]),
+                )
+
+    def test_sticky_reconcile_rows_remain_unapplied_and_uniquely_anchored(self) -> None:
+        rows = self.evidence_rows()
+        keys = [row["Ledger key"] for row in rows]
+        self.assertEqual(len(keys), len(set(keys)))
+        for row in rows:
+            key = re.fullmatch(
+                r"abhimehro/([^#]+)#(\d+)@[0-9a-f]{40}", row["Ledger key"]
+            )
+            self.assertIsNotNone(key, row["Ledger key"])
+            repository, number = key.groups()
+            self.assertEqual(row["Repository / PR"], f"{repository} #{number}")
+            self.assertEqual(row["Changed paths"], "none")
+        sticky = [
+            row
+            for row in rows
+            if "REVIEW_SECURITY" in row["Classification / risk / sticky paths"]
+        ]
+        summary = _two_column_table(self.completion_summary)
+        self.assertEqual(len(sticky), 6)
+        self.assertEqual(len(sticky), int(summary["Reconcile dry-run (withheld)"]))
+        self.assertEqual(summary["Reconciliations (live, acted)"], "0")
+        for row in sticky:
+            with self.subTest(key=row["Ledger key"]):
+                self.assertEqual(row["Guardrail outcome"], "reconcile withheld")
+                self.assertIn("not applied", row["Proposed route / actual action"])
+                self.assertEqual(row["Owner before → after"], "unchanged")
+                self.assertIn(
+                    "anchor frozen",
+                    row["Final observed outcome / calibration correctness"],
+                )
+
+    def test_two_2077_anchors_do_not_collapse_onto_the_shared_live_head(self) -> None:
+        rows = [
+            row
+            for row in self.evidence_rows()
+            if row["Repository / PR"] == "personal-config #2077"
+        ]
+        self.assertEqual(len(rows), 2)
+        self.assertNotEqual(rows[0]["Ledger key"], rows[1]["Ledger key"])
+        live_heads = []
+        for row in rows:
+            live_head = re.search(
+                r"live head `([0-9a-f]+)`", row["Observed vs ledger base/head SHA"]
+            ).group(1)
+            live_heads.append(live_head)
+            self.assertFalse(row["Ledger key"].split("@")[1].startswith(live_head))
+            self.assertIn("not applied", row["Proposed route / actual action"])
+        self.assertEqual(live_heads[0], live_heads[1])
+
+    def test_closed_security_anchors_are_not_reported_as_reintaken(self) -> None:
+        rows = [
+            row
+            for row in self.evidence_rows()
+            if "observed CLOSED" in row["Classification / risk / sticky paths"]
+        ]
+        self.assertCountEqual(
+            [row["Repository / PR"] for row in rows],
+            ["personal-config #2034", "personal-config #2100"],
+        )
+        for row in rows:
+            self.assertIn("not applied", row["Proposed route / actual action"])
+            self.assertEqual(
+                row["Final observed outcome / calibration correctness"],
+                "CLOSED anchor frozen",
+            )
+        self.assertIn("They are not SHA re-intake", " ".join(self.review.split()))
+
+    def test_new_lessons_preserve_schema_and_duplicate_handoff_guards(self) -> None:
+        for lesson, requirements in (
+            (
+                self.reconcile_lesson,
+                (
+                    "Rekey `key`, event `item_key`, and `idempotency_key`",
+                    "if that key is taken, skip the item",
+                    "Do not bump item revision without an event",
+                    "`REVIEW_SECURITY` and non-bot head moves per item",
+                    "MERGED/CLOSED live state never falls through to SHA re-intake",
+                ),
+            ),
+            (
+                self.handoff_lesson,
+                (
+                    "already a `STAGE1_INTAKE` item, skip the handoff",
+                    "leave the original OPEN",
+                    "A replacement that is not `MERGEABLE`/`CLEAN` stays unmerged",
+                    "Swift salvage on Linux stays `HOLD_PLATFORM`",
+                    "Do not apply reconcile actions that move sticky `REVIEW_SECURITY`",
+                    "two keys on the same live head",
+                    "Do not spend the daily cap on Observed-CLOSED `CLOSED_NOOP`",
+                ),
+            ),
+        ):
+            normalized = " ".join(lesson.split())
+            for requirement in requirements:
+                with self.subTest(requirement=requirement):
+                    self.assertIn(requirement, normalized)
+        self.assertIn("Lesson **0ht**", self.review_summary)
+        self.assertIn("Lesson **0hu**", self.completion_summary)
+
+
 if __name__ == "__main__":
     unittest.main()
