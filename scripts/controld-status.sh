@@ -40,9 +40,9 @@ fi
 
 proc_alive=0
 proc_cmd=""
-if pgrep -x ctrld >/dev/null 2>&1; then
+if pgrep -x -- ctrld >/dev/null 2>&1; then
 	proc_alive=1
-	proc_cmd=$(pgrep -lf ctrld 2>/dev/null | head -1 || true)
+	proc_cmd=$(pgrep -lf -- ctrld 2>/dev/null | head -1 || true)
 fi
 
 port53="none"
