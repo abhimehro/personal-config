@@ -327,7 +327,8 @@ def _title_is_reselect_bot(title: str | None) -> bool:
     if not title:
         return False
     norm = _normalize_title_for_prefix(title)
-    return any(norm.startswith(prefix) for prefix in NORMALIZED_RESELECT_TITLE_PREFIXES)
+    # ⚡ Bolt Optimization: Use tuple with str.startswith for fast C-level prefix matching instead of generator in any()
+    return norm.startswith(NORMALIZED_RESELECT_TITLE_PREFIXES)
 
 
 def _extract_item_author_login(item: dict[str, Any]) -> str | None:
@@ -484,7 +485,11 @@ def _reselect_paths_ok(
     sticky = set(item.get("sensitive_paths") or [])
     if "lockfiles_and_major_dependencies" not in sticky:
         return True
-    return not any(path.endswith(LOCKFILE_SUFFIXES) for path in paths)
+    # ⚡ Bolt Optimization: Use explicit for loop over generator expression in any() to eliminate generator allocation overhead
+    for path in paths:
+        if path.endswith(LOCKFILE_SUFFIXES):
+            return False
+    return True
 
 
 def _anchors_match(item: dict[str, Any], live: LivePrSignals) -> bool:
