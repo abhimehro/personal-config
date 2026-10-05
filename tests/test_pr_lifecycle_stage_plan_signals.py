@@ -7,6 +7,8 @@ import unittest
 from typing import Any
 from unittest import mock
 
+import pr_lifecycle_pipeline_health as health
+
 from tests.pr_lifecycle_helpers import (
     NOW,
     import_lifecycle_run,
@@ -14,8 +16,6 @@ from tests.pr_lifecycle_helpers import (
     make_queryable_item,
     make_work_item,
 )
-
-import pr_lifecycle_pipeline_health as health
 
 run = import_lifecycle_run()
 

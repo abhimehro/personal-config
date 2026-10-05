@@ -145,9 +145,9 @@ do not invent recoveries. **Option 3 skip-if-empty (2026-09-24):** when dry-run
 `stage2_work_item_count == 0` and post never-touch mechanical candidates == 0,
 exit success (`EMPTY_INTAKE_SKIP`); do not open/push a docs lineage PR and do
 not launch further Cursor agents. Stage 1 CAS-enqueues ≤5
-`CONFLICTING_UNIQUE_RESELECT` work items; Stage 2 still never merges originals. A PR already merged, closed, deleted, or changed since
-its immutable anchors becomes a structured Stage 3 reconciliation handoff, not a
-recovery branch.
+`CONFLICTING_UNIQUE_RESELECT` work items; Stage 2 still never merges originals.
+A PR already merged, closed, deleted, or changed since its immutable anchors
+becomes a structured Stage 3 reconciliation handoff, not a recovery branch.
 
 ### Step 1: Group by repository and detect shared infrastructure failure
 

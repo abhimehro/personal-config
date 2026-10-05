@@ -14,11 +14,13 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import yaml  # noqa: E402
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     EXAMPLE_LEDGER,
     run_health_cli,
     schema_valid_starved_ledger,
 )
+
 
 class TestPipelineHealthCli(unittest.TestCase):
     def _write(self, ledger: dict[str, object]) -> Path:
@@ -81,4 +83,3 @@ class TestPipelineHealthCli(unittest.TestCase):
                 result = run_health_cli(str(copied))
                 self.assertEqual(result.returncode, 1)
                 self.assertIn(needle, result.stderr)
-
