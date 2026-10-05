@@ -20,7 +20,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 # Ensure scripts dir is on sys.path
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
@@ -775,8 +775,46 @@ class TestEndToEndSync(unittest.TestCase):
                 "chore: bump deps",
             ]
         )
-        exit_code = run_sync(args)
+        context = PRContext(
+            event_name="pull_request",
+            action="synchronize",
+            pr_number=123,
+            pr_title=args.pr_title,
+            pr_body="Routine maintenance",
+            pr_url="https://github.com/org/repo/pull/123",
+            branch_name=args.branch,
+            head_sha="abcdef123456",
+            is_draft=False,
+            is_merged=False,
+            is_closed=False,
+            commit_messages=(args.commit_message,),
+        )
+        # No textual keys can still require an authenticated lookup of a
+        # mirrored PR attachment. Keep credentials and CI PR metadata synthetic.
+        with (
+            patch(
+                "pr_recap.load_config",
+                return_value=Config.from_dict({"teamId": "test"}),
+            ),
+            patch("pr_recap.resolve_pr_context", return_value=context),
+            patch(
+                "pr_recap.resolve_linear_api_key",
+                return_value=("test-api-key", "test"),
+            ),
+            patch("pr_recap.LinearClient", autospec=True) as client_class,
+            patch("pr_recap.GitNexusAnalyzer", autospec=True) as analyzer_class,
+        ):
+            client = client_class.return_value
+            client.find_issue_by_attachment_url.return_value = None
+            exit_code = run_sync(args)
+
         self.assertEqual(exit_code, 0)
+        client_class.assert_called_once_with(api_key="test-api-key")
+        self.assertEqual(
+            client.method_calls,
+            [call.find_issue_by_attachment_url("pull/123")],
+        )
+        analyzer_class.assert_not_called()
 
     def test_sync_dry_run(self) -> None:
         parser = pr_recap.build_parser()
