@@ -61,19 +61,29 @@ interleaving.
 
 ## Sub-agent usage
 
-Use 0 sub-agents for docs-only, formatting-only, dependency-lockfile-only, or single-file typo changes.
+Use 0 sub-agents for docs-only, formatting-only, dependency-lockfile-only, or
+single-file typo changes.
 
-Use 1 sub-agent for focused changes under 300 changed lines when the diff touches one risky area, such as authentication, billing, database migrations, or security-sensitive parsing.
+Use 1 sub-agent for focused changes under 300 changed lines when the diff
+touches one risky area, such as authentication, billing, database migrations, or
+security-sensitive parsing.
 
 Use 3 sub-agents when a PR spans API, data model, and UI changes:
 
-1. API/data reviewer: check request validation, authorization, persistence, and migration safety.
-2. UI reviewer: check user-visible behavior, accessibility, empty states, and error states.
-3. Test reviewer: check that tests cover the observable behavior and important edge cases.
+1. API/data reviewer: check request validation, authorization, persistence, and
+   migration safety.
+2. UI reviewer: check user-visible behavior, accessibility, empty states, and
+   error states.
+3. Test reviewer: check that tests cover the observable behavior and important
+   edge cases.
 
-Use the full 6 sub-agents only for large cross-cutting changes, security-sensitive work, or changes above 800 changed lines. Split them by independent domains rather than asking every sub-agent to review the same files.
+Use the full 6 sub-agents only for large cross-cutting changes,
+security-sensitive work, or changes above 800 changed lines. Split them by
+independent domains rather than asking every sub-agent to review the same files.
 
-Each sub-agent must stay read-only, must not post comments, and must return findings with path, line, severity, rationale, and confidence. The main reviewer must verify every finding before posting it.
+Each sub-agent must stay read-only, must not post comments, and must return
+findings with path, line, severity, rationale, and confidence. The main reviewer
+must verify every finding before posting it.
 
 ## Calibration
 
@@ -110,9 +120,9 @@ changes**, one sentence of rationale, and the count of blocking findings.
 Codacy, qodo, and CodeRabbit review threads that have **no human reply** are
 **advisory**. They do not block routine Stage 3 completion.
 
-Stage 3 may resolve those threads with a short standard comment (policy pointer +
-"no human reply; treating as advisory") **before** `/trunk`, then continue
-bounded non-security completion when all other predicates pass.
+Stage 3 may resolve those threads with a short standard comment (policy
+pointer + "no human reply; treating as advisory") **before** `/trunk`, then
+continue bounded non-security completion when all other predicates pass.
 
 Still blocking (unchanged):
 

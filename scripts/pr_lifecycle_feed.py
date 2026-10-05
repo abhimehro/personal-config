@@ -148,6 +148,18 @@ def _expired_only_stock(ledger: dict[str, Any], *, expiry: int, clock: datetime)
     )
 
 
+def _non_never_touch_stock(
+    ledger: dict[str, Any], *, expiry: int, clock: datetime
+) -> int:
+    """Count feed-eligible stock whose keys are not never-touch sources."""
+    return sum(
+        1
+        for item in _dict_items(ledger)
+        if _reason_for_item(item, expiry=expiry, clock=clock) is not None
+        and not health.is_never_touch_key(item.get("key"))
+    )
+
+
 def build_feed(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -175,6 +187,9 @@ def build_feed(
         "work_item_count": len(work_items),
         "salvage_eligible_count": report.salvage_eligible_count,
         "eligible_stock_count": eligible_stock,
+        "non_never_touch_stock_count": _non_never_touch_stock(
+            ledger, expiry=expiry, clock=clock
+        ),
         "work_items": work_items,
         "empty_with_stock": empty_with_stock,
         "reason": reason,
