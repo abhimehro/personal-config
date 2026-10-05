@@ -6,14 +6,14 @@ import copy
 import unittest
 from unittest import mock
 
+import pr_lifecycle_pipeline_health as real_health
+
 from tests.pr_lifecycle_helpers import (
     import_lifecycle_run,
     make_health_report,
     make_item,
     make_ledger,
 )
-
-import pr_lifecycle_pipeline_health as real_health
 
 run = import_lifecycle_run()
 

@@ -17,11 +17,14 @@ MANUAL=0
 FORCE_TARGET_EMBEDDINGS=0
 
 for arg in "$@"; do
-  case "$arg" in
-    --manual) MANUAL=1 ;;
-    --force-target-embeddings) FORCE_TARGET_EMBEDDINGS=1 ;;
-    *) printf "Usage: %s [--manual] [--force-target-embeddings]\n" "$0" >&2; exit 64 ;;
-  esac
+	case "$arg" in
+	--manual) MANUAL=1 ;;
+	--force-target-embeddings) FORCE_TARGET_EMBEDDINGS=1 ;;
+	*)
+		printf "Usage: %s [--manual] [--force-target-embeddings]\n" "$0" >&2
+		exit 64
+		;;
+	esac
 done
 
 mkdir -p "$LOG_DIR" "$WATCH_DIR"
@@ -31,38 +34,75 @@ START_EPOCH="$(date "+%s")"
 FINISHED=0
 
 log() {
-  printf "[%s] %s\n" "$(date "+%Y-%m-%dT%H:%M:%S%z")" "$*" | tee -a "$LOG_FILE"
+	printf "[%s] %s\n" "$(date "+%Y-%m-%dT%H:%M:%S%z")" "$*" | tee -a "$LOG_FILE"
 }
 on_exit() {
-  local rc=$?
-  if [[ "$FINISHED" -eq 0 ]]; then
-    log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=$rc"
-  fi
+	local rc=$?
+	if [[ $FINISHED -eq 0 ]]; then
+		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=$rc"
+	fi
 }
 trap on_exit EXIT
-log "Start time: $(date "+%Y-%m-%dT%H:%M:%S%z"); mode=$([[ "$MANUAL" -eq 1 ]] && printf manual || printf scheduled)"
+log "Start time: $(date "+%Y-%m-%dT%H:%M:%S%z"); mode=$([[ $MANUAL -eq 1 ]] && printf manual || printf scheduled)"
 
-if [[ "$MANUAL" -eq 0 ]]; then
-  scheduled_window="$(date "+%H%M")"
-  if (( 10#$scheduled_window < 200 || 10#$scheduled_window > 204 )); then
-    log "SKIPPED: outside the 2:00-2:04 AM start window; launchd may have fired after wake."
-    FINISHED=1
-    log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
-    exit 0
-  fi
+check_ssh_auth() {
+	(timeout 5 ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 || true) | grep -Fq "You've successfully authenticated"
+}
+
+if [[ $MANUAL -eq 0 ]]; then
+	scheduled_window="$(date "+%H%M")"
+	if ((10#$scheduled_window < 1230 || 10#$scheduled_window > 1234)); then
+		# Outside the 12:30-12:34 PM window (e.g. launchd fired after sleep/wake).
+		# If SSH authentication is active (1Password unlocked, network up), permit one catch-up run.
+		# If SSH is unavailable, skip cleanly to avoid any interactive prompts or delayed thrash.
+		if ! check_ssh_auth; then
+			log "SKIPPED: outside the 12:30-12:34 PM start window and SSH authentication is not active."
+			FINISHED=1
+			log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
+			exit 0
+		fi
+		log "Wake-triggered start: SSH authentication verified; proceeding with catch-up cycle."
+	fi
 fi
 
-[[ -x "$GITNEXUS_BIN" ]] || { log "ERROR: missing GitNexus executable: $GITNEXUS_BIN"; exit 1; }
-[[ -r "$WATCH_CONFIG" ]] || { log "ERROR: unreadable watcher config: $WATCH_CONFIG"; exit 1; }
-grep -Eq "^max_concurrency:[[:space:]]*1[[:space:]]*$" "$WATCH_CONFIG" || { log "ERROR: max_concurrency must remain 1."; exit 1; }
-grep -Eq "^sync_interval_minutes:[[:space:]]*35791[[:space:]]*$" "$WATCH_CONFIG" || { log "ERROR: sync_interval_minutes must remain 35791 to prevent a follow-up cycle."; exit 1; }
+# Pre-flight check: verify SSH authentication to GitHub is ready.
+# If 1Password SSH agent is locked, awaiting biometric approval, or network is down,
+# fail fast immediately rather than hanging for 9 minutes (60s x 9 repos) and corrupting sync state.
+if ! check_ssh_auth; then
+	if [[ $MANUAL -eq 1 ]]; then
+		log "ERROR: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
+		exit 1
+	else
+		log "SKIPPED: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
+		FINISHED=1
+		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
+		exit 0
+	fi
+fi
+
+[[ -x $GITNEXUS_BIN ]] || {
+	log "ERROR: missing GitNexus executable: $GITNEXUS_BIN"
+	exit 1
+}
+[[ -r $WATCH_CONFIG ]] || {
+	log "ERROR: unreadable watcher config: $WATCH_CONFIG"
+	exit 1
+}
+grep -Eq "^max_concurrency:[[:space:]]*1[[:space:]]*$" "$WATCH_CONFIG" || {
+	log "ERROR: max_concurrency must remain 1."
+	exit 1
+}
+grep -Eq "^sync_interval_minutes:[[:space:]]*35791[[:space:]]*$" "$WATCH_CONFIG" || {
+	log "ERROR: sync_interval_minutes must remain 35791 to prevent a follow-up cycle."
+	exit 1
+}
 if grep -Eiq "repoprompt|repo-prompt" "$WATCH_CONFIG"; then
-  log "ERROR: RepoPrompt appears in config; refusing to run."
-  exit 1
+	log "ERROR: RepoPrompt appears in config; refusing to run."
+	exit 1
 fi
 
 CLONE_ROOT="$HOME/dev/.gitnexus-auto-sync/github.com/abhimehro"
-python3 - "$CLONE_ROOT" << "PY"
+python3 - "$CLONE_ROOT" <<"PY"
 import json
 import pathlib
 import sys
@@ -78,28 +118,37 @@ for name in ("personal-config", "ctrld-sync", "Seatek_Analysis"):
     print(f"Embeddings policy verified: {name}=true")
 PY
 
-status_output="$("$GITNEXUS_BIN" auto-sync status 2>&1)" || { log "ERROR: cannot read watcher status: $status_output"; exit 1; }
-state="$(printf "%s\n" "$status_output" | awk -F= "/^state=/ {split(\$2, fields, \" \"); print fields[1]; exit}")"
-if [[ "$state" == "running" ]]; then
-  prior_log=""
-  if [[ -r "$RUN_POINTER" ]]; then prior_log="$(cat "$RUN_POINTER")"; fi
-  if [[ -n "$prior_log" && -f "$prior_log" ]] && grep -Fq "[auto-sync] Watch loop finished:" "$prior_log"; then
-    log "Prior cycle completed; requesting clean shutdown. Log: $prior_log"
-    "$GITNEXUS_BIN" auto-sync stop >>"$LOG_FILE" 2>&1 || { log "ERROR: clean recovery stop failed; watcher left untouched."; exit 1; }
-    rm -f "$RUN_POINTER"
-    printf "[%s] Recovery: stopped after completion.\n" "$(date "+%Y-%m-%dT%H:%M:%S%z")" >>"$prior_log"
-    FINISHED=1
-    log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); recovered_previous_run=true"
-    exit 0
-  fi
-  log "ERROR: watcher already running; not starting another cycle or stopping it."
-  exit 1
+status_output="$("$GITNEXUS_BIN" auto-sync status 2>&1)" || {
+	log "ERROR: cannot read watcher status: $status_output"
+	exit 1
+}
+state="$(printf "%s\n" "$status_output" | awk -F= '/^state=/ {split($2, fields, " "); print fields[1]; exit}')"
+if [[ $state == "running" ]]; then
+	prior_log=""
+	if [[ -r $RUN_POINTER ]]; then prior_log="$(cat "$RUN_POINTER")"; fi
+	if [[ -n $prior_log && -f $prior_log ]] && grep -Fq "[auto-sync] Watch loop finished:" "$prior_log"; then
+		log "Prior cycle completed; requesting clean shutdown. Log: $prior_log"
+		"$GITNEXUS_BIN" auto-sync stop >>"$LOG_FILE" 2>&1 || {
+			log "ERROR: clean recovery stop failed; watcher left untouched."
+			exit 1
+		}
+		rm -f "$RUN_POINTER"
+		printf "[%s] Recovery: stopped after completion.\n" "$(date "+%Y-%m-%dT%H:%M:%S%z")" >>"$prior_log"
+		FINISHED=1
+		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); recovered_previous_run=true"
+		exit 0
+	fi
+	log "ERROR: watcher already running; not starting another cycle or stopping it."
+	exit 1
 fi
-[[ "$state" == "stopped" ]] || { log "ERROR: watcher state is $state, not stopped; refusing to clear state or start."; exit 1; }
+[[ $state == "stopped" ]] || {
+	log "ERROR: watcher state is $state, not stopped; refusing to clear state or start."
+	exit 1
+}
 
-if [[ "$FORCE_TARGET_EMBEDDINGS" -eq 1 ]]; then
-  backup="$STATE_FILE.pre-embedding-rebuild-$RUN_ID.bak"
-  python3 - "$STATE_FILE" "$backup" "$CLONE_ROOT" << "PY"
+if [[ $FORCE_TARGET_EMBEDDINGS -eq 1 ]]; then
+	backup="$STATE_FILE.pre-embedding-rebuild-$RUN_ID.bak"
+	python3 - "$STATE_FILE" "$backup" "$CLONE_ROOT" <<"PY"
 import json
 import os
 import pathlib
@@ -127,45 +176,57 @@ os.replace(tmp, state_path)
 print("Forced analysis for: personal-config, ctrld-sync, Seatek_Analysis")
 print(f"Pre-change auto-sync state backup: {backup_path}")
 PY
-  log "One-time force enabled for the three embeddings-selected indexes; all other repo state remains unchanged."
+	log "One-time force enabled for the three embeddings-selected indexes; all other repo state remains unchanged."
 fi
 
 pointer_tmp="$RUN_POINTER.tmp.$$"
-printf "%s\n" "$LOG_FILE" > "$pointer_tmp"
+printf "%s\n" "$LOG_FILE" >"$pointer_tmp"
 mv -f "$pointer_tmp" "$RUN_POINTER"
 log "Starting one auto-sync cycle with reduced CPU priority (nice 10)."
 nice -n 10 "$GITNEXUS_BIN" auto-sync start >>"$LOG_FILE" 2>&1 &
 watch_cli_pid=$!
 
 while ! grep -Fq "[auto-sync] Watch loop finished:" "$LOG_FILE"; do
-  if ! kill -0 "$watch_cli_pid" 2>/dev/null; then
-    wait "$watch_cli_pid" || true
-    log "ERROR: GitNexus exited before publishing its completion signal; no forced cleanup attempted."
-    exit 1
-  fi
-  elapsed=$(( $(date "+%s") - START_EPOCH ))
-  if (( elapsed >= MAX_WAIT_SECONDS )); then
-    FINISHED=1
-    log "TIMEOUT: no completion after ${MAX_WAIT_SECONDS}s. Exiting without stopping or killing the active watcher/analyzer; review this run manually."
-    log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=75; watcher_left_running=true"
-    exit 75
-  fi
-  sleep "$POLL_SECONDS"
+	if ! kill -0 "$watch_cli_pid" 2>/dev/null; then
+		wait "$watch_cli_pid" || true
+		log "ERROR: GitNexus exited before publishing its completion signal; no forced cleanup attempted."
+		exit 1
+	fi
+	elapsed=$(($(date "+%s") - START_EPOCH))
+	if ((elapsed >= MAX_WAIT_SECONDS)); then
+		FINISHED=1
+		log "TIMEOUT: no completion after ${MAX_WAIT_SECONDS}s. Exiting without stopping or killing the active watcher/analyzer; review this run manually."
+		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=75; watcher_left_running=true"
+		exit 75
+	fi
+	sleep "$POLL_SECONDS"
 done
 
 log "Completion signal received; requesting graceful watcher stop."
-"$GITNEXUS_BIN" auto-sync stop >>"$LOG_FILE" 2>&1 || { log "ERROR: stop command failed; no signal escalation attempted."; exit 1; }
+"$GITNEXUS_BIN" auto-sync stop >>"$LOG_FILE" 2>&1 || {
+	log "ERROR: stop command failed; no signal escalation attempted."
+	exit 1
+}
 stopped=0
 for _ in $(seq 1 30); do
-  status_output="$("$GITNEXUS_BIN" auto-sync status 2>&1 || true)"
-  state="$(printf "%s\n" "$status_output" | awk -F= "/^state=/ {split(\$2, fields, \" \"); print fields[1]; exit}")"
-  if [[ "$state" == "stopped" ]]; then stopped=1; break; fi
-  sleep 1
+	status_output="$("$GITNEXUS_BIN" auto-sync status 2>&1 || true)"
+	state="$(printf "%s\n" "$status_output" | awk -F= '/^state=/ {split($2, fields, " "); print fields[1]; exit}')"
+	if [[ $state == "stopped" ]]; then
+		stopped=1
+		break
+	fi
+	sleep 1
 done
-[[ "$stopped" -eq 1 ]] || { log "ERROR: watcher did not report stopped; leaving it untouched."; exit 1; }
-wait "$watch_cli_pid" || { log "ERROR: watcher stopped but CLI returned non-zero."; exit 1; }
+[[ $stopped -eq 1 ]] || {
+	log "ERROR: watcher did not report stopped; leaving it untouched."
+	exit 1
+}
+wait "$watch_cli_pid" || {
+	log "ERROR: watcher stopped but CLI returned non-zero."
+	exit 1
+}
 
-python3 - "$GITNEXUS_HOME/watch/project_commit_info.txt" << "PY" | tee -a "$LOG_FILE"
+python3 - "$GITNEXUS_HOME/watch/project_commit_info.txt" <<"PY" | tee -a "$LOG_FILE"
 import pathlib
 import sys
 path = pathlib.Path(sys.argv[1])
