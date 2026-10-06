@@ -139,6 +139,10 @@ def _is_pr_stale(updated_at, now=None):
     return (now - dt).days > 30
 
 
+# ⚡ Bolt Optimization: Module-level tuple constant eliminates list allocations on every _get_pr_category call
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+
+
 def _is_checks_failing(checks):
     # Substring matching is intentional: the inventory file uses markdown-formatted
     # statuses (e.g., "**U**") as well as plain codes, so exact equality would miss them.
@@ -160,7 +164,7 @@ def _get_pr_category(info, checks, now=None):
     if checks_failing and _is_pr_stale(info.get("updatedAt", ""), now):
         return "STALE"
 
-    if merge_status in ["DIRTY", "CONFLICTING"]:
+    if merge_status in _UNMERGEABLE_STATUSES:
         return "CONFLICTING"
 
     if merge_status == "CLEAN" and not checks_failing:
