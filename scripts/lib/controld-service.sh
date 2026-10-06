@@ -109,18 +109,18 @@ _stop_ctrld_cleanly() {
 	_ctrld service stop 2>/dev/null || true
 	_ctrld stop 2>/dev/null || true
 
-	while pgrep -x "ctrld" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
+	while pgrep -x -- "ctrld" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
 		_ctrld service stop 2>/dev/null || true
 		sleep 0.1
 		retry=$((retry + 1))
 	done
 
-	if pgrep -x "ctrld" >/dev/null 2>&1; then
+	if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 		# Last resort: uninstall clears KeepAlive, then terminate stragglers.
 		_ctrld service uninstall 2>/dev/null || true
 		pkill -x -- ctrld 2>/dev/null || true
 		_wait_for_process_stop "ctrld" 30
-		if pgrep -x "ctrld" >/dev/null 2>&1; then
+		if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 			pkill -9 -x -- ctrld 2>/dev/null || true
 			sleep 0.1
 		fi
@@ -174,7 +174,7 @@ _controld_now_s() {
 
 # True when a ctrld worker is visible (process table or launchd PID column).
 _ctrld_process_alive() {
-	if pgrep -x "ctrld" >/dev/null 2>&1; then
+	if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 		return 0
 	fi
 	# launchctl list: "PID Status Label" — PID "-" means not running.
@@ -524,7 +524,7 @@ _write_controld_status_file() {
 		dig_ok="yes"
 	fi
 	holder=$(_foreign_port53_holder 2>/dev/null || true)
-	if [[ -z $holder ]] && pgrep -x ctrld >/dev/null 2>&1; then
+	if [[ -z $holder ]] && pgrep -x -- ctrld >/dev/null 2>&1; then
 		holder="ctrld"
 	elif [[ -z $holder ]]; then
 		holder="none"
@@ -790,7 +790,7 @@ _force_reinstall_ctrld_native() {
 
 	# Uninstall only if the process is still alive after stop (KeepAlive zombie).
 	# Unconditional uninstall caused: relative notice + no logs → Service uninstalled.
-	if pgrep -x "ctrld" >/dev/null 2>&1; then
+	if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 		echo "[WARN] ctrld still alive after stop; uninstalling once to clear KeepAlive." >>"$start_err_log"
 		_ctrld service uninstall 2>/dev/null || true
 		sleep 0.5
@@ -817,7 +817,7 @@ _force_reinstall_ctrld_native() {
 	sleep 0.5
 	{
 		echo "[INFO] post-start settle:"
-		if pgrep -x "ctrld" >/dev/null 2>&1; then
+		if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 			echo "  process: alive"
 		else
 			echo "  process: DEAD (CLI may still have said Service started)"
@@ -1065,7 +1065,7 @@ show_status() {
 	echo "=== Control D Profile Manager Status ==="
 	echo
 
-	if pgrep -f ctrld >/dev/null; then
+	if pgrep -f -- "ctrld" >/dev/null 2>&1; then
 		echo "Service Status: ✅ Running"
 
 		if [[ -f $ACTIVE_PROFILE_FILE ]]; then
