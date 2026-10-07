@@ -192,6 +192,12 @@ class TestIssueExtraction(unittest.TestCase):
             {"ABHI-12": "closes", "OPS-1": "links"},
         )
 
+    def test_explicit_issue_keys_normalize_cli_values(self) -> None:
+        self.assertEqual(
+            pr_recap._explicit_issue_keys((" ops-1:closes ", "", "ABHI-2")),
+            {"OPS-1", "ABHI-2"},
+        )
+
     def test_expanded_branch_categories(self) -> None:
         test_cases = [
             ("sentinel/ABHI-500", {"ABHI-500": "links"}),
@@ -828,6 +834,16 @@ class TestSyncSingleIssue(unittest.TestCase):
         client.update_issue_state.assert_not_called()
         client.upsert_recap_comment.assert_not_called()
         client.ensure_diff_link.assert_not_called()
+
+    def test_fetch_issue_or_none_live_not_found_returns_none(self) -> None:
+        client = MagicMock()
+        client.get_issue.side_effect = LinearApiError(
+            "Linear GraphQL error: Entity not found: Issue"
+        )
+
+        self.assertIsNone(
+            pr_recap._fetch_issue_or_none(client, "ABHI-12", dry_run=False)
+        )
 
     def test_live_none_issue_is_skipped_without_mutations(self) -> None:
         client = MagicMock()

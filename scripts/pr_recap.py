@@ -292,6 +292,14 @@ def filter_issue_keys(
     return filtered
 
 
+def _explicit_issue_keys(explicit_issues: tuple[str, ...]) -> frozenset[str]:
+    return frozenset(
+        normalize_issue_key(raw.strip().split(":", 1)[0])
+        for raw in explicit_issues
+        if raw and raw.strip()
+    )
+
+
 def extract_issue_keys(
     branch_name: str = "",
     commit_messages: tuple[str, ...] | list[str] = (),
@@ -1469,6 +1477,24 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     return 1
 
 
+def _fetch_issue_or_none(
+    linear_client: LinearClient,
+    issue_key: str,
+    dry_run: bool,
+) -> LinearIssue | None:
+    try:
+        return linear_client.get_issue(issue_key)
+    except LinearApiError as exc:
+        if "entity not found" not in str(exc).lower():
+            raise
+        if dry_run:
+            logger.info(
+                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
+                issue_key,
+            )
+        return None
+
+
 def _sync_single_issue(
     issue_key: str,
     relationship: RelationshipType,
@@ -1486,18 +1512,7 @@ def _sync_single_issue(
         logger.info("[DRY RUN] Would fetch and reconcile issue %s", issue_key)
         return True
 
-    try:
-        issue = linear_client.get_issue(issue_key)
-    except LinearApiError as exc:
-        if "entity not found" in str(exc).lower():
-            if dry_run:
-                logger.info(
-                    "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
-                    issue_key,
-                )
-            issue = None
-        else:
-            raise
+    issue = _fetch_issue_or_none(linear_client, issue_key, dry_run)
 
     if issue is None:
         if dry_run:
@@ -1614,13 +1629,10 @@ def run_sync(args: argparse.Namespace) -> int:
         pr_body=context.pr_body,
         explicit_issues=explicit_issues,
     )
-    keep_explicit = frozenset(
-        normalize_issue_key(raw.strip().split(":", 1)[0])
-        for raw in explicit_issues
-        if raw and raw.strip()
-    )
     issue_map = filter_issue_keys(
-        issue_map, config.issue_key_prefixes, keep=keep_explicit
+        issue_map,
+        config.issue_key_prefixes,
+        keep=_explicit_issue_keys(explicit_issues),
     )
 
     # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
