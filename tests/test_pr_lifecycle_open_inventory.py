@@ -194,7 +194,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertIn("pageInfo { hasNextPage }", commands[0][4])
         self.assertIn("cursor=cursor-1", commands[1])
 
-    def test_truncated_or_unknown_check_page_info_marks_checks_incomplete(self):
+    def test_truncated_or_unknown_check_page_info_marks_checks_incomplete(self) -> None:
         for page_info in (
             {"hasNextPage": True},
             None,
@@ -216,7 +216,7 @@ class OpenInventoryTests(unittest.TestCase):
                     {"name": "statusCheckRollup truncated", "state": "PENDING"},
                 )
 
-    def test_missing_or_noninteger_comment_total_is_unknown(self):
+    def test_missing_or_noninteger_comment_total_is_unknown(self) -> None:
         for count in (None, "120", True, -1):
             raw = _pr()
             if count is None:

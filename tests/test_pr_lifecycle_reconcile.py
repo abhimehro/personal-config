@@ -262,7 +262,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["action"], "TERMINAL_CLOSED")
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_closed_security_item_without_label_stays_pending(self):
+    def test_closed_security_item_without_label_stays_pending(self) -> None:
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
