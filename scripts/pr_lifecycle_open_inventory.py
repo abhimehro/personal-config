@@ -340,18 +340,14 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
     return normalized_pr
 
 
+_REPO_RE = re.compile(r"^[^/]+/[^/]+$")
+
+
 def _split_repo(repo: str) -> tuple[str, str]:
     """Split owner/name, raising OSError for anything else."""
-    try:
-        owner, name = repo.split("/", 1)
-        if not owner:
-            raise ValueError("repository must be owner/name")
-        if not name:
-            raise ValueError("repository must be owner/name")
-        if "/" in name:
-            raise ValueError("repository must be owner/name")
-    except (AttributeError, ValueError) as exc:
-        raise OSError("invalid repository") from exc
+    if not isinstance(repo, str) or _REPO_RE.fullmatch(repo) is None:
+        raise OSError("invalid repository")
+    owner, name = repo.split("/", 1)
     return owner, name
 
 
