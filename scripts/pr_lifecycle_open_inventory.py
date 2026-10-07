@@ -142,9 +142,11 @@ def _author_login(author: Any) -> str:
     if not isinstance(author, dict):
         return ""
     login = str(author.get("login") or "")
-    if author.get("__typename") == "Bot" and login and not login.endswith("[bot]"):
-        return f"{login}[bot]"
-    return login
+    if author.get("__typename") != "Bot":
+        return login
+    if not login or login.endswith("[bot]"):
+        return login
+    return f"{login}[bot]"
 
 
 def _require_identity(raw: dict[str, Any]) -> dict[str, Any]:
