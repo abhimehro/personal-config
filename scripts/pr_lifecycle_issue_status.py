@@ -64,6 +64,20 @@ def _gh_issue(
     )
 
 
+def _gh_listed_rows(listed: subprocess.CompletedProcess[str]) -> list[Any]:
+    """Return a dict-row issue-list payload; raise on failure or malformed JSON."""
+    if listed.returncode != 0:
+        stderr = (listed.stderr or "").strip()[:200]
+        raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
+    try:
+        rows = json.loads(listed.stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise OSError("gh issue list returned a malformed payload") from exc
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        raise OSError("gh issue list returned a malformed payload")
+    return rows
+
+
 def _list_pinned_rows(repo: str = _ISSUE_REPO) -> list[Any]:
     """Return the bounded issue-list payload; raise on any failed listing."""
     listed = _gh_issue(
@@ -80,16 +94,7 @@ def _list_pinned_rows(repo: str = _ISSUE_REPO) -> list[Any]:
         ],
         repo,
     )
-    if listed.returncode != 0:
-        stderr = (listed.stderr or "").strip()[:200]
-        raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
-    try:
-        rows = json.loads(listed.stdout)
-    except json.JSONDecodeError:
-        rows = None
-    if not isinstance(rows, list):
-        raise OSError("gh issue list returned a malformed payload")
-    return rows
+    return _gh_listed_rows(listed)
 
 
 def _pinned_row_number(row: dict[str, Any]) -> int:
@@ -161,16 +166,7 @@ def _list_backlog_rows(repo: str) -> list[Any]:
         ],
         repo,
     )
-    if listed.returncode != 0:
-        stderr = (listed.stderr or "").strip()[:200]
-        raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
-    try:
-        rows = json.loads(listed.stdout)
-    except (TypeError, json.JSONDecodeError) as exc:
-        raise OSError("gh issue list returned a malformed payload") from exc
-    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
-        raise OSError("gh issue list returned a malformed payload")
-    return rows
+    return _gh_listed_rows(listed)
 
 
 def _utc(value: datetime) -> datetime:

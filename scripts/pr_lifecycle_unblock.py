@@ -86,33 +86,46 @@ def _fetch_rest_comments(
     return _flatten_comment_pages(json.loads(result.stdout))
 
 
+def _comment_items(payload: list[Any]) -> list[Any]:
+    """Flatten a --slurp page-of-lists payload, or return it unchanged."""
+    if all(isinstance(page, list) for page in payload):
+        return [comment for page in payload for comment in page]
+    return payload
+
+
 def _flatten_comment_pages(payload: Any) -> list[dict[str, Any]]:
     """Return comment dicts from a --slurp payload (pages or a flat list)."""
     if not isinstance(payload, list):
         raise TypeError("malformed comments payload")
-    if all(isinstance(page, list) for page in payload):
-        raw = [comment for page in payload for comment in page]
-    elif all(isinstance(comment, dict) for comment in payload):
-        raw = payload
-    else:
-        raise ValueError("malformed comments payload")
+    raw = _comment_items(payload)
     if not all(isinstance(comment, dict) for comment in raw):
         raise ValueError("malformed comments payload")
     return raw
 
 
+def _optional_str(value: Any) -> bool:
+    """True for None or a string value."""
+    return value is None or isinstance(value, str)
+
+
+def _valid_rest_comment(comment: dict[str, Any]) -> bool:
+    """Require a dict user with string login plus optional string fields."""
+    author = comment.get("user")
+    return (
+        isinstance(author, dict)
+        and isinstance(author.get("login"), str)
+        and _optional_str(comment.get("body"))
+        and _optional_str(comment.get("created_at"))
+    )
+
+
 def _normalize_rest_comment(comment: dict[str, Any]) -> dict[str, Any]:
     """Validate one REST comment and return it in inventory shape."""
-    author = comment.get("user")
+    if not _valid_rest_comment(comment):
+        raise ValueError("malformed comment")
+    author = comment["user"]
     body = comment.get("body")
     created_at = comment.get("created_at")
-    if (
-        not isinstance(author, dict)
-        or not isinstance(author.get("login"), str)
-        or (body is not None and not isinstance(body, str))
-        or (created_at is not None and not isinstance(created_at, str))
-    ):
-        raise ValueError("malformed comment")
     return {
         "author": {"login": author.get("login") or ""},
         "body": body or "",
@@ -120,17 +133,22 @@ def _normalize_rest_comment(comment: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _comment_target_valid(repository: Any, number: Any) -> bool:
+    """Require a non-empty repo string and a positive int PR number."""
+    return (
+        isinstance(repository, str)
+        and bool(repository)
+        and isinstance(number, int)
+        and not isinstance(number, bool)
+        and number >= 1
+    )
+
+
 def _comment_backlog_target(pr: dict[str, Any]) -> tuple[str, int] | None:
     """Return the (repository, number) fetch target, or None when invalid."""
     repository = pr.get("repository")
     number = pr.get("number")
-    if (
-        not isinstance(repository, str)
-        or not repository
-        or not isinstance(number, int)
-        or isinstance(number, bool)
-        or number < 1
-    ):
+    if not _comment_target_valid(repository, number):
         return None
     return repository, number
 
@@ -146,11 +164,7 @@ def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
         comments = []
         pr["comments"] = comments
     total_count = pr.get("commentsTotalCount")
-    if (
-        not isinstance(total_count, int)
-        or isinstance(total_count, bool)
-        or total_count < 0
-    ):
+    if not _comments_total_valid(total_count):
         pr["comments_incomplete"] = True
         return
     if total_count <= len(comments):
@@ -175,6 +189,15 @@ def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
         return
     pr["comments"] = normalized
     pr.pop("comments_incomplete", None)
+
+
+def _comments_total_valid(total_count: Any) -> bool:
+    """Require a non-negative int total so fetch counts are trustworthy."""
+    return (
+        isinstance(total_count, int)
+        and not isinstance(total_count, bool)
+        and total_count >= 0
+    )
 
 
 def _resolve_repositories(

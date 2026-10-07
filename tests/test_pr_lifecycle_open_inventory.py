@@ -16,105 +16,17 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_open_inventory as inventory
 
-
-def _check_contexts() -> list[dict]:
-    """Return the mixed CheckRun and legacy StatusContext fixture nodes."""
-    return [
-        {
-            "__typename": "CheckRun",
-            "name": "Build",
-            "conclusion": "SUCCESS",
-            "status": "COMPLETED",
-        },
-        {
-            "__typename": "CheckRun",
-            "name": "Lint",
-            "conclusion": None,
-            "status": "IN_PROGRESS",
-        },
-        {"__typename": "StatusContext", "context": "Legacy", "state": "ERROR"},
-        {"__typename": "StatusContext", "context": "Optional", "state": "EXPECTED"},
-    ]
-
-
-def _pr_connections() -> dict:
-    """Return the nested reviews/comments/commits connections of the fixture."""
-    return {
-        "latestReviews": {
-            "nodes": [{"author": {"login": "reviewer"}, "state": "APPROVED"}]
-        },
-        "comments": {
-            "totalCount": 1,
-            "nodes": [
-                {
-                    "author": {"login": "reviewer"},
-                    "body": "comment",
-                    "createdAt": "2026-10-02T00:00:00Z",
-                }
-            ],
-        },
-        "commits": {
-            "nodes": [
-                {
-                    "commit": {
-                        "author": {"email": "bot@example.com"},
-                        "statusCheckRollup": {
-                            "contexts": {
-                                "pageInfo": {"hasNextPage": False},
-                                "nodes": _check_contexts(),
-                            }
-                        },
-                    }
-                }
-            ]
-        },
-    }
-
-
-def _pr(number: int = 12) -> dict:
-    """Build a GraphQL PR fixture with reviews, comments, commits, and check states."""
-    return {
-        "number": number,
-        "url": f"https://github.com/owner/repo/pull/{number}",
-        "title": "Example",
-        "body": "x" * 2200,
-        "isDraft": True,
-        "headRefName": "bot/update",
-        "headRefOid": "a" * 40,
-        "baseRefName": "main",
-        "baseRefOid": "b" * 40,
-        "author": {"login": "dependabot[bot]", "__typename": "Bot"},
-        "mergeable": "MERGEABLE",
-        "mergeStateStatus": "CLEAN",
-        "reviewDecision": "REVIEW_REQUIRED",
-        "createdAt": "2026-10-01T00:00:00Z",
-        "updatedAt": "2026-10-02T00:00:00Z",
-        **_pr_connections(),
-    }
-
-
-def _payload(nodes: list[dict], *, next_page: bool = False, cursor: str = "cursor-1"):
-    """Wrap PR nodes in a GraphQL page with configurable pagination metadata."""
-    return {
-        "data": {
-            "repository": {
-                "pullRequests": {
-                    "pageInfo": {
-                        "hasNextPage": next_page,
-                        "endCursor": cursor if next_page else None,
-                    },
-                    "nodes": nodes,
-                }
-            }
-        }
-    }
+from tests.pr_lifecycle_helpers import (
+    make_inventory_payload,
+    make_inventory_pr,
+)
 
 
 class OpenInventoryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.inv = inventory
-        self.make_pr = _pr
-        self.payload = _payload
+        self.make_pr = make_inventory_pr
+        self.payload = make_inventory_payload
 
     def test_bot_logins_gain_rest_style_suffix(self):
         raw = self.make_pr()

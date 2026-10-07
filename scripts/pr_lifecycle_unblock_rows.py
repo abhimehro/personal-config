@@ -42,13 +42,10 @@ def _row_expiry(
 
 
 def _backlog_row(
-    item: dict[str, Any],
-    repo: str,
-    next_action: str,
-    expires: str | None,
-    packet_expiry_days: int,
+    item: dict[str, Any], repo: str, packet_expiry_days: int
 ) -> dict[str, Any]:
     """Build one human-decision backlog row from a ledger item."""
+    next_action = str(item.get("next_action") or "")
     return {
         "repository": repo,
         "pr": item.get("pr"),
@@ -59,7 +56,7 @@ def _backlog_row(
         "safe_default": item.get("safe_default")
         or "Leave open; no merge or close without a human decision.",
         "owner": "human",
-        "expires": expires,
+        "expires": _row_expiry(item, next_action, packet_expiry_days),
         "packet_expiry_close_days": packet_expiry_days,
     }
 
@@ -68,21 +65,11 @@ def _human_ledger_rows(
     repo: str, ledger: dict[str, Any], packet_expiry_days: int
 ) -> list[dict[str, Any]]:
     """Build backlog rows for nonterminal human-owned items and security holds."""
-    rows: list[dict[str, Any]] = []
-    for item in ledger.get("items") or []:
-        if not _backlog_item(item, repo):
-            continue
-        next_action = str(item.get("next_action") or "")
-        rows.append(
-            _backlog_row(
-                item,
-                repo,
-                next_action,
-                _row_expiry(item, next_action, packet_expiry_days),
-                packet_expiry_days,
-            )
-        )
-    return rows
+    return [
+        _backlog_row(item, repo, packet_expiry_days)
+        for item in ledger.get("items") or []
+        if _backlog_item(item, repo)
+    ]
 
 
 def _rows_for_repo(

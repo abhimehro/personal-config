@@ -177,9 +177,7 @@ def _unanswered_trigger(
 ) -> list[dict[str, Any]]:
     """Suppress a fresh duplicate marker; escalate an expired or undated one."""
     created = _parse_datetime(comment.get("createdAt"))
-    expiry = ctx.settings.get("trigger_expiry_days", 3)
-    if not isinstance(expiry, int) or isinstance(expiry, bool) or expiry < 1:
-        expiry = 3
+    expiry = _trigger_expiry_days(ctx.settings)
     if created is not None and _utc(ctx.now) - created <= timedelta(days=expiry):
         return []
     sent = comment.get("createdAt") or "unknown date"
@@ -235,6 +233,14 @@ def _trigger_action(
     ]
 
 
+def _trigger_expiry_days(settings: dict[str, Any]) -> int:
+    """Return the configured unanswered-trigger expiry, defaulting to 3."""
+    expiry = settings.get("trigger_expiry_days", 3)
+    if not isinstance(expiry, int) or isinstance(expiry, bool) or expiry < 1:
+        return 3
+    return expiry
+
+
 def _advisory(name: str, patterns: list[str]) -> bool:
     """Match a check name against exact names or trailing-asterisk prefixes."""
     return any(
@@ -264,12 +270,10 @@ def _lineage_date(pr: dict[str, Any]) -> date | None:
         return None
 
 
-def _salvage_replacement(
-    pr: dict[str, Any],
-    ledger_items_for_pr: list[dict[str, Any]],
-    ledger: dict[str, Any],
-) -> dict[str, Any] | None:
-    """Find a merged Stage 2 replacement whose evidence links to this PR."""
+def _terminal_items(
+    ledger_items_for_pr: list[dict[str, Any]], ledger: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Return terminal items from the ledger plus this PR's terminal items."""
     items = [
         item
         for item in (ledger.get("items") or [])
@@ -280,19 +284,35 @@ def _salvage_replacement(
         for item in ledger_items_for_pr
         if item.get("lifecycle_state") == "TERMINAL" and item not in items
     )
-    for replacement in items:
-        if not str(replacement.get("terminal_disposition") or "").startswith("MERGED_"):
-            continue
-        handoffs = replacement.get("handoffs") or []
-        evidence_urls = replacement.get("evidence_urls") or []
-        if (
-            handoffs
-            and str(handoffs[0]).startswith(_S2_HANDOFF_PREFIX)
-            and replacement.get("url") != pr.get("url")
-            and pr.get("url") in evidence_urls
-        ):
-            return replacement
-    return None
+    return items
+
+
+def _is_salvage_replacement(replacement: dict[str, Any], pr: dict[str, Any]) -> bool:
+    """True for a merged Stage 2 replacement whose evidence cites this PR."""
+    if not str(replacement.get("terminal_disposition") or "").startswith("MERGED_"):
+        return False
+    handoffs = replacement.get("handoffs") or []
+    if not handoffs or not str(handoffs[0]).startswith(_S2_HANDOFF_PREFIX):
+        return False
+    if replacement.get("url") == pr.get("url"):
+        return False
+    return pr.get("url") in (replacement.get("evidence_urls") or [])
+
+
+def _salvage_replacement(
+    pr: dict[str, Any],
+    ledger_items_for_pr: list[dict[str, Any]],
+    ledger: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Find a merged Stage 2 replacement whose evidence links to this PR."""
+    return next(
+        (
+            item
+            for item in _terminal_items(ledger_items_for_pr, ledger)
+            if _is_salvage_replacement(item, pr)
+        ),
+        None,
+    )
 
 
 def _terminal_but_open(
@@ -301,18 +321,25 @@ def _terminal_but_open(
     """Escalate an open head marked terminal when no active ledger item exists."""
     if any(item.get("lifecycle_state") != "TERMINAL" for item in ledger_items_for_pr):
         return None
-    for item in ledger_items_for_pr:
-        key = f"{ctx.pr.get('repository')}#{ctx.pr.get('number')}@{ctx.head}"
-        if item.get("lifecycle_state") == "TERMINAL" and item.get("key") == key:
-            return _escalation(
-                ctx,
-                "ledger_terminal_but_open",
-                evidence={"terminal_disposition": item.get("terminal_disposition")},
-                recommended_action=(
-                    "PR is open but ledger says "
-                    f"{item.get('terminal_disposition')}: close it or confirm it "
-                    "should be re-reviewed"
-                ),
-                security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
-            )
-    return None
+    key = f"{ctx.pr.get('repository')}#{ctx.pr.get('number')}@{ctx.head}"
+    item = next(
+        (
+            i
+            for i in ledger_items_for_pr
+            if i.get("lifecycle_state") == "TERMINAL" and i.get("key") == key
+        ),
+        None,
+    )
+    if item is None:
+        return None
+    return _escalation(
+        ctx,
+        "ledger_terminal_but_open",
+        evidence={"terminal_disposition": item.get("terminal_disposition")},
+        recommended_action=(
+            "PR is open but ledger says "
+            f"{item.get('terminal_disposition')}: close it or confirm it "
+            "should be re-reviewed"
+        ),
+        security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
+    )

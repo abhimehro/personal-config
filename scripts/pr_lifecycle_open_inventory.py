@@ -156,11 +156,12 @@ def _require_identity(raw: dict[str, Any]) -> dict[str, Any]:
     if author is not None and not isinstance(author, dict):
         raise OSError("malformed pull request author")
     author = author or {}
-    login = author.get("login")
-    if login is not None and not isinstance(login, str):
-        raise OSError("malformed pull request author")
-    if raw.get("body") is not None and not isinstance(raw.get("body"), str):
-        raise OSError("malformed pull request body")
+    for value, error in (
+        (author.get("login"), "malformed pull request author"),
+        (raw.get("body"), "malformed pull request body"),
+    ):
+        if value is not None and not isinstance(value, str):
+            raise OSError(error)
     if not _valid_identity_fields(raw):
         raise OSError("malformed pull request identity")
     return author

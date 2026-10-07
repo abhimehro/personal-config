@@ -293,27 +293,37 @@ def _advisory_notes(
     ]
 
 
+def _incomplete_check_action(ctx: _Route) -> list[dict[str, Any]]:
+    """Return the fail-closed action for a truncated status check rollup."""
+    return [
+        {
+            "action": "CHECKS_INCOMPLETE",
+            "repository": ctx.repo,
+            "pr": ctx.number,
+            "url": ctx.pr.get("url"),
+            "head_sha": ctx.head,
+            "reason": (
+                "status check rollup is truncated or pagination metadata "
+                "is unavailable"
+            ),
+        }
+    ]
+
+
+def _check_failures(pr: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the FAILURE-state check dicts of a normalized PR."""
+    return [
+        check
+        for check in pr.get("checks") or []
+        if isinstance(check, dict) and check.get("state") == "FAILURE"
+    ]
+
+
 def _route_checks(ctx: _Route) -> list[dict[str, Any]]:
     """Route failing checks; fail closed when the rollup is truncated."""
     if ctx.pr.get("checksIncomplete"):
-        return [
-            {
-                "action": "CHECKS_INCOMPLETE",
-                "repository": ctx.repo,
-                "pr": ctx.number,
-                "url": ctx.pr.get("url"),
-                "head_sha": ctx.head,
-                "reason": (
-                    "status check rollup is truncated or pagination metadata "
-                    "is unavailable"
-                ),
-            }
-        ]
-    failures = [
-        check
-        for check in ctx.pr.get("checks") or []
-        if isinstance(check, dict) and check.get("state") == "FAILURE"
-    ]
+        return _incomplete_check_action(ctx)
+    failures = _check_failures(ctx.pr)
     advisory = _advisory_patterns(ctx.settings)
     actions = _route_codescene(ctx, failures)
     actions.extend(_route_required_checks(ctx, failures, advisory))
@@ -332,11 +342,8 @@ def _coderabbit_requested(pr: dict[str, Any]) -> bool:
     )
 
 
-def _route_review(ctx: _Route) -> list[dict[str, Any]]:
-    """Route a CHANGES_REQUESTED decision to autofix, Jules, or escalation."""
-    if str(ctx.pr.get("reviewDecision") or "").upper() != "CHANGES_REQUESTED":
-        return []
-    evidence = {"reviewDecision": "CHANGES_REQUESTED"}
+def _review_trigger(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+    """Pick the autofix or Jules trigger for a requested-changes review."""
     if _coderabbit_requested(ctx.pr) and ctx.author_type == "BOT":
         return _trigger_action(
             ctx,
@@ -366,6 +373,57 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
     ]
 
 
+def _route_review(ctx: _Route) -> list[dict[str, Any]]:
+    """Route a CHANGES_REQUESTED decision to autofix, Jules, or escalation."""
+    if str(ctx.pr.get("reviewDecision") or "").upper() != "CHANGES_REQUESTED":
+        return []
+    return _review_trigger(ctx, {"reviewDecision": "CHANGES_REQUESTED"})
+
+
+def _route_ctx(
+    pr: dict[str, Any],
+    author_type: str,
+    ledger_items_for_pr: list[dict[str, Any]],
+    settings: dict[str, Any],
+    now: datetime,
+) -> _Route:
+    """Build the shared routing context for one normalized PR."""
+    safe_base = _safe_check_names([str(pr.get("baseRefName") or "")])
+    return _Route(
+        pr=pr,
+        author_type=author_type,
+        family=_family(pr),
+        security=_sticky_security(ledger_items_for_pr),
+        settings=settings,
+        now=now,
+        repo=str(pr.get("repository") or ""),
+        number=pr.get("number"),
+        head=str(pr.get("headRefOid") or ""),
+        base=safe_base[0] if safe_base else "base branch",
+    )
+
+
+def _route_prefix(
+    ctx: _Route,
+    pr: dict[str, Any],
+    ledger_items_for_pr: list[dict[str, Any]],
+    ledger: dict[str, Any],
+) -> list[dict[str, Any]] | None:
+    """Return lineage, salvage, terminal, or draft short-circuit actions."""
+    stale = _route_stale_lineage(ctx)
+    if stale is not None:
+        return stale
+    superseded = _route_superseded(ctx, ledger_items_for_pr, ledger)
+    if superseded is not None:
+        return superseded
+    terminal_open = _terminal_but_open(ctx, ledger_items_for_pr)
+    if terminal_open is not None:
+        return [terminal_open]
+    if pr.get("isDraft"):
+        return []
+    return None
+
+
 def route_pr(
     pr: dict[str, Any],
     *,
@@ -383,30 +441,10 @@ def route_pr(
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
     """
-    safe_base = _safe_check_names([str(pr.get("baseRefName") or "")])
-    ctx = _Route(
-        pr=pr,
-        author_type=author_type,
-        family=_family(pr),
-        security=_sticky_security(ledger_items_for_pr),
-        settings=settings,
-        now=now,
-        repo=str(pr.get("repository") or ""),
-        number=pr.get("number"),
-        head=str(pr.get("headRefOid") or ""),
-        base=safe_base[0] if safe_base else "base branch",
-    )
-    stale = _route_stale_lineage(ctx)
-    if stale is not None:
-        return stale
-    superseded = _route_superseded(ctx, ledger_items_for_pr, ledger)
-    if superseded is not None:
-        return superseded
-    terminal_open = _terminal_but_open(ctx, ledger_items_for_pr)
-    if terminal_open is not None:
-        return [terminal_open]
-    if pr.get("isDraft"):
-        return []
+    ctx = _route_ctx(pr, author_type, ledger_items_for_pr, settings, now)
+    prefix = _route_prefix(ctx, pr, ledger_items_for_pr, ledger)
+    if prefix is not None:
+        return prefix
     conflict = _route_conflict(ctx)
     if conflict is not None:
         return conflict
