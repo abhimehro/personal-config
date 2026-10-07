@@ -436,7 +436,7 @@ class OpenInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(OSError, "unavailable"):
             inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
         self.assertEqual(run.call_count, 4)
-        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(5)])
+        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(4)])
         for call in run.call_args_list[1:]:
             self.assertIn("cursor=cursor-1", call.args[0])
 
@@ -459,7 +459,7 @@ class OpenInventoryTests(unittest.TestCase):
         sleep = mock.Mock()
         prs = inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
         self.assertEqual([pr["number"] for pr in prs], [12, 13])
-        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(5)] * 2)
+        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(4)] * 2)
         self.assertEqual(run.call_count, 6)
 
     def test_missing_commit_or_rollup_keeps_checks_incomplete(self):
