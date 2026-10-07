@@ -300,61 +300,43 @@ def _apply_mutations(
     return deferred_by_cap, mutation_count, unconfirmed
 
 
-def _one_decision_issue(
-    repo: str,
-    actions: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    packet_expiry_days: int,
-    *,
-    apply: bool,
-    now: datetime,
-) -> dict[str, Any]:
+def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     """Update one repo's decision issue, or render its dry-run body."""
-    rows = _rows_for_repo(repo, actions, ledger, packet_expiry_days)
-    if not apply:
+    rows = _rows_for_repo(spec.repo, spec.actions, spec.ledger, spec.days)
+    if not spec.apply:
         return {
             "row_count": len(rows),
-            "body": backlog_issue_body(repo, rows, {}, now),
+            "body": backlog_issue_body(spec.repo, rows, {}, spec.now),
         }
     try:
-        return update_backlog_issue(repo, rows, now=now)
+        return update_backlog_issue(spec.repo, rows, now=spec.now)
     except (OSError, subprocess.SubprocessError) as exc:
         return {
             "action": "ISSUE_UPDATE_FAILED",
-            "repository": repo,
+            "repository": spec.repo,
             "reason": type(exc).__name__,
         }
 
 
-def _update_decision_issues(
-    repositories: list[str],
-    actions: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    failed_repos: set[str],
-    packet_expiry_days: int,
-    *,
-    apply: bool,
-    now: datetime,
-) -> dict[str, Any]:
-    """Refresh each repo's decision issue, or skip when inventory failed."""
-    escalation_issues: dict[str, Any] = {}
-    for repo in repositories:
-        if repo in failed_repos:
-            escalation_issues[repo] = {
-                "action": "ISSUE_UPDATE_SKIPPED",
-                "repository": repo,
-                "reason": "INVENTORY_FAILED",
-            }
-            continue
-        escalation_issues[repo] = _one_decision_issue(
-            repo,
-            actions,
-            ledger,
-            packet_expiry_days,
-            apply=apply,
-            now=now,
-        )
-    return escalation_issues
+@dataclass(frozen=True)
+class _IssueSpec:
+    """The per-repo decision-issue inputs plus run mode and timestamp."""
+
+    repo: str
+    actions: list[dict[str, Any]]
+    ledger: dict[str, Any]
+    days: int
+    apply: bool
+    now: datetime
+
+
+def _issue_skipped(repo: str) -> dict[str, Any]:
+    """Return the skipped-decision-issue payload for an inventory failure."""
+    return {
+        "action": "ISSUE_UPDATE_SKIPPED",
+        "repository": repo,
+        "reason": "INVENTORY_FAILED",
+    }
 
 
 @dataclass(frozen=True)
@@ -429,19 +411,21 @@ def run_unblock(
         ledger = load_yaml(Path(fetch["ledger_path"]))
         policy = identity_policy_from_config(config)
         actions, inventory_failed, fetched = _scan_repositories(
-            repositories, ledger, policy, settings, run
+            _ScanJob(repositories, ledger, policy, settings), run
         )
         deferred_by_cap, mutation_count, unconfirmed = _apply_mutations(
             actions, cap, apply
         )
         escalation_issues = _decision_issue_updates(
-            repositories,
-            actions,
-            ledger,
-            lifecycle,
-            inventory_failed,
-            apply=apply,
-            now=datetime.now(timezone.utc),
+            _DecisionCtx(
+                repositories,
+                actions,
+                ledger,
+                lifecycle,
+                inventory_failed,
+                apply,
+                datetime.now(timezone.utc),
+            )
         )
         plan = _build_plan(
             _PlanFields(
@@ -462,18 +446,24 @@ def run_unblock(
     return 0
 
 
+@dataclass(frozen=True)
+class _ScanJob:
+    """The multi-repo scan inputs: repo list plus shared state."""
+
+    repositories: list[str]
+    ledger: dict[str, Any]
+    policy: Any
+    settings: dict[str, Any]
+
+
 def _scan_repositories(
-    repositories: list[str],
-    ledger: dict[str, Any],
-    policy: Any,
-    settings: dict[str, Any],
-    run: Any,
+    job: _ScanJob, run: Any
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], int]:
     """Scan every repo, returning (actions, inventory failures, fetch count)."""
     actions: list[dict[str, Any]] = []
     inventory_failed: list[dict[str, str]] = []
     fetched_count = 0
-    for repo in repositories:
+    for repo in job.repositories:
         try:
             prs = list_open_prs(repo)
         except OSError as exc:
@@ -486,7 +476,7 @@ def _scan_repositories(
             )
             continue
         scanned, fetched = _scan_repo(
-            _ScanSpec(repo, prs, ledger, policy, settings), run=run
+            _ScanSpec(repo, prs, job.ledger, job.policy, job.settings), run=run
         )
         actions.extend(scanned)
         fetched_count += fetched
@@ -494,32 +484,38 @@ def _scan_repositories(
     return actions, inventory_failed, fetched_count
 
 
-def _decision_issue_updates(
-    repositories: list[str],
-    actions: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    lifecycle: dict[str, Any],
-    inventory_failed: list[dict[str, str]],
-    *,
-    apply: bool,
-    now: datetime,
-) -> list[dict[str, Any]]:
+@dataclass(frozen=True)
+class _DecisionCtx:
+    """The decision-issue refresh inputs: repos, shared state, run mode."""
+
+    repositories: list[str]
+    actions: list[dict[str, Any]]
+    ledger: dict[str, Any]
+    lifecycle: dict[str, Any]
+    inventory_failed: list[dict[str, str]]
+    apply: bool
+    now: datetime
+
+
+def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
     """Refresh per-repo decision issues, skipping repos whose inventory failed."""
-    packet_expiry_days = lifecycle.get("packet_expiry_close_days", 7)
+    packet_expiry_days = ctx.lifecycle.get("packet_expiry_close_days", 7)
     if not isinstance(packet_expiry_days, int) or packet_expiry_days < 1:
         packet_expiry_days = 7
     failed_repos = {
-        entry["repository"] for entry in inventory_failed if entry.get("repository")
+        entry["repository"] for entry in ctx.inventory_failed if entry.get("repository")
     }
-    return _update_decision_issues(
-        repositories,
-        actions,
-        ledger,
-        failed_repos,
-        packet_expiry_days,
-        apply=apply,
-        now=now,
-    )
+    results: dict[str, Any] = {}
+    for repo in ctx.repositories:
+        if repo in failed_repos:
+            results[repo] = _issue_skipped(repo)
+            continue
+        results[repo] = _one_decision_issue(
+            _IssueSpec(
+                repo, ctx.actions, ctx.ledger, packet_expiry_days, ctx.apply, ctx.now
+            )
+        )
+    return results
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:

@@ -461,15 +461,7 @@ def _edit_backlog_issue(work: _BacklogWork, issue: dict[str, Any]) -> dict[str, 
         work.repo,
         work.github_steps,
     )
-    return _backlog_result(
-        "EDITED",
-        work.repo,
-        issue.get("number"),
-        work.prepared,
-        work.overdue,
-        body,
-        work.github_steps,
-    )
+    return _backlog_result("EDITED", work, issue.get("number"), body)
 
 
 def _notify_created_issue(
@@ -503,15 +495,7 @@ def _create_backlog_issue(work: _BacklogWork) -> dict[str, Any]:
     issue_number = int(match.group(1)) if match is not None else None
     if work.overdue:
         body, issue_number = _notify_created_issue(work, match)
-    return _backlog_result(
-        "CREATED",
-        work.repo,
-        issue_number,
-        work.prepared,
-        work.overdue,
-        body,
-        work.github_steps,
-    )
+    return _backlog_result("CREATED", work, issue_number, body)
 
 
 def _raise_gh(prefix: str, result: subprocess.CompletedProcess[str]) -> None:
@@ -559,21 +543,15 @@ def _notify_overdue(
 
 
 def _backlog_result(
-    action: str,
-    repo: str,
-    issue_number: Any,
-    prepared: list[dict[str, Any]],
-    overdue: list[dict[str, Any]],
-    body: str,
-    github_steps: list[dict[str, Any]],
+    action: str, work: _BacklogWork, issue_number: Any, body: str
 ) -> dict[str, Any]:
     """Assemble the update_backlog_issue result payload."""
     return {
         "action": action,
-        "repository": repo,
+        "repository": work.repo,
         "issue_number": issue_number,
-        "row_count": len(prepared),
-        "overdue_notified": [row["id"] for row in overdue],
+        "row_count": len(work.prepared),
+        "overdue_notified": [row["id"] for row in work.overdue],
         "body": body,
-        "github_steps": github_steps,
+        "github_steps": work.github_steps,
     }

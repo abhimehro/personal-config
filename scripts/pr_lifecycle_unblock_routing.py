@@ -18,6 +18,7 @@ from pr_lifecycle_unblock_route_support import (
     _advisory,
     _advisory_patterns,
     _escalation,
+    _EscalationSpec,
     _family,
     _iso,  # noqa: F401
     _lineage_date,
@@ -96,9 +97,13 @@ def _route_superseded(
     return [
         _escalation(
             ctx,
-            "salvage_replacement_merged",
-            evidence={"replacement_url": replacement_url},
-            recommended_action=(f"close original as superseded by {replacement_url}"),
+            _EscalationSpec(
+                "salvage_replacement_merged",
+                evidence={"replacement_url": replacement_url},
+                recommended_action=(
+                    f"close original as superseded by {replacement_url}"
+                ),
+            ),
         )
     ]
 
@@ -120,9 +125,11 @@ def _conflict_trigger(
         ctx,
         spec.kind,
         spec.body,
-        blocker="merge_conflict",
-        evidence=evidence,
-        recommended_action=spec.action_text,
+        _EscalationSpec(
+            "merge_conflict",
+            evidence=evidence,
+            recommended_action=spec.action_text,
+        ),
     )
 
 
@@ -139,10 +146,12 @@ def _route_conflict(ctx: _Route) -> list[dict[str, Any]] | None:
     return [
         _escalation(
             ctx,
-            "merge_conflict",
-            evidence=evidence,
-            recommended_action="bounded Stage 2 salvage / conflict repair",
-            owner="stage2" if ctx.author_type == "BOT" else "human",
+            _EscalationSpec(
+                "merge_conflict",
+                evidence=evidence,
+                recommended_action="bounded Stage 2 salvage / conflict repair",
+                owner="stage2" if ctx.author_type == "BOT" else "human",
+            ),
         )
     ]
 
@@ -175,9 +184,11 @@ def _route_behind(ctx: _Route) -> list[dict[str, Any]]:
             ctx,
             "dependabot_rebase",
             "@dependabot rebase",
-            blocker="behind_base",
-            evidence=evidence,
-            recommended_action="request a bounded rebase",
+            _EscalationSpec(
+                "behind_base",
+                evidence=evidence,
+                recommended_action="request a bounded rebase",
+            ),
         )
     update = _update_branch_action(ctx)
     if update is not None:
@@ -185,9 +196,11 @@ def _route_behind(ctx: _Route) -> list[dict[str, Any]]:
     return [
         _escalation(
             ctx,
-            "behind_base",
-            evidence=evidence,
-            recommended_action="update the branch from its base or close",
+            _EscalationSpec(
+                "behind_base",
+                evidence=evidence,
+                recommended_action="update the branch from its base or close",
+            ),
         )
     ]
 
@@ -208,9 +221,11 @@ def _route_codescene(
         ctx,
         "codescene",
         "/cs-agent skill:fix-code-health-degradations",
-        blocker="codescene_failure",
-        evidence={"checks": names},
-        recommended_action="run the CodeScene code-health remediation",
+        _EscalationSpec(
+            "codescene_failure",
+            evidence={"checks": names},
+            recommended_action="run the CodeScene code-health remediation",
+        ),
     )
 
 
@@ -236,10 +251,12 @@ def _route_required_checks(
     return [
         _escalation(
             ctx,
-            "required_check_failure",
-            evidence=evidence,
-            recommended_action="fix failing checks or close",
-            owner="human",
+            _EscalationSpec(
+                "required_check_failure",
+                evidence=evidence,
+                recommended_action="fix failing checks or close",
+                owner="human",
+            ),
         )
     ]
 
@@ -257,9 +274,11 @@ def _jules_checks(
         ctx,
         "jules_checks",
         body,
-        blocker="required_check_failure",
-        evidence=evidence,
-        recommended_action="request Jules to fix failing required checks",
+        _EscalationSpec(
+            "required_check_failure",
+            evidence=evidence,
+            recommended_action="request Jules to fix failing required checks",
+        ),
     )
 
 
@@ -273,9 +292,11 @@ def _coderabbit_checks(
         ctx,
         "coderabbit_fixci",
         "@coderabbitai fix-ci commit",
-        blocker="required_check_failure",
-        evidence=evidence,
-        recommended_action="request CodeRabbit to fix failing CI",
+        _EscalationSpec(
+            "required_check_failure",
+            evidence=evidence,
+            recommended_action="request CodeRabbit to fix failing CI",
+        ),
     )
 
 
@@ -422,9 +443,11 @@ def _coderabbit_review(
         ctx,
         "coderabbit_autofix",
         "@coderabbitai autofix",
-        blocker="changes_requested",
-        evidence=evidence,
-        recommended_action="request CodeRabbit autofix",
+        _EscalationSpec(
+            "changes_requested",
+            evidence=evidence,
+            recommended_action="request CodeRabbit autofix",
+        ),
     )
 
 
@@ -437,9 +460,11 @@ def _jules_review(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]
         "jules_review",
         "@google-labs-jules Please address the requested changes in the "
         "latest review on this PR and push.",
-        blocker="changes_requested",
-        evidence=evidence,
-        recommended_action="request Jules to address review changes",
+        _EscalationSpec(
+            "changes_requested",
+            evidence=evidence,
+            recommended_action="request Jules to address review changes",
+        ),
     )
 
 
@@ -455,9 +480,11 @@ def _review_trigger(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any
     return [
         _escalation(
             ctx,
-            "changes_requested",
-            evidence=evidence,
-            recommended_action="address requested review changes or close",
+            _EscalationSpec(
+                "changes_requested",
+                evidence=evidence,
+                recommended_action="address requested review changes or close",
+            ),
         )
     ]
 
@@ -469,22 +496,26 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
     return _review_trigger(ctx, {"reviewDecision": "CHANGES_REQUESTED"})
 
 
-def _route_ctx(
-    pr: dict[str, Any],
-    author_type: str,
-    ledger_items_for_pr: list[dict[str, Any]],
-    settings: dict[str, Any],
-    now: datetime,
-) -> _Route:
+@dataclass(frozen=True)
+class _RouteArgs:
+    """The non-PR routing inputs carried through to _route_ctx."""
+
+    author_type: str
+    ledger_items_for_pr: list[dict[str, Any]]
+    settings: dict[str, Any]
+    now: datetime
+
+
+def _route_ctx(pr: dict[str, Any], args: _RouteArgs) -> _Route:
     """Build the shared routing context for one normalized PR."""
     safe_base = _safe_check_names([str(pr.get("baseRefName") or "")])
     return _Route(
         pr=pr,
-        author_type=author_type,
+        author_type=args.author_type,
         family=_family(pr),
-        security=_sticky_security(ledger_items_for_pr),
-        settings=settings,
-        now=now,
+        security=_sticky_security(args.ledger_items_for_pr),
+        settings=args.settings,
+        now=args.now,
         repo=str(pr.get("repository") or ""),
         number=pr.get("number"),
         head=str(pr.get("headRefOid") or ""),
@@ -530,7 +561,7 @@ def route_pr(
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
     """
-    ctx = _route_ctx(pr, author_type, ledger_items_for_pr, settings, now)
+    ctx = _route_ctx(pr, _RouteArgs(author_type, ledger_items_for_pr, settings, now))
     prefix = _route_prefix(ctx, pr, ledger_items_for_pr, ledger)
     if prefix is not None:
         return prefix

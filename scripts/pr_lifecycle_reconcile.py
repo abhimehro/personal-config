@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -712,11 +713,11 @@ def collect_ingest_actions(
     Duplicate inventory entries produce at most one intake item per PR.
     """
     items = [item for item in ledger.get("items") or [] if isinstance(item, dict)]
-    policy = identity_policy_from_config(config)
+    ctx = _IngestCtx(items, identity_policy_from_config(config), now)
     actions: list[dict[str, Any]] = []
     for repo in config.get("repos") or []:
         for live in open_prs_by_repo.get(repo, []):
-            action = _ingest_action(repo, live, items, policy, now)
+            action = _ingest_action(repo, live, ctx)
             if action is not None:
                 actions.append(action)
     return actions
@@ -812,18 +813,24 @@ def _terminal_at(candidates: list[dict[str, Any]], key: str) -> dict[str, Any] |
     )
 
 
+@dataclass(frozen=True)
+class _IngestCtx:
+    """The shared ingest state: ledger items, identity policy, timestamp."""
+
+    items: list[dict[str, Any]]
+    policy: Any
+    now: datetime
+
+
 def _ingest_action(
-    repo: str,
-    live: dict[str, Any],
-    items: list[dict[str, Any]],
-    policy: Any,
-    now: datetime,
+    repo: str, live: dict[str, Any], ctx: _IngestCtx
 ) -> dict[str, Any] | None:
     """Classify one live PR: skip/terminal/ingest action, or None when tracked.
 
     Skip PRs with any active ledger item, even at an older head. New intake
     items are appended to items so duplicate inventory entries dedupe.
     """
+    items = ctx.items
     pr_number = live.get("number")
     head_sha = str(live.get("headRefOid") or "")
     skipped = _ingest_skip_reason(live)
@@ -837,7 +844,7 @@ def _ingest_action(
     terminal = _terminal_at(candidates, key)
     if terminal is not None:
         return _terminal_open(key, live, terminal)
-    item = build_intake_item(live, policy, now)
+    item = build_intake_item(live, ctx.policy, ctx.now)
     items.append(item)
     return {
         "action": "INGEST_OPEN_PR",

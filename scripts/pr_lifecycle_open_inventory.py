@@ -226,6 +226,16 @@ def _checks_truncated(connection: Any) -> bool:
     return True
 
 
+def _normalized_commit(commit: Any) -> list[dict[str, Any]]:
+    """Return the single-commit normalized list, raising on malformed input."""
+    if not isinstance(commit, dict):
+        raise OSError("malformed commit")
+    commit_author = commit.get("author") or {}
+    if not isinstance(commit_author, dict):
+        raise OSError("malformed commit author")
+    return [{"commit": {"author": {"email": commit_author.get("email")}}}]
+
+
 def _commit_checks(
     raw: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], bool]:
@@ -239,12 +249,7 @@ def _commit_checks(
     if not commits:
         return [], [dict(_TRUNCATED_CHECK)], True
     commit = commits[-1].get("commit")
-    if not isinstance(commit, dict):
-        raise OSError("malformed commit")
-    commit_author = commit.get("author") or {}
-    if not isinstance(commit_author, dict):
-        raise OSError("malformed commit author")
-    normalized_commits = [{"commit": {"author": {"email": commit_author.get("email")}}}]
+    normalized_commits = _normalized_commit(commit)
     rollup = commit.get("statusCheckRollup")
     if rollup is None:
         return normalized_commits, [dict(_TRUNCATED_CHECK)], True

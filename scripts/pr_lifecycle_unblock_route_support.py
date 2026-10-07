@@ -124,22 +124,25 @@ def _sticky_security(items: list[dict[str, Any]]) -> bool:
     )
 
 
-def _escalation(
-    ctx: _Route,
-    blocker: str,
-    *,
-    evidence: Any,
-    recommended_action: str,
-    owner: str = "human",
-    security: bool | None = None,
-) -> dict[str, Any]:
+@dataclass(frozen=True)
+class _EscalationSpec:
+    """The escalation details: blocker name, evidence, action, ownership."""
+
+    blocker: str
+    evidence: Any
+    recommended_action: str
+    owner: str = "human"
+    security: bool | None = None
+
+
+def _escalation(ctx: _Route, spec: _EscalationSpec) -> dict[str, Any]:
     """Build an escalation proposal with evidence, owner, and a leave-open default.
 
     ``security`` defaults to the route's sticky hold; pass an explicit value
     when the flag comes from a single ledger item rather than the whole set.
     """
-    hold = ctx.security if security is None else security
-    human_or_security = ctx.author_type != "BOT" or hold or owner == "human"
+    hold = ctx.security if spec.security is None else spec.security
+    human_or_security = ctx.author_type != "BOT" or hold or spec.owner == "human"
     return {
         "action": "ESCALATE",
         "repository": ctx.pr.get("repository"),
@@ -147,16 +150,16 @@ def _escalation(
         "url": ctx.pr.get("url"),
         "head_sha": ctx.pr.get("headRefOid"),
         "author_type": ctx.author_type,
-        "blocker": blocker,
-        "evidence": evidence,
-        "recommended_action": recommended_action,
+        "blocker": spec.blocker,
+        "evidence": spec.evidence,
+        "recommended_action": spec.recommended_action,
         "security": hold,
         "safe_default": (
             "Leave open; no merge or close without a human decision."
             if human_or_security
             else "Leave open until the next owner acts."
         ),
-        "owner": owner,
+        "owner": spec.owner,
     }
 
 
@@ -184,22 +187,11 @@ def _trigger_skipped(ctx: _Route, kind: str) -> list[dict[str, Any]]:
 
 
 def _trigger_gate(
-    ctx: _Route,
-    kind: str,
-    blocker: str,
-    evidence: Any,
-    recommended_action: str,
+    ctx: _Route, kind: str, spec: _EscalationSpec
 ) -> list[dict[str, Any]] | None:
     """Return a non-trigger proposal when policy or history blocks triggering."""
     if _trigger_blocked(ctx, kind):
-        return [
-            _escalation(
-                ctx,
-                blocker,
-                evidence=evidence,
-                recommended_action=recommended_action,
-            )
-        ]
+        return [_escalation(ctx, spec)]
     if ctx.pr.get("comments_incomplete"):
         return _trigger_skipped(ctx, kind)
     return None
@@ -217,30 +209,27 @@ def _unanswered_trigger(
     return [
         _escalation(
             ctx,
-            "trigger_unanswered",
-            evidence={"kind": kind, "sent": sent},
-            recommended_action=(
-                f"trigger {kind} sent {sent} without a new push; decide fix/close"
+            _EscalationSpec(
+                "trigger_unanswered",
+                evidence={"kind": kind, "sent": sent},
+                recommended_action=(
+                    f"trigger {kind} sent {sent} without a new push; "
+                    "decide fix/close"
+                ),
             ),
         )
     ]
 
 
 def _trigger_action(
-    ctx: _Route,
-    kind: str,
-    body: str,
-    *,
-    blocker: str,
-    evidence: Any,
-    recommended_action: str,
+    ctx: _Route, kind: str, body: str, spec: _EscalationSpec
 ) -> list[dict[str, Any]]:
     """Propose a trigger only after ownership, security, and history checks.
 
     Deduplicate by trigger kind and head SHA. Return no action for a recent
     matching marker, or escalate an expired or undated matching trigger.
     """
-    gated = _trigger_gate(ctx, kind, blocker, evidence, recommended_action)
+    gated = _trigger_gate(ctx, kind, spec)
     if gated is not None:
         return gated
     marker = f"<!-- pr-lifecycle-trigger kind={kind} head={ctx.head} -->"
@@ -370,12 +359,14 @@ def _terminal_but_open(
         return None
     return _escalation(
         ctx,
-        "ledger_terminal_but_open",
-        evidence={"terminal_disposition": item.get("terminal_disposition")},
-        recommended_action=(
-            "PR is open but ledger says "
-            f"{item.get('terminal_disposition')}: close it or confirm it "
-            "should be re-reviewed"
+        _EscalationSpec(
+            "ledger_terminal_but_open",
+            evidence={"terminal_disposition": item.get("terminal_disposition")},
+            recommended_action=(
+                "PR is open but ledger says "
+                f"{item.get('terminal_disposition')}: close it or confirm it "
+                "should be re-reviewed"
+            ),
+            security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
         ),
-        security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
     )
