@@ -73,24 +73,25 @@ def _is_transient_gql_error(error: Any) -> bool:
     return isinstance(message, str) and bool(_TRANSIENT_GQL_RE.search(message.lower()))
 
 
+def _concluded_state(conclusion: str) -> str:
+    """Map a COMPLETED CheckRun conclusion to a normalized state."""
+    if conclusion == "SUCCESS":
+        return "SUCCESS"
+    return conclusion if conclusion in {"SKIPPED", "NEUTRAL"} else "NEUTRAL"
+
+
 def _check_run_state(context: dict[str, Any]) -> tuple[str, str] | None:
     """Normalize a CheckRun context to a name/state pair, or None if nameless."""
     name = context.get("name")
     if not isinstance(name, str):
         return None
     conclusion = str(context.get("conclusion") or "").upper()
-    status = str(context.get("status") or "").upper()
     if conclusion in _FAILURE_CONCLUSIONS:
-        state = "FAILURE"
-    elif status != "COMPLETED":
-        state = "PENDING"
-    elif conclusion == "SUCCESS":
-        state = "SUCCESS"
-    elif conclusion in {"SKIPPED", "NEUTRAL"}:
-        state = conclusion
-    else:
-        state = "NEUTRAL"
-    return name, state
+        return name, "FAILURE"
+    status = str(context.get("status") or "").upper()
+    if status != "COMPLETED":
+        return name, "PENDING"
+    return name, _concluded_state(conclusion)
 
 
 def _status_context_state(context: dict[str, Any]) -> tuple[str, str] | None:
