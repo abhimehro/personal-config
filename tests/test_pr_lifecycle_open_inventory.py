@@ -290,7 +290,7 @@ class OpenInventoryTests(unittest.TestCase):
                 run=lambda *_a, **_k: failures.pop(0),
                 sleep=sleeps.append,
             )
-        self.assertEqual(sleeps, [2, 5])
+        self.assertEqual(sleeps, [2, 4])
 
     def test_graphql_errors_are_not_retried(self):
         result = subprocess.CompletedProcess(
@@ -309,6 +309,42 @@ class OpenInventoryTests(unittest.TestCase):
             )
         self.assertEqual(calls, [1])
         self.assertEqual(sleeps, [])
+
+    def test_transient_graphql_errors_retry_then_succeed(self):
+        rate_limited = subprocess.CompletedProcess(
+            ["gh"],
+            0,
+            json.dumps({"errors": [{"message": "API rate limit exceeded"}]}),
+            "",
+        )
+        valid = subprocess.CompletedProcess(
+            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+        )
+        responses = [rate_limited, valid]
+        sleeps = []
+        prs = inventory.list_open_prs(
+            "owner/repo",
+            run=lambda *_a, **_k: responses.pop(0),
+            sleep=sleeps.append,
+        )
+        self.assertEqual([pr["number"] for pr in prs], [12])
+        self.assertEqual(sleeps, [2])
+
+    def test_persistent_transient_graphql_errors_raise_oserror(self):
+        result = subprocess.CompletedProcess(
+            ["gh"],
+            0,
+            json.dumps({"errors": [{"message": "API rate limit exceeded"}]}),
+            "",
+        )
+        sleeps = []
+        with self.assertRaisesRegex(OSError, "rate limit"):
+            inventory.list_open_prs(
+                "owner/repo",
+                run=lambda *_a, **_k: result,
+                sleep=sleeps.append,
+            )
+        self.assertEqual(sleeps, [2, 4])
 
     def test_api_and_shape_errors_raise_oserror(self):
         for payload in (

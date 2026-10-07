@@ -41,6 +41,8 @@ _JULES_PREFIXES = (
     "jules-",
 )
 _LINEAGE_RE = re.compile(r"^pr-lifecycle-docs-(\d{8})")
+# Stage 2 ledger handoff event ids mark a salvage replacement's origin.
+_S2_HANDOFF_PREFIX = "evt-s2-"
 _EXPIRES_RE = re.compile(r"\bExpires\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)")
 _MUTATING_ACTIONS = {
     "CLOSE_STALE_LINEAGE",
@@ -261,7 +263,7 @@ def _salvage_replacement(
         evidence_urls = replacement.get("evidence_urls") or []
         if (
             handoffs
-            and str(handoffs[0]).startswith("evt-s2-")
+            and str(handoffs[0]).startswith(_S2_HANDOFF_PREFIX)
             and replacement.get("url") != pr.get("url")
             and pr.get("url") in evidence_urls
         ):

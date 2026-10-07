@@ -50,6 +50,17 @@ _FAILURE_CONCLUSIONS = {
     "STARTUP_FAILURE",
 }
 
+# GraphQL `errors` payloads whose messages match these markers are retried
+# like process-level failures; anything else raises immediately.
+_TRANSIENT_GQL_MARKERS = (
+    "rate limit",
+    "timeout",
+    "timed out",
+    "temporar",
+    "unavailable",
+    "internal",
+)
+
 
 def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
     typename = context.get("__typename")
@@ -280,9 +291,23 @@ def list_open_prs(
                             f"gh api graphql returned invalid JSON: {exc}"
                         )
                     else:
-                        break
+                        if isinstance(payload, dict) and "errors" in payload:
+                            messages = " ".join(
+                                str(err.get("message", ""))
+                                for err in payload.get("errors") or []
+                                if isinstance(err, dict)
+                            ).lower()
+                            if not any(
+                                marker in messages for marker in _TRANSIENT_GQL_MARKERS
+                            ):
+                                raise OSError("gh api graphql returned an API error")
+                            last_error = OSError(
+                                "gh api graphql transient error: " f"{messages[:160]}"
+                            )
+                        else:
+                            break
             if attempt < 2:
-                sleep((2, 5)[attempt])
+                sleep(2 ** (attempt + 1))
         else:
             assert last_error is not None
             raise last_error

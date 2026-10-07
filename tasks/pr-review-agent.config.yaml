@@ -118,6 +118,7 @@ lifecycle:
   lineage:
     open_as_draft: false
   unblock:
+    # Check names matched exactly; a trailing "*" means prefix match.
     advisory_checks:
       - "Codacy Static Code Analysis"
       - "jules/review"
