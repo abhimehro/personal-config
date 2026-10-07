@@ -86,7 +86,9 @@ def _rows_for_repo(
             "packet_expiry_close_days": packet_expiry_days,
         }
         for action in actions
-        if action.get("action") == "ESCALATE" and action.get("repository") == repo
+        if action.get("action") == "ESCALATE"
+        and action.get("repository") == repo
+        and action.get("owner") == "human"
     )
     return rows
 

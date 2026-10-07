@@ -288,6 +288,7 @@ calibration, bounded completion. Review automation must not write to
 code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`
 was posted (or post it) before making final salvage/closure disposition.
 
+
 ### Legacy disposition map and compatibility
 
 Historical reports remain evidence inputs under the lifecycle import procedure.

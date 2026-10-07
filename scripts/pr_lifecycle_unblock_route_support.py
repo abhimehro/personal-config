@@ -18,6 +18,7 @@ _JULES_PREFIXES = (
     "bolt-",
     "palette/",
     "palette-",
+    "jules/",
     "jules-",
 )
 _LINEAGE_RE = re.compile(r"^pr-lifecycle-docs-(\d{8})")
@@ -87,8 +88,13 @@ def _is_coderabbit(login: str, branch: str, pr: dict[str, Any]) -> bool:
 
 
 def _is_jules(login: str, branch: str, pr: dict[str, Any]) -> bool:
-    """Match a Jules-prefixed branch."""
-    return branch.startswith(_JULES_PREFIXES)
+    """Match a Jules-prefixed branch on a same-repository head.
+
+    The prefix alone is attacker-controllable on fork PRs, so the family
+    requires isCrossRepository to be false; fork PRs fall to 'other' and
+    are escalated instead of triggering owner-token agent comments.
+    """
+    return branch.startswith(_JULES_PREFIXES) and not pr.get("isCrossRepository")
 
 
 def _is_lineage(login: str, branch: str, pr: dict[str, Any]) -> bool:

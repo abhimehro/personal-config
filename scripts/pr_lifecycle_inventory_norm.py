@@ -117,6 +117,7 @@ def _base_fields(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         "title": raw.get("title") or "",
         "body": str(raw.get("body") or "")[:2000],
         "isDraft": bool(raw.get("isDraft")),
+        "isCrossRepository": bool(raw.get("isCrossRepository")),
         "headRefName": raw.get("headRefName") or "",
         "headRefOid": raw.get("headRefOid") or "",
         "baseRefName": raw.get("baseRefName") or "",

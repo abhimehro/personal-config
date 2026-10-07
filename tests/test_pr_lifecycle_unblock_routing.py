@@ -107,6 +107,18 @@ class RoutePrTests(unittest.TestCase):
         human = _route(_pr(mergeable="CONFLICTING"), author_type="HUMAN")[0]
         self.assertEqual(human["owner"], "human")
 
+    def test_cross_repo_jules_branch_is_escalated_not_triggered(self):
+        """A fork PR cannot claim the jules family via a branch-name prefix."""
+        action = _route(
+            _pr(
+                headRefName="jules-task",
+                mergeable="CONFLICTING",
+                isCrossRepository=True,
+            ),
+            author_type="HUMAN",
+        )[0]
+        self.assertEqual(action["action"], "ESCALATE")
+
     def test_conflict_gates_behind_checks_and_review(self):
         """Resolve conflict routing before considering behind-base or review blockers."""
         pr = _pr(

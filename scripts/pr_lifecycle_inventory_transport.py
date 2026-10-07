@@ -11,7 +11,7 @@ query($owner: String!, $name: String!, $cursor: String) {
     pullRequests(first: 50, states: OPEN, after: $cursor) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number url title body isDraft headRefName headRefOid baseRefName baseRefOid
+        number url title body isDraft isCrossRepository headRefName headRefOid baseRefName baseRefOid
         author { login __typename }
         mergeable mergeStateStatus reviewDecision createdAt updatedAt
         latestReviews(first: 20) { nodes { author { login __typename } state } }
