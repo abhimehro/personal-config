@@ -62,6 +62,8 @@ def _commit_checks(
     if not commits:
         return [], [dict(_TRUNCATED_CHECK)], True
     commit = commits[-1].get("commit")
+    if not isinstance(commit, dict):
+        raise OSError("malformed commit")
     normalized_commits = _normalized_commit(commit)
     rollup = commit.get("statusCheckRollup")
     if rollup is None:
