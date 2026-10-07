@@ -107,6 +107,10 @@ class Config:
 
     @property
     def issue_key_prefixes(self) -> tuple[str, ...]:
+        """Return the uppercase team prefix when team_id is 2–10 ASCII letters.
+
+        Otherwise return an empty tuple, disabling issue-key prefix filtering.
+        """
         if re.fullmatch(r"[A-Za-z]{2,10}", self.team_id):
             return (self.team_id.upper(),)
         return ()
@@ -278,6 +282,11 @@ def filter_issue_keys(
     allowed_prefixes: tuple[str, ...],
     keep: frozenset[str] = frozenset(),
 ) -> dict[str, RelationshipType]:
+    """Keep keys whose prefix before the first hyphen is allowed or that are in keep.
+
+    Both checks are case-sensitive. An empty allowed_prefixes returns issue_map
+    itself; otherwise return a new mapping without modifying the input.
+    """
     if not allowed_prefixes:
         return issue_map
 
@@ -293,6 +302,11 @@ def filter_issue_keys(
 
 
 def _explicit_issue_keys(explicit_issues: tuple[str, ...]) -> frozenset[str]:
+    """Return unique, trimmed, uppercase keys from CLI KEY[:relationship] values.
+
+    Ignore blank entries and discard everything after the first colon without
+    validating key syntax.
+    """
     return frozenset(
         normalize_issue_key(raw.strip().split(":", 1)[0])
         for raw in explicit_issues
@@ -1482,6 +1496,11 @@ def _fetch_issue_or_none(
     issue_key: str,
     dry_run: bool,
 ) -> LinearIssue | None:
+    """Fetch an issue by identifier or UUID, including during a dry run.
+
+    Return None for an empty result or a LinearApiError containing
+    'entity not found' (case-insensitive). Other errors propagate.
+    """
     try:
         return linear_client.get_issue(issue_key)
     except LinearApiError as exc:
@@ -1504,7 +1523,14 @@ def _sync_single_issue(
     linear_client: LinearClient | None,
     dry_run: bool,
 ) -> bool:
-    """Reconcile state, upsert comment, and attach diff link for a single Linear issue."""
+    """Reconcile state, upsert comment, and attach diff link for a single Linear issue.
+
+    Dry runs may fetch the issue but do not mutate Linear. Return True when
+    finished or skipped because the client or issue is missing, including an
+    'entity not found' lookup error. Return False if a state update reports
+    failure; comment and attachment processing still continues in that case.
+    Other lookup errors and errors from mutations propagate.
+    """
     logger.info(
         "--- Processing issue %s (relationship=%s) ---", issue_key, relationship
     )
@@ -1609,7 +1635,18 @@ def _sync_single_issue(
 
 
 def run_sync(args: argparse.Namespace) -> int:
-    """Run synchronization between Git/GitHub, GitNexus, and Linear."""
+    """Run synchronization between Git/GitHub, GitNexus, and Linear.
+
+    Filter extracted keys by the configured team prefix, preserving explicit
+    args.issue keys. If none remain, try resolving mirrored GitHub attachments.
+    args.dry_run allows reads and planning but prevents Linear mutations.
+
+    Return 0 on completion, including no matches or skipped missing issues.
+    Return 1 for configuration errors, missing live-mode credentials when issues
+    remain, or per-issue failures. Per-issue exceptions are caught; errors before
+    that loop outside configuration loading propagate, including ValueError for
+    an invalid PR_RECAP_KEY_TIMEOUT value (a timeout in seconds).
+    """
     # 1. Load config
     try:
         config = load_config(Path(args.config) if args.config else None)
