@@ -142,7 +142,11 @@ def update_pinned_issue(status: dict[str, Any]) -> None:
 
 
 def _list_backlog_rows(repo: str) -> list[Any]:
-    """List open backlog issue candidates, raising OSError on invalid results."""
+    """List open backlog issue candidates, raising OSError on invalid results.
+
+    Nonzero exits also raise OSError; process launch errors and timeouts
+    propagate to the caller.
+    """
     listed = _gh_issue(
         [
             "list",
@@ -225,6 +229,11 @@ def _prepare_backlog_rows(
 
     Preserve first-seen timestamps for active keys, derive missing expiry
     dates, and prune notification state for rows no longer in the backlog.
+    Keep the first row per repository/PR/blocker key without changing inputs.
+    Absent, empty, or non-string expiry uses packet_expiry_close_days
+    (default seven days);
+    unparseable expiry strings use seven days from first seen. A row is
+    overdue at or after its deadline.
     """
     now_utc = _utc(now)
     first_seen_before = state.get("first_seen") or {}
@@ -326,7 +335,18 @@ def backlog_issue_body(
 def update_backlog_issue(
     repo: str, rows: list[dict[str, Any]], *, now: datetime
 ) -> dict[str, Any]:
-    """Refresh or create a per-repository human decision issue."""
+    """Refresh or create a per-repository human decision issue.
+
+    Preserve first-seen state and comment on newly overdue rows. Return a
+    result with action EDITED or CREATED, the rendered body, issue number
+    (possibly None after creation), row count, notified keys, and step results.
+    An empty backlog edits an existing issue; if absent, return NOOP_EMPTY
+    with the repository and body without creating an issue.
+
+    Raise OSError for failed commands or malformed listings, or if a newly
+    created overdue issue has no returned URL. Process launch errors and
+    timeouts propagate. Earlier GitHub mutations are not rolled back.
+    """
     github_steps: list[dict[str, Any]] = []
     listed = _list_backlog_rows(repo)
     issue: dict[str, Any] | None = None

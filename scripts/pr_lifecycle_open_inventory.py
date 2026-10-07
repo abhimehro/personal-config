@@ -115,7 +115,10 @@ def _nodes(connection: Any, label: str) -> list[dict[str, Any]]:
 
 
 def _author_login(author: Any) -> str:
-    """GraphQL logins for Bot actors lack the REST-style '[bot]' suffix."""
+    """Return a login with the REST-style '[bot]' suffix for GraphQL Bot actors.
+
+    Return an empty string when author data or the login is missing.
+    """
     if not isinstance(author, dict):
         return ""
     login = str(author.get("login") or "")
@@ -257,7 +260,15 @@ def list_open_prs(
     run: Any = subprocess.run,
     sleep: Any = time.sleep,
 ) -> list[dict[str, Any]]:
-    """Return all open PRs in ``repo``; any API or payload failure raises OSError."""
+    """Return normalized open PRs in an owner/name repository, including drafts.
+
+    Each page gets up to three attempts for process failures, nonzero exits,
+    invalid JSON, or transient API errors, with 2- and 4-second waits.
+    Nontransient API errors and rejected inventory or pagination data raise
+    OSError immediately; exhausted retries also raise OSError. Invalid repo
+    names raise OSError before any request. A later-page failure never returns
+    a partial inventory.
+    """
     try:
         owner, name = repo.split("/", 1)
         if not owner or not name or "/" in name:
@@ -355,5 +366,8 @@ def list_open_prs(
 
 
 def check_state(context: dict[str, Any]) -> tuple[str, str] | None:
-    """Expose check normalization for callers and tests."""
+    """Return a check name/state pair.
+
+    Return None for unsupported context types or non-string names.
+    """
     return _check_state(context)

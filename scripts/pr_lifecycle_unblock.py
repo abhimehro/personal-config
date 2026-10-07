@@ -324,7 +324,14 @@ def route_pr(
     settings: dict[str, Any],
     now: datetime,
 ) -> list[dict[str, Any]]:
-    """Return ordered fix, trigger, advisory, or escalation proposals."""
+    """Return ordered fix, trigger, advisory, or escalation proposals.
+
+    Consume normalized open-PR inventory and validated unblock settings
+    without mutating GitHub or the inputs. Lineage, salvage, and terminal-head
+    routes precede draft suppression; conflicts precede other blockers.
+    Return an empty list when no proposal is needed, including recent duplicate
+    triggers. Security holds prevent close and push-capable proposals.
+    """
     family = _family(pr)
     security = _sticky_security(ledger_items_for_pr)
     repo = str(pr.get("repository") or "")
@@ -833,7 +840,7 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
 def _human_ledger_rows(
     repo: str, ledger: dict[str, Any], packet_expiry_days: int
 ) -> list[dict[str, Any]]:
-    """Build backlog rows for active human-owned items and all security holds."""
+    """Build backlog rows for nonterminal human-owned items and security holds."""
     rows: list[dict[str, Any]] = []
     for item in ledger.get("items") or []:
         if (
@@ -1019,6 +1026,12 @@ def run_unblock(
     Fetch the ledger and open PR inventory, classify identities, and route
     blockers. In apply mode, refresh decision issues only for repositories
     whose inventory succeeded. Return zero after emitting the plan.
+
+    limit caps PR mutation proposals, defaults to stage1_actions, and leaves
+    overflow in deferred_by_cap. Decision issue updates are outside this cap.
+    Inventory and issue-update failures become plan entries; PR command
+    failures are recorded on actions. Configuration and ledger fetch errors
+    propagate; unknown repository filters raise ValueError.
     """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)

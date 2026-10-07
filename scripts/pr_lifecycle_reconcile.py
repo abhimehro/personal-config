@@ -175,7 +175,12 @@ def _classify_live_merge(
 def _classify_live_close(
     item: dict[str, Any], live: dict[str, Any], key: str
 ) -> dict[str, Any] | None:
-    """Classify a closed PR by its labels, preserving unlabeled security holds."""
+    """Classify a closed PR by its labels, preserving unlabeled security holds.
+
+    Without a disposition label, return CLOSED_NOOP unless REVIEW_SECURITY
+    requires Stage 3 classification. Return None if that security observation
+    was already recorded.
+    """
     labels = _label_names(live)
     disposition = next(
         (
@@ -636,7 +641,12 @@ def collect_actions(
 def build_intake_item(
     live: dict[str, Any], policy: Any, now: datetime
 ) -> dict[str, Any]:
-    """Construct a fail-closed Stage 1 ledger projection for an open PR."""
+    """Construct a fail-closed Stage 1 ledger projection for an open PR.
+
+    Use normalized inventory fields and policy to classify the author. Start
+    at revision zero with UNKNOWN risk and NOT_RUN guardrails; do not modify
+    the PR or ledger. Missing required inventory fields raise KeyError.
+    """
     verdict = classify_pr_identity(live, policy)
     author = {
         "login": verdict.login,
@@ -694,7 +704,13 @@ def collect_ingest_actions(
     *,
     now: datetime,
 ) -> list[dict[str, Any]]:
-    """Plan uncapped intake actions for every configured live open PR."""
+    """Plan uncapped intake actions for configured open PRs without changing inputs.
+
+    Skip PRs with any active ledger item, even at an older head. Report invalid
+    identity anchors as INGEST_SKIPPED and terminal current heads as
+    TERMINAL_BUT_OPEN; otherwise return INGEST_OPEN_PR with an intake item.
+    Duplicate inventory entries produce at most one intake item per PR.
+    """
     items = [item for item in ledger.get("items") or [] if isinstance(item, dict)]
     policy = identity_policy_from_config(config)
     actions: list[dict[str, Any]] = []
@@ -812,7 +828,15 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] 
 def run_reconcile(
     *, apply: bool, limit: int | None, json_out: bool, ingest: bool = True
 ) -> int:
-    """Fetch and emit actions, optionally applying and CAS-committing them."""
+    """Fetch and emit actions, optionally applying and CAS-committing them.
+
+    limit caps existing-item actions; nonpositive limits still allow the first
+    eligible action. Open-PR intake is uncapped; ingest=False skips its
+    inventory and intake. Inventory OSError failures become INVENTORY_FAILED
+    entries; configuration, ledger fetch, and commit errors propagate.
+    Apply mode may close stale PRs and persists ledger changes.
+    Return zero after emitting the plan, including inventory failure reports.
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
@@ -914,7 +938,11 @@ def _apply_actions(
 def _apply_ingest_actions(
     ledger: dict[str, Any], actions: list[dict[str, Any]]
 ) -> list[dict[str, str]]:
-    """Append all eligible intake rows and advance the ledger once per batch."""
+    """Append intake rows in place and return their key/repository summaries.
+
+    Mark duplicate-key actions as skipped. Increment ledger_revision once
+    only if at least one item was appended; do not create transition events.
+    """
     items = ledger.setdefault("items", [])
     existing = {
         item.get("key")
