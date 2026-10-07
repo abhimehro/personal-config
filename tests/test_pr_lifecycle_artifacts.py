@@ -282,6 +282,41 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ):
             validator.validate_config(config)
 
+    def test_unblock_config_accepts_optional_settings_and_minimum_expiry(self) -> None:
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        config["lifecycle"].pop("unblock")
+        validator.validate_config(config)
+        for settings in (
+            None,
+            {},
+            {"advisory_checks": []},
+            {
+                "advisory_checks": ["CodeScene*", "review"],
+                "trigger_expiry_days": 1,
+                "lineage_stale_days": 1,
+            },
+        ):
+            with self.subTest(settings=settings):
+                config["lifecycle"]["unblock"] = settings
+                validator.validate_config(config)
+
+    def test_unblock_config_rejects_noninteger_expiry_and_blank_check_names(self):
+        for field, invalid_values in (
+            ("trigger_expiry_days", (True, False, -1, 1.5, "3")),
+            ("lineage_stale_days", (True, False, -1, 1.5, "3")),
+            ("advisory_checks", (["   "], [None], [1], {"review": True})),
+        ):
+            for value in invalid_values:
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ValueError, field):
+                        config_validator.validate_unblock_config({field: value})
+
+    def test_unblock_config_requires_a_mapping(self):
+        for value in ([], "enabled", True, 1):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "config.lifecycle.unblock"):
+                    config_validator.validate_unblock_config(value)
+
     def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         lifecycle = config["lifecycle"]

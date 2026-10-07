@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import sys
@@ -184,6 +185,105 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertEqual(len(output["inventory_failed"]), len(CONFIG["repos"]))
         self.assertEqual(output["inventory_failed"][0]["action"], "INVENTORY_FAILED")
         self.assertEqual(output["inventory_failed"][0]["reason"], "OSError: network")
+
+    def test_duplicate_inventory_is_planned_once_without_mutating_inputs(self):
+        before = copy.deepcopy((self.ledger, self.live))
+        actions = reconcile.collect_ingest_actions(
+            self.ledger, CONFIG, {REPO: [self.live, self.live]}, now=NOW
+        )
+        self.assertEqual([action["action"] for action in actions], ["INGEST_OPEN_PR"])
+        self.assertEqual((self.ledger, self.live), before)
+
+    def test_invalid_numbers_and_urls_are_skipped(self):
+        for overrides in (
+            {"number": True},
+            {"number": 0},
+            {"number": -1},
+            {"number": "9876"},
+            {"url": None},
+            {"url": "http://github.com/owner/repo/pull/1"},
+        ):
+            with self.subTest(overrides=overrides):
+                actions = reconcile.collect_ingest_actions(
+                    self.ledger, CONFIG, {REPO: [_live(**overrides)]}, now=NOW
+                )
+                self.assertEqual(len(actions), 1)
+                self.assertEqual(actions[0]["action"], "INGEST_SKIPPED")
+                self.assertNotIn("item", actions[0])
+
+    def test_unconfigured_repository_is_not_ingested(self):
+        actions = reconcile.collect_ingest_actions(
+            self.ledger,
+            CONFIG,
+            {"unconfigured/repo": [_live(repository="unconfigured/repo")]},
+            now=NOW,
+        )
+        self.assertEqual(actions, [])
+
+    def test_nonterminal_old_head_prevents_parallel_intake(self):
+        self.ledger["items"] = [
+            _terminal_item(
+                f"{REPO}#9876@{'c' * 40}",
+                lifecycle_state="STAGE2_ACTIVE",
+                terminal_disposition=None,
+            )
+        ]
+        actions = reconcile.collect_ingest_actions(
+            self.ledger, CONFIG, {REPO: [self.live]}, now=NOW
+        )
+        self.assertEqual(actions, [])
+
+    def test_apply_batch_deduplicates_and_replay_does_not_bump_revision(self):
+        actions = reconcile.collect_ingest_actions(
+            self.ledger,
+            CONFIG,
+            {
+                REPO: [
+                    self.live,
+                    _live(number=9877, url=f"https://github.com/{REPO}/pull/9877"),
+                ]
+            },
+            now=NOW,
+        )
+        actions.append(copy.deepcopy(actions[0]))
+        actions.append({"action": "INVENTORY_FAILED", "repository": REPO})
+        applied = reconcile._apply_ingest_actions(self.ledger, actions)
+        self.assertEqual(len(applied), 2)
+        self.assertEqual(len(self.ledger["items"]), 2)
+        self.assertEqual(self.ledger["ledger_revision"], 5)
+        self.assertEqual(actions[2]["skipped"], "duplicate key")
+        before = copy.deepcopy(self.ledger)
+        self.assertEqual(reconcile._apply_ingest_actions(self.ledger, actions), [])
+        self.assertEqual(self.ledger, before)
+
+    def test_no_ingest_preserves_closed_bookkeeping_without_inventory(self):
+        output = {}
+        action = {"action": "TERMINAL_CLOSED", "disposition": "CLOSED_NOOP"}
+        with (
+            mock.patch.object(
+                reconcile.cas,
+                "run_preflight",
+                return_value={"ledger_path": "ledger.yaml"},
+            ),
+            mock.patch.object(
+                reconcile, "load_yaml", side_effect=[CONFIG, self.ledger]
+            ),
+            mock.patch.object(reconcile, "collect_actions", return_value=[action]),
+            mock.patch.object(reconcile, "list_open_prs") as inventory,
+            mock.patch.object(reconcile.cas, "run_commit") as commit,
+            mock.patch.object(
+                reconcile, "_emit", side_effect=lambda plan, _json: output.update(plan)
+            ),
+        ):
+            result = reconcile.run_reconcile(
+                apply=False, limit=None, json_out=True, ingest=False
+            )
+        self.assertEqual(result, 0)
+        inventory.assert_not_called()
+        commit.assert_not_called()
+        self.assertEqual(output["actions"], [action])
+        self.assertEqual(output["ingest_count"], 0)
+        self.assertEqual(output["inventory_failed"], [])
 
 
 if __name__ == "__main__":

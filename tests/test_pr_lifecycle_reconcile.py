@@ -275,6 +275,29 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["observed_state"], "CLOSED")
         self.assertIn("no disposition-bearing label", action["reason"])
 
+    def test_unlabeled_closed_human_pr_is_bookkeeping_despite_sha_drift(self):
+        action = _classify(
+            {"author_type": "HUMAN", "guardrail_outcome": "NOT_RUN"},
+            {"state": "CLOSED", "headRefOid": "c" * 40, "labels": []},
+        )
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
+        self.assertEqual(action["to_state"], "TERMINAL")
+
+    def test_unlabeled_closed_security_pr_routes_from_stage1_to_stage3(self):
+        action = _classify(
+            {
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "lifecycle_state": "STAGE1_INTAKE",
+                "current_owner": "stage1",
+                "next_owner": "stage1",
+            },
+            {"state": "CLOSED", "headRefOid": "c" * 40, "labels": []},
+        )
+        self.assertEqual(action["action"], "TERMINAL_PENDING")
+        self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
+        self.assertIsNone(action["disposition"])
+
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
             {"author_type": "HUMAN"},

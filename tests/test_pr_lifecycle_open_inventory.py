@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -380,6 +381,112 @@ class OpenInventoryTests(unittest.TestCase):
                     "owner/repo",
                     run=lambda *_a, _result=result, **_k: _result,
                 )
+
+    def test_invalid_repository_is_rejected_before_invoking_github(self):
+        for repo in (None, "", "owner", "/repo", "owner/", "owner/repo/extra"):
+            with self.subTest(repo=repo):
+                run = mock.Mock()
+                with self.assertRaisesRegex(OSError, "invalid repository"):
+                    inventory.list_open_prs(repo, run=run)
+                run.assert_not_called()
+
+    def test_pagination_requires_a_new_nonempty_cursor(self):
+        for cursor in (None, "", 42, "cursor-1"):
+            with self.subTest(cursor=cursor):
+                pages = [
+                    _payload([_pr()], next_page=True),
+                    _payload([_pr(13)], next_page=True, cursor=cursor),
+                ]
+                run = mock.Mock(
+                    side_effect=[
+                        subprocess.CompletedProcess(["gh"], 0, json.dumps(page), "")
+                        for page in pages
+                    ]
+                )
+                sleep = mock.Mock()
+                with self.assertRaisesRegex(OSError, "malformed payload"):
+                    inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                self.assertEqual(run.call_count, 2)
+                sleep.assert_not_called()
+
+    def test_later_page_failure_raises_instead_of_returning_partial_inventory(self):
+        run = mock.Mock(
+            side_effect=[
+                subprocess.CompletedProcess(
+                    ["gh"], 0, json.dumps(_payload([_pr()], next_page=True)), ""
+                ),
+                *[subprocess.CompletedProcess(["gh"], 1, "", "unavailable")] * 3,
+            ]
+        )
+        sleep = mock.Mock()
+        with self.assertRaisesRegex(OSError, "unavailable"):
+            inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+        self.assertEqual(run.call_count, 4)
+        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(5)])
+        for call in run.call_args_list[1:]:
+            self.assertIn("cursor=cursor-1", call.args[0])
+
+    def test_retry_budget_resets_for_each_page(self):
+        failure = subprocess.CompletedProcess(["gh"], 1, "", "retry")
+        run = mock.Mock(
+            side_effect=[
+                failure,
+                failure,
+                subprocess.CompletedProcess(
+                    ["gh"], 0, json.dumps(_payload([_pr()], next_page=True)), ""
+                ),
+                failure,
+                failure,
+                subprocess.CompletedProcess(
+                    ["gh"], 0, json.dumps(_payload([_pr(13)])), ""
+                ),
+            ]
+        )
+        sleep = mock.Mock()
+        prs = inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+        self.assertEqual([pr["number"] for pr in prs], [12, 13])
+        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(5)] * 2)
+        self.assertEqual(run.call_count, 6)
+
+    def test_missing_commit_or_rollup_keeps_checks_incomplete(self):
+        for commits in ({"nodes": []}, {"nodes": [{"commit": {"author": None}}]}):
+            with self.subTest(commits=commits):
+                raw = _pr()
+                raw["commits"] = commits
+                live = inventory._normalize_pr(raw, "owner/repo")
+                self.assertTrue(live["checksIncomplete"])
+                self.assertEqual(
+                    live["checks"],
+                    [{"name": "statusCheckRollup truncated", "state": "PENDING"}],
+                )
+
+    def test_invalid_identity_and_connections_are_rejected(self):
+        for field, value in (
+            ("number", True),
+            ("number", 0),
+            ("number", "12"),
+            ("url", "http://github.com/owner/repo/pull/12"),
+            ("isDraft", "false"),
+            ("author", {"login": 42}),
+            ("body", ["text"]),
+            ("latestReviews", {"nodes": [None]}),
+            ("comments", {"nodes": {}}),
+            ("commits", {"nodes": [None]}),
+        ):
+            with self.subTest(field=field, value=value):
+                raw = _pr()
+                raw[field] = value
+                with self.assertRaises(OSError):
+                    inventory._normalize_pr(raw, "owner/repo")
+
+    def test_empty_inventory_is_a_successful_single_request(self):
+        run = mock.Mock(
+            return_value=subprocess.CompletedProcess(
+                ["gh"], 0, json.dumps(_payload([])), ""
+            )
+        )
+        self.assertEqual(inventory.list_open_prs("owner/repo", run=run), [])
+        run.assert_called_once()
 
 
 if __name__ == "__main__":

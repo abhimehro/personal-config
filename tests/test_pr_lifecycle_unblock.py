@@ -519,6 +519,56 @@ class RoutePrTests(unittest.TestCase):
         stale = _route(_pr(isDraft=True, headRefName="pr-lifecycle-docs-20261001"))
         self.assertEqual(stale[0]["action"], "CLOSE_STALE_LINEAGE")
 
+    def test_lineage_staleness_is_exclusive_and_invalid_dates_never_close(self):
+        for branch in (
+            "pr-lifecycle-docs-20261007-run",  # Exactly three days old.
+            "pr-lifecycle-docs-20261011-run",  # Future date.
+            "pr-lifecycle-docs-20260230-run",  # Invalid calendar date.
+        ):
+            with self.subTest(branch=branch):
+                self.assertEqual(_route(_pr(headRefName=branch)), [])
+        action = _route(_pr(headRefName="pr-lifecycle-docs-20261006-run"))[0]
+        self.assertEqual(action["action"], "CLOSE_STALE_LINEAGE")
+        self.assertEqual(action["age_days"], 4)
+
+    def test_trigger_expiry_boundary_and_unknown_timestamp(self):
+        marker = f"<!-- pr-lifecycle-trigger kind=dependabot_rebase head={'a' * 40} -->"
+        for created, expired in (
+            ("2026-10-07T12:00:00Z", False),
+            ("2026-10-07T14:00:00+02:00", False),
+            ("2026-10-07T11:59:59Z", True),
+            (None, True),
+            ("invalid", True),
+        ):
+            with self.subTest(created=created):
+                actions = _route(
+                    _pr(
+                        author={"login": "dependabot[bot]", "type": "Bot"},
+                        mergeStateStatus="BEHIND",
+                        comments=[{"body": marker, "createdAt": created}],
+                    )
+                )
+                if expired:
+                    self.assertEqual(len(actions), 1)
+                    self.assertEqual(actions[0]["action"], "ESCALATE")
+                    self.assertEqual(actions[0]["blocker"], "trigger_unanswered")
+                else:
+                    self.assertEqual(actions, [])
+
+    def test_latest_matching_trigger_controls_expiry(self):
+        marker = f"<!-- pr-lifecycle-trigger kind=dependabot_rebase head={'a' * 40} -->"
+        actions = _route(
+            _pr(
+                author={"login": "dependabot[bot]", "type": "Bot"},
+                mergeStateStatus="BEHIND",
+                comments=[
+                    {"body": marker, "createdAt": "2026-10-01T00:00:00Z"},
+                    {"body": marker, "createdAt": "2026-10-09T00:00:00Z"},
+                ],
+            )
+        )
+        self.assertEqual(actions, [])
+
 
 class UnblockApplyTests(unittest.TestCase):
     def test_inventory_failure_skips_backlog_refresh_in_apply_mode(self):
@@ -758,6 +808,146 @@ class UnblockApplyTests(unittest.TestCase):
         self.assertEqual(output["deferred_by_cap_count"], 1)
         self.assertEqual(output["deferred_by_cap"][0]["kind"], "dependabot_rebase")
         apply_action.assert_not_called()
+
+    def test_partial_or_malformed_comment_history_suppresses_trigger(self):
+        valid = {"user": {"login": "reviewer"}, "body": "hello", "created_at": None}
+        for payload in (
+            [[valid]],  # Fewer comments than the advertised count.
+            [[valid], [None]],
+            [[valid], [{"user": None, "body": "hello"}]],
+            [[valid], [dict(valid, body=42)]],
+            [[valid], [dict(valid, created_at=42)]],
+            {"message": "not a comment list"},
+        ):
+            with self.subTest(payload=payload):
+                pr = _pr(
+                    author={"login": "dependabot[bot]", "type": "Bot"},
+                    mergeStateStatus="BEHIND",
+                    commentsTotalCount=2,
+                )
+                run = mock.Mock(
+                    return_value=subprocess.CompletedProcess(
+                        ["gh"], 0, json.dumps(payload), ""
+                    )
+                )
+                unblock._load_full_comments(pr, run=run)
+                self.assertTrue(pr["comments_incomplete"])
+                self.assertEqual(pr["comments"], [])
+                self.assertEqual([a["action"] for a in _route(pr)], ["TRIGGER_SKIPPED"])
+                run.assert_called_once()
+
+    def test_complete_comment_history_clears_previous_failure(self):
+        comment = {"user": {"login": "reviewer"}, "body": None, "created_at": None}
+        for payload in ([comment], [[comment]]):
+            with self.subTest(payload=payload):
+                pr = _pr(commentsTotalCount=1, comments_incomplete=True)
+                run = mock.Mock(
+                    return_value=subprocess.CompletedProcess(
+                        ["gh"], 0, json.dumps(payload), ""
+                    )
+                )
+                unblock._load_full_comments(pr, run=run)
+                self.assertNotIn("comments_incomplete", pr)
+                self.assertEqual(
+                    pr["comments"],
+                    [
+                        {
+                            "author": {"login": "reviewer"},
+                            "body": "",
+                            "createdAt": None,
+                        }
+                    ],
+                )
+
+    def test_close_requires_successful_reread_of_closed_state(self):
+        for confirmation in (
+            subprocess.CompletedProcess(["gh"], 0, '{"state":"OPEN"}', ""),
+            subprocess.CompletedProcess(["gh"], 0, "{invalid", ""),
+            subprocess.CompletedProcess(["gh"], 0, "[]", ""),
+            subprocess.CompletedProcess(["gh"], 1, '{"state":"CLOSED"}', "failure"),
+            subprocess.TimeoutExpired(["gh"], 60),
+        ):
+            with self.subTest(confirmation=confirmation):
+                run = mock.Mock(
+                    side_effect=[
+                        *[subprocess.CompletedProcess(["gh"], 0, "", "")] * 4,
+                        confirmation,
+                    ]
+                )
+                action = {
+                    "action": "CLOSE_SUPERSEDED",
+                    "repository": REPO,
+                    "pr": 23,
+                    "comment": "Superseded.",
+                }
+                unblock._apply_action(action, run=run)
+                self.assertTrue(action["unconfirmed"])
+                self.assertEqual(run.call_count, 5)
+                self.assertEqual(action["github_steps"][-1]["step"], "confirm")
+
+    def test_push_capable_action_failures_are_reported_without_retry(self):
+        for kind in ("TRIGGER", "UPDATE_BRANCH"):
+            for failure in (
+                subprocess.CompletedProcess(["gh"], 1, "", "failure"),
+                OSError("unavailable"),
+                subprocess.TimeoutExpired(["gh"], 60),
+            ):
+                with self.subTest(kind=kind, failure=failure):
+                    run = mock.Mock(side_effect=[failure])
+                    action = {
+                        "action": kind,
+                        "repository": REPO,
+                        "pr": 23,
+                        "body": "@dependabot rebase",
+                        "expected_head_sha": "a" * 40,
+                    }
+                    unblock._apply_action(action, run=run)
+                    self.assertTrue(action["unconfirmed"])
+                    self.assertEqual(len(action["github_steps"]), 1)
+                    step = action["github_steps"][0]
+                    if isinstance(failure, BaseException):
+                        self.assertIsNone(step["exit_code"])
+                        self.assertEqual(step["error"], type(failure).__name__)
+                    else:
+                        self.assertEqual(step["exit_code"], 1)
+                    run.assert_called_once()
+
+    def test_dry_run_plans_mutations_without_applying_or_updating_issues(self):
+        live = _pr(
+            author={"login": "dependabot[bot]", "type": "Bot"},
+            mergeStateStatus="BEHIND",
+        )
+        config = dict(CONFIG, repos=[REPO])
+        output = {}
+        with (
+            mock.patch.object(
+                unblock, "load_yaml", side_effect=[config, {"items": []}]
+            ),
+            mock.patch.object(
+                unblock.cas,
+                "run_preflight",
+                return_value={"ledger_path": "ledger.yaml"},
+            ),
+            mock.patch.object(unblock, "list_open_prs", return_value=[live]),
+            mock.patch.object(unblock, "_apply_action") as apply_action,
+            mock.patch.object(unblock, "update_backlog_issue") as update_issue,
+            mock.patch.object(
+                unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
+            ),
+        ):
+            result = unblock.run_unblock(
+                apply=False,
+                json_out=True,
+                repos_filter=[REPO],
+                limit=1,
+            )
+        self.assertEqual(result, 0)
+        self.assertTrue(output["dry_run"])
+        self.assertEqual(output["mutations_selected"], 1)
+        self.assertEqual(output["mutations_applied"], 0)
+        self.assertEqual(output["actions"][0]["action"], "TRIGGER")
+        apply_action.assert_not_called()
+        update_issue.assert_not_called()
 
 
 if __name__ == "__main__":

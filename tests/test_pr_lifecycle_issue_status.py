@@ -408,6 +408,112 @@ class IssueStatusTests(unittest.TestCase):
             issue_status.update_backlog_issue("owner/repo", [], now=NOW)
         self.assertEqual(self.command.call_count, 1)
 
+    def test_backlog_deduplicates_by_pr_and_blocker_without_mutating_inputs(self):
+        rows = [
+            {"pr": 42, "blocker": "conflict"},
+            {"pr": 42, "blocker": "conflict", "evidence": "duplicate"},
+            {"pr": 42, "blocker": "security"},
+        ]
+        state = {"first_seen": {}, "overdue_notified": []}
+        before = copy.deepcopy((rows, state))
+        prepared, refreshed, overdue = issue_status._prepare_backlog_rows(
+            "owner/repo", rows, state, NOW
+        )
+        self.assertEqual(
+            [row["id"] for row in prepared],
+            [
+                "owner/repo#42:conflict",
+                "owner/repo#42:security",
+            ],
+        )
+        self.assertEqual(set(refreshed["first_seen"]), {row["id"] for row in prepared})
+        self.assertEqual(overdue, [])
+        self.assertEqual((rows, state), before)
+
+    def test_backlog_expiry_is_inclusive_and_normalizes_timezones(self):
+        for expires, expected in (
+            ("2026-08-30T12:00:01Z", False),
+            ("2026-08-30T12:00:00Z", True),
+            ("2026-08-30T14:00:00+02:00", True),
+        ):
+            with self.subTest(expires=expires):
+                prepared, state, overdue = issue_status._prepare_backlog_rows(
+                    "owner/repo",
+                    [{"pr": 42, "blocker": "conflict", "expires": expires}],
+                    {},
+                    NOW,
+                )
+                self.assertEqual(prepared[0]["overdue"], expected)
+                self.assertEqual(len(overdue), int(expected))
+                self.assertEqual(len(state["overdue_notified"]), int(expected))
+
+    def test_invalid_first_seen_and_expiry_recover_to_default_deadline(self):
+        key = "owner/repo#42:conflict"
+        for expires in (None, "invalid"):
+            with self.subTest(expires=expires):
+                rows = [
+                    {
+                        "pr": 42,
+                        "blocker": "conflict",
+                        "expires": expires,
+                        "packet_expiry_close_days": True,
+                    }
+                ]
+                prepared, state, overdue = issue_status._prepare_backlog_rows(
+                    "owner/repo", rows, {"first_seen": {key: "invalid"}}, NOW
+                )
+                self.assertEqual(state["first_seen"][key], "2026-08-30T12:00:00Z")
+                self.assertEqual(prepared[0]["expires"], "2026-09-06T12:00:00Z")
+                self.assertEqual(overdue, [])
+
+    def test_failed_overdue_notification_does_not_persist_notified_state(self):
+        repo = "owner/repo"
+        row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
+        existing = [
+            {"number": 9, "title": issue_status.BACKLOG_ISSUE_TITLE, "body": ""}
+        ]
+        self.command.side_effect = [
+            self.result(json.dumps(existing)),
+            self.result(returncode=1, stderr="comment rejected"),
+        ]
+        with self.assertRaisesRegex(OSError, "overdue comment failed"):
+            issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.assertEqual(self.command.call_count, 2)
+        self.assertEqual(
+            self.command.call_args_list[1].args[0][1:4], ["issue", "comment", "9"]
+        )
+        # No edit may claim a notification that GitHub rejected.
+        self.assertFalse(
+            any("edit" in call.args[0] for call in self.command.call_args_list)
+        )
+
+    def test_new_overdue_issue_is_created_then_notified_and_persisted(self):
+        repo = "owner/repo"
+        row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
+        self.command.side_effect = [
+            self.result("[]"),
+            self.result(f"https://github.com/{repo}/issues/9\n"),
+            self.result(),
+            self.result(),
+        ]
+        result = issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.assertEqual(result["action"], "CREATED")
+        self.assertEqual(result["issue_number"], 9)
+        self.assertEqual(
+            [call.args[0][2] for call in self.command.call_args_list],
+            ["list", "create", "comment", "edit"],
+        )
+        self.assertEqual(result["overdue_notified"], [f"{repo}#42:conflict"])
+        state = issue_status._previous_state(result["body"])
+        self.assertEqual(state["overdue_notified"], result["overdue_notified"])
+
+    def test_new_overdue_issue_without_returned_url_stops_before_notification(self):
+        row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
+        self.command.side_effect = [self.result("[]"), self.result("created")]
+        with self.assertRaisesRegex(OSError, "did not return the new issue URL"):
+            issue_status.update_backlog_issue("owner/repo", [row], now=NOW)
+        self.assertEqual(self.command.call_count, 2)
+
     def test_status_cli_takes_precedence_over_stage(self) -> None:
         output = StringIO()
         with (
