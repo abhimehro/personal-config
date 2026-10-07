@@ -334,11 +334,13 @@ def route_unblock_pr(
     """Route a PR fixture with a fixed clock and default ledger and settings."""
     return unblock.route_pr(
         pr,
-        author_type=route_kwargs.get("author_type", "BOT"),
-        ledger_items_for_pr=route_kwargs.get("items") or [],
-        ledger=route_kwargs.get("ledger") or {"items": []},
-        settings=route_kwargs.get("settings") or UNBLOCK_SETTINGS,
-        now=UNBLOCK_NOW,
+        unblock._RouteArgs(
+            author_type=route_kwargs.get("author_type", "BOT"),
+            ledger_items_for_pr=route_kwargs.get("items") or [],
+            ledger=route_kwargs.get("ledger") or {"items": []},
+            settings=route_kwargs.get("settings") or UNBLOCK_SETTINGS,
+            now=UNBLOCK_NOW,
+        ),
     )
 
 
@@ -394,11 +396,13 @@ def run_unblock_plan(
         ),
     ):
         unblock.run_unblock(
-            apply=apply,
-            json_out=True,
-            repos_filter=[UNBLOCK_REPO],
-            limit=0,
-            run=run or subprocess.run,
+            unblock._UnblockArgs(
+                apply=apply,
+                json_out=True,
+                repos_filter=[UNBLOCK_REPO],
+                limit=0,
+                run=run or subprocess.run,
+            )
         )
     return output, update_issue
 

@@ -502,6 +502,7 @@ class _RouteArgs:
 
     author_type: str
     ledger_items_for_pr: list[dict[str, Any]]
+    ledger: dict[str, Any]
     settings: dict[str, Any]
     now: datetime
 
@@ -544,15 +545,7 @@ def _route_prefix(
     return None
 
 
-def route_pr(
-    pr: dict[str, Any],
-    *,
-    author_type: str,
-    ledger_items_for_pr: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    settings: dict[str, Any],
-    now: datetime,
-) -> list[dict[str, Any]]:
+def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     """Return ordered fix, trigger, advisory, or escalation proposals.
 
     Consume normalized open-PR inventory and validated unblock settings
@@ -561,8 +554,8 @@ def route_pr(
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
     """
-    ctx = _route_ctx(pr, _RouteArgs(author_type, ledger_items_for_pr, settings, now))
-    prefix = _route_prefix(ctx, pr, ledger_items_for_pr, ledger)
+    ctx = _route_ctx(pr, args)
+    prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
     if prefix is not None:
         return prefix
     conflict = _route_conflict(ctx)

@@ -42,6 +42,7 @@ from pr_lifecycle_unblock_routing import (
     _lineage_date,  # noqa: F401
     _parse_datetime,  # noqa: F401
     _route_review,  # noqa: F401
+    _RouteArgs,
     _safe_check_names,  # noqa: F401
     _salvage_replacement,  # noqa: F401
     _sticky_security,  # noqa: F401
@@ -255,11 +256,15 @@ def _scan_repo(scan: _ScanSpec, *, run: Any) -> tuple[list[dict[str, Any]], int]
         actions.extend(
             route_pr(
                 pr,
-                author_type=verdict.author_type,
-                ledger_items_for_pr=_matching_ledger_items(scan.repo, pr, scan.ledger),
-                ledger=scan.ledger,
-                settings=scan.settings,
-                now=datetime.now(timezone.utc),
+                _RouteArgs(
+                    author_type=verdict.author_type,
+                    ledger_items_for_pr=_matching_ledger_items(
+                        scan.repo, pr, scan.ledger
+                    ),
+                    ledger=scan.ledger,
+                    settings=scan.settings,
+                    now=datetime.now(timezone.utc),
+                ),
             )
         )
     return actions, fetched
@@ -378,14 +383,18 @@ def _build_plan(plan: _PlanFields) -> dict[str, Any]:
     }
 
 
-def run_unblock(
-    *,
-    apply: bool,
-    json_out: bool,
-    repos_filter: list[str] | None,
-    limit: int | None,
-    run: Any = subprocess.run,
-) -> int:
+@dataclass(frozen=True)
+class _UnblockArgs:
+    """The run_unblock CLI inputs: mode, filters, cap, and runner."""
+
+    apply: bool
+    json_out: bool
+    repos_filter: list[str] | None
+    limit: int | None
+    run: Any = subprocess.run
+
+
+def run_unblock(unblock_args: _UnblockArgs) -> int:
     """Build and emit a blocker plan, applying bounded mutations when requested.
 
     Fetch the ledger and open PR inventory, classify identities, and route
@@ -398,12 +407,15 @@ def run_unblock(
     failures are recorded on actions. Configuration and ledger fetch errors
     propagate; unknown repository filters raise ValueError.
     """
+    apply = unblock_args.apply
+    json_out = unblock_args.json_out
+    run = unblock_args.run
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
-    repositories = _resolve_repositories(config, repos_filter)
+    repositories = _resolve_repositories(config, unblock_args.repos_filter)
     lifecycle = config["lifecycle"]
     settings = lifecycle.get("unblock") or {}
-    cap = limit
+    cap = unblock_args.limit
     if cap is None:
         cap = lifecycle["stage_caps"]["stage1_actions"]
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-unblock-") as tmp:
@@ -548,10 +560,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     try:
         return run_unblock(
-            apply=args.apply,
-            json_out=args.json_out,
-            repos_filter=args.repos_filter,
-            limit=args.limit,
+            _UnblockArgs(
+                apply=args.apply,
+                json_out=args.json_out,
+                repos_filter=args.repos_filter,
+                limit=args.limit,
+            )
         )
     except (
         OSError,

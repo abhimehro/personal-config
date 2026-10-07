@@ -444,20 +444,25 @@ def _graphql_page(command: list[str], *, run: Any, sleep: Any) -> Any:
     raise last_error
 
 
+def _conn_parts(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Extract (pullRequests connection, pageInfo); raise on bad shape."""
+    try:
+        connection = payload["data"]["repository"]["pullRequests"]
+        page_info = connection["pageInfo"]
+    except (KeyError, TypeError, AttributeError) as exc:
+        raise OSError("gh api graphql returned a malformed payload") from exc
+    if not isinstance(page_info.get("hasNextPage"), bool):
+        raise OSError("gh api graphql returned a malformed payload")
+    return connection, page_info
+
+
 def _page_connection(payload: Any) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return (pullRequests connection, pageInfo); raise on a bad payload."""
     if not isinstance(payload, dict):
         raise OSError("gh api graphql returned a malformed payload")
     if "errors" in payload:
         raise OSError("gh api graphql returned an API error")
-    try:
-        connection = payload["data"]["repository"]["pullRequests"]
-        page_info = connection["pageInfo"]
-        if not isinstance(page_info.get("hasNextPage"), bool):
-            raise TypeError
-    except (KeyError, TypeError, AttributeError) as exc:
-        raise OSError("gh api graphql returned a malformed payload") from exc
-    return connection, page_info
+    return _conn_parts(payload)
 
 
 def list_open_prs(

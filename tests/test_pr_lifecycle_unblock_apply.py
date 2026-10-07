@@ -278,7 +278,11 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
             ),
         ):
-            unblock.run_unblock(apply=True, json_out=True, repos_filter=[REPO], limit=0)
+            unblock.run_unblock(
+                unblock._UnblockArgs(
+                    apply=True, json_out=True, repos_filter=[REPO], limit=0
+                )
+            )
         self.assertEqual(output["deferred_by_cap_count"], 1)
         self.assertEqual(output["deferred_by_cap"][0]["kind"], "dependabot_rebase")
         self.assertEqual(output["mutations_applied"], 0)
@@ -320,7 +324,11 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
             ),
         ):
-            unblock.run_unblock(apply=True, json_out=True, repos_filter=[REPO], limit=3)
+            unblock.run_unblock(
+                unblock._UnblockArgs(
+                    apply=True, json_out=True, repos_filter=[REPO], limit=3
+                )
+            )
         self.assertEqual(apply.call_count, 3)
         self.assertEqual(output["mutations_selected"], 3)
         self.assertEqual(output["mutations_applied"], 2)
@@ -454,10 +462,12 @@ class UnblockApplyTests(unittest.TestCase):
             ),
         ):
             result = unblock.run_unblock(
-                apply=False,
-                json_out=True,
-                repos_filter=[REPO],
-                limit=1,
+                unblock._UnblockArgs(
+                    apply=False,
+                    json_out=True,
+                    repos_filter=[REPO],
+                    limit=1,
+                )
             )
         self.assertEqual(result, 0)
         self.assertTrue(output["dry_run"])
