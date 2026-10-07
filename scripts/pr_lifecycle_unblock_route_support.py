@@ -61,6 +61,12 @@ def _safe_check_names(names: list[str]) -> list[str]:
     return safe
 
 
+def _safe_ref_name(value: Any, fallback: str) -> str:
+    """Display-sanitize one git ref name, or return fallback when nothing survives."""
+    names = _safe_check_names([str(value or "")])
+    return names[0] if names else fallback
+
+
 @dataclass(frozen=True)
 class _Route:
     """Per-PR routing context: identity, family, security, and safe fields."""

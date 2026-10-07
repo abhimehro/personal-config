@@ -25,6 +25,7 @@ from pr_lifecycle_unblock_route_support import (
     _parse_datetime,  # noqa: F401
     _Route,
     _safe_check_names,
+    _safe_ref_name,
     _salvage_replacement,
     _sticky_security,
     _terminal_but_open,
@@ -509,7 +510,7 @@ class _RouteArgs:
 
 def _route_ctx(pr: dict[str, Any], args: _RouteArgs) -> _Route:
     """Build the shared routing context for one normalized PR."""
-    safe_base = _safe_check_names([str(pr.get("baseRefName") or "")])
+    safe_base = _safe_ref_name(pr.get("baseRefName"), "base branch")
     return _Route(
         pr=pr,
         author_type=args.author_type,
@@ -520,7 +521,7 @@ def _route_ctx(pr: dict[str, Any], args: _RouteArgs) -> _Route:
         repo=str(pr.get("repository") or ""),
         number=pr.get("number"),
         head=str(pr.get("headRefOid") or ""),
-        base=safe_base[0] if safe_base else "base branch",
+        base=safe_base,
     )
 
 
