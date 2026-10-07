@@ -505,6 +505,22 @@ def route_pr(
                     sticky_security=security,
                 )
             )
+        elif family == "coderabbit" and author_type == "BOT":
+            actions.extend(
+                _trigger_action(
+                    pr,
+                    author_type,
+                    "coderabbit_fixci",
+                    "@coderabbitai fix-ci commit",
+                    settings,
+                    now,
+                    blocker="required_check_failure",
+                    evidence={"checks": names},
+                    recommended_action="request CodeRabbit to fix failing CI",
+                    family=family,
+                    sticky_security=security,
+                )
+            )
         else:
             actions.append(
                 _escalation(
@@ -616,8 +632,6 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
                 [
                     "gh",
                     "api",
-                    "--repo",
-                    repo,
                     "-X",
                     "PUT",
                     f"repos/{repo}/pulls/{pr}/update-branch",
@@ -659,6 +673,24 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
                     str(action["comment"]),
                 ],
                 "comment",
+                run=run,
+            )
+        )
+        steps.append(
+            _run_github_step(
+                [
+                    "gh",
+                    "label",
+                    "create",
+                    "superseded",
+                    "--repo",
+                    repo,
+                    "--color",
+                    "cfd3d7",
+                    "--description",
+                    "Superseded by another PR (pr-lifecycle)",
+                ],
+                "ensure_label",
                 run=run,
             )
         )
@@ -718,7 +750,11 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
                 read["state"] = None
         steps.append(read)
     action["github_steps"] = steps
-    action["unconfirmed"] = any(step.get("exit_code") != 0 for step in steps)
+    action["unconfirmed"] = any(
+        step.get("exit_code") != 0
+        for step in steps
+        if step.get("step") != "ensure_label"
+    )
     if action["action"] in {"CLOSE_STALE_LINEAGE", "CLOSE_SUPERSEDED"}:
         confirm = next((step for step in steps if step["step"] == "confirm"), {})
         if str(confirm.get("state") or "").upper() != "CLOSED":
@@ -734,7 +770,10 @@ def _human_ledger_rows(
             not isinstance(item, dict)
             or item.get("repository") != repo
             or item.get("lifecycle_state") == "TERMINAL"
-            or item.get("current_owner") != "human"
+            or (
+                item.get("current_owner") != "human"
+                and item.get("guardrail_outcome") != "REVIEW_SECURITY"
+            )
         ):
             continue
         next_action = str(item.get("next_action") or "")
@@ -837,7 +876,7 @@ def run_unblock(
                     {
                         "action": "INVENTORY_FAILED",
                         "repository": repo,
-                        "reason": type(exc).__name__,
+                        "reason": f"{type(exc).__name__}: {exc}"[:200],
                     }
                 )
                 continue

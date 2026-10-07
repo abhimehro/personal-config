@@ -245,7 +245,7 @@ keeps mutations bounded and never merges or deletes branches.
 | Stale bot lineage or merged salvage original | Comment, label `superseded`, close and confirm; never close HUMAN or `REVIEW_SECURITY` originals. |
 | Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
 | Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
-| Required checks / review changes | Trigger Jules or CodeRabbit only when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
+| Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
 
 Human decisions are refreshed on each repository's open **“PR lifecycle: needs
 human decision”** issue. It preserves first-seen dates, flags expired rows, and

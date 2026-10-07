@@ -200,7 +200,76 @@ class OpenInventoryTests(unittest.TestCase):
                 inventory.list_open_prs(
                     "owner/repo",
                     run=lambda *_a, _result=result, **_k: _result,
+                    sleep=lambda _seconds: None,
                 )
+
+    def test_retries_transient_failures_then_succeeds(self):
+        valid = subprocess.CompletedProcess(
+            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+        )
+        failures = (
+            subprocess.CompletedProcess(["gh"], 1, "", "temporary failure"),
+            subprocess.TimeoutExpired(["gh"], 120),
+            OSError("temporary process failure"),
+            subprocess.CompletedProcess(["gh"], 0, "{bad", ""),
+        )
+        for failure in failures:
+            with self.subTest(failure=type(failure).__name__):
+                responses = [failure, valid]
+                sleeps = []
+                timeouts = []
+
+                def run(
+                    _argv,
+                    *,
+                    _responses=responses,
+                    _timeouts=timeouts,
+                    **kwargs,
+                ):
+                    _timeouts.append(kwargs["timeout"])
+                    response = _responses.pop(0)
+                    if isinstance(response, BaseException):
+                        raise response
+                    return response
+
+                prs = inventory.list_open_prs(
+                    "owner/repo", run=run, sleep=sleeps.append
+                )
+                self.assertEqual([pr["number"] for pr in prs], [12])
+                self.assertEqual(sleeps, [2])
+                self.assertEqual(timeouts, [120, 120])
+
+    def test_three_transient_failures_raise_oserror(self):
+        failures = [
+            subprocess.CompletedProcess(["gh"], 1, "", "temporary failure")
+            for _ in range(3)
+        ]
+        sleeps = []
+        with self.assertRaisesRegex(OSError, "rc=1"):
+            inventory.list_open_prs(
+                "owner/repo",
+                run=lambda *_a, **_k: failures.pop(0),
+                sleep=sleeps.append,
+            )
+        self.assertEqual(sleeps, [2, 5])
+
+    def test_graphql_errors_are_not_retried(self):
+        result = subprocess.CompletedProcess(
+            ["gh"],
+            0,
+            json.dumps({"errors": [{"message": "API error"}]}),
+            "",
+        )
+        calls = []
+        sleeps = []
+        with self.assertRaisesRegex(OSError, "API error"):
+            inventory.list_open_prs(
+                "owner/repo",
+                run=lambda *_a, **_k: calls.append(1) or result,
+                sleep=sleeps.append,
+            )
+        self.assertEqual(calls, [1])
+        self.assertEqual(sleeps, [])
 
     def test_api_and_shape_errors_raise_oserror(self):
         for payload in (

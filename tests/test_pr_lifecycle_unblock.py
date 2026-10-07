@@ -222,6 +222,20 @@ class RoutePrTests(unittest.TestCase):
         )
         self.assertEqual(coderabbit[0]["kind"], "coderabbit_autofix")
 
+    def test_coderabbit_fixci_for_bot_checks_only(self):
+        pr = _pr(
+            author={"login": "coderabbitai[bot]", "type": "Bot"},
+            checks=[{"name": "Build", "state": "FAILURE"}],
+        )
+        action = _route(pr)[0]
+        self.assertEqual(action["action"], "TRIGGER")
+        self.assertEqual(action["kind"], "coderabbit_fixci")
+        self.assertTrue(action["body"].startswith("@coderabbitai fix-ci commit\n"))
+
+        human = _route(pr, author_type="HUMAN")[0]
+        self.assertEqual(human["action"], "ESCALATE")
+        self.assertEqual(human["blocker"], "required_check_failure")
+
     def test_trigger_markers_dedupe_same_head_but_allow_new_head(self):
         marker = f"<!-- pr-lifecycle-trigger kind=dependabot_rebase head={'a' * 40} -->"
         pr = _pr(
@@ -309,6 +323,24 @@ class RoutePrTests(unittest.TestCase):
         rendered = issue_status.backlog_issue_body(REPO, rows, {}, NOW)
         self.assertEqual(rendered.count(f"[23](https://github.com/{REPO}/pull/23)"), 1)
 
+    def test_stage3_owned_security_rows_are_included_in_backlog(self):
+        security_item = {
+            "key": f"{REPO}#24@{'b' * 40}",
+            "repository": REPO,
+            "pr": 24,
+            "url": f"https://github.com/{REPO}/pull/24",
+            "current_owner": "stage3",
+            "lifecycle_state": "STAGE3_REVIEW",
+            "guardrail_outcome": "REVIEW_SECURITY",
+            "next_action": "Review security-sensitive changes.",
+            "safe_default": "Leave open.",
+            "updated_at_utc": "2026-10-01T00:00:00Z",
+        }
+        rows = unblock._human_ledger_rows(REPO, {"items": [security_item]}, 7)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["blocker"], "REVIEW_SECURITY")
+        self.assertEqual(rows[0]["owner"], "human")
+
     def test_drafts_are_skipped_after_salvage_lineage_routes(self):
         self.assertEqual(_route(_pr(isDraft=True)), [])
         stale = _route(_pr(isDraft=True, headRefName="pr-lifecycle-docs-20261001"))
@@ -321,10 +353,11 @@ class UnblockApplyTests(unittest.TestCase):
 
         def run(argv, **kwargs):
             calls.append((argv, kwargs))
+            returncode = 1 if argv[1:3] == ["label", "create"] else 0
             stdout = (
                 json.dumps({"state": "CLOSED"}) if argv[1:3] == ["pr", "view"] else ""
             )
-            return subprocess.CompletedProcess(argv, 0, stdout, "")
+            return subprocess.CompletedProcess(argv, returncode, stdout, "")
 
         action = {
             "action": "CLOSE_SUPERSEDED",
@@ -335,17 +368,33 @@ class UnblockApplyTests(unittest.TestCase):
         unblock._apply_action(action, run=run)
         self.assertFalse(action["unconfirmed"])
         self.assertEqual(
-            [call[0][2] for call in calls], ["comment", "edit", "close", "view"]
+            [call[0][2] for call in calls],
+            ["comment", "create", "edit", "close", "view"],
+        )
+        self.assertEqual(
+            calls[1][0],
+            [
+                "gh",
+                "label",
+                "create",
+                "superseded",
+                "--repo",
+                REPO,
+                "--color",
+                "cfd3d7",
+                "--description",
+                "Superseded by another PR (pr-lifecycle)",
+            ],
         )
         for argv, kwargs in calls:
             self.assertIn("--repo", argv)
             self.assertEqual(argv[argv.index("--repo") + 1], REPO)
             self.assertEqual(kwargs["timeout"], 60)
             self.assertFalse(kwargs["check"])
-        close_argv = calls[2][0]
+        close_argv = calls[3][0]
         self.assertNotIn("--delete-branch", close_argv)
 
-    def test_update_branch_uses_expected_sha_and_pinned_repository(self):
+    def test_update_branch_uses_expected_sha_without_repo_flag(self):
         calls = []
 
         def run(argv, **kwargs):
@@ -367,8 +416,6 @@ class UnblockApplyTests(unittest.TestCase):
             [
                 "gh",
                 "api",
-                "--repo",
-                REPO,
                 "-X",
                 "PUT",
                 f"repos/{REPO}/pulls/23/update-branch",
@@ -376,6 +423,7 @@ class UnblockApplyTests(unittest.TestCase):
                 f"expected_head_sha={'a' * 40}",
             ],
         )
+        self.assertNotIn("--repo", argv)
         self.assertFalse(kwargs["check"])
 
     def test_failed_close_step_is_unconfirmed_and_remaining_steps_run(self):
@@ -397,7 +445,7 @@ class UnblockApplyTests(unittest.TestCase):
         }
         unblock._apply_action(action, run=run)
         self.assertTrue(action["unconfirmed"])
-        self.assertEqual(len(calls), 4)
+        self.assertEqual(len(calls), 5)
 
     def test_mutation_cap_defers_actions_without_silently_dropping_them(self):
         config = dict(CONFIG)

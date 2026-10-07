@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import time
 from typing import Any
 
 _QUERY = """
@@ -192,7 +193,12 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
     return normalized_pr
 
 
-def list_open_prs(repo: str, *, run: Any = subprocess.run) -> list[dict[str, Any]]:
+def list_open_prs(
+    repo: str,
+    *,
+    run: Any = subprocess.run,
+    sleep: Any = time.sleep,
+) -> list[dict[str, Any]]:
     """Return all open PRs in ``repo``; any API or payload failure raises OSError."""
     try:
         owner, name = repo.split("/", 1)
@@ -218,23 +224,44 @@ def list_open_prs(repo: str, *, run: Any = subprocess.run) -> list[dict[str, Any
         ]
         if cursor is not None:
             command.extend(["-F", f"cursor={cursor}"])
-        try:
-            result = run(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        except (OSError, subprocess.SubprocessError) as exc:
-            raise OSError("gh api graphql failed") from exc
-        if result.returncode != 0:
-            raise OSError(f"gh api graphql failed rc={result.returncode}")
-        try:
-            payload = json.loads(result.stdout)
-        except (TypeError, json.JSONDecodeError) as exc:
-            raise OSError("gh api graphql returned invalid JSON") from exc
-        if not isinstance(payload, dict) or payload.get("errors"):
+        payload: Any = None
+        last_error: OSError | None = None
+        for attempt in range(3):
+            try:
+                result = run(
+                    command,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+            except (OSError, subprocess.SubprocessError) as exc:
+                last_error = OSError(
+                    f"gh api graphql process failed: {type(exc).__name__}: {exc}"
+                )
+            else:
+                if result.returncode != 0:
+                    stderr = (result.stderr or "").strip()
+                    last_error = OSError(
+                        f"gh api graphql failed rc={result.returncode}: {stderr[:160]}"
+                    )
+                else:
+                    try:
+                        payload = json.loads(result.stdout)
+                    except (TypeError, json.JSONDecodeError) as exc:
+                        last_error = OSError(
+                            f"gh api graphql returned invalid JSON: {exc}"
+                        )
+                    else:
+                        break
+            if attempt < 2:
+                sleep((2, 5)[attempt])
+        else:
+            assert last_error is not None
+            raise last_error
+        if not isinstance(payload, dict):
+            raise OSError("gh api graphql returned a malformed payload")
+        if "errors" in payload:
             raise OSError("gh api graphql returned an API error")
         try:
             data = payload["data"]

@@ -183,7 +183,7 @@ class OpenPrIngestTests(unittest.TestCase):
             reconcile.run_reconcile(apply=False, limit=None, json_out=True, ingest=True)
         self.assertEqual(len(output["inventory_failed"]), len(CONFIG["repos"]))
         self.assertEqual(output["inventory_failed"][0]["action"], "INVENTORY_FAILED")
-        self.assertEqual(output["inventory_failed"][0]["reason"], "OSError")
+        self.assertEqual(output["inventory_failed"][0]["reason"], "OSError: network")
 
 
 if __name__ == "__main__":

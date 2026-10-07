@@ -826,7 +826,7 @@ def run_reconcile(
                         {
                             "action": "INVENTORY_FAILED",
                             "repository": repo,
-                            "reason": type(exc).__name__,
+                            "reason": f"{type(exc).__name__}: {exc}"[:200],
                         }
                     )
             ingest_actions = collect_ingest_actions(
