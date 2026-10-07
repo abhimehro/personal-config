@@ -235,12 +235,15 @@ def _row_first_seen(
     return _iso(now_utc), now_utc
 
 
+def _valid_days(value: Any) -> bool:
+    """Require a positive int day count (bool excluded)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
 def _packet_expiry_days(row: dict[str, Any]) -> int:
     """Return the row's close-days value, defaulting when absent or invalid."""
     days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
-    if not isinstance(days, int) or isinstance(days, bool) or days < 1:
-        return _DEFAULT_PACKET_EXPIRY_DAYS
-    return days
+    return days if _valid_days(days) else _DEFAULT_PACKET_EXPIRY_DAYS
 
 
 def _expiry_text(row: dict[str, Any], first_at: datetime) -> str:

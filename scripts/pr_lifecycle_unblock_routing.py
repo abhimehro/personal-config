@@ -7,6 +7,7 @@ proposals. All mutating execution is in pr_lifecycle_unblock_apply.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -102,17 +103,26 @@ def _route_superseded(
     ]
 
 
+@dataclass(frozen=True)
+class _ConflictSpec:
+    """The kind, comment body, and action text of a conflict trigger."""
+
+    kind: str
+    body: str
+    action_text: str
+
+
 def _conflict_trigger(
-    ctx: _Route, kind: str, body: str, evidence: Any, action_text: str
+    ctx: _Route, spec: _ConflictSpec, evidence: Any
 ) -> list[dict[str, Any]]:
     """Propose the family-specific merge-conflict fix trigger."""
     return _trigger_action(
         ctx,
-        kind,
-        body,
+        spec.kind,
+        spec.body,
         blocker="merge_conflict",
         evidence=evidence,
-        recommended_action=action_text,
+        recommended_action=spec.action_text,
     )
 
 
@@ -306,10 +316,12 @@ def _dependabot_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str
     """Trigger a bounded Dependabot rebase for a conflicted PR."""
     return _conflict_trigger(
         ctx,
-        "dependabot_rebase",
-        "@dependabot rebase",
+        _ConflictSpec(
+            "dependabot_rebase",
+            "@dependabot rebase",
+            "request a bounded conflict rebase",
+        ),
         evidence,
-        "request a bounded conflict rebase",
     )
 
 
@@ -317,10 +329,12 @@ def _coderabbit_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str
     """Trigger CodeRabbit conflict resolution for a conflicted PR."""
     return _conflict_trigger(
         ctx,
-        "coderabbit_conflict",
-        "@coderabbitai resolve merge conflict",
+        _ConflictSpec(
+            "coderabbit_conflict",
+            "@coderabbitai resolve merge conflict",
+            "request merge conflict resolution",
+        ),
         evidence,
-        "request merge conflict resolution",
     )
 
 
@@ -333,10 +347,12 @@ def _jules_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any
     )
     return _conflict_trigger(
         ctx,
-        "jules_conflict",
-        body,
+        _ConflictSpec(
+            "jules_conflict",
+            body,
+            "request Jules to resolve merge conflicts",
+        ),
         evidence,
-        "request Jules to resolve merge conflicts",
     )
 
 

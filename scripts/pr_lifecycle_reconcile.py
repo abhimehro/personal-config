@@ -763,10 +763,10 @@ def _positive_pr_number(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value >= 1
 
 
-def _sha_pair(live: dict[str, Any], head_sha: str) -> bool:
+def _sha_pair(live: dict[str, Any]) -> bool:
     """Require 40-hex head and base SHAs on a live PR entry."""
     return bool(
-        SHA_RE.fullmatch(head_sha)
+        SHA_RE.fullmatch(str(live.get("headRefOid") or ""))
         and SHA_RE.fullmatch(str(live.get("baseRefOid") or ""))
     )
 
@@ -776,21 +776,15 @@ def _https_url(url: Any) -> bool:
     return isinstance(url, str) and url.startswith("https://")
 
 
-def _ingest_skip_reason(
-    live: dict[str, Any],
-    pr_number: Any,
-    head_sha: str,
-    login: str,
-    url: Any,
-) -> tuple[str, bool] | None:
+def _ingest_skip_reason(live: dict[str, Any]) -> tuple[str, bool] | None:
     """Return (reason, include_pr) for an invalid live entry, or None."""
-    if not _positive_pr_number(pr_number):
+    if not _positive_pr_number(live.get("number")):
         return "invalid pull request number", False
-    if not _sha_pair(live, head_sha):
+    if not _sha_pair(live):
         return "invalid base/head SHA", True
-    if not login:
+    if not _author_login_str(live.get("author")):
         return "empty identity login", True
-    if not _https_url(url):
+    if not _https_url(live.get("url")):
         return "invalid pull request URL", True
     return None
 
@@ -832,9 +826,7 @@ def _ingest_action(
     """
     pr_number = live.get("number")
     head_sha = str(live.get("headRefOid") or "")
-    login = _author_login_str(live.get("author"))
-    url = live.get("url")
-    skipped = _ingest_skip_reason(live, pr_number, head_sha, login, url)
+    skipped = _ingest_skip_reason(live)
     if skipped is not None:
         reason, include_pr = skipped
         return _ingest_skipped(repo, reason, pr_number, include_pr=include_pr)

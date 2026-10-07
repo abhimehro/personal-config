@@ -266,12 +266,15 @@ def _trigger_action(
     ]
 
 
+def _valid_days(value: Any) -> bool:
+    """Require a positive int day count (bool excluded)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
 def _trigger_expiry_days(settings: dict[str, Any]) -> int:
     """Return the configured unanswered-trigger expiry, defaulting to 3."""
     expiry = settings.get("trigger_expiry_days", 3)
-    if not isinstance(expiry, int) or isinstance(expiry, bool) or expiry < 1:
-        return 3
-    return expiry
+    return expiry if _valid_days(expiry) else 3
 
 
 def _advisory(name: str, patterns: list[str]) -> bool:

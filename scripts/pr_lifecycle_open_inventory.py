@@ -152,19 +152,26 @@ def _require_identity(raw: dict[str, Any]) -> dict[str, Any]:
     Raise OSError for a non-mapping author, a non-string login or body, or
     malformed number/url/isDraft fields. A null author normalizes to {}.
     """
-    author = raw.get("author")
-    if author is not None and not isinstance(author, dict):
-        raise OSError("malformed pull request author")
-    author = author or {}
-    for value, error in (
-        (author.get("login"), "malformed pull request author"),
-        (raw.get("body"), "malformed pull request body"),
-    ):
-        if value is not None and not isinstance(value, str):
-            raise OSError(error)
+    author = _require_author(raw)
+    _require_str(author.get("login"), "malformed pull request author")
+    _require_str(raw.get("body"), "malformed pull request body")
     if not _valid_identity_fields(raw):
         raise OSError("malformed pull request identity")
     return author
+
+
+def _require_author(raw: dict[str, Any]) -> dict[str, Any]:
+    """Return the author mapping, raising OSError for a non-mapping value."""
+    author = raw.get("author")
+    if author is not None and not isinstance(author, dict):
+        raise OSError("malformed pull request author")
+    return author or {}
+
+
+def _require_str(value: Any, error: str) -> None:
+    """Raise OSError when a field is present but not a string."""
+    if value is not None and not isinstance(value, str):
+        raise OSError(error)
 
 
 def _valid_identity_fields(raw: dict[str, Any]) -> bool:

@@ -244,33 +244,36 @@ def _matching_ledger_items(
     ]
 
 
-def _scan_repo(
-    repo: str,
-    prs: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    policy: Any,
-    settings: dict[str, Any],
-    *,
-    run: Any,
-) -> tuple[list[dict[str, Any]], int]:
+def _scan_repo(scan: _ScanSpec, *, run: Any) -> tuple[list[dict[str, Any]], int]:
     """Route every fetched PR in a repo; return (actions, comment-fetch count)."""
     actions: list[dict[str, Any]] = []
     fetched = 0
-    for pr in prs:
+    for pr in scan.prs:
         fetched += int(_needs_comment_fetch(pr))
         _load_full_comments(pr, run=run)
-        verdict = classify_pr_identity(pr, policy)
+        verdict = classify_pr_identity(pr, scan.policy)
         actions.extend(
             route_pr(
                 pr,
                 author_type=verdict.author_type,
-                ledger_items_for_pr=_matching_ledger_items(repo, pr, ledger),
-                ledger=ledger,
-                settings=settings,
+                ledger_items_for_pr=_matching_ledger_items(scan.repo, pr, scan.ledger),
+                ledger=scan.ledger,
+                settings=scan.settings,
                 now=datetime.now(timezone.utc),
             )
         )
     return actions, fetched
+
+
+@dataclass(frozen=True)
+class _ScanSpec:
+    """The per-repo scan inputs: PRs plus shared ledger, policy, settings."""
+
+    repo: str
+    prs: list[dict[str, Any]]
+    ledger: dict[str, Any]
+    policy: Any
+    settings: dict[str, Any]
 
 
 def _apply_mutations(
@@ -482,7 +485,9 @@ def _scan_repositories(
                 }
             )
             continue
-        scanned, fetched = _scan_repo(repo, prs, ledger, policy, settings, run=run)
+        scanned, fetched = _scan_repo(
+            _ScanSpec(repo, prs, ledger, policy, settings), run=run
+        )
         actions.extend(scanned)
         fetched_count += fetched
     actions.extend(inventory_failed)
