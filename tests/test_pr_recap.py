@@ -144,6 +144,18 @@ class TestIssueExtraction(unittest.TestCase):
         result = extract_issue_keys(commit_messages=commits)
         self.assertEqual(result, {})
 
+    def test_cwe_cve_not_extracted(self) -> None:
+        commits = (
+            "🛡️ Sentinel: Fix option injection (CWE-88) in launch-permute.sh",
+            "Remediate command injection CVE-2026-1234",
+        )
+        result = extract_issue_keys(
+            commit_messages=commits,
+            pr_title="Fix option injection (CWE-88)",
+            pr_body="Fixes CWE-88 and addresses CVE-2026-1234",
+        )
+        self.assertEqual(result, {})
+
     def test_normalization_and_deduplication(self) -> None:
         commits = (
             "Fixes abhi-123",

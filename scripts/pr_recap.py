@@ -252,10 +252,15 @@ class PRContext:
 # Issue Extraction & Precedence
 # ============================================================
 
+IGNORED_ISSUE_PREFIXES = ("CWE-", "CVE-")
+
 
 def normalize_issue_key(raw_key: str) -> str:
     """Normalize issue key to uppercase identifier (e.g. 'proj-123' -> 'PROJ-123')."""
-    return raw_key.strip().upper()
+    key = raw_key.strip().upper()
+    if key.startswith(IGNORED_ISSUE_PREFIXES):
+        return ""
+    return key
 
 
 def _map_keyword_to_relationship(keyword: str) -> RelationshipType:
@@ -1464,9 +1469,9 @@ def _sync_single_issue(
     try:
         issue = linear_client.get_issue(issue_key)
     except LinearApiError as exc:
-        if dry_run and "entity not found" in str(exc).lower():
-            logger.info(
-                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
+        if "entity not found" in str(exc).lower():
+            logger.warning(
+                "Issue %s not found in Linear workspace; skipping Linear sync.",
                 issue_key,
             )
             issue = None
