@@ -103,22 +103,12 @@ def _confirm_close(repo: str, pr: str, *, run: Any) -> dict[str, Any]:
 def _close_pr_steps(
     repo: str, pr: str, action: dict[str, Any], *, run: Any
 ) -> list[dict[str, Any]]:
-    """Run the comment, label, close, and confirm sequence for a close action."""
+    """Run the label, close, confirm, then comment sequence for a close action.
+
+    The explanatory comment posts only after the close is confirmed, so a
+    failed close does not repeat the comment on every run.
+    """
     steps = [
-        _run_github_step(
-            [
-                "gh",
-                "pr",
-                "comment",
-                pr,
-                "--repo",
-                repo,
-                "--body",
-                str(action["comment"]),
-            ],
-            "comment",
-            run=run,
-        ),
         _run_github_step(
             [
                 "gh",
@@ -156,6 +146,23 @@ def _close_pr_steps(
         ),
     ]
     steps.append(_confirm_close(repo, pr, run=run))
+    if str(steps[-1].get("state") or "").upper() == "CLOSED":
+        steps.append(
+            _run_github_step(
+                [
+                    "gh",
+                    "pr",
+                    "comment",
+                    pr,
+                    "--repo",
+                    repo,
+                    "--body",
+                    str(action["comment"]),
+                ],
+                "comment",
+                run=run,
+            )
+        )
     return steps
 
 

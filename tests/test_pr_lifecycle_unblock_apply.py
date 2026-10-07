@@ -168,10 +168,10 @@ class UnblockApplyTests(unittest.TestCase):
         self.assertFalse(action["unconfirmed"])
         self.assertEqual(
             [call[0][2] for call in calls],
-            ["comment", "create", "edit", "close", "view"],
+            ["create", "edit", "close", "view", "comment"],
         )
         self.assertEqual(
-            calls[1][0],
+            calls[0][0],
             [
                 "gh",
                 "label",
@@ -190,8 +190,32 @@ class UnblockApplyTests(unittest.TestCase):
             self.assertEqual(argv[argv.index("--repo") + 1], REPO)
             self.assertEqual(kwargs["timeout"], 60)
             self.assertFalse(kwargs["check"])
-        close_argv = calls[3][0]
+        close_argv = calls[2][0]
         self.assertNotIn("--delete-branch", close_argv)
+
+    def test_failed_close_skips_the_comment(self):
+        """A close that does not confirm posts no comment step."""
+        calls = []
+
+        def run(argv, **kwargs):
+            calls.append((argv, kwargs))
+            stdout = (
+                json.dumps({"state": "OPEN"}) if argv[1:3] == ["pr", "view"] else ""
+            )
+            return subprocess.CompletedProcess(argv, 0, stdout, "")
+
+        action = {
+            "action": "CLOSE_STALE_LINEAGE",
+            "repository": REPO,
+            "pr": 24,
+            "comment": "Stale.",
+        }
+        unblock._apply_action(action, run=run)
+        self.assertEqual(
+            [call[0][2] for call in calls],
+            ["create", "edit", "close", "view"],
+        )
+        self.assertTrue(action["unconfirmed"])
 
     def test_update_branch_uses_expected_sha_without_repo_flag(self):
         """Pin branch updates to the expected SHA in the repository API endpoint."""
@@ -234,9 +258,9 @@ class UnblockApplyTests(unittest.TestCase):
         def run(argv, **_kwargs):
             """Fail the first close-workflow step and simulate success for later commands."""
             calls.append(argv)
-            rc = 1 if len(calls) == 1 else 0
+            rc = 1 if argv[1:3] == ["pr", "close"] else 0
             stdout = (
-                json.dumps({"state": "CLOSED"}) if argv[1:3] == ["pr", "view"] else ""
+                json.dumps({"state": "OPEN"}) if argv[1:3] == ["pr", "view"] else ""
             )
             return subprocess.CompletedProcess(argv, rc, stdout, "")
 
@@ -248,7 +272,7 @@ class UnblockApplyTests(unittest.TestCase):
         }
         unblock._apply_action(action, run=run)
         self.assertTrue(action["unconfirmed"])
-        self.assertEqual(len(calls), 5)
+        self.assertEqual(len(calls), 4)
 
     def test_mutation_cap_defers_actions_without_silently_dropping_them(self):
         """Report mutations deferred by the cap without executing them."""
@@ -408,8 +432,11 @@ class UnblockApplyTests(unittest.TestCase):
                 }
                 unblock._apply_action(action, run=run)
                 self.assertTrue(action["unconfirmed"])
-                self.assertEqual(run.call_count, 5)
+                self.assertEqual(run.call_count, 4)
                 self.assertEqual(action["github_steps"][-1]["step"], "confirm")
+                self.assertNotIn(
+                    "comment", [step["step"] for step in action["github_steps"]]
+                )
 
     def test_push_capable_action_failures_are_reported_without_retry(self):
         for kind in ("TRIGGER", "UPDATE_BRANCH"):
