@@ -105,6 +105,12 @@ class Config:
     comment_anchor: str = DEFAULT_COMMENT_ANCHOR
     secret_references: dict[str, Any] = dataclasses.field(default_factory=dict)
 
+    @property
+    def issue_key_prefixes(self) -> tuple[str, ...]:
+        if re.fullmatch(r"[A-Za-z]{2,10}", self.team_id):
+            return (self.team_id.upper(),)
+        return ()
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Config:
         team_id = data.get("teamId")
@@ -265,6 +271,25 @@ def _map_keyword_to_relationship(keyword: str) -> RelationshipType:
     if normalized == "contributes to":
         return "contributes"
     return "links"
+
+
+def filter_issue_keys(
+    issue_map: dict[str, RelationshipType],
+    allowed_prefixes: tuple[str, ...],
+    keep: frozenset[str] = frozenset(),
+) -> dict[str, RelationshipType]:
+    if not allowed_prefixes:
+        return issue_map
+
+    filtered: dict[str, RelationshipType] = {}
+    for key, relationship in issue_map.items():
+        if key in keep or key.split("-", 1)[0] in allowed_prefixes:
+            filtered[key] = relationship
+        else:
+            logger.info(
+                "Ignoring issue key %s: prefix not in %s", key, allowed_prefixes
+            )
+    return filtered
 
 
 def extract_issue_keys(
@@ -1413,9 +1438,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
         else "LINEAR_API_KEY"
     )
     proton_field = (
-        proton_ref.get("field", "Secret")
-        if isinstance(proton_ref, dict)
-        else "Secret"
+        proton_ref.get("field", "Secret") if isinstance(proton_ref, dict) else "Secret"
     )
 
     if dry_run:
@@ -1456,7 +1479,9 @@ def _sync_single_issue(
     dry_run: bool,
 ) -> bool:
     """Reconcile state, upsert comment, and attach diff link for a single Linear issue."""
-    logger.info("--- Processing issue %s (relationship=%s) ---", issue_key, relationship)
+    logger.info(
+        "--- Processing issue %s (relationship=%s) ---", issue_key, relationship
+    )
     if not linear_client:
         logger.info("[DRY RUN] Would fetch and reconcile issue %s", issue_key)
         return True
@@ -1464,21 +1489,22 @@ def _sync_single_issue(
     try:
         issue = linear_client.get_issue(issue_key)
     except LinearApiError as exc:
-        if dry_run and "entity not found" in str(exc).lower():
-            logger.info(
-                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
-                issue_key,
-            )
+        if "entity not found" in str(exc).lower():
+            if dry_run:
+                logger.info(
+                    "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
+                    issue_key,
+                )
             issue = None
         else:
             raise
 
-    if not issue:
+    if issue is None:
         if dry_run:
             logger.info("[DRY RUN] Would plan reconciliation for issue %s", issue_key)
             return True
-        logger.error("Linear issue '%s' not found in workspace.", issue_key)
-        return False
+        logger.warning("Linear issue '%s' not found in workspace; skipping.", issue_key)
+        return True
 
     logger.info(
         "Found issue %s: '%s' currently in state '%s' (%s)",
@@ -1580,12 +1606,21 @@ def run_sync(args: argparse.Namespace) -> int:
     context = resolve_pr_context(args)
 
     # 3. Extract Issue Keys & Relationships
+    explicit_issues = tuple(getattr(args, "issue", None) or ())
     issue_map = extract_issue_keys(
         branch_name=context.branch_name,
         commit_messages=context.commit_messages,
         pr_title=context.pr_title,
         pr_body=context.pr_body,
-        explicit_issues=getattr(args, "issue", None) or (),
+        explicit_issues=explicit_issues,
+    )
+    keep_explicit = frozenset(
+        normalize_issue_key(raw.strip().split(":", 1)[0])
+        for raw in explicit_issues
+        if raw and raw.strip()
+    )
+    issue_map = filter_issue_keys(
+        issue_map, config.issue_key_prefixes, keep=keep_explicit
     )
 
     # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
