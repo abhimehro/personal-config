@@ -13,7 +13,8 @@ from typing import Any
 
 from pr_lifecycle_inventory_checks import _nodes
 from pr_lifecycle_inventory_norm import _normalize_pr
-from pr_lifecycle_inventory_transport import _graphql_command, _graphql_page
+from pr_lifecycle_inventory_pages import _graphql_page
+from pr_lifecycle_inventory_transport import _graphql_command
 
 _REPO_RE = re.compile(r"^[^/]+/[^/]+$")
 
