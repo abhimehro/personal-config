@@ -501,9 +501,14 @@ def list_open_prs(
         if not page_info["hasNextPage"]:
             return prs
         cursor = page_info.get("endCursor")
-        if not isinstance(cursor, str) or not cursor or cursor in seen_cursors:
+        if not _usable_cursor(cursor, seen_cursors):
             raise OSError("gh api graphql returned a malformed payload")
         seen_cursors.add(cursor)
+
+
+def _usable_cursor(value: Any, seen: set[str]) -> bool:
+    """Require a fresh non-empty string cursor."""
+    return isinstance(value, str) and bool(value) and value not in seen
 
 
 def check_state(context: dict[str, Any]) -> tuple[str, str] | None:
