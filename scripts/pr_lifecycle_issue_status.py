@@ -64,16 +64,26 @@ def _gh_issue(
     )
 
 
+def _parse_issue_rows(stdout: str) -> Any:
+    """Decode an issue-list payload, raising OSError on malformed JSON."""
+    try:
+        return json.loads(stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise OSError("gh issue list returned a malformed payload") from exc
+
+
+def _dict_rows(rows: Any) -> bool:
+    """Require a list whose elements are all dicts."""
+    return isinstance(rows, list) and all(isinstance(row, dict) for row in rows)
+
+
 def _gh_listed_rows(listed: subprocess.CompletedProcess[str]) -> list[Any]:
     """Return a dict-row issue-list payload; raise on failure or malformed JSON."""
     if listed.returncode != 0:
         stderr = (listed.stderr or "").strip()[:200]
         raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
-    try:
-        rows = json.loads(listed.stdout)
-    except (TypeError, json.JSONDecodeError) as exc:
-        raise OSError("gh issue list returned a malformed payload") from exc
-    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+    rows = _parse_issue_rows(listed.stdout)
+    if not _dict_rows(rows):
         raise OSError("gh issue list returned a malformed payload")
     return rows
 

@@ -174,10 +174,7 @@ def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
         pr["comments_incomplete"] = True
         return
     try:
-        raw = _fetch_rest_comments(target[0], target[1], run=run)
-        if len(raw) < total_count:
-            raise ValueError("incomplete comments payload")
-        normalized = [_normalize_rest_comment(comment) for comment in raw]
+        pr["comments"] = _normalized_rest_comments(target, total_count, run=run)
     except (
         OSError,
         subprocess.SubprocessError,
@@ -187,8 +184,17 @@ def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
     ):
         pr["comments_incomplete"] = True
         return
-    pr["comments"] = normalized
     pr.pop("comments_incomplete", None)
+
+
+def _normalized_rest_comments(
+    target: tuple[str, int], total_count: int, *, run: Any
+) -> list[dict[str, Any]]:
+    """Fetch and validate the full comment history for one PR."""
+    raw = _fetch_rest_comments(target[0], target[1], run=run)
+    if len(raw) < total_count:
+        raise ValueError("incomplete comments payload")
+    return [_normalize_rest_comment(comment) for comment in raw]
 
 
 def _comments_total_valid(total_count: Any) -> bool:

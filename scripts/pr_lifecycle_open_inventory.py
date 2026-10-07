@@ -336,6 +336,36 @@ def _graphql_command(owner: str, name: str, cursor: str | None) -> list[str]:
     return command
 
 
+def _all_transient(errors: Any) -> bool:
+    """True only for a non-empty list of transient GraphQL errors."""
+    return (
+        isinstance(errors, list)
+        and bool(errors)
+        and all(_is_transient_gql_error(err) for err in errors)
+    )
+
+
+def _transient_errors(payload: Any) -> list[Any] | None:
+    """Return the all-transient errors list, or None when the payload has none.
+
+    Raise OSError when a GraphQL errors payload is not fully transient.
+    """
+    if not (isinstance(payload, dict) and "errors" in payload):
+        return None
+    errors = payload["errors"]
+    if not _all_transient(errors):
+        raise OSError("gh api graphql returned an API error")
+    return errors
+
+
+def _parse_payload(stdout: str) -> tuple[OSError | None, Any]:
+    """Return (None, decoded JSON) or (OSError, None) for invalid JSON."""
+    try:
+        return None, json.loads(stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        return OSError(f"gh api graphql returned invalid JSON: {exc}"), None
+
+
 def _page_result(
     result: subprocess.CompletedProcess[str],
 ) -> tuple[OSError | None, Any]:
@@ -351,19 +381,12 @@ def _page_result(
             OSError(f"gh api graphql failed rc={result.returncode}: {stderr[:160]}"),
             None,
         )
-    try:
-        payload = json.loads(result.stdout)
-    except (TypeError, json.JSONDecodeError) as exc:
-        return OSError(f"gh api graphql returned invalid JSON: {exc}"), None
-    if not (isinstance(payload, dict) and "errors" in payload):
+    error, payload = _parse_payload(result.stdout)
+    if error is not None:
+        return error, None
+    errors = _transient_errors(payload)
+    if errors is None:
         return None, payload
-    errors = payload["errors"]
-    if (
-        not isinstance(errors, list)
-        or not errors
-        or not all(_is_transient_gql_error(err) for err in errors)
-    ):
-        raise OSError("gh api graphql returned an API error")
     messages = " ".join(str(err.get("message", "")) for err in errors).lower()
     return OSError(f"gh api graphql transient error: {messages[:160]}"), None
 

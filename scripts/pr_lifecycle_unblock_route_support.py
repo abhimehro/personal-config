@@ -76,20 +76,43 @@ class _Route:
     base: str
 
 
+def _is_dependabot(login: str, branch: str, pr: dict[str, Any]) -> bool:
+    """Match a Dependabot-authored login."""
+    return "dependabot" in login
+
+
+def _is_coderabbit(login: str, branch: str, pr: dict[str, Any]) -> bool:
+    """Match the CodeRabbit login or a coderabbit-prefixed branch."""
+    return login == "coderabbitai[bot]" or branch.startswith("coderabbit")
+
+
+def _is_jules(login: str, branch: str, pr: dict[str, Any]) -> bool:
+    """Match a Jules-prefixed branch."""
+    return branch.startswith(_JULES_PREFIXES)
+
+
+def _is_lineage(login: str, branch: str, pr: dict[str, Any]) -> bool:
+    """Match a dated docs-lineage branch name."""
+    return bool(_LINEAGE_RE.match(str(pr.get("headRefName") or "")))
+
+
+_FAMILY_RULES = (
+    ("dependabot", _is_dependabot),
+    ("coderabbit", _is_coderabbit),
+    ("jules", _is_jules),
+    ("lineage", _is_lineage),
+)
+
+
 def _family(pr: dict[str, Any]) -> str:
     """Choose a routing family from author and branch hints, not identity policy."""
     author = pr.get("author")
     login = str(author.get("login") or "").lower() if isinstance(author, dict) else ""
     branch = str(pr.get("headRefName") or "").lower()
-    if "dependabot" in login:
-        return "dependabot"
-    if login == "coderabbitai[bot]" or branch.startswith("coderabbit"):
-        return "coderabbit"
-    if branch.startswith(_JULES_PREFIXES):
-        return "jules"
-    if _LINEAGE_RE.match(str(pr.get("headRefName") or "")):
-        return "lineage"
-    return "other"
+    return next(
+        (name for name, matches in _FAMILY_RULES if matches(login, branch, pr)),
+        "other",
+    )
 
 
 def _sticky_security(items: list[dict[str, Any]]) -> bool:

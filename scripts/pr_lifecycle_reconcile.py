@@ -795,6 +795,29 @@ def _ingest_skip_reason(
     return None
 
 
+def _repo_candidates(
+    items: list[dict[str, Any]], repo: str, pr_number: Any
+) -> list[dict[str, Any]]:
+    """Return ledger items matching this repo and PR number."""
+    return [
+        item
+        for item in items
+        if item.get("repository") == repo and item.get("pr") == pr_number
+    ]
+
+
+def _terminal_at(candidates: list[dict[str, Any]], key: str) -> dict[str, Any] | None:
+    """Return the terminal ledger item recorded at this head key, if any."""
+    return next(
+        (
+            item
+            for item in candidates
+            if item.get("key") == key and item.get("lifecycle_state") == "TERMINAL"
+        ),
+        None,
+    )
+
+
 def _ingest_action(
     repo: str,
     live: dict[str, Any],
@@ -815,22 +838,11 @@ def _ingest_action(
     if skipped is not None:
         reason, include_pr = skipped
         return _ingest_skipped(repo, reason, pr_number, include_pr=include_pr)
-    candidates = [
-        item
-        for item in items
-        if item.get("repository") == repo and item.get("pr") == pr_number
-    ]
+    candidates = _repo_candidates(items, repo, pr_number)
     if any(item.get("lifecycle_state") != "TERMINAL" for item in candidates):
         return None
     key = f"{repo}#{pr_number}@{head_sha}"
-    terminal = next(
-        (
-            item
-            for item in candidates
-            if item.get("key") == key and item.get("lifecycle_state") == "TERMINAL"
-        ),
-        None,
-    )
+    terminal = _terminal_at(candidates, key)
     if terminal is not None:
         return _terminal_open(key, repo, pr_number, url, terminal)
     item = build_intake_item(live, policy, now)

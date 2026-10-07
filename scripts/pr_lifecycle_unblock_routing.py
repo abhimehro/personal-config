@@ -118,35 +118,9 @@ def _route_conflict(ctx: _Route) -> list[dict[str, Any]] | None:
     if mergeable != "CONFLICTING" and merge_state != "DIRTY":
         return None
     evidence = {"mergeable": mergeable, "mergeStateStatus": merge_state}
-    if ctx.family == "dependabot":
-        return _conflict_trigger(
-            ctx,
-            "dependabot_rebase",
-            "@dependabot rebase",
-            evidence,
-            "request a bounded conflict rebase",
-        )
-    if ctx.family == "coderabbit":
-        return _conflict_trigger(
-            ctx,
-            "coderabbit_conflict",
-            "@coderabbitai resolve merge conflict",
-            evidence,
-            "request merge conflict resolution",
-        )
-    if ctx.family == "jules":
-        body = (
-            f"@google-labs-jules This PR has merge conflicts with `{ctx.base}`. "
-            f"Please merge the latest `{ctx.base}` into this branch, resolve "
-            "the conflicts, and push."
-        )
-        return _conflict_trigger(
-            ctx,
-            "jules_conflict",
-            body,
-            evidence,
-            "request Jules to resolve merge conflicts",
-        )
+    handler = _CONFLICT_TRIGGERS.get(ctx.family)
+    if handler is not None:
+        return handler(ctx, evidence)
     return [
         _escalation(
             ctx,
@@ -155,6 +129,23 @@ def _route_conflict(ctx: _Route) -> list[dict[str, Any]] | None:
             recommended_action="bounded Stage 2 salvage / conflict repair",
             owner="stage2" if ctx.author_type == "BOT" else "human",
         )
+    ]
+
+
+def _update_branch_action(ctx: _Route) -> list[dict[str, Any]] | None:
+    """Return UPDATE_BRANCH for a non-secured bot PR, else None."""
+    if ctx.author_type != "BOT" or ctx.security:
+        return None
+    return [
+        {
+            "action": "UPDATE_BRANCH",
+            "repository": ctx.repo,
+            "pr": ctx.number,
+            "url": ctx.pr.get("url"),
+            "head_sha": ctx.head,
+            "author_type": ctx.author_type,
+            "expected_head_sha": ctx.head,
+        }
     ]
 
 
@@ -173,18 +164,9 @@ def _route_behind(ctx: _Route) -> list[dict[str, Any]]:
             evidence=evidence,
             recommended_action="request a bounded rebase",
         )
-    if ctx.author_type == "BOT" and not ctx.security:
-        return [
-            {
-                "action": "UPDATE_BRANCH",
-                "repository": ctx.repo,
-                "pr": ctx.number,
-                "url": ctx.pr.get("url"),
-                "head_sha": ctx.head,
-                "author_type": ctx.author_type,
-                "expected_head_sha": ctx.head,
-            }
-        ]
+    update = _update_branch_action(ctx)
+    if update is not None:
+        return update
     return [
         _escalation(
             ctx,
@@ -232,29 +214,10 @@ def _route_required_checks(
         sorted({str(check.get("name") or "") for check in required})
     )
     evidence = {"checks": names}
-    if ctx.family == "jules":
-        body = (
-            f"@google-labs-jules These checks are failing on this PR: "
-            f"{', '.join(names)}. "
-            "Please fix the failures and push to this branch."
-        )
-        return _trigger_action(
-            ctx,
-            "jules_checks",
-            body,
-            blocker="required_check_failure",
-            evidence=evidence,
-            recommended_action="request Jules to fix failing required checks",
-        )
-    if ctx.family == "coderabbit" and ctx.author_type == "BOT":
-        return _trigger_action(
-            ctx,
-            "coderabbit_fixci",
-            "@coderabbitai fix-ci commit",
-            blocker="required_check_failure",
-            evidence=evidence,
-            recommended_action="request CodeRabbit to fix failing CI",
-        )
+    handler = _CHECK_TRIGGERS.get(ctx.family)
+    action = handler(ctx, names, evidence) if handler is not None else None
+    if action is not None:
+        return action
     return [
         _escalation(
             ctx,
@@ -264,6 +227,47 @@ def _route_required_checks(
             owner="human",
         )
     ]
+
+
+def _jules_checks(
+    ctx: _Route, names: list[str], evidence: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Trigger Jules to fix the named failing checks."""
+    body = (
+        "@google-labs-jules These checks are failing on this PR: "
+        f"{', '.join(names)}. "
+        "Please fix the failures and push to this branch."
+    )
+    return _trigger_action(
+        ctx,
+        "jules_checks",
+        body,
+        blocker="required_check_failure",
+        evidence=evidence,
+        recommended_action="request Jules to fix failing required checks",
+    )
+
+
+def _coderabbit_checks(
+    ctx: _Route, names: list[str], evidence: dict[str, Any]
+) -> list[dict[str, Any]] | None:
+    """Trigger CodeRabbit fix-ci on bot-authored PRs, else None."""
+    if ctx.author_type != "BOT":
+        return None
+    return _trigger_action(
+        ctx,
+        "coderabbit_fixci",
+        "@coderabbitai fix-ci commit",
+        blocker="required_check_failure",
+        evidence=evidence,
+        recommended_action="request CodeRabbit to fix failing CI",
+    )
+
+
+_CHECK_TRIGGERS = {
+    "jules": _jules_checks,
+    "coderabbit": _coderabbit_checks,
+}
 
 
 def _advisory_notes(
@@ -291,6 +295,51 @@ def _advisory_notes(
             ),
         }
     ]
+
+
+def _dependabot_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+    """Trigger a bounded Dependabot rebase for a conflicted PR."""
+    return _conflict_trigger(
+        ctx,
+        "dependabot_rebase",
+        "@dependabot rebase",
+        evidence,
+        "request a bounded conflict rebase",
+    )
+
+
+def _coderabbit_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+    """Trigger CodeRabbit conflict resolution for a conflicted PR."""
+    return _conflict_trigger(
+        ctx,
+        "coderabbit_conflict",
+        "@coderabbitai resolve merge conflict",
+        evidence,
+        "request merge conflict resolution",
+    )
+
+
+def _jules_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+    """Trigger Jules to merge the base branch and resolve conflicts."""
+    body = (
+        f"@google-labs-jules This PR has merge conflicts with `{ctx.base}`. "
+        f"Please merge the latest `{ctx.base}` into this branch, resolve "
+        "the conflicts, and push."
+    )
+    return _conflict_trigger(
+        ctx,
+        "jules_conflict",
+        body,
+        evidence,
+        "request Jules to resolve merge conflicts",
+    )
+
+
+_CONFLICT_TRIGGERS = {
+    "dependabot": _dependabot_conflict,
+    "coderabbit": _coderabbit_conflict,
+    "jules": _jules_conflict,
+}
 
 
 def _incomplete_check_action(ctx: _Route) -> list[dict[str, Any]]:
@@ -342,27 +391,46 @@ def _coderabbit_requested(pr: dict[str, Any]) -> bool:
     )
 
 
+def _coderabbit_review(
+    ctx: _Route, evidence: dict[str, Any]
+) -> list[dict[str, Any]] | None:
+    """Trigger CodeRabbit autofix when its review requested changes on a bot PR."""
+    if not _coderabbit_requested(ctx.pr) or ctx.author_type != "BOT":
+        return None
+    return _trigger_action(
+        ctx,
+        "coderabbit_autofix",
+        "@coderabbitai autofix",
+        blocker="changes_requested",
+        evidence=evidence,
+        recommended_action="request CodeRabbit autofix",
+    )
+
+
+def _jules_review(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Trigger Jules to address review changes on a Jules-family PR."""
+    if ctx.family != "jules":
+        return None
+    return _trigger_action(
+        ctx,
+        "jules_review",
+        "@google-labs-jules Please address the requested changes in the "
+        "latest review on this PR and push.",
+        blocker="changes_requested",
+        evidence=evidence,
+        recommended_action="request Jules to address review changes",
+    )
+
+
+_REVIEW_HANDLERS = (_coderabbit_review, _jules_review)
+
+
 def _review_trigger(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
     """Pick the autofix or Jules trigger for a requested-changes review."""
-    if _coderabbit_requested(ctx.pr) and ctx.author_type == "BOT":
-        return _trigger_action(
-            ctx,
-            "coderabbit_autofix",
-            "@coderabbitai autofix",
-            blocker="changes_requested",
-            evidence=evidence,
-            recommended_action="request CodeRabbit autofix",
-        )
-    if ctx.family == "jules":
-        return _trigger_action(
-            ctx,
-            "jules_review",
-            "@google-labs-jules Please address the requested changes in the "
-            "latest review on this PR and push.",
-            blocker="changes_requested",
-            evidence=evidence,
-            recommended_action="request Jules to address review changes",
-        )
+    for handler in _REVIEW_HANDLERS:
+        action = handler(ctx, evidence)
+        if action is not None:
+            return action
     return [
         _escalation(
             ctx,
