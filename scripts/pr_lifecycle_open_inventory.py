@@ -202,6 +202,11 @@ def _normalize_reviews(raw: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _nonneg_int(value: Any) -> bool:
+    """Require a non-negative int value (bool excluded)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
 def _normalize_comments(
     raw: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], int | None]:
@@ -216,9 +221,7 @@ def _normalize_comments(
         for comment in _nodes(connection, "comments")
     ]
     total = connection.get("totalCount") if isinstance(connection, dict) else None
-    if not isinstance(total, int) or isinstance(total, bool) or total < 0:
-        total = None
-    return comments, total
+    return comments, total if _nonneg_int(total) else None
 
 
 def _checks_truncated(connection: Any) -> bool:
