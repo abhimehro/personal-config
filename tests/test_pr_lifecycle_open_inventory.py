@@ -383,6 +383,59 @@ class OpenInventoryTests(unittest.TestCase):
             )
         self.assertEqual(sleeps, [2, 4])
 
+    def test_graphql_retries_require_every_error_to_be_transient(self):
+        """Permanent, unknown, and malformed errors prevent retries."""
+        for errors in (
+            [{"message": "rate limit exceeded"}, {"message": "access denied"}],
+            [{"type": "INTERNAL"}, {"type": "FORBIDDEN"}],
+            [{"type": "FORBIDDEN", "message": "internal resource unavailable"}],
+            [{"type": "UNKNOWN", "message": "timeout"}],
+            [{"type": [], "message": "timeout"}],
+            [{"message": "rate"}, {"message": "limit"}],
+            [{"message": "timeout"}, None],
+            [{"message": ["timeout"]}],
+            [],
+            None,
+            {"message": "timeout"},
+        ):
+            with self.subTest(errors=errors):
+                result = subprocess.CompletedProcess(
+                    ["gh"], 0, json.dumps({"errors": errors}), ""
+                )
+                run = mock.Mock(return_value=result)
+                sleep = mock.Mock()
+                with self.assertRaisesRegex(OSError, "API error"):
+                    inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                run.assert_called_once()
+                sleep.assert_not_called()
+
+    def test_graphql_structured_types_and_untyped_messages_allow_retries(self):
+        """Known transient types work without message markers; all errors count."""
+        for errors in (
+            [{"type": "RATE_LIMITED", "message": "request rejected"}],
+            [{"type": "INTERNAL"}],
+            [{"type": "SERVICE_UNAVAILABLE"}],
+            [{"type": "TIMEOUT"}],
+            [{"type": "INTERNAL"}, {"message": "Temporarily unavailable"}],
+            [{"message": "rate limit exceeded"}, {"message": "timed out"}],
+        ):
+            with self.subTest(errors=errors):
+                run = mock.Mock(
+                    side_effect=[
+                        subprocess.CompletedProcess(
+                            ["gh"], 0, json.dumps({"errors": errors}), ""
+                        ),
+                        subprocess.CompletedProcess(
+                            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+                        ),
+                    ]
+                )
+                sleep = mock.Mock()
+                prs = inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                self.assertEqual([pr["number"] for pr in prs], [12])
+                self.assertEqual(run.call_count, 2)
+                sleep.assert_called_once_with(2)
+
     def test_api_and_shape_errors_raise_oserror(self):
         """Reject GraphQL errors and malformed inventory response shapes."""
         for payload in (

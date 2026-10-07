@@ -50,8 +50,8 @@ _FAILURE_CONCLUSIONS = {
     "STARTUP_FAILURE",
 }
 
-# GraphQL `errors` payloads whose messages match these markers are retried
-# like process-level failures; anything else raises immediately.
+# Structured types take precedence; message markers cover untyped errors only.
+_TRANSIENT_GQL_TYPES = {"RATE_LIMITED", "INTERNAL", "SERVICE_UNAVAILABLE", "TIMEOUT"}
 _TRANSIENT_GQL_MARKERS = (
     "rate limit",
     "timeout",
@@ -60,6 +60,19 @@ _TRANSIENT_GQL_MARKERS = (
     "unavailable",
     "internal",
 )
+
+
+def _is_transient_gql_error(error: Any) -> bool:
+    """Classify one API error, rejecting unknown types and malformed entries."""
+    if not isinstance(error, dict):
+        return False
+    error_type = error.get("type")
+    if error_type is not None:
+        return isinstance(error_type, str) and error_type in _TRANSIENT_GQL_TYPES
+    message = error.get("message")
+    return isinstance(message, str) and any(
+        marker in message.lower() for marker in _TRANSIENT_GQL_MARKERS
+    )
 
 
 def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
@@ -323,15 +336,18 @@ def list_open_prs(
                         )
                     else:
                         if isinstance(payload, dict) and "errors" in payload:
-                            messages = " ".join(
-                                str(err.get("message", ""))
-                                for err in payload.get("errors") or []
-                                if isinstance(err, dict)
-                            ).lower()
-                            if not any(
-                                marker in messages for marker in _TRANSIENT_GQL_MARKERS
+                            errors = payload["errors"]
+                            if (
+                                not isinstance(errors, list)
+                                or not errors
+                                or not all(
+                                    _is_transient_gql_error(err) for err in errors
+                                )
                             ):
                                 raise OSError("gh api graphql returned an API error")
+                            messages = " ".join(
+                                str(err.get("message", "")) for err in errors
+                            ).lower()
                             last_error = OSError(
                                 "gh api graphql transient error: " f"{messages[:160]}"
                             )

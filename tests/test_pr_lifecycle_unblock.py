@@ -840,7 +840,51 @@ class UnblockApplyTests(unittest.TestCase):
             unblock.run_unblock(apply=True, json_out=True, repos_filter=[REPO], limit=0)
         self.assertEqual(output["deferred_by_cap_count"], 1)
         self.assertEqual(output["deferred_by_cap"][0]["kind"], "dependabot_rebase")
+        self.assertEqual(output["mutations_applied"], 0)
+        self.assertEqual(output["mutations_unconfirmed"], 0)
         apply_action.assert_not_called()
+
+    def test_summary_counts_selected_mutations_by_confirmation(self):
+        """Separate unconfirmed results, excluding deferred and nonmutating rows."""
+        actions = [
+            {"action": "TRIGGER", "repository": REPO, "pr": number}
+            for number in range(1, 5)
+        ]
+        actions.append({"action": "SKIP", "repository": REPO, "unconfirmed": True})
+        actions[3]["unconfirmed"] = True
+        output = {}
+
+        def apply_action(action):
+            if action["pr"] != 3:
+                action["unconfirmed"] = action["pr"] == 2
+
+        with (
+            mock.patch.object(
+                unblock,
+                "load_yaml",
+                side_effect=[dict(CONFIG, repos=[REPO]), {"items": []}],
+            ),
+            mock.patch.object(
+                unblock.cas,
+                "run_preflight",
+                return_value={"ledger_path": "ledger.yaml"},
+            ),
+            mock.patch.object(unblock, "list_open_prs", return_value=[_pr()]),
+            mock.patch.object(unblock, "route_pr", return_value=actions),
+            mock.patch.object(
+                unblock, "_apply_action", side_effect=apply_action
+            ) as apply,
+            mock.patch.object(unblock, "update_backlog_issue"),
+            mock.patch.object(
+                unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
+            ),
+        ):
+            unblock.run_unblock(apply=True, json_out=True, repos_filter=[REPO], limit=3)
+        self.assertEqual(apply.call_count, 3)
+        self.assertEqual(output["mutations_selected"], 3)
+        self.assertEqual(output["mutations_applied"], 2)
+        self.assertEqual(output["mutations_unconfirmed"], 1)
+        self.assertEqual(output["deferred_by_cap_count"], 1)
 
     def test_partial_or_malformed_comment_history_suppresses_trigger(self):
         valid = {"user": {"login": "reviewer"}, "body": "hello", "created_at": None}
@@ -979,6 +1023,7 @@ class UnblockApplyTests(unittest.TestCase):
         self.assertEqual(output["mutations_selected"], 1)
         self.assertEqual(output["mutations_applied"], 0)
         self.assertEqual(output["actions"][0]["action"], "TRIGGER")
+        self.assertEqual(output["mutations_unconfirmed"], 0)
         apply_action.assert_not_called()
         update_issue.assert_not_called()
 

@@ -1097,6 +1097,7 @@ def run_unblock(
         actions.extend(inventory_failed)
         deferred_by_cap: list[dict[str, Any]] = []
         mutation_count = 0
+        mutations_unconfirmed = 0
         for action in actions:
             if action.get("action") not in _MUTATING_ACTIONS:
                 continue
@@ -1106,6 +1107,7 @@ def run_unblock(
             mutation_count += 1
             if apply:
                 _apply_action(action)
+                mutations_unconfirmed += bool(action.get("unconfirmed"))
 
         now = datetime.now(timezone.utc)
         packet_expiry_days = lifecycle.get("packet_expiry_close_days", 7)
@@ -1148,7 +1150,8 @@ def run_unblock(
             "deferred_by_cap_count": len(deferred_by_cap),
             "mutation_cap": cap,
             "mutations_selected": mutation_count,
-            "mutations_applied": mutation_count if apply else 0,
+            "mutations_applied": mutation_count - mutations_unconfirmed if apply else 0,
+            "mutations_unconfirmed": mutations_unconfirmed if apply else 0,
             "inventory_failed": inventory_failed,
             "comment_history_fetch_pr_count": comment_history_fetch_pr_count,
             "escalation_issues": escalation_issues,
