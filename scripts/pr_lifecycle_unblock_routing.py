@@ -33,9 +33,14 @@ from pr_lifecycle_unblock_route_support import (
 )
 
 
+def _lineage_closable(ctx: _Route) -> bool:
+    """True for a bot-authored lineage PR without a security hold."""
+    return ctx.family == "lineage" and ctx.author_type == "BOT" and not ctx.security
+
+
 def _route_stale_lineage(ctx: _Route) -> list[dict[str, Any]] | None:
     """Close a bot lineage docs PR older than the configured stale window."""
-    if ctx.family != "lineage" or ctx.author_type != "BOT" or ctx.security:
+    if not _lineage_closable(ctx):
         return None
     lineage_date = _lineage_date(ctx.pr)
     if lineage_date is None:

@@ -744,15 +744,15 @@ def _ingest_skipped(
 
 
 def _terminal_open(
-    key: str, repo: str, pr_number: int, url: Any, terminal: dict[str, Any]
+    key: str, live: dict[str, Any], terminal: dict[str, Any]
 ) -> dict[str, Any]:
     """Build a TERMINAL_BUT_OPEN entry for a live PR at a terminal head."""
     return {
         "action": "TERMINAL_BUT_OPEN",
         "key": key,
-        "repository": repo,
-        "pr": pr_number,
-        "url": url,
+        "repository": live.get("repository"),
+        "pr": live.get("number"),
+        "url": live.get("url"),
         "terminal_disposition": terminal.get("terminal_disposition"),
         "reason": "PR is open at a head already recorded as terminal",
     }
@@ -844,7 +844,7 @@ def _ingest_action(
     key = f"{repo}#{pr_number}@{head_sha}"
     terminal = _terminal_at(candidates, key)
     if terminal is not None:
-        return _terminal_open(key, repo, pr_number, url, terminal)
+        return _terminal_open(key, live, terminal)
     item = build_intake_item(live, policy, now)
     items.append(item)
     return {

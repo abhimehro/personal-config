@@ -235,6 +235,22 @@ def _row_first_seen(
     return _iso(now_utc), now_utc
 
 
+def _packet_expiry_days(row: dict[str, Any]) -> int:
+    """Return the row's close-days value, defaulting when absent or invalid."""
+    days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
+    if not isinstance(days, int) or isinstance(days, bool) or days < 1:
+        return _DEFAULT_PACKET_EXPIRY_DAYS
+    return days
+
+
+def _expiry_text(row: dict[str, Any], first_at: datetime) -> str:
+    """Return the row's expires text, deriving it when absent or empty."""
+    expiry_text = row.get("expires")
+    if isinstance(expiry_text, str) and expiry_text:
+        return expiry_text
+    return _iso(first_at + timedelta(days=_packet_expiry_days(row)))
+
+
 def _row_expiry(row: dict[str, Any], first_at: datetime) -> tuple[str, datetime]:
     """Resolve a row's expiry as (iso_text, datetime).
 
@@ -242,12 +258,7 @@ def _row_expiry(row: dict[str, Any], first_at: datetime) -> tuple[str, datetime]
     (default seven days); an unparseable one uses seven days from
     first seen.
     """
-    expiry_text = row.get("expires")
-    if not isinstance(expiry_text, str) or not expiry_text:
-        days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
-        if not isinstance(days, int) or isinstance(days, bool) or days < 1:
-            days = _DEFAULT_PACKET_EXPIRY_DAYS
-        expiry_text = _iso(first_at + timedelta(days=days))
+    expiry_text = _expiry_text(row, first_at)
     try:
         return expiry_text, _utc(
             datetime.fromisoformat(expiry_text.replace("Z", "+00:00"))

@@ -262,20 +262,17 @@ def _rollup_checks(rollup: dict[str, Any]) -> tuple[list[dict[str, str]], bool]:
     return checks, checks_incomplete
 
 
-def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
-    """Validate and normalize a GraphQL PR for identity and blocker routing.
-
-    Raise OSError for malformed fields. Mark incomplete check rollups as
-    pending and preserve unknown comment counts so callers fail closed.
-    """
-    author = _require_identity(raw)
-    normalized_author = {"login": _author_login(author)}
+def _normalized_author(author: dict[str, Any]) -> dict[str, Any]:
+    """Return the normalized author mapping, marking Bot typenames."""
+    normalized = {"login": _author_login(author)}
     if author.get("__typename") == "Bot":
-        normalized_author["type"] = "Bot"
-    comments, comments_total_count = _normalize_comments(raw)
-    commits, checks, checks_incomplete = _commit_checks(raw)
+        normalized["type"] = "Bot"
+    return normalized
 
-    normalized_pr = {
+
+def _base_fields(raw: dict[str, Any], repository: str) -> dict[str, Any]:
+    """Return the normalized PR's scalar and repository fields."""
+    return {
         "number": raw.get("number"),
         "url": raw.get("url"),
         "title": raw.get("title") or "",
@@ -285,25 +282,43 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         "headRefOid": raw.get("headRefOid") or "",
         "baseRefName": raw.get("baseRefName") or "",
         "baseRefOid": raw.get("baseRefOid") or "",
-        "author": normalized_author,
         "mergeable": raw.get("mergeable"),
         "mergeStateStatus": raw.get("mergeStateStatus"),
         "reviewDecision": raw.get("reviewDecision"),
         "createdAt": raw.get("createdAt"),
         "updatedAt": raw.get("updatedAt"),
-        "latestReviews": _normalize_reviews(raw),
-        "comments": comments,
-        "commentsTotalCount": comments_total_count,
-        "commits": commits,
-        "checks": checks,
-        "checksIncomplete": checks_incomplete,
         "repository": repository,
     }
-    if not all(
-        isinstance(normalized_pr[key], str)
-        for key in ("title", "headRefName", "headRefOid", "baseRefName", "baseRefOid")
-    ):
+
+
+def _validate_pr_fields(normalized_pr: dict[str, Any]) -> None:
+    """Require the branch/ref string fields, raising OSError when malformed."""
+    string_keys = ("title", "headRefName", "headRefOid", "baseRefName", "baseRefOid")
+    if not all(isinstance(normalized_pr[key], str) for key in string_keys):
         raise OSError("malformed pull request fields")
+
+
+def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
+    """Validate and normalize a GraphQL PR for identity and blocker routing.
+
+    Raise OSError for malformed fields. Mark incomplete check rollups as
+    pending and preserve unknown comment counts so callers fail closed.
+    """
+    normalized_pr = _base_fields(raw, repository)
+    normalized_pr["author"] = _normalized_author(_require_identity(raw))
+    comments, comments_total_count = _normalize_comments(raw)
+    commits, checks, checks_incomplete = _commit_checks(raw)
+    normalized_pr.update(
+        {
+            "latestReviews": _normalize_reviews(raw),
+            "comments": comments,
+            "commentsTotalCount": comments_total_count,
+            "commits": commits,
+            "checks": checks,
+            "checksIncomplete": checks_incomplete,
+        }
+    )
+    _validate_pr_fields(normalized_pr)
     return normalized_pr
 
 

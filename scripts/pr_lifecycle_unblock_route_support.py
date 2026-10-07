@@ -160,6 +160,29 @@ def _escalation(
     }
 
 
+def _trigger_blocked(ctx: _Route, kind: str) -> bool:
+    """True when a security hold or non-bot ownership forbids triggering."""
+    if ctx.security:
+        return True
+    return kind != "codescene" and ctx.author_type != "BOT" and ctx.family != "jules"
+
+
+def _trigger_skipped(ctx: _Route, kind: str) -> list[dict[str, Any]]:
+    """Return the TRIGGER_SKIPPED entry for unverified comment history."""
+    return [
+        {
+            "action": "TRIGGER_SKIPPED",
+            "repository": ctx.pr.get("repository"),
+            "pr": ctx.pr.get("number"),
+            "url": ctx.pr.get("url"),
+            "head_sha": ctx.pr.get("headRefOid"),
+            "author_type": ctx.author_type,
+            "kind": kind,
+            "reason": "comment history unavailable; marker dedupe unverified",
+        }
+    ]
+
+
 def _trigger_gate(
     ctx: _Route,
     kind: str,
@@ -168,9 +191,7 @@ def _trigger_gate(
     recommended_action: str,
 ) -> list[dict[str, Any]] | None:
     """Return a non-trigger proposal when policy or history blocks triggering."""
-    if ctx.security or (
-        kind != "codescene" and ctx.author_type != "BOT" and ctx.family != "jules"
-    ):
+    if _trigger_blocked(ctx, kind):
         return [
             _escalation(
                 ctx,
@@ -180,18 +201,7 @@ def _trigger_gate(
             )
         ]
     if ctx.pr.get("comments_incomplete"):
-        return [
-            {
-                "action": "TRIGGER_SKIPPED",
-                "repository": ctx.pr.get("repository"),
-                "pr": ctx.pr.get("number"),
-                "url": ctx.pr.get("url"),
-                "head_sha": ctx.pr.get("headRefOid"),
-                "author_type": ctx.author_type,
-                "kind": kind,
-                "reason": "comment history unavailable; marker dedupe unverified",
-            }
-        ]
+        return _trigger_skipped(ctx, kind)
     return None
 
 

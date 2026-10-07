@@ -424,44 +424,21 @@ def run_unblock(
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-unblock-") as tmp:
         fetch = cas.run_preflight(Path(tmp) / "ledger.yaml")
         ledger = load_yaml(Path(fetch["ledger_path"]))
-        actions: list[dict[str, Any]] = []
-        inventory_failed: list[dict[str, str]] = []
-        comment_history_fetch_pr_count = 0
         policy = identity_policy_from_config(config)
-        for repo in repositories:
-            try:
-                prs = list_open_prs(repo)
-            except OSError as exc:
-                inventory_failed.append(
-                    {
-                        "action": "INVENTORY_FAILED",
-                        "repository": repo,
-                        "reason": f"{type(exc).__name__}: {exc}"[:200],
-                    }
-                )
-                continue
-            scanned, fetched = _scan_repo(repo, prs, ledger, policy, settings, run=run)
-            actions.extend(scanned)
-            comment_history_fetch_pr_count += fetched
-        actions.extend(inventory_failed)
+        actions, inventory_failed, fetched = _scan_repositories(
+            repositories, ledger, policy, settings, run
+        )
         deferred_by_cap, mutation_count, unconfirmed = _apply_mutations(
             actions, cap, apply
         )
-        now = datetime.now(timezone.utc)
-        packet_expiry_days = lifecycle.get("packet_expiry_close_days", 7)
-        if not isinstance(packet_expiry_days, int) or packet_expiry_days < 1:
-            packet_expiry_days = 7
-        failed_repos = {
-            entry["repository"] for entry in inventory_failed if entry.get("repository")
-        }
-        escalation_issues = _update_decision_issues(
+        escalation_issues = _decision_issue_updates(
             repositories,
             actions,
             ledger,
-            failed_repos,
-            packet_expiry_days,
+            lifecycle,
+            inventory_failed,
             apply=apply,
-            now=now,
+            now=datetime.now(timezone.utc),
         )
         plan = _build_plan(
             _PlanFields(
@@ -474,12 +451,70 @@ def run_unblock(
                 mutation_count=mutation_count,
                 unconfirmed=unconfirmed,
                 inventory_failed=inventory_failed,
-                fetched=comment_history_fetch_pr_count,
+                fetched=fetched,
                 escalation_issues=escalation_issues,
             )
         )
         _emit(plan, json_out)
     return 0
+
+
+def _scan_repositories(
+    repositories: list[str],
+    ledger: dict[str, Any],
+    policy: Any,
+    settings: dict[str, Any],
+    run: Any,
+) -> tuple[list[dict[str, Any]], list[dict[str, str]], int]:
+    """Scan every repo, returning (actions, inventory failures, fetch count)."""
+    actions: list[dict[str, Any]] = []
+    inventory_failed: list[dict[str, str]] = []
+    fetched_count = 0
+    for repo in repositories:
+        try:
+            prs = list_open_prs(repo)
+        except OSError as exc:
+            inventory_failed.append(
+                {
+                    "action": "INVENTORY_FAILED",
+                    "repository": repo,
+                    "reason": f"{type(exc).__name__}: {exc}"[:200],
+                }
+            )
+            continue
+        scanned, fetched = _scan_repo(repo, prs, ledger, policy, settings, run=run)
+        actions.extend(scanned)
+        fetched_count += fetched
+    actions.extend(inventory_failed)
+    return actions, inventory_failed, fetched_count
+
+
+def _decision_issue_updates(
+    repositories: list[str],
+    actions: list[dict[str, Any]],
+    ledger: dict[str, Any],
+    lifecycle: dict[str, Any],
+    inventory_failed: list[dict[str, str]],
+    *,
+    apply: bool,
+    now: datetime,
+) -> list[dict[str, Any]]:
+    """Refresh per-repo decision issues, skipping repos whose inventory failed."""
+    packet_expiry_days = lifecycle.get("packet_expiry_close_days", 7)
+    if not isinstance(packet_expiry_days, int) or packet_expiry_days < 1:
+        packet_expiry_days = 7
+    failed_repos = {
+        entry["repository"] for entry in inventory_failed if entry.get("repository")
+    }
+    return _update_decision_issues(
+        repositories,
+        actions,
+        ledger,
+        failed_repos,
+        packet_expiry_days,
+        apply=apply,
+        now=now,
+    )
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:
