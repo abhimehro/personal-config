@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import time
 from typing import Any
@@ -51,14 +52,11 @@ _FAILURE_CONCLUSIONS = {
 }
 
 # Structured types take precedence; message markers cover untyped errors only.
+# The "temporar" marker requires a word boundary and no leading "not " so an
+# explicit "not temporary" error does not count as transient.
 _TRANSIENT_GQL_TYPES = {"RATE_LIMITED", "INTERNAL", "SERVICE_UNAVAILABLE", "TIMEOUT"}
-_TRANSIENT_GQL_MARKERS = (
-    "rate limit",
-    "timeout",
-    "timed out",
-    "temporar",
-    "unavailable",
-    "internal",
+_TRANSIENT_GQL_RE = re.compile(
+    r"rate limit|timeout|timed out|unavailable|internal|(?<!not )\btemporar"
 )
 
 
@@ -70,9 +68,7 @@ def _is_transient_gql_error(error: Any) -> bool:
     if error_type is not None:
         return isinstance(error_type, str) and error_type in _TRANSIENT_GQL_TYPES
     message = error.get("message")
-    return isinstance(message, str) and any(
-        marker in message.lower() for marker in _TRANSIENT_GQL_MARKERS
-    )
+    return isinstance(message, str) and bool(_TRANSIENT_GQL_RE.search(message.lower()))
 
 
 def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
@@ -140,11 +136,11 @@ def _author_login(author: Any) -> str:
     return login
 
 
-def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
-    """Validate and normalize a GraphQL PR for identity and blocker routing.
+def _require_identity(raw: dict[str, Any]) -> dict[str, Any]:
+    """Validate a raw PR's identity fields; return its author mapping.
 
-    Raise OSError for malformed fields. Mark incomplete check rollups as
-    pending and preserve unknown comment counts so callers fail closed.
+    Raise OSError for a non-mapping author, a non-string login or body, or
+    malformed number/url/isDraft fields. A null author normalizes to {}.
     """
     author = raw.get("author")
     if author is not None and not isinstance(author, dict):
@@ -165,72 +161,96 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         or not isinstance(raw.get("isDraft"), bool)
     ):
         raise OSError("malformed pull request identity")
-    normalized_author = {"login": _author_login(author)}
-    if author.get("__typename") == "Bot":
-        normalized_author["type"] = "Bot"
+    return author
 
-    reviews = [
+
+def _normalize_reviews(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return latestReviews nodes as {author.login, state} dicts."""
+    return [
         {
             "author": {"login": _author_login(review.get("author"))},
             "state": review.get("state"),
         }
         for review in _nodes(raw.get("latestReviews"), "latestReviews")
     ]
-    comment_connection = raw.get("comments")
-    comment_nodes = _nodes(comment_connection, "comments")
+
+
+def _normalize_comments(
+    raw: dict[str, Any],
+) -> tuple[list[dict[str, Any]], int | None]:
+    """Return (comment dicts, totalCount or None when unknown/invalid)."""
+    connection = raw.get("comments")
     comments = [
         {
             "author": {"login": _author_login(comment.get("author"))},
             "body": comment.get("body") or "",
             "createdAt": comment.get("createdAt"),
         }
-        for comment in comment_nodes
+        for comment in _nodes(connection, "comments")
     ]
-    comments_total_count = (
-        comment_connection.get("totalCount")
-        if isinstance(comment_connection, dict)
-        and isinstance(comment_connection.get("totalCount"), int)
-        and not isinstance(comment_connection.get("totalCount"), bool)
-        and comment_connection["totalCount"] >= 0
-        else None
-    )
+    total = connection.get("totalCount") if isinstance(connection, dict) else None
+    if not isinstance(total, int) or isinstance(total, bool) or total < 0:
+        total = None
+    return comments, total
 
+
+def _checks_truncated(connection: Any) -> bool:
+    """True when the contexts pageInfo is absent or reports a next page."""
+    page_info = connection.get("pageInfo") if isinstance(connection, dict) else None
+    if isinstance(page_info, dict) and isinstance(page_info.get("hasNextPage"), bool):
+        return page_info["hasNextPage"]
+    return True
+
+
+def _commit_checks(
+    raw: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, str]], bool]:
+    """Return (normalized commits, checks, checks_incomplete) for a raw PR.
+
+    Only the last commit is normalized. An absent commit, non-dict commit or
+    commit author, or a non-dict statusCheckRollup fails closed: missing
+    rollups mark checks incomplete and a synthetic PENDING check is appended.
+    """
     commits = _nodes(raw.get("commits"), "commits")
-    normalized_commits: list[dict[str, Any]] = []
+    if not commits:
+        return [], [{"name": "statusCheckRollup truncated", "state": "PENDING"}], True
+    commit = commits[-1].get("commit")
+    if not isinstance(commit, dict):
+        raise OSError("malformed commit")
+    commit_author = commit.get("author") or {}
+    if not isinstance(commit_author, dict):
+        raise OSError("malformed commit author")
+    normalized_commits = [{"commit": {"author": {"email": commit_author.get("email")}}}]
     checks: list[dict[str, str]] = []
     checks_incomplete = True
-    if commits:
-        commit = commits[-1].get("commit")
-        if not isinstance(commit, dict):
-            raise OSError("malformed commit")
-        commit_author = commit.get("author") or {}
-        if not isinstance(commit_author, dict):
-            raise OSError("malformed commit author")
-        normalized_commits.append(
-            {"commit": {"author": {"email": commit_author.get("email")}}}
-        )
-        rollup = commit.get("statusCheckRollup")
-        if rollup is not None:
-            if not isinstance(rollup, dict):
-                raise OSError("malformed statusCheckRollup")
-            contexts_connection = rollup.get("contexts")
-            page_info = (
-                contexts_connection.get("pageInfo")
-                if isinstance(contexts_connection, dict)
-                else None
-            )
-            if isinstance(page_info, dict) and isinstance(
-                page_info.get("hasNextPage"), bool
-            ):
-                checks_incomplete = page_info["hasNextPage"]
-            if isinstance(contexts_connection, dict):
-                contexts = _nodes(contexts_connection, "status check contexts")
-                for context in contexts:
-                    normalized = _check_state(context)
-                    if normalized is not None:
-                        checks.append({"name": normalized[0], "state": normalized[1]})
+    rollup = commit.get("statusCheckRollup")
+    if rollup is not None:
+        if not isinstance(rollup, dict):
+            raise OSError("malformed statusCheckRollup")
+        connection = rollup.get("contexts")
+        checks_incomplete = _checks_truncated(connection)
+        if isinstance(connection, dict):
+            for context in _nodes(connection, "status check contexts"):
+                normalized = _check_state(context)
+                if normalized is not None:
+                    checks.append({"name": normalized[0], "state": normalized[1]})
     if checks_incomplete:
         checks.append({"name": "statusCheckRollup truncated", "state": "PENDING"})
+    return normalized_commits, checks, checks_incomplete
+
+
+def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
+    """Validate and normalize a GraphQL PR for identity and blocker routing.
+
+    Raise OSError for malformed fields. Mark incomplete check rollups as
+    pending and preserve unknown comment counts so callers fail closed.
+    """
+    author = _require_identity(raw)
+    normalized_author = {"login": _author_login(author)}
+    if author.get("__typename") == "Bot":
+        normalized_author["type"] = "Bot"
+    comments, comments_total_count = _normalize_comments(raw)
+    commits, checks, checks_incomplete = _commit_checks(raw)
 
     normalized_pr = {
         "number": raw.get("number"),
@@ -248,23 +268,123 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         "reviewDecision": raw.get("reviewDecision"),
         "createdAt": raw.get("createdAt"),
         "updatedAt": raw.get("updatedAt"),
-        "latestReviews": reviews,
+        "latestReviews": _normalize_reviews(raw),
         "comments": comments,
         "commentsTotalCount": comments_total_count,
-        "commits": normalized_commits,
+        "commits": commits,
         "checks": checks,
         "checksIncomplete": checks_incomplete,
         "repository": repository,
     }
-    if (
-        not isinstance(normalized_pr["title"], str)
-        or not isinstance(normalized_pr["headRefName"], str)
-        or not isinstance(normalized_pr["headRefOid"], str)
-        or not isinstance(normalized_pr["baseRefName"], str)
-        or not isinstance(normalized_pr["baseRefOid"], str)
+    if not all(
+        isinstance(normalized_pr[key], str)
+        for key in ("title", "headRefName", "headRefOid", "baseRefName", "baseRefOid")
     ):
         raise OSError("malformed pull request fields")
     return normalized_pr
+
+
+def _split_repo(repo: str) -> tuple[str, str]:
+    """Split owner/name, raising OSError for anything else."""
+    try:
+        owner, name = repo.split("/", 1)
+        if not owner or not name or "/" in name:
+            raise ValueError("repository must be owner/name")
+    except (AttributeError, ValueError) as exc:
+        raise OSError("invalid repository") from exc
+    return owner, name
+
+
+def _graphql_command(owner: str, name: str, cursor: str | None) -> list[str]:
+    """Build the gh api graphql argv for one pullRequests page."""
+    command = [
+        "gh",
+        "api",
+        "graphql",
+        "-f",
+        f"query={_QUERY}",
+        "-F",
+        f"owner={owner}",
+        "-F",
+        f"name={name}",
+    ]
+    if cursor is not None:
+        command.extend(["-F", f"cursor={cursor}"])
+    return command
+
+
+def _page_result(
+    result: subprocess.CompletedProcess[str],
+) -> tuple[OSError | None, Any]:
+    """Classify one gh api graphql response.
+
+    Return (retryable OSError, None) for failures worth retrying, or
+    (None, payload) on success. A GraphQL errors payload whose messages
+    are not transient raises immediately rather than retrying.
+    """
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        return (
+            OSError(f"gh api graphql failed rc={result.returncode}: {stderr[:160]}"),
+            None,
+        )
+    try:
+        payload = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        return OSError(f"gh api graphql returned invalid JSON: {exc}"), None
+    if not (isinstance(payload, dict) and "errors" in payload):
+        return None, payload
+    errors = payload["errors"]
+    if (
+        not isinstance(errors, list)
+        or not errors
+        or not all(_is_transient_gql_error(err) for err in errors)
+    ):
+        raise OSError("gh api graphql returned an API error")
+    messages = " ".join(str(err.get("message", "")) for err in errors).lower()
+    return OSError(f"gh api graphql transient error: {messages[:160]}"), None
+
+
+def _graphql_page(command: list[str], *, run: Any, sleep: Any) -> Any:
+    """Fetch one GraphQL page, retrying transient failures up to 3 times."""
+    last_error: OSError | None = None
+    for attempt in range(3):
+        try:
+            result = run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            last_error = OSError(
+                f"gh api graphql process failed: {type(exc).__name__}: {exc}"
+            )
+        else:
+            last_error, payload = _page_result(result)
+            if last_error is None:
+                return payload
+        if attempt < 2:
+            sleep(2 ** (attempt + 1))
+    assert last_error is not None
+    raise last_error
+
+
+def _page_connection(payload: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return (pullRequests connection, pageInfo); raise on a bad payload."""
+    if not isinstance(payload, dict):
+        raise OSError("gh api graphql returned a malformed payload")
+    if "errors" in payload:
+        raise OSError("gh api graphql returned an API error")
+    try:
+        connection = payload["data"]["repository"]["pullRequests"]
+        page_info = connection["pageInfo"]
+        if not isinstance(page_info.get("hasNextPage"), bool):
+            raise TypeError
+    except (KeyError, TypeError, AttributeError) as exc:
+        raise OSError("gh api graphql returned a malformed payload") from exc
+    return connection, page_info
 
 
 def list_open_prs(
@@ -282,103 +402,24 @@ def list_open_prs(
     names raise OSError before any request. A later-page failure never returns
     a partial inventory.
     """
-    try:
-        owner, name = repo.split("/", 1)
-        if not owner or not name or "/" in name:
-            raise ValueError("repository must be owner/name")
-    except (AttributeError, ValueError) as exc:
-        raise OSError("invalid repository") from exc
-
+    owner, name = _split_repo(repo)
     prs: list[dict[str, Any]] = []
     cursor: str | None = None
     seen_cursors: set[str] = set()
     while True:
-        command = [
-            "gh",
-            "api",
-            "graphql",
-            "-f",
-            f"query={_QUERY}",
-            "-F",
-            f"owner={owner}",
-            "-F",
-            f"name={name}",
-        ]
-        if cursor is not None:
-            command.extend(["-F", f"cursor={cursor}"])
-        payload: Any = None
-        last_error: OSError | None = None
-        for attempt in range(3):
-            try:
-                result = run(
-                    command,
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=120,
-                )
-            except (OSError, subprocess.SubprocessError) as exc:
-                last_error = OSError(
-                    f"gh api graphql process failed: {type(exc).__name__}: {exc}"
-                )
-            else:
-                if result.returncode != 0:
-                    stderr = (result.stderr or "").strip()
-                    last_error = OSError(
-                        f"gh api graphql failed rc={result.returncode}: {stderr[:160]}"
-                    )
-                else:
-                    try:
-                        payload = json.loads(result.stdout)
-                    except (TypeError, json.JSONDecodeError) as exc:
-                        last_error = OSError(
-                            f"gh api graphql returned invalid JSON: {exc}"
-                        )
-                    else:
-                        if isinstance(payload, dict) and "errors" in payload:
-                            errors = payload["errors"]
-                            if (
-                                not isinstance(errors, list)
-                                or not errors
-                                or not all(
-                                    _is_transient_gql_error(err) for err in errors
-                                )
-                            ):
-                                raise OSError("gh api graphql returned an API error")
-                            messages = " ".join(
-                                str(err.get("message", "")) for err in errors
-                            ).lower()
-                            last_error = OSError(
-                                "gh api graphql transient error: " f"{messages[:160]}"
-                            )
-                        else:
-                            break
-            if attempt < 2:
-                sleep(2 ** (attempt + 1))
-        else:
-            assert last_error is not None
-            raise last_error
-        if not isinstance(payload, dict):
+        payload = _graphql_page(
+            _graphql_command(owner, name, cursor), run=run, sleep=sleep
+        )
+        connection, page_info = _page_connection(payload)
+        prs.extend(
+            _normalize_pr(pr, repo) for pr in _nodes(connection, "pull requests")
+        )
+        if not page_info["hasNextPage"]:
+            return prs
+        cursor = page_info.get("endCursor")
+        if not isinstance(cursor, str) or not cursor or cursor in seen_cursors:
             raise OSError("gh api graphql returned a malformed payload")
-        if "errors" in payload:
-            raise OSError("gh api graphql returned an API error")
-        try:
-            data = payload["data"]
-            repository_data = data["repository"]
-            connection = repository_data["pullRequests"]
-            page_info = connection["pageInfo"]
-            if not isinstance(page_info.get("hasNextPage"), bool):
-                raise TypeError
-            nodes = _nodes(connection, "pull requests")
-            prs.extend(_normalize_pr(pr, repo) for pr in nodes)
-            if not page_info["hasNextPage"]:
-                return prs
-            cursor = page_info.get("endCursor")
-            if not isinstance(cursor, str) or not cursor or cursor in seen_cursors:
-                raise TypeError
-            seen_cursors.add(cursor)
-        except (KeyError, TypeError, AttributeError) as exc:
-            raise OSError("gh api graphql returned a malformed payload") from exc
+        seen_cursors.add(cursor)
 
 
 def check_state(context: dict[str, Any]) -> tuple[str, str] | None:

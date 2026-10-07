@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Pinned GitHub issue mirror for PR pipeline run status.
 
 Best-effort gh issue helpers: locate the pinned status issue by exact title
@@ -211,6 +210,65 @@ def _row_key(repo: str, row: dict[str, Any]) -> str:
     return f"{repo}#{row.get('pr')}:{row.get('blocker')}"
 
 
+def _row_first_seen(
+    key: str, previous: dict[str, Any], now_utc: datetime
+) -> tuple[str, datetime]:
+    """Resolve a row's first-seen timestamp, preserving prior state.
+
+    Return (iso_text, datetime); an absent, non-string, or unparseable
+    previous timestamp resolves to now_utc.
+    """
+    first = previous.get(key)
+    if isinstance(first, str):
+        try:
+            first_at = _utc(datetime.fromisoformat(first.replace("Z", "+00:00")))
+            return _iso(first_at), first_at
+        except ValueError:
+            pass
+    return _iso(now_utc), now_utc
+
+
+def _row_expiry(row: dict[str, Any], first_at: datetime) -> tuple[str, datetime]:
+    """Resolve a row's expiry as (iso_text, datetime).
+
+    A missing/empty expiry derives from packet_expiry_close_days
+    (default seven days); an unparseable one uses seven days from
+    first seen.
+    """
+    expiry_text = row.get("expires")
+    if not isinstance(expiry_text, str) or not expiry_text:
+        days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
+        if not isinstance(days, int) or isinstance(days, bool) or days < 1:
+            days = _DEFAULT_PACKET_EXPIRY_DAYS
+        expiry_text = _iso(first_at + timedelta(days=days))
+    try:
+        return expiry_text, _utc(
+            datetime.fromisoformat(expiry_text.replace("Z", "+00:00"))
+        )
+    except ValueError:
+        expiry_at = first_at + timedelta(days=_DEFAULT_PACKET_EXPIRY_DAYS)
+        return _iso(expiry_at), expiry_at
+
+
+def _find_backlog_issue(rows: list[Any]) -> dict[str, Any] | None:
+    """Return the first row titled as the backlog issue.
+
+    Every title-matching row must carry an integer number; a missing or
+    boolean number raises OSError so a malformed listing fails closed
+    rather than shadowing the real issue.
+    """
+    issue: dict[str, Any] | None = None
+    for row in rows:
+        if row.get("title") != BACKLOG_ISSUE_TITLE:
+            continue
+        if issue is None:
+            issue = row
+        number = row.get("number")
+        if not isinstance(number, int) or isinstance(number, bool):
+            raise OSError("gh issue list matched backlog title without a number")
+    return issue
+
+
 def _markdown_cell(value: object, limit: int = 300) -> str:
     """Bound cell text and neutralize pipes, comment markers, and mentions."""
     text = " ".join(str(value or "").replace("|", "\\|").split())
@@ -248,27 +306,9 @@ def _prepare_backlog_rows(
         if key in seen:
             continue
         seen.add(key)
-        first = first_seen_before.get(key)
-        if not isinstance(first, str):
-            first = _iso(now_utc)
+        first, first_at = _row_first_seen(key, first_seen_before, now_utc)
         first_seen[key] = first
-        try:
-            first_at = _utc(datetime.fromisoformat(first.replace("Z", "+00:00")))
-        except ValueError:
-            first_at = now_utc
-            first = _iso(first_at)
-            first_seen[key] = first
-        expiry_text = row.get("expires")
-        if not isinstance(expiry_text, str) or not expiry_text:
-            days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
-            if not isinstance(days, int) or isinstance(days, bool) or days < 1:
-                days = _DEFAULT_PACKET_EXPIRY_DAYS
-            expiry_text = _iso(first_at + timedelta(days=days))
-        try:
-            expiry_at = _utc(datetime.fromisoformat(expiry_text.replace("Z", "+00:00")))
-        except ValueError:
-            expiry_at = first_at + timedelta(days=_DEFAULT_PACKET_EXPIRY_DAYS)
-            expiry_text = _iso(expiry_at)
+        expiry_text, expiry_at = _row_expiry(row, first_at)
         overdue = now_utc >= expiry_at
         row.update(
             {
@@ -348,87 +388,109 @@ def update_backlog_issue(
     timeouts propagate. Earlier GitHub mutations are not rolled back.
     """
     github_steps: list[dict[str, Any]] = []
-    listed = _list_backlog_rows(repo)
-    issue: dict[str, Any] | None = None
-    for row in listed:
-        if row.get("title") == BACKLOG_ISSUE_TITLE:
-            if issue is None:
-                issue = row
-            number = row.get("number")
-            if not isinstance(number, int) or isinstance(number, bool):
-                raise OSError("gh issue list matched backlog title without a number")
+    issue = _find_backlog_issue(_list_backlog_rows(repo))
     old_state = _previous_state(issue.get("body") if issue else None)
     prepared, state, overdue = _prepare_backlog_rows(repo, rows, old_state, now)
     if not prepared and issue is None:
         body = backlog_issue_body(repo, rows, old_state, now)
         return {"action": "NOOP_EMPTY", "repository": repo, "body": body}
-
-    def notify_overdue(issue_number: int) -> None:
-        """Post the overdue summary and record its result, raising on failure."""
-        comment_body = (
-            f"@abhimehro {len(overdue)} item(s) passed their decision deadline:\n"
-            + "\n".join(
-                f"- {_markdown_cell(row.get('url') or row.get('pr'))}: "
-                f"{_markdown_cell(row.get('blocker'))} "
-                f"(expires {row['expires']})"
-                for row in overdue
-            )
-        )
-        comment = _gh_issue(
-            ["comment", str(issue_number), "--body", comment_body], repo
-        )
-        github_steps.append(
-            {"step": "overdue_comment", "exit_code": comment.returncode}
-        )
-        if comment.returncode != 0:
-            stderr = (comment.stderr or "").strip()[:200]
-            raise OSError(
-                f"gh issue overdue comment failed rc={comment.returncode}: {stderr}"
-            )
-
     if issue is not None:
         issue_number = int(issue["number"])
         if overdue:
-            notify_overdue(issue_number)
+            _notify_overdue(repo, overdue, issue_number, github_steps)
         body = backlog_issue_body(repo, rows, state if overdue else old_state, now)
-        result = _gh_issue(["edit", str(issue_number), "--body", body], repo)
-        github_steps.append({"step": "edit", "exit_code": result.returncode})
-        operation = "EDITED"
-    else:
-        body = backlog_issue_body(repo, rows, old_state, now)
-        result = _gh_issue(
-            ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body], repo
+        _gh_step(
+            ["edit", str(issue_number), "--body", body], "edit", repo, github_steps
         )
-        github_steps.append({"step": "create", "exit_code": result.returncode})
-        if result.returncode != 0:
-            stderr = (result.stderr or "").strip()[:200]
-            raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
-        match = re.search(r"/issues/(\d+)\b", result.stdout or "")
-        if overdue:
-            if match is None:
-                raise OSError("gh issue create did not return the new issue URL")
-            issue_number = int(match.group(1))
-            notify_overdue(issue_number)
-            body = backlog_issue_body(repo, rows, state, now)
-            result = _gh_issue(["edit", str(issue_number), "--body", body], repo)
-            github_steps.append({"step": "edit", "exit_code": result.returncode})
-            if result.returncode != 0:
-                stderr = (result.stderr or "").strip()[:200]
-                raise OSError(
-                    f"gh issue update failed rc={result.returncode}: {stderr}"
-                )
-        operation = "CREATED"
+        return _backlog_result(
+            "EDITED", repo, issue.get("number"), prepared, overdue, body, github_steps
+        )
+    body = backlog_issue_body(repo, rows, old_state, now)
+    created = _gh_step(
+        ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body],
+        "create",
+        repo,
+        github_steps,
+    )
+    match = re.search(r"/issues/(\d+)\b", created.stdout or "")
+    if overdue:
+        if match is None:
+            raise OSError("gh issue create did not return the new issue URL")
+        issue_number = int(match.group(1))
+        _notify_overdue(repo, overdue, issue_number, github_steps)
+        body = backlog_issue_body(repo, rows, state, now)
+        _gh_step(
+            ["edit", str(issue_number), "--body", body], "edit", repo, github_steps
+        )
+    return _backlog_result(
+        "CREATED",
+        repo,
+        int(match.group(1)) if match is not None else None,
+        prepared,
+        overdue,
+        body,
+        github_steps,
+    )
+
+
+def _raise_gh(prefix: str, result: subprocess.CompletedProcess[str]) -> None:
+    """Raise OSError carrying the command prefix, rc, and bounded stderr."""
+    stderr = (result.stderr or "").strip()[:200]
+    raise OSError(f"{prefix} rc={result.returncode}: {stderr}")
+
+
+def _gh_step(
+    cmd: list[str], step: str, repo: str, steps: list[dict[str, Any]]
+) -> subprocess.CompletedProcess[str]:
+    """Run a mutating gh issue call, record its exit code, raise on failure."""
+    result = _gh_issue(cmd, repo)
+    steps.append({"step": step, "exit_code": result.returncode})
     if result.returncode != 0:
-        stderr = (result.stderr or "").strip()[:200]
-        raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
+        _raise_gh("gh issue update failed", result)
+    return result
+
+
+def _notify_overdue(
+    repo: str,
+    overdue: list[dict[str, Any]],
+    issue_number: int,
+    github_steps: list[dict[str, Any]],
+) -> None:
+    """Post the overdue @-mention summary and record its step result.
+
+    Comments before the notified-state persists so a failed comment never
+    loses the notification; a later edit failure only risks a duplicate
+    ping on the next run.
+    """
+    comment_body = (
+        f"@abhimehro {len(overdue)} item(s) passed their decision deadline:\n"
+        + "\n".join(
+            f"- {_markdown_cell(row.get('url') or row.get('pr'))}: "
+            f"{_markdown_cell(row.get('blocker'))} "
+            f"(expires {row['expires']})"
+            for row in overdue
+        )
+    )
+    comment = _gh_issue(["comment", str(issue_number), "--body", comment_body], repo)
+    github_steps.append({"step": "overdue_comment", "exit_code": comment.returncode})
+    if comment.returncode != 0:
+        _raise_gh("gh issue overdue comment failed", comment)
+
+
+def _backlog_result(
+    action: str,
+    repo: str,
+    issue_number: Any,
+    prepared: list[dict[str, Any]],
+    overdue: list[dict[str, Any]],
+    body: str,
+    github_steps: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Assemble the update_backlog_issue result payload."""
     return {
-        "action": operation,
+        "action": action,
         "repository": repo,
-        "issue_number": (
-            issue.get("number")
-            if issue
-            else (int(match.group(1)) if match is not None else None)
-        ),
+        "issue_number": issue_number,
         "row_count": len(prepared),
         "overdue_notified": [row["id"] for row in overdue],
         "body": body,

@@ -71,23 +71,31 @@ def validate_unblock_config(value: Any) -> None:
     if value is None:
         return
     unblock = require_mapping(value, "config.lifecycle.unblock")
-    advisory = unblock.get("advisory_checks")
-    if advisory is not None and (
-        not isinstance(advisory, list)
-        or any(not isinstance(name, str) or not name.strip() for name in advisory)
-    ):
+    _require_advisory_checks(unblock.get("advisory_checks"))
+    for field in ("trigger_expiry_days", "lineage_stale_days"):
+        _require_positive_days(unblock.get(field), field)
+
+
+def _require_advisory_checks(advisory: Any) -> None:
+    if advisory is None:
+        return
+    valid = isinstance(advisory, list) and all(
+        isinstance(name, str) and name.strip() for name in advisory
+    )
+    if not valid:
         raise ValueError(
             "config.lifecycle.unblock.advisory_checks: "
             "must be a list of non-empty strings"
         )
-    for field in ("trigger_expiry_days", "lineage_stale_days"):
-        days = unblock.get(field)
-        if days is not None and (
-            not isinstance(days, int) or isinstance(days, bool) or days < 1
-        ):
-            raise ValueError(
-                f"config.lifecycle.unblock.{field}: must be a positive integer"
-            )
+
+
+def _require_positive_days(days: Any, field: str) -> None:
+    if days is None:
+        return
+    if not isinstance(days, int) or isinstance(days, bool) or days < 1:
+        raise ValueError(
+            f"config.lifecycle.unblock.{field}: must be a positive integer"
+        )
 
 
 def require_fetched_ledger_command(command: Any) -> None:

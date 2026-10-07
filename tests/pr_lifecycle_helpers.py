@@ -16,7 +16,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import yaml  # noqa: E402
+import yaml
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -282,3 +282,127 @@ def import_lifecycle_run() -> Any:
     finally:
         _restore_run_stubs(saved)
     return module
+
+
+# --- unblock fixtures --------------------------------------------------------
+# Live below so the pr_lifecycle_unblock import binds after the SCRIPTS path
+# insert, matching the layout of every other helper block in this module.
+
+from unittest import mock
+
+import pr_lifecycle_unblock as unblock
+
+UNBLOCK_NOW = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)
+UNBLOCK_CONFIG = yaml.safe_load(
+    (ROOT / "tasks/pr-review-agent.config.yaml").read_text()
+)
+UNBLOCK_REPO = UNBLOCK_CONFIG["repos"][0]
+UNBLOCK_BOT = UNBLOCK_CONFIG["bot_authors"][1]
+UNBLOCK_SETTINGS = {
+    "advisory_checks": ["CodeScene*", "review"],
+    "trigger_expiry_days": 3,
+    "lineage_stale_days": 3,
+}
+
+
+def make_unblock_pr(**overrides: object) -> dict[str, object]:
+    """Build an overridable open bot PR fixture with no initial blockers."""
+    pr: dict[str, object] = {
+        "number": 23,
+        "repository": UNBLOCK_REPO,
+        "url": f"https://github.com/{UNBLOCK_REPO}/pull/23",
+        "author": {"login": UNBLOCK_BOT, "type": "Bot"},
+        "headRefName": "bot/update",
+        "headRefOid": "a" * 40,
+        "baseRefName": "main",
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "reviewDecision": "REVIEW_REQUIRED",
+        "isDraft": False,
+        "checks": [],
+        "comments": [],
+        "commentsTotalCount": 0,
+        "latestReviews": [],
+    }
+    pr.update(overrides)
+    return pr
+
+
+def route_unblock_pr(
+    pr: dict[str, object],
+    *,
+    author_type: str = "BOT",
+    items: list[dict[str, Any]] | None = None,
+    ledger: dict[str, Any] | None = None,
+    settings: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Route a PR fixture with a fixed clock and default ledger and settings."""
+    return unblock.route_pr(
+        pr,
+        author_type=author_type,
+        ledger_items_for_pr=items or [],
+        ledger=ledger or {"items": []},
+        settings=settings or UNBLOCK_SETTINGS,
+        now=UNBLOCK_NOW,
+    )
+
+
+def make_salvage_item(**overrides: object) -> dict[str, object]:
+    """Build a merged Stage 2 replacement fixture linked to the original PR."""
+    item: dict[str, object] = {
+        "key": f"{UNBLOCK_REPO}#90@{'b' * 40}",
+        "repository": UNBLOCK_REPO,
+        "pr": 90,
+        "url": f"https://github.com/{UNBLOCK_REPO}/pull/90",
+        "evidence_urls": [f"https://github.com/{UNBLOCK_REPO}/pull/23"],
+        "handoffs": ["evt-s2-20261001-salvage"],
+        "lifecycle_state": "TERMINAL",
+        "terminal_disposition": "MERGED_ROUTINE",
+    }
+    item.update(overrides)
+    return item
+
+
+def run_unblock_plan(
+    live: dict[str, Any] | None = None,
+    *,
+    apply: bool = False,
+    run: Any = None,
+    inventory_error: BaseException | None = None,
+) -> tuple[dict[str, Any], Any]:
+    """Capture a one-repository plan with mocked ledger, inventory, and writes."""
+    config = dict(UNBLOCK_CONFIG)
+    config["repos"] = [UNBLOCK_REPO]
+    ledger = {"ledger_revision": 3, "items": []}
+    output: dict[str, Any] = {}
+    inventory_patch = (
+        mock.patch.object(unblock, "list_open_prs", side_effect=inventory_error)
+        if inventory_error is not None
+        else mock.patch.object(unblock, "list_open_prs", return_value=[live])
+    )
+    with (
+        mock.patch.object(unblock, "load_yaml", side_effect=[config, ledger]),
+        mock.patch.object(
+            unblock.cas,
+            "run_preflight",
+            return_value={"ledger_path": "ledger.yaml"},
+        ),
+        inventory_patch,
+        mock.patch.object(unblock, "_apply_action"),
+        mock.patch.object(
+            unblock,
+            "update_backlog_issue",
+            return_value={"action": "NOOP_EMPTY"},
+        ) as update_issue,
+        mock.patch.object(
+            unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
+        ),
+    ):
+        unblock.run_unblock(
+            apply=apply,
+            json_out=True,
+            repos_filter=[UNBLOCK_REPO],
+            limit=0,
+            run=run or subprocess.run,
+        )
+    return output, update_issue
