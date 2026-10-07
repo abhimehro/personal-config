@@ -7,6 +7,7 @@ import json
 import subprocess
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import timedelta
 from io import StringIO
 from unittest import mock
 
@@ -184,6 +185,140 @@ class IssueStatusTests(unittest.TestCase):
                     issue_status.update_pinned_issue(self.status)
                 self.command.assert_called_once()
                 self.assertEqual(self.command.call_args.args[0][2], "list")
+
+    def test_backlog_body_renders_decision_table_and_state_block(self) -> None:
+        now = NOW
+        row = {
+            "pr": 42,
+            "url": "https://github.com/owner/repo/pull/42",
+            "blocker": "required_check_failure",
+            "evidence": "Build failed",
+            "recommended_action": "Fix checks",
+            "safe_default": "Leave open",
+            "owner": "human",
+            "packet_expiry_close_days": 7,
+        }
+        body = issue_status.backlog_issue_body("owner/repo", [row], {}, now)
+        self.assertIn("<!-- pr-lifecycle-backlog -->", body)
+        self.assertIn("| PR | Blocker | Evidence |", body)
+        self.assertIn("[42](https://github.com/owner/repo/pull/42)", body)
+        self.assertIn("required_check_failure", body)
+        state = json.loads(
+            body.split("<!-- pr-lifecycle-backlog-state ", 1)[1].split(" -->", 1)[0]
+        )
+        self.assertEqual(
+            state["first_seen"]["owner/repo#42:required_check_failure"],
+            "2026-08-30T12:00:00Z",
+        )
+
+    def test_backlog_refresh_preserves_first_seen_and_notifies_overdue_once(
+        self,
+    ) -> None:
+        repo = "owner/repo"
+        key = f"{repo}#42:required_check_failure"
+        old_state = {
+            "first_seen": {key: "2026-08-01T12:00:00Z"},
+            "overdue_notified": [],
+        }
+        row = {
+            "pr": 42,
+            "url": "https://github.com/owner/repo/pull/42",
+            "blocker": "required_check_failure",
+            "evidence": "Build failed",
+            "recommended_action": "Fix checks",
+            "safe_default": "Leave open",
+            "owner": "human",
+            "packet_expiry_close_days": 7,
+        }
+        old_body = issue_status.backlog_issue_body(
+            repo, [row], old_state, NOW - timedelta(days=25)
+        )
+        self.command.side_effect = [
+            self.result(
+                json.dumps(
+                    [
+                        {
+                            "number": 51,
+                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "body": old_body,
+                        }
+                    ]
+                )
+            ),
+            self.result(),
+            self.result(),
+        ]
+        result = issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.assertEqual(result["action"], "EDITED")
+        comment_argv = self.command.call_args_list[1].args[0]
+        self.assertEqual(comment_argv[2:4], ["comment", "51"])
+        comment_body = comment_argv[comment_argv.index("--body") + 1]
+        self.assertIn(
+            "@abhimehro 1 item(s) passed their decision deadline:", comment_body
+        )
+        edit_argv = self.command.call_args_list[2].args[0]
+        body = edit_argv[edit_argv.index("--body") + 1]
+        self.assertIn("2026-08-01T12:00:00Z", body)
+        state = json.loads(
+            body.split("<!-- pr-lifecycle-backlog-state ", 1)[1].split(" -->", 1)[0]
+        )
+        self.assertEqual(state["overdue_notified"], [key])
+
+        self.command.reset_mock()
+        self.command.side_effect = [
+            self.result(
+                json.dumps(
+                    [
+                        {
+                            "number": 51,
+                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "body": body,
+                        }
+                    ]
+                )
+            ),
+            self.result(),
+        ]
+        issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.assertEqual(self.command.call_count, 2)
+        self.assertEqual(self.command.call_args_list[1].args[0][2], "edit")
+
+    def test_empty_backlog_edits_existing_but_does_not_create(self) -> None:
+        repo = "owner/repo"
+        self.command.side_effect = [
+            self.result(
+                json.dumps(
+                    [
+                        {
+                            "number": 52,
+                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "body": "",
+                        }
+                    ]
+                )
+            ),
+            self.result(),
+        ]
+        result = issue_status.update_backlog_issue(repo, [], now=NOW)
+        self.assertEqual(result["action"], "EDITED")
+        argv = self.command.call_args_list[1].args[0]
+        self.assertEqual(argv[2:4], ["edit", "52"])
+        self.assertIn(
+            "No open items needing a human decision",
+            argv[argv.index("--body") + 1],
+        )
+        self.assertEqual(argv[-2:], ["--repo", repo])
+
+    def test_empty_backlog_without_issue_and_failed_listing_do_not_create(self) -> None:
+        self.command.side_effect = [self.result("[]")]
+        result = issue_status.update_backlog_issue("owner/repo", [], now=NOW)
+        self.assertEqual(result["action"], "NOOP_EMPTY")
+        self.assertEqual(self.command.call_count, 1)
+        self.command.reset_mock()
+        self.command.side_effect = [self.result("not-json")]
+        with self.assertRaises(OSError):
+            issue_status.update_backlog_issue("owner/repo", [], now=NOW)
+        self.assertEqual(self.command.call_count, 1)
 
     def test_status_cli_takes_precedence_over_stage(self) -> None:
         output = StringIO()

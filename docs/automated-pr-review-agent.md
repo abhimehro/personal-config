@@ -234,6 +234,24 @@ only if Trunk still cannot enqueue after the PR is already up to date with
 
 ## Phase 5 — Hand off the nonterminal tail
 
+### Blocker resolution (fix-or-trigger)
+
+Run reconcile with `--apply` to record observed closures and ingest every open
+PR, then run `scripts/pr_lifecycle_unblock.py --apply --json`. The executor
+keeps mutations bounded and never merges or deletes branches.
+
+| Live blocker | Safe next action |
+| --- | --- |
+| Stale bot lineage or merged salvage original | Comment, label `superseded`, close and confirm; never close HUMAN or `REVIEW_SECURITY` originals. |
+| Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
+| Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
+| Required checks / review changes | Trigger Jules or CodeRabbit only when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
+
+Human decisions are refreshed on each repository's open **“PR lifecycle: needs
+human decision”** issue. It preserves first-seen dates, flags expired rows, and
+notifies once per newly overdue item. Draft PRs are included in inventory but
+are not otherwise unblocked.
+
 Phase 1 is throughput-optimized: it merges what is clean, closes what is
 redundant, canonical-picks BOT overlap clusters, and gives every remaining item
 one next owner. It must not leave a prose-only deferred tail. Use the

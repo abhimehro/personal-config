@@ -221,27 +221,37 @@ class ClassifyItemTests(unittest.TestCase):
                 self.assertEqual(action["action"], "TERMINAL_CLOSED")
                 self.assertEqual(action["disposition"], expected)
 
-    def test_closed_without_evidence_routes_to_stage3_pending(self):
+    def test_closed_without_evidence_is_closed_noop(self):
         for labels in (None, [], [{"name": "enhancement"}]):
             with self.subTest(labels=labels):
                 live = {"state": "CLOSED", "headRefOid": "a" * 40}
                 if labels is not None:
                     live["labels"] = labels
                 action = _classify({"lifecycle_state": "STAGE1_INTAKE"}, live)
-                self.assertEqual(action["action"], "TERMINAL_PENDING")
-                self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
-                self.assertIsNone(action["disposition"])
+                self.assertEqual(action["action"], "TERMINAL_CLOSED")
+                self.assertEqual(action["to_state"], "TERMINAL")
+                self.assertEqual(action["disposition"], "CLOSED_NOOP")
+                self.assertEqual(
+                    action["evidence"],
+                    {
+                        "labels": [
+                            label["name"]
+                            for label in labels or []
+                            if isinstance(label, dict)
+                        ]
+                    },
+                )
 
-    def test_pending_observed_stage3_item_notes_in_place(self):
+    def test_closed_stage3_item_is_terminal_closed(self):
         action = _classify(
             {"lifecycle_state": "STAGE3_RECONCILIATION"},
             {"state": "CLOSED", "headRefOid": "a" * 40},
         )
-        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
-        self.assertNotIn("to_state", action)
-        self.assertEqual(action["observed_state"], "CLOSED")
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["to_state"], "TERMINAL")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_repeat_reconcile_does_not_reclassify_pending_observation(self):
+    def test_prior_closed_observation_marker_does_not_prevent_terminal_close(self):
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -249,9 +259,10 @@ class ClassifyItemTests(unittest.TestCase):
             },
             {"state": "CLOSED", "headRefOid": "a" * 40},
         )
-        self.assertIsNone(action)
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_closed_observation_does_not_reintake_on_head_drift(self):
+    def test_closed_security_item_is_terminal_without_head_reintake(self):
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -260,7 +271,8 @@ class ClassifyItemTests(unittest.TestCase):
             },
             {"state": "CLOSED", "headRefOid": "c" * 40},
         )
-        self.assertIsNone(action)
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
@@ -376,7 +388,7 @@ class ReconcileHelpersTests(unittest.TestCase):
             "action": "TERMINAL_PENDING",
             "to_state": "STAGE3_RECONCILIATION",
             "disposition": None,
-            "observed_state": "CLOSED",
+            "observed_state": "MERGED",
             "reason": "closed without classifying evidence",
         }
         event = _apply_with_mocks(ledger, item, action)
@@ -384,7 +396,7 @@ class ReconcileHelpersTests(unittest.TestCase):
         self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
         self.assertEqual(item["current_owner"], "stage3")
         self.assertIsNone(item["terminal_disposition"])
-        self.assertIn("Observed CLOSED unclassified", item["next_action"])
+        self.assertIn("Observed MERGED unclassified", item["next_action"])
         self.assertEqual(ledger["events"], [event])
 
     def test_apply_terminal_observed_notes_in_place_without_event(self):

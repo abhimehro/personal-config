@@ -288,7 +288,22 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
         self.assertEqual(lifecycle["stage2_intake"], "self_fed")
         self.assertFalse(lifecycle["lineage"]["open_as_draft"])
+        self.assertEqual(lifecycle["unblock"]["trigger_expiry_days"], 3)
+        self.assertEqual(lifecycle["unblock"]["lineage_stale_days"], 3)
         validator.validate_config(config)
+
+        for field, invalid in (
+            ("advisory_checks", ["", "review"]),
+            ("advisory_checks", "review"),
+            ("trigger_expiry_days", 0),
+            ("lineage_stale_days", True),
+        ):
+            invalid_config = copy.deepcopy(config)
+            invalid_config["lifecycle"]["unblock"][field] = invalid
+            with self.subTest(field=field, invalid=invalid), self.assertRaises(
+                ValueError
+            ):
+                validator.validate_config(invalid_config)
 
         lifecycle["unexpected_rebalance_option"] = True
         with self.assertRaisesRegex(ValueError, "unsupported fields"):
@@ -366,6 +381,8 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
         ).read_text(encoding="utf-8")
         self.assertIn("pr_lifecycle_reconcile.py", review)
+        self.assertIn("pr_lifecycle_unblock.py --apply --json", review)
+        self.assertIn("pr_lifecycle_reconcile.py --apply --json", review)
         self.assertIn("pr_lifecycle_feed.py", review)
         self.assertIn("REVIEW.md", review)
         salvage = (

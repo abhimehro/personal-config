@@ -25,7 +25,9 @@ if str(SCRIPT_DIR) not in sys.path:
 # pylint: disable=wrong-import-position
 import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
+from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
+from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
 from pr_lifecycle_support import ROOT, SHA_RE
 from pr_lifecycle_yaml import load_yaml
@@ -129,8 +131,8 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     return (now - stamp).total_seconds() / 86400.0
 
 
-# Only labels that make one disposition unambiguous evidence; anything else
-# leaves classification pending rather than guessing.
+# Only labels that make one disposition unambiguous evidence; unlabeled
+# closures are recorded as CLOSED_NOOP rather than guessed from other data.
 _CLOSED_LABEL_DISPOSITIONS = {
     "duplicate": "CLOSED_DUPLICATE",
     "superseded": "CLOSED_SUPERSEDED",
@@ -183,7 +185,17 @@ def _classify_live_close(
         None,
     )
     if disposition is None:
-        return _pending_terminal(item, key, "CLOSED", "no disposition-bearing label")
+        return {
+            "action": "TERMINAL_CLOSED",
+            "key": key,
+            "to_state": "TERMINAL",
+            "disposition": "CLOSED_NOOP",
+            "reason": (
+                "live PR state=CLOSED without disposition label; "
+                "closed outside lifecycle → CLOSED_NOOP"
+            ),
+            "evidence": {"labels": labels},
+        }
     return {
         "action": "TERMINAL_CLOSED",
         "key": key,
@@ -197,7 +209,7 @@ def _classify_live_close(
 def _pending_terminal(
     item: dict[str, Any], key: str, observed: str, detail: str
 ) -> dict[str, Any] | None:
-    """Observed a terminal live state without evidence to classify it.
+    """Route an unclassified merge to Stage 3 when merger evidence is absent.
 
     Non-Stage-3 items route to Stage 3 for classification; an item already
     Stage-3-owned gets an in-place observation note (same-state handoffs are
@@ -616,6 +628,170 @@ def collect_actions(
     return actions
 
 
+def build_intake_item(
+    live: dict[str, Any], policy: Any, now: datetime
+) -> dict[str, Any]:
+    """Construct a fail-closed Stage 1 ledger projection for an open PR."""
+    verdict = classify_pr_identity(live, policy)
+    author = {
+        "login": verdict.login,
+        "identity_source": "github_api",
+        "app_slug": verdict.app_slug,
+    }
+    if verdict.method in {
+        "allowlist_login",
+        "allowlist_app_slug",
+        "token_authored_signals",
+    }:
+        author["identity_provenance"] = {
+            "method": verdict.method,
+            "signals": list(verdict.signals),
+        }
+    repository = str(live["repository"])
+    pr = int(live["number"])
+    head_sha = str(live["headRefOid"])
+    url = str(live["url"])
+    return {
+        "key": f"{repository}#{pr}@{head_sha}",
+        "repository": repository,
+        "pr": pr,
+        "url": url,
+        "base_sha": str(live["baseRefOid"]),
+        "head_sha": head_sha,
+        "author": author,
+        "author_type": verdict.author_type,
+        "classification": "UNKNOWN",
+        "risk_class": "UNKNOWN",
+        "sensitive_paths": [],
+        "changed_paths": [],
+        "guardrail_outcome": "NOT_RUN",
+        "lifecycle_state": "STAGE1_INTAKE",
+        "current_owner": "stage1",
+        "next_owner": "stage1",
+        "terminal_disposition": None,
+        "safe_default": "Leave open; no merge or close until Stage 1 guardrails run.",
+        "next_action": (
+            "Stage 1: run guardrails on newly ingested open PR "
+            f"(ingested {now.strftime('%Y-%m-%d')} by reconcile)."
+        ),
+        "evidence_urls": [url],
+        "attempts": {"evidence": 0, "recovery": 0, "mutations": 0},
+        "handoffs": [],
+        "revision": 0,
+        "updated_at_utc": now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
+def collect_ingest_actions(
+    ledger: dict[str, Any],
+    config: dict[str, Any],
+    open_prs_by_repo: dict[str, list[dict[str, Any]]],
+    *,
+    now: datetime,
+) -> list[dict[str, Any]]:
+    """Plan uncapped intake actions for every configured live open PR."""
+    items = [item for item in ledger.get("items") or [] if isinstance(item, dict)]
+    policy = identity_policy_from_config(config)
+    actions: list[dict[str, Any]] = []
+    for repo in config.get("repos") or []:
+        for live in open_prs_by_repo.get(repo, []):
+            pr_number = live.get("number")
+            head_sha = str(live.get("headRefOid") or "")
+            author = live.get("author")
+            login = (
+                str(author.get("login") or "").strip()
+                if isinstance(author, dict)
+                else ""
+            )
+            if (
+                not isinstance(pr_number, int)
+                or isinstance(pr_number, bool)
+                or pr_number < 1
+            ):
+                actions.append(
+                    {
+                        "action": "INGEST_SKIPPED",
+                        "repository": repo,
+                        "reason": "invalid pull request number",
+                    }
+                )
+                continue
+            if not SHA_RE.fullmatch(head_sha) or not SHA_RE.fullmatch(
+                str(live.get("baseRefOid") or "")
+            ):
+                actions.append(
+                    {
+                        "action": "INGEST_SKIPPED",
+                        "repository": repo,
+                        "pr": pr_number,
+                        "reason": "invalid base/head SHA",
+                    }
+                )
+                continue
+            if not login:
+                actions.append(
+                    {
+                        "action": "INGEST_SKIPPED",
+                        "repository": repo,
+                        "pr": pr_number,
+                        "reason": "empty identity login",
+                    }
+                )
+                continue
+            url = live.get("url")
+            if not isinstance(url, str) or not url.startswith("https://"):
+                actions.append(
+                    {
+                        "action": "INGEST_SKIPPED",
+                        "repository": repo,
+                        "pr": pr_number,
+                        "reason": "invalid pull request URL",
+                    }
+                )
+                continue
+            candidates = [
+                item
+                for item in items
+                if item.get("repository") == repo and item.get("pr") == pr_number
+            ]
+            if any(item.get("lifecycle_state") != "TERMINAL" for item in candidates):
+                continue
+            key = f"{repo}#{pr_number}@{head_sha}"
+            terminal = next(
+                (
+                    item
+                    for item in candidates
+                    if item.get("key") == key
+                    and item.get("lifecycle_state") == "TERMINAL"
+                ),
+                None,
+            )
+            if terminal is not None:
+                actions.append(
+                    {
+                        "action": "TERMINAL_BUT_OPEN",
+                        "key": key,
+                        "repository": repo,
+                        "pr": pr_number,
+                        "url": url,
+                        "terminal_disposition": terminal.get("terminal_disposition"),
+                        "reason": "PR is open at a head already recorded as terminal",
+                    }
+                )
+                continue
+            actions.append(
+                {
+                    "action": "INGEST_OPEN_PR",
+                    "key": key,
+                    "repository": repo,
+                    "pr": pr_number,
+                    "item": build_intake_item(live, policy, now),
+                }
+            )
+            items.append(actions[-1]["item"])
+    return actions
+
+
 def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] | None:
     """Look up and classify one nonterminal ledger item."""
     if not isinstance(item, dict):
@@ -628,7 +804,9 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] 
     return classify_item(item, live, expiry_days=expiry, now=clock)
 
 
-def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
+def run_reconcile(
+    *, apply: bool, limit: int | None, json_out: bool, ingest: bool = True
+) -> int:
     """Fetch and emit actions, optionally applying and CAS-committing them."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
@@ -637,16 +815,45 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
         fetch = cas.run_preflight(out)
         ledger = load_yaml(Path(fetch["ledger_path"]))
         actions = collect_actions(ledger, config, limit=limit)
+        inventory_failed: list[dict[str, str]] = []
+        open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
+        if ingest:
+            for repo in config["repos"]:
+                try:
+                    open_prs_by_repo[repo] = list_open_prs(repo)
+                except OSError as exc:
+                    inventory_failed.append(
+                        {
+                            "action": "INVENTORY_FAILED",
+                            "repository": repo,
+                            "reason": type(exc).__name__,
+                        }
+                    )
+            ingest_actions = collect_ingest_actions(
+                ledger, config, open_prs_by_repo, now=_utc_now()
+            )
+            actions.extend(ingest_actions)
+            actions.extend(inventory_failed)
+        else:
+            ingest_actions = []
         plan = {
             "dry_run": not apply,
             "ledger_revision": ledger.get("ledger_revision"),
             "action_count": len(actions),
             "actions": actions,
+            "ingest_count": sum(
+                action["action"] == "INGEST_OPEN_PR" for action in ingest_actions
+            ),
+            "terminal_but_open_count": sum(
+                action["action"] == "TERMINAL_BUT_OPEN" for action in ingest_actions
+            ),
+            "inventory_failed": inventory_failed,
         }
         if not apply:
             _emit(plan, json_out)
             return 0
         applied = _apply_actions(ledger, actions)
+        ingested = _apply_ingest_actions(ledger, actions)
         strip_in_memory_item_fields(ledger)
         out.write_text(dump_ledger(ledger), encoding="utf-8")
         result = cas.run_commit(
@@ -655,6 +862,7 @@ def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
             bump_revision=False,
         )
         plan["applied"] = applied
+        plan["ingested"] = ingested
         plan["cas"] = result
         _emit(plan, json_out)
     return 0
@@ -679,12 +887,44 @@ def _apply_actions(
     }
     applied: list[dict[str, Any]] = []
     for action in actions:
-        if action["action"] == "LIVE_LOOKUP_FAILED":
+        if action["action"] in {
+            "LIVE_LOOKUP_FAILED",
+            "INGEST_OPEN_PR",
+            "INGEST_SKIPPED",
+            "TERMINAL_BUT_OPEN",
+            "INVENTORY_FAILED",
+        }:
             continue
         result = _apply_one(ledger, action, items_by_key)
         if result is not None:
             applied.append(result)
     return applied
+
+
+def _apply_ingest_actions(
+    ledger: dict[str, Any], actions: list[dict[str, Any]]
+) -> list[dict[str, str]]:
+    """Append all eligible intake rows and advance the ledger once per batch."""
+    items = ledger.setdefault("items", [])
+    existing = {
+        item.get("key")
+        for item in items
+        if isinstance(item, dict) and isinstance(item.get("key"), str)
+    }
+    ingested: list[dict[str, str]] = []
+    for action in actions:
+        if action.get("action") != "INGEST_OPEN_PR":
+            continue
+        item = action["item"]
+        if item["key"] in existing:
+            action["skipped"] = "duplicate key"
+            continue
+        items.append(item)
+        existing.add(item["key"])
+        ingested.append({"key": item["key"], "repository": item["repository"]})
+    if ingested:
+        ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return ingested
 
 
 def _apply_one(
@@ -735,6 +975,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="CAS-write transitions (default: dry-run plan only)",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--no-ingest",
+        action="store_true",
+        help="skip live open-PR inventory and Stage 1 intake planning",
+    )
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -743,7 +988,12 @@ def main(argv: list[str] | None = None) -> int:
     """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
     try:
-        return run_reconcile(apply=args.apply, limit=args.limit, json_out=args.json)
+        return run_reconcile(
+            apply=args.apply,
+            limit=args.limit,
+            json_out=args.json,
+            ingest=not args.no_ingest,
+        )
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"PR_LIFECYCLE_RECONCILE_ERROR: {type(exc).__name__}", file=sys.stderr)
         return 1

@@ -51,13 +51,38 @@ def validate_config(config: dict[str, Any]) -> None:
         "packet_expiry_close_days",
         "stage2_intake",
         "lineage",
+        "unblock",
     }
     require_fields(lifecycle, allowed, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
     validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
+    validate_unblock_config(lifecycle.get("unblock"))
     require_exact_stage_caps(lifecycle["stage_caps"])
     require_exact_stage_contract(lifecycle["stages"])
+
+
+def validate_unblock_config(value: Any) -> None:
+    if value is None:
+        return
+    unblock = require_mapping(value, "config.lifecycle.unblock")
+    advisory = unblock.get("advisory_checks")
+    if advisory is not None and (
+        not isinstance(advisory, list)
+        or any(not isinstance(name, str) or not name.strip() for name in advisory)
+    ):
+        raise ValueError(
+            "config.lifecycle.unblock.advisory_checks: "
+            "must be a list of non-empty strings"
+        )
+    for field in ("trigger_expiry_days", "lineage_stale_days"):
+        days = unblock.get(field)
+        if days is not None and (
+            not isinstance(days, int) or isinstance(days, bool) or days < 1
+        ):
+            raise ValueError(
+                f"config.lifecycle.unblock.{field}: must be a positive integer"
+            )
 
 
 def require_fetched_ledger_command(command: Any) -> None:

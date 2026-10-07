@@ -14,11 +14,17 @@ TRANSIENT_RETRY classification.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 PINNED_ISSUE_TITLE = "PR pipeline status"
+BACKLOG_ISSUE_TITLE = "PR lifecycle: needs human decision"
 _ISSUE_REPO = "abhimehro/personal-config"
+_BACKLOG_MARKER = "<!-- pr-lifecycle-backlog -->"
+_STATE_PATTERN = re.compile(r"<!-- pr-lifecycle-backlog-state (\{.*\}) -->")
+_DEFAULT_PACKET_EXPIRY_DAYS = 7
 
 
 def issue_body(status: dict[str, Any]) -> str:
@@ -41,14 +47,16 @@ def issue_body(status: dict[str, Any]) -> str:
     )
 
 
-def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run gh issue arguments against the fixed repository with a 60-second timeout.
+def _gh_issue(
+    cmd: list[str], repo: str = _ISSUE_REPO
+) -> subprocess.CompletedProcess[str]:
+    """Run gh issue arguments against a pinned repository with 60s timeout.
 
     Capture text output and return nonzero exit codes without raising.
     Process launch errors and timeouts propagate to the caller.
     """
     return subprocess.run(
-        ["gh", "issue", *cmd, "--repo", _ISSUE_REPO],
+        ["gh", "issue", *cmd, "--repo", repo],
         check=False,
         capture_output=True,
         text=True,
@@ -56,7 +64,7 @@ def _gh_issue(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _list_pinned_rows() -> list[Any]:
+def _list_pinned_rows(repo: str = _ISSUE_REPO) -> list[Any]:
     """Return the bounded issue-list payload; raise on any failed listing."""
     listed = _gh_issue(
         [
@@ -69,7 +77,8 @@ def _list_pinned_rows() -> list[Any]:
             "all",
             "--limit",
             "1000",
-        ]
+        ],
+        repo,
     )
     if listed.returncode != 0:
         stderr = (listed.stderr or "").strip()[:200]
@@ -91,7 +100,7 @@ def _pinned_row_number(row: dict[str, Any]) -> int:
     return number
 
 
-def _find_pinned_issue() -> int | None:
+def _find_pinned_issue(repo: str = _ISSUE_REPO) -> int | None:
     """Return the pinned issue's number; raise on a failed or malformed list.
 
     Only a well-formed listing with no exact-title row returns None, so
@@ -100,7 +109,7 @@ def _find_pinned_issue() -> int | None:
     exact-title row without an integer number — is raised as OSError rather
     than risk a duplicate pinned issue. Process exceptions propagate.
     """
-    for row in _list_pinned_rows():
+    for row in _list_pinned_rows(repo):
         if not isinstance(row, dict):
             raise OSError("gh issue list returned a malformed payload")
         if row.get("title") == PINNED_ISSUE_TITLE:
@@ -108,16 +117,20 @@ def _find_pinned_issue() -> int | None:
     return None
 
 
-def _upsert_pinned_issue(issue_number: int | None, body: str) -> None:
+def _upsert_pinned_issue(
+    issue_number: int | None, body: str, repo: str = _ISSUE_REPO
+) -> None:
     """Edit the supplied issue or create the status issue when its number is None.
 
     Raise OSError on a nonzero exit code, including at most 200 characters of
     stderr. Process launch errors and timeouts propagate without retry.
     """
     if issue_number is not None:
-        result = _gh_issue(["edit", str(issue_number), "--body", body])
+        result = _gh_issue(["edit", str(issue_number), "--body", body], repo)
     else:
-        result = _gh_issue(["create", "--title", PINNED_ISSUE_TITLE, "--body", body])
+        result = _gh_issue(
+            ["create", "--title", PINNED_ISSUE_TITLE, "--body", body], repo
+        )
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()[:200]
         raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
@@ -126,3 +139,263 @@ def _upsert_pinned_issue(issue_number: int | None, body: str) -> None:
 def update_pinned_issue(status: dict[str, Any]) -> None:
     """Best-effort update of the pinned PR pipeline status issue."""
     _upsert_pinned_issue(_find_pinned_issue(), issue_body(status))
+
+
+def _list_backlog_rows(repo: str) -> list[Any]:
+    listed = _gh_issue(
+        [
+            "list",
+            "--search",
+            f'in:title "{BACKLOG_ISSUE_TITLE}"',
+            "--json",
+            "number,title,body",
+            "--state",
+            "open",
+            "--limit",
+            "1000",
+        ],
+        repo,
+    )
+    if listed.returncode != 0:
+        stderr = (listed.stderr or "").strip()[:200]
+        raise OSError(f"gh issue list failed rc={listed.returncode}: {stderr}")
+    try:
+        rows = json.loads(listed.stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise OSError("gh issue list returned a malformed payload") from exc
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        raise OSError("gh issue list returned a malformed payload")
+    return rows
+
+
+def _utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _iso(value: datetime) -> str:
+    return _utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _previous_state(body: object) -> dict[str, Any]:
+    if not isinstance(body, str):
+        return {"first_seen": {}, "overdue_notified": []}
+    match = _STATE_PATTERN.search(body)
+    if not match:
+        return {"first_seen": {}, "overdue_notified": []}
+    try:
+        state = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return {"first_seen": {}, "overdue_notified": []}
+    if not isinstance(state, dict):
+        return {"first_seen": {}, "overdue_notified": []}
+    first_seen = state.get("first_seen")
+    notified = state.get("overdue_notified")
+    return {
+        "first_seen": first_seen if isinstance(first_seen, dict) else {},
+        "overdue_notified": notified if isinstance(notified, list) else [],
+    }
+
+
+def _row_key(repo: str, row: dict[str, Any]) -> str:
+    return f"{repo}#{row.get('pr')}:{row.get('blocker')}"
+
+
+def _markdown_cell(value: object, limit: int = 300) -> str:
+    text = " ".join(str(value or "").replace("|", "\\|").split())
+    return text[:limit]
+
+
+def _prepare_backlog_rows(
+    repo: str,
+    rows: list[dict[str, Any]],
+    state: dict[str, Any],
+    now: datetime,
+) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
+    now_utc = _utc(now)
+    first_seen_before = state.get("first_seen") or {}
+    notified = set(state.get("overdue_notified") or [])
+    first_seen: dict[str, str] = {}
+    prepared: list[dict[str, Any]] = []
+    newly_overdue: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in rows:
+        row = dict(raw)
+        key = _row_key(repo, row)
+        if key in seen:
+            continue
+        seen.add(key)
+        first = first_seen_before.get(key)
+        if not isinstance(first, str):
+            first = _iso(now_utc)
+        first_seen[key] = first
+        try:
+            first_at = _utc(datetime.fromisoformat(first.replace("Z", "+00:00")))
+        except ValueError:
+            first_at = now_utc
+            first = _iso(first_at)
+            first_seen[key] = first
+        expiry_text = row.get("expires")
+        if not isinstance(expiry_text, str) or not expiry_text:
+            days = row.get("packet_expiry_close_days", _DEFAULT_PACKET_EXPIRY_DAYS)
+            if not isinstance(days, int) or isinstance(days, bool) or days < 1:
+                days = _DEFAULT_PACKET_EXPIRY_DAYS
+            expiry_text = _iso(first_at + timedelta(days=days))
+        try:
+            expiry_at = _utc(datetime.fromisoformat(expiry_text.replace("Z", "+00:00")))
+        except ValueError:
+            expiry_at = first_at + timedelta(days=_DEFAULT_PACKET_EXPIRY_DAYS)
+            expiry_text = _iso(expiry_at)
+        overdue = now_utc >= expiry_at
+        row.update(
+            {
+                "id": key,
+                "first_seen": first,
+                "expires": expiry_text,
+                "overdue": overdue,
+            }
+        )
+        prepared.append(row)
+        if overdue and key not in notified:
+            newly_overdue.append(row)
+            notified.add(key)
+    new_state = {
+        "first_seen": first_seen,
+        "overdue_notified": sorted(notified),
+    }
+    return prepared, new_state, newly_overdue
+
+
+def backlog_issue_body(
+    repo: str,
+    rows: list[dict[str, Any]],
+    state: dict[str, Any],
+    now: datetime,
+) -> str:
+    """Render the per-repository human decision backlog and durable state."""
+    prepared, final_state, _ = _prepare_backlog_rows(repo, rows, state, now)
+    updated = _iso(now)
+    if not prepared:
+        content = f"No open items needing a human decision as of {updated}."
+    else:
+        content = "\n".join(
+            [
+                "| PR | Blocker | Evidence | Recommended action | Safe default | Owner | First seen | Expires | Status |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                *[
+                    (
+                        f"| [{_markdown_cell(row.get('pr'))}]"
+                        f"({row.get('url') or ''}) | "
+                        f"{_markdown_cell(row.get('blocker'))} | "
+                        f"{_markdown_cell(row.get('evidence'), 160)} | "
+                        f"{_markdown_cell(row.get('recommended_action'), 200)} | "
+                        f"{_markdown_cell(row.get('safe_default'), 160)} | "
+                        f"{_markdown_cell(row.get('owner'))} | "
+                        f"{row['first_seen']} | {row['expires']} | "
+                        f"{'OVERDUE' if row['overdue'] else ''} |"
+                    )
+                    for row in prepared
+                ],
+            ]
+        )
+    return (
+        f"{_BACKLOG_MARKER}\n"
+        f"updated_at_utc: {updated}\n"
+        f"open_items: {len(prepared)}\n"
+        f"overdue_items: {sum(bool(row['overdue']) for row in prepared)}\n\n"
+        f"{content}\n\n"
+        f"<!-- pr-lifecycle-backlog-state "
+        f"{json.dumps(final_state, sort_keys=True, separators=(',', ':'))} -->\n"
+    )
+
+
+def update_backlog_issue(
+    repo: str, rows: list[dict[str, Any]], *, now: datetime
+) -> dict[str, Any]:
+    """Refresh or create a per-repository human decision issue."""
+    github_steps: list[dict[str, Any]] = []
+    listed = _list_backlog_rows(repo)
+    issue: dict[str, Any] | None = None
+    for row in listed:
+        if row.get("title") == BACKLOG_ISSUE_TITLE:
+            if issue is None:
+                issue = row
+            number = row.get("number")
+            if not isinstance(number, int) or isinstance(number, bool):
+                raise OSError("gh issue list matched backlog title without a number")
+    old_state = _previous_state(issue.get("body") if issue else None)
+    prepared, state, overdue = _prepare_backlog_rows(repo, rows, old_state, now)
+    if not prepared and issue is None:
+        body = backlog_issue_body(repo, rows, old_state, now)
+        return {"action": "NOOP_EMPTY", "repository": repo, "body": body}
+
+    def notify_overdue(issue_number: int) -> None:
+        comment_body = (
+            f"@abhimehro {len(overdue)} item(s) passed their decision deadline:\n"
+            + "\n".join(
+                f"- {row.get('url') or row.get('pr')}: {row.get('blocker')} "
+                f"(expires {row['expires']})"
+                for row in overdue
+            )
+        )
+        comment = _gh_issue(
+            ["comment", str(issue_number), "--body", comment_body], repo
+        )
+        github_steps.append(
+            {"step": "overdue_comment", "exit_code": comment.returncode}
+        )
+        if comment.returncode != 0:
+            stderr = (comment.stderr or "").strip()[:200]
+            raise OSError(
+                f"gh issue overdue comment failed rc={comment.returncode}: {stderr}"
+            )
+
+    if issue is not None:
+        issue_number = int(issue["number"])
+        if overdue:
+            notify_overdue(issue_number)
+        body = backlog_issue_body(repo, rows, state if overdue else old_state, now)
+        result = _gh_issue(["edit", str(issue_number), "--body", body], repo)
+        github_steps.append({"step": "edit", "exit_code": result.returncode})
+        operation = "EDITED"
+    else:
+        body = backlog_issue_body(repo, rows, old_state, now)
+        result = _gh_issue(
+            ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body], repo
+        )
+        github_steps.append({"step": "create", "exit_code": result.returncode})
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()[:200]
+            raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
+        match = re.search(r"/issues/(\d+)\b", result.stdout or "")
+        if overdue:
+            if match is None:
+                raise OSError("gh issue create did not return the new issue URL")
+            issue_number = int(match.group(1))
+            notify_overdue(issue_number)
+            body = backlog_issue_body(repo, rows, state, now)
+            result = _gh_issue(["edit", str(issue_number), "--body", body], repo)
+            github_steps.append({"step": "edit", "exit_code": result.returncode})
+            if result.returncode != 0:
+                stderr = (result.stderr or "").strip()[:200]
+                raise OSError(
+                    f"gh issue update failed rc={result.returncode}: {stderr}"
+                )
+        operation = "CREATED"
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()[:200]
+        raise OSError(f"gh issue update failed rc={result.returncode}: {stderr}")
+    return {
+        "action": operation,
+        "repository": repo,
+        "issue_number": (
+            issue.get("number")
+            if issue
+            else (int(match.group(1)) if match is not None else None)
+        ),
+        "row_count": len(prepared),
+        "overdue_notified": [row["id"] for row in overdue],
+        "body": body,
+        "github_steps": github_steps,
+    }
