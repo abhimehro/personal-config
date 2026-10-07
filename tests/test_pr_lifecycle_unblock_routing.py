@@ -198,60 +198,65 @@ class RoutePrTests(unittest.TestCase):
         self.assertEqual(human["action"], "ESCALATE")
         self.assertEqual(human["blocker"], "required_check_failure")
 
+    @staticmethod
+    def _security_trigger_cases() -> tuple[tuple[str, dict], ...]:
+        """Return (name, _pr overrides) for each trigger family a hold beats."""
+        return (
+            (
+                "dependabot rebase",
+                {
+                    "author": {"login": "dependabot[bot]", "type": "Bot"},
+                    "mergeable": "CONFLICTING",
+                },
+            ),
+            (
+                "coderabbit conflict",
+                {
+                    "author": {"login": "coderabbitai[bot]", "type": "Bot"},
+                    "mergeStateStatus": "DIRTY",
+                },
+            ),
+            (
+                "coderabbit fix-ci",
+                {
+                    "author": {"login": "coderabbitai[bot]", "type": "Bot"},
+                    "checks": [{"name": "Build", "state": "FAILURE"}],
+                },
+            ),
+            (
+                "coderabbit autofix",
+                {
+                    "author": {"login": "coderabbitai[bot]", "type": "Bot"},
+                    "reviewDecision": "CHANGES_REQUESTED",
+                    "latestReviews": [
+                        {
+                            "author": {"login": "coderabbitai[bot]"},
+                            "state": "CHANGES_REQUESTED",
+                        }
+                    ],
+                },
+            ),
+            (
+                "jules",
+                {
+                    "headRefName": "jules-task",
+                    "checks": [{"name": "Build", "state": "FAILURE"}],
+                },
+            ),
+            (
+                "codescene",
+                {"checks": [{"name": "CodeScene quality gate", "state": "FAILURE"}]},
+            ),
+        )
+
     def test_security_hold_escalates_before_all_trigger_and_skip_paths(self):
         """Prioritize security escalation across every supported trigger family."""
         security_item = {
             "lifecycle_state": "STAGE1_INTAKE",
             "guardrail_outcome": "REVIEW_SECURITY",
         }
-        cases = (
-            (
-                "dependabot rebase",
-                _pr(
-                    author={"login": "dependabot[bot]", "type": "Bot"},
-                    mergeable="CONFLICTING",
-                ),
-            ),
-            (
-                "coderabbit conflict",
-                _pr(
-                    author={"login": "coderabbitai[bot]", "type": "Bot"},
-                    mergeStateStatus="DIRTY",
-                ),
-            ),
-            (
-                "coderabbit fix-ci",
-                _pr(
-                    author={"login": "coderabbitai[bot]", "type": "Bot"},
-                    checks=[{"name": "Build", "state": "FAILURE"}],
-                ),
-            ),
-            (
-                "coderabbit autofix",
-                _pr(
-                    author={"login": "coderabbitai[bot]", "type": "Bot"},
-                    reviewDecision="CHANGES_REQUESTED",
-                    latestReviews=[
-                        {
-                            "author": {"login": "coderabbitai[bot]"},
-                            "state": "CHANGES_REQUESTED",
-                        }
-                    ],
-                ),
-            ),
-            (
-                "jules",
-                _pr(
-                    headRefName="jules-task",
-                    checks=[{"name": "Build", "state": "FAILURE"}],
-                ),
-            ),
-            (
-                "codescene",
-                _pr(checks=[{"name": "CodeScene quality gate", "state": "FAILURE"}]),
-            ),
-        )
-        for name, pr in cases:
+        for name, overrides in self._security_trigger_cases():
+            pr = _pr(**overrides)
             pr["comments_incomplete"] = True
             with self.subTest(trigger_family=name):
                 actions = _route(pr, author_type="BOT", items=[security_item])

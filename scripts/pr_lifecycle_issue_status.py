@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -394,42 +395,102 @@ def update_backlog_issue(
     if not prepared and issue is None:
         body = backlog_issue_body(repo, rows, old_state, now)
         return {"action": "NOOP_EMPTY", "repository": repo, "body": body}
+    work = _BacklogWork(
+        repo=repo,
+        rows=rows,
+        old_state=old_state,
+        state=state,
+        overdue=overdue,
+        prepared=prepared,
+        now=now,
+        github_steps=github_steps,
+    )
     if issue is not None:
-        issue_number = int(issue["number"])
-        if overdue:
-            _notify_overdue(repo, overdue, issue_number, github_steps)
-        body = backlog_issue_body(repo, rows, state if overdue else old_state, now)
-        _gh_step(
-            ["edit", str(issue_number), "--body", body], "edit", repo, github_steps
-        )
-        return _backlog_result(
-            "EDITED", repo, issue.get("number"), prepared, overdue, body, github_steps
-        )
-    body = backlog_issue_body(repo, rows, old_state, now)
+        return _edit_backlog_issue(work, issue)
+    return _create_backlog_issue(work)
+
+
+@dataclass(frozen=True)
+class _BacklogWork:
+    """Shared context for the edit/create backlog-issue paths."""
+
+    repo: str
+    rows: list[dict[str, Any]]
+    old_state: dict[str, Any]
+    state: dict[str, Any]
+    overdue: list[dict[str, Any]]
+    prepared: list[dict[str, Any]]
+    now: datetime
+    github_steps: list[dict[str, Any]]
+
+
+def _edit_backlog_issue(work: _BacklogWork, issue: dict[str, Any]) -> dict[str, Any]:
+    """Notify overdue rows and edit the existing backlog issue body."""
+    issue_number = int(issue["number"])
+    if work.overdue:
+        _notify_overdue(work.repo, work.overdue, issue_number, work.github_steps)
+    body = backlog_issue_body(
+        work.repo,
+        work.rows,
+        work.state if work.overdue else work.old_state,
+        work.now,
+    )
+    _gh_step(
+        ["edit", str(issue_number), "--body", body],
+        "edit",
+        work.repo,
+        work.github_steps,
+    )
+    return _backlog_result(
+        "EDITED",
+        work.repo,
+        issue.get("number"),
+        work.prepared,
+        work.overdue,
+        body,
+        work.github_steps,
+    )
+
+
+def _notify_created_issue(
+    work: _BacklogWork, match: re.Match[str] | None
+) -> tuple[str, int]:
+    """Notify overdue rows on a fresh issue; return (new body, issue number)."""
+    if match is None:
+        raise OSError("gh issue create did not return the new issue URL")
+    issue_number = int(match.group(1))
+    _notify_overdue(work.repo, work.overdue, issue_number, work.github_steps)
+    body = backlog_issue_body(work.repo, work.rows, work.state, work.now)
+    _gh_step(
+        ["edit", str(issue_number), "--body", body],
+        "edit",
+        work.repo,
+        work.github_steps,
+    )
+    return body, issue_number
+
+
+def _create_backlog_issue(work: _BacklogWork) -> dict[str, Any]:
+    """Create the backlog issue and notify overdue rows on it when needed."""
+    body = backlog_issue_body(work.repo, work.rows, work.old_state, work.now)
     created = _gh_step(
         ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body],
         "create",
-        repo,
-        github_steps,
+        work.repo,
+        work.github_steps,
     )
     match = re.search(r"/issues/(\d+)\b", created.stdout or "")
-    if overdue:
-        if match is None:
-            raise OSError("gh issue create did not return the new issue URL")
-        issue_number = int(match.group(1))
-        _notify_overdue(repo, overdue, issue_number, github_steps)
-        body = backlog_issue_body(repo, rows, state, now)
-        _gh_step(
-            ["edit", str(issue_number), "--body", body], "edit", repo, github_steps
-        )
+    issue_number = int(match.group(1)) if match is not None else None
+    if work.overdue:
+        body, issue_number = _notify_created_issue(work, match)
     return _backlog_result(
         "CREATED",
-        repo,
-        int(match.group(1)) if match is not None else None,
-        prepared,
-        overdue,
+        work.repo,
+        issue_number,
+        work.prepared,
+        work.overdue,
         body,
-        github_steps,
+        work.github_steps,
     )
 
 

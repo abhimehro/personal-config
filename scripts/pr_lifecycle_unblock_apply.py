@@ -165,14 +165,7 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
     Branch updates use the expected head SHA; closes are re-read for
     confirmation. Record failures in github_steps and unconfirmed.
     """
-    repo = str(action["repository"])
-    pr = str(action["pr"])
-    if action["action"] == "UPDATE_BRANCH":
-        steps = [_update_branch_step(repo, pr, action, run=run)]
-    elif action["action"] == "TRIGGER":
-        steps = [_trigger_step(repo, pr, action, run=run)]
-    else:
-        steps = _close_pr_steps(repo, pr, action, run=run)
+    steps = _steps_for_action(action, run=run)
     action["github_steps"] = steps
     action["unconfirmed"] = any(
         step.get("exit_code") != 0
@@ -183,3 +176,16 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
         confirm = next((step for step in steps if step["step"] == "confirm"), {})
         if str(confirm.get("state") or "").upper() != "CLOSED":
             action["unconfirmed"] = True
+
+
+def _steps_for_action(
+    action: dict[str, Any], *, run: Any = subprocess.run
+) -> list[dict[str, Any]]:
+    """Return the step plan for one action kind."""
+    repo = str(action["repository"])
+    pr = str(action["pr"])
+    if action["action"] == "UPDATE_BRANCH":
+        return [_update_branch_step(repo, pr, action, run=run)]
+    if action["action"] == "TRIGGER":
+        return [_trigger_step(repo, pr, action, run=run)]
+    return _close_pr_steps(repo, pr, action, run=run)

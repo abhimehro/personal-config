@@ -20,6 +20,7 @@ run = import_lifecycle_run()
 
 class IssueStatusTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.st = issue_status
         self.status = {
             "updated_at_utc": "2026-08-30T12:00:00Z",
             "run_id": "test-status",
@@ -32,9 +33,7 @@ class IssueStatusTests(unittest.TestCase):
             "calibration_enabled": False,
         }
         # Every test mocks the process boundary, including unexpected calls.
-        self.command = self.enterContext(
-            mock.patch.object(issue_status.subprocess, "run")
-        )
+        self.command = self.enterContext(mock.patch.object(self.st.subprocess, "run"))
 
     @staticmethod
     def result(
@@ -42,10 +41,38 @@ class IssueStatusTests(unittest.TestCase):
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(["gh"], returncode, stdout, stderr)
 
+    def _backlog_row(self) -> dict:
+        """Return a human-decision backlog row fixture for PR 42."""
+        return {
+            "pr": 42,
+            "url": "https://github.com/owner/repo/pull/42",
+            "blocker": "required_check_failure",
+            "evidence": "Build failed",
+            "recommended_action": "Fix checks",
+            "safe_default": "Leave open",
+            "owner": "human",
+            "packet_expiry_close_days": 7,
+        }
+
+    def _listing(self, body: str) -> subprocess.CompletedProcess[str]:
+        """Return a gh issue list result exposing one backlog issue."""
+        return self.result(
+            json.dumps(
+                [{"number": 51, "title": self.st.BACKLOG_ISSUE_TITLE, "body": body}]
+            )
+        )
+
+    @staticmethod
+    def _state_block(body: str) -> dict:
+        """Parse the embedded backlog state block out of an issue body."""
+        return json.loads(
+            body.split("<!-- pr-lifecycle-backlog-state ", 1)[1].split(" -->", 1)[0]
+        )
+
     def test_body_preserves_status_json_and_does_not_mutate_input(self) -> None:
         self.status["reason"] = "needs review\nwith Unicode: café"
         original = copy.deepcopy(self.status)
-        body = issue_status.issue_body(self.status)
+        body = self.st.issue_body(self.status)
         self.assertTrue(body.startswith("<!-- pr-lifecycle-status -->\n"))
         self.assertIn("signals_status: PARTIAL\ncondition: SIGNALS_DEGRADED\n", body)
         self.assertIn("calibration_enabled: false\n", body)
@@ -54,13 +81,11 @@ class IssueStatusTests(unittest.TestCase):
         self.assertEqual(self.status, original)
         # The calibration line is a hardcoded invariant, not a field echo.
         self.status["calibration_enabled"] = True
-        self.assertIn(
-            "calibration_enabled: false\n", issue_status.issue_body(self.status)
-        )
+        self.assertIn("calibration_enabled: false\n", self.st.issue_body(self.status))
         self.command.assert_not_called()
 
     def test_body_handles_minimal_status_without_condition(self) -> None:
-        body = issue_status.issue_body({"updated_at_utc": "2026-08-30T12:00:00Z"})
+        body = self.st.issue_body({"updated_at_utc": "2026-08-30T12:00:00Z"})
         header = body.split("```json", 1)[0]
         for field in (
             "run_id",
@@ -82,7 +107,7 @@ class IssueStatusTests(unittest.TestCase):
         ]
         self.status["reason"] = "$(touch sentinel); 'quoted'\n--repo other/repo"
         self.command.side_effect = [self.result(json.dumps(rows)), self.result()]
-        issue_status.update_pinned_issue(self.status)
+        self.st.update_pinned_issue(self.status)
         list_argv = self.command.call_args_list[0].args[0]
         edit_argv = self.command.call_args_list[1].args[0]
         self.assertEqual(
@@ -121,7 +146,7 @@ class IssueStatusTests(unittest.TestCase):
             with self.subTest(stdout=listed.stdout):
                 self.command.reset_mock()
                 self.command.side_effect = [listed, self.result()]
-                issue_status.update_pinned_issue(self.status)
+                self.st.update_pinned_issue(self.status)
                 self.assertEqual(self.command.call_count, 2)
                 create_argv = self.command.call_args.args[0]
                 self.assertEqual(
@@ -151,7 +176,7 @@ class IssueStatusTests(unittest.TestCase):
                 self.command.reset_mock()
                 self.command.side_effect = [listed]
                 with self.assertRaises(OSError):
-                    issue_status.update_pinned_issue(self.status)
+                    self.st.update_pinned_issue(self.status)
                 self.command.assert_called_once()
 
     def test_failed_create_and_edit_raise_bounded_error_without_retry(self) -> None:
@@ -166,7 +191,7 @@ class IssueStatusTests(unittest.TestCase):
                     self.result(returncode=2, stderr="  " + "x" * 250 + "  "),
                 ]
                 with self.assertRaises(OSError) as caught:
-                    issue_status.update_pinned_issue(self.status)
+                    self.st.update_pinned_issue(self.status)
                 self.assertEqual(
                     str(caught.exception), "gh issue update failed rc=2: " + "x" * 200
                 )
@@ -182,7 +207,7 @@ class IssueStatusTests(unittest.TestCase):
                 self.command.reset_mock()
                 self.command.side_effect = error
                 with self.assertRaises(type(error)):
-                    issue_status.update_pinned_issue(self.status)
+                    self.st.update_pinned_issue(self.status)
                 self.command.assert_called_once()
                 self.assertEqual(self.command.call_args.args[0][2], "list")
 
@@ -199,7 +224,7 @@ class IssueStatusTests(unittest.TestCase):
             "owner": "human",
             "packet_expiry_close_days": 7,
         }
-        body = issue_status.backlog_issue_body("owner/repo", [row], {}, now)
+        body = self.st.backlog_issue_body("owner/repo", [row], {}, now)
         self.assertIn("<!-- pr-lifecycle-backlog -->", body)
         self.assertIn("| PR | Blocker | Evidence |", body)
         self.assertIn("[42](https://github.com/owner/repo/pull/42)", body)
@@ -214,7 +239,7 @@ class IssueStatusTests(unittest.TestCase):
 
     def test_backlog_cells_neutralize_comment_markers_and_mentions(self) -> None:
         """Prevent row text from injecting hidden state markers or user mentions."""
-        rendered = issue_status._markdown_cell(
+        rendered = self.st._markdown_cell(
             "<!-- pr-lifecycle-backlog-state {} --> @someone"
         )
         self.assertNotIn("<!--", rendered)
@@ -238,7 +263,7 @@ class IssueStatusTests(unittest.TestCase):
             + json.dumps(real)
             + " -->"
         )
-        self.assertEqual(issue_status._previous_state(body), real)
+        self.assertEqual(self.st._previous_state(body), real)
 
     def test_removed_rows_prune_overdue_notifications_before_readding(self) -> None:
         """Allow a fresh overdue notification after a row is removed and re-added."""
@@ -248,8 +273,8 @@ class IssueStatusTests(unittest.TestCase):
             "first_seen": {key: "2026-08-01T12:00:00Z"},
             "overdue_notified": [key],
         }
-        empty_body = issue_status.backlog_issue_body(repo, [], state, NOW)
-        empty_state = issue_status._previous_state(empty_body)
+        empty_body = self.st.backlog_issue_body(repo, [], state, NOW)
+        empty_state = self.st._previous_state(empty_body)
         self.assertEqual(empty_state["overdue_notified"], [])
 
         row = {
@@ -258,7 +283,7 @@ class IssueStatusTests(unittest.TestCase):
             "blocker": "required_check_failure",
             "expires": "2026-08-01T12:00:00Z",
         }
-        _prepared, refreshed_state, newly_overdue = issue_status._prepare_backlog_rows(
+        _prepared, refreshed_state, newly_overdue = self.st._prepare_backlog_rows(
             repo, [row], empty_state, NOW
         )
         self.assertEqual([item["id"] for item in newly_overdue], [key])
@@ -277,16 +302,14 @@ class IssueStatusTests(unittest.TestCase):
             "owner": "human",
             "expires": "2026-08-20T00:00:00Z",
         }
-        old_body = issue_status.backlog_issue_body(
-            repo, [row], {}, NOW - timedelta(days=20)
-        )
+        old_body = self.st.backlog_issue_body(repo, [row], {}, NOW - timedelta(days=20))
         self.command.side_effect = [
             self.result(
                 json.dumps(
                     [
                         {
                             "number": 51,
-                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "title": self.st.BACKLOG_ISSUE_TITLE,
                             "body": old_body,
                         }
                     ]
@@ -295,7 +318,7 @@ class IssueStatusTests(unittest.TestCase):
             self.result(),
             self.result(),
         ]
-        issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.st.update_backlog_issue(repo, [row], now=NOW)
         comment_body = self.command.call_args_list[1].args[0][
             self.command.call_args_list[1].args[0].index("--body") + 1
         ]
@@ -310,39 +333,20 @@ class IssueStatusTests(unittest.TestCase):
         """Preserve first-seen dates and avoid repeating an overdue notification."""
         repo = "owner/repo"
         key = f"{repo}#42:required_check_failure"
+        row = self._backlog_row()
         old_state = {
             "first_seen": {key: "2026-08-01T12:00:00Z"},
             "overdue_notified": [],
         }
-        row = {
-            "pr": 42,
-            "url": "https://github.com/owner/repo/pull/42",
-            "blocker": "required_check_failure",
-            "evidence": "Build failed",
-            "recommended_action": "Fix checks",
-            "safe_default": "Leave open",
-            "owner": "human",
-            "packet_expiry_close_days": 7,
-        }
-        old_body = issue_status.backlog_issue_body(
+        old_body = self.st.backlog_issue_body(
             repo, [row], old_state, NOW - timedelta(days=25)
         )
         self.command.side_effect = [
-            self.result(
-                json.dumps(
-                    [
-                        {
-                            "number": 51,
-                            "title": issue_status.BACKLOG_ISSUE_TITLE,
-                            "body": old_body,
-                        }
-                    ]
-                )
-            ),
+            self._listing(old_body),
             self.result(),
             self.result(),
         ]
-        result = issue_status.update_backlog_issue(repo, [row], now=NOW)
+        result = self.st.update_backlog_issue(repo, [row], now=NOW)
         self.assertEqual(result["action"], "EDITED")
         comment_argv = self.command.call_args_list[1].args[0]
         self.assertEqual(comment_argv[2:4], ["comment", "51"])
@@ -353,27 +357,11 @@ class IssueStatusTests(unittest.TestCase):
         edit_argv = self.command.call_args_list[2].args[0]
         body = edit_argv[edit_argv.index("--body") + 1]
         self.assertIn("2026-08-01T12:00:00Z", body)
-        state = json.loads(
-            body.split("<!-- pr-lifecycle-backlog-state ", 1)[1].split(" -->", 1)[0]
-        )
-        self.assertEqual(state["overdue_notified"], [key])
+        self.assertEqual(self._state_block(body)["overdue_notified"], [key])
 
         self.command.reset_mock()
-        self.command.side_effect = [
-            self.result(
-                json.dumps(
-                    [
-                        {
-                            "number": 51,
-                            "title": issue_status.BACKLOG_ISSUE_TITLE,
-                            "body": body,
-                        }
-                    ]
-                )
-            ),
-            self.result(),
-        ]
-        issue_status.update_backlog_issue(repo, [row], now=NOW)
+        self.command.side_effect = [self._listing(body), self.result()]
+        self.st.update_backlog_issue(repo, [row], now=NOW)
         self.assertEqual(self.command.call_count, 2)
         self.assertEqual(self.command.call_args_list[1].args[0][2], "edit")
 
@@ -386,7 +374,7 @@ class IssueStatusTests(unittest.TestCase):
                     [
                         {
                             "number": 52,
-                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "title": self.st.BACKLOG_ISSUE_TITLE,
                             "body": "",
                         }
                     ]
@@ -394,7 +382,7 @@ class IssueStatusTests(unittest.TestCase):
             ),
             self.result(),
         ]
-        result = issue_status.update_backlog_issue(repo, [], now=NOW)
+        result = self.st.update_backlog_issue(repo, [], now=NOW)
         self.assertEqual(result["action"], "EDITED")
         argv = self.command.call_args_list[1].args[0]
         self.assertEqual(argv[2:4], ["edit", "52"])
@@ -407,13 +395,13 @@ class IssueStatusTests(unittest.TestCase):
     def test_empty_backlog_without_issue_and_failed_listing_do_not_create(self) -> None:
         """Avoid issue creation for an empty backlog or a malformed listing."""
         self.command.side_effect = [self.result("[]")]
-        result = issue_status.update_backlog_issue("owner/repo", [], now=NOW)
+        result = self.st.update_backlog_issue("owner/repo", [], now=NOW)
         self.assertEqual(result["action"], "NOOP_EMPTY")
         self.assertEqual(self.command.call_count, 1)
         self.command.reset_mock()
         self.command.side_effect = [self.result("not-json")]
         with self.assertRaises(OSError):
-            issue_status.update_backlog_issue("owner/repo", [], now=NOW)
+            self.st.update_backlog_issue("owner/repo", [], now=NOW)
         self.assertEqual(self.command.call_count, 1)
 
     def test_backlog_deduplicates_by_pr_and_blocker_without_mutating_inputs(self):
@@ -424,7 +412,7 @@ class IssueStatusTests(unittest.TestCase):
         ]
         state = {"first_seen": {}, "overdue_notified": []}
         before = copy.deepcopy((rows, state))
-        prepared, refreshed, overdue = issue_status._prepare_backlog_rows(
+        prepared, refreshed, overdue = self.st._prepare_backlog_rows(
             "owner/repo", rows, state, NOW
         )
         self.assertEqual(
@@ -445,7 +433,7 @@ class IssueStatusTests(unittest.TestCase):
             ("2026-08-30T14:00:00+02:00", True),
         ):
             with self.subTest(expires=expires):
-                prepared, state, overdue = issue_status._prepare_backlog_rows(
+                prepared, state, overdue = self.st._prepare_backlog_rows(
                     "owner/repo",
                     [{"pr": 42, "blocker": "conflict", "expires": expires}],
                     {},
@@ -467,7 +455,7 @@ class IssueStatusTests(unittest.TestCase):
                         "packet_expiry_close_days": True,
                     }
                 ]
-                prepared, state, overdue = issue_status._prepare_backlog_rows(
+                prepared, state, overdue = self.st._prepare_backlog_rows(
                     "owner/repo", rows, {"first_seen": {key: "invalid"}}, NOW
                 )
                 self.assertEqual(state["first_seen"][key], "2026-08-30T12:00:00Z")
@@ -477,15 +465,13 @@ class IssueStatusTests(unittest.TestCase):
     def test_failed_overdue_notification_does_not_persist_notified_state(self):
         repo = "owner/repo"
         row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
-        existing = [
-            {"number": 9, "title": issue_status.BACKLOG_ISSUE_TITLE, "body": ""}
-        ]
+        existing = [{"number": 9, "title": self.st.BACKLOG_ISSUE_TITLE, "body": ""}]
         self.command.side_effect = [
             self.result(json.dumps(existing)),
             self.result(returncode=1, stderr="comment rejected"),
         ]
         with self.assertRaisesRegex(OSError, "overdue comment failed"):
-            issue_status.update_backlog_issue(repo, [row], now=NOW)
+            self.st.update_backlog_issue(repo, [row], now=NOW)
         self.assertEqual(self.command.call_count, 2)
         self.assertEqual(
             self.command.call_args_list[1].args[0][1:4], ["issue", "comment", "9"]
@@ -504,7 +490,7 @@ class IssueStatusTests(unittest.TestCase):
             self.result(),
             self.result(),
         ]
-        result = issue_status.update_backlog_issue(repo, [row], now=NOW)
+        result = self.st.update_backlog_issue(repo, [row], now=NOW)
         self.assertEqual(result["action"], "CREATED")
         self.assertEqual(result["issue_number"], 9)
         self.assertEqual(
@@ -512,14 +498,14 @@ class IssueStatusTests(unittest.TestCase):
             ["list", "create", "comment", "edit"],
         )
         self.assertEqual(result["overdue_notified"], [f"{repo}#42:conflict"])
-        state = issue_status._previous_state(result["body"])
+        state = self.st._previous_state(result["body"])
         self.assertEqual(state["overdue_notified"], result["overdue_notified"])
 
     def test_new_overdue_issue_without_returned_url_stops_before_notification(self):
         row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
         self.command.side_effect = [self.result("[]"), self.result("created")]
         with self.assertRaisesRegex(OSError, "did not return the new issue URL"):
-            issue_status.update_backlog_issue("owner/repo", [row], now=NOW)
+            self.st.update_backlog_issue("owner/repo", [row], now=NOW)
         self.assertEqual(self.command.call_count, 2)
 
     def test_status_cli_takes_precedence_over_stage(self) -> None:

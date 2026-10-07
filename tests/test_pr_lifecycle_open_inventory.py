@@ -17,24 +17,29 @@ if str(SCRIPTS) not in sys.path:
 import pr_lifecycle_open_inventory as inventory
 
 
-def _pr(number: int = 12) -> dict:
-    """Build a GraphQL PR fixture with reviews, comments, commits, and check states."""
+def _check_contexts() -> list[dict]:
+    """Return the mixed CheckRun and legacy StatusContext fixture nodes."""
+    return [
+        {
+            "__typename": "CheckRun",
+            "name": "Build",
+            "conclusion": "SUCCESS",
+            "status": "COMPLETED",
+        },
+        {
+            "__typename": "CheckRun",
+            "name": "Lint",
+            "conclusion": None,
+            "status": "IN_PROGRESS",
+        },
+        {"__typename": "StatusContext", "context": "Legacy", "state": "ERROR"},
+        {"__typename": "StatusContext", "context": "Optional", "state": "EXPECTED"},
+    ]
+
+
+def _pr_connections() -> dict:
+    """Return the nested reviews/comments/commits connections of the fixture."""
     return {
-        "number": number,
-        "url": f"https://github.com/owner/repo/pull/{number}",
-        "title": "Example",
-        "body": "x" * 2200,
-        "isDraft": True,
-        "headRefName": "bot/update",
-        "headRefOid": "a" * 40,
-        "baseRefName": "main",
-        "baseRefOid": "b" * 40,
-        "author": {"login": "dependabot[bot]", "__typename": "Bot"},
-        "mergeable": "MERGEABLE",
-        "mergeStateStatus": "CLEAN",
-        "reviewDecision": "REVIEW_REQUIRED",
-        "createdAt": "2026-10-01T00:00:00Z",
-        "updatedAt": "2026-10-02T00:00:00Z",
         "latestReviews": {
             "nodes": [{"author": {"login": "reviewer"}, "state": "APPROVED"}]
         },
@@ -56,36 +61,35 @@ def _pr(number: int = 12) -> dict:
                         "statusCheckRollup": {
                             "contexts": {
                                 "pageInfo": {"hasNextPage": False},
-                                "nodes": [
-                                    {
-                                        "__typename": "CheckRun",
-                                        "name": "Build",
-                                        "conclusion": "SUCCESS",
-                                        "status": "COMPLETED",
-                                    },
-                                    {
-                                        "__typename": "CheckRun",
-                                        "name": "Lint",
-                                        "conclusion": None,
-                                        "status": "IN_PROGRESS",
-                                    },
-                                    {
-                                        "__typename": "StatusContext",
-                                        "context": "Legacy",
-                                        "state": "ERROR",
-                                    },
-                                    {
-                                        "__typename": "StatusContext",
-                                        "context": "Optional",
-                                        "state": "EXPECTED",
-                                    },
-                                ],
+                                "nodes": _check_contexts(),
                             }
                         },
                     }
                 }
             ]
         },
+    }
+
+
+def _pr(number: int = 12) -> dict:
+    """Build a GraphQL PR fixture with reviews, comments, commits, and check states."""
+    return {
+        "number": number,
+        "url": f"https://github.com/owner/repo/pull/{number}",
+        "title": "Example",
+        "body": "x" * 2200,
+        "isDraft": True,
+        "headRefName": "bot/update",
+        "headRefOid": "a" * 40,
+        "baseRefName": "main",
+        "baseRefOid": "b" * 40,
+        "author": {"login": "dependabot[bot]", "__typename": "Bot"},
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "reviewDecision": "REVIEW_REQUIRED",
+        "createdAt": "2026-10-01T00:00:00Z",
+        "updatedAt": "2026-10-02T00:00:00Z",
+        **_pr_connections(),
     }
 
 
@@ -107,8 +111,13 @@ def _payload(nodes: list[dict], *, next_page: bool = False, cursor: str = "curso
 
 
 class OpenInventoryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.inv = inventory
+        self.make_pr = _pr
+        self.payload = _payload
+
     def test_bot_logins_gain_rest_style_suffix(self):
-        raw = _pr()
+        raw = self.make_pr()
         raw["author"] = {"login": "coderabbitai", "__typename": "Bot"}
         raw["latestReviews"]["nodes"] = [
             {
@@ -123,7 +132,7 @@ class OpenInventoryTests(unittest.TestCase):
                 "createdAt": "2026-10-02T00:00:00Z",
             }
         ]
-        live = inventory._normalize_pr(raw, "owner/repo")
+        live = self.inv._normalize_pr(raw, "owner/repo")
         self.assertEqual(live["author"]["login"], "coderabbitai[bot]")
         self.assertEqual(
             live["latestReviews"][0]["author"]["login"], "coderabbitai[bot]"
@@ -132,7 +141,7 @@ class OpenInventoryTests(unittest.TestCase):
 
     def test_normalizes_pr_identity_reviews_comments_commits_and_checks(self):
         """Normalize GraphQL connections and truncate the PR body for classification."""
-        live = inventory._normalize_pr(_pr(), "owner/repo")
+        live = self.inv._normalize_pr(self.make_pr(), "owner/repo")
         self.assertEqual(live["author"], {"login": "dependabot[bot]", "type": "Bot"})
         self.assertEqual(
             live["commits"], [{"commit": {"author": {"email": "bot@example.com"}}}]
@@ -199,16 +208,21 @@ class OpenInventoryTests(unittest.TestCase):
         )
         for raw, expected in cases:
             with self.subTest(raw=raw):
-                self.assertEqual(inventory.check_state(raw), expected)
+                self.assertEqual(self.inv.check_state(raw), expected)
 
     def test_paginates_open_prs_with_50_per_page_query(self):
         """Follow the next-page cursor while requesting the required PR metadata."""
         commands = []
         responses = [
             subprocess.CompletedProcess(
-                ["gh"], 0, json.dumps(_payload([_pr()], next_page=True)), ""
+                ["gh"],
+                0,
+                json.dumps(self.payload([self.make_pr()], next_page=True)),
+                "",
             ),
-            subprocess.CompletedProcess(["gh"], 0, json.dumps(_payload([_pr(13)])), ""),
+            subprocess.CompletedProcess(
+                ["gh"], 0, json.dumps(self.payload([self.make_pr(13)])), ""
+            ),
         ]
 
         def run(argv, **_kwargs):
@@ -216,7 +230,7 @@ class OpenInventoryTests(unittest.TestCase):
             commands.append(argv)
             return responses.pop(0)
 
-        prs = inventory.list_open_prs("owner/repo", run=run)
+        prs = self.inv.list_open_prs("owner/repo", run=run)
         self.assertEqual([pr["number"] for pr in prs], [12, 13])
         self.assertEqual(len(commands), 2)
         self.assertIn("pullRequests(first: 50, states: OPEN", commands[0][4])
@@ -231,7 +245,7 @@ class OpenInventoryTests(unittest.TestCase):
             None,
             {"hasNextPage": "false"},
         ):
-            raw = _pr()
+            raw = self.make_pr()
             contexts = raw["commits"]["nodes"][0]["commit"]["statusCheckRollup"][
                 "contexts"
             ]
@@ -240,7 +254,7 @@ class OpenInventoryTests(unittest.TestCase):
             else:
                 contexts["pageInfo"] = page_info
             with self.subTest(page_info=page_info):
-                live = inventory._normalize_pr(raw, "owner/repo")
+                live = self.inv._normalize_pr(raw, "owner/repo")
                 self.assertTrue(live["checksIncomplete"])
                 self.assertEqual(
                     live["checks"][-1],
@@ -250,13 +264,13 @@ class OpenInventoryTests(unittest.TestCase):
     def test_missing_or_noninteger_comment_total_is_unknown(self) -> None:
         """Preserve an unknown comment count when the API value is absent or invalid."""
         for count in (None, "120", True, -1):
-            raw = _pr()
+            raw = self.make_pr()
             if count is None:
                 raw["comments"].pop("totalCount")
             else:
                 raw["comments"]["totalCount"] = count
             with self.subTest(count=count):
-                live = inventory._normalize_pr(raw, "owner/repo")
+                live = self.inv._normalize_pr(raw, "owner/repo")
                 self.assertIsNone(live["commentsTotalCount"])
 
     def test_nonzero_exit_and_malformed_json_raise_oserror(self):
@@ -269,7 +283,7 @@ class OpenInventoryTests(unittest.TestCase):
                 self.subTest(returncode=result.returncode, stdout=result.stdout),
                 self.assertRaises(OSError),
             ):
-                inventory.list_open_prs(
+                self.inv.list_open_prs(
                     "owner/repo",
                     run=lambda *_a, _result=result, **_k: _result,
                     sleep=lambda _seconds: None,
@@ -278,7 +292,7 @@ class OpenInventoryTests(unittest.TestCase):
     def test_retries_transient_failures_then_succeeds(self):
         """Retry transient process or JSON failures with the configured timeout."""
         valid = subprocess.CompletedProcess(
-            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+            ["gh"], 0, json.dumps(self.payload([self.make_pr()])), ""
         )
         failures = (
             subprocess.CompletedProcess(["gh"], 1, "", "temporary failure"),
@@ -306,9 +320,7 @@ class OpenInventoryTests(unittest.TestCase):
                         raise response
                     return response
 
-                prs = inventory.list_open_prs(
-                    "owner/repo", run=run, sleep=sleeps.append
-                )
+                prs = self.inv.list_open_prs("owner/repo", run=run, sleep=sleeps.append)
                 self.assertEqual([pr["number"] for pr in prs], [12])
                 self.assertEqual(sleeps, [2])
                 self.assertEqual(timeouts, [120, 120])
@@ -321,7 +333,7 @@ class OpenInventoryTests(unittest.TestCase):
         ]
         sleeps = []
         with self.assertRaisesRegex(OSError, "rc=1"):
-            inventory.list_open_prs(
+            self.inv.list_open_prs(
                 "owner/repo",
                 run=lambda *_a, **_k: failures.pop(0),
                 sleep=sleeps.append,
@@ -339,7 +351,7 @@ class OpenInventoryTests(unittest.TestCase):
         calls = []
         sleeps = []
         with self.assertRaisesRegex(OSError, "API error"):
-            inventory.list_open_prs(
+            self.inv.list_open_prs(
                 "owner/repo",
                 run=lambda *_a, **_k: calls.append(1) or result,
                 sleep=sleeps.append,
@@ -355,11 +367,11 @@ class OpenInventoryTests(unittest.TestCase):
             "",
         )
         valid = subprocess.CompletedProcess(
-            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+            ["gh"], 0, json.dumps(self.payload([self.make_pr()])), ""
         )
         responses = [rate_limited, valid]
         sleeps = []
-        prs = inventory.list_open_prs(
+        prs = self.inv.list_open_prs(
             "owner/repo",
             run=lambda *_a, **_k: responses.pop(0),
             sleep=sleeps.append,
@@ -376,7 +388,7 @@ class OpenInventoryTests(unittest.TestCase):
         )
         sleeps = []
         with self.assertRaisesRegex(OSError, "rate limit"):
-            inventory.list_open_prs(
+            self.inv.list_open_prs(
                 "owner/repo",
                 run=lambda *_a, **_k: result,
                 sleep=sleeps.append,
@@ -405,7 +417,7 @@ class OpenInventoryTests(unittest.TestCase):
                 run = mock.Mock(return_value=result)
                 sleep = mock.Mock()
                 with self.assertRaisesRegex(OSError, "API error"):
-                    inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                    self.inv.list_open_prs("owner/repo", run=run, sleep=sleep)
                 run.assert_called_once()
                 sleep.assert_not_called()
 
@@ -426,12 +438,12 @@ class OpenInventoryTests(unittest.TestCase):
                             ["gh"], 0, json.dumps({"errors": errors}), ""
                         ),
                         subprocess.CompletedProcess(
-                            ["gh"], 0, json.dumps(_payload([_pr()])), ""
+                            ["gh"], 0, json.dumps(self.payload([self.make_pr()])), ""
                         ),
                     ]
                 )
                 sleep = mock.Mock()
-                prs = inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                prs = self.inv.list_open_prs("owner/repo", run=run, sleep=sleep)
                 self.assertEqual([pr["number"] for pr in prs], [12])
                 self.assertEqual(run.call_count, 2)
                 sleep.assert_called_once_with(2)
@@ -444,7 +456,7 @@ class OpenInventoryTests(unittest.TestCase):
         ):
             result = subprocess.CompletedProcess(["gh"], 0, json.dumps(payload), "")
             with self.subTest(payload=payload), self.assertRaises(OSError):
-                inventory.list_open_prs(
+                self.inv.list_open_prs(
                     "owner/repo",
                     run=lambda *_a, _result=result, **_k: _result,
                 )
@@ -454,15 +466,15 @@ class OpenInventoryTests(unittest.TestCase):
             with self.subTest(repo=repo):
                 run = mock.Mock()
                 with self.assertRaisesRegex(OSError, "invalid repository"):
-                    inventory.list_open_prs(repo, run=run)
+                    self.inv.list_open_prs(repo, run=run)
                 run.assert_not_called()
 
     def test_pagination_requires_a_new_nonempty_cursor(self):
         for cursor in (None, "", 42, "cursor-1"):
             with self.subTest(cursor=cursor):
                 pages = [
-                    _payload([_pr()], next_page=True),
-                    _payload([_pr(13)], next_page=True, cursor=cursor),
+                    self.payload([self.make_pr()], next_page=True),
+                    self.payload([self.make_pr(13)], next_page=True, cursor=cursor),
                 ]
                 run = mock.Mock(
                     side_effect=[
@@ -472,7 +484,7 @@ class OpenInventoryTests(unittest.TestCase):
                 )
                 sleep = mock.Mock()
                 with self.assertRaisesRegex(OSError, "malformed payload"):
-                    inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+                    self.inv.list_open_prs("owner/repo", run=run, sleep=sleep)
                 self.assertEqual(run.call_count, 2)
                 sleep.assert_not_called()
 
@@ -480,14 +492,17 @@ class OpenInventoryTests(unittest.TestCase):
         run = mock.Mock(
             side_effect=[
                 subprocess.CompletedProcess(
-                    ["gh"], 0, json.dumps(_payload([_pr()], next_page=True)), ""
+                    ["gh"],
+                    0,
+                    json.dumps(self.payload([self.make_pr()], next_page=True)),
+                    "",
                 ),
                 *[subprocess.CompletedProcess(["gh"], 1, "", "unavailable")] * 3,
             ]
         )
         sleep = mock.Mock()
         with self.assertRaisesRegex(OSError, "unavailable"):
-            inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+            self.inv.list_open_prs("owner/repo", run=run, sleep=sleep)
         self.assertEqual(run.call_count, 4)
         self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(4)])
         for call in run.call_args_list[1:]:
@@ -500,17 +515,20 @@ class OpenInventoryTests(unittest.TestCase):
                 failure,
                 failure,
                 subprocess.CompletedProcess(
-                    ["gh"], 0, json.dumps(_payload([_pr()], next_page=True)), ""
+                    ["gh"],
+                    0,
+                    json.dumps(self.payload([self.make_pr()], next_page=True)),
+                    "",
                 ),
                 failure,
                 failure,
                 subprocess.CompletedProcess(
-                    ["gh"], 0, json.dumps(_payload([_pr(13)])), ""
+                    ["gh"], 0, json.dumps(self.payload([self.make_pr(13)])), ""
                 ),
             ]
         )
         sleep = mock.Mock()
-        prs = inventory.list_open_prs("owner/repo", run=run, sleep=sleep)
+        prs = self.inv.list_open_prs("owner/repo", run=run, sleep=sleep)
         self.assertEqual([pr["number"] for pr in prs], [12, 13])
         self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(4)] * 2)
         self.assertEqual(run.call_count, 6)
@@ -518,9 +536,9 @@ class OpenInventoryTests(unittest.TestCase):
     def test_missing_commit_or_rollup_keeps_checks_incomplete(self):
         for commits in ({"nodes": []}, {"nodes": [{"commit": {"author": None}}]}):
             with self.subTest(commits=commits):
-                raw = _pr()
+                raw = self.make_pr()
                 raw["commits"] = commits
-                live = inventory._normalize_pr(raw, "owner/repo")
+                live = self.inv._normalize_pr(raw, "owner/repo")
                 self.assertTrue(live["checksIncomplete"])
                 self.assertEqual(
                     live["checks"],
@@ -541,18 +559,18 @@ class OpenInventoryTests(unittest.TestCase):
             ("commits", {"nodes": [None]}),
         ):
             with self.subTest(field=field, value=value):
-                raw = _pr()
+                raw = self.make_pr()
                 raw[field] = value
                 with self.assertRaises(OSError):
-                    inventory._normalize_pr(raw, "owner/repo")
+                    self.inv._normalize_pr(raw, "owner/repo")
 
     def test_empty_inventory_is_a_successful_single_request(self):
         run = mock.Mock(
             return_value=subprocess.CompletedProcess(
-                ["gh"], 0, json.dumps(_payload([])), ""
+                ["gh"], 0, json.dumps(self.payload([])), ""
             )
         )
-        self.assertEqual(inventory.list_open_prs("owner/repo", run=run), [])
+        self.assertEqual(self.inv.list_open_prs("owner/repo", run=run), [])
         run.assert_called_once()
 
 

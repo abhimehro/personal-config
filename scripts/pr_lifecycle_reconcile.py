@@ -716,101 +716,105 @@ def collect_ingest_actions(
     actions: list[dict[str, Any]] = []
     for repo in config.get("repos") or []:
         for live in open_prs_by_repo.get(repo, []):
-            pr_number = live.get("number")
-            head_sha = str(live.get("headRefOid") or "")
-            author = live.get("author")
-            login = (
-                str(author.get("login") or "").strip()
-                if isinstance(author, dict)
-                else ""
-            )
-            if (
-                not isinstance(pr_number, int)
-                or isinstance(pr_number, bool)
-                or pr_number < 1
-            ):
-                actions.append(
-                    {
-                        "action": "INGEST_SKIPPED",
-                        "repository": repo,
-                        "reason": "invalid pull request number",
-                    }
-                )
-                continue
-            if not SHA_RE.fullmatch(head_sha) or not SHA_RE.fullmatch(
-                str(live.get("baseRefOid") or "")
-            ):
-                actions.append(
-                    {
-                        "action": "INGEST_SKIPPED",
-                        "repository": repo,
-                        "pr": pr_number,
-                        "reason": "invalid base/head SHA",
-                    }
-                )
-                continue
-            if not login:
-                actions.append(
-                    {
-                        "action": "INGEST_SKIPPED",
-                        "repository": repo,
-                        "pr": pr_number,
-                        "reason": "empty identity login",
-                    }
-                )
-                continue
-            url = live.get("url")
-            if not isinstance(url, str) or not url.startswith("https://"):
-                actions.append(
-                    {
-                        "action": "INGEST_SKIPPED",
-                        "repository": repo,
-                        "pr": pr_number,
-                        "reason": "invalid pull request URL",
-                    }
-                )
-                continue
-            candidates = [
-                item
-                for item in items
-                if item.get("repository") == repo and item.get("pr") == pr_number
-            ]
-            if any(item.get("lifecycle_state") != "TERMINAL" for item in candidates):
-                continue
-            key = f"{repo}#{pr_number}@{head_sha}"
-            terminal = next(
-                (
-                    item
-                    for item in candidates
-                    if item.get("key") == key
-                    and item.get("lifecycle_state") == "TERMINAL"
-                ),
-                None,
-            )
-            if terminal is not None:
-                actions.append(
-                    {
-                        "action": "TERMINAL_BUT_OPEN",
-                        "key": key,
-                        "repository": repo,
-                        "pr": pr_number,
-                        "url": url,
-                        "terminal_disposition": terminal.get("terminal_disposition"),
-                        "reason": "PR is open at a head already recorded as terminal",
-                    }
-                )
-                continue
-            actions.append(
-                {
-                    "action": "INGEST_OPEN_PR",
-                    "key": key,
-                    "repository": repo,
-                    "pr": pr_number,
-                    "item": build_intake_item(live, policy, now),
-                }
-            )
-            items.append(actions[-1]["item"])
+            action = _ingest_action(repo, live, items, policy, now)
+            if action is not None:
+                actions.append(action)
     return actions
+
+
+def _author_login_str(author: Any) -> str:
+    """Return the stripped author login from a live PR entry."""
+    if not isinstance(author, dict):
+        return ""
+    return str(author.get("login") or "").strip()
+
+
+def _ingest_skipped(
+    repo: str, reason: str, pr_number: Any = None, *, include_pr: bool = False
+) -> dict[str, Any]:
+    """Build an INGEST_SKIPPED entry, optionally carrying the PR number."""
+    action: dict[str, Any] = {
+        "action": "INGEST_SKIPPED",
+        "repository": repo,
+        "reason": reason,
+    }
+    if include_pr:
+        action["pr"] = pr_number
+    return action
+
+
+def _terminal_open(
+    key: str, repo: str, pr_number: int, url: Any, terminal: dict[str, Any]
+) -> dict[str, Any]:
+    """Build a TERMINAL_BUT_OPEN entry for a live PR at a terminal head."""
+    return {
+        "action": "TERMINAL_BUT_OPEN",
+        "key": key,
+        "repository": repo,
+        "pr": pr_number,
+        "url": url,
+        "terminal_disposition": terminal.get("terminal_disposition"),
+        "reason": "PR is open at a head already recorded as terminal",
+    }
+
+
+def _ingest_action(
+    repo: str,
+    live: dict[str, Any],
+    items: list[dict[str, Any]],
+    policy: Any,
+    now: datetime,
+) -> dict[str, Any] | None:
+    """Classify one live PR: skip/terminal/ingest action, or None when tracked.
+
+    Skip PRs with any active ledger item, even at an older head. New intake
+    items are appended to items so duplicate inventory entries dedupe.
+    """
+    pr_number = live.get("number")
+    head_sha = str(live.get("headRefOid") or "")
+    login = _author_login_str(live.get("author"))
+    url = live.get("url")
+    if not isinstance(pr_number, int) or isinstance(pr_number, bool) or pr_number < 1:
+        return _ingest_skipped(repo, "invalid pull request number")
+    if not SHA_RE.fullmatch(head_sha) or not SHA_RE.fullmatch(
+        str(live.get("baseRefOid") or "")
+    ):
+        return _ingest_skipped(
+            repo, "invalid base/head SHA", pr_number, include_pr=True
+        )
+    if not login:
+        return _ingest_skipped(repo, "empty identity login", pr_number, include_pr=True)
+    if not isinstance(url, str) or not url.startswith("https://"):
+        return _ingest_skipped(
+            repo, "invalid pull request URL", pr_number, include_pr=True
+        )
+    candidates = [
+        item
+        for item in items
+        if item.get("repository") == repo and item.get("pr") == pr_number
+    ]
+    if any(item.get("lifecycle_state") != "TERMINAL" for item in candidates):
+        return None
+    key = f"{repo}#{pr_number}@{head_sha}"
+    terminal = next(
+        (
+            item
+            for item in candidates
+            if item.get("key") == key and item.get("lifecycle_state") == "TERMINAL"
+        ),
+        None,
+    )
+    if terminal is not None:
+        return _terminal_open(key, repo, pr_number, url, terminal)
+    item = build_intake_item(live, policy, now)
+    items.append(item)
+    return {
+        "action": "INGEST_OPEN_PR",
+        "key": key,
+        "repository": repo,
+        "pr": pr_number,
+        "item": item,
+    }
 
 
 def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] | None:

@@ -329,20 +329,15 @@ def make_unblock_pr(**overrides: object) -> dict[str, object]:
 
 
 def route_unblock_pr(
-    pr: dict[str, object],
-    *,
-    author_type: str = "BOT",
-    items: list[dict[str, Any]] | None = None,
-    ledger: dict[str, Any] | None = None,
-    settings: dict[str, Any] | None = None,
+    pr: dict[str, object], **route_kwargs: Any
 ) -> list[dict[str, Any]]:
     """Route a PR fixture with a fixed clock and default ledger and settings."""
     return unblock.route_pr(
         pr,
-        author_type=author_type,
-        ledger_items_for_pr=items or [],
-        ledger=ledger or {"items": []},
-        settings=settings or UNBLOCK_SETTINGS,
+        author_type=route_kwargs.get("author_type", "BOT"),
+        ledger_items_for_pr=route_kwargs.get("items") or [],
+        ledger=route_kwargs.get("ledger") or {"items": []},
+        settings=route_kwargs.get("settings") or UNBLOCK_SETTINGS,
         now=UNBLOCK_NOW,
     )
 

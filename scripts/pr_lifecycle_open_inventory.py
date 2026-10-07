@@ -51,6 +51,8 @@ _FAILURE_CONCLUSIONS = {
     "STARTUP_FAILURE",
 }
 
+_TRUNCATED_CHECK = {"name": "statusCheckRollup truncated", "state": "PENDING"}
+
 # Structured types take precedence; message markers cover untyped errors only.
 # The "temporar" marker requires a word boundary and no leading "not " so an
 # explicit "not temporary" error does not count as transient.
@@ -71,6 +73,41 @@ def _is_transient_gql_error(error: Any) -> bool:
     return isinstance(message, str) and bool(_TRANSIENT_GQL_RE.search(message.lower()))
 
 
+def _check_run_state(context: dict[str, Any]) -> tuple[str, str] | None:
+    """Normalize a CheckRun context to a name/state pair, or None if nameless."""
+    name = context.get("name")
+    if not isinstance(name, str):
+        return None
+    conclusion = str(context.get("conclusion") or "").upper()
+    status = str(context.get("status") or "").upper()
+    if conclusion in _FAILURE_CONCLUSIONS:
+        state = "FAILURE"
+    elif status != "COMPLETED":
+        state = "PENDING"
+    elif conclusion == "SUCCESS":
+        state = "SUCCESS"
+    elif conclusion in {"SKIPPED", "NEUTRAL"}:
+        state = conclusion
+    else:
+        state = "NEUTRAL"
+    return name, state
+
+
+def _status_context_state(context: dict[str, Any]) -> tuple[str, str] | None:
+    """Normalize a legacy StatusContext to a name/state pair, or None if nameless."""
+    name = context.get("context")
+    if not isinstance(name, str):
+        return None
+    status = str(context.get("state") or "").upper()
+    if status in {"FAILURE", "ERROR"}:
+        return name, "FAILURE"
+    if status in {"PENDING", "EXPECTED"}:
+        return name, "PENDING"
+    if status == "SUCCESS":
+        return name, "SUCCESS"
+    return name, "NEUTRAL"
+
+
 def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
     """Normalize a check run or legacy status to a name/state pair.
 
@@ -78,36 +115,9 @@ def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
     """
     typename = context.get("__typename")
     if typename == "CheckRun":
-        name = context.get("name")
-        if not isinstance(name, str):
-            return None
-        conclusion = str(context.get("conclusion") or "").upper()
-        status = str(context.get("status") or "").upper()
-        if conclusion in _FAILURE_CONCLUSIONS:
-            state = "FAILURE"
-        elif status != "COMPLETED":
-            state = "PENDING"
-        elif conclusion == "SUCCESS":
-            state = "SUCCESS"
-        elif conclusion in {"SKIPPED", "NEUTRAL"}:
-            state = conclusion
-        else:
-            state = "NEUTRAL"
-        return name, state
+        return _check_run_state(context)
     if typename == "StatusContext":
-        name = context.get("context")
-        status = str(context.get("state") or "").upper()
-        if not isinstance(name, str):
-            return None
-        if status in {"FAILURE", "ERROR"}:
-            state = "FAILURE"
-        elif status in {"PENDING", "EXPECTED"}:
-            state = "PENDING"
-        elif status == "SUCCESS":
-            state = "SUCCESS"
-        else:
-            state = "NEUTRAL"
-        return name, state
+        return _status_context_state(context)
     return None
 
 
@@ -145,23 +155,29 @@ def _require_identity(raw: dict[str, Any]) -> dict[str, Any]:
     author = raw.get("author")
     if author is not None and not isinstance(author, dict):
         raise OSError("malformed pull request author")
-    if author is None:
-        author = {}
+    author = author or {}
     login = author.get("login")
     if login is not None and not isinstance(login, str):
         raise OSError("malformed pull request author")
     if raw.get("body") is not None and not isinstance(raw.get("body"), str):
         raise OSError("malformed pull request body")
-    if (
-        not isinstance(raw.get("number"), int)
-        or isinstance(raw.get("number"), bool)
-        or raw["number"] < 1
-        or not isinstance(raw.get("url"), str)
-        or not raw["url"].startswith("https://")
-        or not isinstance(raw.get("isDraft"), bool)
-    ):
+    if not _valid_identity_fields(raw):
         raise OSError("malformed pull request identity")
     return author
+
+
+def _valid_identity_fields(raw: dict[str, Any]) -> bool:
+    """Require a positive int number, an https url, and a boolean isDraft."""
+    number = raw.get("number")
+    url = raw.get("url")
+    return (
+        isinstance(number, int)
+        and not isinstance(number, bool)
+        and number >= 1
+        and isinstance(url, str)
+        and url.startswith("https://")
+        and isinstance(raw.get("isDraft"), bool)
+    )
 
 
 def _normalize_reviews(raw: dict[str, Any]) -> list[dict[str, Any]]:
@@ -213,7 +229,7 @@ def _commit_checks(
     """
     commits = _nodes(raw.get("commits"), "commits")
     if not commits:
-        return [], [{"name": "statusCheckRollup truncated", "state": "PENDING"}], True
+        return [], [dict(_TRUNCATED_CHECK)], True
     commit = commits[-1].get("commit")
     if not isinstance(commit, dict):
         raise OSError("malformed commit")
@@ -221,22 +237,28 @@ def _commit_checks(
     if not isinstance(commit_author, dict):
         raise OSError("malformed commit author")
     normalized_commits = [{"commit": {"author": {"email": commit_author.get("email")}}}]
-    checks: list[dict[str, str]] = []
-    checks_incomplete = True
     rollup = commit.get("statusCheckRollup")
-    if rollup is not None:
-        if not isinstance(rollup, dict):
-            raise OSError("malformed statusCheckRollup")
-        connection = rollup.get("contexts")
-        checks_incomplete = _checks_truncated(connection)
-        if isinstance(connection, dict):
-            for context in _nodes(connection, "status check contexts"):
-                normalized = _check_state(context)
-                if normalized is not None:
-                    checks.append({"name": normalized[0], "state": normalized[1]})
-    if checks_incomplete:
-        checks.append({"name": "statusCheckRollup truncated", "state": "PENDING"})
+    if rollup is None:
+        return normalized_commits, [dict(_TRUNCATED_CHECK)], True
+    if not isinstance(rollup, dict):
+        raise OSError("malformed statusCheckRollup")
+    checks, checks_incomplete = _rollup_checks(rollup)
     return normalized_commits, checks, checks_incomplete
+
+
+def _rollup_checks(rollup: dict[str, Any]) -> tuple[list[dict[str, str]], bool]:
+    """Return (normalized checks, checks_incomplete) from a statusCheckRollup."""
+    connection = rollup.get("contexts")
+    checks_incomplete = _checks_truncated(connection)
+    checks: list[dict[str, str]] = []
+    if isinstance(connection, dict):
+        for context in _nodes(connection, "status check contexts"):
+            normalized = _check_state(context)
+            if normalized is not None:
+                checks.append({"name": normalized[0], "state": normalized[1]})
+    if checks_incomplete:
+        checks.append(dict(_TRUNCATED_CHECK))
+    return checks, checks_incomplete
 
 
 def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:

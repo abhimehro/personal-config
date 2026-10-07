@@ -14,6 +14,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -82,7 +83,11 @@ def _fetch_rest_comments(
     )
     if result.returncode != 0:
         raise OSError(f"gh api comments failed rc={result.returncode}")
-    payload = json.loads(result.stdout)
+    return _flatten_comment_pages(json.loads(result.stdout))
+
+
+def _flatten_comment_pages(payload: Any) -> list[dict[str, Any]]:
+    """Return comment dicts from a --slurp payload (pages or a flat list)."""
     if not isinstance(payload, list):
         raise TypeError("malformed comments payload")
     if all(isinstance(page, list) for page in payload):
@@ -185,6 +190,31 @@ def _resolve_repositories(
     return repositories
 
 
+def _needs_comment_fetch(pr: dict[str, Any]) -> bool:
+    """True when the inventory page holds fewer comments than the total count."""
+    comments = pr.get("comments")
+    comment_count = len(comments) if isinstance(comments, list) else 0
+    total_count = pr.get("commentsTotalCount")
+    return (
+        isinstance(total_count, int)
+        and not isinstance(total_count, bool)
+        and total_count > comment_count
+    )
+
+
+def _matching_ledger_items(
+    repo: str, pr: dict[str, Any], ledger: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Return ledger items whose repository and pr number match this PR."""
+    return [
+        item
+        for item in ledger.get("items") or []
+        if isinstance(item, dict)
+        and item.get("repository") == repo
+        and item.get("pr") == pr.get("number")
+    ]
+
+
 def _scan_repo(
     repo: str,
     prs: list[dict[str, Any]],
@@ -198,29 +228,14 @@ def _scan_repo(
     actions: list[dict[str, Any]] = []
     fetched = 0
     for pr in prs:
-        comments = pr.get("comments")
-        comment_count = len(comments) if isinstance(comments, list) else 0
-        total_count = pr.get("commentsTotalCount")
-        if (
-            isinstance(total_count, int)
-            and not isinstance(total_count, bool)
-            and total_count > comment_count
-        ):
-            fetched += 1
+        fetched += int(_needs_comment_fetch(pr))
         _load_full_comments(pr, run=run)
         verdict = classify_pr_identity(pr, policy)
-        matching = [
-            item
-            for item in ledger.get("items") or []
-            if isinstance(item, dict)
-            and item.get("repository") == repo
-            and item.get("pr") == pr.get("number")
-        ]
         actions.extend(
             route_pr(
                 pr,
                 author_type=verdict.author_type,
-                ledger_items_for_pr=matching,
+                ledger_items_for_pr=_matching_ledger_items(repo, pr, ledger),
                 ledger=ledger,
                 settings=settings,
                 now=datetime.now(timezone.utc),
@@ -253,6 +268,32 @@ def _apply_mutations(
     return deferred_by_cap, mutation_count, unconfirmed
 
 
+def _one_decision_issue(
+    repo: str,
+    actions: list[dict[str, Any]],
+    ledger: dict[str, Any],
+    packet_expiry_days: int,
+    *,
+    apply: bool,
+    now: datetime,
+) -> dict[str, Any]:
+    """Update one repo's decision issue, or render its dry-run body."""
+    rows = _rows_for_repo(repo, actions, ledger, packet_expiry_days)
+    if not apply:
+        return {
+            "row_count": len(rows),
+            "body": backlog_issue_body(repo, rows, {}, now),
+        }
+    try:
+        return update_backlog_issue(repo, rows, now=now)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {
+            "action": "ISSUE_UPDATE_FAILED",
+            "repository": repo,
+            "reason": type(exc).__name__,
+        }
+
+
 def _update_decision_issues(
     repositories: list[str],
     actions: list[dict[str, Any]],
@@ -273,53 +314,53 @@ def _update_decision_issues(
                 "reason": "INVENTORY_FAILED",
             }
             continue
-        rows = _rows_for_repo(repo, actions, ledger, packet_expiry_days)
-        if apply:
-            try:
-                escalation_issues[repo] = update_backlog_issue(repo, rows, now=now)
-            except (OSError, subprocess.SubprocessError) as exc:
-                escalation_issues[repo] = {
-                    "action": "ISSUE_UPDATE_FAILED",
-                    "repository": repo,
-                    "reason": type(exc).__name__,
-                }
-        else:
-            escalation_issues[repo] = {
-                "row_count": len(rows),
-                "body": backlog_issue_body(repo, rows, {}, now),
-            }
+        escalation_issues[repo] = _one_decision_issue(
+            repo,
+            actions,
+            ledger,
+            packet_expiry_days,
+            apply=apply,
+            now=now,
+        )
     return escalation_issues
 
 
-def _build_plan(
-    apply: bool,
-    ledger: dict[str, Any],
-    repositories: list[str],
-    actions: list[dict[str, Any]],
-    deferred_by_cap: list[dict[str, Any]],
-    cap: int,
-    mutation_count: int,
-    unconfirmed: int,
-    inventory_failed: list[dict[str, str]],
-    fetched: int,
-    escalation_issues: dict[str, Any],
-) -> dict[str, Any]:
+@dataclass(frozen=True)
+class _PlanFields:
+    """Inputs assembled into the emitted unblock plan payload."""
+
+    apply: bool
+    ledger: dict[str, Any]
+    repositories: list[str]
+    actions: list[dict[str, Any]]
+    deferred_by_cap: list[dict[str, Any]]
+    cap: int
+    mutation_count: int
+    unconfirmed: int
+    inventory_failed: list[dict[str, str]]
+    fetched: int
+    escalation_issues: dict[str, Any]
+
+
+def _build_plan(plan: _PlanFields) -> dict[str, Any]:
     """Assemble the emitted unblock plan payload."""
     return {
-        "dry_run": not apply,
-        "ledger_revision": ledger.get("ledger_revision"),
-        "repositories": _repo_counts(actions, repositories),
-        "action_count": len(actions),
-        "actions": actions,
-        "deferred_by_cap": deferred_by_cap,
-        "deferred_by_cap_count": len(deferred_by_cap),
-        "mutation_cap": cap,
-        "mutations_selected": mutation_count,
-        "mutations_applied": mutation_count - unconfirmed if apply else 0,
-        "mutations_unconfirmed": unconfirmed if apply else 0,
-        "inventory_failed": inventory_failed,
-        "comment_history_fetch_pr_count": fetched,
-        "escalation_issues": escalation_issues,
+        "dry_run": not plan.apply,
+        "ledger_revision": plan.ledger.get("ledger_revision"),
+        "repositories": _repo_counts(plan.actions, plan.repositories),
+        "action_count": len(plan.actions),
+        "actions": plan.actions,
+        "deferred_by_cap": plan.deferred_by_cap,
+        "deferred_by_cap_count": len(plan.deferred_by_cap),
+        "mutation_cap": plan.cap,
+        "mutations_selected": plan.mutation_count,
+        "mutations_applied": (
+            plan.mutation_count - plan.unconfirmed if plan.apply else 0
+        ),
+        "mutations_unconfirmed": plan.unconfirmed if plan.apply else 0,
+        "inventory_failed": plan.inventory_failed,
+        "comment_history_fetch_pr_count": plan.fetched,
+        "escalation_issues": plan.escalation_issues,
     }
 
 
@@ -394,17 +435,19 @@ def run_unblock(
             now=now,
         )
         plan = _build_plan(
-            apply,
-            ledger,
-            repositories,
-            actions,
-            deferred_by_cap,
-            cap,
-            mutation_count,
-            unconfirmed,
-            inventory_failed,
-            comment_history_fetch_pr_count,
-            escalation_issues,
+            _PlanFields(
+                apply=apply,
+                ledger=ledger,
+                repositories=repositories,
+                actions=actions,
+                deferred_by_cap=deferred_by_cap,
+                cap=cap,
+                mutation_count=mutation_count,
+                unconfirmed=unconfirmed,
+                inventory_failed=inventory_failed,
+                fetched=comment_history_fetch_pr_count,
+                escalation_issues=escalation_issues,
+            )
         )
         _emit(plan, json_out)
     return 0

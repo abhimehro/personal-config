@@ -89,13 +89,14 @@ def _require_advisory_checks(advisory: Any) -> None:
         )
 
 
+def _positive_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
 def _require_positive_days(days: Any, field: str) -> None:
-    if days is None:
+    if days is None or _positive_int(days):
         return
-    if not isinstance(days, int) or isinstance(days, bool) or days < 1:
-        raise ValueError(
-            f"config.lifecycle.unblock.{field}: must be a positive integer"
-        )
+    raise ValueError(f"config.lifecycle.unblock.{field}: must be a positive integer")
 
 
 def require_fetched_ledger_command(command: Any) -> None:
