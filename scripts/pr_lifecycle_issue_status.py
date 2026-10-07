@@ -23,6 +23,9 @@ PINNED_ISSUE_TITLE = "PR pipeline status"
 BACKLOG_ISSUE_TITLE = "PR lifecycle: needs human decision"
 _ISSUE_REPO = "abhimehro/personal-config"
 _BACKLOG_MARKER = "<!-- pr-lifecycle-backlog -->"
+# GitHub caps issue bodies at 65,536 chars; reserve room for the marker,
+# preamble lines, and the durable-state JSON block.
+_BACKLOG_TABLE_CHAR_CAP = 45_000
 _STATE_PATTERN = re.compile(r"<!-- pr-lifecycle-backlog-state (\{.*\}) -->")
 _DEFAULT_PACKET_EXPIRY_DAYS = 7
 
@@ -362,26 +365,34 @@ def backlog_issue_body(
     if not prepared:
         content = f"No open items needing a human decision as of {updated}."
     else:
-        content = "\n".join(
-            [
-                "| PR | Blocker | Evidence | Recommended action | Safe default | Owner | First seen | Expires | Status |",
-                "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-                *[
-                    (
-                        f"| [{_markdown_cell(row.get('pr'))}]"
-                        f"({row.get('url') or ''}) | "
-                        f"{_markdown_cell(row.get('blocker'))} | "
-                        f"{_markdown_cell(row.get('evidence'), 160)} | "
-                        f"{_markdown_cell(row.get('recommended_action'), 200)} | "
-                        f"{_markdown_cell(row.get('safe_default'), 160)} | "
-                        f"{_markdown_cell(row.get('owner'))} | "
-                        f"{row['first_seen']} | {row['expires']} | "
-                        f"{'OVERDUE' if row['overdue'] else ''} |"
-                    )
-                    for row in prepared
-                ],
-            ]
-        )
+        table = [
+            "| PR | Blocker | Evidence | Recommended action | Safe default | Owner | First seen | Expires | Status |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        used = sum(len(line) + 1 for line in table)
+        omitted = 0
+        for row in prepared:
+            line = (
+                f"| [{_markdown_cell(row.get('pr'))}]"
+                f"({row.get('url') or ''}) | "
+                f"{_markdown_cell(row.get('blocker'))} | "
+                f"{_markdown_cell(row.get('evidence'), 160)} | "
+                f"{_markdown_cell(row.get('recommended_action'), 200)} | "
+                f"{_markdown_cell(row.get('safe_default'), 160)} | "
+                f"{_markdown_cell(row.get('owner'))} | "
+                f"{row['first_seen']} | {row['expires']} | "
+                f"{'OVERDUE' if row['overdue'] else ''} |"
+            )
+            if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
+                omitted += 1
+                continue
+            used += len(line) + 1
+            table.append(line)
+        if omitted:
+            table.append(
+                f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
+            )
+        content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"
         f"updated_at_utc: {updated}\n"
