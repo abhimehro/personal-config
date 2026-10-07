@@ -181,11 +181,11 @@ def _iso(value: datetime) -> str:
 def _previous_state(body: object) -> dict[str, Any]:
     if not isinstance(body, str):
         return {"first_seen": {}, "overdue_notified": []}
-    match = _STATE_PATTERN.search(body)
-    if not match:
+    matches = list(_STATE_PATTERN.finditer(body))
+    if not matches:
         return {"first_seen": {}, "overdue_notified": []}
     try:
-        state = json.loads(match.group(1))
+        state = json.loads(matches[-1].group(1))
     except json.JSONDecodeError:
         return {"first_seen": {}, "overdue_notified": []}
     if not isinstance(state, dict):
@@ -204,6 +204,8 @@ def _row_key(repo: str, row: dict[str, Any]) -> str:
 
 def _markdown_cell(value: object, limit: int = 300) -> str:
     text = " ".join(str(value or "").replace("|", "\\|").split())
+    text = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
+    text = text.replace("@", "@\u200b")
     return text[:limit]
 
 
@@ -262,7 +264,7 @@ def _prepare_backlog_rows(
             notified.add(key)
     new_state = {
         "first_seen": first_seen,
-        "overdue_notified": sorted(notified),
+        "overdue_notified": sorted(key for key in notified if key in first_seen),
     }
     return prepared, new_state, newly_overdue
 
@@ -334,7 +336,8 @@ def update_backlog_issue(
         comment_body = (
             f"@abhimehro {len(overdue)} item(s) passed their decision deadline:\n"
             + "\n".join(
-                f"- {row.get('url') or row.get('pr')}: {row.get('blocker')} "
+                f"- {_markdown_cell(row.get('url') or row.get('pr'))}: "
+                f"{_markdown_cell(row.get('blocker'))} "
                 f"(expires {row['expires']})"
                 for row in overdue
             )

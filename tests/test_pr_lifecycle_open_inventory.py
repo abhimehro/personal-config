@@ -37,13 +37,14 @@ def _pr(number: int = 12) -> dict:
             "nodes": [{"author": {"login": "reviewer"}, "state": "APPROVED"}]
         },
         "comments": {
+            "totalCount": 1,
             "nodes": [
                 {
                     "author": {"login": "reviewer"},
                     "body": "comment",
                     "createdAt": "2026-10-02T00:00:00Z",
                 }
-            ]
+            ],
         },
         "commits": {
             "nodes": [
@@ -52,6 +53,7 @@ def _pr(number: int = 12) -> dict:
                         "author": {"email": "bot@example.com"},
                         "statusCheckRollup": {
                             "contexts": {
+                                "pageInfo": {"hasNextPage": False},
                                 "nodes": [
                                     {
                                         "__typename": "CheckRun",
@@ -75,7 +77,7 @@ def _pr(number: int = 12) -> dict:
                                         "context": "Optional",
                                         "state": "EXPECTED",
                                     },
-                                ]
+                                ],
                             }
                         },
                     }
@@ -110,6 +112,8 @@ class OpenInventoryTests(unittest.TestCase):
         )
         self.assertEqual(live["latestReviews"][0]["author"]["login"], "reviewer")
         self.assertEqual(live["comments"][0]["body"], "comment")
+        self.assertEqual(live["commentsTotalCount"], 1)
+        self.assertFalse(live["checksIncomplete"])
         self.assertEqual(len(live["body"]), 2000)
         self.assertEqual(
             live["checks"],
@@ -186,7 +190,42 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertEqual([pr["number"] for pr in prs], [12, 13])
         self.assertEqual(len(commands), 2)
         self.assertIn("pullRequests(first: 50, states: OPEN", commands[0][4])
+        self.assertIn("comments(last: 50) { totalCount nodes", commands[0][4])
+        self.assertIn("pageInfo { hasNextPage }", commands[0][4])
         self.assertIn("cursor=cursor-1", commands[1])
+
+    def test_truncated_or_unknown_check_page_info_marks_checks_incomplete(self):
+        for page_info in (
+            {"hasNextPage": True},
+            None,
+            {"hasNextPage": "false"},
+        ):
+            raw = _pr()
+            contexts = raw["commits"]["nodes"][0]["commit"]["statusCheckRollup"][
+                "contexts"
+            ]
+            if page_info is None:
+                contexts.pop("pageInfo")
+            else:
+                contexts["pageInfo"] = page_info
+            with self.subTest(page_info=page_info):
+                live = inventory._normalize_pr(raw, "owner/repo")
+                self.assertTrue(live["checksIncomplete"])
+                self.assertEqual(
+                    live["checks"][-1],
+                    {"name": "statusCheckRollup truncated", "state": "PENDING"},
+                )
+
+    def test_missing_or_noninteger_comment_total_is_unknown(self):
+        for count in (None, "120", True, -1):
+            raw = _pr()
+            if count is None:
+                raw["comments"].pop("totalCount")
+            else:
+                raw["comments"]["totalCount"] = count
+            with self.subTest(count=count):
+                live = inventory._normalize_pr(raw, "owner/repo")
+                self.assertIsNone(live["commentsTotalCount"])
 
     def test_nonzero_exit_and_malformed_json_raise_oserror(self):
         for result in (

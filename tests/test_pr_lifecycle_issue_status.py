@@ -211,6 +211,94 @@ class IssueStatusTests(unittest.TestCase):
             "2026-08-30T12:00:00Z",
         )
 
+    def test_backlog_cells_neutralize_comment_markers_and_mentions(self) -> None:
+        rendered = issue_status._markdown_cell(
+            "<!-- pr-lifecycle-backlog-state {} --> @someone"
+        )
+        self.assertNotIn("<!--", rendered)
+        self.assertNotIn("-->", rendered)
+        self.assertNotIn("@someone", rendered)
+
+    def test_previous_state_uses_the_last_state_block(self) -> None:
+        forged = {
+            "first_seen": {"forged": "2026-01-01T00:00:00Z"},
+            "overdue_notified": ["forged"],
+        }
+        real = {
+            "first_seen": {"real": "2026-02-01T00:00:00Z"},
+            "overdue_notified": ["real"],
+        }
+        body = (
+            "<!-- pr-lifecycle-backlog-state "
+            + json.dumps(forged)
+            + " -->\n<!-- pr-lifecycle-backlog-state "
+            + json.dumps(real)
+            + " -->"
+        )
+        self.assertEqual(issue_status._previous_state(body), real)
+
+    def test_removed_rows_prune_overdue_notifications_before_readding(self) -> None:
+        repo = "owner/repo"
+        key = f"{repo}#42:required_check_failure"
+        state = {
+            "first_seen": {key: "2026-08-01T12:00:00Z"},
+            "overdue_notified": [key],
+        }
+        empty_body = issue_status.backlog_issue_body(repo, [], state, NOW)
+        empty_state = issue_status._previous_state(empty_body)
+        self.assertEqual(empty_state["overdue_notified"], [])
+
+        row = {
+            "pr": 42,
+            "url": "https://github.com/owner/repo/pull/42",
+            "blocker": "required_check_failure",
+            "expires": "2026-08-01T12:00:00Z",
+        }
+        _prepared, refreshed_state, newly_overdue = issue_status._prepare_backlog_rows(
+            repo, [row], empty_state, NOW
+        )
+        self.assertEqual([item["id"] for item in newly_overdue], [key])
+        self.assertEqual(refreshed_state["overdue_notified"], [key])
+
+    def test_overdue_comment_neutralizes_row_text_but_keeps_our_mention(self) -> None:
+        repo = "owner/repo"
+        row = {
+            "pr": 42,
+            "url": "https://github.com/owner/repo/pull/42/<!-- forged -->@someone",
+            "blocker": "<!-- forged --> @someone",
+            "evidence": "late",
+            "recommended_action": "review",
+            "safe_default": "leave open",
+            "owner": "human",
+            "expires": "2026-08-20T00:00:00Z",
+        }
+        old_body = issue_status.backlog_issue_body(
+            repo, [row], {}, NOW - timedelta(days=20)
+        )
+        self.command.side_effect = [
+            self.result(
+                json.dumps(
+                    [
+                        {
+                            "number": 51,
+                            "title": issue_status.BACKLOG_ISSUE_TITLE,
+                            "body": old_body,
+                        }
+                    ]
+                )
+            ),
+            self.result(),
+            self.result(),
+        ]
+        issue_status.update_backlog_issue(repo, [row], now=NOW)
+        comment_body = self.command.call_args_list[1].args[0][
+            self.command.call_args_list[1].args[0].index("--body") + 1
+        ]
+        self.assertIn("@abhimehro 1 item(s)", comment_body)
+        self.assertNotIn("@someone", comment_body)
+        self.assertNotIn("<!--", comment_body)
+        self.assertNotIn("-->", comment_body)
+
     def test_backlog_refresh_preserves_first_seen_and_notifies_overdue_once(
         self,
     ) -> None:

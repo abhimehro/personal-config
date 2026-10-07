@@ -262,17 +262,18 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["action"], "TERMINAL_CLOSED")
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_closed_security_item_is_terminal_without_head_reintake(self):
+    def test_closed_security_item_without_label_stays_pending(self):
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
-                "next_action": "Observed CLOSED unclassified; Stage 3 classification required.",
+                "next_action": "Stage 3 classification required.",
                 "guardrail_outcome": "REVIEW_SECURITY",
             },
             {"state": "CLOSED", "headRefOid": "c" * 40},
         )
-        self.assertEqual(action["action"], "TERMINAL_CLOSED")
-        self.assertEqual(action["disposition"], "CLOSED_NOOP")
+        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
+        self.assertEqual(action["observed_state"], "CLOSED")
+        self.assertIn("no disposition-bearing label", action["reason"])
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (

@@ -239,6 +239,10 @@ only if Trunk still cannot enqueue after the PR is already up to date with
 Run reconcile with `--apply` to record observed closures and ingest every open
 PR, then run `scripts/pr_lifecycle_unblock.py --apply --json`. The executor
 keeps mutations bounded and never merges or deletes branches.
+Trigger comments (`@google-labs-jules`, `@coderabbitai`, `/cs-agent`) are posted
+through `gh` authenticated with `GH_TOKEN` (the owner's token); agents ignore
+bot-authored triggers, so never run the executor under a bot/app identity.
+An unanswered trigger expires and escalates.
 
 | Live blocker | Safe next action |
 | --- | --- |

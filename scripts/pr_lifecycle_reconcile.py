@@ -131,8 +131,8 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     return (now - stamp).total_seconds() / 86400.0
 
 
-# Only labels that make one disposition unambiguous evidence; unlabeled
-# closures are recorded as CLOSED_NOOP rather than guessed from other data.
+# Only labels that make one disposition unambiguous evidence; other
+# unlabeled closures are recorded as CLOSED_NOOP rather than guessed.
 _CLOSED_LABEL_DISPOSITIONS = {
     "duplicate": "CLOSED_DUPLICATE",
     "superseded": "CLOSED_SUPERSEDED",
@@ -185,6 +185,10 @@ def _classify_live_close(
         None,
     )
     if disposition is None:
+        if item.get("guardrail_outcome") == "REVIEW_SECURITY":
+            return _pending_terminal(
+                item, key, "CLOSED", "no disposition-bearing label"
+            )
         return {
             "action": "TERMINAL_CLOSED",
             "key": key,

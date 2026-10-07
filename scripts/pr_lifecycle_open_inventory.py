@@ -18,13 +18,14 @@ query($owner: String!, $name: String!, $cursor: String) {
         author { login __typename }
         mergeable mergeStateStatus reviewDecision createdAt updatedAt
         latestReviews(first: 20) { nodes { author { login } state } }
-        comments(last: 50) { nodes { author { login } body createdAt } }
+        comments(last: 50) { totalCount nodes { author { login } body createdAt } }
         commits(last: 1) {
           nodes {
             commit {
               author { email }
               statusCheckRollup {
                 contexts(first: 100) {
+                  pageInfo { hasNextPage }
                   nodes {
                     __typename
                     ... on CheckRun { name conclusion status }
@@ -128,18 +129,29 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         }
         for review in _nodes(raw.get("latestReviews"), "latestReviews")
     ]
+    comment_connection = raw.get("comments")
+    comment_nodes = _nodes(comment_connection, "comments")
     comments = [
         {
             "author": {"login": (comment.get("author") or {}).get("login") or ""},
             "body": comment.get("body") or "",
             "createdAt": comment.get("createdAt"),
         }
-        for comment in _nodes(raw.get("comments"), "comments")
+        for comment in comment_nodes
     ]
+    comments_total_count = (
+        comment_connection.get("totalCount")
+        if isinstance(comment_connection, dict)
+        and isinstance(comment_connection.get("totalCount"), int)
+        and not isinstance(comment_connection.get("totalCount"), bool)
+        and comment_connection["totalCount"] >= 0
+        else None
+    )
 
     commits = _nodes(raw.get("commits"), "commits")
     normalized_commits: list[dict[str, Any]] = []
     checks: list[dict[str, str]] = []
+    checks_incomplete = True
     if commits:
         commit = commits[-1].get("commit")
         if not isinstance(commit, dict):
@@ -154,11 +166,24 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         if rollup is not None:
             if not isinstance(rollup, dict):
                 raise OSError("malformed statusCheckRollup")
-            contexts = _nodes(rollup.get("contexts"), "status check contexts")
-            for context in contexts:
-                normalized = _check_state(context)
-                if normalized is not None:
-                    checks.append({"name": normalized[0], "state": normalized[1]})
+            contexts_connection = rollup.get("contexts")
+            page_info = (
+                contexts_connection.get("pageInfo")
+                if isinstance(contexts_connection, dict)
+                else None
+            )
+            if isinstance(page_info, dict) and isinstance(
+                page_info.get("hasNextPage"), bool
+            ):
+                checks_incomplete = page_info["hasNextPage"]
+            if isinstance(contexts_connection, dict):
+                contexts = _nodes(contexts_connection, "status check contexts")
+                for context in contexts:
+                    normalized = _check_state(context)
+                    if normalized is not None:
+                        checks.append({"name": normalized[0], "state": normalized[1]})
+    if checks_incomplete:
+        checks.append({"name": "statusCheckRollup truncated", "state": "PENDING"})
 
     normalized_pr = {
         "number": raw.get("number"),
@@ -178,8 +203,10 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         "updatedAt": raw.get("updatedAt"),
         "latestReviews": reviews,
         "comments": comments,
+        "commentsTotalCount": comments_total_count,
         "commits": normalized_commits,
         "checks": checks,
+        "checksIncomplete": checks_incomplete,
         "repository": repository,
     }
     if (

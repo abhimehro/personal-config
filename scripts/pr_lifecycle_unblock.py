@@ -60,6 +60,17 @@ def _iso(value: datetime) -> str:
     return _utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _safe_check_names(names: list[str]) -> list[str]:
+    safe: list[str] = []
+    for name in names[:10]:
+        if not isinstance(name, str):
+            continue
+        cleaned = re.sub(r"[^\w .:/()\-]", "", name)[:80]
+        if cleaned:
+            safe.append(cleaned)
+    return safe
+
+
 def _parse_datetime(value: object) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
@@ -114,6 +125,7 @@ def _escalation(
         "blocker": blocker,
         "evidence": evidence,
         "recommended_action": recommended_action,
+        "security": security,
         "safe_default": (
             "Leave open; no merge or close without a human decision."
             if human_or_security
@@ -137,7 +149,9 @@ def _trigger_action(
     family: str,
     sticky_security: bool,
 ) -> list[dict[str, Any]]:
-    if kind != "codescene" and author_type != "BOT" and family != "jules":
+    if sticky_security or (
+        kind != "codescene" and author_type != "BOT" and family != "jules"
+    ):
         return [
             _escalation(
                 pr,
@@ -147,6 +161,19 @@ def _trigger_action(
                 recommended_action=recommended_action,
                 security=sticky_security,
             )
+        ]
+    if pr.get("comments_incomplete"):
+        return [
+            {
+                "action": "TRIGGER_SKIPPED",
+                "repository": pr.get("repository"),
+                "pr": pr.get("number"),
+                "url": pr.get("url"),
+                "head_sha": pr.get("headRefOid"),
+                "author_type": author_type,
+                "kind": kind,
+                "reason": "comment history unavailable; marker dedupe unverified",
+            }
         ]
     head = str(pr.get("headRefOid") or "")
     marker = f"<!-- pr-lifecycle-trigger kind={kind} head={head} -->"
@@ -286,6 +313,8 @@ def route_pr(
     number = pr.get("number")
     head = str(pr.get("headRefOid") or "")
     base = str(pr.get("baseRefName") or "")
+    safe_base = _safe_check_names([base])
+    base = safe_base[0] if safe_base else "base branch"
     lineage_stale_days = settings.get("lineage_stale_days", 3)
     if (
         family == "lineage"
@@ -387,7 +416,7 @@ def route_pr(
                 pr,
                 author_type,
                 "jules_conflict",
-                f"@jules This PR has merge conflicts with `{base}`. Please merge "
+                f"@google-labs-jules This PR has merge conflicts with `{base}`. Please merge "
                 f"the latest `{base}` into this branch, resolve the conflicts, and push.",
                 settings,
                 now,
@@ -451,105 +480,121 @@ def route_pr(
                 )
             )
 
-    checks = [
-        check
-        for check in pr.get("checks") or []
-        if isinstance(check, dict) and check.get("state") == "FAILURE"
-    ]
-    advisory_patterns = settings.get("advisory_checks", [])
-    if not isinstance(advisory_patterns, list):
-        advisory_patterns = []
-    codescene = [
-        check
-        for check in checks
-        if str(check.get("name") or "").startswith("CodeScene")
-    ]
-    if codescene:
-        names = sorted({str(check.get("name") or "") for check in codescene})
-        actions.extend(
-            _trigger_action(
-                pr,
-                author_type,
-                "codescene",
-                "/cs-agent skill:fix-code-health-degradations",
-                settings,
-                now,
-                blocker="codescene_failure",
-                evidence={"checks": names},
-                recommended_action="run the CodeScene code-health remediation",
-                family=family,
-                sticky_security=security,
-            )
-        )
-    required_failures = [
-        check
-        for check in checks
-        if not _advisory(str(check.get("name") or ""), advisory_patterns)
-    ]
-    if required_failures:
-        names = sorted({str(check.get("name") or "") for check in required_failures})
-        if family == "jules":
-            actions.extend(
-                _trigger_action(
-                    pr,
-                    author_type,
-                    "jules_checks",
-                    f"@jules These checks are failing on this PR: {', '.join(names)}. "
-                    "Please fix the failures and push to this branch.",
-                    settings,
-                    now,
-                    blocker="required_check_failure",
-                    evidence={"checks": names},
-                    recommended_action="request Jules to fix failing required checks",
-                    family=family,
-                    sticky_security=security,
-                )
-            )
-        elif family == "coderabbit" and author_type == "BOT":
-            actions.extend(
-                _trigger_action(
-                    pr,
-                    author_type,
-                    "coderabbit_fixci",
-                    "@coderabbitai fix-ci commit",
-                    settings,
-                    now,
-                    blocker="required_check_failure",
-                    evidence={"checks": names},
-                    recommended_action="request CodeRabbit to fix failing CI",
-                    family=family,
-                    sticky_security=security,
-                )
-            )
-        else:
-            actions.append(
-                _escalation(
-                    pr,
-                    author_type,
-                    "required_check_failure",
-                    evidence={"checks": names},
-                    recommended_action="fix failing checks or close",
-                    owner="human",
-                    security=security,
-                )
-            )
-    advisory_failures = [
-        check
-        for check in checks
-        if _advisory(str(check.get("name") or ""), advisory_patterns)
-    ]
-    if advisory_failures:
-        names = sorted({str(check.get("name") or "") for check in advisory_failures})
+    if pr.get("checksIncomplete"):
         actions.append(
             {
-                "action": "ADVISORY_ONLY",
+                "action": "CHECKS_INCOMPLETE",
                 "repository": repo,
                 "pr": number,
                 "url": pr.get("url"),
-                "checks": names,
-                "reason": "Stage 1 routine predicates may treat advisory checks as green.",
+                "head_sha": head,
+                "reason": "status check rollup is truncated or pagination metadata is unavailable",
             }
         )
+    else:
+        checks = [
+            check
+            for check in pr.get("checks") or []
+            if isinstance(check, dict) and check.get("state") == "FAILURE"
+        ]
+        advisory_patterns = settings.get("advisory_checks", [])
+        if not isinstance(advisory_patterns, list):
+            advisory_patterns = []
+        codescene = [
+            check
+            for check in checks
+            if str(check.get("name") or "").startswith("CodeScene")
+        ]
+        if codescene:
+            names = sorted({str(check.get("name") or "") for check in codescene})
+            actions.extend(
+                _trigger_action(
+                    pr,
+                    author_type,
+                    "codescene",
+                    "/cs-agent skill:fix-code-health-degradations",
+                    settings,
+                    now,
+                    blocker="codescene_failure",
+                    evidence={"checks": names},
+                    recommended_action="run the CodeScene code-health remediation",
+                    family=family,
+                    sticky_security=security,
+                )
+            )
+        required_failures = [
+            check
+            for check in checks
+            if not _advisory(str(check.get("name") or ""), advisory_patterns)
+        ]
+        if required_failures:
+            names = _safe_check_names(
+                sorted({str(check.get("name") or "") for check in required_failures})
+            )
+            if family == "jules":
+                actions.extend(
+                    _trigger_action(
+                        pr,
+                        author_type,
+                        "jules_checks",
+                        f"@google-labs-jules These checks are failing on this PR: {', '.join(names)}. "
+                        "Please fix the failures and push to this branch.",
+                        settings,
+                        now,
+                        blocker="required_check_failure",
+                        evidence={"checks": names},
+                        recommended_action="request Jules to fix failing required checks",
+                        family=family,
+                        sticky_security=security,
+                    )
+                )
+            elif family == "coderabbit" and author_type == "BOT":
+                actions.extend(
+                    _trigger_action(
+                        pr,
+                        author_type,
+                        "coderabbit_fixci",
+                        "@coderabbitai fix-ci commit",
+                        settings,
+                        now,
+                        blocker="required_check_failure",
+                        evidence={"checks": names},
+                        recommended_action="request CodeRabbit to fix failing CI",
+                        family=family,
+                        sticky_security=security,
+                    )
+                )
+            else:
+                actions.append(
+                    _escalation(
+                        pr,
+                        author_type,
+                        "required_check_failure",
+                        evidence={"checks": names},
+                        recommended_action="fix failing checks or close",
+                        owner="human",
+                        security=security,
+                    )
+                )
+        advisory_failures = [
+            check
+            for check in checks
+            if _advisory(str(check.get("name") or ""), advisory_patterns)
+        ]
+        if advisory_failures:
+            names = sorted(
+                {str(check.get("name") or "") for check in advisory_failures}
+            )
+            actions.append(
+                {
+                    "action": "ADVISORY_ONLY",
+                    "repository": repo,
+                    "pr": number,
+                    "url": pr.get("url"),
+                    "checks": names,
+                    "reason": "Stage 1 routine predicates may treat advisory checks as green.",
+                }
+            )
 
     if str(pr.get("reviewDecision") or "").upper() == "CHANGES_REQUESTED":
         coderabbit_review = any(
@@ -581,7 +626,7 @@ def route_pr(
                     pr,
                     author_type,
                     "jules_review",
-                    "@jules Please address the requested changes in the latest review "
+                    "@google-labs-jules Please address the requested changes in the latest review "
                     "on this PR and push.",
                     settings,
                     now,
@@ -842,12 +887,100 @@ def _repo_counts(
     return result
 
 
+def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
+    comments = pr.get("comments")
+    if not isinstance(comments, list):
+        comments = []
+        pr["comments"] = comments
+    total_count = pr.get("commentsTotalCount")
+    if (
+        not isinstance(total_count, int)
+        or isinstance(total_count, bool)
+        or total_count < 0
+    ):
+        pr["comments_incomplete"] = True
+        return
+    if total_count <= len(comments):
+        return
+    repository = pr.get("repository")
+    number = pr.get("number")
+    if (
+        not isinstance(repository, str)
+        or not repository
+        or not isinstance(number, int)
+        or isinstance(number, bool)
+        or number < 1
+    ):
+        pr["comments_incomplete"] = True
+        return
+    try:
+        result = run(
+            [
+                "gh",
+                "api",
+                "--paginate",
+                "--slurp",
+                f"repos/{repository}/issues/{number}/comments",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode != 0:
+            raise OSError(f"gh api comments failed rc={result.returncode}")
+        payload = json.loads(result.stdout)
+        if not isinstance(payload, list):
+            raise TypeError("malformed comments payload")
+        if all(isinstance(page, list) for page in payload):
+            raw_comments = [comment for page in payload for comment in page]
+        elif all(isinstance(comment, dict) for comment in payload):
+            raw_comments = payload
+        else:
+            raise ValueError("malformed comments payload")
+        if not all(isinstance(comment, dict) for comment in raw_comments):
+            raise ValueError("malformed comments payload")
+        if len(raw_comments) < total_count:
+            raise ValueError("incomplete comments payload")
+        normalized: list[dict[str, Any]] = []
+        for comment in raw_comments:
+            author = comment.get("user")
+            body = comment.get("body")
+            created_at = comment.get("created_at")
+            if (
+                not isinstance(author, dict)
+                or not isinstance(author.get("login"), str)
+                or (body is not None and not isinstance(body, str))
+                or (created_at is not None and not isinstance(created_at, str))
+            ):
+                raise ValueError("malformed comment")
+            normalized.append(
+                {
+                    "author": {"login": author.get("login") or ""},
+                    "body": body or "",
+                    "createdAt": created_at,
+                }
+            )
+    except (
+        OSError,
+        subprocess.SubprocessError,
+        json.JSONDecodeError,
+        TypeError,
+        ValueError,
+    ):
+        pr["comments_incomplete"] = True
+        return
+    pr["comments"] = normalized
+    pr.pop("comments_incomplete", None)
+
+
 def run_unblock(
     *,
     apply: bool,
     json_out: bool,
     repos_filter: list[str] | None,
     limit: int | None,
+    run: Any = subprocess.run,
 ) -> int:
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
@@ -867,6 +1000,7 @@ def run_unblock(
         ledger = load_yaml(Path(fetch["ledger_path"]))
         actions: list[dict[str, Any]] = []
         inventory_failed: list[dict[str, str]] = []
+        comment_history_fetch_pr_count = 0
         policy = identity_policy_from_config(config)
         for repo in repositories:
             try:
@@ -881,6 +1015,16 @@ def run_unblock(
                 )
                 continue
             for pr in prs:
+                comments = pr.get("comments")
+                comment_count = len(comments) if isinstance(comments, list) else 0
+                total_count = pr.get("commentsTotalCount")
+                if (
+                    isinstance(total_count, int)
+                    and not isinstance(total_count, bool)
+                    and total_count > comment_count
+                ):
+                    comment_history_fetch_pr_count += 1
+                _load_full_comments(pr, run=run)
                 verdict = classify_pr_identity(pr, policy)
                 matching = [
                     item
@@ -917,7 +1061,17 @@ def run_unblock(
         if not isinstance(packet_expiry_days, int) or packet_expiry_days < 1:
             packet_expiry_days = 7
         escalation_issues: dict[str, Any] = {}
+        failed_repos = {
+            entry["repository"] for entry in inventory_failed if entry.get("repository")
+        }
         for repo in repositories:
+            if repo in failed_repos:
+                escalation_issues[repo] = {
+                    "action": "ISSUE_UPDATE_SKIPPED",
+                    "repository": repo,
+                    "reason": "INVENTORY_FAILED",
+                }
+                continue
             rows = _rows_for_repo(repo, actions, ledger, packet_expiry_days)
             if apply:
                 try:
@@ -945,6 +1099,7 @@ def run_unblock(
             "mutations_selected": mutation_count,
             "mutations_applied": mutation_count if apply else 0,
             "inventory_failed": inventory_failed,
+            "comment_history_fetch_pr_count": comment_history_fetch_pr_count,
             "escalation_issues": escalation_issues,
         }
         _emit(plan, json_out)
