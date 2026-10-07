@@ -104,6 +104,29 @@ def _payload(nodes: list[dict], *, next_page: bool = False, cursor: str = "curso
 
 
 class OpenInventoryTests(unittest.TestCase):
+    def test_bot_logins_gain_rest_style_suffix(self):
+        raw = _pr()
+        raw["author"] = {"login": "coderabbitai", "__typename": "Bot"}
+        raw["latestReviews"]["nodes"] = [
+            {
+                "author": {"login": "coderabbitai", "__typename": "Bot"},
+                "state": "CHANGES_REQUESTED",
+            }
+        ]
+        raw["comments"]["nodes"] = [
+            {
+                "author": {"login": "dependabot", "__typename": "Bot"},
+                "body": "comment",
+                "createdAt": "2026-10-02T00:00:00Z",
+            }
+        ]
+        live = inventory._normalize_pr(raw, "owner/repo")
+        self.assertEqual(live["author"]["login"], "coderabbitai[bot]")
+        self.assertEqual(
+            live["latestReviews"][0]["author"]["login"], "coderabbitai[bot]"
+        )
+        self.assertEqual(live["comments"][0]["author"]["login"], "dependabot[bot]")
+
     def test_normalizes_pr_identity_reviews_comments_commits_and_checks(self):
         live = inventory._normalize_pr(_pr(), "owner/repo")
         self.assertEqual(live["author"], {"login": "dependabot[bot]", "type": "Bot"})

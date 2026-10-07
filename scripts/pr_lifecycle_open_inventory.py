@@ -17,8 +17,8 @@ query($owner: String!, $name: String!, $cursor: String) {
         number url title body isDraft headRefName headRefOid baseRefName baseRefOid
         author { login __typename }
         mergeable mergeStateStatus reviewDecision createdAt updatedAt
-        latestReviews(first: 20) { nodes { author { login } state } }
-        comments(last: 50) { totalCount nodes { author { login } body createdAt } }
+        latestReviews(first: 20) { nodes { author { login __typename } state } }
+        comments(last: 50) { totalCount nodes { author { login __typename } body createdAt } }
         commits(last: 1) {
           nodes {
             commit {
@@ -109,6 +109,16 @@ def _nodes(connection: Any, label: str) -> list[dict[str, Any]]:
     return nodes
 
 
+def _author_login(author: Any) -> str:
+    """GraphQL logins for Bot actors lack the REST-style '[bot]' suffix."""
+    if not isinstance(author, dict):
+        return ""
+    login = str(author.get("login") or "")
+    if author.get("__typename") == "Bot" and login and not login.endswith("[bot]"):
+        return f"{login}[bot]"
+    return login
+
+
 def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
     author = raw.get("author")
     if author is not None and not isinstance(author, dict):
@@ -129,13 +139,13 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
         or not isinstance(raw.get("isDraft"), bool)
     ):
         raise OSError("malformed pull request identity")
-    normalized_author = {"login": author.get("login") or ""}
+    normalized_author = {"login": _author_login(author)}
     if author.get("__typename") == "Bot":
         normalized_author["type"] = "Bot"
 
     reviews = [
         {
-            "author": {"login": (review.get("author") or {}).get("login") or ""},
+            "author": {"login": _author_login(review.get("author"))},
             "state": review.get("state"),
         }
         for review in _nodes(raw.get("latestReviews"), "latestReviews")
@@ -144,7 +154,7 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
     comment_nodes = _nodes(comment_connection, "comments")
     comments = [
         {
-            "author": {"login": (comment.get("author") or {}).get("login") or ""},
+            "author": {"login": _author_login(comment.get("author"))},
             "body": comment.get("body") or "",
             "createdAt": comment.get("createdAt"),
         }
