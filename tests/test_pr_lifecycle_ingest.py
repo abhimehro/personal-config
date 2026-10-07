@@ -36,6 +36,7 @@ REPO = CONFIG["repos"][0]
 
 
 def _live(**overrides):
+    """Build an overridable bot PR fixture with valid intake identity anchors."""
     pr = {
         "number": 9876,
         "repository": REPO,
@@ -58,6 +59,7 @@ def _live(**overrides):
 
 
 def _terminal_item(key: str, **overrides):
+    """Build an overridable terminal ledger item for the supplied key."""
     item = {
         "key": key,
         "repository": REPO,
@@ -71,10 +73,12 @@ def _terminal_item(key: str, **overrides):
 
 class OpenPrIngestTests(unittest.TestCase):
     def setUp(self):
+        """Start each intake test with an empty ledger and a valid open bot PR."""
         self.ledger = {"ledger_revision": 4, "items": [], "events": []}
         self.live = _live()
 
     def test_untracked_pr_builds_schema_valid_fail_closed_intake(self):
+        """Require new intake items to satisfy the schema with unevaluated guardrails."""
         actions = reconcile.collect_ingest_actions(
             self.ledger, CONFIG, {REPO: [self.live]}, now=NOW
         )
@@ -99,6 +103,7 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertTrue(item["safe_default"].startswith("Leave open"))
 
     def test_nonterminal_pr_is_not_ingested(self):
+        """Avoid duplicate intake while the PR already has an active ledger item."""
         self.ledger["items"] = [
             _terminal_item(
                 f"{REPO}#9876@{'a' * 40}",
@@ -114,6 +119,7 @@ class OpenPrIngestTests(unittest.TestCase):
         )
 
     def test_terminal_at_same_head_is_reported_but_old_head_is_reingested(self):
+        """Report a terminal current head and allow intake after the head changes."""
         key = f"{REPO}#9876@{'a' * 40}"
         self.ledger["items"] = [_terminal_item(key)]
         actions = reconcile.collect_ingest_actions(
@@ -128,6 +134,7 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertEqual(actions[0]["action"], "INGEST_OPEN_PR")
 
     def test_invalid_anchors_and_empty_login_are_reported_as_skipped(self):
+        """Skip intake when either SHA anchor or the author login is invalid."""
         bad_sha = _live(headRefOid="bad")
         bad_base = _live(baseRefOid="bad")
         no_login = _live(author={"login": ""})
@@ -137,6 +144,7 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertEqual([item["action"] for item in actions], ["INGEST_SKIPPED"] * 3)
 
     def test_apply_is_idempotent_and_advances_revision_once_per_batch(self):
+        """Apply intake once and advance the ledger revision once for the batch."""
         actions = reconcile.collect_ingest_actions(
             self.ledger, CONFIG, {REPO: [self.live]}, now=NOW
         )
@@ -151,6 +159,7 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertEqual(len(self.ledger["items"]), 1)
 
     def test_full_example_ledger_with_intake_item_passes_runtime_validator(self):
+        """Validate a complete example ledger after appending a new intake item."""
         ledger = yaml.safe_load(
             (ROOT / "tasks/pr-lifecycle-ledger.example.yaml").read_text()
         )
@@ -162,6 +171,7 @@ class OpenPrIngestTests(unittest.TestCase):
         ledger_module.validate_runtime_records(ledger, CONFIG)
 
     def test_inventory_oserror_is_emitted_as_inventory_failed(self):
+        """Include inventory failures and their reasons in the reconciliation plan."""
         output = {}
         fetch = {"ledger_path": ROOT / "tasks/pr-lifecycle-ledger.example.yaml"}
         with (

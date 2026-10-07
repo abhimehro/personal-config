@@ -187,6 +187,7 @@ class IssueStatusTests(unittest.TestCase):
                 self.assertEqual(self.command.call_args.args[0][2], "list")
 
     def test_backlog_body_renders_decision_table_and_state_block(self) -> None:
+        """Render decision rows with a durable first-seen state block."""
         now = NOW
         row = {
             "pr": 42,
@@ -212,6 +213,7 @@ class IssueStatusTests(unittest.TestCase):
         )
 
     def test_backlog_cells_neutralize_comment_markers_and_mentions(self) -> None:
+        """Prevent row text from injecting hidden state markers or user mentions."""
         rendered = issue_status._markdown_cell(
             "<!-- pr-lifecycle-backlog-state {} --> @someone"
         )
@@ -220,6 +222,7 @@ class IssueStatusTests(unittest.TestCase):
         self.assertNotIn("@someone", rendered)
 
     def test_previous_state_uses_the_last_state_block(self) -> None:
+        """Read the final state block when earlier blocks are present in the body."""
         forged = {
             "first_seen": {"forged": "2026-01-01T00:00:00Z"},
             "overdue_notified": ["forged"],
@@ -238,6 +241,7 @@ class IssueStatusTests(unittest.TestCase):
         self.assertEqual(issue_status._previous_state(body), real)
 
     def test_removed_rows_prune_overdue_notifications_before_readding(self) -> None:
+        """Allow a fresh overdue notification after a row is removed and re-added."""
         repo = "owner/repo"
         key = f"{repo}#42:required_check_failure"
         state = {
@@ -261,6 +265,7 @@ class IssueStatusTests(unittest.TestCase):
         self.assertEqual(refreshed_state["overdue_notified"], [key])
 
     def test_overdue_comment_neutralizes_row_text_but_keeps_our_mention(self) -> None:
+        """Sanitize row content while retaining the intended owner notification."""
         repo = "owner/repo"
         row = {
             "pr": 42,
@@ -302,6 +307,7 @@ class IssueStatusTests(unittest.TestCase):
     def test_backlog_refresh_preserves_first_seen_and_notifies_overdue_once(
         self,
     ) -> None:
+        """Preserve first-seen dates and avoid repeating an overdue notification."""
         repo = "owner/repo"
         key = f"{repo}#42:required_check_failure"
         old_state = {
@@ -372,6 +378,7 @@ class IssueStatusTests(unittest.TestCase):
         self.assertEqual(self.command.call_args_list[1].args[0][2], "edit")
 
     def test_empty_backlog_edits_existing_but_does_not_create(self) -> None:
+        """Refresh an existing issue to show that its decision backlog is empty."""
         repo = "owner/repo"
         self.command.side_effect = [
             self.result(
@@ -398,6 +405,7 @@ class IssueStatusTests(unittest.TestCase):
         self.assertEqual(argv[-2:], ["--repo", repo])
 
     def test_empty_backlog_without_issue_and_failed_listing_do_not_create(self) -> None:
+        """Avoid issue creation for an empty backlog or a malformed listing."""
         self.command.side_effect = [self.result("[]")]
         result = issue_status.update_backlog_issue("owner/repo", [], now=NOW)
         self.assertEqual(result["action"], "NOOP_EMPTY")

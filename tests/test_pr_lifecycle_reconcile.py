@@ -222,6 +222,7 @@ class ClassifyItemTests(unittest.TestCase):
                 self.assertEqual(action["disposition"], expected)
 
     def test_closed_without_evidence_is_closed_noop(self):
+        """Record an unlabeled closed PR as CLOSED_NOOP without Stage 3 escalation."""
         for labels in (None, [], [{"name": "enhancement"}]):
             with self.subTest(labels=labels):
                 live = {"state": "CLOSED", "headRefOid": "a" * 40}
@@ -243,6 +244,7 @@ class ClassifyItemTests(unittest.TestCase):
                 )
 
     def test_closed_stage3_item_is_terminal_closed(self):
+        """Finalize an already closed Stage 3 item as CLOSED_NOOP."""
         action = _classify(
             {"lifecycle_state": "STAGE3_RECONCILIATION"},
             {"state": "CLOSED", "headRefOid": "a" * 40},
@@ -252,6 +254,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
     def test_prior_closed_observation_marker_does_not_prevent_terminal_close(self):
+        """Finalize a closed PR even if an earlier observation marker is present."""
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -263,6 +266,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
     def test_closed_security_item_without_label_stays_pending(self) -> None:
+        """Keep an unlabeled closed security item pending for Stage 3 review."""
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -406,6 +410,7 @@ class ReconcileHelpersTests(unittest.TestCase):
         self.assertIs(ledger["events"][1], event)
 
     def test_apply_terminal_pending_handoffs_to_stage3_with_marker(self):
+        """Handoff an unclassified terminal observation to Stage 3 with its marker."""
         ledger = {"ledger_revision": 4, "events": []}
         item = _item(lifecycle_state="WAITING_HUMAN", current_owner="human")
         action = {

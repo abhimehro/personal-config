@@ -175,6 +175,7 @@ def _classify_live_merge(
 def _classify_live_close(
     item: dict[str, Any], live: dict[str, Any], key: str
 ) -> dict[str, Any] | None:
+    """Classify a closed PR by its labels, preserving unlabeled security holds."""
     labels = _label_names(live)
     disposition = next(
         (
@@ -884,6 +885,11 @@ def _apply_close_stale(action: dict[str, Any]) -> bool:
 def _apply_actions(
     ledger: dict[str, Any], actions: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
+    """Apply reconciliation actions to the ledger and return successful events.
+
+    Inventory reports and intake actions are skipped; intake is applied
+    separately by the ingestion path.
+    """
     items_by_key = {
         item["key"]: item
         for item in ledger.get("items") or []

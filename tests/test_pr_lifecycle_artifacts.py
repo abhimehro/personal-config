@@ -318,6 +318,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     config_validator.validate_unblock_config(value)
 
     def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
+        """Accept supported lifecycle settings and reject unknown configuration keys."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         lifecycle = config["lifecycle"]
         self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
@@ -412,6 +413,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         )
 
     def test_stage_prompts_name_role_based_tools(self):
+        """Require stage prompts to name their role-specific command tools."""
         review = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
         ).read_text(encoding="utf-8")

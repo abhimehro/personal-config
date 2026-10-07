@@ -53,16 +53,19 @@ _MUTATING_ACTIONS = {
 
 
 def _utc(value: datetime) -> datetime:
+    """Convert a datetime to UTC, treating naive values as already in UTC."""
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
 
 
 def _iso(value: datetime) -> str:
+    """Format a datetime as a UTC timestamp with second precision."""
     return _utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _safe_check_names(names: list[str]) -> list[str]:
+    """Sanitize up to ten check names and cap each result at 80 characters."""
     safe: list[str] = []
     for name in names[:10]:
         if not isinstance(name, str):
@@ -74,6 +77,7 @@ def _safe_check_names(names: list[str]) -> list[str]:
 
 
 def _parse_datetime(value: object) -> datetime | None:
+    """Parse an ISO timestamp as UTC, returning None for invalid input."""
     if not isinstance(value, str) or not value:
         return None
     try:
@@ -84,6 +88,7 @@ def _parse_datetime(value: object) -> datetime | None:
 
 
 def _family(pr: dict[str, Any]) -> str:
+    """Choose a routing family from author and branch hints, not identity policy."""
     author = pr.get("author")
     login = str(author.get("login") or "").lower() if isinstance(author, dict) else ""
     branch = str(pr.get("headRefName") or "").lower()
@@ -99,6 +104,7 @@ def _family(pr: dict[str, Any]) -> str:
 
 
 def _sticky_security(items: list[dict[str, Any]]) -> bool:
+    """Report whether any nonterminal ledger item retains a security hold."""
     return any(
         item.get("lifecycle_state") != "TERMINAL"
         and item.get("guardrail_outcome") == "REVIEW_SECURITY"
@@ -116,6 +122,7 @@ def _escalation(
     owner: str = "human",
     security: bool = False,
 ) -> dict[str, Any]:
+    """Build an escalation proposal with evidence, owner, and a leave-open default."""
     human_or_security = author_type != "BOT" or security or owner == "human"
     return {
         "action": "ESCALATE",
@@ -151,6 +158,11 @@ def _trigger_action(
     family: str,
     sticky_security: bool,
 ) -> list[dict[str, Any]]:
+    """Propose a trigger only after ownership, security, and history checks.
+
+    Deduplicate by trigger kind and head SHA. Return no action for a recent
+    matching marker, or escalate an expired or undated matching trigger.
+    """
     if sticky_security or (
         kind != "codescene" and author_type != "BOT" and family != "jules"
     ):
@@ -221,6 +233,7 @@ def _trigger_action(
 
 
 def _advisory(name: str, patterns: list[str]) -> bool:
+    """Match a check name against exact names or trailing-asterisk prefixes."""
     return any(
         name.startswith(pattern[:-1]) if pattern.endswith("*") else name == pattern
         for pattern in patterns
@@ -228,6 +241,7 @@ def _advisory(name: str, patterns: list[str]) -> bool:
 
 
 def _lineage_date(pr: dict[str, Any]) -> date | None:
+    """Extract a docs lineage branch date, returning None if absent or invalid."""
     match = _LINEAGE_RE.match(str(pr.get("headRefName") or ""))
     if match is None:
         return None
@@ -246,6 +260,7 @@ def _salvage_replacement(
     ledger_items_for_pr: list[dict[str, Any]],
     ledger: dict[str, Any],
 ) -> dict[str, Any] | None:
+    """Find a merged Stage 2 replacement whose evidence links to this PR."""
     items = [
         item
         for item in (ledger.get("items") or [])
@@ -276,6 +291,7 @@ def _terminal_but_open(
     ledger_items_for_pr: list[dict[str, Any]],
     author_type: str,
 ) -> dict[str, Any] | None:
+    """Escalate an open head marked terminal when no active ledger item exists."""
     if any(item.get("lifecycle_state") != "TERMINAL" for item in ledger_items_for_pr):
         return None
     head = str(pr.get("headRefOid") or "")
@@ -656,6 +672,7 @@ def route_pr(
 def _run_github_step(
     argv: list[str], step: str, *, run: Any = subprocess.run
 ) -> dict[str, Any]:
+    """Run one GitHub command and return its exit code or process error type."""
     try:
         result = run(
             argv,
@@ -670,6 +687,11 @@ def _run_github_step(
 
 
 def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
+    """Execute a selected GitHub mutation and attach step results to the action.
+
+    Branch updates use the expected head SHA; closes are re-read for
+    confirmation. Record failures in github_steps and unconfirmed.
+    """
     repo = str(action["repository"])
     pr = str(action["pr"])
     steps: list[dict[str, Any]] = []
@@ -811,6 +833,7 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
 def _human_ledger_rows(
     repo: str, ledger: dict[str, Any], packet_expiry_days: int
 ) -> list[dict[str, Any]]:
+    """Build backlog rows for active human-owned items and all security holds."""
     rows: list[dict[str, Any]] = []
     for item in ledger.get("items") or []:
         if (
@@ -854,6 +877,7 @@ def _rows_for_repo(
     ledger: dict[str, Any],
     packet_expiry_days: int,
 ) -> list[dict[str, Any]]:
+    """Combine a repository's ledger decision rows and escalation proposals."""
     rows = _human_ledger_rows(repo, ledger, packet_expiry_days)
     rows.extend(
         {
@@ -869,6 +893,7 @@ def _rows_for_repo(
 def _repo_counts(
     actions: list[dict[str, Any]], repositories: list[str]
 ) -> dict[str, Any]:
+    """Count proposals by action and blocker for each requested repository."""
     result: dict[str, Any] = {}
     for repo in repositories:
         repo_actions = [
@@ -890,6 +915,11 @@ def _repo_counts(
 
 
 def _load_full_comments(pr: dict[str, Any], *, run: Any) -> None:
+    """Fill missing PR comment history in place using paginated GitHub results.
+
+    Set comments_incomplete when counts are unknown or fetching or validation
+    fails, so callers cannot issue triggers without verified deduplication.
+    """
     comments = pr.get("comments")
     if not isinstance(comments, list):
         comments = []
@@ -984,6 +1014,12 @@ def run_unblock(
     limit: int | None,
     run: Any = subprocess.run,
 ) -> int:
+    """Build and emit a blocker plan, applying bounded mutations when requested.
+
+    Fetch the ledger and open PR inventory, classify identities, and route
+    blockers. In apply mode, refresh decision issues only for repositories
+    whose inventory succeeded. Return zero after emitting the plan.
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     repositories = list(config["repos"])
@@ -1109,6 +1145,7 @@ def run_unblock(
 
 
 def _emit(plan: dict[str, Any], json_out: bool) -> None:
+    """Print the unblock plan as JSON or a brief action and deferral summary."""
     if json_out:
         print(json.dumps(plan, indent=2, sort_keys=True))
         return
@@ -1120,6 +1157,7 @@ def _emit(plan: dict[str, Any], json_out: bool) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the unblock CLI parser for apply mode, output, filters, and limits."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--json", action="store_true", dest="json_out")
@@ -1129,6 +1167,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the unblock CLI, returning one for invalid limits or handled failures."""
     args = build_parser().parse_args(argv)
     if args.limit is not None and args.limit < 0:
         print("PR_LIFECYCLE_UNBLOCK_ERROR: ValueError", file=sys.stderr)

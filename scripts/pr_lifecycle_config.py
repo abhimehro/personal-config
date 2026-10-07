@@ -63,6 +63,11 @@ def validate_config(config: dict[str, Any]) -> None:
 
 
 def validate_unblock_config(value: Any) -> None:
+    """Validate optional advisory patterns and positive expiry settings.
+
+    Raise ValueError when a supplied unblock setting has an invalid type
+    or value; an absent configuration is allowed.
+    """
     if value is None:
         return
     unblock = require_mapping(value, "config.lifecycle.unblock")

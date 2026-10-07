@@ -18,6 +18,7 @@ import pr_lifecycle_open_inventory as inventory
 
 
 def _pr(number: int = 12) -> dict:
+    """Build a GraphQL PR fixture with reviews, comments, commits, and check states."""
     return {
         "number": number,
         "url": f"https://github.com/owner/repo/pull/{number}",
@@ -89,6 +90,7 @@ def _pr(number: int = 12) -> dict:
 
 
 def _payload(nodes: list[dict], *, next_page: bool = False, cursor: str = "cursor-1"):
+    """Wrap PR nodes in a GraphQL page with configurable pagination metadata."""
     return {
         "data": {
             "repository": {
@@ -129,6 +131,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertEqual(live["comments"][0]["author"]["login"], "dependabot[bot]")
 
     def test_normalizes_pr_identity_reviews_comments_commits_and_checks(self):
+        """Normalize GraphQL connections and truncate the PR body for classification."""
         live = inventory._normalize_pr(_pr(), "owner/repo")
         self.assertEqual(live["author"], {"login": "dependabot[bot]", "type": "Bot"})
         self.assertEqual(
@@ -152,6 +155,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertTrue(live["isDraft"])
 
     def test_check_conclusion_and_status_normalization(self):
+        """Map check runs and legacy statuses to the expected lifecycle states."""
         cases = (
             (
                 {
@@ -198,6 +202,7 @@ class OpenInventoryTests(unittest.TestCase):
                 self.assertEqual(inventory.check_state(raw), expected)
 
     def test_paginates_open_prs_with_50_per_page_query(self):
+        """Follow the next-page cursor while requesting the required PR metadata."""
         commands = []
         responses = [
             subprocess.CompletedProcess(
@@ -207,6 +212,7 @@ class OpenInventoryTests(unittest.TestCase):
         ]
 
         def run(argv, **_kwargs):
+            """Record the query arguments and return the next fake inventory page."""
             commands.append(argv)
             return responses.pop(0)
 
@@ -219,6 +225,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertIn("cursor=cursor-1", commands[1])
 
     def test_truncated_or_unknown_check_page_info_marks_checks_incomplete(self) -> None:
+        """Mark rollups pending when pagination is truncated or cannot be verified."""
         for page_info in (
             {"hasNextPage": True},
             None,
@@ -241,6 +248,7 @@ class OpenInventoryTests(unittest.TestCase):
                 )
 
     def test_missing_or_noninteger_comment_total_is_unknown(self) -> None:
+        """Preserve an unknown comment count when the API value is absent or invalid."""
         for count in (None, "120", True, -1):
             raw = _pr()
             if count is None:
@@ -252,6 +260,7 @@ class OpenInventoryTests(unittest.TestCase):
                 self.assertIsNone(live["commentsTotalCount"])
 
     def test_nonzero_exit_and_malformed_json_raise_oserror(self):
+        """Expose failed commands and invalid JSON as inventory errors."""
         for result in (
             subprocess.CompletedProcess(["gh"], 1, "", "failure"),
             subprocess.CompletedProcess(["gh"], 0, "{bad", ""),
@@ -267,6 +276,7 @@ class OpenInventoryTests(unittest.TestCase):
                 )
 
     def test_retries_transient_failures_then_succeeds(self):
+        """Retry transient process or JSON failures with the configured timeout."""
         valid = subprocess.CompletedProcess(
             ["gh"], 0, json.dumps(_payload([_pr()])), ""
         )
@@ -289,6 +299,7 @@ class OpenInventoryTests(unittest.TestCase):
                     _timeouts=timeouts,
                     **kwargs,
                 ):
+                    """Record the timeout and replay the next transient failure or response."""
                     _timeouts.append(kwargs["timeout"])
                     response = _responses.pop(0)
                     if isinstance(response, BaseException):
@@ -303,6 +314,7 @@ class OpenInventoryTests(unittest.TestCase):
                 self.assertEqual(timeouts, [120, 120])
 
     def test_three_transient_failures_raise_oserror(self):
+        """Stop after three failed attempts with two backoff delays."""
         failures = [
             subprocess.CompletedProcess(["gh"], 1, "", "temporary failure")
             for _ in range(3)
@@ -317,6 +329,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertEqual(sleeps, [2, 4])
 
     def test_graphql_errors_are_not_retried(self):
+        """Raise GraphQL API errors immediately without another request or sleep."""
         result = subprocess.CompletedProcess(
             ["gh"],
             0,
@@ -371,6 +384,7 @@ class OpenInventoryTests(unittest.TestCase):
         self.assertEqual(sleeps, [2, 4])
 
     def test_api_and_shape_errors_raise_oserror(self):
+        """Reject GraphQL errors and malformed inventory response shapes."""
         for payload in (
             {"errors": [{"message": "partial API failure"}]},
             {"data": {"repository": {"pullRequests": {"nodes": []}}}},

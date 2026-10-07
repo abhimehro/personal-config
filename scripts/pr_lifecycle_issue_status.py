@@ -142,6 +142,7 @@ def update_pinned_issue(status: dict[str, Any]) -> None:
 
 
 def _list_backlog_rows(repo: str) -> list[Any]:
+    """List open backlog issue candidates, raising OSError on invalid results."""
     listed = _gh_issue(
         [
             "list",
@@ -169,16 +170,19 @@ def _list_backlog_rows(repo: str) -> list[Any]:
 
 
 def _utc(value: datetime) -> datetime:
+    """Convert a datetime to UTC, treating naive values as already in UTC."""
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
 
 
 def _iso(value: datetime) -> str:
+    """Format a datetime as a UTC timestamp with second precision."""
     return _utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _previous_state(body: object) -> dict[str, Any]:
+    """Read the last embedded backlog state, defaulting invalid fields to empty."""
     if not isinstance(body, str):
         return {"first_seen": {}, "overdue_notified": []}
     matches = list(_STATE_PATTERN.finditer(body))
@@ -199,10 +203,12 @@ def _previous_state(body: object) -> dict[str, Any]:
 
 
 def _row_key(repo: str, row: dict[str, Any]) -> str:
+    """Identify a backlog item by repository, PR number, and blocker."""
     return f"{repo}#{row.get('pr')}:{row.get('blocker')}"
 
 
 def _markdown_cell(value: object, limit: int = 300) -> str:
+    """Bound cell text and neutralize pipes, comment markers, and mentions."""
     text = " ".join(str(value or "").replace("|", "\\|").split())
     text = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
     text = text.replace("@", "@\u200b")
@@ -215,6 +221,11 @@ def _prepare_backlog_rows(
     state: dict[str, Any],
     now: datetime,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
+    """Deduplicate rows and return prepared rows, state, and new overdue items.
+
+    Preserve first-seen timestamps for active keys, derive missing expiry
+    dates, and prune notification state for rows no longer in the backlog.
+    """
     now_utc = _utc(now)
     first_seen_before = state.get("first_seen") or {}
     notified = set(state.get("overdue_notified") or [])
@@ -333,6 +344,7 @@ def update_backlog_issue(
         return {"action": "NOOP_EMPTY", "repository": repo, "body": body}
 
     def notify_overdue(issue_number: int) -> None:
+        """Post the overdue summary and record its result, raising on failure."""
         comment_body = (
             f"@abhimehro {len(overdue)} item(s) passed their decision deadline:\n"
             + "\n".join(

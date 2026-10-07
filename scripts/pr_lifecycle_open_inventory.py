@@ -63,6 +63,10 @@ _TRANSIENT_GQL_MARKERS = (
 
 
 def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
+    """Normalize a check run or legacy status to a name/state pair.
+
+    Return None for unsupported context types or missing string names.
+    """
     typename = context.get("__typename")
     if typename == "CheckRun":
         name = context.get("name")
@@ -99,6 +103,7 @@ def _check_state(context: dict[str, Any]) -> tuple[str, str] | None:
 
 
 def _nodes(connection: Any, label: str) -> list[dict[str, Any]]:
+    """Return connection nodes or raise OSError for malformed node lists."""
     if not isinstance(connection, dict) or not isinstance(
         connection.get("nodes"), list
     ):
@@ -120,6 +125,11 @@ def _author_login(author: Any) -> str:
 
 
 def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
+    """Validate and normalize a GraphQL PR for identity and blocker routing.
+
+    Raise OSError for malformed fields. Mark incomplete check rollups as
+    pending and preserve unknown comment counts so callers fail closed.
+    """
     author = raw.get("author")
     if author is not None and not isinstance(author, dict):
         raise OSError("malformed pull request author")
