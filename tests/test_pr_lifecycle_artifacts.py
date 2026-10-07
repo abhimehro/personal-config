@@ -76,13 +76,13 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, message):
             validator.validate(self.write_ledger(ledger))
 
-    def test_nonempty_example_and_source_exports_validate(self):
+    def test_nonempty_example_and_source_exports_validate(self) -> None:
         validator.validate(
             ROOT / "tasks/pr-lifecycle-ledger.example.yaml",
             include_exports=True,
         )
 
-    def test_validate_does_not_run_export_prompt_gate(self):
+    def test_validate_does_not_run_export_prompt_gate(self) -> None:
         with mock.patch.object(
             validator,
             "validate_exports_and_prompts",
@@ -90,7 +90,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ):
             validator.validate(self.write_ledger(self.example()))
 
-    def test_validate_include_exports_invokes_prompt_gate(self):
+    def test_validate_include_exports_invokes_prompt_gate(self) -> None:
         # fmt: off
         # Keep the `as gate` line wrapped under 79 chars: the export-authority
         # merge gate patches this exact line, so black must not rejoin it.
@@ -103,7 +103,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             gate.assert_called_once()
         # fmt: on
 
-    def test_export_validation_reports_prompt_include_errors(self):
+    def test_export_validation_reports_prompt_include_errors(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         with mock.patch.object(
             config_validator,
@@ -116,11 +116,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             ):
                 config_validator.validate_exports_and_prompts(config)
 
-    def test_main_pointer_cannot_be_used_as_runtime_ledger(self):
+    def test_main_pointer_cannot_be_used_as_runtime_ledger(self) -> None:
         with self.assertRaisesRegex(ValueError, "schema root"):
             validator.validate(ROOT / "tasks/pr-lifecycle-ledger.yaml")
 
-    def test_active_pointer_selects_an_allowed_write_primitive(self):
+    def test_active_pointer_selects_an_allowed_write_primitive(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         pointer = validator.load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
         validator.validate_bootstrap_pointer(pointer, config)
@@ -129,7 +129,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported primitive"):
             validator.validate_bootstrap_pointer(pointer, config)
 
-    def test_validator_cli_requires_a_fetched_runtime_ledger_path(self):
+    def test_validator_cli_requires_a_fetched_runtime_ledger_path(self) -> None:
         result = subprocess.run(
             [sys.executable, "scripts/validate_pr_lifecycle_artifacts.py"],
             cwd=ROOT,
@@ -140,7 +140,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("runtime_ledger", result.stderr)
 
-    def test_duplicate_yaml_keys_fail_closed(self):
+    def test_duplicate_yaml_keys_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "duplicate.yaml"
             path.write_text(
@@ -149,17 +149,17 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate YAML key"):
                 validator.load_yaml(path)
 
-    def test_terminal_item_requires_terminal_disposition_and_no_owner(self):
+    def test_terminal_item_requires_terminal_disposition_and_no_owner(self) -> None:
         ledger = self.example()
         ledger["items"][1]["current_owner"] = "stage1"
         self.assert_invalid(ledger, "lifecycle state and owner disagree")
 
-    def test_nonterminal_item_requires_next_owner(self):
+    def test_nonterminal_item_requires_next_owner(self) -> None:
         ledger = self.example()
         ledger["items"][0]["next_owner"] = "none"
         self.assert_invalid(ledger, "nonterminal record requires next owner")
 
-    def test_all_url_fields_reject_non_https_values(self):
+    def test_all_url_fields_reject_non_https_values(self) -> None:
         evidence = self.example()
         evidence["items"][0]["evidence_urls"] = ["http://example.test/evidence"]
         self.assert_invalid(evidence, "schema items.0.evidence_urls.0")
@@ -176,26 +176,26 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ]
         self.assert_invalid(approval, "schema calibration.approval_evidence_urls.0")
 
-    def test_calibration_approval_requires_seven_events(self):
+    def test_calibration_approval_requires_seven_events(self) -> None:
         ledger = self.approved_example()
         ledger["calibration"]["successful_run_count"] = 6
         ledger["events"].pop()
         self.assert_invalid(ledger, "schema calibration.successful_run_count")
 
-    def test_calibration_approval_passes_with_seven_current_events(self):
+    def test_calibration_approval_passes_with_seven_current_events(self) -> None:
         validator.validate(self.write_ledger(self.approved_example()))
 
-    def test_stale_policy_cannot_retain_approved_calibration(self):
+    def test_stale_policy_cannot_retain_approved_calibration(self) -> None:
         ledger = self.approved_example()
         ledger["calibration"]["policy_revision"] = "pr-lifecycle-v1.1"
         self.assert_invalid(ledger, "stale policy")
 
-    def test_event_projection_must_match_item_revision(self):
+    def test_event_projection_must_match_item_revision(self) -> None:
         ledger = self.example()
         ledger["items"][0]["revision"] = 2
         self.assert_invalid(ledger, "projection revision disagrees")
 
-    def test_stage2_can_return_routine_results_to_stage1(self):
+    def test_stage2_can_return_routine_results_to_stage1(self) -> None:
         for state in ("STAGE2_QUEUED", "STAGE2_ACTIVE"):
             validate_transition_table(
                 {
@@ -205,7 +205,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                 }
             )
 
-    def test_acknowledgement_and_cancellation_do_not_increment_revision(self):
+    def test_acknowledgement_and_cancellation_do_not_increment_revision(self) -> None:
         validator.validate(self.write_ledger(self.example()))
         ledger = self.example()
         receipt = ledger["events"][1]
@@ -213,7 +213,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         receipt["status"] = "CANCELLED"
         validator.validate(self.write_ledger(ledger))
 
-    def test_receipts_require_a_parent_transition(self):
+    def test_receipts_require_a_parent_transition(self) -> None:
         for kind, status in (
             ("ACKNOWLEDGEMENT", "ACKNOWLEDGED"),
             ("CANCELLATION", "CANCELLED"),
@@ -224,31 +224,31 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             ledger["events"][1]["parent_event_id"] = None
             self.assert_invalid(ledger, "parent_event_id")
 
-    def test_in_place_handoff_status_mutation_is_not_a_receipt(self):
+    def test_in_place_handoff_status_mutation_is_not_a_receipt(self) -> None:
         ledger = self.example()
         ledger["events"][0]["status"] = "ACKNOWLEDGED"
         self.assert_invalid(ledger, "schema events.0.status")
 
-    def test_terminal_item_requires_terminal_event(self):
+    def test_terminal_item_requires_terminal_event(self) -> None:
         ledger = self.example()
         ledger["events"].pop(2)
         ledger["items"][1]["handoffs"] = []
         ledger["items"][1]["revision"] = 0
         self.assert_invalid(ledger, "terminal record requires terminal event")
 
-    def test_stage2_command_requires_explicit_runtime_ledger_path(self):
+    def test_stage2_command_requires_explicit_runtime_ledger_path(self) -> None:
         command = self.example()["stage2_work_items"][0]["required_test_command"]
         self.assertEqual(
             command,
             'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"',
         )
 
-    def test_verified_zero_requires_authoritative_evidence(self):
+    def test_verified_zero_requires_authoritative_evidence(self) -> None:
         ledger = self.example()
         ledger["repository_merge_methods"][0]["required_checks_verified_zero"] = False
         self.assert_invalid(ledger, "empty checks require verified-zero proof")
 
-    def test_legacy_config_keys_and_contract_drift_fail_closed(self):
+    def test_legacy_config_keys_and_contract_drift_fail_closed(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         config["merge_strategy"] = "squash"
         with self.assertRaisesRegex(ValueError, "legacy lifecycle keys"):
@@ -264,7 +264,7 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "config.repos"):
             validator.validate_config(config)
 
-    def test_active_config_requires_fetched_runtime_ledger_argument(self):
+    def test_active_config_requires_fetched_runtime_ledger_argument(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         self.assertEqual(
             config["lifecycle"]["validation_command"],
@@ -282,7 +282,8 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ):
             validator.validate_config(config)
 
-    def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
+    def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self) -> None:
+        """Accept supported rebalance settings and reject unknown lifecycle keys."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         lifecycle = config["lifecycle"]
         self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
@@ -294,16 +295,39 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported fields"):
             validator.validate_config(config)
 
-    def test_live_stage_prompts_require_runner_marker(self):
-        contract = "Read docs/automated-pr-lifecycle.md first."
-        config_validator.validate_prompt(
-            contract + " Run scripts/pr_lifecycle_run.py --stage 1.",
-            "daily-pr-review.md",
+    def test_stage_prompts_require_each_runtime_continuity_marker(self) -> None:
+        """Reject each stage prompt when any runtime continuity marker is missing."""
+        markers = (
+            "docs/automated-pr-lifecycle.md",
+            "docs/pr-lifecycle-runtime-ledger.md",
+            "Memory is enabled",
+            "Dashboard-referenced MCP set",
+            "ledger, run records, and lessons",
         )
-        with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
-            config_validator.validate_prompt(contract, "daily-pr-review.md")
+        prompts = ROOT / "docs/cursor-automations/prompts"
+        for name in (
+            "daily-pr-review.md",
+            "daily-pr-salvage.md",
+            "daily-pr-completion.md",
+            "daily-pr-completion.calibration.md",
+        ):
+            text = " ".join((prompts / name).read_text(encoding="utf-8").split())
+            config_validator.validate_prompt(text, name)
+            for marker in markers:
+                with self.subTest(name=name, missing=marker):
+                    self.assertIn(marker, text)
+                    with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
+                        config_validator.validate_prompt(text.replace(marker, ""), name)
+            with self.subTest(name=name, bootstrap_only=True):
+                with self.assertRaisesRegex(ValueError, "runtime continuity marker"):
+                    config_validator.validate_prompt(
+                        "docs/automated-pr-lifecycle.md "
+                        "scripts/pr_lifecycle_run.py --stage 1",
+                        name,
+                    )
 
-    def test_calibration_prompt_keeps_legacy_continuity_markers(self):
+    def test_calibration_prompt_keeps_legacy_continuity_markers(self) -> None:
+        """Require the full continuity contract for calibration prompts."""
         calibration = " ".join(
             (
                 "docs/automated-pr-lifecycle.md",
@@ -322,30 +346,34 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                 "daily-pr-completion.calibration.md",
             )
 
-    def test_enabled_memory_is_required_for_all_cursor_exports(self):
+    def test_enabled_memory_is_required_for_all_cursor_exports(self) -> None:
+        """Verify every Cursor automation export enables memory."""
         exports = ROOT / "docs/cursor-automations/exports"
         for path in sorted(exports.glob("*.json")):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertTrue(data["memoryEnabled"], path.name)
 
-    def test_stage_prompts_bootstrap_stage_runner(self):
+    def test_stage_prompts_bind_runtime_ledger_and_stage(self) -> None:
+        """Require stage identity, runtime ledger authority, and revision checks."""
         prompts = ROOT / "docs/cursor-automations/prompts"
         for name, stage in (
-            ("daily-pr-review.md", "--stage 1"),
-            ("daily-pr-salvage.md", "--stage 2"),
-            ("daily-pr-completion.md", "--stage 3"),
+            ("daily-pr-review.md", "Stage 1"),
+            ("daily-pr-salvage.md", "Stage 2"),
+            ("daily-pr-completion.md", "Stage 3"),
         ):
             with self.subTest(name):
-                text = (prompts / name).read_text(encoding="utf-8")
-                self.assertIn("scripts/pr_lifecycle_run.py " + stage, text)
+                text = " ".join((prompts / name).read_text(encoding="utf-8").split())
+                self.assertIn("You are **" + stage, text)
+                self.assertIn(
+                    "automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml",
+                    text,
+                )
+                self.assertIn("non-authoritative bootstrap pointer", text)
+                self.assertIn("revision-checked events", text)
                 self.assertIn("docs/automated-pr-lifecycle.md", text)
-        calibration = (prompts / "daily-pr-completion.calibration.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("Dashboard-referenced MCP set", calibration)
-        self.assertIn("`gh`", calibration)
 
-    def test_identity_policy_versions_hyphen_and_slash_prefixes(self):
+    def test_identity_policy_versions_hyphen_and_slash_prefixes(self) -> None:
+        """Verify agent branch prefixes and aligned identity policy revisions."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         prefixes = config["identity_classification"]["branch_prefixes"]
         for agent in ("jules", "bolt", "palette", "sentinel"):
@@ -361,18 +389,22 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             "pr-lifecycle-v1.4",
         )
 
-    def test_stage_prompts_name_role_based_tools(self):
+    def test_stage_prompts_name_role_based_tools(self) -> None:
+        """Verify each stage names its tools, handoffs, and action limits."""
         review = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("pr_lifecycle_reconcile.py", review)
-        self.assertIn("pr_lifecycle_feed.py", review)
-        self.assertIn("REVIEW.md", review)
+        self.assertIn("scripts/pr_identity.py", review)
+        self.assertIn("complete Stage 2 work item", review)
+        self.assertIn("CHANGES_REQUESTED", review)
         salvage = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-salvage.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("pr_lifecycle_feed.py", salvage)
-        self.assertIn("never merges", salvage)
+        self.assertIn("fix-ci", salvage)
+        self.assertIn(
+            "Never approve, request review, mark ready, merge, close",
+            salvage,
+        )
         calibration = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-completion.calibration.md"
         ).read_text(encoding="utf-8")
@@ -381,10 +413,14 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         completion = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-completion.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("REVIEW.md", completion)
-        self.assertIn("advisory", completion)
+        self.assertIn("TRUNK_QUEUE", completion)
+        self.assertIn(
+            "required-check configuration cannot be read, hold rather than act",
+            completion,
+        )
 
-    def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
+    def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self) -> None:
+        """Verify discovered merge methods clear holds and retain check evidence."""
         ledger = self.example()
         verified = ledger["repository_merge_methods"]
         self.assertTrue(
@@ -398,54 +434,88 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assertTrue(verified[6]["required_checks"])
 
 
-class TestStagePromptBootstrap(unittest.TestCase):
-    """Stage prompts are thin bootstraps that defer to pr_lifecycle_run plans."""
+class TestStagePromptSafeguards(unittest.TestCase):
+    """Expanded stage prompts preserve execution and handoff safeguards."""
 
     def _prompt(self, name: str) -> str:
+        """Return the expanded source of a named lifecycle automation prompt."""
         return expand_prompt_source(ROOT / "docs/cursor-automations/prompts" / name)
 
-    def test_review_prompt_stage1_runner_and_feed(self):
-        review = self._prompt("daily-pr-review.md")
-        self.assertIn("pr_lifecycle_run.py --stage 1", review)
-        self.assertIn("emitted plan", review)
-        self.assertIn("pr_lifecycle_feed.py", review)
-        self.assertIn("pr_lifecycle_reconcile.py", review)
+    def test_review_prompt_routes_mechanical_repairs(self) -> None:
+        """Require bounded Stage 2 repair handoffs and replacement PR re-ingestion."""
+        review = " ".join(self._prompt("daily-pr-review.md").split())
+        self.assertIn("bounded mechanical repair", review)
+        self.assertIn("create exactly one complete Stage 2 work item", review)
+        self.assertIn("Re-ingest Stage 2 salvage replacement PRs", review)
 
-    def test_review_prompt_guardrails(self):
-        review = self._prompt("daily-pr-review.md")
-        self.assertIn("Calibration stays", review)
-        self.assertIn("Schema-aware CAS", review)
-        self.assertIn("force-push", review)
+    def test_review_prompt_guardrails(self) -> None:
+        """Require validated runtime state and protection for sensitive human work."""
+        review = " ".join(self._prompt("daily-pr-review.md").split())
+        self.assertIn("take no lifecycle action or calibration step", review)
+        self.assertIn("selected CAS path", review)
+        self.assertIn(
+            "Sticky sensitive-path classification still blocks",
+            review,
+        )
+        self.assertIn(
+            "never auto-acts on security-sensitive or ordinary human-authored work",
+            review,
+        )
         self.assertIn("run record", review)
 
-    def test_salvage_prompt_never_merges_and_empty_feed_stop(self):
-        salvage = self._prompt("daily-pr-salvage.md")
-        self.assertIn("never merges", salvage)
-        self.assertIn("EMPTY_FEED_WITH_ELIGIBLE_STOCK", salvage)
-        self.assertIn("LOGIC_STOP", salvage)
-        self.assertIn("heal-forward", salvage)
+    def test_salvage_prompt_draft_only_and_structured_outcome(self) -> None:
+        """Require draft verification, provenance, and structured failure records."""
+        salvage = " ".join(self._prompt("daily-pr-salvage.md").split())
+        self.assertIn(
+            "Never approve, request review, mark ready, merge, close",
+            salvage,
+        )
+        self.assertIn("structured failed-recovery record", salvage)
+        self.assertIn("re-read `isDraft`", salvage)
+        self.assertIn("provenance to the original before handing off", salvage)
 
-    def test_completion_calibration_bounce_back(self):
-        calibration = self._prompt("daily-pr-completion.calibration.md")
-        self.assertIn("router", calibration)
-        self.assertIn("back to Stage 1", " ".join(calibration.split()))
-        self.assertIn("file-collision", calibration)
+    def test_completion_calibration_requires_progress(self) -> None:
+        """Require bounded repair progress before counting calibration success."""
+        calibration = " ".join(
+            self._prompt("daily-pr-completion.calibration.md").split()
+        )
+        self.assertIn(
+            "report-only for approve/merge/close/comment/branch mutations",
+            calibration,
+        )
+        self.assertIn("route a bounded repair", calibration.lower())
+        self.assertIn(
+            "A docs-only wrap-up is not a successful calibration run",
+            calibration,
+        )
+        self.assertIn("must not increment `successful_run_count`", calibration)
 
-    def test_completion_prompt_stage3_and_bot_thread_advisory(self):
-        completion = self._prompt("daily-pr-completion.md")
-        self.assertIn("pr_lifecycle_run.py --stage 3", completion)
-        self.assertIn("advisory", completion)
-        self.assertIn("Codacy", completion)
-        self.assertIn("REVIEW.md", completion)
+    def test_completion_prompt_rechecks_queue_predicates(self) -> None:
+        """Require fresh queue evidence and a stop after queue submission failure."""
+        completion = " ".join(self._prompt("daily-pr-completion.md").split())
+        self.assertIn(
+            "Re-read every predicate independently of Stage 2's recovery notes",
+            completion,
+        )
+        self.assertIn("TRUNK_QUEUE", completion)
+        self.assertIn(
+            "If approval succeeds and queue submission fails, record the failure and stop",
+            completion,
+        )
+        self.assertIn(
+            "required-check configuration cannot be read, hold rather than act",
+            completion,
+        )
 
-    def test_lifecycle_contract_sha_match_exception(self):
+    def test_lifecycle_contract_sha_match_exception(self) -> None:
+        """Preserve documented exceptions to skipping unchanged PR revisions."""
         contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
         self.assertIn("SHA_MATCH skip applies only", contract)
         self.assertIn("canonical-pick", contract)
         self.assertIn("product-mutation", contract)
         self.assertIn("salvage only", contract)
 
-    def test_lifecycle_contract_trunk_stale_vs_main(self):
+    def test_lifecycle_contract_trunk_stale_vs_main(self) -> None:
         contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
         self.assertIn("Trunk queue: stale vs main", contract)
         self.assertIn("stale-vs-main", contract)
@@ -473,7 +543,7 @@ class TestStagePromptBootstrap(unittest.TestCase):
         contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         self.assertIn("stale-vs-main", contributing)
 
-    def test_policy_revision_stays_v14(self):
+    def test_policy_revision_stays_v14(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
         self.assertEqual(

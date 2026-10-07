@@ -478,6 +478,9 @@ EOF
 		avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$metrics_report")
 		local total_warnings
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
+		# Expand the period-based range for larger observed totals while keeping
+		# the period's warning thresholds fixed.
+		((total_warnings > warning_meter_max)) && warning_meter_max=$total_warnings
 
 		cat >>"$dashboard_file" <<EOF
             <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
@@ -496,8 +499,8 @@ EOF
             </li>
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">
-                    ${total_warnings}
-                    <meter value="${total_warnings}" min="0" max="${warning_meter_max}" low="${warning_meter_low}" high="${warning_meter_high}" optimum="0" aria-label="Total Warnings: ${total_warnings}"></meter>
+                    ${total_warnings:-0}
+                    <meter value="${total_warnings:-0}" min="0" max="${warning_meter_max}" low="${warning_meter_low}" high="${warning_meter_high}" optimum="0" aria-label="Total Warnings: ${total_warnings:-0}"></meter>
                 </div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
