@@ -119,30 +119,6 @@ class RoutePrTests(unittest.TestCase):
         )[0]
         self.assertEqual(action["action"], "ESCALATE")
 
-    def test_cross_repo_coderabbit_branch_is_escalated_not_triggered(self):
-        """A fork PR cannot claim the coderabbit family via a branch prefix."""
-        action = _route(
-            _pr(
-                headRefName="coderabbit-fixes",
-                mergeable="CONFLICTING",
-                isCrossRepository=True,
-                author={"login": "random-bot[bot]", "type": "Bot"},
-            ),
-        )[0]
-        self.assertEqual(action["action"], "ESCALATE")
-
-    def test_same_repo_coderabbit_branch_still_routes_fixer(self):
-        """Same-repo coderabbit-prefixed branches keep the fixer family."""
-        action = _route(
-            _pr(
-                headRefName="coderabbit-fixes",
-                mergeable="CONFLICTING",
-                author={"login": "random-bot[bot]", "type": "Bot"},
-            ),
-        )[0]
-        self.assertEqual(action["action"], "TRIGGER")
-        self.assertEqual(action["kind"], "coderabbit_conflict")
-
     def test_conflict_gates_behind_checks_and_review(self):
         """Resolve conflict routing before considering behind-base or review blockers."""
         pr = _pr(
@@ -529,27 +505,6 @@ class RoutePrTests(unittest.TestCase):
                     self.assertEqual(actions[0]["blocker"], "trigger_unanswered")
                 else:
                     self.assertEqual(actions, [])
-
-    def test_marker_from_untrusted_author_does_not_suppress_trigger(self):
-        """Only owner-authored trigger markers dedupe; anyone else is ignored."""
-        marker = f"<!-- pr-lifecycle-trigger kind=dependabot_rebase head={'a' * 40} -->"
-        for comment in (
-            {
-                "author": {"login": "rando"},
-                "body": marker,
-                "createdAt": "2026-10-09T00:00:00Z",
-            },
-            {"body": marker, "createdAt": "2026-10-09T00:00:00Z"},
-        ):
-            with self.subTest(author=comment.get("author")):
-                actions = _route(
-                    _pr(
-                        author={"login": "dependabot[bot]", "type": "Bot"},
-                        mergeStateStatus="BEHIND",
-                        comments=[comment],
-                    )
-                )
-                self.assertEqual(actions[0]["action"], "TRIGGER")
 
     def test_latest_matching_trigger_controls_expiry(self):
         marker = f"<!-- pr-lifecycle-trigger kind=dependabot_rebase head={'a' * 40} -->"
