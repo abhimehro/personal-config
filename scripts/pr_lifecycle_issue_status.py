@@ -321,32 +321,13 @@ def _row_deadline(
     return expiry_text, now_utc >= expiry_at
 
 
-def _prepare_row(
-    repo: str,
-    raw: dict[str, Any],
-    first_seen_before: dict[str, Any],
-    now_utc: datetime,
-    seen: set[str],
-    first_seen: dict[str, str],
-) -> dict[str, Any] | None:
-    """Prepare one deduped backlog row, or None when the key repeats."""
-    key = _row_key(repo, raw)
-    if key in seen:
-        return None
-    seen.add(key)
-    row = dict(raw)
-    first, first_at = _row_first_seen(key, first_seen_before, now_utc)
-    first_seen[key] = first
-    expiry_text, overdue = _row_deadline(row, first_at, now_utc)
-    row.update(
-        {
-            "id": key,
-            "first_seen": first,
-            "expires": expiry_text,
-            "overdue": overdue,
-        }
-    )
-    return row
+def _record_overdue(
+    row: dict[str, Any], notified: set[str], newly_overdue: list[dict[str, Any]]
+) -> None:
+    """Queue a row for its one overdue notification, once per state key."""
+    if row["overdue"] and row["id"] not in notified:
+        newly_overdue.append(row)
+        notified.add(row["id"])
 
 
 def _prepare_backlog_rows(
@@ -375,13 +356,24 @@ def _prepare_backlog_rows(
     newly_overdue: list[dict[str, Any]] = []
     seen: set[str] = set()
     for raw in rows:
-        row = _prepare_row(repo, raw, first_seen_before, now_utc, seen, first_seen)
-        if row is None:
+        key = _row_key(repo, raw)
+        if key in seen:
             continue
+        seen.add(key)
+        row = dict(raw)
+        first, first_at = _row_first_seen(key, first_seen_before, now_utc)
+        first_seen[key] = first
+        expiry_text, overdue = _row_deadline(row, first_at, now_utc)
+        row.update(
+            {
+                "id": key,
+                "first_seen": first,
+                "expires": expiry_text,
+                "overdue": overdue,
+            }
+        )
         prepared.append(row)
-        if row["overdue"] and row["id"] not in notified:
-            newly_overdue.append(row)
-            notified.add(row["id"])
+        _record_overdue(row, notified, newly_overdue)
     new_state = {
         "first_seen": first_seen,
         "overdue_notified": sorted(key for key in notified if key in first_seen),
