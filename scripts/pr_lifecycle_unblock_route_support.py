@@ -83,6 +83,17 @@ class _Route:
     base: str
 
 
+def _trusted_marker_author(comment: dict[str, Any], repo: str) -> bool:
+    """Trigger markers only count when authored by the repository owner.
+
+    The executor posts marker comments through the owner's GH_TOKEN identity;
+    any other author could pre-post the marker to suppress a real trigger.
+    """
+    author = comment.get("author")
+    login = author.get("login") if isinstance(author, dict) else None
+    return isinstance(login, str) and login == repo.split("/", 1)[0]
+
+
 def _is_dependabot(login: str, branch: str, pr: dict[str, Any]) -> bool:
     """Match a Dependabot-authored login."""
     return "dependabot" in login
@@ -254,7 +265,9 @@ def _trigger_action(
     matching = [
         comment
         for comment in ctx.pr.get("comments") or []
-        if isinstance(comment, dict) and marker in str(comment.get("body") or "")
+        if isinstance(comment, dict)
+        and marker in str(comment.get("body") or "")
+        and _trusted_marker_author(comment, ctx.repo)
     ]
     if matching:
         return _unanswered_trigger(ctx, kind, matching[-1])

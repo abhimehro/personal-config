@@ -46,6 +46,15 @@ class Stage2HandoffTests(unittest.TestCase):
         self.assertTrue(prepared[0]["overdue"])
         self.assertEqual(len(overdue), 1)
 
+    def test_non_string_notified_entries_do_not_crash(self):
+        """Hand-edited state with unhashable entries is ignored, not fatal."""
+        state = {"first_seen": {}, "overdue_notified": [["x"], {"a": 1}, 42]}
+        prepared, new_state, _ = issue_status._prepare_backlog_rows(
+            "owner/repo", [{"pr": 1, "blocker": "b"}], state, NOW
+        )
+        self.assertEqual(new_state["overdue_notified"], [])
+        self.assertEqual(len(prepared), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

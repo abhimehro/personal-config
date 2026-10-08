@@ -339,7 +339,9 @@ def _prepare_backlog_rows(
     """
     now_utc = _utc(now)
     first_seen_before = state.get("first_seen") or {}
-    notified = set(state.get("overdue_notified") or [])
+    notified = {
+        key for key in (state.get("overdue_notified") or []) if isinstance(key, str)
+    }
     first_seen: dict[str, str] = {}
     prepared: list[dict[str, Any]] = []
     newly_overdue: list[dict[str, Any]] = []

@@ -73,6 +73,7 @@ class UnblockApplyTests(unittest.TestCase):
             for index in range(120)
         ]
         full_comments[101].update(
+            user={"login": "abhimehro"},
             body=marker,
             created_at="2026-10-01T00:00:00Z",
         )
