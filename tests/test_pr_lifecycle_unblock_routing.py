@@ -119,6 +119,30 @@ class RoutePrTests(unittest.TestCase):
         )[0]
         self.assertEqual(action["action"], "ESCALATE")
 
+    def test_cross_repo_coderabbit_branch_is_escalated_not_triggered(self):
+        """A fork PR cannot claim the coderabbit family via a branch prefix."""
+        action = _route(
+            _pr(
+                headRefName="coderabbit-fixes",
+                mergeable="CONFLICTING",
+                isCrossRepository=True,
+                author={"login": "random-bot[bot]", "type": "Bot"},
+            ),
+        )[0]
+        self.assertEqual(action["action"], "ESCALATE")
+
+    def test_same_repo_coderabbit_branch_still_routes_fixer(self):
+        """Same-repo coderabbit-prefixed branches keep the fixer family."""
+        action = _route(
+            _pr(
+                headRefName="coderabbit-fixes",
+                mergeable="CONFLICTING",
+                author={"login": "random-bot[bot]", "type": "Bot"},
+            ),
+        )[0]
+        self.assertEqual(action["action"], "TRIGGER")
+        self.assertEqual(action["kind"], "coderabbit_conflict")
+
     def test_conflict_gates_behind_checks_and_review(self):
         """Resolve conflict routing before considering behind-base or review blockers."""
         pr = _pr(

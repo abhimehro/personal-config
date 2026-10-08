@@ -89,8 +89,14 @@ def _is_dependabot(login: str, branch: str, pr: dict[str, Any]) -> bool:
 
 
 def _is_coderabbit(login: str, branch: str, pr: dict[str, Any]) -> bool:
-    """Match the CodeRabbit login or a coderabbit-prefixed branch."""
-    return login == "coderabbitai[bot]" or branch.startswith("coderabbit")
+    """Match the CodeRabbit login, or a coderabbit-prefixed same-repo branch.
+
+    The branch prefix alone is attacker-controllable on fork PRs, so it only
+    counts when isCrossRepository is false — same rule as the jules family.
+    """
+    if login == "coderabbitai[bot]":
+        return True
+    return branch.startswith("coderabbit") and not pr.get("isCrossRepository")
 
 
 def _is_jules(login: str, branch: str, pr: dict[str, Any]) -> bool:

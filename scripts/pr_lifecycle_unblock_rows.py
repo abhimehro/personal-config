@@ -86,18 +86,14 @@ def _rows_for_repo(
             "packet_expiry_close_days": packet_expiry_days,
         }
         for action in actions
-        if _is_human_escalate(action, repo)
+        if _is_escalate_for_repo(action, repo)
     )
     return rows
 
 
-def _is_human_escalate(action: dict[str, Any], repo: str) -> bool:
-    """True for a human-owned escalation proposal on this repository."""
-    return (action.get("action"), action.get("repository"), action.get("owner")) == (
-        "ESCALATE",
-        repo,
-        "human",
-    )
+def _is_escalate_for_repo(action: dict[str, Any], repo: str) -> bool:
+    """True for an escalation proposal on this repository, any owner."""
+    return (action.get("action"), action.get("repository")) == ("ESCALATE", repo)
 
 
 def _repo_counts(

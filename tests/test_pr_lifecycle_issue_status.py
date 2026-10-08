@@ -462,6 +462,24 @@ class IssueStatusTests(unittest.TestCase):
                 self.assertEqual(prepared[0]["expires"], "2026-09-06T12:00:00Z")
                 self.assertEqual(overdue, [])
 
+    def test_stage2_rows_render_in_handoff_section_and_never_overdue(self):
+        """Non-human escalations list under Stage 2 handoffs without a deadline."""
+        rows = [
+            {"pr": 42, "blocker": "conflict", "owner": "stage2"},
+            {"pr": 43, "blocker": "security", "owner": "human"},
+        ]
+        prepared, state, overdue = self.st._prepare_backlog_rows(
+            "owner/repo", rows, {}, NOW
+        )
+        by_pr = {row["pr"]: row for row in prepared}
+        self.assertFalse(by_pr[42]["overdue"])
+        self.assertEqual(by_pr[42]["expires"], "—")
+        self.assertEqual(overdue, [])
+        self.assertEqual(state["overdue_notified"], [])
+        body = self.st.backlog_issue_body("owner/repo", rows, {}, NOW)
+        self.assertIn("Stage 2 handoffs", body)
+        self.assertIn("| stage2 |", body)
+
     def test_failed_overdue_notification_does_not_persist_notified_state(self):
         repo = "owner/repo"
         row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}

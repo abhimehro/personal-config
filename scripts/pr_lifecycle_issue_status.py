@@ -301,6 +301,15 @@ def _markdown_cell(value: object, limit: int = 300) -> str:
     return text[:limit]
 
 
+def _is_handoff_row(row: dict[str, Any]) -> bool:
+    """True for rows handed to a non-human owner (e.g. stage2 escalations).
+
+    Rows without an owner, or owned by "human", stay on the human decision
+    table with real expiry and overdue state.
+    """
+    return row.get("owner") not in (None, "human")
+
+
 def _prepare_backlog_rows(
     repo: str,
     rows: list[dict[str, Any]],
@@ -333,7 +342,10 @@ def _prepare_backlog_rows(
         first, first_at = _row_first_seen(key, first_seen_before, now_utc)
         first_seen[key] = first
         expiry_text, expiry_at = _row_expiry(row, first_at)
-        overdue = now_utc >= expiry_at
+        if _is_handoff_row(row):
+            expiry_text, overdue = "—", False
+        else:
+            overdue = now_utc >= expiry_at
         row.update(
             {
                 "id": key,
@@ -371,7 +383,7 @@ def backlog_issue_body(
         ]
         used = sum(len(line) + 1 for line in table)
         omitted = 0
-        for row in prepared:
+        for row in (r for r in prepared if not _is_handoff_row(r)):
             line = (
                 f"| [{_markdown_cell(row.get('pr'))}]"
                 f"({row.get('url') or ''}) | "
@@ -392,6 +404,34 @@ def backlog_issue_body(
             table.append(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
+        handoffs = [r for r in prepared if _is_handoff_row(r)]
+        if handoffs:
+            table.extend(
+                [
+                    "",
+                    "Stage 2 handoffs (no human decision needed):",
+                    "",
+                    "| PR | Blocker | Evidence | Recommended action | Owner | First seen |",
+                    "| --- | --- | --- | --- | --- | --- |",
+                ]
+            )
+            for row in handoffs:
+                line = (
+                    f"| [{_markdown_cell(row.get('pr'))}]"
+                    f"({row.get('url') or ''}) | "
+                    f"{_markdown_cell(row.get('blocker'))} | "
+                    f"{_markdown_cell(row.get('evidence'), 160)} | "
+                    f"{_markdown_cell(row.get('recommended_action'), 200)} | "
+                    f"{_markdown_cell(row.get('owner'))} | "
+                    f"{row['first_seen']} |"
+                )
+                if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
+                    omitted += 1
+                    continue
+                used += len(line) + 1
+                table.append(line)
+            if omitted:
+                table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"
