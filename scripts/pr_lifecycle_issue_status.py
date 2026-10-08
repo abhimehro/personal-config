@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -365,6 +366,73 @@ def _prepare_backlog_rows(
     return prepared, new_state, newly_overdue
 
 
+def _human_row_line(row: dict[str, Any]) -> str:
+    """Render one human-decision backlog row."""
+    return (
+        f"| [{_markdown_cell(row.get('pr'))}]"
+        f"({row.get('url') or ''}) | "
+        f"{_markdown_cell(row.get('blocker'))} | "
+        f"{_markdown_cell(row.get('evidence'), 160)} | "
+        f"{_markdown_cell(row.get('recommended_action'), 200)} | "
+        f"{_markdown_cell(row.get('safe_default'), 160)} | "
+        f"{_markdown_cell(row.get('owner'))} | "
+        f"{row['first_seen']} | {row['expires']} | "
+        f"{'OVERDUE' if row['overdue'] else ''} |"
+    )
+
+
+def _handoff_row_line(row: dict[str, Any]) -> str:
+    """Render one Stage 2 handoff row (no expiry or status columns)."""
+    return (
+        f"| [{_markdown_cell(row.get('pr'))}]"
+        f"({row.get('url') or ''}) | "
+        f"{_markdown_cell(row.get('blocker'))} | "
+        f"{_markdown_cell(row.get('evidence'), 160)} | "
+        f"{_markdown_cell(row.get('recommended_action'), 200)} | "
+        f"{_markdown_cell(row.get('owner'))} | "
+        f"{row['first_seen']} |"
+    )
+
+
+def _capped_row_lines(
+    rows: Iterable[dict[str, Any]],
+    render: Callable[[dict[str, Any]], str],
+    used: int,
+) -> tuple[list[str], int, int]:
+    """Render rows while the table stays under _BACKLOG_TABLE_CHAR_CAP."""
+    lines: list[str] = []
+    omitted = 0
+    for row in rows:
+        line = render(row)
+        if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
+            omitted += 1
+            continue
+        used += len(line) + 1
+        lines.append(line)
+    return lines, used, omitted
+
+
+def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> None:
+    """Append the Stage 2 handoffs section when non-human rows exist."""
+    handoffs = [r for r in prepared if _is_handoff_row(r)]
+    if not handoffs:
+        return
+    table.extend(
+        [
+            "",
+            "Stage 2 handoffs (no human decision needed):",
+            "",
+            "| PR | Blocker | Evidence | Recommended action | Owner | First seen |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+    )
+    used = sum(len(line) + 1 for line in table)
+    lines, _, omitted = _capped_row_lines(handoffs, _handoff_row_line, used)
+    table.extend(lines)
+    if omitted:
+        table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
+
+
 def backlog_issue_body(
     repo: str,
     rows: list[dict[str, Any]],
@@ -382,56 +450,15 @@ def backlog_issue_body(
             "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
         used = sum(len(line) + 1 for line in table)
-        omitted = 0
-        for row in (r for r in prepared if not _is_handoff_row(r)):
-            line = (
-                f"| [{_markdown_cell(row.get('pr'))}]"
-                f"({row.get('url') or ''}) | "
-                f"{_markdown_cell(row.get('blocker'))} | "
-                f"{_markdown_cell(row.get('evidence'), 160)} | "
-                f"{_markdown_cell(row.get('recommended_action'), 200)} | "
-                f"{_markdown_cell(row.get('safe_default'), 160)} | "
-                f"{_markdown_cell(row.get('owner'))} | "
-                f"{row['first_seen']} | {row['expires']} | "
-                f"{'OVERDUE' if row['overdue'] else ''} |"
-            )
-            if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
-                omitted += 1
-                continue
-            used += len(line) + 1
-            table.append(line)
+        rows, used, omitted = _capped_row_lines(
+            (r for r in prepared if not _is_handoff_row(r)), _human_row_line, used
+        )
+        table.extend(rows)
         if omitted:
             table.append(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
-        handoffs = [r for r in prepared if _is_handoff_row(r)]
-        if handoffs:
-            table.extend(
-                [
-                    "",
-                    "Stage 2 handoffs (no human decision needed):",
-                    "",
-                    "| PR | Blocker | Evidence | Recommended action | Owner | First seen |",
-                    "| --- | --- | --- | --- | --- | --- |",
-                ]
-            )
-            for row in handoffs:
-                line = (
-                    f"| [{_markdown_cell(row.get('pr'))}]"
-                    f"({row.get('url') or ''}) | "
-                    f"{_markdown_cell(row.get('blocker'))} | "
-                    f"{_markdown_cell(row.get('evidence'), 160)} | "
-                    f"{_markdown_cell(row.get('recommended_action'), 200)} | "
-                    f"{_markdown_cell(row.get('owner'))} | "
-                    f"{row['first_seen']} |"
-                )
-                if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
-                    omitted += 1
-                    continue
-                used += len(line) + 1
-                table.append(line)
-            if omitted:
-                table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
+        _append_handoff_table(table, prepared, used)
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"
