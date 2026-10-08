@@ -311,6 +311,16 @@ def _is_handoff_row(row: dict[str, Any]) -> bool:
     return row.get("owner") not in (None, "human")
 
 
+def _row_deadline(
+    row: dict[str, Any], first_at: datetime, now_utc: datetime
+) -> tuple[str, bool]:
+    """Expiry text and overdue flag; non-human handoff rows never expire."""
+    expiry_text, expiry_at = _row_expiry(row, first_at)
+    if _is_handoff_row(row):
+        return "—", False
+    return expiry_text, now_utc >= expiry_at
+
+
 def _prepare_backlog_rows(
     repo: str,
     rows: list[dict[str, Any]],
@@ -342,11 +352,7 @@ def _prepare_backlog_rows(
         seen.add(key)
         first, first_at = _row_first_seen(key, first_seen_before, now_utc)
         first_seen[key] = first
-        expiry_text, expiry_at = _row_expiry(row, first_at)
-        if _is_handoff_row(row):
-            expiry_text, overdue = "—", False
-        else:
-            overdue = now_utc >= expiry_at
+        expiry_text, overdue = _row_deadline(row, first_at, now_utc)
         row.update(
             {
                 "id": key,
@@ -458,7 +464,7 @@ def backlog_issue_body(
             table.append(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
-        _append_handoff_table(table, prepared, used)
+        _append_handoff_table(table, prepared)
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"
