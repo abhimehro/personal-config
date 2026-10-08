@@ -255,7 +255,10 @@ class PRContext:
 
 def normalize_issue_key(raw_key: str) -> str:
     """Normalize issue key to uppercase identifier (e.g. 'proj-123' -> 'PROJ-123')."""
-    return raw_key.strip().upper()
+    key = raw_key.strip().upper()
+    if key.startswith(("CWE-", "CVE-", "GHSA-")):
+        return ""
+    return key
 
 
 def _map_keyword_to_relationship(keyword: str) -> RelationshipType:

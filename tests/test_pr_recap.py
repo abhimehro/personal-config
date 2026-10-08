@@ -140,6 +140,9 @@ class TestIssueExtraction(unittest.TestCase):
             "123-ABHI invalid prefix",
             "A-1 single letter prefix",
             "VERYLONGLONGIDENTIFIER-123 too long prefix",
+            "Fix Option Injection (CWE-88) in pkill/pgrep commands",
+            "Fix CVE-2026-1234 vulnerability",
+            "Relates to GHSA-1234-5678-9012",
         )
         result = extract_issue_keys(commit_messages=commits)
         self.assertEqual(result, {})
