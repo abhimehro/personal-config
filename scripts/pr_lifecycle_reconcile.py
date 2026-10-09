@@ -684,14 +684,12 @@ def _dup_action(loser: dict[str, Any], survivor: dict[str, Any]) -> dict[str, An
 def _duplicate_terminal_actions(
     items: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], set[Any]]:
-    """Return CLOSED_DUPLICATE actions for stale duplicate items.
-
-    Keys embed head_sha, so a re-intake after drift can mint a second
-    nonterminal item for the same (repository, pr). The item at the most
-    advanced lifecycle state (tiebreak: higher revision, then newer
-    updated_at_utc) survives; the rest go TERMINAL/CLOSED_DUPLICATE.
-    Items missing repository or pr keep their normal per-item path.
-    """
+    """Return CLOSED_DUPLICATE actions and loser keys for stale dupes."""
+    # Keys embed head_sha, so a re-intake after drift can mint a second
+    # nonterminal item for the same (repository, pr). The item at the most
+    # advanced lifecycle state (tiebreak: higher revision, then newer
+    # updated_at_utc) survives; the rest go TERMINAL/CLOSED_DUPLICATE.
+    # Items missing repository or pr keep their normal per-item path.
     actions: list[dict[str, Any]] = []
     losers: set[Any] = set()
     for dupes in _dup_groups(items).values():
@@ -704,23 +702,11 @@ def _duplicate_terminal_actions(
     return actions, losers
 
 
-def _item_actions(
-    items: list[dict[str, Any]],
-    dup_losers: set[Any],
-    expiry: int,
-    clock: datetime,
-    limit: int | None,
-    actions: list[dict[str, Any]],
-) -> None:
-    """Append per-item actions until the action limit is reached."""
+def _live_items(items: list[dict[str, Any]], dup_losers: set[Any]) -> Any:
+    """Yield items that are not stale duplicates."""
     for item in items:
-        if isinstance(item, dict) and item.get("key") in dup_losers:
-            continue
-        if limit is not None and len(actions) >= limit:
-            break
-        action = _action_for_item(item, expiry, clock)
-        if action is not None:
-            actions.append(action)
+        if not isinstance(item, dict) or item.get("key") not in dup_losers:
+            yield item
 
 
 def collect_actions(
@@ -735,7 +721,12 @@ def collect_actions(
     expiry = _expiry_days(config)
     items = ledger.get("items") or []
     actions, dup_losers = _duplicate_terminal_actions(items)
-    _item_actions(items, dup_losers, expiry, clock, limit, actions)
+    for item in _live_items(items, dup_losers):
+        if limit is not None and len(actions) >= limit:
+            break
+        action = _action_for_item(item, expiry, clock)
+        if action is not None:
+            actions.append(action)
     if limit is not None:
         return actions[:limit]
     return actions
