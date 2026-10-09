@@ -149,6 +149,10 @@ def _is_checks_failing(checks):
     return checks.strip(" *_") == "U"
 
 
+# ⚡ Bolt Optimization: Module-level tuple constant avoids re-instantiating list objects on every function invocation
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+
+
 def _get_pr_category(info, checks, now=None):
     if not info.get("files", ()):
         return "SUPERSEDED"
@@ -160,7 +164,7 @@ def _get_pr_category(info, checks, now=None):
     if checks_failing and _is_pr_stale(info.get("updatedAt", ""), now):
         return "STALE"
 
-    if merge_status in ["DIRTY", "CONFLICTING"]:
+    if merge_status in _UNMERGEABLE_STATUSES:
         return "CONFLICTING"
 
     if merge_status == "CLEAN" and not checks_failing:
