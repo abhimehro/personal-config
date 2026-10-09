@@ -364,7 +364,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     """Update one repo's decision issue, or render its dry-run body."""
     rows = _rows_for_repo(spec.repo, spec.actions, spec.ledger, spec.days)
     if not spec.apply or not spec.decision_issues:
-        result = {
+        result: dict[str, Any] = {
             "row_count": len(rows),
             "body": backlog_issue_body(_BacklogSpec(spec.repo, {}, spec.now), rows),
         }
@@ -373,6 +373,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
             result["reason"] = "DECISION_ISSUES_FLAG_OFF"
         return result
     tick_outcome = _execute_ticks(spec.repo, spec.ledger)
+    result: dict[str, Any]
     try:
         result = update_backlog_issue(
             spec.repo,

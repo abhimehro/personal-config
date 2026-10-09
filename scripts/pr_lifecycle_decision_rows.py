@@ -2,11 +2,23 @@
 
 from typing import Any
 
-from pr_lifecycle_issue_status import (
-    _BACKLOG_TABLE_CHAR_CAP,
-    _is_handoff_row,
-    _markdown_cell,
-)
+# Shared table/row helpers live here so issue_status can render decision rows
+# without an import cycle (issue_status -> decision_rows, never the reverse).
+_BACKLOG_TABLE_CHAR_CAP = 45_000
+
+
+def _markdown_cell(value: object, limit: int = 300) -> str:
+    """Bound cell text and neutralize pipes, comment markers, and mentions."""
+    text = " ".join(str(value or "").replace("|", "\\|").split())
+    text = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
+    text = text.replace("@", "@\u200b")
+    return text[:limit]
+
+
+def _is_handoff_row(row: dict[str, Any]) -> bool:
+    """True for rows handed to a non-human owner (e.g. stage2 escalations)."""
+    return row.get("owner") not in (None, "human")
+
 
 __all__ = ["decision_lines"]
 

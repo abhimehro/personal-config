@@ -20,13 +20,19 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from pr_lifecycle_decision_rows import (
+    _BACKLOG_TABLE_CHAR_CAP,
+    _is_handoff_row,
+    _markdown_cell,
+    decision_lines,
+)
+
 PINNED_ISSUE_TITLE = "PR pipeline status"
 BACKLOG_ISSUE_TITLE = "PR lifecycle: needs human decision"
 _ISSUE_REPO = "abhimehro/personal-config"
 _BACKLOG_MARKER = "<!-- pr-lifecycle-backlog -->"
 # GitHub caps issue bodies at 65,536 chars; reserve room for the marker,
 # preamble lines, and the durable-state JSON block.
-_BACKLOG_TABLE_CHAR_CAP = 45_000
 _STATE_PATTERN = re.compile(r"<!-- pr-lifecycle-backlog-state (\{.*\}) -->")
 _DEFAULT_PACKET_EXPIRY_DAYS = 7
 
@@ -315,14 +321,6 @@ def _find_backlog_issue(rows: list[Any]) -> dict[str, Any] | None:
     return issue
 
 
-def _markdown_cell(value: object, limit: int = 300) -> str:
-    """Bound cell text and neutralize pipes, comment markers, and mentions."""
-    text = " ".join(str(value or "").replace("|", "\\|").split())
-    text = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
-    text = text.replace("@", "@\u200b")
-    return text[:limit]
-
-
 def _safe_url(value: object) -> str:
     """Strip surrounding whitespace and return a plain https URL, or blank.
 
@@ -333,15 +331,6 @@ def _safe_url(value: object) -> str:
     if re.fullmatch(r"https://[^\s()\[\]<>\"'`]+", text):
         return text
     return ""
-
-
-def _is_handoff_row(row: dict[str, Any]) -> bool:
-    """True for rows handed to a non-human owner (e.g. stage2 escalations).
-
-    Rows without an owner, or owned by "human", stay on the human decision
-    table with real expiry and overdue state.
-    """
-    return row.get("owner") not in (None, "human")
 
 
 def _row_deadline(
@@ -536,9 +525,6 @@ def backlog_issue_body(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
         _append_handoff_table(table, prepared)
-        # Lazy import: decision_rows needs helpers defined above in this module.
-        from pr_lifecycle_decision_rows import decision_lines
-
         table.extend(decision_lines(prepared, sum(len(line) + 1 for line in table)))
         content = "\n".join(table)
     return (
