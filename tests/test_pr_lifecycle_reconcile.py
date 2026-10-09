@@ -46,6 +46,8 @@ sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **
 
 import pr_lifecycle_reconcile as reconcile  # noqa: E402
 
+from tests.pr_lifecycle_helpers import reconcile_item  # noqa: E402
+
 for _name in _STUB_NAMES:
     _saved = _saved_modules[_name]
     if _saved is None:
@@ -57,25 +59,7 @@ NOW = datetime(2026, 9, 21, 18, 0, tzinfo=timezone.utc)
 
 
 def _item(**overrides):
-    base = {
-        "key": "abhimehro/personal-config#99@" + "a" * 40,
-        "repository": "abhimehro/personal-config",
-        "pr": 99,
-        "head_sha": "a" * 40,
-        "base_sha": "b" * 40,
-        "author_type": "BOT",
-        "guardrail_outcome": "HOLD_EVIDENCE",
-        "lifecycle_state": "WAITING_HUMAN",
-        "current_owner": "human",
-        "next_owner": "human",
-        "terminal_disposition": None,
-        "revision": 1,
-        "handoffs": [],
-        "updated_at_utc": (NOW - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "next_action": "Await human",
-    }
-    base.update(overrides)
-    return base
+    return reconcile_item(now=NOW, **overrides)
 
 
 _OPEN_LIVE = {"state": "OPEN", "headRefOid": "a" * 40}
