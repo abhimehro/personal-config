@@ -49,8 +49,8 @@ def parse_ticks(body: str) -> list[dict[str, Any]]:
     return ticks
 
 
-def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
-    """Fetch raw userContentEdits nodes, or None on any failure."""
+def _graphql_stdout(repo: str, number: int, run: Any) -> str | None:
+    """Run the editor-history GraphQL query; None on nonzero exit."""
     owner, _, name = repo.partition("/")
     proc = run(
         [
@@ -73,8 +73,16 @@ def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
     )
     if proc.returncode:
         return None
+    return proc.stdout or ""
+
+
+def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
+    """Fetch raw userContentEdits nodes, or None on any failure."""
+    stdout = _graphql_stdout(repo, number, run)
+    if stdout is None:
+        return None
     try:
-        data = json.loads(proc.stdout or "{}")
+        data = json.loads(stdout or "{}")
     except json.JSONDecodeError:
         return None
     issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
@@ -176,7 +184,7 @@ def _tick_to_action(ctx: TickCtx) -> dict[str, Any]:
         "key": ctx.item["key"],
         "disposition": ctx.tick.get("token") or ctx.meta.get("suggested_disposition"),
     }
-    live = _gh_pr_view(repo, int(pr_text))
+    live = _gh_pr_view(repo, int(pr_text)) or {}
     if not _head_current(live, ctx.meta):
         return {**base, "skipped": "head moved since rendered"}
     action = _resolve_action(ctx, base, live)
