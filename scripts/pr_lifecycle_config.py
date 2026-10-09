@@ -72,8 +72,23 @@ def validate_unblock_config(value: Any) -> None:
         return
     unblock = require_mapping(value, "config.lifecycle.unblock")
     _require_advisory_checks(unblock.get("advisory_checks"))
+    _require_exclusions(unblock.get("exclusions"))
     for field in ("trigger_expiry_days", "lineage_stale_days"):
         _require_positive_days(unblock.get(field), field)
+
+
+def _require_exclusions(exclusions: Any) -> None:
+    """Allow None or a list of REPO#PR-shaped strings; otherwise raise."""
+    if exclusions is None:
+        return
+    valid = isinstance(exclusions, list) and all(
+        isinstance(entry, str) and entry.strip() for entry in exclusions
+    )
+    if not valid:
+        raise ValueError(
+            "config.lifecycle.unblock.exclusions: must be a list of strings "
+            "like owner/repo#123, repo#123, or #123"
+        )
 
 
 def _require_advisory_checks(advisory: Any) -> None:

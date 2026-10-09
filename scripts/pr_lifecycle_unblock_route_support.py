@@ -154,6 +154,72 @@ def _sticky_security(items: list[dict[str, Any]]) -> bool:
     )
 
 
+_BLOCKED_OWNERS = ("human", "stage2", "stage3")
+
+_COMMENT_BOT_HINTS = (
+    "[bot]",
+    "app/",
+    "dependabot",
+    "snyk",
+    "coderabbit",
+    "octopus-review",
+    "github-actions",
+    "sonarcloud",
+    "codacy",
+    "kilo",
+    "jules",
+    "cursor",
+    "trunk",
+    "greptile",
+    "devin",
+    "renovate",
+    "linear",
+)
+
+
+def _comment_is_human(comment: Any) -> bool:
+    """True when a PR comment's author is a recognizable human.
+
+    Bot-authored comments (``*-bot`` / ``app/*`` logins and the known reviewer
+    and automation bots) never count as human participation. An author that
+    cannot be read at all counts as human — the safe direction for an
+    automatic close.
+    """
+    if not isinstance(comment, dict):
+        return True
+    author = comment.get("author")
+    login = str(author.get("login") or "").lower() if isinstance(author, dict) else ""
+    if not login:
+        return True
+    return not any(hint in login for hint in _COMMENT_BOT_HINTS)
+
+
+def _has_human_comment(pr: dict[str, Any]) -> bool:
+    """True when the PR has a human comment, or the history is incomplete."""
+    if pr.get("comments_incomplete"):
+        return True
+    comments = pr.get("comments")
+    if not isinstance(comments, list):
+        return True
+    return any(_comment_is_human(comment) for comment in comments)
+
+
+def _ledger_owner_hold(items: list[dict[str, Any]]) -> str | None:
+    """Return the non-stage1 owner holding a nonterminal item, else None.
+
+    A ledger item owned by ``human``, ``stage2``, or ``stage3`` means another
+    stage or a person already owns the next step, so a plain ``--apply`` must
+    not mutate the PR (no close, trigger, or push). The hold lives in the
+    ledger, not only in the Stage 1 wrapper prompt.
+    """
+    owners = [
+        str(item.get("current_owner") or "")
+        for item in items
+        if item.get("lifecycle_state") != "TERMINAL"
+    ]
+    return next((owner for owner in _BLOCKED_OWNERS if owner in owners), None)
+
+
 @dataclass(frozen=True)
 class _EscalationSpec:
     """The escalation details: blocker name, evidence, action, ownership."""

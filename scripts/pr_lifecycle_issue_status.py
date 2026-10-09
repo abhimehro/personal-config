@@ -515,7 +515,11 @@ def backlog_issue_body(
 
 
 def update_backlog_issue(
-    repo: str, rows: list[dict[str, Any]], *, now: datetime
+    repo: str,
+    rows: list[dict[str, Any]],
+    *,
+    now: datetime,
+    notify_overdue: bool = True,
 ) -> dict[str, Any]:
     """Refresh or create a per-repository human decision issue.
 
@@ -525,6 +529,9 @@ def update_backlog_issue(
     An empty backlog edits an existing issue; if absent, return NOOP_EMPTY
     with the repository and body without creating an issue.
 
+    Pass ``notify_overdue=False`` to skip the @-mention overdue comments and
+    leave them unrecorded, so they can still fire on a later enabled run.
+
     Raise OSError for failed commands or malformed listings, or if a newly
     created overdue issue has no returned URL. Process launch errors and
     timeouts propagate. Earlier GitHub mutations are not rolled back.
@@ -533,7 +540,7 @@ def update_backlog_issue(
     issue = _find_backlog_issue(_list_backlog_rows(repo))
     old_state = _previous_state(issue.get("body") if issue else None)
     prepared, state, overdue = _prepare_backlog_rows(
-        _BacklogSpec(repo, old_state, now), rows
+        _BacklogSpec(repo, old_state, now, record_overdue=notify_overdue), rows
     )
     if not prepared and issue is None:
         body = backlog_issue_body(_BacklogSpec(repo, old_state, now), rows)

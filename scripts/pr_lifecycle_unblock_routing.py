@@ -20,7 +20,9 @@ from pr_lifecycle_unblock_route_support import (
     _escalation,
     _EscalationSpec,
     _family,
+    _has_human_comment,
     _iso,  # noqa: F401
+    _ledger_owner_hold,
     _lineage_date,
     _parse_datetime,  # noqa: F401
     _Route,
@@ -37,8 +39,18 @@ from pr_lifecycle_unblock_route_support import (
 
 
 def _lineage_closable(ctx: _Route) -> bool:
-    """True for a bot-authored lineage PR without a security hold."""
-    return ctx.family == "lineage" and ctx.author_type == "BOT" and not ctx.security
+    """True for a bot lineage PR with no security hold or human comment.
+
+    Bot-authored comments (Snyk, reviewer bots, app/* logins) never count as
+    human participation, so they cannot hold a stale-lineage close; an
+    unreadable author or incomplete history holds it.
+    """
+    return (
+        ctx.family == "lineage"
+        and ctx.author_type == "BOT"
+        and not ctx.security
+        and not _has_human_comment(ctx.pr)
+    )
 
 
 def _route_stale_lineage(ctx: _Route) -> list[dict[str, Any]] | None:
@@ -580,6 +592,17 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     """
     ctx = _route_ctx(pr, args)
     octopus = _route_octopus_findings(ctx)
+    actions = _route_candidates(ctx, pr, args, octopus)
+    return _enforce_ledger_owner(ctx, actions, args.ledger_items_for_pr)
+
+
+def _route_candidates(
+    ctx: _Route,
+    pr: dict[str, Any],
+    args: _RouteArgs,
+    octopus: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return every proposal routing would make, before the owner hold."""
     prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
     if prefix is not None:
         if not octopus:
@@ -599,3 +622,35 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     actions.extend(_route_review(ctx))
     actions.extend(octopus)
     return actions
+
+
+def _enforce_ledger_owner(
+    ctx: _Route,
+    actions: list[dict[str, Any]],
+    ledger_items_for_pr: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Drop automatic actions when a non-stage1 owner holds the ledger item.
+
+    Human-, stage2-, and stage3-owned nonterminal items keep their ESCALATE
+    rows (they still render on the decision issue, in the matching section)
+    but lose every mutating proposal: no close, trigger, or push, regardless
+    of what branch-name or staleness heuristics would otherwise emit. A
+    ``ledger_owned_by_<owner>`` escalation records why nothing ran.
+    """
+    owner = _ledger_owner_hold(ledger_items_for_pr)
+    if owner is None:
+        return actions
+    hold = _escalation(
+        ctx,
+        _EscalationSpec(
+            blocker=f"ledger_owned_by_{owner}",
+            evidence={"current_owner": owner},
+            recommended_action=(
+                f"Leave open; the {owner} stage owns the next step, so "
+                "Stage 1 apply must not mutate this PR."
+            ),
+            owner=owner,
+        ),
+    )
+    kept = [action for action in actions if action.get("action") == "ESCALATE"]
+    return [hold, *kept]

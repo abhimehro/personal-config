@@ -562,13 +562,48 @@ single Antigravity/Devin/Grok stage run:
 | 3 Completion | `python3 scripts/pr_lifecycle_run.py --stage 3` | live completion; advisory bot threads   |
 
 Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
-`pr_lifecycle_ledger_archive.py`. Prompts under
+`pr_lifecycle_ledger_archive.py`, `pr_lifecycle_guardrails.py`,
+`pr_lifecycle_unblock.py`. Prompts under
 `docs/cursor-automations/prompts/daily-pr-*.md` are short bootstraps; run
 `python3 scripts/sync_cursor_export_prompts.py --write` after editing.
 
-Weekly human digest: pinned GitHub issue / issue comment — Notion packets
-retired for this path. Pause/resume: leave Dashboard paused; operators run stage
-scripts manually until usage restores.
+### Deterministic guardrail evaluation
+
+`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to limit)
+refreshes `sensitive_paths` and `guardrail_outcome` from each nonterminal
+ledger item's `changed_paths` against the `sensitive_path_taxonomy` classes.
+Only `NOT_RUN`, `REVIEW_SECURITY`, and unset outcomes re-evaluate — the
+`HOLD_*`, `PASS_ROUTINE`, `CLOSE_NONSECURITY_NOOP`, and `ANALYSIS_ERROR`
+outcomes encode non-path evidence a path classifier cannot clear. Items with
+empty `changed_paths` keep their outcome: no path list is not proof of a clean
+diff. `generated_output` alone is non-sticky (recorded but routes routine);
+any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+
+### Code-enforced holds in the unblock executor
+
+Holds live in code, not only in the Stage 1 prompt:
+
+- **Ledger-owner hold.** A nonterminal item whose `current_owner` is `human`,
+  `stage2`, or `stage3` is immune to every mutating action under a plain
+  `unblock --apply` (no close, trigger, or push); `ESCALATE` rows still emit
+  so the repo decision issue keeps visibility. Covers the
+  Stage 3-reconciliation lineage PRs and the Stage 2-queued item without any
+  prompt-side wrapper.
+- **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/`
+  slugs, Snyk, reviewer/automation bots) never counts as human participation
+  for the stale-lineage close; a genuinely human-authored comment does hold
+  it, and an unreadable author or incomplete comment history holds too
+  (fail toward not closing).
+- **Exclusions.** `--exclude owner/repo#N` (repeatable; `repo#N`, `#N`, or a
+  bare `N` also accepted — repo-less forms match every repo) and the
+  `lifecycle.unblock.exclusions` config list make a PR never-touch: skipped
+  before any routing.
+- **Bounded side effects.** `--apply` alone performs only per-PR mutations.
+  Repo decision-issue create/update requires `--decision-issues`; the
+  overdue @-mention comments additionally require `--overdue-notifications`.
+  Without the flags the run reports `ISSUE_UPDATE_SKIPPED` and leaves overdue
+  state unrecorded so a later flagged run still catches up. Stage 1 passes
+  both flags explicitly (the issues and mentions are its planned outputs).
 
 ## Related specifications
 
