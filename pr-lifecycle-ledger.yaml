@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 340
+ledger_revision: 348
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -23040,12 +23040,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T12:27:07Z'
-- key: abhimehro/email-security-pipeline#1665@5911d00f08b34e23b6db732ffe0dd885d2831361
+- key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0
   repository: abhimehro/email-security-pipeline
   pr: 1665
   url: https://github.com/abhimehro/email-security-pipeline/pull/1665
   base_sha: f693f6a3a4fe0eed374518dcbb942135f61d5810
-  head_sha: 5911d00f08b34e23b6db732ffe0dd885d2831361
+  head_sha: 475cc0bcc450158ae226c933741a515cb17500e0
   author:
     login: abhimehro
     identity_source: github_api
@@ -23071,7 +23071,7 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head 5911d00f08b34e23b6db732ffe0dd885d2831361;
+  next_action: Re-anchored to live head 475cc0bcc450158ae226c933741a515cb17500e0;
     prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1665
@@ -23081,7 +23081,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/email-security-pipeline#1672@84d91ae71bc2285994a97ba4face5bcafd4ea8c0
   repository: abhimehro/email-security-pipeline
   pr: 1672
@@ -27061,12 +27061,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/repoprompt-ce#392@d658724c79f28b46b74e0e65fd2eb1641f0fa164
+- key: abhimehro/repoprompt-ce#392@895c103700d2670cea902a48a7dfe3427ccff1ca
   repository: abhimehro/repoprompt-ce
   pr: 392
   url: https://github.com/abhimehro/repoprompt-ce/pull/392
   base_sha: 586e36ece62d677ce8f6ac84c7f64370c59838ad
-  head_sha: d658724c79f28b46b74e0e65fd2eb1641f0fa164
+  head_sha: 895c103700d2670cea902a48a7dfe3427ccff1ca
   author:
     login: abhimehro
     identity_source: github_api
@@ -27092,9 +27092,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 895c103700d2670cea902a48a7dfe3427ccff1ca;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/392
   attempts:
@@ -27103,7 +27102,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#395@e325dcef2317d2a853680bbe8f7ae4219ee35b6b
   repository: abhimehro/repoprompt-ce
   pr: 395
@@ -27270,12 +27269,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/repoprompt-ce#404@447a49eff16dc7e19bc6e7d396efcc09157084d0
+- key: abhimehro/repoprompt-ce#404@eb1d62eb8bdf034b00b5f41c0f20d5f56fe07e23
   repository: abhimehro/repoprompt-ce
   pr: 404
   url: https://github.com/abhimehro/repoprompt-ce/pull/404
   base_sha: 38be61210adba042d01d5ef7368b5f225bc78932
-  head_sha: 447a49eff16dc7e19bc6e7d396efcc09157084d0
+  head_sha: eb1d62eb8bdf034b00b5f41c0f20d5f56fe07e23
   author:
     login: abhimehro
     identity_source: github_api
@@ -27300,9 +27299,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head eb1d62eb8bdf034b00b5f41c0f20d5f56fe07e23;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/404
   attempts:
@@ -27311,7 +27309,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#405@d75b6d482a9d55833c732aa4deb03acb37e993f4
   repository: abhimehro/repoprompt-ce
   pr: 405
@@ -27532,12 +27530,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#416@95c9d546e65d7173949f26ba6489e379df30faff
+- key: abhimehro/repoprompt-ce#416@cd394267ca72b765d1f2cda5b723006cd5163b89
   repository: abhimehro/repoprompt-ce
   pr: 416
   url: https://github.com/abhimehro/repoprompt-ce/pull/416
   base_sha: 38be61210adba042d01d5ef7368b5f225bc78932
-  head_sha: 95c9d546e65d7173949f26ba6489e379df30faff
+  head_sha: cd394267ca72b765d1f2cda5b723006cd5163b89
   author:
     login: abhimehro
     identity_source: github_api
@@ -27571,9 +27569,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head cd394267ca72b765d1f2cda5b723006cd5163b89;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/416
   attempts:
@@ -27582,7 +27579,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#426@066aaf1a5ebf2954d4067af3507d36c1d29d8ccd
   repository: abhimehro/repoprompt-ce
   pr: 426
@@ -27747,12 +27744,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#431@5ce18e29851f950fad2d730adbee3010aee0c277
+- key: abhimehro/repoprompt-ce#431@ab5b5ef5bda469483116c91290ae55ad4f7741fa
   repository: abhimehro/repoprompt-ce
   pr: 431
   url: https://github.com/abhimehro/repoprompt-ce/pull/431
   base_sha: 0efe107782e16367a71ce576e4d70ee7d55b11a5
-  head_sha: 5ce18e29851f950fad2d730adbee3010aee0c277
+  head_sha: ab5b5ef5bda469483116c91290ae55ad4f7741fa
   author:
     login: abhimehro
     identity_source: github_api
@@ -27779,9 +27776,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head ab5b5ef5bda469483116c91290ae55ad4f7741fa;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/431
   attempts:
@@ -27790,7 +27786,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#432@9f8195d0ac97c44b119998d3eac181f92777c76b
   repository: abhimehro/repoprompt-ce
   pr: 432
@@ -28135,12 +28131,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#441@5f741c6e65bc18ba2737365c367e36c1c4929940
+- key: abhimehro/repoprompt-ce#441@ed2fac9b982b7f527271a690d7e835fc70e4a3cc
   repository: abhimehro/repoprompt-ce
   pr: 441
   url: https://github.com/abhimehro/repoprompt-ce/pull/441
   base_sha: 0efe107782e16367a71ce576e4d70ee7d55b11a5
-  head_sha: 5f741c6e65bc18ba2737365c367e36c1c4929940
+  head_sha: ed2fac9b982b7f527271a690d7e835fc70e4a3cc
   author:
     login: abhimehro
     identity_source: github_api
@@ -28166,9 +28162,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head ed2fac9b982b7f527271a690d7e835fc70e4a3cc;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/441
   attempts:
@@ -28177,7 +28172,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#442@1cce978abc59690852a82d4ab84e2fffd898fcf0
   repository: abhimehro/repoprompt-ce
   pr: 442
@@ -28308,12 +28303,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#445@6608d24171345588c5db3aba2ad77e739b9b6e1d
+- key: abhimehro/repoprompt-ce#445@d3e76c466767e9caf00f3baa939181970c2f7646
   repository: abhimehro/repoprompt-ce
   pr: 445
   url: https://github.com/abhimehro/repoprompt-ce/pull/445
   base_sha: 0efe107782e16367a71ce576e4d70ee7d55b11a5
-  head_sha: 6608d24171345588c5db3aba2ad77e739b9b6e1d
+  head_sha: d3e76c466767e9caf00f3baa939181970c2f7646
   author:
     login: abhimehro
     identity_source: github_api
@@ -28340,9 +28335,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head d3e76c466767e9caf00f3baa939181970c2f7646;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/445
   attempts:
@@ -28351,7 +28345,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#450@4fe0121652abddb29883369c01b990c5c9ad13f7
   repository: abhimehro/repoprompt-ce
   pr: 450
@@ -28478,12 +28472,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#453@b3625ae696cd1404bfb6e43b59824d4e38c58501
+- key: abhimehro/repoprompt-ce#453@811b2a2d14c60187208cd3961ada01244a6e79ab
   repository: abhimehro/repoprompt-ce
   pr: 453
   url: https://github.com/abhimehro/repoprompt-ce/pull/453
   base_sha: 53ff8aa4f980b6308e570dafa5ce97b9367a3401
-  head_sha: b3625ae696cd1404bfb6e43b59824d4e38c58501
+  head_sha: 811b2a2d14c60187208cd3961ada01244a6e79ab
   author:
     login: abhimehro
     identity_source: github_api
@@ -28511,9 +28505,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 811b2a2d14c60187208cd3961ada01244a6e79ab;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/453
   attempts:
@@ -28522,7 +28515,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:43:41Z'
 - key: abhimehro/repoprompt-ce#454@1271fc3332f1aab40594c1d34ae2c4a0636f3e4d
   repository: abhimehro/repoprompt-ce
   pr: 454
