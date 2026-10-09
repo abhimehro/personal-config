@@ -51,7 +51,7 @@ _PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
 _PATH_RULES: tuple[tuple[str, str], ...] = (
     (
         "workflows_and_permissions",
-        r"(^|/)\.github/(workflows|actions|rulesets|scripts|hooks|agents|commands|copilot|jules|CODEOWNERS|github-app\.ya?ml|repository-automation\.ya?ml|dependabot\.ya?ml|pull_request_template)|(^|/)(\.claude/|\.windsurf/|\.codeium/|\.mcp\.json$)",
+        r"(^|/)\.github/(workflows|actions|rulesets|scripts|hooks|agents|commands|copilot|jules|CODEOWNERS|github-app\.ya?ml|repository-automation\.ya?ml|dependabot\.ya?ml|pull_request_template)|(^|/)(\.claude/|\.agents/|\.windsurf/|\.codeium/|\.mcp\.json$|AGENTS\.md$|CLAUDE\.md$|\.cursorrules$|docs/cursor-automations/(prompts|exports)/)",
     ),
     (
         "secrets",
@@ -91,7 +91,7 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "generated_output",
-        r"(^|/)(\.jules/|jules/|generated/|dist/|build/|coverage/|\.snapshot[^/]*|docs/cursor-automations/exports/|[^/]*\.generated\.[^/]*$)",
+        r"(^|/)(\.jules/|jules/|generated/|dist/|build/|coverage/|\.snapshot[^/]*|[^/]*\.generated\.[^/]*$)",
     ),
     (
         "public_api_contracts",

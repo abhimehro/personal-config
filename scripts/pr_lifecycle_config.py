@@ -78,7 +78,7 @@ def validate_unblock_config(value: Any) -> None:
         _require_positive_days(unblock.get(field), field)
 
 
-_EXCLUSION_RE = re.compile(r"^\s*(?:[^#\s]+\s*#)?\s*\d+\s*$")
+_EXCLUSION_RE = re.compile(r"^\s*(?:[^#\s]*\s*#)?\s*\d+\s*$")
 
 
 def _require_exclusions(exclusions: Any) -> None:

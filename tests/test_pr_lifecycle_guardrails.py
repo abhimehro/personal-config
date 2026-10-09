@@ -215,6 +215,21 @@ class EvaluateItemTests(unittest.TestCase):
                 path,
             )
 
+    def test_agent_instruction_and_prompt_surfaces_sticky(self) -> None:
+        for path in (
+            ".agents/skills/x/SKILL.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".cursorrules",
+            "docs/cursor-automations/prompts/daily-pr-review.md",
+            "docs/cursor-automations/exports/daily-pr-review.json",
+        ):
+            self.assertIn(
+                "workflows_and_permissions",
+                guardrails.classify_path(path),
+                path,
+            )
+
 
 class EvaluateLedgerTests(unittest.TestCase):
     def test_bumps_revision_and_filters_repos(self) -> None:

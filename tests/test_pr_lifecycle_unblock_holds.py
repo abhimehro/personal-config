@@ -113,6 +113,7 @@ class ExclusionTests(unittest.TestCase):
         from pr_lifecycle_config import validate_unblock_config
 
         validate_unblock_config({"exclusions": ["a/b#1"]})
+        validate_unblock_config({"exclusions": ["#123", "123", " a/b # 42 "]})
         validate_unblock_config({"exclusions": None})
         validate_unblock_config(None)
         for bad in (
