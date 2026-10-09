@@ -125,18 +125,15 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
 
 
 def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
-    """
-    Fetch the PR's changed-file paths via REST; None on any failure.
-
-    Paginates so a large diff cannot silently truncate evidence (a hidden
-    sensitive path must never downgrade a hold). Renames contribute their
-    old path too: `.previous_filename` keeps a file moved OUT of a
-    sensitive location from looking clean. An empty result also returns
-    None: a real open PR always changes at least one file, so an empty
-    list means the evidence could not be trusted. The API caps at 3000
-    files even under pagination with no truncation signal, so hitting the
-    cap fails closed as well.
-    """
+    """Fetch the PR's changed-file paths via REST; None on any failure."""
+    # Paginates so a large diff cannot silently truncate evidence (a hidden
+    # sensitive path must never downgrade a hold). Renames contribute their
+    # old path too: `.previous_filename` keeps a file moved OUT of a
+    # sensitive location from looking clean. An empty result also returns
+    # None: a real open PR always changes at least one file, so an empty
+    # list means the evidence could not be trusted. The API caps at 3000
+    # files even under pagination with no truncation signal, so hitting the
+    # cap fails closed as well.
     cmd = [
         "gh",
         "api",
@@ -389,14 +386,11 @@ def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
 def _path_backfill_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """
-    Emit a changed_paths backfill for an open live PR missing path evidence.
-
-    Data-only action: it stamps `changed_paths` so the guardrail evaluator
-    can judge the item on real evidence instead of holding it forever on a
-    missing list. Fetch failures emit PATH_BACKFILL_FAILED for visibility
-    (never applied); non-OPEN live states skip the fetch entirely.
-    """
+    """Emit a changed_paths backfill for an open live PR missing path evidence."""
+    # Data-only action: it stamps `changed_paths` so the guardrail evaluator
+    # can judge the item on real evidence instead of holding it forever on a
+    # missing list. Fetch failures emit PATH_BACKFILL_FAILED for visibility
+    # (never applied); non-OPEN live states skip the fetch entirely.
     if not _backfill_eligible(item, live):
         return None
     repo = str(item["repository"])
@@ -670,13 +664,10 @@ def _note_observed_terminal(
 def _backfill_item_paths(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """
-    Stamp `changed_paths` in place from a BACKFILL_PATHS action.
-
-    Data-only write: no transition event, no revision bump, and no
-    updated_at_utc refresh (a path list is evidence, not activity — the
-    staleness clock must not reset on a backfill).
-    """
+    """Stamp `changed_paths` in place from a BACKFILL_PATHS action."""
+    # Data-only write: no transition event, no revision bump, and no
+    # updated_at_utc refresh (a path list is evidence, not activity — the
+    # staleness clock must not reset on a backfill).
     paths = sorted({str(path) for path in action.get("paths") or [] if str(path)})
     if not paths:
         raise ReconcileSkip("backfill_empty_paths")
@@ -965,12 +956,9 @@ def _ingest_action(
 
 
 def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
-    """
-    Look up and classify one nonterminal item; return 0-2 planned actions.
-
-    A changed-paths backfill rides alongside the primary action so the
-    guardrail evaluator can adjudicate the item on evidence next pass.
-    """
+    """Look up and classify one nonterminal item; return 0-2 planned actions."""
+    # A changed-paths backfill rides alongside the primary action so the
+    # guardrail evaluator can adjudicate the item on evidence next pass.
     if not isinstance(item, dict):
         return []
     if item.get("lifecycle_state") == "TERMINAL":
