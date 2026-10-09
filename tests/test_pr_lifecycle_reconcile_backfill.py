@@ -2,80 +2,30 @@
 
 from __future__ import annotations
 
-import re
 import sys
 import types
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
-# Stub heavy repo modules so classify_item can load without PyYAML / CAS.
-# Restoring sys.modules keeps unittest discovery from leaking the stubs into
-# the rest of the suite.
-_STUB_NAMES = (
-    "pr_lifecycle_ledger",
-    "pr_lifecycle_ledger_cas",
-    "pr_lifecycle_config",
-    "pr_lifecycle_persist",
-    "pr_lifecycle_support",
-    "pr_lifecycle_yaml",
+from tests.pr_lifecycle_helpers import (
+    load_reconcile_with_stubs,
+    reconcile_item,
 )
-_saved_modules = {name: sys.modules.get(name) for name in _STUB_NAMES}
-for name in _STUB_NAMES:
-    sys.modules[name] = types.ModuleType(name)
 
-sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
-    "STAGE1_INTAKE": "stage1",
-    "STAGE2_QUEUED": "stage2",
-    "STAGE2_ACTIVE": "stage2",
-    "STAGE3_RECONCILIATION": "stage3",
-    "WAITING_HUMAN": "human",
-    "TERMINAL": "none",
-}
-sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
-sys.modules["pr_lifecycle_support"].ROOT = ROOT
-sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
-sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
-sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
-sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: 0
-
-import pr_lifecycle_reconcile as reconcile
-
-for _name in _STUB_NAMES:
-    _saved = _saved_modules[_name]
-    if _saved is None:
-        sys.modules.pop(_name, None)
-    else:
-        sys.modules[_name] = _saved
+reconcile = load_reconcile_with_stubs()
 
 NOW = datetime(2026, 9, 21, 18, 0, tzinfo=timezone.utc)
 
 
 def _item(**overrides):
-    base = {
-        "key": "abhimehro/personal-config#99@" + "a" * 40,
-        "repository": "abhimehro/personal-config",
-        "pr": 99,
-        "head_sha": "a" * 40,
-        "base_sha": "b" * 40,
-        "author_type": "BOT",
-        "guardrail_outcome": "HOLD_EVIDENCE",
-        "lifecycle_state": "WAITING_HUMAN",
-        "current_owner": "human",
-        "next_owner": "human",
-        "terminal_disposition": None,
-        "revision": 1,
-        "handoffs": [],
-        "updated_at_utc": (NOW - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "next_action": "Await human",
-    }
-    base.update(overrides)
-    return base
+    return reconcile_item(now=NOW, **overrides)
 
 
 _OPEN_LIVE = {"state": "OPEN", "headRefOid": "a" * 40}
@@ -155,21 +105,19 @@ class PathBackfillTests(unittest.TestCase):
             actions = reconcile.collect_actions(ledger, {"lifecycle": {}}, now=NOW)
         self.assertEqual([action["action"] for action in actions], ["BACKFILL_PATHS"])
 
-    def test_collect_actions_respects_limit_with_backfill(self):
+    def test_collect_actions_limit_truncates_backfill_pair(self):
         item = _item(lifecycle_state="STAGE1_INTAKE", changed_paths=[])
         ledger = {"items": [item]}
-        live = {
-            "state": "OPEN",
-            "headRefOid": "a" * 40,
-            "baseRefOid": "b" * 40,
-        }
+        live = {"state": "OPEN", "headRefOid": "c" * 40, "baseRefOid": "b" * 40}
         with mock.patch.object(
             reconcile, "_gh_pr_view", return_value=live
         ), mock.patch.object(reconcile, "_gh_pr_files", return_value=["x.py"]):
-            actions = reconcile.collect_actions(
+            full = reconcile.collect_actions(ledger, {"lifecycle": {}}, now=NOW)
+            capped = reconcile.collect_actions(
                 ledger, {"lifecycle": {}}, now=NOW, limit=1
             )
-        self.assertLessEqual(len(actions), 1)
+        self.assertEqual(len(full), 2)
+        self.assertEqual(capped, full[:1])
 
     def test_apply_backfills_paths_without_event_or_stale_reset(self):
         item = _item(changed_paths=[])
