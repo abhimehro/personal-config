@@ -2343,7 +2343,7 @@ Full record: `tasks/pr-salvage-2026-09-18-1700.md`.
    [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
    and [#2030](https://github.com/abhimehro/personal-config/pull/2030) OPEN. Do
    not close because a replacement exists. Sticky/HUMAN/workflow-consolidate
-   remainder is Stage 3, not a salvage invent.
+   remainder belongs to Stage 3 and is not a basis for inventing salvage tasks.
 3. Do not salvage rpce Swift on Linux. Do not trunk-merge this lineage from
    Stage 2. Do not execute the retracted processor WI.
 
