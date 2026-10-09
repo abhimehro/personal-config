@@ -226,6 +226,7 @@ class ClosedUnreviewedSchemaTests(unittest.TestCase):
             for i in ledger.get("items") or []
             if isinstance(i, dict) and i.get("lifecycle_state") == "TERMINAL"
         ]
+        self.assertTrue(surfaces)
         for surface in surfaces:
             surface["terminal_disposition"] = "CLOSED_UNREVIEWED"
         validate_schema(ledger)

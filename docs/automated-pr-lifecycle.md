@@ -49,7 +49,7 @@ Calibration stays self-contained (no includes).
 Every in-scope PR must have either a terminal disposition or a single current
 owner. A terminal disposition is `MERGED_ROUTINE`, `MERGED_BOUNDED_COMPLETION`,
 `CLOSED_NOOP`, `CLOSED_DUPLICATE`, `CLOSED_STALE`, `CLOSED_SUPERSEDED`,
-`HUMAN_REJECTED`, or `HUMAN_DEFERRED`. A **guardrail outcome** is intermediate
+`CLOSED_UNREVIEWED`, `HUMAN_REJECTED`, or `HUMAN_DEFERRED`. A **guardrail outcome** is intermediate
 eligibility evidence, not a terminal disposition.
 
 Every nonterminal item must carry immutable base and head SHA anchors, a risk
