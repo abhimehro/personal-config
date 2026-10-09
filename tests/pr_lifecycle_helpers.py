@@ -40,6 +40,22 @@ def make_item(**overrides: object) -> dict[str, object]:
     return base
 
 
+def guardrail_item(**overrides: object) -> dict[str, object]:
+    """Build an evaluable BOT item for the guardrail evaluator tests."""
+    base: dict[str, object] = {
+        "key": "owner/repo#1@abc",
+        "repository": "owner/repo",
+        "pr": 1,
+        "author_type": "BOT",
+        "lifecycle_state": "STAGE1_INTAKE",
+        "guardrail_outcome": "NOT_RUN",
+        "changed_paths": ["docs/readme.md"],
+        "revision": 1,
+    }
+    base.update(overrides)
+    return base
+
+
 def make_work_item(**overrides: object) -> dict[str, object]:
     """Build a complete Stage 2 work item with test overrides."""
     sha = "0123456789abcdef0123456789abcdef01234567"

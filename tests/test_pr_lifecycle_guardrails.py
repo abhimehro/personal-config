@@ -15,20 +15,7 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_guardrails as guardrails
 
-
-def _item(**overrides: object) -> dict[str, object]:
-    item: dict[str, object] = {
-        "key": "owner/repo#1@abc",
-        "repository": "owner/repo",
-        "pr": 1,
-        "author_type": "BOT",
-        "lifecycle_state": "STAGE1_INTAKE",
-        "guardrail_outcome": "NOT_RUN",
-        "changed_paths": ["docs/readme.md"],
-        "revision": 1,
-    }
-    item.update(overrides)
-    return item
+from tests.pr_lifecycle_helpers import guardrail_item as _item
 
 
 class ClassifyPathTests(unittest.TestCase):
