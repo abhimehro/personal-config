@@ -27,7 +27,11 @@ if str(SCRIPT_DIR) not in sys.path:
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
-from pr_lifecycle_issue_status import backlog_issue_body, update_backlog_issue
+from pr_lifecycle_issue_status import (
+    _BacklogSpec,
+    backlog_issue_body,
+    update_backlog_issue,
+)
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
@@ -313,7 +317,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     if not spec.apply:
         return {
             "row_count": len(rows),
-            "body": backlog_issue_body(spec.repo, rows, {}, spec.now),
+            "body": backlog_issue_body(_BacklogSpec(spec.repo, {}, spec.now), rows),
         }
     try:
         return update_backlog_issue(spec.repo, rows, now=spec.now)

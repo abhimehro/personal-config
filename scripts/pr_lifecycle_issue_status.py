@@ -474,18 +474,12 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
 
 
 def backlog_issue_body(
-    repo: str,
+    spec: _BacklogSpec,
     rows: list[dict[str, Any]],
-    state: dict[str, Any],
-    now: datetime,
-    *,
-    record_overdue: bool = True,
 ) -> str:
     """Render the per-repository human decision backlog and durable state."""
-    prepared, final_state, _ = _prepare_backlog_rows(
-        _BacklogSpec(repo, state, now, record_overdue), rows
-    )
-    updated = _iso(now)
+    prepared, final_state, _ = _prepare_backlog_rows(spec, rows)
+    updated = _iso(spec.now)
     if not prepared:
         content = f"No open items needing a human decision as of {updated}."
     else:
@@ -537,7 +531,7 @@ def update_backlog_issue(
         _BacklogSpec(repo, old_state, now), rows
     )
     if not prepared and issue is None:
-        body = backlog_issue_body(repo, rows, old_state, now)
+        body = backlog_issue_body(_BacklogSpec(repo, old_state, now), rows)
         return {"action": "NOOP_EMPTY", "repository": repo, "body": body}
     work = _BacklogWork(
         repo=repo,
@@ -574,10 +568,10 @@ def _edit_backlog_issue(work: _BacklogWork, issue: dict[str, Any]) -> dict[str, 
     if work.overdue:
         _notify_overdue(work.repo, work.overdue, issue_number, work.github_steps)
     body = backlog_issue_body(
-        work.repo,
+        _BacklogSpec(
+            work.repo, work.state if work.overdue else work.old_state, work.now
+        ),
         work.rows,
-        work.state if work.overdue else work.old_state,
-        work.now,
     )
     _gh_step(
         ["edit", str(issue_number), "--body", body],
@@ -596,7 +590,7 @@ def _notify_created_issue(
         raise OSError("gh issue create did not return the new issue URL")
     issue_number = int(match.group(1))
     _notify_overdue(work.repo, work.overdue, issue_number, work.github_steps)
-    body = backlog_issue_body(work.repo, work.rows, work.state, work.now)
+    body = backlog_issue_body(_BacklogSpec(work.repo, work.state, work.now), work.rows)
     _gh_step(
         ["edit", str(issue_number), "--body", body],
         "edit",
@@ -609,7 +603,7 @@ def _notify_created_issue(
 def _create_backlog_issue(work: _BacklogWork) -> dict[str, Any]:
     """Create the backlog issue and notify overdue rows on it when needed."""
     body = backlog_issue_body(
-        work.repo, work.rows, work.old_state, work.now, record_overdue=False
+        _BacklogSpec(work.repo, work.old_state, work.now, False), work.rows
     )
     created = _gh_step(
         ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body],

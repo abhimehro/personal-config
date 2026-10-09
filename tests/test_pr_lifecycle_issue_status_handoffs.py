@@ -33,7 +33,9 @@ class Stage2HandoffTests(unittest.TestCase):
         self.assertEqual(by_pr[42]["expires"], "—")
         self.assertEqual(overdue, [])
         self.assertEqual(state["overdue_notified"], [])
-        body = issue_status.backlog_issue_body("owner/repo", rows, {}, NOW)
+        body = issue_status.backlog_issue_body(
+            issue_status._BacklogSpec("owner/repo", {}, NOW), rows
+        )
         self.assertIn("Stage 2 handoffs", body)
         self.assertIn("| stage2 |", body)
 

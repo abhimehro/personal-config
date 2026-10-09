@@ -436,7 +436,9 @@ class RoutePrTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0]["blocker"], "REVIEW_SECURITY")
         self.assertEqual(rows[0]["owner"], "human")
-        rendered = issue_status.backlog_issue_body(REPO, rows, {}, NOW)
+        rendered = issue_status.backlog_issue_body(
+            issue_status._BacklogSpec(REPO, {}, NOW), rows
+        )
         self.assertEqual(rendered.count(f"[23](https://github.com/{REPO}/pull/23)"), 1)
 
     def test_stage3_owned_security_rows_are_included_in_backlog(self):

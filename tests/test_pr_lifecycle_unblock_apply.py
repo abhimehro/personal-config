@@ -14,6 +14,8 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+import types
+
 import pr_lifecycle_unblock as unblock
 
 from tests.pr_lifecycle_helpers import (
@@ -35,8 +37,7 @@ from tests.pr_lifecycle_helpers import (
 
 class UnblockApplyTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.st = unblock
-        self.plan = _run_unblock_plan
+        self.st = types.SimpleNamespace(**vars(unblock), run_plan=_run_unblock_plan)
 
     def test_unknown_action_is_rejected_before_any_github_command(self):
         run = mock.Mock()
@@ -52,7 +53,7 @@ class UnblockApplyTests(unittest.TestCase):
 
     def test_inventory_failure_skips_backlog_refresh_in_apply_mode(self):
         """Preserve the existing backlog issue when repository inventory fails."""
-        plan, update_issue = self.plan(
+        plan, update_issue = self.st.run_plan(
             apply=True,
             inventory_error=OSError("network unavailable"),
         )
@@ -101,7 +102,7 @@ class UnblockApplyTests(unittest.TestCase):
                 "",
             )
         )
-        plan, _ = self.plan(live, run=runner)
+        plan, _ = self.st.run_plan(live, run=runner)
         self.assertEqual(
             runner.call_args.args[0],
             [
@@ -128,7 +129,7 @@ class UnblockApplyTests(unittest.TestCase):
         runner = mock.Mock(
             return_value=subprocess.CompletedProcess(["gh"], 1, "", "unavailable")
         )
-        plan, _ = self.plan(live, run=runner)
+        plan, _ = self.st.run_plan(live, run=runner)
         self.assertEqual(plan["comment_history_fetch_pr_count"], 1)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER_SKIPPED")
         self.assertEqual(
@@ -146,7 +147,7 @@ class UnblockApplyTests(unittest.TestCase):
             commentsTotalCount=1,
         )
         runner = mock.Mock()
-        plan, _ = self.plan(complete, run=runner)
+        plan, _ = self.st.run_plan(complete, run=runner)
         runner.assert_not_called()
         self.assertEqual(plan["comment_history_fetch_pr_count"], 0)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER")
@@ -157,7 +158,7 @@ class UnblockApplyTests(unittest.TestCase):
         )
         unknown.pop("commentsTotalCount")
         runner.reset_mock()
-        plan, _ = self.plan(unknown, run=runner)
+        plan, _ = self.st.run_plan(unknown, run=runner)
         runner.assert_not_called()
         self.assertEqual(plan["comment_history_fetch_pr_count"], 0)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER_SKIPPED")

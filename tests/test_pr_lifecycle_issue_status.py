@@ -224,7 +224,9 @@ class IssueStatusTests(unittest.TestCase):
             "owner": "human",
             "packet_expiry_close_days": 7,
         }
-        body = self.st.backlog_issue_body("owner/repo", [row], {}, now)
+        body = self.st.backlog_issue_body(
+            self.st._BacklogSpec("owner/repo", {}, now), [row]
+        )
         self.assertIn("<!-- pr-lifecycle-backlog -->", body)
         self.assertIn("| PR | Blocker | Evidence |", body)
         self.assertIn("[42](https://github.com/owner/repo/pull/42)", body)
@@ -273,7 +275,9 @@ class IssueStatusTests(unittest.TestCase):
             "first_seen": {key: "2026-08-01T12:00:00Z"},
             "overdue_notified": [key],
         }
-        empty_body = self.st.backlog_issue_body(repo, [], state, NOW)
+        empty_body = self.st.backlog_issue_body(
+            self.st._BacklogSpec(repo, state, NOW), []
+        )
         empty_state = self.st._previous_state(empty_body)
         self.assertEqual(empty_state["overdue_notified"], [])
 
@@ -302,7 +306,9 @@ class IssueStatusTests(unittest.TestCase):
             "owner": "human",
             "expires": "2026-08-20T00:00:00Z",
         }
-        old_body = self.st.backlog_issue_body(repo, [row], {}, NOW - timedelta(days=20))
+        old_body = self.st.backlog_issue_body(
+            self.st._BacklogSpec(repo, {}, NOW - timedelta(days=20)), [row]
+        )
         self.command.side_effect = [
             self.result(
                 json.dumps(
@@ -339,7 +345,8 @@ class IssueStatusTests(unittest.TestCase):
             "overdue_notified": [],
         }
         old_body = self.st.backlog_issue_body(
-            repo, [row], old_state, NOW - timedelta(days=25)
+            self.st._BacklogSpec(repo, old_state, NOW - timedelta(days=25)),
+            [row],
         )
         self.command.side_effect = [
             self._listing(old_body),
@@ -577,10 +584,8 @@ class IssueStatusTests(unittest.TestCase):
         ):
             with self.subTest(url=url):
                 body = self.st.backlog_issue_body(
-                    "owner/repo",
+                    self.st._BacklogSpec("owner/repo", {}, NOW),
                     [dict(self._backlog_row(), url=url)],
-                    {},
-                    NOW,
                 )
                 self.assertIn("| [42]() |", body)
                 self.assertNotIn(url, body)
