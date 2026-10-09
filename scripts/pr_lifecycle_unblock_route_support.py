@@ -248,13 +248,15 @@ def _ledger_owner_hold(items: list[dict[str, Any]]) -> str | None:
     A ledger item owned by ``human``, ``stage2``, or ``stage3`` means another
     stage or a person already owns the next step, so a plain ``--apply`` must
     not mutate the PR (no close, trigger, or push). The hold lives in the
-    ledger, not only in the Stage 1 wrapper prompt.
+    ledger, not only in the Stage 1 wrapper prompt. A nonterminal item
+    carrying ``risk_class: HUMAN_REVIEW`` is a recorded human hold even when
+    it is still owned by stage1 — bot-authored PRs like pc#2276 would
+    otherwise route through bot-only heuristics and lose the hold.
     """
-    owners = [
-        str(item.get("current_owner") or "")
-        for item in items
-        if item.get("lifecycle_state") != "TERMINAL"
-    ]
+    held = [item for item in items if item.get("lifecycle_state") != "TERMINAL"]
+    if any(item.get("risk_class") == "HUMAN_REVIEW" for item in held):
+        return "human"
+    owners = [str(item.get("current_owner") or "") for item in held]
     return next((owner for owner in _BLOCKED_OWNERS if owner in owners), None)
 
 
