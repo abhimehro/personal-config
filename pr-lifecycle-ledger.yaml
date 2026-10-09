@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 313
+ledger_revision: 339
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -4244,12 +4244,12 @@ items:
   - evt-s3-20260822-seatekanalys-708-h
   revision: 4
   updated_at_utc: '2026-08-22T19:20:00Z'
-- key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e
+- key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396
   repository: abhimehro/personal-config
   pr: 2059
   url: https://github.com/abhimehro/personal-config/pull/2059
   base_sha: 3e86704ab0262f822a68e81496156b686cecf6a9
-  head_sha: 9aafcaa34e7c2cbe575139743633356135b47c2e
+  head_sha: 0b8c0b444eec70a64140eb60450d1cf26bb73396
   author:
     login: abhimehro
     identity_source: github_api
@@ -4270,7 +4270,7 @@ items:
   next_owner: stage1
   safe_default: Do not merge overlapping Palette empty-state/meter twins. Merge method
     is TRUNK_QUEUE.
-  next_action: Re-anchor intake to live head 9aafcaa34e7c2cbe575139743633356135b47c2e;
+  next_action: Re-anchored to live head 0b8c0b444eec70a64140eb60450d1cf26bb73396;
     prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2059
@@ -4289,7 +4289,7 @@ items:
   - evt-s3-20260822-personalconf-2059-h
   - evt-reconcile-20260924155259-53c27b3d
   revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/personal-config#2056@966b2fefde9da5f336aa1a11e711a28440d98191
   repository: abhimehro/personal-config
   pr: 2056
@@ -19850,10 +19850,10 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
   safe_default: 'Do not squash-merge or Trunk #2254 (CONFLICTING). All unique content
     is on main (#2400) or salvage draft #2482; leave #2254 OPEN until Stage 3 reconciles
     after #2482 lands or is rejected.'
@@ -19882,8 +19882,9 @@ items:
   - evt-reconcile-20261005151243-f07f823c
   - evt-s2-20261009-pc-2254-a
   - evt-s2-20261009-pc-2254-h
-  revision: 7
-  updated_at_utc: '2026-10-09T11:03:02Z'
+  - evt-reconcile-20261009122707-e23df59a
+  revision: 8
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
   repository: abhimehro/personal-config
   pr: 2400
@@ -21837,10 +21838,10 @@ items:
   - tasks/review-session-reports.md
   - tests/test_pr_lifecycle_run_records.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
     paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
@@ -21851,9 +21852,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  handoffs:
+  - evt-reconcile-20261009122707-4abb40b1
+  revision: 1
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/personal-config#2421@a243ce3291ff609b87aa3558eda35c48b39d4ea1
   repository: abhimehro/personal-config
   pr: 2421
@@ -22856,12 +22858,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1624@f74ac187de983f23a36a849349a3328c41634e5c
+- key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
   repository: abhimehro/email-security-pipeline
   pr: 1624
   url: https://github.com/abhimehro/email-security-pipeline/pull/1624
   base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-  head_sha: f74ac187de983f23a36a849349a3328c41634e5c
+  head_sha: b45b5b176a6883e41e96fb2f497e387d30530830
   author:
     login: abhimehro
     identity_source: github_api
@@ -22888,9 +22890,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head b45b5b176a6883e41e96fb2f497e387d30530830;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1624
   attempts:
@@ -22899,7 +22900,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1636@e90e9648f88335885c732147712c63d0d2f8f242
   repository: abhimehro/email-security-pipeline
   pr: 1636
@@ -22933,12 +22934,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1656@9cdd60f6e28bdbd5bebcf4c8b220d56d45e76a3b
+- key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
   repository: abhimehro/email-security-pipeline
   pr: 1656
   url: https://github.com/abhimehro/email-security-pipeline/pull/1656
   base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-  head_sha: 9cdd60f6e28bdbd5bebcf4c8b220d56d45e76a3b
+  head_sha: 58f6b9a1384dcbb606b253f912320b91c1eec333
   author:
     login: abhimehro
     identity_source: github_api
@@ -22965,9 +22966,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 58f6b9a1384dcbb606b253f912320b91c1eec333;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1656
   attempts:
@@ -22976,13 +22976,13 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1661@ec5e7237b4365dca46243106c113421432f6336e
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/email-security-pipeline#1661@ed878583450444b5c7190c45bc6ccdd65d3a664c
   repository: abhimehro/email-security-pipeline
   pr: 1661
   url: https://github.com/abhimehro/email-security-pipeline/pull/1661
   base_sha: 8d49ed7b316576636e100a92556988baba0c299a
-  head_sha: ec5e7237b4365dca46243106c113421432f6336e
+  head_sha: ed878583450444b5c7190c45bc6ccdd65d3a664c
   author:
     login: abhimehro
     identity_source: github_api
@@ -23009,9 +23009,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head ed878583450444b5c7190c45bc6ccdd65d3a664c;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1661
   attempts:
@@ -23020,13 +23019,13 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1665@a6923005d608d2fff472f365e3a638a9d872aebc
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/email-security-pipeline#1665@5911d00f08b34e23b6db732ffe0dd885d2831361
   repository: abhimehro/email-security-pipeline
   pr: 1665
   url: https://github.com/abhimehro/email-security-pipeline/pull/1665
   base_sha: f693f6a3a4fe0eed374518dcbb942135f61d5810
-  head_sha: a6923005d608d2fff472f365e3a638a9d872aebc
+  head_sha: 5911d00f08b34e23b6db732ffe0dd885d2831361
   author:
     login: abhimehro
     identity_source: github_api
@@ -23052,9 +23051,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 5911d00f08b34e23b6db732ffe0dd885d2831361;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1665
   attempts:
@@ -23063,7 +23061,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1672@84d91ae71bc2285994a97ba4face5bcafd4ea8c0
   repository: abhimehro/email-security-pipeline
   pr: 1672
@@ -23108,12 +23106,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1694@973ca1f4b781b8d54a24c92545f7c6e8048bc237
+- key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e
   repository: abhimehro/email-security-pipeline
   pr: 1694
   url: https://github.com/abhimehro/email-security-pipeline/pull/1694
   base_sha: f693f6a3a4fe0eed374518dcbb942135f61d5810
-  head_sha: 973ca1f4b781b8d54a24c92545f7c6e8048bc237
+  head_sha: 323d8f070ada72597ddc211d34ff663675dd853e
   author:
     login: abhimehro
     identity_source: github_api
@@ -23140,9 +23138,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 323d8f070ada72597ddc211d34ff663675dd853e;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1694
   attempts:
@@ -23151,13 +23148,13 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1701@cec5fd97ad7db3daae5ec4139adbae08f5abe42d
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/email-security-pipeline#1701@28c14345aea6a6a7a21c3ddb103a16618483c85a
   repository: abhimehro/email-security-pipeline
   pr: 1701
   url: https://github.com/abhimehro/email-security-pipeline/pull/1701
   base_sha: f448e2c5dfced9f777ab7d30e04eb803dc5f1042
-  head_sha: cec5fd97ad7db3daae5ec4139adbae08f5abe42d
+  head_sha: 28c14345aea6a6a7a21c3ddb103a16618483c85a
   author:
     login: abhimehro
     identity_source: github_api
@@ -23183,9 +23180,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 28c14345aea6a6a7a21c3ddb103a16618483c85a;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1701
   attempts:
@@ -23194,7 +23190,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1719@010805e75f2f497b6285736551b39330efd3f2cb
   repository: abhimehro/email-security-pipeline
   pr: 1719
@@ -23238,12 +23234,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1720@073cb067a46ab67aed610985499392fa316d6ef0
+- key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60
   repository: abhimehro/email-security-pipeline
   pr: 1720
   url: https://github.com/abhimehro/email-security-pipeline/pull/1720
   base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: 073cb067a46ab67aed610985499392fa316d6ef0
+  head_sha: 9e1aeecf15456f993db636ccc892b2e20eed2c60
   author:
     login: abhimehro
     identity_source: github_api
@@ -23269,9 +23265,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 9e1aeecf15456f993db636ccc892b2e20eed2c60;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1720
   attempts:
@@ -23280,7 +23275,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1723@450385cab115f79da1be72f5eec5a6c4aba533dd
   repository: abhimehro/email-security-pipeline
   pr: 1723
@@ -23362,12 +23357,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1725@68bdcc00a04af35e51f9e3d356455aced224094f
+- key: abhimehro/email-security-pipeline#1725@2103ac3f30e8c60f5c40111ea0476685fac62ec6
   repository: abhimehro/email-security-pipeline
   pr: 1725
   url: https://github.com/abhimehro/email-security-pipeline/pull/1725
   base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: 68bdcc00a04af35e51f9e3d356455aced224094f
+  head_sha: 2103ac3f30e8c60f5c40111ea0476685fac62ec6
   author:
     login: abhimehro
     identity_source: github_api
@@ -23393,9 +23388,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 2103ac3f30e8c60f5c40111ea0476685fac62ec6;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1725
   attempts:
@@ -23404,13 +23398,13 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1727@ebc4fac2b6763d2e552d73279da0ad82170eec03
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/email-security-pipeline#1727@6de019f20a86d08b64e40c12427696578017ed24
   repository: abhimehro/email-security-pipeline
   pr: 1727
   url: https://github.com/abhimehro/email-security-pipeline/pull/1727
   base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: ebc4fac2b6763d2e552d73279da0ad82170eec03
+  head_sha: 6de019f20a86d08b64e40c12427696578017ed24
   author:
     login: abhimehro
     identity_source: github_api
@@ -23436,9 +23430,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 6de019f20a86d08b64e40c12427696578017ed24;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1727
   attempts:
@@ -23447,13 +23440,13 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1728@4369c15d065789cb623b5cda57dcc7f0e97c2a64
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/email-security-pipeline#1728@687ab710b039434ac0800b99c0b8f28d5c9ca3e1
   repository: abhimehro/email-security-pipeline
   pr: 1728
   url: https://github.com/abhimehro/email-security-pipeline/pull/1728
   base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: 4369c15d065789cb623b5cda57dcc7f0e97c2a64
+  head_sha: 687ab710b039434ac0800b99c0b8f28d5c9ca3e1
   author:
     login: abhimehro
     identity_source: github_api
@@ -23479,9 +23472,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 687ab710b039434ac0800b99c0b8f28d5c9ca3e1;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1728
   attempts:
@@ -23490,7 +23482,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1729@82c23f8b431bf0ba0dc8d2dc873637f4ec3d0891
   repository: abhimehro/email-security-pipeline
   pr: 1729
@@ -23534,12 +23526,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/email-security-pipeline#1730@a55cf35a5effbd9a67af2289c5f9b41a807d3124
+- key: abhimehro/email-security-pipeline#1730@427b5af12b7bba4bc59bc073cb4ec78104a13c9b
   repository: abhimehro/email-security-pipeline
   pr: 1730
   url: https://github.com/abhimehro/email-security-pipeline/pull/1730
   base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: a55cf35a5effbd9a67af2289c5f9b41a807d3124
+  head_sha: 427b5af12b7bba4bc59bc073cb4ec78104a13c9b
   author:
     login: abhimehro
     identity_source: github_api
@@ -23566,9 +23558,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 427b5af12b7bba4bc59bc073cb4ec78104a13c9b;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1730
   attempts:
@@ -23577,7 +23568,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/email-security-pipeline#1731@67bd3b378a42ac56b108aa644c33f39ea59c098b
   repository: abhimehro/email-security-pipeline
   pr: 1731
@@ -24246,12 +24237,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/Seatek_Analysis#986@a61f47c713b283ba1bf04475c96fa0f24b026bba
+- key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
   repository: abhimehro/Seatek_Analysis
   pr: 986
   url: https://github.com/abhimehro/Seatek_Analysis/pull/986
   base_sha: ee1e779066a06e5142b55c2c8f7d8d1b1420a0ff
-  head_sha: a61f47c713b283ba1bf04475c96fa0f24b026bba
+  head_sha: efccb65f98a29cae788e1a7b147957c295239365
   author:
     login: abhimehro
     identity_source: github_api
@@ -24278,9 +24269,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head efccb65f98a29cae788e1a7b147957c295239365;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/986
   attempts:
@@ -24289,7 +24279,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#722@8057ee486be41e2c3b7d95ab7dff299d6e0bdf36
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 722
@@ -24539,12 +24529,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#773@943a9c9597f197c4a7c0c6d0febe69fd06dde867
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#773@6548d57eb4ab8b40f2f088d8d5580f01cf8dbd9c
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 773
   url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/773
   base_sha: 266c0de8f469942331bc00509fc73b3947dbfc27
-  head_sha: 943a9c9597f197c4a7c0c6d0febe69fd06dde867
+  head_sha: 6548d57eb4ab8b40f2f088d8d5580f01cf8dbd9c
   author:
     login: abhimehro
     identity_source: github_api
@@ -24570,9 +24560,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 6548d57eb4ab8b40f2f088d8d5580f01cf8dbd9c;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/773
   attempts:
@@ -24581,7 +24570,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#775@44744f773facc841942337d798665d869934288f
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 775
@@ -24669,12 +24658,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#778@b440569eb4bd1587f9258d417c9dc8f76c71ff12
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#778@4c6c07228260082ebef6fcddee4f1267161894cc
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 778
   url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/778
   base_sha: 266c0de8f469942331bc00509fc73b3947dbfc27
-  head_sha: b440569eb4bd1587f9258d417c9dc8f76c71ff12
+  head_sha: 4c6c07228260082ebef6fcddee4f1267161894cc
   author:
     login: abhimehro
     identity_source: github_api
@@ -24699,9 +24688,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 4c6c07228260082ebef6fcddee4f1267161894cc;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/778
   attempts:
@@ -24710,7 +24698,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#780@a435ee6fe0dc8ba1b659098b340266a8dc5f73d3
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 780
@@ -24838,12 +24826,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#783@675282bcde51a6192b4069700ba4ad3af2c50aa2
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#783@910edcf9483dfaaac21f606010e9e9227a21ed93
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 783
   url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/783
   base_sha: 266c0de8f469942331bc00509fc73b3947dbfc27
-  head_sha: 675282bcde51a6192b4069700ba4ad3af2c50aa2
+  head_sha: 910edcf9483dfaaac21f606010e9e9227a21ed93
   author:
     login: abhimehro
     identity_source: github_api
@@ -24868,9 +24856,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 910edcf9483dfaaac21f606010e9e9227a21ed93;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/783
   attempts:
@@ -24879,7 +24866,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#784@bba54c67263280493417047dcf87c64b2b5b7d95
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 784
@@ -25140,12 +25127,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/series_correction_project_updated#484@65d88ba5d9991ed858ad16f86581004e44181526
+- key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
   repository: abhimehro/series_correction_project_updated
   pr: 484
   url: https://github.com/abhimehro/series_correction_project_updated/pull/484
   base_sha: e480ad80987c817b5edbc20ef407f0330e57283b
-  head_sha: 65d88ba5d9991ed858ad16f86581004e44181526
+  head_sha: f9cc4be9c8641ea35526e8d98d16d93ffdc23850
   author:
     login: abhimehro
     identity_source: github_api
@@ -25172,9 +25159,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head f9cc4be9c8641ea35526e8d98d16d93ffdc23850;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/484
   attempts:
@@ -25183,7 +25169,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/series_correction_project_updated#487@1114fd1e90480338812202749a783d755e2407b7
   repository: abhimehro/series_correction_project_updated
   pr: 487
@@ -25267,12 +25253,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/series_correction_project_updated#499@3e89d5fb6819eb09ec143ad2b2a028c1548428db
+- key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
   repository: abhimehro/series_correction_project_updated
   pr: 499
   url: https://github.com/abhimehro/series_correction_project_updated/pull/499
   base_sha: 42c1affad2ae8cf897e50607c1d8f23274da0563
-  head_sha: 3e89d5fb6819eb09ec143ad2b2a028c1548428db
+  head_sha: 785783d3845e57e253972ca0533a0d0557b47a91
   author:
     login: cursor[bot]
     identity_source: github_api
@@ -25296,9 +25282,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 785783d3845e57e253972ca0533a0d0557b47a91;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/499
   attempts:
@@ -25307,7 +25292,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/series_correction_project_updated#501@00151e0e81f4f36c7ca792068766580ebea432e6
   repository: abhimehro/series_correction_project_updated
   pr: 501
@@ -25434,12 +25419,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/series_correction_project_updated#549@6138bfdbb3182de32642e06c82891e8d63a3037a
+- key: abhimehro/series_correction_project_updated#549@6d05db815b946dc9d6967e7af7c0d70ea5493ea2
   repository: abhimehro/series_correction_project_updated
   pr: 549
   url: https://github.com/abhimehro/series_correction_project_updated/pull/549
   base_sha: cead64bb062342fdf15e74e09720800176719c51
-  head_sha: 6138bfdbb3182de32642e06c82891e8d63a3037a
+  head_sha: 6d05db815b946dc9d6967e7af7c0d70ea5493ea2
   author:
     login: abhimehro
     identity_source: github_api
@@ -25465,9 +25450,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 6d05db815b946dc9d6967e7af7c0d70ea5493ea2;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/549
   attempts:
@@ -25476,7 +25460,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/series_correction_project_updated#550@12cba30dcbedfc021706c27b413870b7893eab38
   repository: abhimehro/series_correction_project_updated
   pr: 550
@@ -25690,12 +25674,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/series_correction_project_updated#556@4665d9e0d156069de9813b104d3a44ccb466289d
+- key: abhimehro/series_correction_project_updated#556@787ed4bb49287b1be3a555edb45cbec81b53c80f
   repository: abhimehro/series_correction_project_updated
   pr: 556
   url: https://github.com/abhimehro/series_correction_project_updated/pull/556
   base_sha: cead64bb062342fdf15e74e09720800176719c51
-  head_sha: 4665d9e0d156069de9813b104d3a44ccb466289d
+  head_sha: 787ed4bb49287b1be3a555edb45cbec81b53c80f
   author:
     login: abhimehro
     identity_source: github_api
@@ -25720,9 +25704,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 787ed4bb49287b1be3a555edb45cbec81b53c80f;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/556
   attempts:
@@ -25731,7 +25714,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/series_correction_project_updated#557@26bd843a4751a54008ad8362d8252aee0cb9ffac
   repository: abhimehro/series_correction_project_updated
   pr: 557
@@ -26629,12 +26612,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/repoprompt-ce#376@7ac5fd9a5f736e36ed2c372e843d5e2af6693b5a
+- key: abhimehro/repoprompt-ce#376@26b1af679d33803d3015acb20f83b23710fa3d8a
   repository: abhimehro/repoprompt-ce
   pr: 376
   url: https://github.com/abhimehro/repoprompt-ce/pull/376
   base_sha: 9e7105895c2c5ae6f506a0c6ebc9c0b255e47301
-  head_sha: 7ac5fd9a5f736e36ed2c372e843d5e2af6693b5a
+  head_sha: 26b1af679d33803d3015acb20f83b23710fa3d8a
   author:
     login: abhimehro
     identity_source: github_api
@@ -26657,9 +26640,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 26b1af679d33803d3015acb20f83b23710fa3d8a;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/376
   attempts:
@@ -26668,7 +26650,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/repoprompt-ce#378@772849eaa7f471ad789a2a83e58f5a757da5727e
   repository: abhimehro/repoprompt-ce
   pr: 378
@@ -26844,12 +26826,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/repoprompt-ce#385@d361bc627aadebb0f2e878fa16556c01c17d7406
+- key: abhimehro/repoprompt-ce#385@c5851389170a0397f6fce56b47a4e5396aad2f4c
   repository: abhimehro/repoprompt-ce
   pr: 385
   url: https://github.com/abhimehro/repoprompt-ce/pull/385
   base_sha: 272a0ae89c1f10064fd5d34006255f2bd78dee17
-  head_sha: d361bc627aadebb0f2e878fa16556c01c17d7406
+  head_sha: c5851389170a0397f6fce56b47a4e5396aad2f4c
   author:
     login: abhimehro
     identity_source: github_api
@@ -26875,9 +26857,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head c5851389170a0397f6fce56b47a4e5396aad2f4c;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/385
   attempts:
@@ -26886,7 +26867,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T12:27:07Z'
 - key: abhimehro/repoprompt-ce#388@885d19eb56221fe902528a96d0e4e3039d459ca0
   repository: abhimehro/repoprompt-ce
   pr: 388
@@ -28615,10 +28596,10 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
   safe_default: 'Draft-only salvage of #2254. Stage 2 never merges or marks ready.
     Do not close original #2254 from Stage 2.'
   next_action: 'Stage 1: re-ingest salvage draft #2482 (docs-only: lesson 0hq + 2026-09-21
@@ -28641,8 +28622,49 @@ items:
   - evt-s2-20261009-pc-2482-i
   - evt-s2-20261009-pc-2482-a
   - evt-s2-20261009-pc-2482-h
-  revision: 3
-  updated_at_utc: '2026-10-09T11:03:02Z'
+  - evt-reconcile-20261009122707-71c599b2
+  revision: 4
+  updated_at_utc: '2026-10-09T12:27:07Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#790@837f59dad7b8f47e93e40ad73b7857b4f22ee564
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 790
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/790
+  base_sha: 266c0de8f469942331bc00509fc73b3947dbfc27
+  head_sha: 837f59dad7b8f47e93e40ad73b7857b4f22ee564
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-09
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/790
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-09T12:27:07Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -31289,7 +31311,7 @@ events:
     Do not merge. #705 closed vs BOT #713.'
 - event_id: evt-s1-20260822-personalconf-2059-h
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e
+  item_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396
   from_owner: stage1
   to_owner: stage3
   from_state: STAGE1_INTAKE
@@ -31299,7 +31321,7 @@ events:
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e:evt-s1-20260822-personalconf-2059-h
+  idempotency_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396:evt-s1-20260822-personalconf-2059-h
   status: PROJECTED
   created_at_utc: '2026-08-22T08:10:00Z'
   acknowledged_at_utc: null
@@ -33219,7 +33241,7 @@ events:
     Trunk-queue.
 - event_id: evt-s3-20260822-personalconf-2059-a
   kind: ACKNOWLEDGEMENT
-  item_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e
+  item_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396
   from_owner: stage3
   to_owner: stage3
   from_state: STAGE3_RECONCILIATION
@@ -33229,7 +33251,7 @@ events:
   parent_event_id: evt-s1-20260822-personalconf-2059-h
   expected_item_revision: 1
   resulting_item_revision: 1
-  idempotency_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e:evt-s3-20260822-personalconf-2059-a
+  idempotency_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396:evt-s3-20260822-personalconf-2059-a
   status: ACKNOWLEDGED
   created_at_utc: '2026-08-22T19:20:00Z'
   acknowledged_at_utc: '2026-08-22T19:20:00Z'
@@ -33237,7 +33259,7 @@ events:
     cluster still competing.
 - event_id: evt-s3-20260822-personalconf-2059-h
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e
+  item_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396
   from_owner: stage3
   to_owner: human
   from_state: STAGE3_RECONCILIATION
@@ -33247,7 +33269,7 @@ events:
   parent_event_id: null
   expected_item_revision: 1
   resulting_item_revision: 2
-  idempotency_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e:evt-s3-20260822-personalconf-2059-h
+  idempotency_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396:evt-s3-20260822-personalconf-2059-h
   status: PROJECTED
   created_at_utc: '2026-08-22T19:20:00Z'
   acknowledged_at_utc: null
@@ -52524,7 +52546,7 @@ events:
   policy_revision: null
 - event_id: evt-reconcile-20260924155259-53c27b3d
   kind: HANDOFF
-  item_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e
+  item_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396
   from_owner: human
   to_owner: stage1
   from_state: WAITING_HUMAN
@@ -52534,7 +52556,7 @@ events:
   parent_event_id: null
   expected_item_revision: 2
   resulting_item_revision: 3
-  idempotency_key: abhimehro/personal-config#2059@9aafcaa34e7c2cbe575139743633356135b47c2e:evt-reconcile-20260924155259-53c27b3d
+  idempotency_key: abhimehro/personal-config#2059@0b8c0b444eec70a64140eb60450d1cf26bb73396:evt-reconcile-20260924155259-53c27b3d
   status: PROJECTED
   created_at_utc: '2026-09-24T15:52:59Z'
   acknowledged_at_utc: null
@@ -56854,6 +56876,64 @@ events:
   reason: 'Routine BOT salvage complete (docs-only session-report deltas + lesson
     0hq from #2254). Stage 1 re-ingests draft #2482. Merge authority is never Stage
     2. PASS_ROUTINE. personal-config merge method TRUNK_QUEUE.'
+- event_id: evt-reconcile-20261009122707-e23df59a
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 7
+  resulting_item_revision: 8
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-reconcile-20261009122707-e23df59a
+  status: PROJECTED
+  created_at_utc: '2026-10-09T12:27:07Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261009122707-4abb40b1
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2417@d8a5bc2ea6bba5f967d0170083d4cf7a223682e0
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2417@d8a5bc2ea6bba5f967d0170083d4cf7a223682e0:evt-reconcile-20261009122707-4abb40b1
+  status: PROJECTED
+  created_at_utc: '2026-10-09T12:27:07Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261009122707-71c599b2
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 3
+  resulting_item_revision: 4
+  idempotency_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170:evt-reconcile-20261009122707-71c599b2
+  status: PROJECTED
+  created_at_utc: '2026-10-09T12:27:07Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
