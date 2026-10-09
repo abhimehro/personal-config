@@ -121,6 +121,20 @@ class TestScratchInventory(unittest.TestCase):
         self.assertEqual(prs, [])
         mock_run.assert_called_once()
 
+    @patch("scratch_inventory.subprocess.run")
+    def test_fetch_repo_prs_invalid_repo_rejected(self, mock_run):
+        invalid_repos = [
+            "--option-injection/repo",
+            "-f/repo",
+            "invalid_repo_no_slash",
+            "owner/repo;injection",
+            "owner/repo name",
+        ]
+        for bad_repo in invalid_repos:
+            prs = _fetch_repo_prs(bad_repo)
+            self.assertEqual(prs, [])
+        mock_run.assert_not_called()
+
 
 if __name__ == "__main__":
 
