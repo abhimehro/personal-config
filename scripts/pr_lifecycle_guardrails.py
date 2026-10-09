@@ -45,6 +45,10 @@ _BLOCKED_OWNERS = {"human", "stage2", "stage3"}
 # (a human or a security reviewer) rather than path evidence. Even
 # --clear-stand-in never downgrades these.
 _PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
+# Identity classifications the intake classifier marked as security work.
+# These stay held regardless of path evidence — a Sentinel fix can touch
+# only ordinary source files yet still be a security change.
+_SECURITY_CLASSIFICATIONS = {"SECURITY"}
 
 # (taxonomy class, regex matched against each changed path). Patterns are
 # anchored per path segment; order matters only for readability.
@@ -125,11 +129,18 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
 
 
 def _evaluable(item: dict[str, Any]) -> bool:
-    """True when the item is a nonterminal, unowned, re-evaluatable entry."""
+    """True when the item is a nonterminal, unowned, re-evaluatable entry.
+
+    Non-BOT-authored items are never evaluated: the ledger contract
+    forbids ``risk_class: ROUTINE`` on human-authored PRs, so a path
+    downgrade could never apply anyway, and a forced human hold must
+    not be touched by an unattended path classifier.
+    """
     changed_paths = item.get("changed_paths")
     return all(
         (
             item.get("lifecycle_state") != "TERMINAL",
+            item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("guardrail_outcome") in _EVALUATABLE,
             item.get("guardrail_source") not in _PROTECTED_SOURCES,
@@ -138,9 +149,14 @@ def _evaluable(item: dict[str, Any]) -> bool:
     )
 
 
-def _stand_in_hold(outcome: Any, sticky: list[str]) -> bool:
-    """True for a REVIEW_SECURITY with no sticky path class (stand-in shape)."""
-    return outcome == "REVIEW_SECURITY" and not sticky
+def _security_sticky(item: dict[str, Any], sticky: list[str]) -> bool:
+    """True when a sticky path class or a SECURITY identity holds the item."""
+    return bool(sticky) or item.get("classification") in _SECURITY_CLASSIFICATIONS
+
+
+def _stand_in_hold(item: dict[str, Any], outcome: Any, sticky: list[str]) -> bool:
+    """True for a REVIEW_SECURITY with no sticky evidence (stand-in shape)."""
+    return outcome == "REVIEW_SECURITY" and not _security_sticky(item, sticky)
 
 
 def evaluate_item(
@@ -162,9 +178,9 @@ def evaluate_item(
     outcome = item.get("guardrail_outcome")
     classes = classify_item_paths(item["changed_paths"])
     sticky = sorted(classes - _STICKY_EXEMPT)
-    if _stand_in_hold(outcome, sticky) and not clear_standin:
+    if _stand_in_hold(item, outcome, sticky) and not clear_standin:
         return None
-    sticky_flag = bool(sticky)
+    sticky_flag = _security_sticky(item, sticky)
     patch = {
         "sensitive_paths": sorted(classes),
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
@@ -195,7 +211,8 @@ def _record_evaluation(
             }
         )
     item.update(patch)
-    item["revision"] = int(item.get("revision") or 0) + 1
+    # item.revision is a projection of transition events only — bumping it
+    # here without logging an event breaks the ledger consistency check.
     item["updated_at_utc"] = now
 
 

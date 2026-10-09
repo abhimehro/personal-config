@@ -578,9 +578,18 @@ Only `NOT_RUN`, `REVIEW_SECURITY`, and unset outcomes re-evaluate — the
 outcomes encode non-path evidence a path classifier cannot clear. Items with
 empty `changed_paths` keep their outcome: no path list is not proof of a
 clean diff. Items whose `current_owner` is `human`/`stage2`/`stage3` are
-never touched, matching the unblock router's blocked-owner set.
-`generated_output` alone is non-sticky (recorded but routes routine); any
-other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+never touched, matching the unblock router's blocked-owner set, and items
+whose `author_type` is not `BOT` are never evaluated either — the ledger
+contract forbids `ROUTINE` on human-authored PRs and forced human holds are
+out of scope for a path classifier. An item whose `classification` is
+`SECURITY` stays held (`REVIEW_SECURITY` + `SENSITIVE`) regardless of path
+matches: the intake identity classification is authoritative over path
+evidence, so a Sentinel-style fix touching only ordinary files cannot be
+drained. `generated_output` alone is non-sticky (recorded but routes
+routine); any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+Evaluation never bumps `revision` — that field is a projection of transition
+events, and bumping it without logging an event breaks the consistency
+check.
 
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
 `--clear-stand-in` is passed — a recorded hold may come from non-path

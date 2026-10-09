@@ -19,6 +19,7 @@ def _item(**overrides: object) -> dict[str, object]:
         "key": "owner/repo#1@abc",
         "repository": "owner/repo",
         "pr": 1,
+        "author_type": "BOT",
         "lifecycle_state": "STAGE1_INTAKE",
         "guardrail_outcome": "NOT_RUN",
         "changed_paths": ["docs/readme.md"],
@@ -184,6 +185,72 @@ class EvaluateItemTests(unittest.TestCase):
             )
         )
 
+    def test_non_bot_authors_never_evaluated(self) -> None:
+        """Human/unknown-authored items stay untouched (ledger contract
+        forbids ROUTINE on them; forced holds are out of scope)."""
+        for author_type in ("HUMAN", "UNKNOWN", None):
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(
+                        author_type=author_type,
+                        guardrail_outcome="REVIEW_SECURITY",
+                        changed_paths=["docs/a.md"],
+                    ),
+                    clear_standin=True,
+                ),
+                author_type,
+            )
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(author_type=author_type, changed_paths=["x.sh"])
+                ),
+                author_type,
+            )
+
+    def test_security_classification_is_sticky(self) -> None:
+        """classification=SECURITY keeps the hold without sticky paths —
+        a Sentinel fix can touch only ordinary files (Grok dry-run: the
+        flag would have flipped ~30 Sentinel fixes)."""
+        patch = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                changed_paths=["docs/a.md", "src/main.py"],
+            )
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+        self.assertEqual("SENSITIVE", patch["risk_class"])
+        # And an existing REVIEW_SECURITY on a SECURITY-classed item is
+        # never drained by --clear-stand-in: evaluation may re-stamp
+        # provenance, but the hold itself stays.
+        held = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                guardrail_outcome="REVIEW_SECURITY",
+                sensitive_paths=[],
+                changed_paths=["docs/a.md"],
+            ),
+            clear_standin=True,
+        )
+        self.assertIsNotNone(held)
+        assert held is not None
+        self.assertEqual("REVIEW_SECURITY", held["guardrail_outcome"])
+        self.assertEqual("SENSITIVE", held["risk_class"])
+        # Non-SECURITY classifications still clear normally.
+        for classification in ("DEPENDENCY", "UI", "UNKNOWN"):
+            patch = guardrails.evaluate_item(
+                _item(
+                    classification=classification,
+                    guardrail_outcome="REVIEW_SECURITY",
+                    changed_paths=["docs/a.md"],
+                ),
+                clear_standin=True,
+            )
+            self.assertIsNotNone(patch, classification)
+            assert patch is not None
+            self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+
     def test_protected_guardrail_source_never_cleared(self) -> None:
         """A hold stamped by a real review survives even --clear-stand-in."""
         for source in ("manual", "review", "human", "octopus"):
@@ -232,7 +299,9 @@ class EvaluateItemTests(unittest.TestCase):
 
 
 class EvaluateLedgerTests(unittest.TestCase):
-    def test_bumps_revision_and_filters_repos(self) -> None:
+    def test_preserves_revision_and_filters_repos(self) -> None:
+        """revision is a projection of transition events — evaluation must
+        not bump it without logging one (ledger consistency check)."""
         ledger = {
             "items": [
                 _item(
@@ -252,9 +321,63 @@ class EvaluateLedgerTests(unittest.TestCase):
         _, summary = guardrails.evaluate_ledger(ledger, {"owner/a"})
         self.assertEqual(1, summary["evaluated"])
         a, b = ledger["items"]
-        self.assertEqual(3, a["revision"])
+        self.assertEqual(2, a["revision"])
         self.assertEqual(1, b["revision"])
         self.assertIn("updated_at_utc", a)
+        self.assertNotIn("updated_at_utc", b)
+
+    def test_evaluated_example_ledger_passes_validation(self) -> None:
+        """End-to-end: run evaluation on a schema-valid ledger, then the
+        real schema + runtime-record validators accept the write."""
+        from pr_lifecycle_ledger import validate_runtime_records
+        from pr_lifecycle_schema import validate_schema
+        from pr_lifecycle_yaml import load_yaml
+
+        from tests.pr_lifecycle_helpers import schema_valid_starved_ledger
+
+        ledger = schema_valid_starved_ledger()
+        item = ledger["items"][0]
+        # Move the item back to STAGE1_INTAKE with a legal HANDOFF event so
+        # the projected fields (state/owner/revision/handoffs) stay
+        # consistent with the event log.
+        return_event = {
+            "event_id": "evt-2026-stage3-return-001",
+            "kind": "HANDOFF",
+            "item_key": item["key"],
+            "from_owner": "stage3",
+            "to_owner": "stage1",
+            "from_state": "STAGE3_RECONCILIATION",
+            "to_state": "STAGE1_INTAKE",
+            "next_owner": "stage1",
+            "terminal_disposition": None,
+            "parent_event_id": None,
+            "expected_item_revision": 1,
+            "resulting_item_revision": 2,
+            "idempotency_key": f"{item['key']}:evt-2026-stage3-return-001",
+            "status": "PROJECTED",
+            "created_at_utc": "2026-10-09T12:00:00Z",
+            "acknowledged_at_utc": None,
+            "reason": "Stage 3 handed it back for re-evaluation.",
+        }
+        ledger["events"].insert(2, return_event)
+        item.update(
+            {
+                "author_type": "BOT",
+                "lifecycle_state": "STAGE1_INTAKE",
+                "current_owner": "stage1",
+                "next_owner": "stage1",
+                "revision": 2,
+                "handoffs": [*item["handoffs"], "evt-2026-stage3-return-001"],
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "changed_paths": ["docs/plan.md"],
+            }
+        )
+        guardrails.evaluate_ledger(ledger, None, clear_standin=True)
+        self.assertEqual("PASS_ROUTINE", item["guardrail_outcome"])
+        self.assertEqual("path_eval", item["guardrail_source"])
+        validate_schema(ledger)
+        config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        validate_runtime_records(ledger, config)
 
 
 class ArgParseTests(unittest.TestCase):
