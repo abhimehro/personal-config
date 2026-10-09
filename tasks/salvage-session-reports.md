@@ -2317,9 +2317,9 @@ Full record: `tasks/pr-salvage-2026-09-18-1700.md`.
 
 ### Verification
 
-- Isolated ledger schema **PASS** on rev 79. Health reason: `Stage 2 empty
-  intake with zero salvage-eligible remainder`. Owners: none 332 / human 82 /
-  stage3 14 / stage1 3 / stage2 0.
+- Isolated ledger schema **PASS** on rev 79. Health reason:
+  `Stage 2 empty intake with zero salvage-eligible remainder`. Owners: none 332 /
+  human 82 / stage3 14 / stage1 3 / stage2 0.
 - Live GitHub: series
   [#460](https://github.com/abhimehro/series_correction_project_updated/pull/460)
   OPEN `isDraft=true` head `e5af43e4`. personal-config
@@ -2343,8 +2343,8 @@ Full record: `tasks/pr-salvage-2026-09-18-1700.md`.
    [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
    and [#2030](https://github.com/abhimehro/personal-config/pull/2030) OPEN. Do
    not close because a replacement exists. Sticky/HUMAN/workflow-consolidate
-   remainder is Stage 3, not a salvage invent.
-3. Do not salvage rpce Swift on Linux. Do not Trunk-merge this lineage from
+   remainder belongs to Stage 3 and is not a basis for inventing salvage tasks.
+3. Do not salvage rpce Swift on Linux. Do not trunk-merge this lineage from
    Stage 2. Do not execute the retracted processor WI.
 
 Full record: `tasks/pr-salvage-2026-09-21-1700.md`.
