@@ -65,11 +65,11 @@ def _graphql_command(owner: str, name: str, cursor: str | None) -> list[str]:
         "graphql",
         "-f",
         f"query={_QUERY}",
-        "-F",
+        "-f",
         f"owner={owner}",
-        "-F",
+        "-f",
         f"name={name}",
     ]
     if cursor is not None:
-        command.extend(["-F", f"cursor={cursor}"])
+        command.extend(["-f", f"cursor={cursor}"])
     return command

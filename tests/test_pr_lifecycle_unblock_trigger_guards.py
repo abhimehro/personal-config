@@ -66,5 +66,30 @@ class TriggerMarkerGuardsTests(unittest.TestCase):
                 self.assertEqual(actions[0]["action"], "TRIGGER")
 
 
+    def test_codescene_not_triggered_on_fork_pr(self):
+        """A fork PR never receives the push-capable /cs-agent trigger."""
+        pr = _pr(
+            isCrossRepository=True,
+            checks=[{"name": "CodeScene quality gate", "state": "FAILURE"}],
+        )
+        actions = _route(pr, author_type="HUMAN")
+        self.assertNotIn("TRIGGER", [a["action"] for a in actions])
+
+    def test_not_run_ledger_item_blocks_triggers_until_guardrails_run(self):
+        """Freshly ingested NOT_RUN items escalate instead of triggering."""
+        item = {
+            "key": f"abhimehro/personal-config#23@{'a' * 40}",
+            "lifecycle_state": "STAGE1_INTAKE",
+            "guardrail_outcome": "NOT_RUN",
+        }
+        pr = _pr(
+            author={"login": "dependabot[bot]", "type": "Bot"},
+            mergeStateStatus="BEHIND",
+        )
+        actions = _route(pr, items=[item])
+        self.assertNotIn("TRIGGER", [a["action"] for a in actions])
+        self.assertEqual(actions[0]["action"], "ESCALATE")
+
+
 if __name__ == "__main__":
     unittest.main()

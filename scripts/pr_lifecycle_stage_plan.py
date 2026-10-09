@@ -390,7 +390,7 @@ def _stage3_plan(
             ),
         },
         {
-            "action": "CLOSED_NOOP_DEFERRED",
+            "action": "CLOSED_NOOP_RECORDED_BY_RECONCILE",
             "reason": (
                 "Reconcile now records observed-closed CLOSED_NOOP directly; "
                 "this informational action is not deferred to Stage 3"

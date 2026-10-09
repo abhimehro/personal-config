@@ -162,11 +162,11 @@ class Option3Stage3HandoffTests(unittest.TestCase):
         ):
             plan = run.build_stage_plan(3, {"ledger_revision": 3}, {})
         kinds = [a["action"] for a in plan["actions"]]
-        self.assertIn("CLOSED_NOOP_DEFERRED", kinds)
+        self.assertIn("CLOSED_NOOP_RECORDED_BY_RECONCILE", kinds)
         closed_action = next(
             action
             for action in plan["actions"]
-            if action["action"] == "CLOSED_NOOP_DEFERRED"
+            if action["action"] == "CLOSED_NOOP_RECORDED_BY_RECONCILE"
         )
         self.assertIn("records observed-closed", closed_action["reason"])
         self.assertTrue(

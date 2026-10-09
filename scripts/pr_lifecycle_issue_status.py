@@ -385,7 +385,7 @@ def _human_row_line(row: dict[str, Any]) -> str:
     """Render one human-decision backlog row."""
     return (
         f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({row.get('url') or ''}) | "
+        f"({_markdown_cell(row.get('url'))}) | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "
@@ -400,7 +400,7 @@ def _handoff_row_line(row: dict[str, Any]) -> str:
     """Render one Stage 2 handoff row (no expiry or status columns)."""
     return (
         f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({row.get('url') or ''}) | "
+        f"({_markdown_cell(row.get('url'))}) | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "

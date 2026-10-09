@@ -145,10 +145,11 @@ def _family(pr: dict[str, Any]) -> str:
 
 
 def _sticky_security(items: list[dict[str, Any]]) -> bool:
-    """Report whether any nonterminal ledger item retains a security hold."""
+    """Report whether any nonterminal ledger item holds or has not yet cleared
+    security review — ingested NOT_RUN items block push/close actions too."""
     return any(
         item.get("lifecycle_state") != "TERMINAL"
-        and item.get("guardrail_outcome") == "REVIEW_SECURITY"
+        and item.get("guardrail_outcome") in {"REVIEW_SECURITY", "NOT_RUN"}
         for item in items
     )
 
@@ -193,8 +194,9 @@ def _escalation(ctx: _Route, spec: _EscalationSpec) -> dict[str, Any]:
 
 
 def _trigger_blocked(ctx: _Route, kind: str) -> bool:
-    """True when a security hold or non-bot ownership forbids triggering."""
-    if ctx.security:
+    """True when a security hold, fork head, or non-bot ownership forbids a
+    trigger — including /cs-agent on an untrusted cross-repository branch."""
+    if ctx.security or ctx.pr.get("isCrossRepository"):
         return True
     return kind != "codescene" and ctx.author_type != "BOT" and ctx.family != "jules"
 
