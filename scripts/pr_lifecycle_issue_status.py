@@ -526,13 +526,12 @@ def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
     """Render tickable disposition rows inside the shared body budget."""
     header = [
         "",
-        "Decisions — tick a checkbox to execute the suggested disposition.",
-        "Ticks are honored only while the rendered head is still the PR's live head;",
-        "every executed disposition is logged as a ledger event.",
+        "Decisions — tick a checkbox to execute the suggested disposition. Ticks are",
+        "honored only while the rendered head is still the PR's live head; every",
+        "executed disposition is logged as a ledger event.",
         "",
     ]
-    rows: list[str] = []
-    omitted = 0
+    rows, omitted = [], 0
     for row in prepared:
         if _is_handoff_row(row) or not row.get("head_sha"):
             continue
