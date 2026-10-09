@@ -73,6 +73,22 @@ class LedgerOwnerHoldTests(unittest.TestCase):
             )
             self.assertEqual("CLOSE_STALE_LINEAGE", actions[0]["action"], owner)
 
+    def test_human_review_risk_class_holds_like_human_owner(self):
+        """pc#2276/ctrld#1303/Hydro#722 shape: BOT-authored + stage1-owned +
+        risk_class HUMAN_REVIEW must not be auto-mutated — the recorded human
+        hold lives in the ledger, not only in the prompt's exclude list."""
+        item = self._stage_owned_item("stage1", "STAGE1_INTAKE")
+        item["risk_class"] = "HUMAN_REVIEW"
+        actions = _route(
+            _pr(headRefName="pr-lifecycle-docs-20260919"),
+            items=[item],
+        )
+        self.assertTrue(actions)
+        for action in actions:
+            self.assertEqual("ESCALATE", action.get("action"))
+        self.assertEqual("ledger_owned_by_human", actions[0]["blocker"])
+        self.assertEqual("human", actions[0]["owner"])
+
     def test_terminal_owner_does_not_hold(self):
         actions = _route(
             _pr(headRefName="pr-lifecycle-docs-20260919"),

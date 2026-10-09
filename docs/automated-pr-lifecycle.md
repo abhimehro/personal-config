@@ -581,7 +581,10 @@ clean diff. Items whose `current_owner` is `human`/`stage2`/`stage3` are
 never touched, matching the unblock router's blocked-owner set, and items
 whose `author_type` is not `BOT` are never evaluated either — the ledger
 contract forbids `ROUTINE` on human-authored PRs and forced human holds are
-out of scope for a path classifier. An item whose `classification` is
+out of scope for a path classifier. The same applies to an item carrying
+`risk_class: HUMAN_REVIEW` regardless of author type — that field is the
+ledger's human-hold marker, so a BOT-authored held PR (pc#2276 shape) is
+never re-stamped `ROUTINE` by path evidence. An item whose `classification` is
 `SECURITY` stays held (`REVIEW_SECURITY` + `SENSITIVE`) regardless of path
 matches: the intake identity classification is authoritative over path
 evidence, so a Sentinel-style fix touching only ordinary files cannot be
@@ -613,6 +616,12 @@ Holds live in code, not only in the Stage 1 prompt:
   so the repo decision issue keeps visibility. Covers the
   Stage 3-reconciliation lineage PRs and the Stage 2-queued item without any
   prompt-side wrapper.
+- **Human-review hold.** A nonterminal item with `risk_class:
+  HUMAN_REVIEW` is a recorded human hold even while `current_owner` is
+  still `stage1` — the router treats it as human-held (`ledger_owned_by_human`
+  escalation, all mutations suppressed). Covers bot-authored human holds like
+  pc#2276, ctrld#1303, and Hydro#722, which previously depended on the
+  prompt's exclusion list alone.
 - **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/`
   slugs, Snyk, reviewer/automation bots) never counts as human participation
   for the stale-lineage close — and neither does a machine-generated body

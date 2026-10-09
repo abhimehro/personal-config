@@ -219,6 +219,34 @@ class EvaluateItemTests(unittest.TestCase):
             )
         )
 
+    def test_human_review_items_never_evaluated(self) -> None:
+        """risk_class=HUMAN_REVIEW is the ledger's human-hold marker (pc#2276
+        shape): a BOT item with clean paths must keep the hold, even under
+        --clear-stand-in, because a path classifier cannot judge a human's
+        reasons."""
+        for clear in (False, True):
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(
+                        risk_class="HUMAN_REVIEW",
+                        changed_paths=["docs/readme.md"],
+                    ),
+                    clear_standin=clear,
+                ),
+                f"NOT_RUN item, clear_standin={clear}",
+            )
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(
+                        guardrail_outcome="REVIEW_SECURITY",
+                        risk_class="HUMAN_REVIEW",
+                        changed_paths=["docs/readme.md"],
+                    ),
+                    clear_standin=clear,
+                ),
+                f"REVIEW_SECURITY item, clear_standin={clear}",
+            )
+
     def test_generated_output_alone_is_not_sticky(self) -> None:
         patch = guardrails.evaluate_item(
             _item(changed_paths=[".jules/journal/2026-10-09.md"])

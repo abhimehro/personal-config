@@ -134,7 +134,10 @@ def _evaluable(item: dict[str, Any]) -> bool:
     Non-BOT-authored items are never evaluated: the ledger contract
     forbids ``risk_class: ROUTINE`` on human-authored PRs, so a path
     downgrade could never apply anyway, and a forced human hold must
-    not be touched by an unattended path classifier.
+    not be touched by an unattended path classifier. Items carrying
+    ``risk_class: HUMAN_REVIEW`` are human holds regardless of author
+    type — a path evaluation must never overwrite the hold with a
+    routine stamp.
     """
     changed_paths = item.get("changed_paths")
     return all(
@@ -142,6 +145,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("lifecycle_state") != "TERMINAL",
             item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
+            item.get("risk_class") != "HUMAN_REVIEW",
             item.get("guardrail_outcome") in _EVALUATABLE,
             item.get("guardrail_source") not in _PROTECTED_SOURCES,
             isinstance(changed_paths, list) and bool(changed_paths),
