@@ -17,6 +17,7 @@ from pr_lifecycle_unblock_route_support import (
     _S2_HANDOFF_PREFIX,  # noqa: F401
     _advisory,
     _advisory_patterns,
+    _enforce_ledger_owner,
     _escalation,
     _EscalationSpec,
     _family,
@@ -622,35 +623,3 @@ def _route_candidates(
     actions.extend(_route_review(ctx))
     actions.extend(octopus)
     return actions
-
-
-def _enforce_ledger_owner(
-    ctx: _Route,
-    actions: list[dict[str, Any]],
-    ledger_items_for_pr: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Drop automatic actions when a non-stage1 owner holds the ledger item.
-
-    Human-, stage2-, and stage3-owned nonterminal items keep their ESCALATE
-    rows (they still render on the decision issue, in the matching section)
-    but lose every mutating proposal: no close, trigger, or push, regardless
-    of what branch-name or staleness heuristics would otherwise emit. A
-    ``ledger_owned_by_<owner>`` escalation records why nothing ran.
-    """
-    owner = _ledger_owner_hold(ledger_items_for_pr)
-    if owner is None:
-        return actions
-    hold = _escalation(
-        ctx,
-        _EscalationSpec(
-            blocker=f"ledger_owned_by_{owner}",
-            evidence={"current_owner": owner},
-            recommended_action=(
-                f"Leave open; the {owner} stage owns the next step, so "
-                "Stage 1 apply must not mutate this PR."
-            ),
-            owner=owner,
-        ),
-    )
-    kept = [action for action in actions if action.get("action") == "ESCALATE"]
-    return [hold, *kept]
