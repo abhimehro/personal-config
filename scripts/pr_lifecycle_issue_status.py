@@ -228,13 +228,11 @@ def _migrate_first_seen(first_seen: Any) -> dict[str, Any]:
     if not isinstance(first_seen, dict):
         return migrated
     for key, value in first_seen.items():
-        if not isinstance(key, str):
+        if not isinstance(key, str) or not isinstance(value, str):
             continue
         base = key.split(":", 1)[0]
         prev = migrated.get(base)
-        if prev is None or (
-            isinstance(value, str) and isinstance(prev, str) and value < prev
-        ):
+        if prev is None or value < prev:
             migrated[base] = value
     return migrated
 
@@ -514,6 +512,16 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
         table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
 
 
+def _decision_row_line(row: dict[str, Any]) -> str:
+    """Render one tickable disposition row."""
+    suggested = _markdown_cell(row.get("suggested_disposition") or "KEEP_OPEN")
+    head = _markdown_cell(str(row.get("head_sha") or "")[:7] or "unknown")
+    return (
+        f"- [ ] **{row['id']}** — suggested `{suggested}` "
+        f"· head `{head}` · {_markdown_cell(row.get('blocker'))}"
+    )
+
+
 def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
     """Render tickable disposition rows inside the shared body budget."""
     lines = [
@@ -528,12 +536,7 @@ def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
     for row in prepared:
         if _is_handoff_row(row) or not row.get("head_sha"):
             continue
-        suggested = _markdown_cell(row.get("suggested_disposition") or "KEEP_OPEN")
-        head = _markdown_cell(str(row.get("head_sha") or "")[:7] or "unknown")
-        line = (
-            f"- [ ] **{row['id']}** — suggested `{suggested}` "
-            f"· head `{head}` · {_markdown_cell(row.get('blocker'))}"
-        )
+        line = _decision_row_line(row)
         if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
             omitted += 1
             continue

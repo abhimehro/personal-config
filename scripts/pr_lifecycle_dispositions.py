@@ -49,8 +49,8 @@ def parse_ticks(body: str) -> list[dict[str, Any]]:
     return ticks
 
 
-def editors(repo: str, number: int, *, run: Any = subprocess.run) -> set[str] | None:
-    """Return every recorded body editor login, or None on any failure."""
+def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
+    """Fetch raw userContentEdits nodes, or None on any failure."""
     owner, _, name = repo.partition("/")
     proc = run(
         [
@@ -78,8 +78,26 @@ def editors(repo: str, number: int, *, run: Any = subprocess.run) -> set[str] | 
     except json.JSONDecodeError:
         return None
     issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
-    nodes = (issue.get("userContentEdits") or {}).get("nodes") or []
-    return {(node.get("editor") or {}).get("login") for node in nodes} - {None}
+    return (issue.get("userContentEdits") or {}).get("nodes") or []
+
+
+def _editor_login(node: Any) -> str | None:
+    """Return one edit node's editor login, or None when absent."""
+    if not isinstance(node, dict):
+        return None
+    editor = node.get("editor")
+    if not isinstance(editor, dict):
+        return None
+    login = editor.get("login")
+    return login if isinstance(login, str) else None
+
+
+def editors(repo: str, number: int, *, run: Any = subprocess.run) -> set[str] | None:
+    """Return every recorded body editor login, or None on any failure."""
+    nodes = _editor_nodes(repo, number, run)
+    if nodes is None:
+        return None
+    return {login for node in nodes if (login := _editor_login(node))}
 
 
 def _find_item(ledger: dict[str, Any], repo: str, pr_num: Any) -> dict[str, Any] | None:
@@ -109,7 +127,7 @@ def _close_pr(repo: str, pr_num: Any, run: Any) -> bool:
 
 
 @dataclass(frozen=True)
-class _TickCtx:
+class TickCtx:
     """One verified tick plus the ledger item and execution context."""
 
     tick: dict[str, Any]
@@ -119,7 +137,7 @@ class _TickCtx:
     run: Any
 
 
-def _resolve_action(ctx: _TickCtx, base: dict[str, Any], live: dict[str, Any]) -> dict:
+def _resolve_action(ctx: TickCtx, base: dict[str, Any], live: dict[str, Any]) -> dict:
     """Map a verified disposition to its ledger action or a skip record."""
     disposition = base["disposition"]
     if disposition == "KEEP_OPEN":
@@ -141,7 +159,14 @@ def _resolve_action(ctx: _TickCtx, base: dict[str, Any], live: dict[str, Any]) -
     }
 
 
-def _tick_to_action(ctx: _TickCtx) -> dict[str, Any]:
+def _head_current(live: dict[str, Any] | None, meta: dict[str, Any]) -> bool:
+    """Return True when the live head still equals the rendered head."""
+    if not live:
+        return False
+    return str(live.get("headRefOid") or "") == str(meta.get("head_sha") or "")
+
+
+def _tick_to_action(ctx: TickCtx) -> dict[str, Any]:
     """Apply one verified tick and return its action record."""
     repo, _, pr_text = ctx.tick["row_id"].partition("#")
     base = {
@@ -152,9 +177,7 @@ def _tick_to_action(ctx: _TickCtx) -> dict[str, Any]:
         "disposition": ctx.tick.get("token") or ctx.meta.get("suggested_disposition"),
     }
     live = _gh_pr_view(repo, int(pr_text))
-    if not live or str(live.get("headRefOid") or "") != str(
-        ctx.meta.get("head_sha") or ""
-    ):
+    if not _head_current(live, ctx.meta):
         return {**base, "skipped": "head moved since rendered"}
     action = _resolve_action(ctx, base, live)
     if "to_state" not in action:
@@ -163,7 +186,7 @@ def _tick_to_action(ctx: _TickCtx) -> dict[str, Any]:
     return {**action, "event_id": event.get("event_id"), "executed": True}
 
 
-def _process_tick(tick: dict[str, Any], ctx: _ExecCtx) -> dict[str, Any]:
+def _process_tick(tick: dict[str, Any], ctx: ExecCtx) -> dict[str, Any]:
     """Resolve one tick to an executed or skipped outcome record."""
     repo_part, _, pr_part = tick["row_id"].partition("#")
     meta = (ctx.state.get("rows_meta") or {}).get(tick["row_id"])
@@ -173,11 +196,11 @@ def _process_tick(tick: dict[str, Any], ctx: _ExecCtx) -> dict[str, Any]:
         item = None
     if meta is None or item is None:
         return {**tick, "skipped": "unknown row"}
-    return _tick_to_action(_TickCtx(tick, meta, item, ctx.ledger, ctx.run))
+    return _tick_to_action(TickCtx(tick, meta, item, ctx.ledger, ctx.run))
 
 
 @dataclass(frozen=True)
-class _ExecCtx:
+class ExecCtx:
     """Inputs for one repository's tick execution pass."""
 
     repo: str
@@ -187,22 +210,26 @@ class _ExecCtx:
     run: Any
 
 
-def execute(ctx: _ExecCtx) -> dict[str, Any]:
+def _editor_gate(ctx: ExecCtx) -> str | None:
+    """Return a refusal reason unless every body editor is abhimehro."""
+    number = ctx.issue.get("number")
+    if not isinstance(number, int):
+        return "no decision issue"
+    logins = editors(ctx.repo, number, run=ctx.run)
+    if logins is None:
+        return "editor history unreadable"
+    if not logins or logins - _ALLOWED_EDITORS:
+        return f"body editors {sorted(logins)!r} not abhimehro-only"
+    return None
+
+
+def execute(ctx: ExecCtx) -> dict[str, Any]:
     """Execute verified decision-issue ticks for one repository."""
     # Returns {"accepted": [...], "skipped": [...], "reason": ...}; the ledger
     # is mutated in place via apply_action_to_ledger for each accepted tick.
-    number = ctx.issue.get("number")
-    if not isinstance(number, int):
-        return {"accepted": [], "skipped": [], "reason": "no decision issue"}
-    logins = editors(ctx.repo, number, run=ctx.run)
-    if logins is None:
-        return {"accepted": [], "skipped": [], "reason": "editor history unreadable"}
-    if not logins or logins - _ALLOWED_EDITORS:
-        return {
-            "accepted": [],
-            "skipped": [],
-            "reason": f"body editors {sorted(logins)!r} not abhimehro-only",
-        }
+    reason = _editor_gate(ctx)
+    if reason is not None:
+        return {"accepted": [], "skipped": [], "reason": reason}
     outcomes = [
         _process_tick(tick, ctx) for tick in parse_ticks(ctx.issue.get("body") or "")
     ]

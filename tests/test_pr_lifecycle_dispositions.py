@@ -102,7 +102,7 @@ class ParseTickTests(unittest.TestCase):
     def test_no_edit_history_means_no_execution(self):
         run = _Run(editor=None)
         body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
-        ctx = dispositions._ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
+        ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
         result = dispositions.execute(ctx)
         self.assertEqual(result["accepted"], [])
         self.assertIn("not abhimehro", result["reason"])
@@ -120,7 +120,7 @@ class ExecuteTests(unittest.TestCase):
         run = _Run(**kw)
         live = live or {"state": "OPEN", "headRefOid": "abc1234"}
         ledger = _ledger()
-        ctx = dispositions._ExecCtx(REPO, _issue(body), ledger, _state(), run)
+        ctx = dispositions.ExecCtx(REPO, _issue(body), ledger, _state(), run)
         with mock.patch.object(dispositions, "_gh_pr_view", lambda repo, pr: live):
             result = dispositions.execute(ctx)
         return result, run, ledger
@@ -164,7 +164,7 @@ class ExecuteTests(unittest.TestCase):
         )
         result, _, ledger = self._run(body)
         ledger["items"][0]["lifecycle_state"] = "TERMINAL"
-        ctx = dispositions._ExecCtx(REPO, _issue(body), ledger, _state(), _Run())
+        ctx = dispositions.ExecCtx(REPO, _issue(body), ledger, _state(), _Run())
         with mock.patch.object(
             dispositions, "_gh_pr_view", lambda repo, pr: {"state": "OPEN"}
         ):

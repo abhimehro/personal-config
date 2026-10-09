@@ -626,7 +626,7 @@ def _execute_ticks(repo: str, ledger: dict[str, Any]) -> None:
         issue = _find_backlog_issue(_list_backlog_rows(repo))
         if not issue:
             return
-        ctx = dispositions._ExecCtx(
+        ctx = dispositions.ExecCtx(
             repo, issue, ledger, _previous_state(issue.get("body")), subprocess.run
         )
         dispositions.execute(ctx)
