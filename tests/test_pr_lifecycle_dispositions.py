@@ -123,7 +123,9 @@ class ParseTickTests(unittest.TestCase):
         run = _Run(pages=list(pages))
         body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
         ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
-        result = dispositions.execute(ctx)
+        live = {"state": "OPEN", "headRefOid": "abc1234"}
+        with mock.patch.object(dispositions, "_gh_pr_view", lambda repo, pr: live):
+            result = dispositions.execute(ctx)
         self.assertEqual(len(result["accepted"]), 1)
 
     def test_missing_cursor_mid_pagination_is_refused(self):
