@@ -53,20 +53,25 @@ def _state(head: str = "abc1234") -> dict:
 class _Run:
     """Fake subprocess.run routing gh calls."""
 
-    def __init__(self, editor="abhimehro", live=None, close_rc=0, total=None):
+    def __init__(self, editor="abhimehro", live=None, close_rc=0, pages=None):
         self.editor = editor
         self.live = live or {"state": "OPEN", "headRefOid": "abc1234"}
         self.close_rc = close_rc
-        self.total = total
+        self.pages = pages or [[{"editor": {"login": editor}}]]
         self.calls = []
 
     def __call__(self, cmd, **kw):
         self.calls.append(cmd)
         out = ""
         if cmd[:3] == ["gh", "api", "graphql"]:
-            edits: dict = {"nodes": [{"editor": {"login": self.editor}}]}
-            if self.total is not None:
-                edits["totalCount"] = self.total
+            page = self.pages.pop(0) if self.pages else []
+            edits = {
+                "nodes": page,
+                "pageInfo": {
+                    "hasNextPage": bool(self.pages),
+                    "endCursor": f"c{len(self.pages)}" if self.pages else "",
+                },
+            }
             out = json.dumps(
                 {"data": {"repository": {"issue": {"userContentEdits": edits}}}}
             )
@@ -110,10 +115,34 @@ class ParseTickTests(unittest.TestCase):
     def test_null_editor_fields_return_empty(self):
         self.assertEqual(dispositions.editors(REPO, 7, run=_Run(editor=None)), set())
 
-    def test_truncated_editor_history_is_refused(self):
-        run = _Run(total=150)
+    def test_editor_history_paginates(self):
+        pages = [
+            [{"editor": {"login": "abhimehro"}} for _ in range(100)],
+            [{"editor": {"login": "abhimehro"}} for _ in range(50)],
+        ]
+        run = _Run(pages=list(pages))
         body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
         ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
+        result = dispositions.execute(ctx)
+        self.assertEqual(len(result["accepted"]), 1)
+
+    def test_missing_cursor_mid_pagination_is_refused(self):
+        def broken(cmd, **kw):
+            if cmd[:3] == ["gh", "api", "graphql"]:
+                edits = {
+                    "nodes": [{"editor": {"login": "abhimehro"}}],
+                    "pageInfo": {"hasNextPage": True, "endCursor": ""},
+                }
+                return _Done(
+                    0,
+                    json.dumps(
+                        {"data": {"repository": {"issue": {"userContentEdits": edits}}}}
+                    ),
+                )
+            return _Done(0)
+
+        body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
+        ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), broken)
         result = dispositions.execute(ctx)
         self.assertEqual(result["accepted"], [])
         self.assertIn("unreadable", result["reason"])
