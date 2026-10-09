@@ -620,18 +620,22 @@ class _DecisionCtx:
     overdue_notifications: bool = False
 
 
-def _execute_ticks(repo: str, ledger: dict[str, Any]) -> None:
+def _execute_ticks(repo: str, ledger: dict[str, Any]) -> dict[str, Any] | None:
     """Execute verified decision-issue ticks before the issue re-renders."""
     try:
         issue = _find_backlog_issue(_list_backlog_rows(repo))
         if not issue:
-            return
+            return None
         ctx = dispositions.ExecCtx(
             repo, issue, ledger, _previous_state(issue.get("body")), subprocess.run
         )
-        dispositions.execute(ctx)
-    except (OSError, subprocess.SubprocessError):
-        return
+        outcome = dispositions.execute(ctx)
+    except (OSError, subprocess.SubprocessError) as exc:
+        outcome = {"accepted": [], "skipped": [], "reason": type(exc).__name__}
+    if outcome.get("reason") or outcome.get("skipped"):
+        detail = outcome.get("reason") or [s.get("skipped") for s in outcome["skipped"]]
+        print(f"decision-issue ticks for {repo}: {detail}", file=sys.stderr)
+    return outcome
 
 
 def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
@@ -647,8 +651,9 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
         if repo in failed_repos:
             results[repo] = _issue_skipped(repo)
             continue
+        tick_outcome = None
         if ctx.apply and ctx.decision_issues:
-            _execute_ticks(repo, ctx.ledger)
+            tick_outcome = _execute_ticks(repo, ctx.ledger)
         results[repo] = _one_decision_issue(
             _IssueSpec(
                 repo,
@@ -661,6 +666,8 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
                 ctx.overdue_notifications,
             )
         )
+        if tick_outcome is not None:
+            results[repo]["ticks"] = tick_outcome
     return results
 
 

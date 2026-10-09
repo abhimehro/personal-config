@@ -37,28 +37,38 @@ _TICK_RE = re.compile(r"^-\s*\[[xX]\]\s*\*\*([^*\s]+)\*\*")
 _TOKEN_RE = re.compile(r"`([A-Z][A-Z0-9_]+)`")
 
 
+def _line_tick(line: str) -> dict[str, Any] | None:
+    """Parse one body line into a tick record, or None when unticked."""
+    match = _TICK_RE.match(line.strip())
+    if not match:
+        return None
+    tokens = _TOKEN_RE.findall(line)
+    return {"row_id": match.group(1), "token": tokens[-1] if tokens else None}
+
+
 def parse_ticks(body: str) -> list[dict[str, Any]]:
     """Extract ticked decision rows: row id plus an optional edited token."""
-    ticks: list[dict[str, Any]] = []
-    for line in str(body or "").splitlines():
-        match = _TICK_RE.match(line.strip())
-        if match:
-            tokens = _TOKEN_RE.findall(line)
-            ticks.append(
-                {"row_id": match.group(1), "token": tokens[-1] if tokens else None}
-            )
-    return ticks
+    return [
+        tick
+        for line in str(body or "").splitlines()
+        if (tick := _line_tick(line)) is not None
+    ]
+
+
+def _is_candidate(item: Any, repo: str, pr_num: Any) -> bool:
+    """Match nonterminal ledger items belonging to repo#pr."""
+    return (
+        isinstance(item, dict)
+        and item.get("repository") == repo
+        and item.get("pr") == pr_num
+        and item.get("lifecycle_state") != "TERMINAL"
+    )
 
 
 def _find_item(ledger: dict[str, Any], repo: str, pr_num: Any) -> dict[str, Any] | None:
     """Return the nonterminal ledger item for repo#pr, preferring the newest."""
     candidates = [
-        item
-        for item in ledger.get("items") or []
-        if isinstance(item, dict)
-        and item.get("repository") == repo
-        and item.get("pr") == pr_num
-        and item.get("lifecycle_state") != "TERMINAL"
+        item for item in ledger.get("items") or [] if _is_candidate(item, repo, pr_num)
     ]
     candidates.sort(key=lambda i: (int(i.get("revision") or 0)), reverse=True)
     return candidates[0] if candidates else None
@@ -91,6 +101,8 @@ def _resolve_action(ctx: TickCtx, base: dict[str, Any], live: dict[str, Any]) ->
     """Map a verified disposition to its ledger action or a skip record."""
     disposition = base["disposition"]
     if disposition == "KEEP_OPEN":
+        if live.get("state") not in (None, "OPEN"):
+            return {**base, "skipped": "PR no longer open"}
         return {
             **{k: v for k, v in base.items() if k != "disposition"},
             "to_state": "WAITING_HUMAN",
@@ -98,15 +110,20 @@ def _resolve_action(ctx: TickCtx, base: dict[str, Any], live: dict[str, Any]) ->
         }
     if disposition not in _DISPOSITIONS:
         return {**base, "skipped": "unknown disposition"}
-    if live.get("state") != "CLOSED" and not _close_pr(
-        base["repository"], base["pr"], ctx.run
-    ):
+    if not _ensure_closed(ctx, base, live):
         return {**base, "skipped": "gh pr close failed"}
     return {
         **base,
         "to_state": "TERMINAL",
         "reason": f"human disposition {disposition} via decision issue",
     }
+
+
+def _ensure_closed(ctx: TickCtx, base: dict[str, Any], live: dict[str, Any]) -> bool:
+    """Close the live PR unless it already is; True when it ends up closed."""
+    if live.get("state") == "CLOSED":
+        return True
+    return _close_pr(base["repository"], base["pr"], ctx.run)
 
 
 def _head_current(live: dict[str, Any] | None, meta: dict[str, Any]) -> bool:
@@ -139,6 +156,8 @@ def _tick_to_action(ctx: TickCtx) -> dict[str, Any]:
 def _process_tick(tick: dict[str, Any], ctx: ExecCtx) -> dict[str, Any]:
     """Resolve one tick to an executed or skipped outcome record."""
     repo_part, _, pr_part = tick["row_id"].partition("#")
+    if repo_part != ctx.repo:
+        return {**tick, "skipped": "row repository mismatch"}
     meta = (ctx.state.get("rows_meta") or {}).get(tick["row_id"])
     try:
         item = _find_item(ctx.ledger, repo_part, int(pr_part or 0))

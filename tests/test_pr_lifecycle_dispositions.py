@@ -3,6 +3,7 @@
 import json
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -12,6 +13,7 @@ import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_issue_status as issue_status
 
 REPO = "owner/repo"
+NOW = datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def _ledger() -> dict:
@@ -159,6 +161,22 @@ class ExecuteTests(unittest.TestCase):
         self.assertIsNone(item["terminal_disposition"])
         self.assertNotIn(["gh", "pr", "close", "42", "--repo", REPO], run.calls)
 
+    def test_keep_open_on_closed_pr_is_skipped(self):
+        body = f"- [x] **{REPO}#42** — `KEEP_OPEN`\n"
+        result, _, ledger = self._run(
+            body, live={"state": "MERGED", "headRefOid": "abc1234"}
+        )
+        self.assertEqual(result["accepted"], [])
+        self.assertEqual(result["skipped"][0]["skipped"], "PR no longer open")
+        self.assertEqual(ledger["items"][0]["lifecycle_state"], "STAGE3_RECONCILIATION")
+
+    def test_cross_repo_row_is_skipped(self):
+        body = "- [x] **other/repo#42** — `CLOSED_STALE`\n"
+        result, run, _ = self._run(body)
+        self.assertEqual(result["accepted"], [])
+        self.assertEqual(result["skipped"][0]["skipped"], "row repository mismatch")
+        self.assertNotIn(["gh", "pr", "close", "42", "--repo", "other/repo"], run.calls)
+
     def test_unknown_row_and_terminal_item_are_skipped(self):
         body = (
             "- [x] **owner/repo#99** — `CLOSED_STALE`\n"
@@ -221,10 +239,6 @@ class RenderedDecisionsTests(unittest.TestCase):
         )
         self.assertNotIn("tick a checkbox", body)
 
-
-from datetime import datetime, timezone
-
-NOW = datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc)
 
 if __name__ == "__main__":
     unittest.main()

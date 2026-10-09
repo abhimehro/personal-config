@@ -51,6 +51,15 @@ def _graphql_json(repo: str, number: int, run: Any) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+def _nested(value: Any, *keys: str) -> Any:
+    """Walk nested dict keys; None when any level is not a dict."""
+    for key in keys:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(key)
+    return value
+
+
 def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
     """Fetch raw userContentEdits nodes, or None on any failure."""
     # A truncated edit history is not the whole gate: refuse when the API
@@ -58,8 +67,7 @@ def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
     data = _graphql_json(repo, number, run)
     if data is None:
         return None
-    issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
-    edits = issue.get("userContentEdits") or {}
+    edits = _nested(data, "data", "repository", "issue", "userContentEdits") or {}
     nodes = edits.get("nodes") or []
     total = edits.get("totalCount")
     if isinstance(total, int) and total > len(nodes):
