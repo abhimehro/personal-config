@@ -8,7 +8,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from pr_lifecycle_inventory_checks import _commit_checks, _nodes
+from pr_lifecycle_inventory_checks import (
+    _checks_truncated,
+    _commit_checks,
+    _nodes,
+)
+
+_OCTOPUS_BOT_LOGIN = "octopus-review"
 
 
 def _author_login(author: Any) -> str:
@@ -101,6 +107,54 @@ def _normalize_comments(
     return comments, total if _nonneg_int(total) else None
 
 
+def _require_str_value(value: Any, label: str) -> str:
+    """Return value when it is a string, else raise OSError (fail closed)."""
+    if not isinstance(value, str):
+        raise OSError(label)
+    return value
+
+
+def _octopus_thread_author(thread: dict[str, Any]) -> bool:
+    """True when the first thread comment was authored by the Octopus bot.
+
+    Unverifiable author identity raises OSError: an unresolved thread whose
+    author cannot be read is never treated as a clean non-match (fail closed).
+    """
+    first = _nodes(thread.get("comments"), "reviewThread comments")
+    author = first[0].get("author") if first and isinstance(first[0], dict) else None
+    login = author.get("login") if isinstance(author, dict) else None
+    typename = author.get("__typename") if isinstance(author, dict) else None
+    label = "reviewThread comment author unverifiable"
+    return (
+        _require_str_value(typename, label) == "Bot"
+        and _require_str_value(login, label) == _OCTOPUS_BOT_LOGIN
+    )
+
+
+def _octopus_thread_open(thread: dict[str, Any]) -> bool:
+    """True when the thread is an unresolved, non-outdated Octopus finding."""
+    resolved = thread.get("isResolved")
+    outdated = thread.get("isOutdated")
+    if not isinstance(resolved, bool) or not isinstance(outdated, bool):
+        raise OSError("malformed reviewThreads")
+    if resolved or outdated:
+        return False
+    return _octopus_thread_author(thread)
+
+
+def _normalize_octopus_findings(raw: dict[str, Any]) -> int | None:
+    """Count unresolved Octopus review threads; None when the page truncated.
+
+    Absent or malformed reviewThreads data raises OSError (fail closed): a PR
+    we cannot verify is not normalized into routable inventory.
+    """
+    connection = raw.get("reviewThreads")
+    threads = _nodes(connection, "reviewThreads")
+    if _checks_truncated(connection):
+        return None
+    return sum(1 for thread in threads if _octopus_thread_open(thread))
+
+
 def _normalized_author(author: dict[str, Any]) -> dict[str, Any]:
     """Return the normalized author mapping, marking Bot typenames."""
     normalized = {"login": _author_login(author)}
@@ -151,6 +205,7 @@ def _normalize_pr(raw: dict[str, Any], repository: str) -> dict[str, Any]:
     normalized_pr.update(
         {
             "latestReviews": _normalize_reviews(raw),
+            "openOctopusFindings": _normalize_octopus_findings(raw),
             "comments": comments,
             "commentsTotalCount": comments_total_count,
             "commits": commits,

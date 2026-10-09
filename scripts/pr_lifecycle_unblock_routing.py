@@ -497,6 +497,27 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
     return _review_trigger(ctx, {"reviewDecision": "CHANGES_REQUESTED"})
 
 
+def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
+    """Escalate open Octopus review findings; they block routine merge."""
+    findings = ctx.pr.get("openOctopusFindings")
+    if findings == 0:
+        return []
+    unknown = findings is None
+    action = "verify the Octopus review threads on the PR (thread list truncated or unreadable), then resolve or close"
+    if not unknown:
+        action = "resolve the open Octopus review findings on the PR or close it"
+    return [
+        _escalation(
+            ctx,
+            _EscalationSpec(
+                "open_octopus_findings",
+                evidence={"open_octopus_findings": "unknown" if unknown else findings},
+                recommended_action=action,
+            ),
+        )
+    ]
+
+
 @dataclass(frozen=True)
 class _RouteArgs:
     """The non-PR routing inputs carried through to _route_ctx."""
@@ -554,15 +575,27 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     routes precede draft suppression; conflicts precede other blockers.
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
+    Open or unknown Octopus findings always escalate: automatic close actions
+    are suppressed and the escalation is kept alongside any other blockers.
     """
     ctx = _route_ctx(pr, args)
+    octopus = _route_octopus_findings(ctx)
     prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
     if prefix is not None:
-        return prefix
+        if not octopus:
+            return prefix
+        actions = [
+            action
+            for action in prefix
+            if not str(action.get("action") or "").startswith("CLOSE")
+        ]
+        actions.extend(octopus)
+        return actions
     conflict = _route_conflict(ctx)
     if conflict is not None:
-        return conflict
+        return conflict + octopus
     actions = _route_behind(ctx)
     actions.extend(_route_checks(ctx))
     actions.extend(_route_review(ctx))
+    actions.extend(octopus)
     return actions
