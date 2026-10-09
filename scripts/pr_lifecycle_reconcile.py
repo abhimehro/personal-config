@@ -124,8 +124,9 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
     return payload
 
 
-def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
-    """Fetch the PR's changed-file paths via REST; None on any failure.
+def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
+    """
+    Fetch the PR's changed-file paths via REST; None on any failure.
 
     Paginates so a large diff cannot silently truncate evidence (a hidden
     sensitive path must never downgrade a hold). Renames contribute their
@@ -139,7 +140,7 @@ def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
     cmd = [
         "gh",
         "api",
-        f"repos/{repo}/pulls/{pr}/files",
+        f"repos/{repo}/pulls/{pr_num}/files",
         "--paginate",
         "--jq",
         ".[] | .filename, (.previous_filename // empty)",
@@ -388,7 +389,8 @@ def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
 def _path_backfill_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """Emit a changed_paths backfill for an open live PR missing path evidence.
+    """
+    Emit a changed_paths backfill for an open live PR missing path evidence.
 
     Data-only action: it stamps `changed_paths` so the guardrail evaluator
     can judge the item on real evidence instead of holding it forever on a
@@ -398,22 +400,22 @@ def _path_backfill_action(
     if not _backfill_eligible(item, live):
         return None
     repo = str(item["repository"])
-    pr = int(item["pr"])
+    pr_num = int(item["pr"])
     key = str(item.get("key") or "")
-    paths = _gh_pr_files(repo, pr)
+    paths = _gh_pr_files(repo, pr_num)
     if paths is None:
         return {
             "action": "PATH_BACKFILL_FAILED",
             "key": key,
             "repository": repo,
-            "pr": pr,
+            "pr": pr_num,
             "reason": "changed-paths fetch failed; item stays unevaluated",
         }
     return {
         "action": "BACKFILL_PATHS",
         "key": key,
         "repository": repo,
-        "pr": pr,
+        "pr": pr_num,
         "paths": paths,
         "reason": f"backfill changed_paths ({len(paths)} files) for guardrail evidence",
     }
@@ -668,7 +670,8 @@ def _note_observed_terminal(
 def _backfill_item_paths(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """Stamp `changed_paths` in place from a BACKFILL_PATHS action.
+    """
+    Stamp `changed_paths` in place from a BACKFILL_PATHS action.
 
     Data-only write: no transition event, no revision bump, and no
     updated_at_utc refresh (a path list is evidence, not activity — the
@@ -962,7 +965,8 @@ def _ingest_action(
 
 
 def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
-    """Look up and classify one nonterminal item; return 0-2 planned actions.
+    """
+    Look up and classify one nonterminal item; return 0-2 planned actions.
 
     A changed-paths backfill rides alongside the primary action so the
     guardrail evaluator can adjudicate the item on evidence next pass.
