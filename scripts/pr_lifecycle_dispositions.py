@@ -76,16 +76,24 @@ def _graphql_stdout(repo: str, number: int, run: Any) -> str | None:
     return proc.stdout or ""
 
 
-def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
-    """Fetch raw userContentEdits nodes, or None on any failure."""
-    # A truncated edit history is not the whole gate: refuse when the API
-    # reports more edits than the 100-node window returned.
+def _graphql_json(repo: str, number: int, run: Any) -> dict[str, Any] | None:
+    """Fetch the editor-history payload, or None on transport/parse failure."""
     stdout = _graphql_stdout(repo, number, run)
     if stdout is None:
         return None
     try:
         data = json.loads(stdout or "{}")
     except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
+    """Fetch raw userContentEdits nodes, or None on any failure."""
+    # A truncated edit history is not the whole gate: refuse when the API
+    # reports more edits than the 100-node window returned.
+    data = _graphql_json(repo, number, run)
+    if data is None:
         return None
     issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
     edits = issue.get("userContentEdits") or {}
