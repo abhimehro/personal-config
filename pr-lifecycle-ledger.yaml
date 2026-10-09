@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 339
+ledger_revision: 340
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -11204,7 +11204,8 @@ items:
   - evt-s3-20260826-seatekanalys-744-h
   - evt-reconcile-20260924155259-322d167d
   revision: 3
-  updated_at_utc: '2026-09-24T15:52:59Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#743@5dcc49d8fee3035213a6291bc11ef1586eaf1fa2
   repository: abhimehro/Seatek_Analysis
   pr: 743
@@ -20746,6 +20747,7 @@ items:
   classification: PERFORMANCE
   risk_class: SENSITIVE
   sensitive_paths:
+  - file_read_write_boundaries
   - security_configuration
   - shell_execution
   - workflows_and_permissions
@@ -20803,7 +20805,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2245@2408f5b8f50a2e84ca71fce7e8060dbc8d6254b1
   repository: abhimehro/personal-config
   pr: 2245
@@ -20848,7 +20851,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2276@552f824c62dbf2cd5d4d2cb8235b400ee20669a8
   repository: abhimehro/personal-config
   pr: 2276
@@ -21544,7 +21548,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - authentication_and_authorization
+  - security_configuration
   - shell_execution
   - workflows_and_permissions
   changed_paths:
@@ -21606,7 +21610,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2329@1fd41acb8390fb0649549e4f2ca6d04afaefcd95
   repository: abhimehro/personal-config
   pr: 2329
@@ -21625,7 +21630,6 @@ items:
   classification: DEPENDENCY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
   - workflows_and_permissions
   changed_paths:
   - .github/workflows/security-scan.yml
@@ -21646,7 +21650,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2330@77fbf13dccfe699b77be90aa3e95e373d2572773
   repository: abhimehro/personal-config
   pr: 2330
@@ -21665,7 +21670,6 @@ items:
   classification: DEPENDENCY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
   - workflows_and_permissions
   changed_paths:
   - .github/workflows/security-scan.yml
@@ -21686,7 +21690,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2334@c6d70837125a257473871d8568ed87af12792bfc
   repository: abhimehro/personal-config
   pr: 2334
@@ -21731,7 +21736,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2390@52c095ab6985a065237579a333c885b72f2d058d
   repository: abhimehro/personal-config
   pr: 2390
@@ -21770,7 +21776,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2412@aded8f2d55aeffe93a4c490b262b3b5303a1454b
   repository: abhimehro/personal-config
   pr: 2412
@@ -21811,7 +21818,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2417@d8a5bc2ea6bba5f967d0170083d4cf7a223682e0
   repository: abhimehro/personal-config
   pr: 2417
@@ -21894,7 +21902,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2422@fff0919855194edfc1bab8d1b8900fcaa70f4a72
   repository: abhimehro/personal-config
   pr: 2422
@@ -21933,7 +21942,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2437@771e59cb67e0edda55ab3e5b50675019fa512981
   repository: abhimehro/personal-config
   pr: 2437
@@ -22018,7 +22028,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2439@6d67a19bacdf468851e9098a1c3c744b18bdd5e5
   repository: abhimehro/personal-config
   pr: 2439
@@ -22148,7 +22159,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2444@72c0524f45452b3fd4320df71125862b1a0db4de
   repository: abhimehro/personal-config
   pr: 2444
@@ -22282,7 +22294,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2471@a950d664cb47e093ed07c17786830bc5809924f9
   repository: abhimehro/personal-config
   pr: 2471
@@ -22371,7 +22384,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2475@05917c2e37b047ae0b52ee5fea2c2f7f6a0adc85
   repository: abhimehro/personal-config
   pr: 2475
@@ -22477,7 +22491,6 @@ items:
   classification: CI_INFRA
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
   - workflows_and_permissions
   changed_paths:
   - .github/workflows/jules-pr-review.yml
@@ -22506,7 +22519,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1280@adc49274b27b4e3e69c4d8c04729fe1a861453c5
   repository: abhimehro/ctrld-sync
   pr: 1280
@@ -22616,7 +22630,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1303@7ec3fcc2b9df68cbddf7a8e9dc2fd3943682aaaa
   repository: abhimehro/ctrld-sync
   pr: 1303
@@ -22691,7 +22706,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1315@caef3c41d0a1fad5179e185590f12460e86f88f8
   repository: abhimehro/ctrld-sync
   pr: 1315
@@ -22730,7 +22746,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1316@711acc84e9dd68bc3ed7c44f9b360f934c329b38
   repository: abhimehro/ctrld-sync
   pr: 1316
@@ -22769,7 +22786,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1584@71bec5b1293f28f488d4ae93acd159b82212bf04
   repository: abhimehro/email-security-pipeline
   pr: 1584
@@ -22834,6 +22852,7 @@ items:
   classification: UI
   risk_class: SENSITIVE
   sensitive_paths:
+  - generated_output
   - lockfiles_and_major_dependencies
   changed_paths:
   - .jules/palette.md
@@ -22857,7 +22876,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
   repository: abhimehro/email-security-pipeline
   pr: 1624
@@ -23314,7 +23334,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1724@005e5899a3e398224197d8559d5c5540e939f063
   repository: abhimehro/email-security-pipeline
   pr: 1724
@@ -23607,7 +23628,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1732@19f22170f6e1a2d96895af343b41957a9c4fae5f
   repository: abhimehro/email-security-pipeline
   pr: 1732
@@ -23646,7 +23668,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#826@b50066892ffd4056038706492e77f26944262e7b
   repository: abhimehro/Seatek_Analysis
   pr: 826
@@ -23669,7 +23692,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
@@ -23691,7 +23715,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#852@cea2815f136a9a2025087d1b5d1d1f873b4d5fa5
   repository: abhimehro/Seatek_Analysis
   pr: 852
@@ -23714,7 +23739,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
   - .github/scripts/repository_automation_tasks.py
@@ -23736,7 +23762,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#857@a89c9ff88904b7d62440df7253de5b59b6b81971
   repository: abhimehro/Seatek_Analysis
   pr: 857
@@ -23837,7 +23864,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#901@53dcd3e8aca586a17ffc72369986ac27fed669b0
   repository: abhimehro/Seatek_Analysis
   pr: 901
@@ -23860,7 +23888,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
   - .github/scripts/repository_automation_tasks.py
@@ -23882,7 +23911,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#903@decb3d53dddabbfbde2f86741ce3a00221d0351f
   repository: abhimehro/Seatek_Analysis
   pr: 903
@@ -23921,7 +23951,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#904@a8f33e6bfbc2528b5ca7eeeb16c5de94f9649d1e
   repository: abhimehro/Seatek_Analysis
   pr: 904
@@ -23960,7 +23991,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#905@efc80ad2548c18a603c51fd01da22b26c8852b39
   repository: abhimehro/Seatek_Analysis
   pr: 905
@@ -23999,7 +24031,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#909@e91eabbfd171d3ac745285777894b3f67db4a1b7
   repository: abhimehro/Seatek_Analysis
   pr: 909
@@ -24054,7 +24087,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
   - .jules/sentinel.md
@@ -24076,7 +24110,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#931@6edddcc03eb7b88c7d05bda5108c58fb65426ac4
   repository: abhimehro/Seatek_Analysis
   pr: 931
@@ -24115,7 +24150,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#932@4a6a9472d4566fa37d6c5649e98c6e0a62706edf
   repository: abhimehro/Seatek_Analysis
   pr: 932
@@ -24154,7 +24190,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#936@b23528150c350f30a674effd9e1ab1c1f4e419ce
   repository: abhimehro/Seatek_Analysis
   pr: 936
@@ -24336,8 +24373,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/app.py
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -24360,7 +24396,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#769@e4d1dd5bba0da7739d13e47e3f3188504e4e6160
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 769
@@ -24382,8 +24419,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: REVIEW_SECURITY
@@ -24403,7 +24439,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#770@eb9138d8f2a78730ad544d2dc9d694f0d83b362e
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 770
@@ -24442,7 +24479,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#771@21f3f04fe566f9987a3f38ea3e440a2838899d27
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 771
@@ -24484,7 +24522,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#772@21e481040a90531403dbe5febd8d4c14e3508734
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 772
@@ -24506,8 +24545,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
@@ -24528,7 +24566,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#773@6548d57eb4ab8b40f2f088d8d5580f01cf8dbd9c
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 773
@@ -24592,8 +24631,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: REVIEW_SECURITY
@@ -24613,7 +24651,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#776@56dad9179fa2e772b62c19e0872fa55f6d9890c3
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 776
@@ -24635,8 +24674,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
@@ -24657,7 +24695,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#778@4c6c07228260082ebef6fcddee4f1267161894cc
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 778
@@ -24721,7 +24760,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -24742,7 +24781,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#781@f4f1c7a7549e1db8e75c1f3486f6f155810ec23c
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 781
@@ -24782,7 +24822,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#782@8304b18dd5051a980e70f0a25bca2c1598645d96
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 782
@@ -24804,8 +24845,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: REVIEW_SECURITY
@@ -24825,7 +24865,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#783@910edcf9483dfaaac21f606010e9e9227a21ed93
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 783
@@ -24930,7 +24971,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -24952,7 +24993,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#787@c2dab1ea13f7a5333cffe11e2a3c8b09f1669322
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 787
@@ -25022,7 +25064,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -25044,7 +25086,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#445@80b4d210c7c7778866a7fd2a4632e2895932568d
   repository: abhimehro/series_correction_project_updated
   pr: 445
@@ -25083,7 +25126,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#468@be551f66a55c40608e572bfe310fb3de9271c59b
   repository: abhimehro/series_correction_project_updated
   pr: 468
@@ -25126,7 +25170,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
   repository: abhimehro/series_correction_project_updated
   pr: 484
@@ -25208,7 +25253,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#489@0c3e0266ad0e6b816129d8f9dded63a6034bdfca
   repository: abhimehro/series_correction_project_updated
   pr: 489
@@ -25230,8 +25276,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
@@ -25252,7 +25297,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
   repository: abhimehro/series_correction_project_updated
   pr: 499
@@ -25335,7 +25381,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#527@56bfd027ab56d87de9b8cb5a3078a25db69ebb35
   repository: abhimehro/series_correction_project_updated
   pr: 527
@@ -25357,8 +25404,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
@@ -25379,7 +25425,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#544@a496f060b75c322a89e0101444ed6f109ea0a929
   repository: abhimehro/series_correction_project_updated
   pr: 544
@@ -25418,7 +25465,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#549@6d05db815b946dc9d6967e7af7c0d70ea5493ea2
   repository: abhimehro/series_correction_project_updated
   pr: 549
@@ -25481,8 +25529,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
@@ -25503,7 +25550,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#551@972098fbf8135f6f0c963eb0aabc7a343aef6acf
   repository: abhimehro/series_correction_project_updated
   pr: 551
@@ -25567,8 +25615,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
@@ -25589,7 +25636,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#554@9d5b8d06b8e9cd9d68d23a9a363a3aba5c271c78
   repository: abhimehro/series_correction_project_updated
   pr: 554
@@ -25673,7 +25721,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#556@787ed4bb49287b1be3a555edb45cbec81b53c80f
   repository: abhimehro/series_correction_project_updated
   pr: 556
@@ -25736,8 +25785,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
@@ -25758,7 +25806,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#558@6323777f5a7f051784ca5036b96a563507741b7d
   repository: abhimehro/series_correction_project_updated
   pr: 558
@@ -25797,7 +25846,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#559@3b1e14b60de73383f9e1800c0d4113b19974b056
   repository: abhimehro/series_correction_project_updated
   pr: 559
@@ -25836,7 +25886,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#560@c1d89add19b03faf94364fd89ece6d46bdc7bacc
   repository: abhimehro/series_correction_project_updated
   pr: 560
@@ -25875,7 +25926,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#339@22a11d25cdaeeef920e69b45f0746df2285bda51
   repository: abhimehro/repoprompt-ce
   pr: 339
@@ -25897,7 +25949,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - deployment_and_infrastructure
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/MCP/AppShared/MCPFilesystemConstants.swift
   - Sources/RepoPrompt/Infrastructure/MCP/BootstrapSocketServer.swift
@@ -25920,7 +25973,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#344@a04bcf35ae4694d7860380f657e9df67635f5319
   repository: abhimehro/repoprompt-ce
   pr: 344
@@ -25943,7 +25997,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - deployment_and_infrastructure
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/Process/CLIEnvironmentCache.swift
@@ -25966,7 +26021,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#349@30107c432a71109eb798236fd356b3715d58b2de
   repository: abhimehro/repoprompt-ce
   pr: 349
@@ -25989,7 +26045,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Scripts/extract_staged_release.py
@@ -26011,7 +26067,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#351@a16cc2d755e9185448a2171d3bc747230f264e82
   repository: abhimehro/repoprompt-ce
   pr: 351
@@ -26076,8 +26133,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - security_configuration
+  sensitive_paths: []
   changed_paths:
   - Sources/RepoPromptDomainRuntime/DomainMutationPolicy.swift
   guardrail_outcome: REVIEW_SECURITY
@@ -26097,7 +26153,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#355@8f40af8a24fb1b2dec7ed9814bc9c7cff9eae645
   repository: abhimehro/repoprompt-ce
   pr: 355
@@ -26226,7 +26283,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#361@5f1ae137836254e21b6c25c848c10239aed60ef9
   repository: abhimehro/repoprompt-ce
   pr: 361
@@ -26291,7 +26349,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - deployment_and_infrastructure
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/MCP/AppShared/MCPFilesystemConstants.swift
   - Sources/RepoPromptMCP/Shared/MCPFilesystemConstants.swift
@@ -26313,7 +26372,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#365@b73bab68d320af06dd346b19c0e59ee9339462d6
   repository: abhimehro/repoprompt-ce
   pr: 365
@@ -26415,7 +26475,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Scripts/extract_staged_release.py
@@ -26437,7 +26497,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#370@d37381e95ccc2fe1c9ce2241b3da625bbbad0072
   repository: abhimehro/repoprompt-ce
   pr: 370
@@ -26546,7 +26607,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - deployment_and_infrastructure
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/Process/CLI/CLIPathInstaller.swift
@@ -26567,7 +26629,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#375@d09de3fb26de26a738da90433f541d075b4093a6
   repository: abhimehro/repoprompt-ce
   pr: 375
@@ -26673,7 +26736,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - deployment_and_infrastructure
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/MCP/MCPConfigExportService.swift
@@ -26695,7 +26759,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#380@8a94ac7489d95d7461a8d69cd19f462ca15a6bc5
   repository: abhimehro/repoprompt-ce
   pr: 380
@@ -26804,7 +26869,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - deployment_and_infrastructure
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/Antigravity/AntigravityRuntimeManager.swift
@@ -26825,7 +26891,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#385@c5851389170a0397f6fce56b47a4e5396aad2f4c
   repository: abhimehro/repoprompt-ce
   pr: 385
@@ -26910,7 +26977,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#390@7c27d4a2b9d77da73ef24adfb355984ab584538d
   repository: abhimehro/repoprompt-ce
   pr: 390
@@ -27057,7 +27125,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - deployment_and_infrastructure
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/MCP/AppShared/MCPRoutingState.swift
   guardrail_outcome: REVIEW_SECURITY
@@ -27077,7 +27146,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#397@b3e4ce86c2b4916ecffb9bd6e22e843ec1b0d6c2
   repository: abhimehro/repoprompt-ce
   pr: 397
@@ -27159,7 +27229,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#403@bf44b58a65674cc0573f687ac7bb16ad1707c890
   repository: abhimehro/repoprompt-ce
   pr: 403
@@ -27262,8 +27333,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - network_and_browser_origins
+  sensitive_paths: []
   changed_paths:
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
   - Tests/RepoPromptMCPCoreTests/MCPProxyTerminalRecordTests.swift
@@ -27284,7 +27354,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#408@fea32f080e9b8668170cf46e02a88c0cb30512db
   repository: abhimehro/repoprompt-ce
   pr: 408
@@ -27327,7 +27398,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#412@445793088ae1d6a59a4566959806bf12d12a7533
   repository: abhimehro/repoprompt-ce
   pr: 412
@@ -27434,7 +27506,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - deployment_and_infrastructure
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/App/ApplicationSecurity.swift
@@ -27457,7 +27530,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#416@95c9d546e65d7173949f26ba6489e379df30faff
   repository: abhimehro/repoprompt-ce
   pr: 416
@@ -27649,7 +27723,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Features/AgentMode/Runtime/SessionLinks/AgentSessionLinkTranscriptSanitizer.swift
@@ -27671,7 +27745,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#431@5ce18e29851f950fad2d730adbee3010aee0c277
   repository: abhimehro/repoprompt-ce
   pr: 431
@@ -27818,6 +27893,7 @@ items:
   classification: PERFORMANCE
   risk_class: SENSITIVE
   sensitive_paths:
+  - deployment_and_infrastructure
   - workflows_and_permissions
   changed_paths:
   - .github/workflows/codex-update-candidate.yml
@@ -27839,7 +27915,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#435@3cf54b531cc2d1f71ea2684ab545660e6c6a6124
   repository: abhimehro/repoprompt-ce
   pr: 435
@@ -27861,7 +27938,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - deployment_and_infrastructure
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/Telemetry/SentryTelemetryBootstrap.swift
   guardrail_outcome: REVIEW_SECURITY
@@ -27881,7 +27959,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#437@4a8c0b72380eb18aaa1f094a74cd81f6fe5260cf
   repository: abhimehro/repoprompt-ce
   pr: 437
@@ -27922,7 +28001,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#438@532c438303104a175489dab9c0f739d6b5ee7096
   repository: abhimehro/repoprompt-ce
   pr: 438
@@ -28006,7 +28086,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#440@c8f188eee2902243024d663a0597c40b93987e86
   repository: abhimehro/repoprompt-ce
   pr: 440
@@ -28028,8 +28109,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - network_and_browser_origins
-  - security_configuration
+  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Scripts/validate_codex_update_workflow.py
@@ -28053,7 +28133,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#441@5f741c6e65bc18ba2737365c367e36c1c4929940
   repository: abhimehro/repoprompt-ce
   pr: 441
@@ -28138,7 +28219,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#443@c430b1d53a8cd2c822056bdcff0f72ac75de4cf5
   repository: abhimehro/repoprompt-ce
   pr: 443
@@ -28224,7 +28306,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#445@6608d24171345588c5db3aba2ad77e739b9b6e1d
   repository: abhimehro/repoprompt-ce
   pr: 445
@@ -28393,7 +28476,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#453@b3625ae696cd1404bfb6e43b59824d4e38c58501
   repository: abhimehro/repoprompt-ce
   pr: 453
@@ -28508,8 +28592,7 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths:
-  - network_and_browser_origins
+  sensitive_paths: []
   changed_paths:
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
   - Tests/RepoPromptMCPCoreTests/MCPProxyTerminalRecordTests.swift
@@ -28530,7 +28613,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-09T13:16:23Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#456@a61361e9740b7eae79e321e5bde9abe0bf964476
   repository: abhimehro/repoprompt-ce
   pr: 456
