@@ -483,20 +483,33 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
     cap = unblock_args.limit
     if cap is None:
         cap = lifecycle["stage_caps"]["stage1_actions"]
-    plan = _scan_and_plan(unblock_args, config, repositories, lifecycle, settings, cap)
+    plan = _scan_and_plan(
+        _ScanPlanSpec(unblock_args, config, repositories, lifecycle, settings, cap)
+    )
     _emit(plan, unblock_args.json_out)
     return 0
 
 
-def _scan_and_plan(
-    unblock_args: _UnblockArgs,
-    config: dict[str, Any],
-    repositories: list[str],
-    lifecycle: dict[str, Any],
-    settings: dict[str, Any],
-    cap: int,
-) -> dict[str, Any]:
+@dataclass(frozen=True)
+class _ScanPlanSpec:
+    """Everything _scan_and_plan needs, folded to respect the arg-count gate."""
+
+    unblock_args: _UnblockArgs
+    config: dict[str, Any]
+    repositories: list[str]
+    lifecycle: dict[str, Any]
+    settings: dict[str, Any]
+    cap: int
+
+
+def _scan_and_plan(spec: _ScanPlanSpec) -> dict[str, Any]:
     """Fetch the ledger, scan repos, apply mutations, and build the plan."""
+    unblock_args = spec.unblock_args
+    config = spec.config
+    repositories = spec.repositories
+    lifecycle = spec.lifecycle
+    settings = spec.settings
+    cap = spec.cap
     apply = unblock_args.apply
     run = unblock_args.run
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-unblock-") as tmp:

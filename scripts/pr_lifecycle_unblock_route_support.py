@@ -189,8 +189,8 @@ _KNOWN_BOT_LOGINS = frozenset(
 )
 
 # Machine-authored content posted under a human login (e.g. Snyk PR checks
-# comment through the repo owner's OAuth identity). These bodies are never a
-# human weighing in, even though the author login looks human.
+# comment through the repo owner's OAuth identity). These are signature
+# markers, not ordinary prose — a human who types them still counts as human.
 _COMMENT_BOT_BODY_HINTS = (
     "<!-- this is an auto-generated comment",
     "<!-- trunk merge -->",
@@ -198,12 +198,19 @@ _COMMENT_BOT_BODY_HINTS = (
     "<!-- jules-",
     "<!-- octopus-",
     "<!-- dependency-review-pr-comment-marker -->",
-    "snyk checks have",
     "snyk/image/upload",
     "prcheckscomment",
     "octopus publication reference",
-    "review attempt:",
 )
+
+
+def _login_is_bot(login: str) -> bool:
+    """True when a GraphQL login is a bot account."""
+    if login.endswith(("[bot]", "-bot")):
+        return True
+    if login.startswith("app/"):
+        return True
+    return login in _KNOWN_BOT_LOGINS
 
 
 def _comment_is_human(comment: Any) -> bool:
@@ -219,13 +226,7 @@ def _comment_is_human(comment: Any) -> bool:
         return True
     author = comment.get("author")
     login = str(author.get("login") or "").lower() if isinstance(author, dict) else ""
-    if not login:
-        return True
-    if (
-        login.endswith(("[bot]", "-bot"))
-        or login.startswith("app/")
-        or login in _KNOWN_BOT_LOGINS
-    ):
+    if login and _login_is_bot(login):
         return False
     body = str(comment.get("body") or "").lower()
     return not any(hint in body for hint in _COMMENT_BOT_BODY_HINTS)
@@ -540,5 +541,30 @@ def _terminal_but_open(
                 "should be re-reviewed"
             ),
             security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class _ConflictSpec:
+    """The kind, comment body, and action text of a conflict trigger."""
+
+    kind: str
+    body: str
+    action_text: str
+
+
+def _conflict_trigger(
+    ctx: _Route, spec: _ConflictSpec, evidence: Any
+) -> list[dict[str, Any]]:
+    """Propose the family-specific merge-conflict fix trigger."""
+    return _trigger_action(
+        ctx,
+        spec.kind,
+        spec.body,
+        _EscalationSpec(
+            "merge_conflict",
+            evidence=evidence,
+            recommended_action=spec.action_text,
         ),
     )

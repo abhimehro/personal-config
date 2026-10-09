@@ -38,6 +38,9 @@ CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 _COMMIT_MESSAGE = "chore(lifecycle): deterministic guardrail path evaluation"
 _EVALUATABLE = {"NOT_RUN", "REVIEW_SECURITY", None}
 _STICKY_EXEMPT = {"generated_output"}
+# Owners whose holds must never be rewritten by an unattended evaluator,
+# matching the unblock router's blocked-owner set.
+_BLOCKED_OWNERS = {"human", "stage2", "stage3"}
 _MANUAL_OUTCOMES = {
     "PASS_ROUTINE",
     "HOLD_CONTRACT",
@@ -53,7 +56,7 @@ _MANUAL_OUTCOMES = {
 _PATH_RULES: tuple[tuple[str, str], ...] = (
     (
         "workflows_and_permissions",
-        r"\.github/(workflows|actions|rulesets|CODEOWNERS|dependabot\.ya?ml|pull_request_template)",
+        r"(^|/)\.github/(workflows|actions|rulesets|scripts|hooks|agents|CODEOWNERS|github-app\.ya?ml|repository-automation\.ya?ml|dependabot\.ya?ml|pull_request_template)|(^|/)(\.claude/|\.windsurf/|\.codeium/|\.mcp\.json$)",
     ),
     (
         "secrets",
@@ -126,14 +129,22 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
     return classes
 
 
-def evaluate_item(item: dict[str, Any]) -> dict[str, Any] | None:
+def evaluate_item(
+    item: dict[str, Any], clear_standin: bool = False
+) -> dict[str, Any] | None:
     """Return the field patch for one item, or None when it is left alone.
 
     Only NOT_RUN/REVIEW_SECURITY outcomes on nonterminal items re-evaluate;
     items without changed_paths keep their current outcome (nothing to
-    classify is not evidence of a clean diff).
+    classify is not evidence of a clean diff). Items owned by
+    human/stage2/stage3 are never touched. A ``REVIEW_SECURITY`` outcome
+    downgrades to ``PASS_ROUTINE`` only with ``clear_standin=True`` — a
+    recorded hold may come from non-path evidence, so clearing it is an
+    explicit opt-in rather than an unattended default.
     """
     if item.get("lifecycle_state") == "TERMINAL":
+        return None
+    if item.get("current_owner") in _BLOCKED_OWNERS:
         return None
     outcome = item.get("guardrail_outcome")
     if outcome not in _EVALUATABLE:
@@ -143,6 +154,8 @@ def evaluate_item(item: dict[str, Any]) -> dict[str, Any] | None:
         return None
     classes = classify_item_paths(changed_paths)
     sticky = sorted(classes - _STICKY_EXEMPT)
+    if outcome == "REVIEW_SECURITY" and not sticky and not clear_standin:
+        return None
     new_outcome = "REVIEW_SECURITY" if sticky else "PASS_ROUTINE"
     patch = {
         "sensitive_paths": sorted(classes),
@@ -178,7 +191,9 @@ def _record_evaluation(
 
 
 def evaluate_ledger(
-    ledger: dict[str, Any], repos_filter: set[str] | None
+    ledger: dict[str, Any],
+    repos_filter: set[str] | None,
+    clear_standin: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Apply evaluate_item across items; return (ledger, summary)."""
     summary: dict[str, Any] = {
@@ -194,7 +209,7 @@ def evaluate_ledger(
             continue
         if repos_filter and item.get("repository") not in repos_filter:
             continue
-        patch = evaluate_item(item)
+        patch = evaluate_item(item, clear_standin)
         if patch is None:
             summary["skipped"] += 1
             continue
@@ -214,7 +229,7 @@ def run_guardrails(args: argparse.Namespace) -> int:
         ledger_path = Path(tmp) / "ledger.yaml"
         cas.run_preflight(ledger_path)
         ledger = load_yaml(ledger_path)
-        ledger, summary = evaluate_ledger(ledger, repos_filter)
+        ledger, summary = evaluate_ledger(ledger, repos_filter, args.clear_standin)
         summary["dry_run"] = not args.apply
         summary["ledger_revision"] = ledger.get("ledger_revision")
         if args.apply and summary["evaluated"]:
@@ -230,6 +245,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--repo", action="append", dest="repos_filter")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_out",
+        help="accepted for stage-prompt parity; output is always JSON",
+    )
+    parser.add_argument(
+        "--clear-stand-in",
+        action="store_true",
+        dest="clear_standin",
+        help=(
+            "allow REVIEW_SECURITY outcomes to downgrade to PASS_ROUTINE "
+            "when no sticky path class matches (corrects the Stage 1 "
+            "stand-in over-marking; human/stage-owned items are never "
+            "touched either way)"
+        ),
+    )
     return parser
 
 

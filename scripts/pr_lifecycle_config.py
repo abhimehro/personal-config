@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -77,12 +78,15 @@ def validate_unblock_config(value: Any) -> None:
         _require_positive_days(unblock.get(field), field)
 
 
+_EXCLUSION_RE = re.compile(r"^\s*(?:[^#\s]+\s*#)?\s*\d+\s*$")
+
+
 def _require_exclusions(exclusions: Any) -> None:
     """Allow None or a list of REPO#PR-shaped strings; otherwise raise."""
     if exclusions is None:
         return
     valid = isinstance(exclusions, list) and all(
-        isinstance(entry, str) and entry.strip() for entry in exclusions
+        isinstance(entry, str) and _EXCLUSION_RE.match(entry) for entry in exclusions
     )
     if not valid:
         raise ValueError(

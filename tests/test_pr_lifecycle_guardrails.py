@@ -98,13 +98,40 @@ class EvaluateItemTests(unittest.TestCase):
                 guardrail_outcome="REVIEW_SECURITY",
                 sensitive_paths=["security_configuration"],
                 changed_paths=["docs/plan.md", "tasks/today.md"],
-            )
+            ),
+            clear_standin=True,
         )
         self.assertIsNotNone(patch)
         assert patch is not None
         self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
         self.assertEqual([], patch["sensitive_paths"])
         self.assertEqual("ROUTINE", patch["risk_class"])
+
+    def test_review_security_preserved_without_clear_standin(self) -> None:
+        """REVIEW_SECURITY is sticky by default; only the opt-in clears it."""
+        patch = guardrails.evaluate_item(
+            _item(
+                guardrail_outcome="REVIEW_SECURITY",
+                sensitive_paths=["security_configuration"],
+                changed_paths=["docs/plan.md", "tasks/today.md"],
+            )
+        )
+        self.assertIsNone(patch)
+
+    def test_owned_items_never_evaluated(self) -> None:
+        for owner in ("human", "stage2", "stage3"):
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(current_owner=owner, changed_paths=["scripts/x.sh"]),
+                    clear_standin=True,
+                ),
+                owner,
+            )
+        self.assertIsNotNone(
+            guardrails.evaluate_item(
+                _item(current_owner="stage1", changed_paths=["scripts/x.sh"])
+            )
+        )
 
     def test_generated_output_alone_is_not_sticky(self) -> None:
         patch = guardrails.evaluate_item(
@@ -181,6 +208,20 @@ class EvaluateLedgerTests(unittest.TestCase):
         self.assertEqual(3, a["revision"])
         self.assertEqual(1, b["revision"])
         self.assertIn("updated_at_utc", a)
+
+
+class ArgParseTests(unittest.TestCase):
+    def test_json_flag_accepted(self) -> None:
+        args = guardrails.build_parser().parse_args(["--json"])
+        self.assertTrue(args.json_out)
+        self.assertFalse(args.apply)
+        self.assertFalse(args.clear_standin)
+
+    def test_clear_stand_in_flag_accepted(self) -> None:
+        args = guardrails.build_parser().parse_args(
+            ["--apply", "--json", "--clear-stand-in"]
+        )
+        self.assertTrue(args.clear_standin)
 
 
 if __name__ == "__main__":

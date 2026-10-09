@@ -569,15 +569,26 @@ Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
 
 ### Deterministic guardrail evaluation
 
-`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to limit)
+`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to
+limit, `--json` accepted for stage-prompt parity — output is always JSON)
 refreshes `sensitive_paths` and `guardrail_outcome` from each nonterminal
 ledger item's `changed_paths` against the `sensitive_path_taxonomy` classes.
 Only `NOT_RUN`, `REVIEW_SECURITY`, and unset outcomes re-evaluate — the
 `HOLD_*`, `PASS_ROUTINE`, `CLOSE_NONSECURITY_NOOP`, and `ANALYSIS_ERROR`
 outcomes encode non-path evidence a path classifier cannot clear. Items with
-empty `changed_paths` keep their outcome: no path list is not proof of a clean
-diff. `generated_output` alone is non-sticky (recorded but routes routine);
-any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+empty `changed_paths` keep their outcome: no path list is not proof of a
+clean diff. Items whose `current_owner` is `human`/`stage2`/`stage3` are
+never touched, matching the unblock router's blocked-owner set.
+`generated_output` alone is non-sticky (recorded but routes routine); any
+other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+
+A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
+`--clear-stand-in` is passed — a recorded hold may come from non-path
+evidence (content review, Octopus or human review), so clearing it is an
+explicit opt-in, not an unattended default. `--clear-stand-in` is the
+correction mechanism for the Stage 1 stand-in over-marking; keep it in the
+Stage 1 command until the over-marked set drains, then drop it so fresh
+`REVIEW_SECURITY` items stay sticky.
 
 ### Code-enforced holds in the unblock executor
 

@@ -115,7 +115,17 @@ class ExclusionTests(unittest.TestCase):
         validate_unblock_config({"exclusions": ["a/b#1"]})
         validate_unblock_config({"exclusions": None})
         validate_unblock_config(None)
-        for bad in (["a/b#1", 7], "a/b#1", [""]):
+        for bad in (
+            ["a/b#1", 7],
+            "a/b#1",
+            [""],
+            ["a/b#notanumber"],
+            ["a/b#"],
+            ["#"],
+            ["a b#1"],
+            ["a/b##1"],
+            ["a/b#1x"],
+        ):
             with self.assertRaises(ValueError):
                 validate_unblock_config({"exclusions": bad})
 
