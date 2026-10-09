@@ -503,19 +503,16 @@ def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     if findings == 0:
         return []
     unknown = findings is None
+    action = "verify the Octopus review threads on the PR (thread list truncated or unreadable), then resolve or close"
+    if not unknown:
+        action = "resolve the open Octopus review findings on the PR or close it"
     return [
         _escalation(
             ctx,
             _EscalationSpec(
                 "open_octopus_findings",
                 evidence={"open_octopus_findings": "unknown" if unknown else findings},
-                recommended_action=(
-                    "resolve the open Octopus review findings on the PR " "or close it"
-                    if not unknown
-                    else "verify the Octopus review threads on the PR "
-                    "(thread list truncated or unreadable), then resolve "
-                    "or close"
-                ),
+                recommended_action=action,
             ),
         )
     ]
