@@ -342,13 +342,19 @@ def _record_overdue(
         notified.add(row["id"])
 
 
+@dataclass(frozen=True)
+class _BacklogSpec:
+    """Inputs shared by backlog row preparation."""
+
+    repo: str
+    state: dict[str, Any]
+    now: datetime
+    record_overdue: bool = True
+
+
 def _prepare_backlog_rows(
-    repo: str,
+    spec: _BacklogSpec,
     rows: list[dict[str, Any]],
-    state: dict[str, Any],
-    now: datetime,
-    *,
-    record_overdue: bool = True,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
     """Deduplicate rows and return prepared rows, state, and new overdue items.
 
@@ -362,17 +368,19 @@ def _prepare_backlog_rows(
     em dash for expiry and never become overdue; ownerless rows use deadlines.
     Set record_overdue=False to leave new overdue notifications unrecorded.
     """
-    now_utc = _utc(now)
-    first_seen_before = state.get("first_seen") or {}
+    now_utc = _utc(spec.now)
+    first_seen_before = spec.state.get("first_seen") or {}
     notified = {
-        key for key in (state.get("overdue_notified") or []) if isinstance(key, str)
+        key
+        for key in (spec.state.get("overdue_notified") or [])
+        if isinstance(key, str)
     }
     first_seen: dict[str, str] = {}
     prepared: list[dict[str, Any]] = []
     newly_overdue: list[dict[str, Any]] = []
     seen: set[str] = set()
     for raw in rows:
-        key = _row_key(repo, raw)
+        key = _row_key(spec.repo, raw)
         if key in seen:
             continue
         seen.add(key)
@@ -389,7 +397,7 @@ def _prepare_backlog_rows(
             }
         )
         prepared.append(row)
-        if record_overdue:
+        if spec.record_overdue:
             _record_overdue(row, notified, newly_overdue)
     new_state = {
         "first_seen": first_seen,
@@ -475,7 +483,7 @@ def backlog_issue_body(
 ) -> str:
     """Render the per-repository human decision backlog and durable state."""
     prepared, final_state, _ = _prepare_backlog_rows(
-        repo, rows, state, now, record_overdue=record_overdue
+        _BacklogSpec(repo, state, now, record_overdue), rows
     )
     updated = _iso(now)
     if not prepared:
@@ -525,7 +533,9 @@ def update_backlog_issue(
     github_steps: list[dict[str, Any]] = []
     issue = _find_backlog_issue(_list_backlog_rows(repo))
     old_state = _previous_state(issue.get("body") if issue else None)
-    prepared, state, overdue = _prepare_backlog_rows(repo, rows, old_state, now)
+    prepared, state, overdue = _prepare_backlog_rows(
+        _BacklogSpec(repo, old_state, now), rows
+    )
     if not prepared and issue is None:
         body = backlog_issue_body(repo, rows, old_state, now)
         return {"action": "NOOP_EMPTY", "repository": repo, "body": body}

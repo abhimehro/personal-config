@@ -284,7 +284,7 @@ class IssueStatusTests(unittest.TestCase):
             "expires": "2026-08-01T12:00:00Z",
         }
         _prepared, refreshed_state, newly_overdue = self.st._prepare_backlog_rows(
-            repo, [row], empty_state, NOW
+            self.st._BacklogSpec(repo, empty_state, NOW), [row]
         )
         self.assertEqual([item["id"] for item in newly_overdue], [key])
         self.assertEqual(refreshed_state["overdue_notified"], [key])
@@ -413,7 +413,7 @@ class IssueStatusTests(unittest.TestCase):
         state = {"first_seen": {}, "overdue_notified": []}
         before = copy.deepcopy((rows, state))
         prepared, refreshed, overdue = self.st._prepare_backlog_rows(
-            "owner/repo", rows, state, NOW
+            self.st._BacklogSpec("owner/repo", state, NOW), rows
         )
         self.assertEqual(
             [row["id"] for row in prepared],
@@ -434,10 +434,8 @@ class IssueStatusTests(unittest.TestCase):
         ):
             with self.subTest(expires=expires):
                 prepared, state, overdue = self.st._prepare_backlog_rows(
-                    "owner/repo",
+                    self.st._BacklogSpec("owner/repo", {}, NOW),
                     [{"pr": 42, "blocker": "conflict", "expires": expires}],
-                    {},
-                    NOW,
                 )
                 self.assertEqual(prepared[0]["overdue"], expected)
                 self.assertEqual(len(overdue), int(expected))
@@ -456,7 +454,10 @@ class IssueStatusTests(unittest.TestCase):
                     }
                 ]
                 prepared, state, overdue = self.st._prepare_backlog_rows(
-                    "owner/repo", rows, {"first_seen": {key: "invalid"}}, NOW
+                    self.st._BacklogSpec(
+                        "owner/repo", {"first_seen": {key: "invalid"}}, NOW
+                    ),
+                    rows,
                 )
                 self.assertEqual(state["first_seen"][key], "2026-08-30T12:00:00Z")
                 self.assertEqual(prepared[0]["expires"], "2026-09-06T12:00:00Z")
@@ -500,7 +501,9 @@ class IssueStatusTests(unittest.TestCase):
         state = self.st._previous_state(body)
         self.assertEqual(state["overdue_notified"], [])
         self.assertIn("OVERDUE", body)
-        _, _, overdue = self.st._prepare_backlog_rows(repo, [row], state, NOW)
+        _, _, overdue = self.st._prepare_backlog_rows(
+            self.st._BacklogSpec(repo, state, NOW), [row]
+        )
         self.assertEqual([item["id"] for item in overdue], [f"{repo}#42:conflict"])
 
     def test_new_overdue_issue_is_created_then_notified_and_persisted(self):
@@ -558,10 +561,8 @@ class IssueStatusTests(unittest.TestCase):
             with self.subTest(days=days):
                 row = dict(self._backlog_row(), packet_expiry_close_days=days)
                 prepared, _, overdue = self.st._prepare_backlog_rows(
-                    "owner/repo",
+                    self.st._BacklogSpec("owner/repo", {}, NOW),
                     [row],
-                    {},
-                    NOW,
                 )
                 self.assertEqual(prepared[0]["expires"], "2026-09-06T12:00:00Z")
                 self.assertFalse(prepared[0]["overdue"])
@@ -585,16 +586,21 @@ class IssueStatusTests(unittest.TestCase):
                 self.assertNotIn(url, body)
                 self.assertNotIn("[injected]", body)
 
+
+class RunStatusCliTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.runner = run
+
     def test_status_cli_takes_precedence_over_stage(self) -> None:
         output = StringIO()
         with (
-            mock.patch.object(run, "update_pinned_issue") as update,
-            mock.patch.object(run, "run_stage") as stage,
-            mock.patch.object(run, "_utc_now", return_value=NOW),
-            mock.patch.object(run, "_run_id", return_value="manual-status"),
+            mock.patch.object(self.runner, "update_pinned_issue") as update,
+            mock.patch.object(self.runner, "run_stage") as stage,
+            mock.patch.object(self.runner, "_utc_now", return_value=NOW),
+            mock.patch.object(self.runner, "_run_id", return_value="manual-status"),
             redirect_stdout(output),
         ):
-            code = run.main(["--status", "--stage", "1"])
+            code = self.runner.main(["--status", "--stage", "1"])
         self.assertEqual(code, 0)
         status = json.loads(output.getvalue())
         self.assertEqual(status["updated_at_utc"], "2026-08-30T12:00:00Z")
@@ -620,11 +626,11 @@ class IssueStatusTests(unittest.TestCase):
                         "update_pinned_issue",
                         side_effect=error,
                     ),
-                    mock.patch.object(run, "run_stage") as stage,
+                    mock.patch.object(self.runner, "run_stage") as stage,
                     redirect_stderr(error_output),
                     redirect_stdout(output),
                 ):
-                    code = run.main(["--status"])
+                    code = self.runner.main(["--status"])
                 self.assertEqual(code, 1)
                 self.assertEqual(
                     error_output.getvalue(),

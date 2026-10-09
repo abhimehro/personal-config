@@ -34,6 +34,10 @@ from tests.pr_lifecycle_helpers import (
 
 
 class UnblockApplyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.st = unblock
+        self.plan = _run_unblock_plan
+
     def test_unknown_action_is_rejected_before_any_github_command(self):
         run = mock.Mock()
         action = {
@@ -43,12 +47,12 @@ class UnblockApplyTests(unittest.TestCase):
             "comment": "Must not be posted.",
         }
         with self.assertRaisesRegex(ValueError, "unsupported action: CLOSE_UNKNOWN"):
-            unblock._apply_action(action, run=run)
+            self.st._apply_action(action, run=run)
         run.assert_not_called()
 
     def test_inventory_failure_skips_backlog_refresh_in_apply_mode(self):
         """Preserve the existing backlog issue when repository inventory fails."""
-        plan, update_issue = _run_unblock_plan(
+        plan, update_issue = self.plan(
             apply=True,
             inventory_error=OSError("network unavailable"),
         )
@@ -97,7 +101,7 @@ class UnblockApplyTests(unittest.TestCase):
                 "",
             )
         )
-        plan, _ = _run_unblock_plan(live, run=runner)
+        plan, _ = self.plan(live, run=runner)
         self.assertEqual(
             runner.call_args.args[0],
             [
@@ -124,7 +128,7 @@ class UnblockApplyTests(unittest.TestCase):
         runner = mock.Mock(
             return_value=subprocess.CompletedProcess(["gh"], 1, "", "unavailable")
         )
-        plan, _ = _run_unblock_plan(live, run=runner)
+        plan, _ = self.plan(live, run=runner)
         self.assertEqual(plan["comment_history_fetch_pr_count"], 1)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER_SKIPPED")
         self.assertEqual(
@@ -142,7 +146,7 @@ class UnblockApplyTests(unittest.TestCase):
             commentsTotalCount=1,
         )
         runner = mock.Mock()
-        plan, _ = _run_unblock_plan(complete, run=runner)
+        plan, _ = self.plan(complete, run=runner)
         runner.assert_not_called()
         self.assertEqual(plan["comment_history_fetch_pr_count"], 0)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER")
@@ -153,7 +157,7 @@ class UnblockApplyTests(unittest.TestCase):
         )
         unknown.pop("commentsTotalCount")
         runner.reset_mock()
-        plan, _ = _run_unblock_plan(unknown, run=runner)
+        plan, _ = self.plan(unknown, run=runner)
         runner.assert_not_called()
         self.assertEqual(plan["comment_history_fetch_pr_count"], 0)
         self.assertEqual(plan["actions"][0]["action"], "TRIGGER_SKIPPED")
@@ -177,7 +181,7 @@ class UnblockApplyTests(unittest.TestCase):
             "pr": 23,
             "comment": "Superseded.",
         }
-        unblock._apply_action(action, run=run)
+        self.st._apply_action(action, run=run)
         self.assertFalse(action["unconfirmed"])
         self.assertEqual(
             [call[0][2] for call in calls],
@@ -223,7 +227,7 @@ class UnblockApplyTests(unittest.TestCase):
             "pr": 24,
             "comment": "Stale.",
         }
-        unblock._apply_action(action, run=run)
+        self.st._apply_action(action, run=run)
         self.assertEqual(
             [call[0][2] for call in calls],
             ["create", "edit", "close", "view"],
@@ -239,7 +243,7 @@ class UnblockApplyTests(unittest.TestCase):
             calls.append((argv, kwargs))
             return subprocess.CompletedProcess(argv, 0, "", "")
 
-        unblock._apply_action(
+        self.st._apply_action(
             {
                 "action": "UPDATE_BRANCH",
                 "repository": REPO,
@@ -283,7 +287,7 @@ class UnblockApplyTests(unittest.TestCase):
             "pr": 23,
             "comment": "Stale.",
         }
-        unblock._apply_action(action, run=run)
+        self.st._apply_action(action, run=run)
         self.assertTrue(action["unconfirmed"])
         self.assertEqual(len(calls), 4)
 
@@ -300,7 +304,7 @@ class UnblockApplyTests(unittest.TestCase):
         with (
             mock.patch.object(unblock, "load_yaml", side_effect=[config, ledger]),
             mock.patch.object(
-                unblock.cas,
+                self.st.cas,
                 "run_preflight",
                 return_value={"ledger_path": "ledger.yaml"},
             ),
@@ -315,8 +319,8 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
             ),
         ):
-            unblock.run_unblock(
-                unblock._UnblockArgs(
+            self.st.run_unblock(
+                self.st._UnblockArgs(
                     apply=True, json_out=True, repos_filter=[REPO], limit=0
                 )
             )
@@ -347,7 +351,7 @@ class UnblockApplyTests(unittest.TestCase):
                 side_effect=[dict(CONFIG, repos=[REPO]), {"items": []}],
             ),
             mock.patch.object(
-                unblock.cas,
+                self.st.cas,
                 "run_preflight",
                 return_value={"ledger_path": "ledger.yaml"},
             ),
@@ -361,8 +365,8 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
             ),
         ):
-            unblock.run_unblock(
-                unblock._UnblockArgs(
+            self.st.run_unblock(
+                self.st._UnblockArgs(
                     apply=True, json_out=True, repos_filter=[REPO], limit=3
                 )
             )
@@ -393,7 +397,7 @@ class UnblockApplyTests(unittest.TestCase):
                         ["gh"], 0, json.dumps(payload), ""
                     )
                 )
-                unblock._load_full_comments(pr, run=run)
+                self.st._load_full_comments(pr, run=run)
                 self.assertTrue(pr["comments_incomplete"])
                 self.assertEqual(pr["comments"], [])
                 self.assertEqual([a["action"] for a in _route(pr)], ["TRIGGER_SKIPPED"])
@@ -409,7 +413,7 @@ class UnblockApplyTests(unittest.TestCase):
                         ["gh"], 0, json.dumps(payload), ""
                     )
                 )
-                unblock._load_full_comments(pr, run=run)
+                self.st._load_full_comments(pr, run=run)
                 self.assertNotIn("comments_incomplete", pr)
                 self.assertEqual(
                     pr["comments"],
@@ -443,7 +447,7 @@ class UnblockApplyTests(unittest.TestCase):
                     "pr": 23,
                     "comment": "Superseded.",
                 }
-                unblock._apply_action(action, run=run)
+                self.st._apply_action(action, run=run)
                 self.assertTrue(action["unconfirmed"])
                 self.assertEqual(run.call_count, 4)
                 self.assertEqual(action["github_steps"][-1]["step"], "confirm")
@@ -587,7 +591,7 @@ class UnblockApplyTests(unittest.TestCase):
                         "body": "@dependabot rebase",
                         "expected_head_sha": "a" * 40,
                     }
-                    unblock._apply_action(action, run=run)
+                    self.st._apply_action(action, run=run)
                     self.assertTrue(action["unconfirmed"])
                     self.assertEqual(len(action["github_steps"]), 1)
                     step = action["github_steps"][0]
@@ -610,7 +614,7 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "load_yaml", side_effect=[config, {"items": []}]
             ),
             mock.patch.object(
-                unblock.cas,
+                self.st.cas,
                 "run_preflight",
                 return_value={"ledger_path": "ledger.yaml"},
             ),
@@ -621,8 +625,8 @@ class UnblockApplyTests(unittest.TestCase):
                 unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
             ),
         ):
-            result = unblock.run_unblock(
-                unblock._UnblockArgs(
+            result = self.st.run_unblock(
+                self.st._UnblockArgs(
                     apply=False,
                     json_out=True,
                     repos_filter=[REPO],

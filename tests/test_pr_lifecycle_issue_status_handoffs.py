@@ -26,7 +26,7 @@ class Stage2HandoffTests(unittest.TestCase):
             {"pr": 43, "blocker": "security", "owner": "human"},
         ]
         prepared, state, overdue = issue_status._prepare_backlog_rows(
-            "owner/repo", rows, {}, NOW
+            issue_status._BacklogSpec("owner/repo", {}, NOW), rows
         )
         by_pr = {row["pr"]: row for row in prepared}
         self.assertFalse(by_pr[42]["overdue"])
@@ -41,7 +41,7 @@ class Stage2HandoffTests(unittest.TestCase):
         """A row without an owner still gets a real expiry and can go overdue."""
         row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
         prepared, _, overdue = issue_status._prepare_backlog_rows(
-            "owner/repo", [row], {}, NOW
+            issue_status._BacklogSpec("owner/repo", {}, NOW), [row]
         )
         self.assertTrue(prepared[0]["overdue"])
         self.assertEqual(len(overdue), 1)
@@ -50,7 +50,8 @@ class Stage2HandoffTests(unittest.TestCase):
         """Hand-edited state with unhashable entries is ignored, not fatal."""
         state = {"first_seen": {}, "overdue_notified": [["x"], {"a": 1}, 42]}
         prepared, new_state, _ = issue_status._prepare_backlog_rows(
-            "owner/repo", [{"pr": 1, "blocker": "b"}], state, NOW
+            issue_status._BacklogSpec("owner/repo", state, NOW),
+            [{"pr": 1, "blocker": "b"}],
         )
         self.assertEqual(new_state["overdue_notified"], [])
         self.assertEqual(len(prepared), 1)
