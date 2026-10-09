@@ -184,6 +184,68 @@ class TestPrLifecyclePersist(unittest.TestCase):
         self.assertEqual(result["validator_stripped_fields"], 0)
         self.assertNotIn("latest_transition:", path.read_text(encoding="utf-8"))
 
+    def test_validate_uses_supplied_content_instead_of_path(self) -> None:
+        path = self.write_ledger(self.example())
+        content = path.read_text(encoding="utf-8")
+        path.write_text("invalid: [\n", encoding="utf-8")
+        self.assertEqual(validator.validate(path, content=content), 0)
+
+    def test_run_commit_does_not_reopen_path_after_sanitization(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        path = self.write_ledger(self.example())
+        original = path.read_text(encoding="utf-8")
+        real_sanitize = cas.sanitize_ledger_file
+
+        def replace_after_sanitization(
+            file_path: Path, *, bump_revision: bool
+        ) -> persist.SanitizedLedgerFile:
+            result = real_sanitize(file_path, bump_revision=bump_revision)
+            path.write_text("invalid: [\n", encoding="utf-8")
+            return result
+
+        with mock.patch.object(cas, "pointer_runtime", return_value={}):
+            with mock.patch.object(
+                cas, "sanitize_ledger_file", side_effect=replace_after_sanitization
+            ):
+                with mock.patch.object(
+                    cas, "cas_commit", return_value={"commit_sha": "a" * 40}
+                ) as commit:
+                    cas.run_commit(path, cas.DEFAULT_COMMIT_MESSAGE, bump_revision=False)
+        self.assertEqual(commit.call_args.args[1], original)
+
+    def test_run_commit_uploads_validated_content_after_path_replacement(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        real_validate = cas.validate
+        for replace_before_validation in (True, False):
+            with self.subTest(replace_before_validation=replace_before_validation):
+                path = self.write_ledger(self.example())
+                original = path.read_text(encoding="utf-8")
+
+                def replace_during_validation(
+                    runtime_ledger: Path, *, content: str | None = None
+                ) -> int:
+                    if replace_before_validation:
+                        path.write_text("invalid: [\n", encoding="utf-8")
+                    stripped = real_validate(runtime_ledger, content=content)
+                    if not replace_before_validation:
+                        path.write_text("invalid: [\n", encoding="utf-8")
+                    return stripped
+
+                with mock.patch.object(cas, "pointer_runtime", return_value={}):
+                    with mock.patch.object(
+                        cas, "validate", side_effect=replace_during_validation
+                    ):
+                        with mock.patch.object(
+                            cas, "cas_commit", return_value={"commit_sha": "a" * 40}
+                        ) as commit:
+                            cas.run_commit(
+                                path, cas.DEFAULT_COMMIT_MESSAGE, bump_revision=False
+                            )
+                self.assertEqual(commit.call_args.args[1], original)
+                self.assertEqual(path.read_text(encoding="utf-8"), "invalid: [\n")
+
     def test_cas_commit_does_not_retry_stale_bytes(self) -> None:
         import pr_lifecycle_ledger_cas as cas
 
