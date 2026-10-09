@@ -91,31 +91,28 @@ class PathBackfillTests(unittest.TestCase):
             self.assertIsNone(reconcile._path_backfill_action(item, None))
         fetch.assert_not_called()
 
-    def test_collect_actions_emits_backfill_with_primary(self):
-        item = _item(lifecycle_state="STAGE1_INTAKE", changed_paths=[])
-        ledger = {"items": [item]}
-        live = {
-            "state": "OPEN",
-            "headRefOid": "a" * 40,
-            "baseRefOid": "b" * 40,
-        }
+    def _collect(self, item, live, files, limit=None):
         with mock.patch.object(
             reconcile, "_gh_pr_view", return_value=live
-        ), mock.patch.object(reconcile, "_gh_pr_files", return_value=["x.py", "y.py"]):
-            actions = reconcile.collect_actions(ledger, {"lifecycle": {}}, now=NOW)
+        ), mock.patch.object(reconcile, "_gh_pr_files", return_value=files):
+            return reconcile.collect_actions(
+                {"items": [item]}, {"lifecycle": {}}, now=NOW, limit=limit
+            )
+
+    def test_collect_actions_emits_backfill_with_primary(self):
+        item = _item(lifecycle_state="STAGE1_INTAKE", changed_paths=[])
+        actions = self._collect(
+            item,
+            {"state": "OPEN", "headRefOid": "a" * 40, "baseRefOid": "b" * 40},
+            ["x.py", "y.py"],
+        )
         self.assertEqual([action["action"] for action in actions], ["BACKFILL_PATHS"])
 
     def test_collect_actions_limit_truncates_backfill_pair(self):
         item = _item(lifecycle_state="STAGE1_INTAKE", changed_paths=[])
-        ledger = {"items": [item]}
         live = {"state": "OPEN", "headRefOid": "c" * 40, "baseRefOid": "b" * 40}
-        with mock.patch.object(
-            reconcile, "_gh_pr_view", return_value=live
-        ), mock.patch.object(reconcile, "_gh_pr_files", return_value=["x.py"]):
-            full = reconcile.collect_actions(ledger, {"lifecycle": {}}, now=NOW)
-            capped = reconcile.collect_actions(
-                ledger, {"lifecycle": {}}, now=NOW, limit=1
-            )
+        full = self._collect(item, live, ["x.py"])
+        capped = self._collect(item, live, ["x.py"], limit=1)
         self.assertEqual(len(full), 2)
         self.assertEqual(capped, full[:1])
 
