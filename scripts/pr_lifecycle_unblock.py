@@ -372,19 +372,23 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
             result["action"] = "ISSUE_UPDATE_SKIPPED"
             result["reason"] = "DECISION_ISSUES_FLAG_OFF"
         return result
+    tick_outcome = _execute_ticks(spec.repo, spec.ledger)
     try:
-        return update_backlog_issue(
+        result = update_backlog_issue(
             spec.repo,
             rows,
             now=spec.now,
             notify_overdue=spec.overdue_notifications,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        return {
+        result = {
             "action": "ISSUE_UPDATE_FAILED",
             "repository": spec.repo,
             "reason": type(exc).__name__,
         }
+    if tick_outcome is not None:
+        result["ticks"] = tick_outcome
+    return result
 
 
 @dataclass(frozen=True)
@@ -651,9 +655,6 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
         if repo in failed_repos:
             results[repo] = _issue_skipped(repo)
             continue
-        tick_outcome = None
-        if ctx.apply and ctx.decision_issues:
-            tick_outcome = _execute_ticks(repo, ctx.ledger)
         results[repo] = _one_decision_issue(
             _IssueSpec(
                 repo,
@@ -666,8 +667,6 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
                 ctx.overdue_notifications,
             )
         )
-        if tick_outcome is not None:
-            results[repo]["ticks"] = tick_outcome
     return results
 
 

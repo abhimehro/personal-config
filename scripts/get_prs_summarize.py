@@ -88,9 +88,7 @@ BODY_MARKERS = (
 _BRANCH_SIGNAL_PAIRS = tuple(
     (sig, f"branch:{sig.rstrip('/')}") for sig in BRANCH_SIGNALS
 )
-_TITLE_KW_PAIRS = tuple(
-    (kw, f"title:{kw}") for kw in TITLE_KW
-)
+_TITLE_KW_PAIRS = tuple((kw, f"title:{kw}") for kw in TITLE_KW)
 
 
 def _add_author_hints(author: dict | None, hints: set[str]) -> None:

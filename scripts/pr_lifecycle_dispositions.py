@@ -153,19 +153,28 @@ def _tick_to_action(ctx: TickCtx) -> dict[str, Any]:
     return {**action, "event_id": event.get("event_id"), "executed": True}
 
 
-def _process_tick(tick: dict[str, Any], ctx: ExecCtx) -> dict[str, Any]:
-    """Resolve one tick to an executed or skipped outcome record."""
-    repo_part, _, pr_part = tick["row_id"].partition("#")
-    if repo_part != ctx.repo:
-        return {**tick, "skipped": "row repository mismatch"}
+def _lookup(ctx: ExecCtx, tick: dict[str, Any]) -> TickCtx | None:
+    """Bind a tick to its rendered meta and ledger item, or None."""
     meta = (ctx.state.get("rows_meta") or {}).get(tick["row_id"])
     try:
-        item = _find_item(ctx.ledger, repo_part, int(pr_part or 0))
+        item = _find_item(
+            ctx.ledger, ctx.repo, int(tick["row_id"].partition("#")[2] or 0)
+        )
     except ValueError:
         item = None
     if meta is None or item is None:
+        return None
+    return TickCtx(tick, meta, item, ctx.ledger, ctx.run)
+
+
+def _process_tick(tick: dict[str, Any], ctx: ExecCtx) -> dict[str, Any]:
+    """Resolve one tick to an executed or skipped outcome record."""
+    if tick["row_id"].partition("#")[0] != ctx.repo:
+        return {**tick, "skipped": "row repository mismatch"}
+    bound = _lookup(ctx, tick)
+    if bound is None:
         return {**tick, "skipped": "unknown row"}
-    return _tick_to_action(TickCtx(tick, meta, item, ctx.ledger, ctx.run))
+    return _tick_to_action(bound)
 
 
 @dataclass(frozen=True)

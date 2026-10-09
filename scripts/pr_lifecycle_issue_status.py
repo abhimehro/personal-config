@@ -512,44 +512,6 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
         table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
 
 
-def _decision_row_line(row: dict[str, Any]) -> str:
-    """Render one tickable disposition row."""
-    return (
-        f"- [ ] **{row['id']}** — suggested "
-        f"`{_markdown_cell(row.get('suggested_disposition') or 'KEEP_OPEN')}` "
-        f"· head `{_markdown_cell(str(row.get('head_sha') or '')[:7] or 'unknown')}`"
-        f" · {_markdown_cell(row.get('blocker'))}"
-    )
-
-
-def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
-    """Render tickable disposition rows inside the shared body budget."""
-    header = [
-        "",
-        "Decisions — tick a checkbox to execute the suggested disposition. Ticks are",
-        "honored only while the rendered head is still the PR's live head; every",
-        "executed disposition is logged as a ledger event.",
-        "",
-    ]
-    rows, omitted = [], 0
-    for row in prepared:
-        if _is_handoff_row(row) or not row.get("head_sha"):
-            continue
-        line = _decision_row_line(row)
-        if (
-            used + sum(len(l) + 1 for l in header + rows + [line])
-            > _BACKLOG_TABLE_CHAR_CAP
-        ):
-            omitted += 1
-            continue
-        rows.append(line)
-    if not rows:
-        return []
-    if omitted:
-        rows.append(f"- {omitted} decision row(s) omitted (body cap)")
-    return header + rows
-
-
 def backlog_issue_body(
     spec: _BacklogSpec,
     rows: list[dict[str, Any]],
@@ -574,7 +536,10 @@ def backlog_issue_body(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
         _append_handoff_table(table, prepared)
-        table.extend(_decision_lines(prepared, sum(len(line) + 1 for line in table)))
+        # Lazy import: decision_rows needs helpers defined above in this module.
+        from pr_lifecycle_decision_rows import decision_lines
+
+        table.extend(decision_lines(prepared, sum(len(line) + 1 for line in table)))
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"
