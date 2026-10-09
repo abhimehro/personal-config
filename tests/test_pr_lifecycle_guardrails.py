@@ -35,7 +35,7 @@ class ClassifyPathTests(unittest.TestCase):
             ".env.production": "secrets",
             "uv.lock": "lockfiles_and_major_dependencies",
             "scripts/maint.sh": "shell_execution",
-            "docs/cursor-automations/exports/x.json": "generated_output",
+            "docs/cursor-automations/exports/x.json": "workflows_and_permissions",
             "schemas/ledger.schema.json": "public_api_contracts",
             "src/db/migrations/0001.py": "database_migrations",
             "configs/proxy.toml": "network_and_browser_origins",
