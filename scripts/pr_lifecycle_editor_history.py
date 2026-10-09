@@ -1,7 +1,6 @@
 """Decision-issue body editor history: GraphQL fetch plus truncation gate."""
 
 import json
-import subprocess
 from typing import Any
 
 _EDITOR_QUERY = (
@@ -104,7 +103,7 @@ def _editor_login(node: Any) -> str | None:
     return login if isinstance(login, str) else None
 
 
-def editors(repo: str, number: int, *, run: Any = subprocess.run) -> set[str] | None:
+def editors(repo: str, number: int, *, run: Any) -> set[str] | None:
     """Return every recorded body editor login, or None on any failure."""
     nodes = _editor_nodes(repo, number, run)
     if nodes is None:
