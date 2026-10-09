@@ -18,17 +18,21 @@
 
 LOG="$HOME/Public/Scripts/controld_monitor.log"
 mkdir -p "$(dirname "$LOG")"
+FALLBACK_STATE="$HOME/Library/Application Support/ctrld-network-watch/dhcp-fallback"
+fallback_active=0
+[[ -f $FALLBACK_STATE ]] && fallback_active=1
 
 # Function to get all active network services dynamically
 # Uses the same pattern as scripts/lib/network-utils.sh
 get_network_services() {
-	networksetup -listallnetworkservices | grep -v "^An asterisk"
+	networksetup -listallnetworkservices | grep -vE '^(An asterisk|\*)'
 }
 
 # Function to set DNS servers for all active interfaces
 set_dns_all_interfaces() {
 	local dns_value="$1"
 	local services
+	local failed=0
 	services=$(get_network_services)
 
 	if [[ -z $services ]]; then
@@ -38,9 +42,22 @@ set_dns_all_interfaces() {
 
 	while IFS= read -r iface; do
 		[[ -z $iface ]] && continue
-		sudo networksetup -setdnsservers "$iface" "$dns_value" 2>/dev/null
+		if ! sudo networksetup -setdnsservers "$iface" "$dns_value" 2>/dev/null; then
+			echo "$(date): failed to set DNS for $iface to $dns_value" >>"$LOG"
+			failed=1
+		fi
 	done <<<"$services"
-	return 0
+	return "$failed"
+}
+
+restore_dns_after_fallback() {
+	[[ $fallback_active -eq 1 ]] || return 0
+	echo "$(date): ctrld recovered — re-enforcing 127.0.0.1 DNS" >>"$LOG"
+	if set_dns_all_interfaces "127.0.0.1" && rm -f "$FALLBACK_STATE"; then
+		fallback_active=0
+	else
+		echo "$(date): failed to restore localhost DNS; will retry on next check" >>"$LOG"
+	fi
 }
 
 # One health check + optional recovery. Debounced so rapid scutil events
@@ -57,21 +74,33 @@ check_and_recover() {
 	fi
 
 	if dig +time=3 +tries=1 @127.0.0.1 verify.controld.com &>/dev/null; then
+		restore_dns_after_fallback
 		return 0
 	fi
 
-	echo "$(date): ctrld unresponsive after network event — falling back to DHCP" >>"$LOG"
-	set_dns_all_interfaces "Empty"
+	if (umask 077; mkdir -p "$(dirname "$FALLBACK_STATE")" && : >"$FALLBACK_STATE") 2>/dev/null; then
+		fallback_active=1
+		if set_dns_all_interfaces "Empty"; then
+			echo "$(date): ctrld unresponsive after network event — falling back to DHCP" >>"$LOG"
+		else
+			echo "$(date): DHCP fallback incomplete; will restore DNS after recovery" >>"$LOG"
+		fi
+	else
+		echo "$(date): could not save DHCP fallback state; leaving DNS unchanged" >>"$LOG"
+	fi
 	sudo dscacheutil -flushcache 2>/dev/null || true
 	sudo killall -HUP mDNSResponder 2>/dev/null || true
 	# Attempt service recovery (do not background-race overlapping restarts)
 	sudo ctrld service restart >/dev/null 2>&1 || true
 	sleep 5
 	if dig +time=3 +tries=1 @127.0.0.1 verify.controld.com &>/dev/null; then
-		echo "$(date): ctrld recovered — re-enforcing 127.0.0.1 DNS" >>"$LOG"
-		set_dns_all_interfaces "127.0.0.1"
+		restore_dns_after_fallback
 	else
-		echo "$(date): ctrld failed to recover — DHCP DNS remains active" >>"$LOG"
+		if [[ $fallback_active -eq 1 ]]; then
+			echo "$(date): ctrld failed to recover — DNS fallback remains active" >>"$LOG"
+		else
+			echo "$(date): ctrld failed to recover — DNS unchanged" >>"$LOG"
+		fi
 	fi
 }
 
