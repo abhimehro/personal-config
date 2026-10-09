@@ -38,14 +38,6 @@ def _tickable(row: dict[str, Any]) -> bool:
     return not _is_handoff_row(row) and bool(row.get("head_sha"))
 
 
-def _fits(header: list[str], rows: list[str], line: str, used: int) -> bool:
-    """True when the next row still fits the shared body budget."""
-    return (
-        used + sum(len(line_) + 1 for line_ in header + rows + [line])
-        <= _BACKLOG_TABLE_CHAR_CAP
-    )
-
-
 def decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
     """Render tickable disposition rows inside the shared body budget."""
     header = [
@@ -56,14 +48,16 @@ def decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
         "",
     ]
     rows, omitted = [], 0
+    used += sum(len(line_) + 1 for line_ in header)
     for row in prepared:
         if not _tickable(row):
             continue
         line = _decision_row_line(row)
-        if not _fits(header, rows, line, used):
+        if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
             omitted += 1
             continue
         rows.append(line)
+        used += len(line) + 1
     if not rows:
         return []
     if omitted:

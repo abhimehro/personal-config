@@ -106,7 +106,7 @@ class ParseTickTests(unittest.TestCase):
         ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
         result = dispositions.execute(ctx)
         self.assertEqual(result["accepted"], [])
-        self.assertIn("not abhimehro", result["reason"])
+        self.assertEqual(result["reason"], "no editor history found")
 
     def test_ticked_row_without_token_falls_back(self):
         ticks = dispositions.parse_ticks("- [x] **owner/repo#2** — no token\n")
@@ -171,6 +171,24 @@ class ExecuteTests(unittest.TestCase):
         result, _, _ = self._run(body, live={"state": "OPEN", "headRefOid": "deadbeef"})
         self.assertEqual(result["accepted"], [])
         self.assertEqual(result["skipped"][0]["skipped"], "head moved since rendered")
+
+    def test_fetch_failure_is_not_reported_as_head_moved(self):
+        body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
+        run = _Run()
+        ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
+        with mock.patch.object(dispositions, "_gh_pr_view", lambda repo, pr: None):
+            result = dispositions.execute(ctx)
+        self.assertEqual(result["accepted"], [])
+        self.assertEqual(result["skipped"][0]["skipped"], "failed to fetch live PR")
+
+    def test_merged_pr_skips_before_close_attempt(self):
+        body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
+        result, run, _ = self._run(
+            body, live={"state": "MERGED", "headRefOid": "abc1234"}
+        )
+        self.assertEqual(result["accepted"], [])
+        self.assertEqual(result["skipped"][0]["skipped"], "PR no longer open")
+        self.assertFalse(any("pr close" in " ".join(c) for c in run.calls))
 
     def test_close_disposition_terminates_with_event(self):
         body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"

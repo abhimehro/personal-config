@@ -110,6 +110,8 @@ def _resolve_action(ctx: TickCtx, base: dict[str, Any], live: dict[str, Any]) ->
         }
     if disposition not in _DISPOSITIONS:
         return {**base, "skipped": "unknown disposition"}
+    if live.get("state") == "MERGED":
+        return {**base, "skipped": "PR no longer open"}
     if not _ensure_closed(ctx, base, live):
         return {**base, "skipped": "gh pr close failed"}
     return {
@@ -143,7 +145,9 @@ def _tick_to_action(ctx: TickCtx) -> dict[str, Any]:
         "key": ctx.item["key"],
         "disposition": ctx.tick.get("token") or ctx.meta.get("suggested_disposition"),
     }
-    live = _gh_pr_view(repo, int(pr_text)) or {}
+    live = _gh_pr_view(repo, int(pr_text))
+    if live is None:
+        return {**base, "skipped": "failed to fetch live PR"}
     if not _head_current(live, ctx.meta):
         return {**base, "skipped": "head moved since rendered"}
     action = _resolve_action(ctx, base, live)
@@ -196,7 +200,9 @@ def _editor_gate(ctx: ExecCtx) -> str | None:
     logins = editors(ctx.repo, number, run=ctx.run)
     if logins is None:
         return "editor history unreadable"
-    if not logins or logins - _ALLOWED_EDITORS:
+    if not logins:
+        return "no editor history found"
+    if logins - _ALLOWED_EDITORS:
         return f"body editors {sorted(logins)!r} not abhimehro-only"
     return None
 

@@ -372,7 +372,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
             result["action"] = "ISSUE_UPDATE_SKIPPED"
             result["reason"] = "DECISION_ISSUES_FLAG_OFF"
         return result
-    tick_outcome = _execute_ticks(spec.repo, spec.ledger)
+    tick_outcome = _execute_ticks(spec.repo, spec.ledger, spec.run)
     result: dict[str, Any]
     try:
         result = update_backlog_issue(
@@ -404,6 +404,7 @@ class _IssueSpec:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
 
 
 def _issue_skipped(repo: str) -> dict[str, Any]:
@@ -551,6 +552,7 @@ def _scan_and_plan(spec: _ScanPlanSpec) -> dict[str, Any]:
                 datetime.now(timezone.utc),
                 unblock_args.decision_issues,
                 unblock_args.overdue_notifications,
+                unblock_args.run,
             )
         )
         return _build_plan(
@@ -623,16 +625,19 @@ class _DecisionCtx:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
 
 
-def _execute_ticks(repo: str, ledger: dict[str, Any]) -> dict[str, Any] | None:
+def _execute_ticks(
+    repo: str, ledger: dict[str, Any], run: Any
+) -> dict[str, Any] | None:
     """Execute verified decision-issue ticks before the issue re-renders."""
     try:
         issue = _find_backlog_issue(_list_backlog_rows(repo))
         if not issue:
             return None
         ctx = dispositions.ExecCtx(
-            repo, issue, ledger, _previous_state(issue.get("body")), subprocess.run
+            repo, issue, ledger, _previous_state(issue.get("body")), run
         )
         outcome = dispositions.execute(ctx)
     except (OSError, subprocess.SubprocessError) as exc:
@@ -666,6 +671,7 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
                 ctx.now,
                 ctx.decision_issues,
                 ctx.overdue_notifications,
+                ctx.run,
             )
         )
     return results
