@@ -342,9 +342,7 @@ def _require_str_tuple(identity: Mapping[str, Any], key: str) -> tuple[str, ...]
     return tuple(str(item) for item in value)
 
 
-def _require_lowered_str_tuple(
-    identity: Mapping[str, Any], key: str
-) -> tuple[str, ...]:
+def _require_lowered_str_tuple(identity: Mapping[str, Any], key: str) -> tuple[str, ...]:
     value = identity.get(key)
     if not isinstance(value, list) or not value:
         raise ValueError(
