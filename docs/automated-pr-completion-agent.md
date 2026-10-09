@@ -174,6 +174,10 @@ model output as human approval.
 
 ## Decision packets and human inbox
 
+Unresolved human decisions are tracked on each affected repository's open
+**“PR lifecycle: needs human decision”** GitHub issue, refreshed by the unblock
+executor; use that backlog instead of Notion packets.
+
 Create a packet only for a decision that cannot be reduced to evidence, a Stage
 1 canonical-pick, or a Stage 2 work item. Do not packet BOT non-sensitive
 file-overlap clusters. A packet must answer one question and include immutable

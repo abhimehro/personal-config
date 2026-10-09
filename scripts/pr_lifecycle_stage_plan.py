@@ -248,13 +248,14 @@ def _stage1_plan(
     # reselect planner; aggregate candidate_count > 0 with enqueued_count == 0
     # grades FEED_CHECK FAIL with LOGIC_STOP.
     allowed = [
-        "python3 scripts/pr_lifecycle_reconcile.py --json",
+        "python3 scripts/pr_lifecycle_reconcile.py --apply --json (closed-PR bookkeeping + open-PR ingestion)",
+        "python3 scripts/pr_lifecycle_unblock.py --apply --json (fix-or-trigger blockers, salvage/lineage close, escalation issues)",
         "python3 scripts/pr_lifecycle_feed.py --json (read-only verification)",
         "gh pr view / gh pr list (read-only inventory)",
         "routine approve/squash-merge/close per lifecycle predicates",
         "CAS handoff via pr_lifecycle_ledger_cas (schema-aware only)",
         "CAS-write ≤5 complete stage2_work_items (ENQUEUE_STAGE2_WI)",
-        "CLOSED_NOOP Observed-CLOSED ledger catch-up (bookkeeping; weekly ok)",
+        "CLOSED_NOOP observed-closed bookkeeping is recorded directly by reconcile",
     ]
     cap = _stage_cap(config, "stage1_actions", 40)
     actions = reconcile_mod.collect_actions(ledger, config, limit=cap)
@@ -366,9 +367,10 @@ def _stage3_plan(
     *,
     signals: health.ReselectSignals | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], str | None, str]:
-    """Plan Stage 3 reconciliation, deferred CLOSED_NOOP, and handoff actions."""
+    """Plan Stage 3 reconciliation and handoff actions."""
     allowed = [
         "python3 scripts/pr_lifecycle_reconcile.py --json",
+        "python3 scripts/pr_lifecycle_unblock.py --apply --json (idempotent blocker routing)",
         "resolve advisory Codacy/qodo/CodeRabbit threads with no human reply",
         "bounded non-security completion / close per Stage 3 predicates",
         "CAS terminal transitions; never force-push",
@@ -388,10 +390,10 @@ def _stage3_plan(
             ),
         },
         {
-            "action": "CLOSED_NOOP_DEFERRED",
+            "action": "CLOSED_NOOP_RECORDED_BY_RECONCILE",
             "reason": (
-                "Observed-CLOSED CLOSED_NOOP is Stage 1 reconcile bookkeeping "
-                "or weekly archive — do not spend Stage 3 daily completion cap"
+                "Reconcile now records observed-closed CLOSED_NOOP directly; "
+                "this informational action is not deferred to Stage 3"
             ),
         },
     ]

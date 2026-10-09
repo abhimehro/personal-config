@@ -117,6 +117,16 @@ lifecycle:
   stage2_intake: self_fed
   lineage:
     open_as_draft: false
+  unblock:
+    # Check names matched exactly; a trailing "*" means prefix match.
+    advisory_checks:
+      - "Codacy Static Code Analysis"
+      - "jules/review"
+      - "review"
+      - "Kilo Code Review"
+      - "CodeScene*"
+    trigger_expiry_days: 3
+    lineage_stale_days: 3
   # Keep existing stage_caps / stages / calibration-disabled posture unchanged.
   stage_caps:
     stage1_inventory: 80
