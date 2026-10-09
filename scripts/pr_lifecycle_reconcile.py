@@ -124,6 +124,34 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
     return payload
 
 
+def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
+    """Fetch the PR's changed-file paths via REST; None on any failure.
+
+    Paginates so a large diff cannot silently truncate evidence (a hidden
+    sensitive path must never downgrade a hold). An empty result also
+    returns None: a real open PR always changes at least one file, so an
+    empty list means the evidence could not be trusted.
+    """
+    cmd = [
+        "gh",
+        "api",
+        f"repos/{repo}/pulls/{pr}/files",
+        "--paginate",
+        "--jq",
+        ".[].filename",
+    ]
+    try:
+        completed = subprocess.run(
+            cmd, check=False, capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    paths = sorted({line for line in completed.stdout.splitlines() if line})
+    return paths or None
+
+
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     """Return days since the item update, or None for an invalid timestamp."""
     stamp = _parse_utc(item.get("updated_at_utc"))
@@ -332,6 +360,54 @@ def _classify_stale(
     }
 
 
+def _needs_path_backfill(item: dict[str, Any]) -> bool:
+    """True for a nonterminal item whose changed-path evidence is absent."""
+    paths = item.get("changed_paths")
+    return item.get("lifecycle_state") != "TERMINAL" and not (
+        isinstance(paths, list) and paths
+    )
+
+
+def _path_backfill_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Emit a changed_paths backfill for an open live PR missing path evidence.
+
+    Data-only action: it stamps `changed_paths` so the guardrail evaluator
+    can judge the item on real evidence instead of holding it forever on a
+    missing list. Fetch failures emit PATH_BACKFILL_FAILED for visibility
+    (never applied); non-OPEN live states skip the fetch entirely.
+    """
+    if not _needs_path_backfill(item):
+        return None
+    if not isinstance(live, dict):
+        return None
+    if str(live.get("state") or "").upper() != "OPEN":
+        return None
+    repo = str(item.get("repository") or "")
+    pr = item.get("pr")
+    key = str(item.get("key") or "")
+    if not repo or not _positive_pr_number(pr):
+        return None
+    paths = _gh_pr_files(repo, int(pr))
+    if paths is None:
+        return {
+            "action": "PATH_BACKFILL_FAILED",
+            "key": key,
+            "repository": repo,
+            "pr": pr,
+            "reason": "changed-paths fetch failed; item stays unevaluated",
+        }
+    return {
+        "action": "BACKFILL_PATHS",
+        "key": key,
+        "repository": repo,
+        "pr": pr,
+        "paths": paths,
+        "reason": f"backfill changed_paths ({len(paths)} files) for guardrail evidence",
+    }
+
+
 def classify_item(
     item: dict[str, Any],
     live: dict[str, Any] | None,
@@ -528,6 +604,8 @@ def apply_action_to_ledger(
         return _reanchor_item(ledger, item, action)
     if action.get("action") == "TERMINAL_OBSERVED":
         return _note_observed_terminal(ledger, item, action)
+    if action.get("action") == "BACKFILL_PATHS":
+        return _backfill_item_paths(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -572,6 +650,25 @@ def _note_observed_terminal(
     """
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     item["next_action"] = str(action.get("reason") or "Observed unclassified")
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
+def _backfill_item_paths(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Stamp `changed_paths` in place from a BACKFILL_PATHS action.
+
+    Data-only write: no transition event, no revision bump, and no
+    updated_at_utc refresh (a path list is evidence, not activity — the
+    staleness clock must not reset on a backfill).
+    """
+    paths = sorted({str(path) for path in action.get("paths") or [] if str(path)})
+    if not paths:
+        raise ReconcileSkip("backfill_empty_paths")
+    if item.get("changed_paths") == paths:
+        raise ReconcileSkip("backfill_noop")
+    item["changed_paths"] = paths
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 
@@ -630,10 +727,7 @@ def collect_actions(
     expiry = _expiry_days(config)
     actions: list[dict[str, Any]] = []
     for item in ledger.get("items") or []:
-        action = _action_for_item(item, expiry, clock)
-        if action is None:
-            continue
-        actions.append(action)
+        actions.extend(_action_for_item(item, expiry, clock))
         if limit is not None and len(actions) >= limit:
             break
     return actions
@@ -855,16 +949,25 @@ def _ingest_action(
     }
 
 
-def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] | None:
-    """Look up and classify one nonterminal ledger item."""
+def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
+    """Look up and classify one nonterminal item; return 0-2 planned actions.
+
+    A changed-paths backfill rides alongside the primary action so the
+    guardrail evaluator can adjudicate the item on evidence next pass.
+    """
     if not isinstance(item, dict):
-        return None
+        return []
     if item.get("lifecycle_state") == "TERMINAL":
-        return None
+        return []
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-    return classify_item(item, live, expiry_days=expiry, now=clock)
+    primary = classify_item(item, live, expiry_days=expiry, now=clock)
+    actions = [primary] if primary is not None else []
+    backfill = _path_backfill_action(item, live)
+    if backfill is not None:
+        actions.append(backfill)
+    return actions
 
 
 def run_reconcile(
@@ -969,6 +1072,7 @@ def _apply_actions(
             "INGEST_SKIPPED",
             "TERMINAL_BUT_OPEN",
             "INVENTORY_FAILED",
+            "PATH_BACKFILL_FAILED",
         }:
             continue
         result = _apply_one(ledger, action, items_by_key)
