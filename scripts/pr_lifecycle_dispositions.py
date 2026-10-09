@@ -163,7 +163,7 @@ def _tick_to_action(ctx: _TickCtx) -> dict[str, Any]:
     return {**action, "event_id": event.get("event_id"), "executed": True}
 
 
-def _process_tick(tick: dict[str, Any], ctx: "_ExecCtx") -> dict[str, Any]:
+def _process_tick(tick: dict[str, Any], ctx: _ExecCtx) -> dict[str, Any]:
     """Resolve one tick to an executed or skipped outcome record."""
     repo_part, _, pr_part = tick["row_id"].partition("#")
     meta = (ctx.state.get("rows_meta") or {}).get(tick["row_id"])
