@@ -1498,13 +1498,17 @@ def _fetch_issue_or_none(
 ) -> LinearIssue | None:
     """Fetch an issue by identifier or UUID, including during a dry run.
 
-    Return None for an empty result or a LinearApiError containing
-    'entity not found' (case-insensitive). Other errors propagate.
+    Return None for an empty result or a Linear GraphQL error containing
+    'entity not found' (case-insensitive). HTTP and other errors propagate.
     """
     try:
         return linear_client.get_issue(issue_key)
     except LinearApiError as exc:
-        if "entity not found" not in str(exc).lower():
+        message = str(exc).lower()
+        if not (
+            message.startswith("linear graphql error:")
+            and "entity not found" in message
+        ):
             raise
         if dry_run:
             logger.info(
@@ -1527,7 +1531,7 @@ def _sync_single_issue(
 
     Dry runs may fetch the issue but do not mutate Linear. Return True when
     finished or skipped because the client or issue is missing, including an
-    'entity not found' lookup error. Return False if a state update reports
+    GraphQL 'entity not found' lookup error. Return False if a state update reports
     failure; comment and attachment processing still continues in that case.
     Other lookup errors and errors from mutations propagate.
     """

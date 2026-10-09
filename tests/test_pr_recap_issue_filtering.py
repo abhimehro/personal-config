@@ -130,8 +130,8 @@ class TestFetchIssueOrNone(unittest.TestCase):
     def test_missing_issue_error_is_case_insensitive_in_both_modes(self) -> None:
         for dry_run in (False, True):
             for message in (
-                "ENTITY NOT FOUND: Issue",
-                "GraphQL: eNtItY nOt FoUnD: Issue",
+                "Linear GraphQL error: ENTITY NOT FOUND: Issue",
+                "Linear GraphQL error: eNtItY nOt FoUnD: Issue",
             ):
                 with self.subTest(dry_run=dry_run, message=message):
                     client = create_autospec(pr_recap.LinearClient, instance=True)
@@ -148,6 +148,11 @@ class TestFetchIssueOrNone(unittest.TestCase):
                 "HTTP 429: Rate limited",
                 "HTTP 500",
                 "Issue not found",
+                "Entity not found: Issue",
+                "Linear GraphQL error: Unauthorized",
+                "Linear HTTP 404 error: Entity not found: Issue",
+                "Linear HTTP 401 error: Linear GraphQL error: Entity not found",
+                "Linear request failed after 3 attempts: Entity not found",
             ):
                 with self.subTest(dry_run=dry_run, message=message):
                     client = create_autospec(pr_recap.LinearClient, instance=True)
@@ -281,7 +286,10 @@ class TestIssueFilteringSync(unittest.TestCase):
         self.context = dataclasses.replace(
             self.context, commit_messages=("Closes ABHI-12 and closes ABHI-13",)
         )
-        for missing in (None, pr_recap.LinearApiError("Entity not found: Issue")):
+        for missing in (
+            None,
+            pr_recap.LinearApiError("Linear GraphQL error: Entity not found: Issue"),
+        ):
             with self.subTest(missing=missing):
                 self.client.reset_mock()
                 self.client.get_issue.side_effect = [missing, issue]
@@ -309,7 +317,10 @@ class TestIssueFilteringSync(unittest.TestCase):
     def test_dry_run_missing_issue_plans_without_mutations_or_warnings(self) -> None:
         self.args.dry_run = True
         self.args.issue = ["ABHI-12"]
-        for missing in (None, pr_recap.LinearApiError("Entity not found: Issue")):
+        for missing in (
+            None,
+            pr_recap.LinearApiError("Linear GraphQL error: Entity not found: Issue"),
+        ):
             with self.subTest(missing=missing):
                 self.client.reset_mock()
                 self.client.get_issue.side_effect = [missing]
