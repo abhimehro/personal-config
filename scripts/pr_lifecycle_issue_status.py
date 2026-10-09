@@ -302,6 +302,18 @@ def _markdown_cell(value: object, limit: int = 300) -> str:
     return text[:limit]
 
 
+def _safe_url(value: object) -> str:
+    """Pass a plain https URL through byte-identical; blank anything else.
+
+    Link destinations must not be cell-escaped (escaping corrupts the href)
+    and must not carry markdown (a crafted url could break out of the link).
+    """
+    text = str(value or "").strip()
+    if re.fullmatch(r"https://[^\s()\[\]<>\"'`]+", text):
+        return text
+    return ""
+
+
 def _is_handoff_row(row: dict[str, Any]) -> bool:
     """True for rows handed to a non-human owner (e.g. stage2 escalations).
 
@@ -385,7 +397,7 @@ def _human_row_line(row: dict[str, Any]) -> str:
     """Render one human-decision backlog row."""
     return (
         f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({_markdown_cell(row.get('url'))}) | "
+        f"({_safe_url(row.get('url'))}) | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "
@@ -400,7 +412,7 @@ def _handoff_row_line(row: dict[str, Any]) -> str:
     """Render one Stage 2 handoff row (no expiry or status columns)."""
     return (
         f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({_markdown_cell(row.get('url'))}) | "
+        f"({_safe_url(row.get('url'))}) | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "

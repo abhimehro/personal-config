@@ -196,7 +196,7 @@ def _escalation(ctx: _Route, spec: _EscalationSpec) -> dict[str, Any]:
 def _trigger_blocked(ctx: _Route, kind: str) -> bool:
     """True when a security hold, fork head, or non-bot ownership forbids a
     trigger — including /cs-agent on an untrusted cross-repository branch."""
-    if ctx.security or ctx.pr.get("isCrossRepository"):
+    if ctx.security or ctx.pr.get("isCrossRepository", True):
         return True
     return kind != "codescene" and ctx.author_type != "BOT" and ctx.family != "jules"
 

@@ -319,6 +319,7 @@ def make_unblock_pr(**overrides: object) -> dict[str, object]:
         "mergeStateStatus": "CLEAN",
         "reviewDecision": "REVIEW_REQUIRED",
         "isDraft": False,
+        "isCrossRepository": False,
         "checks": [],
         "comments": [],
         "commentsTotalCount": 0,
