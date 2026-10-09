@@ -514,11 +514,11 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
 
 def _decision_row_line(row: dict[str, Any]) -> str:
     """Render one tickable disposition row."""
-    suggested = _markdown_cell(row.get("suggested_disposition") or "KEEP_OPEN")
-    head = _markdown_cell(str(row.get("head_sha") or "")[:7] or "unknown")
     return (
-        f"- [ ] **{row['id']}** — suggested `{suggested}` "
-        f"· head `{head}` · {_markdown_cell(row.get('blocker'))}"
+        f"- [ ] **{row['id']}** — suggested "
+        f"`{_markdown_cell(row.get('suggested_disposition') or 'KEEP_OPEN')}` "
+        f"· head `{_markdown_cell(str(row.get('head_sha') or '')[:7] or 'unknown')}`"
+        f" · {_markdown_cell(row.get('blocker'))}"
     )
 
 
