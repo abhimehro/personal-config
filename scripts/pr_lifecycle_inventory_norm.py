@@ -107,16 +107,9 @@ def _normalize_comments(
     return comments, total if _nonneg_int(total) else None
 
 
-def _octopus_thread_open(thread: dict[str, Any]) -> bool:
-    """True when the thread is an unresolved, non-outdated Octopus finding."""
-    resolved = thread.get("isResolved")
-    outdated = thread.get("isOutdated")
-    if not isinstance(resolved, bool) or not isinstance(outdated, bool):
-        raise OSError("malformed reviewThreads")
-    if resolved or outdated:
-        return False
-    comments = thread.get("comments")
-    first = _nodes(comments, "reviewThread comments")
+def _octopus_thread_author(thread: dict[str, Any]) -> bool:
+    """True when the first thread comment was authored by the Octopus bot."""
+    first = _nodes(thread.get("comments"), "reviewThread comments")
     if not first:
         return False
     author = first[0].get("author")
@@ -125,6 +118,17 @@ def _octopus_thread_open(thread: dict[str, Any]) -> bool:
     return (
         author.get("__typename") == "Bot" and author.get("login") == _OCTOPUS_BOT_LOGIN
     )
+
+
+def _octopus_thread_open(thread: dict[str, Any]) -> bool:
+    """True when the thread is an unresolved, non-outdated Octopus finding."""
+    resolved = thread.get("isResolved")
+    outdated = thread.get("isOutdated")
+    if not isinstance(resolved, bool) or not isinstance(outdated, bool):
+        raise OSError("malformed reviewThreads")
+    if resolved or outdated:
+        return False
+    return _octopus_thread_author(thread)
 
 
 def _normalize_octopus_findings(raw: dict[str, Any]) -> int | None:

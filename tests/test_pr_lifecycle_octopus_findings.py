@@ -102,14 +102,15 @@ class OctopusFindingsTests(unittest.TestCase):
 
     def test_findings_escalate_alongside_other_blockers(self) -> None:
         actions = route_unblock_pr(
-            make_unblock_pr(
-                openOctopusFindings=2,
-                mergeStateStatus="BEHIND",
-                author_type="BOT",
-            )
+            make_unblock_pr(openOctopusFindings=2, mergeStateStatus="BEHIND")
         )
         blockers = {a.get("blocker") for a in actions}
+        self.assertGreaterEqual(len(actions), 2)
         self.assertIn("open_octopus_findings", blockers)
+        self.assertTrue(
+            any(a.get("action") == "UPDATE_BRANCH" for a in actions),
+            "expected the BEHIND update-branch action to fire alongside",
+        )
 
 
 if __name__ == "__main__":
