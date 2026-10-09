@@ -24,11 +24,15 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position,unused-import
+import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
 from pr_lifecycle_issue_status import (
     _BacklogSpec,
+    _find_backlog_issue,
+    _list_backlog_rows,
+    _previous_state,
     backlog_issue_body,
     update_backlog_issue,
 )
@@ -360,7 +364,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     """Update one repo's decision issue, or render its dry-run body."""
     rows = _rows_for_repo(spec.repo, spec.actions, spec.ledger, spec.days)
     if not spec.apply or not spec.decision_issues:
-        result = {
+        result: dict[str, Any] = {
             "row_count": len(rows),
             "body": backlog_issue_body(_BacklogSpec(spec.repo, {}, spec.now), rows),
         }
@@ -368,19 +372,24 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
             result["action"] = "ISSUE_UPDATE_SKIPPED"
             result["reason"] = "DECISION_ISSUES_FLAG_OFF"
         return result
+    tick_outcome = _execute_ticks(spec.repo, spec.ledger, spec.run)
+    result: dict[str, Any]
     try:
-        return update_backlog_issue(
+        result = update_backlog_issue(
             spec.repo,
             rows,
             now=spec.now,
             notify_overdue=spec.overdue_notifications,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        return {
+        result = {
             "action": "ISSUE_UPDATE_FAILED",
             "repository": spec.repo,
             "reason": type(exc).__name__,
         }
+    if tick_outcome is not None:
+        result["ticks"] = tick_outcome
+    return result
 
 
 @dataclass(frozen=True)
@@ -395,6 +404,7 @@ class _IssueSpec:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
 
 
 def _issue_skipped(repo: str) -> dict[str, Any]:
@@ -542,6 +552,7 @@ def _scan_and_plan(spec: _ScanPlanSpec) -> dict[str, Any]:
                 datetime.now(timezone.utc),
                 unblock_args.decision_issues,
                 unblock_args.overdue_notifications,
+                unblock_args.run,
             )
         )
         return _build_plan(
@@ -614,6 +625,27 @@ class _DecisionCtx:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
+
+
+def _execute_ticks(
+    repo: str, ledger: dict[str, Any], run: Any
+) -> dict[str, Any] | None:
+    """Execute verified decision-issue ticks before the issue re-renders."""
+    try:
+        issue = _find_backlog_issue(_list_backlog_rows(repo))
+        if not issue:
+            return None
+        ctx = dispositions.ExecCtx(
+            repo, issue, ledger, _previous_state(issue.get("body")), run
+        )
+        outcome = dispositions.execute(ctx)
+    except (OSError, subprocess.SubprocessError) as exc:
+        outcome = {"accepted": [], "skipped": [], "reason": type(exc).__name__}
+    if outcome.get("reason") or outcome.get("skipped"):
+        detail = outcome.get("reason") or [s.get("skipped") for s in outcome["skipped"]]
+        print(f"decision-issue ticks for {repo}: {detail}", file=sys.stderr)
+    return outcome
 
 
 def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
@@ -639,6 +671,7 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
                 ctx.now,
                 ctx.decision_issues,
                 ctx.overdue_notifications,
+                ctx.run,
             )
         )
     return results

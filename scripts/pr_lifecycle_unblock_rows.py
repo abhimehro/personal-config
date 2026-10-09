@@ -46,10 +46,15 @@ def _backlog_row(
 ) -> dict[str, Any]:
     """Build one human-decision backlog row from a ledger item."""
     next_action = str(item.get("next_action") or "")
+    key = str(item.get("key") or "")
+    head_sha = key.split("@", 1)[1] if "@" in key else str(item.get("head_sha") or "")
+    security_hold = item.get("guardrail_outcome") == "REVIEW_SECURITY"
     return {
         "repository": repo,
         "pr": item.get("pr"),
         "url": item.get("url"),
+        "head_sha": head_sha,
+        "suggested_disposition": "CLOSED_STALE" if security_hold else "KEEP_OPEN",
         "blocker": item.get("guardrail_outcome") or "human_decision",
         "evidence": next_action[:200],
         "recommended_action": next_action[:200],
