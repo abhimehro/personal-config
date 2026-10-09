@@ -67,7 +67,10 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
     def do_HEAD(self):
         if not self.check_auth():
             return
-        super().do_HEAD()
+        # The inherited HEAD handler serves local files instead of the media remote.
+        self.send_response(405)
+        self.send_header("Allow", "GET")
+        self.end_headers()
 
     def check_auth(self):
 
