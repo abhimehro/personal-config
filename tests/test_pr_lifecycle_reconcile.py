@@ -265,8 +265,8 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["action"], "TERMINAL_CLOSED")
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_closed_security_item_without_label_stays_pending(self) -> None:
-        """Keep an unlabeled closed security item pending for Stage 3 review."""
+    def test_closed_security_item_without_label_is_closed_unreviewed(self) -> None:
+        """An unlabeled closed security hold was never reviewed → CLOSED_UNREVIEWED."""
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -275,9 +275,22 @@ class ClassifyItemTests(unittest.TestCase):
             },
             {"state": "CLOSED", "headRefOid": "c" * 40},
         )
-        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
-        self.assertEqual(action["observed_state"], "CLOSED")
-        self.assertIn("no disposition-bearing label", action["reason"])
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["to_state"], "TERMINAL")
+        self.assertEqual(action["disposition"], "CLOSED_UNREVIEWED")
+
+    def test_closed_observed_marker_security_item_sweeps_to_unreviewed(self) -> None:
+        """Sweep a stuck 'Observed CLOSED unclassified' security item to terminal."""
+        action = _classify(
+            {
+                "lifecycle_state": "STAGE3_RECONCILIATION",
+                "next_action": "Observed CLOSED unclassified: no disposition-bearing label",
+                "guardrail_outcome": "REVIEW_SECURITY",
+            },
+            {"state": "CLOSED", "headRefOid": "c" * 40},
+        )
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_UNREVIEWED")
 
     def test_unlabeled_closed_human_pr_is_bookkeeping_despite_sha_drift(self):
         action = _classify(
@@ -288,7 +301,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["disposition"], "CLOSED_NOOP")
         self.assertEqual(action["to_state"], "TERMINAL")
 
-    def test_unlabeled_closed_security_pr_routes_from_stage1_to_stage3(self):
+    def test_unlabeled_closed_security_pr_is_closed_unreviewed(self):
         action = _classify(
             {
                 "guardrail_outcome": "REVIEW_SECURITY",
@@ -298,9 +311,28 @@ class ClassifyItemTests(unittest.TestCase):
             },
             {"state": "CLOSED", "headRefOid": "c" * 40, "labels": []},
         )
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["to_state"], "TERMINAL")
+        self.assertEqual(action["disposition"], "CLOSED_UNREVIEWED")
+
+    def test_closed_state_with_merged_at_is_not_closed_unreviewed(self):
+        """mergedAt is authoritative: a CLOSED PR that merged is not unreviewed."""
+        action = _classify(
+            {
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "lifecycle_state": "STAGE1_INTAKE",
+                "current_owner": "stage1",
+                "next_owner": "stage1",
+            },
+            {
+                "state": "CLOSED",
+                "mergedAt": "2026-10-01T00:00:00Z",
+                "headRefOid": "c" * 40,
+                "labels": [],
+            },
+        )
         self.assertEqual(action["action"], "TERMINAL_PENDING")
-        self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
-        self.assertIsNone(action["disposition"])
+        self.assertNotEqual(action.get("disposition"), "CLOSED_UNREVIEWED")
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
@@ -328,10 +360,9 @@ def _transition_effect(event, projected):
 def _apply_with_mocks(ledger, item, action):
     with mock.patch.object(
         reconcile.ledger_mod, "apply_transition", side_effect=_transition_effect
-    ):
-        with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
-            with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
-                return reconcile.apply_action_to_ledger(ledger, item, action)
+    ), mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+        with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+            return reconcile.apply_action_to_ledger(ledger, item, action)
 
 
 class ReconcileHelpersTests(unittest.TestCase):
@@ -341,7 +372,7 @@ class ReconcileHelpersTests(unittest.TestCase):
                 "invalid",
                 _item(key="terminal", lifecycle_state="TERMINAL"),
                 _item(key="first", lifecycle_state="STAGE1_INTAKE"),
-                _item(key="second", lifecycle_state="STAGE2_QUEUED"),
+                _item(key="second", lifecycle_state="STAGE2_QUEUED", pr=98),
             ]
         }
         live = {"state": "CLOSED", "headRefOid": "a" * 40}
@@ -354,6 +385,56 @@ class ReconcileHelpersTests(unittest.TestCase):
             )
         self.assertEqual([action["key"] for action in actions], ["first"])
         view.assert_called_once_with("abhimehro/personal-config", 99)
+
+    def test_items_without_identity_are_not_deduped(self):
+        """Items lacking repository/pr keep the per-item path (Octopus)."""
+        ledger = {
+            "items": [
+                _item(key="a", repository=None, pr=None),
+                _item(key="b", repository=None, pr=None),
+            ]
+        }
+        actions, losers = reconcile._duplicate_terminal_actions(ledger["items"])
+        self.assertEqual(actions, [])
+        self.assertEqual(losers, set())
+
+    def test_duplicate_items_terminate_stale_copy_once(self):
+        """Two nonterminal items for one PR: stale copy → CLOSED_DUPLICATE."""
+        ledger = {
+            "items": [
+                _item(
+                    key="repo#1@new",
+                    lifecycle_state="WAITING_HUMAN",
+                    current_owner="human",
+                    revision=3,
+                    pr=42,
+                ),
+                _item(
+                    key="repo#1@old",
+                    lifecycle_state="STAGE1_INTAKE",
+                    revision=1,
+                    pr=42,
+                ),
+                _item(key="repo#2@only", lifecycle_state="STAGE1_INTAKE", pr=43),
+            ]
+        }
+        config = {"lifecycle": {"packet_expiry_close_days": 7}}
+        open_live = {"state": "OPEN", "headRefOid": "a" * 40}
+        with mock.patch.object(reconcile, "_gh_pr_view", return_value=open_live):
+            actions = reconcile.collect_actions(ledger, config, now=NOW)
+        dup = [a for a in actions if a["action"] == "TERMINAL_DUPLICATE"]
+        self.assertEqual([a["key"] for a in dup], ["repo#1@old"])
+        self.assertEqual(dup[0]["to_state"], "TERMINAL")
+        self.assertEqual(dup[0]["disposition"], "CLOSED_DUPLICATE")
+        self.assertNotIn(
+            "repo#1@old",
+            [a["key"] for a in actions if a["action"] != "TERMINAL_DUPLICATE"],
+        )
+        # Idempotent: once the loser is TERMINAL the next collect emits nothing.
+        ledger["items"][1]["lifecycle_state"] = "TERMINAL"
+        with mock.patch.object(reconcile, "_gh_pr_view", return_value=open_live):
+            again = reconcile.collect_actions(ledger, config, now=NOW)
+        self.assertEqual([a for a in again if a["action"] == "TERMINAL_DUPLICATE"], [])
 
     def test_build_transition_event_preserves_revision_and_owner_contract(self):
         action = {
@@ -545,11 +626,10 @@ class ReconcileHelpersTests(unittest.TestCase):
             types.SimpleNamespace(returncode=0, stdout="not-json"),
             types.SimpleNamespace(returncode=0, stdout="[]"),
         ):
-            with self.subTest(completed=completed):
-                with mock.patch.object(
-                    reconcile.subprocess, "run", return_value=completed
-                ):
-                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+            with self.subTest(completed=completed), mock.patch.object(
+                reconcile.subprocess, "run", return_value=completed
+            ):
+                self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(reconcile.subprocess, "run", side_effect=OSError):
             self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
@@ -558,13 +638,12 @@ class ReconcileHelpersTests(unittest.TestCase):
         base_fail = types.SimpleNamespace(returncode=1, stdout="")
         base_empty = types.SimpleNamespace(returncode=0, stdout="\n")
         for base_resp in (base_fail, base_empty):
-            with self.subTest(base=base_resp):
-                with mock.patch.object(
-                    reconcile.subprocess,
-                    "run",
-                    side_effect=[view_ok, base_resp],
-                ):
-                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+            with self.subTest(base=base_resp), mock.patch.object(
+                reconcile.subprocess,
+                "run",
+                side_effect=[view_ok, base_resp],
+            ):
+                self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(
             reconcile.subprocess,

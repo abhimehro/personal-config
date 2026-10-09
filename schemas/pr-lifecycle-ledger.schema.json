@@ -166,6 +166,7 @@
             "CLOSED_DUPLICATE",
             "CLOSED_STALE",
             "CLOSED_SUPERSEDED",
+            "CLOSED_UNREVIEWED",
             "HUMAN_REJECTED",
             "HUMAN_DEFERRED",
             null
@@ -275,6 +276,7 @@
             "CLOSED_DUPLICATE",
             "CLOSED_STALE",
             "CLOSED_SUPERSEDED",
+            "CLOSED_UNREVIEWED",
             "HUMAN_REJECTED",
             "HUMAN_DEFERRED",
             null
