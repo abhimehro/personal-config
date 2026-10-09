@@ -98,13 +98,13 @@ _ctrld service stop 2>/dev/null || true
 _ctrld stop 2>/dev/null || true
 sleep 1
 
-if pgrep -x ctrld >/dev/null 2>&1; then
+if pgrep -x -- ctrld >/dev/null 2>&1; then
 	echo "[WARN] Process still alive; uninstalling LaunchDaemon ONCE to clear KeepAlive..."
 	_ctrld service uninstall 2>/dev/null || true
 	sleep 1
 	pkill -x -- ctrld 2>/dev/null || true
 	sleep 1
-	if pgrep -x ctrld >/dev/null 2>&1; then
+	if pgrep -x -- ctrld >/dev/null 2>&1; then
 		pkill -9 -x -- ctrld 2>/dev/null || true
 	fi
 fi
@@ -162,7 +162,7 @@ if [[ -x /opt/homebrew/bin/ctrld && -f /usr/local/bin/ctrld && ! -L /usr/local/b
 fi
 
 echo "[INFO] Post-stop state:"
-pgrep -xl ctrld || echo "  ctrld: stopped"
+pgrep -xl -- ctrld || echo "  ctrld: stopped"
 networksetup -getdnsservers Wi-Fi || true
 dig google.com +short +time=2 +tries=1 | head -3 || true
 
