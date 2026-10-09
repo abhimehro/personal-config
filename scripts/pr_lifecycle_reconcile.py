@@ -27,7 +27,7 @@ import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_config import validate_config
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
-from pr_lifecycle_support import ROOT
+from pr_lifecycle_support import ROOT, SHA_RE
 from pr_lifecycle_yaml import load_yaml
 
 DEFAULT_EXPIRY_DAYS = 7
@@ -326,10 +326,14 @@ def classify_item(
             "key": key,
             "reason": "gh pr view failed; skip mutation",
         }
-    return (
-        _classify_live_terminal(item, live, key)
-        or _classify_sha_drift(item, live, key)
-        or _classify_stale(item, expiry_days=expiry_days, now=now, key=key)
+    # A merged or closed PR is done. An already-noted observation returns None;
+    # do not fall through into SHA re-intake just because the recorded head
+    # differs from the closed head.
+    live_state = str(live.get("state") or "").upper()
+    if live_state in {"MERGED", "CLOSED"}:
+        return _classify_live_terminal(item, live, key)
+    return _classify_sha_drift(item, live, key) or _classify_stale(
+        item, expiry_days=expiry_days, now=now, key=key
     )
 
 
@@ -379,10 +383,90 @@ def build_transition_event(
     }
 
 
+class ReconcileSkip(Exception):
+    """One action cannot be applied; the rest of the batch may continue."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _anchor_blocked(item: dict[str, Any], action: dict[str, Any]) -> bool:
+    """Sticky security and non-bot head moves stay on their recorded anchor.
+
+    REVIEW_SECURITY and human-authored packets are not silently re-intaken.
+    """
+    if action.get("action") not in {"SHA_DRIFT_REINTAKE", "REANCHOR_HEAD"}:
+        return False
+    if item.get("guardrail_outcome") == "REVIEW_SECURITY":
+        return True
+    if item.get("author_type") != "BOT":
+        return True
+    return False
+
+
+def _rekey_item_head(
+    ledger: dict[str, Any], item: dict[str, Any], live_head: str
+) -> bool:
+    """Point key at live_head. False if that key is already taken.
+
+    Schema requires key.endswith(head_sha) and
+    idempotency_key == f"{item_key}:{event_id}". Rewrite this item's events
+    and any stage2 work-item source keys. Do not bump item revision here.
+    """
+    if not live_head or live_head == item.get("head_sha"):
+        return True
+    if SHA_RE.fullmatch(live_head) is None:
+        return False
+    repository = item.get("repository")
+    pr = item.get("pr")
+    if not repository or pr is None:
+        return False
+    new_key = f"{repository}#{pr}@{live_head}"
+    for other in ledger.get("items") or []:
+        taken = (
+            isinstance(other, dict)
+            and other is not item
+            and other.get("key") == new_key
+        )
+        if taken:
+            return False
+    old_key = item["key"]
+    item["key"] = new_key
+    item["head_sha"] = live_head
+    for event in ledger.get("events") or []:
+        if isinstance(event, dict) and event.get("item_key") == old_key:
+            event_id = event.get("event_id")
+            event["item_key"] = new_key
+            if isinstance(event_id, str) and event_id:
+                event["idempotency_key"] = f"{new_key}:{event_id}"
+    for work in ledger.get("stage2_work_items") or []:
+        if isinstance(work, dict) and work.get("source_item_key") == old_key:
+            work["source_item_key"] = new_key
+    return True
+
+
+def _prepare_live_head(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> None:
+    """Rekey before a transition event is built. Skip leaves the item unchanged."""
+    if action.get("action") not in {"SHA_DRIFT_REINTAKE", "REANCHOR_HEAD"}:
+        return
+    if _anchor_blocked(item, action):
+        raise ReconcileSkip("sticky_anchor")
+    live_head = str(action.get("live_head_sha") or "")
+    if not live_head or live_head == item.get("head_sha"):
+        return
+    if SHA_RE.fullmatch(live_head) is None:
+        raise ReconcileSkip("anchor_invalid_head")
+    if not _rekey_item_head(ledger, item, live_head):
+        raise ReconcileSkip("anchor_key_taken")
+
+
 def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
     live_head = action.get("live_head_sha")
-    if live_head:
-        item["head_sha"] = live_head
+    # Head moves only via _rekey_item_head so the key still ends with head_sha.
+    if live_head and live_head == item.get("head_sha"):
         item["next_action"] = (
             f"Re-anchor intake to live head {live_head}; prior evidence void."
         )
@@ -394,14 +478,14 @@ def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
 def _reanchor_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """In-place head/base re-anchor for items already in STAGE1_INTAKE."""
-    live_head = action.get("live_head_sha")
-    if live_head:
-        item["head_sha"] = live_head
+    """In-place base note for items already in STAGE1_INTAKE.
+
+    The live head is written by _prepare_live_head. Item revision stays put:
+    this path records no transition event, and the projection must match events.
+    """
     live_base = action.get("live_base_sha")
     if live_base:
         item["base_sha"] = live_base
-    item["revision"] = int(item.get("revision") or 0) + 1
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     item["next_action"] = (
         f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
@@ -416,6 +500,7 @@ def apply_action_to_ledger(
     action: dict[str, Any],
 ) -> dict[str, Any]:
     """Apply an action in memory and return the appended transition event."""
+    _prepare_live_head(ledger, item, action)
     if action.get("action") == "REANCHOR_HEAD":
         return _reanchor_item(ledger, item, action)
     if action.get("action") == "TERMINAL_OBSERVED":
@@ -457,8 +542,11 @@ def apply_action_to_ledger(
 def _note_observed_terminal(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """In-place observation note for a Stage-3-owned unclassified terminal."""
-    item["revision"] = int(item.get("revision") or 0) + 1
+    """In-place observation note for a Stage-3-owned unclassified terminal.
+
+    Do not bump item revision: this note has no transition event, and the
+    projection validator requires revision to match the event chain.
+    """
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     item["next_action"] = str(action.get("reason") or "Observed unclassified")
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
@@ -610,7 +698,11 @@ def _apply_one(
     if action["action"] == "CLOSE_STALE":
         if not _apply_close_stale(action):
             return None
-    event = apply_action_to_ledger(ledger, item, action)
+    try:
+        event = apply_action_to_ledger(ledger, item, action)
+    except ReconcileSkip as exc:
+        action["skipped"] = exc.reason
+        return None
     return {"action": action, "event_id": event["event_id"]}
 
 
