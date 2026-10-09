@@ -207,6 +207,24 @@ class EvaluateLedgerTests(unittest.TestCase):
         validate_runtime_records(ledger, config)
 
 
+class ClosedUnreviewedSchemaTests(unittest.TestCase):
+    def test_closed_unreviewed_is_a_valid_terminal_disposition(self) -> None:
+        """Validator accepts CLOSED_UNREVIEWED on item and event surfaces."""
+        from pr_lifecycle_ledger import TERMINAL_DISPOSITIONS
+        from pr_lifecycle_schema import validate_schema
+        from pr_lifecycle_yaml import load_yaml
+
+        self.assertIn("CLOSED_UNREVIEWED", TERMINAL_DISPOSITIONS)
+        ledger = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
+        for event in ledger.get("events") or []:
+            if isinstance(event, dict) and event.get("kind") == "TERMINAL":
+                event["terminal_disposition"] = "CLOSED_UNREVIEWED"
+        for item in ledger.get("items") or []:
+            if isinstance(item, dict) and item.get("lifecycle_state") == "TERMINAL":
+                item["terminal_disposition"] = "CLOSED_UNREVIEWED"
+        validate_schema(ledger)
+
+
 class GuardrailSourceSchemaTests(unittest.TestCase):
     def test_all_documented_sources_are_accepted(self) -> None:
         from pr_lifecycle_schema import validate_schema

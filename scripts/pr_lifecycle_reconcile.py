@@ -176,11 +176,12 @@ def _classify_live_merge(
 def _classify_live_close(
     item: dict[str, Any], live: dict[str, Any], key: str
 ) -> dict[str, Any] | None:
-    """Classify a closed PR by its labels, preserving unlabeled security holds.
+    """Classify a closed PR by its labels.
 
-    Without a disposition label, return CLOSED_NOOP unless REVIEW_SECURITY
-    requires Stage 3 classification. Return None if that security observation
-    was already recorded.
+    Without a disposition label: a REVIEW_SECURITY item closed unmerged was
+    never security-reviewed, so it terminates CLOSED_UNREVIEWED; anything
+    else terminates CLOSED_NOOP. (Pending classification remains merge-only:
+    a MERGED live state without merger evidence still routes to Stage 3.)
     """
     labels = _label_names(live)
     disposition = next(
@@ -193,9 +194,18 @@ def _classify_live_close(
     )
     if disposition is None:
         if item.get("guardrail_outcome") == "REVIEW_SECURITY":
-            return _pending_terminal(
-                item, key, "CLOSED", "no disposition-bearing label"
-            )
+            return {
+                "action": "TERMINAL_CLOSED",
+                "key": key,
+                "to_state": "TERMINAL",
+                "disposition": "CLOSED_UNREVIEWED",
+                "reason": (
+                    "live PR state=CLOSED unmerged under REVIEW_SECURITY "
+                    "without disposition label; closed before review "
+                    "→ CLOSED_UNREVIEWED"
+                ),
+                "evidence": {"labels": labels},
+            }
         return {
             "action": "TERMINAL_CLOSED",
             "key": key,
@@ -259,6 +269,10 @@ def _classify_live_terminal(
     if live_state == "MERGED":
         return _classify_live_merge(item, live, key)
     if live_state == "CLOSED":
+        # A closed PR with a mergedAt timestamp was merged, not abandoned —
+        # mergedAt is the authoritative signal, not the state label.
+        if live.get("mergedAt"):
+            return _classify_live_merge(item, live, key)
         return _classify_live_close(item, live, key)
     return None
 
@@ -618,6 +632,63 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     return steps, confirmed
 
 
+_LIFECYCLE_RANK = {
+    "STAGE1_INTAKE": 0,
+    "STAGE2_QUEUED": 1,
+    "STAGE2_ACTIVE": 2,
+    "STAGE3_RECONCILIATION": 3,
+    "WAITING_HUMAN": 4,
+}
+
+
+def _duplicate_terminal_actions(
+    items: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], set[Any]]:
+    """Return CLOSED_DUPLICATE actions for stale duplicate items.
+
+    Keys embed head_sha, so a re-intake after drift can mint a second
+    nonterminal item for the same (repository, pr). The item at the most
+    advanced lifecycle state (tiebreak: higher revision, then newer
+    updated_at_utc) survives; the rest go TERMINAL/CLOSED_DUPLICATE.
+    """
+    groups: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
+    for item in items:
+        if not isinstance(item, dict) or item.get("lifecycle_state") == "TERMINAL":
+            continue
+        groups.setdefault((item.get("repository"), item.get("pr")), []).append(item)
+    actions: list[dict[str, Any]] = []
+    losers: set[Any] = set()
+    for dupes in groups.values():
+        if len(dupes) < 2:
+            continue
+        dupes.sort(
+            key=lambda i: (
+                _LIFECYCLE_RANK.get(str(i.get("lifecycle_state")), -1),
+                int(i.get("revision") or 0),
+                str(i.get("updated_at_utc") or ""),
+            ),
+            reverse=True,
+        )
+        survivor = dupes[0]
+        for loser in dupes[1:]:
+            losers.add(loser.get("key"))
+            actions.append(
+                {
+                    "action": "TERMINAL_DUPLICATE",
+                    "key": loser.get("key"),
+                    "repository": loser.get("repository"),
+                    "pr": loser.get("pr"),
+                    "to_state": "TERMINAL",
+                    "disposition": "CLOSED_DUPLICATE",
+                    "reason": (
+                        "duplicate ledger item for the same PR; "
+                        f"{survivor.get('key')} is the survivor"
+                    ),
+                }
+            )
+    return actions, losers
+
+
 def collect_actions(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -628,8 +699,13 @@ def collect_actions(
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
-    actions: list[dict[str, Any]] = []
-    for item in ledger.get("items") or []:
+    items = ledger.get("items") or []
+    actions, dup_losers = _duplicate_terminal_actions(items)
+    if limit is not None and len(actions) >= limit:
+        return actions[:limit]
+    for item in items:
+        if isinstance(item, dict) and item.get("key") in dup_losers:
+            continue
         action = _action_for_item(item, expiry, clock)
         if action is None:
             continue
