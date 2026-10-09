@@ -649,10 +649,10 @@ def _dup_groups(
     for item in items:
         if not isinstance(item, dict) or item.get("lifecycle_state") == "TERMINAL":
             continue
-        repo, pr = item.get("repository"), item.get("pr")
-        if not repo or not pr:
+        repo, pr_num = item.get("repository"), item.get("pr")
+        if not repo or not pr_num:
             continue
-        groups.setdefault((repo, pr), []).append(item)
+        groups.setdefault((repo, pr_num), []).append(item)
     return groups
 
 
@@ -684,8 +684,7 @@ def _dup_action(loser: dict[str, Any], survivor: dict[str, Any]) -> dict[str, An
 def _duplicate_terminal_actions(
     items: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], set[Any]]:
-    """
-    Return CLOSED_DUPLICATE actions for stale duplicate items.
+    """Return CLOSED_DUPLICATE actions for stale duplicate items.
 
     Keys embed head_sha, so a re-intake after drift can mint a second
     nonterminal item for the same (repository, pr). The item at the most
@@ -705,6 +704,25 @@ def _duplicate_terminal_actions(
     return actions, losers
 
 
+def _item_actions(
+    items: list[dict[str, Any]],
+    dup_losers: set[Any],
+    expiry: int,
+    clock: datetime,
+    limit: int | None,
+    actions: list[dict[str, Any]],
+) -> None:
+    """Append per-item actions until the action limit is reached."""
+    for item in items:
+        if isinstance(item, dict) and item.get("key") in dup_losers:
+            continue
+        if limit is not None and len(actions) >= limit:
+            break
+        action = _action_for_item(item, expiry, clock)
+        if action is not None:
+            actions.append(action)
+
+
 def collect_actions(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -715,15 +733,9 @@ def collect_actions(
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
-    actions, dup_losers = _duplicate_terminal_actions(ledger.get("items") or [])
-    for item in ledger.get("items") or []:
-        if isinstance(item, dict) and item.get("key") in dup_losers:
-            continue
-        if limit is not None and len(actions) >= limit:
-            break
-        action = _action_for_item(item, expiry, clock)
-        if action is not None:
-            actions.append(action)
+    items = ledger.get("items") or []
+    actions, dup_losers = _duplicate_terminal_actions(items)
+    _item_actions(items, dup_losers, expiry, clock, limit, actions)
     if limit is not None:
         return actions[:limit]
     return actions
