@@ -327,7 +327,9 @@ def _title_is_reselect_bot(title: str | None) -> bool:
     if not title:
         return False
     norm = _normalize_title_for_prefix(title)
-    return any(norm.startswith(prefix) for prefix in NORMALIZED_RESELECT_TITLE_PREFIXES)
+    # PERF: Passing tuple directly to str.startswith uses CPython's native C loop
+    # instead of allocating a generator expression and iterating in Python.
+    return norm.startswith(NORMALIZED_RESELECT_TITLE_PREFIXES)
 
 
 def _extract_item_author_login(item: dict[str, Any]) -> str | None:
