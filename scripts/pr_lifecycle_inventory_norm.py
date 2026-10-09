@@ -107,6 +107,13 @@ def _normalize_comments(
     return comments, total if _nonneg_int(total) else None
 
 
+def _require_str(value: Any, label: str) -> str:
+    """Return value when it is a string, else raise OSError (fail closed)."""
+    if not isinstance(value, str):
+        raise OSError(label)
+    return value
+
+
 def _octopus_thread_author(thread: dict[str, Any]) -> bool:
     """True when the first thread comment was authored by the Octopus bot.
 
@@ -114,16 +121,14 @@ def _octopus_thread_author(thread: dict[str, Any]) -> bool:
     author cannot be read is never treated as a clean non-match (fail closed).
     """
     first = _nodes(thread.get("comments"), "reviewThread comments")
-    if not first or not isinstance(first[0], dict):
-        raise OSError("reviewThread first comment missing")
-    author = first[0].get("author")
-    if not isinstance(author, dict):
-        raise OSError("reviewThread comment author missing")
-    login = author.get("login")
-    typename = author.get("__typename")
-    if not isinstance(login, str) or not isinstance(typename, str):
-        raise OSError("reviewThread comment author malformed")
-    return typename == "Bot" and login == _OCTOPUS_BOT_LOGIN
+    author = first[0].get("author") if first and isinstance(first[0], dict) else None
+    login = author.get("login") if isinstance(author, dict) else None
+    typename = author.get("__typename") if isinstance(author, dict) else None
+    label = "reviewThread comment author unverifiable"
+    return (
+        _require_str(typename, label) == "Bot"
+        and _require_str(login, label) == _OCTOPUS_BOT_LOGIN
+    )
 
 
 def _octopus_thread_open(thread: dict[str, Any]) -> bool:
