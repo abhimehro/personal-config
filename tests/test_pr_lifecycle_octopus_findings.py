@@ -112,6 +112,49 @@ class OctopusFindingsTests(unittest.TestCase):
             "expected the BEHIND update-branch action to fire alongside",
         )
 
+    def test_findings_suppress_automatic_close(self) -> None:
+        """A stale-lineage PR with findings escalates instead of auto-closing."""
+        actions = route_unblock_pr(
+            make_unblock_pr(
+                headRefName="pr-lifecycle-docs-20261001-run",
+                openOctopusFindings=1,
+            )
+        )
+        self.assertFalse(
+            any(str(a.get("action") or "").startswith("CLOSE") for a in actions),
+            "open findings must suppress automatic close actions",
+        )
+        self.assertTrue(
+            any(a.get("blocker") == "open_octopus_findings" for a in actions)
+        )
+
+    def test_findings_kept_with_conflict_routing(self) -> None:
+        actions = route_unblock_pr(
+            make_unblock_pr(openOctopusFindings=2, mergeable="CONFLICTING")
+        )
+        self.assertGreaterEqual(len(actions), 2)
+        self.assertTrue(
+            any(a.get("blocker") == "open_octopus_findings" for a in actions)
+        )
+        self.assertTrue(
+            any(a.get("blocker") in (None, "merge_conflict") for a in actions),
+            "expected the conflict route to fire alongside the escalation",
+        )
+
+    def test_unverifiable_thread_author_fails_closed(self) -> None:
+        raw = _with_threads(
+            make_inventory_pr(),
+            [
+                {
+                    "isResolved": False,
+                    "isOutdated": False,
+                    "comments": {"nodes": [{"author": None}]},
+                }
+            ],
+        )
+        with self.assertRaises(OSError):
+            _normalize_pr(raw, "owner/repo")
+
 
 if __name__ == "__main__":
     unittest.main()

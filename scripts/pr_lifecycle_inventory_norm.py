@@ -108,16 +108,22 @@ def _normalize_comments(
 
 
 def _octopus_thread_author(thread: dict[str, Any]) -> bool:
-    """True when the first thread comment was authored by the Octopus bot."""
+    """True when the first thread comment was authored by the Octopus bot.
+
+    Unverifiable author identity raises OSError: an unresolved thread whose
+    author cannot be read is never treated as a clean non-match (fail closed).
+    """
     first = _nodes(thread.get("comments"), "reviewThread comments")
-    if not first:
-        return False
+    if not first or not isinstance(first[0], dict):
+        raise OSError("reviewThread first comment missing")
     author = first[0].get("author")
     if not isinstance(author, dict):
-        return False
-    return (
-        author.get("__typename") == "Bot" and author.get("login") == _OCTOPUS_BOT_LOGIN
-    )
+        raise OSError("reviewThread comment author missing")
+    login = author.get("login")
+    typename = author.get("__typename")
+    if not isinstance(login, str) or not isinstance(typename, str):
+        raise OSError("reviewThread comment author malformed")
+    return typename == "Bot" and login == _OCTOPUS_BOT_LOGIN
 
 
 def _octopus_thread_open(thread: dict[str, Any]) -> bool:

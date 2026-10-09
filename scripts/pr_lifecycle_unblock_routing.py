@@ -575,16 +575,27 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     routes precede draft suppression; conflicts precede other blockers.
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
+    Open or unknown Octopus findings always escalate: automatic close actions
+    are suppressed and the escalation is kept alongside any other blockers.
     """
     ctx = _route_ctx(pr, args)
+    octopus = _route_octopus_findings(ctx)
     prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
     if prefix is not None:
-        return prefix
+        if not octopus:
+            return prefix
+        actions = [
+            action
+            for action in prefix
+            if not str(action.get("action") or "").startswith("CLOSE")
+        ]
+        actions.extend(octopus)
+        return actions
     conflict = _route_conflict(ctx)
     if conflict is not None:
-        return conflict
+        return conflict + octopus
     actions = _route_behind(ctx)
     actions.extend(_route_checks(ctx))
     actions.extend(_route_review(ctx))
-    actions.extend(_route_octopus_findings(ctx))
+    actions.extend(octopus)
     return actions
