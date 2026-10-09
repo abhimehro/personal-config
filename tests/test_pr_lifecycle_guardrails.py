@@ -47,6 +47,29 @@ class ClassifyPathTests(unittest.TestCase):
         for path in ("README.md", "src/main.py", "tests/test_x.py", "docs/a.md"):
             self.assertEqual(set(), guardrails.classify_path(path), path)
 
+    def test_editor_and_agent_dirs_match(self) -> None:
+        """Directory patterns match files inside them (Octopus regression)."""
+        for path in (
+            ".cursor/hooks.json",
+            ".devin/hooks.json",
+            ".vscode/settings.json",
+            ".idea/workspace.xml",
+            ".gitignore",
+            "sub/dir/.cursor/rules/x.mdc",
+        ):
+            self.assertIn(
+                "file_read_write_boundaries", guardrails.classify_path(path), path
+            )
+
+    def test_nested_requirements_and_api_dirs_match(self) -> None:
+        """requirements/ and api/ directory contents classify too."""
+        self.assertIn(
+            "lockfiles_and_major_dependencies",
+            guardrails.classify_path("requirements/dev.txt"),
+        )
+        for path in ("api/spec.json", "apis/v1/openapi.yaml"):
+            self.assertIn("public_api_contracts", guardrails.classify_path(path), path)
+
     def test_all_rule_classes_exist_in_config_taxonomy(self) -> None:
         from pr_lifecycle_yaml import load_yaml
 

@@ -475,9 +475,6 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
     recorded on actions. Configuration and ledger fetch errors propagate;
     unknown repository filters raise ValueError.
     """
-    apply = unblock_args.apply
-    json_out = unblock_args.json_out
-    run = unblock_args.run
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     repositories = _resolve_repositories(config, unblock_args.repos_filter)
@@ -486,6 +483,22 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
     cap = unblock_args.limit
     if cap is None:
         cap = lifecycle["stage_caps"]["stage1_actions"]
+    plan = _scan_and_plan(unblock_args, config, repositories, lifecycle, settings, cap)
+    _emit(plan, unblock_args.json_out)
+    return 0
+
+
+def _scan_and_plan(
+    unblock_args: _UnblockArgs,
+    config: dict[str, Any],
+    repositories: list[str],
+    lifecycle: dict[str, Any],
+    settings: dict[str, Any],
+    cap: int,
+) -> dict[str, Any]:
+    """Fetch the ledger, scan repos, apply mutations, and build the plan."""
+    apply = unblock_args.apply
+    run = unblock_args.run
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-unblock-") as tmp:
         fetch = cas.run_preflight(Path(tmp) / "ledger.yaml")
         ledger = load_yaml(Path(fetch["ledger_path"]))
@@ -518,7 +531,7 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
                 unblock_args.overdue_notifications,
             )
         )
-        plan = _build_plan(
+        return _build_plan(
             _PlanFields(
                 apply=apply,
                 ledger=ledger,
@@ -533,8 +546,6 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
                 escalation_issues=escalation_issues,
             )
         )
-        _emit(plan, json_out)
-    return 0
 
 
 @dataclass(frozen=True)

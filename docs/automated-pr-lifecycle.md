@@ -591,9 +591,10 @@ Holds live in code, not only in the Stage 1 prompt:
   prompt-side wrapper.
 - **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/`
   slugs, Snyk, reviewer/automation bots) never counts as human participation
-  for the stale-lineage close; a genuinely human-authored comment does hold
-  it, and an unreadable author or incomplete comment history holds too
-  (fail toward not closing).
+  for the stale-lineage close — and neither does a machine-generated body
+  posted under a human login (Snyk PR-check summaries comment as the repo
+  owner). A genuinely human-authored comment does hold it, and an unreadable
+  author or incomplete comment history holds too (fail toward not closing).
 - **Exclusions.** `--exclude owner/repo#N` (repeatable; `repo#N`, `#N`, or a
   bare `N` also accepted — repo-less forms match every repo) and the
   `lifecycle.unblock.exclusions` config list make a PR never-touch: skipped
@@ -604,6 +605,10 @@ Holds live in code, not only in the Stage 1 prompt:
   Without the flags the run reports `ISSUE_UPDATE_SKIPPED` and leaves overdue
   state unrecorded so a later flagged run still catches up. Stage 1 passes
   both flags explicitly (the issues and mentions are its planned outputs).
+
+Weekly human digest: pinned GitHub issue / issue comment — Notion packets
+retired for this path. Pause/resume: leave Dashboard paused; operators run stage
+scripts manually until usage restores.
 
 ## Related specifications
 

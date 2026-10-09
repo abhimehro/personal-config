@@ -69,7 +69,7 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "lockfiles_and_major_dependencies",
-        r"(^|/)(package-lock\.json|yarn\.lock|pnpm-lock\.ya?ml|uv\.lock|poetry\.lock|Pipfile\.lock|Gemfile\.lock|go\.(mod|sum)|Cargo\.(toml|lock)|composer\.(json|lock)|requirements[^/]*\.txt|pyproject\.toml|setup\.(py|cfg)|package\.json|Brewfile[^/]*|[^/]*\.gemspec|renv\.lock)",
+        r"(^|/)(package-lock\.json|yarn\.lock|pnpm-lock\.ya?ml|uv\.lock|poetry\.lock|Pipfile\.lock|Gemfile\.lock|go\.(mod|sum)|Cargo\.(toml|lock)|composer\.(json|lock)|requirements[^/]*\.txt|requirements/|pyproject\.toml|setup\.(py|cfg)|package\.json|Brewfile[^/]*|[^/]*\.gemspec|renv\.lock)",
     ),
     (
         "security_configuration",
@@ -89,7 +89,7 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "file_read_write_boundaries",
-        r"(^|/)(\.gitignore|\.gitattributes|\.cursorignore|\.cursor/|\.devin/|\.idea/|\.vscode/|[^/]*ignore)$",
+        r"(^|/)(\.gitignore|\.gitattributes|\.cursorignore|[^/]*ignore$|\.cursor/|\.devin/|\.idea/|\.vscode/)",
     ),
     (
         "generated_output",
@@ -97,7 +97,7 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "public_api_contracts",
-        r"(^|/)(openapi[^/]*|swagger[^/]*|schemas?/|api[^/]*\.(json|ya?ml)|[^/]*\.proto$|[^/]*\.graphql|[^/]*\.schema\.json)",
+        r"(^|/)(openapi[^/]*|swagger[^/]*|schemas?/|apis?/|api[^/]*\.(json|ya?ml)|[^/]*\.proto$|[^/]*\.graphql|[^/]*\.schema\.json)",
     ),
     (
         "destructive_data_actions",
@@ -154,6 +154,29 @@ def evaluate_item(item: dict[str, Any]) -> dict[str, Any] | None:
     return patch
 
 
+def _record_evaluation(
+    item: dict[str, Any], patch: dict[str, Any], now: str, summary: dict[str, Any]
+) -> None:
+    """Apply one item's patch in place and fold it into the summary."""
+    summary["evaluated"] += 1
+    outcome = str(patch["guardrail_outcome"])
+    summary["by_outcome"][outcome] += 1
+    if item.get("guardrail_outcome") == outcome:
+        summary["outcomes_unchanged"] += 1
+    else:
+        summary["changes"].append(
+            {
+                "key": item.get("key"),
+                "from": item.get("guardrail_outcome"),
+                "to": outcome,
+                "sensitive_paths": patch["sensitive_paths"],
+            }
+        )
+    item.update(patch)
+    item["revision"] = int(item.get("revision") or 0) + 1
+    item["updated_at_utc"] = now
+
+
 def evaluate_ledger(
     ledger: dict[str, Any], repos_filter: set[str] | None
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -175,23 +198,7 @@ def evaluate_ledger(
         if patch is None:
             summary["skipped"] += 1
             continue
-        summary["evaluated"] += 1
-        outcome = str(patch["guardrail_outcome"])
-        summary["by_outcome"][outcome] += 1
-        if item.get("guardrail_outcome") == outcome:
-            summary["outcomes_unchanged"] += 1
-        else:
-            summary["changes"].append(
-                {
-                    "key": item.get("key"),
-                    "from": item.get("guardrail_outcome"),
-                    "to": outcome,
-                    "sensitive_paths": patch["sensitive_paths"],
-                }
-            )
-        item.update(patch)
-        item["revision"] = int(item.get("revision") or 0) + 1
-        item["updated_at_utc"] = now
+        _record_evaluation(item, patch, now, summary)
     return ledger, summary
 
 
