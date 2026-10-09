@@ -508,6 +508,61 @@ class IssueStatusTests(unittest.TestCase):
             self.st.update_backlog_issue("owner/repo", [row], now=NOW)
         self.assertEqual(self.command.call_count, 2)
 
+    def test_invalid_duplicate_backlog_listing_stops_before_any_write(self):
+        """A valid first match must not hide a malformed later title match."""
+        for number in (None, True, "52"):
+            with self.subTest(number=number):
+                self.command.reset_mock()
+                self.command.return_value = self.result(
+                    json.dumps(
+                        [
+                            {
+                                "number": 51,
+                                "title": self.st.BACKLOG_ISSUE_TITLE,
+                                "body": "",
+                            },
+                            {"number": number, "title": self.st.BACKLOG_ISSUE_TITLE},
+                        ]
+                    )
+                )
+                with self.assertRaisesRegex(OSError, "without a number"):
+                    self.st.update_backlog_issue(
+                        "owner/repo", [self._backlog_row()], now=NOW
+                    )
+                self.command.assert_called_once()
+
+    def test_invalid_packet_days_default_to_seven_without_boolean_coercion(self):
+        for days in (True, False, 0, -1, "2", 1.5):
+            with self.subTest(days=days):
+                row = dict(self._backlog_row(), packet_expiry_close_days=days)
+                prepared, _, overdue = self.st._prepare_backlog_rows(
+                    "owner/repo",
+                    [row],
+                    {},
+                    NOW,
+                )
+                self.assertEqual(prepared[0]["expires"], "2026-09-06T12:00:00Z")
+                self.assertFalse(prepared[0]["overdue"])
+                self.assertEqual(overdue, [])
+
+    def test_unsafe_link_destinations_do_not_escape_the_backlog_table(self):
+        for url in (
+            "http://example.com/pr/42",
+            "javascript:alert(1)",
+            "https://example.com/42) [injected](https://evil.example)",
+            "https://example.com/42\n<!-- injected -->",
+        ):
+            with self.subTest(url=url):
+                body = self.st.backlog_issue_body(
+                    "owner/repo",
+                    [dict(self._backlog_row(), url=url)],
+                    {},
+                    NOW,
+                )
+                self.assertIn("| [42]() |", body)
+                self.assertNotIn(url, body)
+                self.assertNotIn("[injected]", body)
+
     def test_status_cli_takes_precedence_over_stage(self) -> None:
         output = StringIO()
         with (

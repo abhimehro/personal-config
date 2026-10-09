@@ -421,7 +421,7 @@ class UnblockApplyTests(unittest.TestCase):
             with self.subTest(confirmation=confirmation):
                 run = mock.Mock(
                     side_effect=[
-                        *[subprocess.CompletedProcess(["gh"], 0, "", "")] * 4,
+                        *[subprocess.CompletedProcess(["gh"], 0, "", "")] * 3,
                         confirmation,
                     ]
                 )
@@ -435,9 +435,129 @@ class UnblockApplyTests(unittest.TestCase):
                 self.assertTrue(action["unconfirmed"])
                 self.assertEqual(run.call_count, 4)
                 self.assertEqual(action["github_steps"][-1]["step"], "confirm")
+                step = action["github_steps"][-1]
+                if isinstance(confirmation, BaseException):
+                    self.assertEqual(step["error"], type(confirmation).__name__)
+                    self.assertIsNone(step["exit_code"])
+                else:
+                    self.assertEqual(step["exit_code"], confirmation.returncode)
                 self.assertNotIn(
                     "comment", [step["step"] for step in action["github_steps"]]
                 )
+
+    def test_confirmed_close_still_reports_failed_label_or_comment(self):
+        """A closed PR alone does not prove that all required steps succeeded."""
+        for failed_step in ("label", "close", "comment"):
+            with self.subTest(failed_step=failed_step):
+                steps = ("ensure_label", "label", "close", "confirm", "comment")
+                run = mock.Mock(
+                    side_effect=[
+                        subprocess.CompletedProcess(
+                            ["gh"],
+                            1 if step == failed_step else 0,
+                            '{"state":"CLOSED"}' if step == "confirm" else "",
+                            "",
+                        )
+                        for step in steps
+                    ]
+                )
+                action = {
+                    "action": "CLOSE_SUPERSEDED",
+                    "repository": REPO,
+                    "pr": 23,
+                    "comment": "Superseded.",
+                }
+                unblock._apply_action(action, run=run)
+                self.assertTrue(action["unconfirmed"])
+                self.assertEqual(run.call_count, 5)
+                self.assertEqual(
+                    [
+                        step["step"]
+                        for step in action["github_steps"]
+                        if step["exit_code"]
+                    ],
+                    [failed_step],
+                )
+
+    def test_invalid_repository_filter_fails_before_ledger_or_inventory_reads(self):
+        with (
+            mock.patch.object(unblock, "load_yaml", return_value=CONFIG),
+            mock.patch.object(unblock.cas, "run_preflight") as fetch,
+            mock.patch.object(unblock, "list_open_prs") as inventory,
+            mock.patch.object(unblock, "_apply_action") as apply,
+        ):
+            with self.assertRaisesRegex(ValueError, "unknown repository filter"):
+                unblock.run_unblock(
+                    unblock._UnblockArgs(
+                        apply=True,
+                        json_out=True,
+                        repos_filter=["unconfigured/repo"],
+                        limit=None,
+                    )
+                )
+        fetch.assert_not_called()
+        inventory.assert_not_called()
+        apply.assert_not_called()
+
+    def test_inventory_failure_does_not_block_other_repository_refresh(self):
+        """Only the failed repository keeps its previous decision issue."""
+        other = CONFIG["repos"][1]
+        output = {}
+        with (
+            mock.patch.object(
+                unblock,
+                "load_yaml",
+                side_effect=[
+                    dict(CONFIG, repos=[REPO, other]),
+                    {"items": []},
+                ],
+            ),
+            mock.patch.object(
+                unblock.cas,
+                "run_preflight",
+                return_value={
+                    "ledger_path": "ledger.yaml",
+                },
+            ),
+            mock.patch.object(
+                unblock,
+                "list_open_prs",
+                side_effect=[
+                    OSError("unavailable"),
+                    [],
+                ],
+            ) as inventory,
+            mock.patch.object(unblock, "_apply_action") as apply,
+            mock.patch.object(
+                unblock,
+                "update_backlog_issue",
+                return_value={
+                    "action": "NOOP_EMPTY",
+                },
+            ) as update,
+            mock.patch.object(
+                unblock, "_emit", side_effect=lambda plan, _: output.update(plan)
+            ),
+        ):
+            unblock.run_unblock(
+                unblock._UnblockArgs(
+                    apply=True,
+                    json_out=True,
+                    repos_filter=None,
+                    limit=None,
+                )
+            )
+        self.assertEqual(inventory.call_args_list, [mock.call(REPO), mock.call(other)])
+        update.assert_called_once_with(other, [], now=mock.ANY)
+        apply.assert_not_called()
+        self.assertEqual(
+            output["escalation_issues"][REPO]["action"], "ISSUE_UPDATE_SKIPPED"
+        )
+        self.assertEqual(output["escalation_issues"][other]["action"], "NOOP_EMPTY")
+        self.assertEqual(output["inventory_failed"][0]["repository"], REPO)
+        self.assertEqual(
+            output["mutation_cap"], CONFIG["lifecycle"]["stage_caps"]["stage1_actions"]
+        )
 
     def test_push_capable_action_failures_are_reported_without_retry(self):
         for kind in ("TRIGGER", "UPDATE_BRANCH"):

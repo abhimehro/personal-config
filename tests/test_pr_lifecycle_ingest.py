@@ -266,6 +266,71 @@ class OpenPrIngestTests(unittest.TestCase):
         self.assertEqual(reconcile._apply_ingest_actions(self.ledger, actions), [])
         self.assertEqual(self.ledger, before)
 
+    def test_same_pr_number_in_different_repositories_is_independent(self):
+        other = CONFIG["repos"][1]
+        self.ledger["items"] = [
+            _terminal_item(
+                f"{REPO}#9876@{'a' * 40}",
+                lifecycle_state="STAGE2_ACTIVE",
+                terminal_disposition=None,
+            )
+        ]
+        live_by_repo = {
+            REPO: [self.live],
+            other: [
+                _live(repository=other, url=f"https://github.com/{other}/pull/9876")
+            ],
+            "unconfigured/repo": [_live(repository="unconfigured/repo")],
+        }
+        before = copy.deepcopy((self.ledger, live_by_repo))
+        actions = reconcile.collect_ingest_actions(
+            self.ledger,
+            CONFIG,
+            live_by_repo,
+            now=NOW,
+        )
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action"], "INGEST_OPEN_PR")
+        self.assertEqual(actions[0]["key"], f"{other}#9876@{'a' * 40}")
+        self.assertEqual(actions[0]["item"]["repository"], other)
+        self.assertEqual((self.ledger, live_by_repo), before)
+
+    def test_duplicate_inventory_entries_produce_one_intake_without_mutating_inputs(
+        self,
+    ):
+        entries = [self.live, copy.deepcopy(self.live)]
+        before = copy.deepcopy((self.ledger, entries))
+        actions = reconcile.collect_ingest_actions(
+            self.ledger,
+            CONFIG,
+            {REPO: entries},
+            now=NOW,
+        )
+        self.assertEqual([a["action"] for a in actions], ["INGEST_OPEN_PR"])
+        self.assertEqual((self.ledger, entries), before)
+
+    def test_human_pr_intake_keeps_unevaluated_guardrails(self):
+        live = _live(
+            author={"login": "contributor", "type": "User"},
+            headRefName="feature/new-widget",
+            title="Add widget",
+        )
+        actions = reconcile.collect_ingest_actions(
+            self.ledger,
+            CONFIG,
+            {REPO: [live]},
+            now=NOW,
+        )
+        item = actions[0]["item"]
+        self.assertEqual(item["author_type"], "HUMAN")
+        self.assertEqual(item["lifecycle_state"], "STAGE1_INTAKE")
+        self.assertEqual(item["guardrail_outcome"], "NOT_RUN")
+        self.assertEqual(item["risk_class"], "UNKNOWN")
+        self.assertEqual(item["revision"], 0)
+        self.assertEqual(
+            item["attempts"], {"evidence": 0, "recovery": 0, "mutations": 0}
+        )
+
     def test_no_ingest_preserves_closed_bookkeeping_without_inventory(self):
         output = {}
         action = {"action": "TERMINAL_CLOSED", "disposition": "CLOSED_NOOP"}

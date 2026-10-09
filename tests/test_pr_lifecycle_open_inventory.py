@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import copy
 import subprocess
 import sys
 import unittest
@@ -474,6 +475,98 @@ class OpenInventoryTests(unittest.TestCase):
                 raw = self.make_pr()
                 raw[field] = value
                 with self.assertRaises(OSError):
+                    self.inv._normalize_pr(raw, "owner/repo")
+
+    def test_check_failures_take_precedence_over_incomplete_run_status(self):
+        """A failed conclusion must not become pending during a status race."""
+        for conclusion in (
+            "failure",
+            "timed_out",
+            "cancelled",
+            "action_required",
+            "startup_failure",
+        ):
+            for status in ("COMPLETED", "IN_PROGRESS", None):
+                with self.subTest(conclusion=conclusion, status=status):
+                    self.assertEqual(
+                        self.inv.check_state(
+                            {
+                                "__typename": "CheckRun",
+                                "name": "Build",
+                                "conclusion": conclusion,
+                                "status": status,
+                            }
+                        ),
+                        ("Build", "FAILURE"),
+                    )
+
+    def test_nonfailure_checks_require_completion_before_reporting_success(self):
+        for conclusion, status, expected in (
+            ("success", "completed", "SUCCESS"),
+            ("SUCCESS", "QUEUED", "PENDING"),
+            ("SKIPPED", "IN_PROGRESS", "PENDING"),
+            (None, "COMPLETED", "NEUTRAL"),
+            ("UNKNOWN", "COMPLETED", "NEUTRAL"),
+        ):
+            with self.subTest(conclusion=conclusion, status=status):
+                self.assertEqual(
+                    self.inv.check_state(
+                        {
+                            "__typename": "CheckRun",
+                            "name": "Build",
+                            "conclusion": conclusion,
+                            "status": status,
+                        }
+                    ),
+                    ("Build", expected),
+                )
+
+    def test_unsupported_or_nameless_checks_are_ignored(self):
+        for context in (
+            {"__typename": "Unknown", "name": "Build", "state": "FAILURE"},
+            {"__typename": "CheckRun", "name": None, "conclusion": "FAILURE"},
+            {"__typename": "StatusContext", "context": 42, "state": "ERROR"},
+        ):
+            with self.subTest(context=context):
+                self.assertIsNone(self.inv.check_state(context))
+
+    def test_only_latest_commit_checks_and_author_are_used(self):
+        raw = self.make_pr()
+        latest = copy.deepcopy(raw["commits"]["nodes"][0])
+        latest["commit"]["author"]["email"] = "latest@example.com"
+        latest["commit"]["statusCheckRollup"]["contexts"]["nodes"] = []
+        raw["commits"]["nodes"].append(latest)
+        before = copy.deepcopy(raw)
+        live = self.inv._normalize_pr(raw, "owner/repo")
+        self.assertEqual(live["checks"], [])
+        self.assertFalse(live["checksIncomplete"])
+        self.assertEqual(
+            live["commits"],
+            [{"commit": {"author": {"email": "latest@example.com"}}}],
+        )
+        self.assertEqual(raw, before)
+
+    def test_deleted_author_remains_unknown_without_losing_other_metadata(self):
+        raw = self.make_pr()
+        raw["author"] = None
+        raw["body"] = None
+        live = self.inv._normalize_pr(raw, "owner/repo")
+        self.assertEqual(live["author"], {"login": ""})
+        self.assertEqual(live["body"], "")
+        self.assertEqual(live["number"], 12)
+        self.assertEqual(live["headRefOid"], "a" * 40)
+
+    def test_malformed_commit_data_fails_closed(self):
+        for commit in (
+            None,
+            {"author": "not an author"},
+            {"author": {}, "statusCheckRollup": []},
+            {"author": {}, "statusCheckRollup": {"contexts": {"nodes": [None]}}},
+        ):
+            with self.subTest(commit=commit):
+                raw = self.make_pr()
+                raw["commits"] = {"nodes": [{"commit": commit}]}
+                with self.assertRaisesRegex(OSError, "malformed"):
                     self.inv._normalize_pr(raw, "owner/repo")
 
     def test_empty_inventory_is_a_successful_single_request(self):
