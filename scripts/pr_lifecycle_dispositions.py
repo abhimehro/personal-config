@@ -32,7 +32,7 @@ _EDITOR_QUERY = (
     "query($owner: String!, $name: String!, $number: Int!) {"
     " repository(owner: $owner, name: $name) {"
     " issue(number: $number) {"
-    " userContentEdits(first: 100) { nodes { editor { login } } } } } }"
+    " userContentEdits(first: 100) { totalCount nodes { editor { login } } } } } }"
 )
 
 
@@ -78,6 +78,8 @@ def _graphql_stdout(repo: str, number: int, run: Any) -> str | None:
 
 def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
     """Fetch raw userContentEdits nodes, or None on any failure."""
+    # A truncated edit history is not the whole gate: refuse when the API
+    # reports more edits than the 100-node window returned.
     stdout = _graphql_stdout(repo, number, run)
     if stdout is None:
         return None
@@ -86,7 +88,12 @@ def _editor_nodes(repo: str, number: int, run: Any) -> list[Any] | None:
     except json.JSONDecodeError:
         return None
     issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
-    return (issue.get("userContentEdits") or {}).get("nodes") or []
+    edits = issue.get("userContentEdits") or {}
+    nodes = edits.get("nodes") or []
+    total = edits.get("totalCount")
+    if isinstance(total, int) and total > len(nodes):
+        return None
+    return nodes
 
 
 def _editor_login(node: Any) -> str | None:

@@ -524,27 +524,29 @@ def _decision_row_line(row: dict[str, Any]) -> str:
 
 def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
     """Render tickable disposition rows inside the shared body budget."""
-    lines = [
+    header = [
         "",
         "Decisions — tick a checkbox to execute the suggested disposition.",
         "Ticks are honored only while the rendered head is still the PR's live head;",
         "every executed disposition is logged as a ledger event.",
         "",
     ]
-    used += sum(len(line) + 1 for line in lines)
+    rows: list[str] = []
     omitted = 0
     for row in prepared:
         if _is_handoff_row(row) or not row.get("head_sha"):
             continue
         line = _decision_row_line(row)
-        if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
+        cost = sum(len(line) + 1 for line in header + rows) + len(line) + 1
+        if used + cost > _BACKLOG_TABLE_CHAR_CAP:
             omitted += 1
             continue
-        lines.append(line)
-        used += len(line) + 1
+        rows.append(line)
+    if not rows:
+        return []
     if omitted:
-        lines.append(f"- {omitted} decision row(s) omitted (body cap)")
-    return lines
+        rows.append(f"- {omitted} decision row(s) omitted (body cap)")
+    return header + rows
 
 
 def backlog_issue_body(

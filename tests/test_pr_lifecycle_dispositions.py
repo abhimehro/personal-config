@@ -51,28 +51,22 @@ def _state(head: str = "abc1234") -> dict:
 class _Run:
     """Fake subprocess.run routing gh calls."""
 
-    def __init__(self, editor="abhimehro", live=None, close_rc=0):
+    def __init__(self, editor="abhimehro", live=None, close_rc=0, total=None):
         self.editor = editor
         self.live = live or {"state": "OPEN", "headRefOid": "abc1234"}
         self.close_rc = close_rc
+        self.total = total
         self.calls = []
 
     def __call__(self, cmd, **kw):
         self.calls.append(cmd)
         out = ""
         if cmd[:3] == ["gh", "api", "graphql"]:
+            edits: dict = {"nodes": [{"editor": {"login": self.editor}}]}
+            if self.total is not None:
+                edits["totalCount"] = self.total
             out = json.dumps(
-                {
-                    "data": {
-                        "repository": {
-                            "issue": {
-                                "userContentEdits": {
-                                    "nodes": [{"editor": {"login": self.editor}}]
-                                }
-                            }
-                        }
-                    }
-                }
+                {"data": {"repository": {"issue": {"userContentEdits": edits}}}}
             )
         elif cmd[:3] == ["gh", "pr", "view"]:
             out = json.dumps(self.live)
@@ -113,6 +107,14 @@ class ParseTickTests(unittest.TestCase):
 
     def test_null_editor_fields_return_empty(self):
         self.assertEqual(dispositions.editors(REPO, 7, run=_Run(editor=None)), set())
+
+    def test_truncated_editor_history_is_refused(self):
+        run = _Run(total=150)
+        body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
+        ctx = dispositions.ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
+        result = dispositions.execute(ctx)
+        self.assertEqual(result["accepted"], [])
+        self.assertIn("unreadable", result["reason"])
 
 
 class ExecuteTests(unittest.TestCase):
@@ -211,6 +213,13 @@ class RenderedDecisionsTests(unittest.TestCase):
         state = issue_status._previous_state(body)
         self.assertEqual(state["first_seen"], {"owner/repo#42": "2026-01-01T00:00:00Z"})
         self.assertEqual(state["overdue_notified"], ["owner/repo#42"])
+
+    def test_no_decision_header_without_tickable_rows(self):
+        spec = issue_status._BacklogSpec(REPO, {}, issue_status._utc(NOW))
+        body = issue_status.backlog_issue_body(
+            spec, [{"pr": 42, "blocker": "some blocker"}]
+        )
+        self.assertNotIn("tick a checkbox", body)
 
 
 from datetime import datetime, timezone
