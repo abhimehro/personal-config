@@ -111,17 +111,20 @@ This repo uses [Trunk](https://docs.trunk.io) as the local lint hub (shellcheck,
 shfmt, ruff, black, prettier, trufflehog, and more).
 
 ```bash
-# Check all files
-make lint          # equivalent to: trunk check --all
+# Check all files without rewriting them
+make lint          # trunk check --all --no-fix
 
 # Auto-fix where supported
 make lint-fix      # equivalent to: trunk fmt
+
+# ShellCheck correctness gate (SC2155/SC2145); does not need Trunk
+make lint-errors
 ```
 
 > **ShellCheck dual-config note:** `shellcheck` called directly uses
 > `.shellcheckrc` (root), while Trunk CI uses `.trunk/configs/.shellcheckrc`
-> (`enable=all`). To reproduce CI behaviour locally, run `trunk check <file>`
-> instead of calling `shellcheck` directly.
+> (`enable=all`). To reproduce CI behaviour locally, run
+> `trunk check --no-fix <file>` instead of calling `shellcheck` directly.
 
 Trunk downloads its own tool versions on first run — subsequent runs are fast.
 
