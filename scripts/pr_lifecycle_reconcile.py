@@ -128,9 +128,11 @@ def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
     """Fetch the PR's changed-file paths via REST; None on any failure.
 
     Paginates so a large diff cannot silently truncate evidence (a hidden
-    sensitive path must never downgrade a hold). An empty result also
-    returns None: a real open PR always changes at least one file, so an
-    empty list means the evidence could not be trusted.
+    sensitive path must never downgrade a hold). Renames contribute their
+    old path too: `.previous_filename` keeps a file moved OUT of a
+    sensitive location from looking clean. An empty result also returns
+    None: a real open PR always changes at least one file, so an empty
+    list means the evidence could not be trusted.
     """
     cmd = [
         "gh",
@@ -138,7 +140,7 @@ def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
         f"repos/{repo}/pulls/{pr}/files",
         "--paginate",
         "--jq",
-        ".[].filename",
+        ".[] | .filename, (.previous_filename // empty)",
     ]
     try:
         completed = subprocess.run(
@@ -368,6 +370,17 @@ def _needs_path_backfill(item: dict[str, Any]) -> bool:
     )
 
 
+def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
+    """True only when a pathless nonterminal item faces an open live PR."""
+    return (
+        _needs_path_backfill(item)
+        and isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "OPEN"
+        and bool(str(item.get("repository") or ""))
+        and _positive_pr_number(item.get("pr"))
+    )
+
+
 def _path_backfill_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
@@ -378,18 +391,12 @@ def _path_backfill_action(
     missing list. Fetch failures emit PATH_BACKFILL_FAILED for visibility
     (never applied); non-OPEN live states skip the fetch entirely.
     """
-    if not _needs_path_backfill(item):
+    if not _backfill_eligible(item, live):
         return None
-    if not isinstance(live, dict):
-        return None
-    if str(live.get("state") or "").upper() != "OPEN":
-        return None
-    repo = str(item.get("repository") or "")
-    pr = item.get("pr")
+    repo = str(item["repository"])
+    pr = int(item["pr"])
     key = str(item.get("key") or "")
-    if not repo or not _positive_pr_number(pr):
-        return None
-    paths = _gh_pr_files(repo, int(pr))
+    paths = _gh_pr_files(repo, pr)
     if paths is None:
         return {
             "action": "PATH_BACKFILL_FAILED",
@@ -729,6 +736,7 @@ def collect_actions(
     for item in ledger.get("items") or []:
         actions.extend(_action_for_item(item, expiry, clock))
         if limit is not None and len(actions) >= limit:
+            del actions[limit:]
             break
     return actions
 
