@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import copy
 import sys
 import unittest
+from datetime import datetime, timezone
+from itertools import product
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -83,6 +87,102 @@ class ClassifyPathTests(unittest.TestCase):
 
 
 class EvaluateItemTests(unittest.TestCase):
+    def test_missing_author_type_never_evaluated(self) -> None:
+        for paths, clear_standin in product(
+            (["docs/a.md"], ["scripts/fix.sh"]), (False, True)
+        ):
+            with self.subTest(paths=paths, clear_standin=clear_standin):
+                item = _item(classification="SECURITY", changed_paths=paths)
+                del item["author_type"]
+                before = copy.deepcopy(item)
+                self.assertIsNone(guardrails.evaluate_item(item, clear_standin))
+                self.assertEqual(before, item)
+
+    def test_security_identity_overrides_nonsticky_paths(self) -> None:
+        """Generated output exemptions cannot drain identity-based holds."""
+        for paths, classes in (
+            (["docs/a.md"], []),
+            (["generated/report.md"], ["generated_output"]),
+        ):
+            for outcome, source, clear_standin in product(
+                (None, "NOT_RUN", "REVIEW_SECURITY"),
+                (None, "stand_in", "path_eval"),
+                (False, True),
+            ):
+                with self.subTest(
+                    paths=paths,
+                    outcome=outcome,
+                    source=source,
+                    clear_standin=clear_standin,
+                ):
+                    item = _item(
+                        classification="SECURITY",
+                        changed_paths=paths,
+                        guardrail_outcome=outcome,
+                        guardrail_source=source,
+                        risk_class="UNKNOWN",
+                    )
+                    before = copy.deepcopy(item)
+                    self.assertEqual(
+                        {
+                            "sensitive_paths": classes,
+                            "guardrail_outcome": "REVIEW_SECURITY",
+                            "guardrail_source": "path_eval",
+                            "risk_class": "SENSITIVE",
+                        },
+                        guardrails.evaluate_item(item, clear_standin),
+                    )
+                    self.assertEqual(before, item)
+
+    def test_security_identity_does_not_bypass_eligibility(self) -> None:
+        """Security classification must respect non-path holds and ownership."""
+        exclusions = [
+            {"author_type": "HUMAN"},
+            {"author_type": "UNKNOWN"},
+            {"lifecycle_state": "TERMINAL"},
+            {"changed_paths": []},
+            {"changed_paths": None},
+            {"changed_paths": "docs/a.md"},
+            *({"current_owner": owner} for owner in ("human", "stage2", "stage3")),
+            *(
+                {"guardrail_source": source}
+                for source in ("manual", "review", "human", "octopus")
+            ),
+            *(
+                {"guardrail_outcome": outcome}
+                for outcome in (
+                    "HOLD_CONTRACT",
+                    "HOLD_EVIDENCE",
+                    "HOLD_PLATFORM",
+                    "HOLD_CANONICAL",
+                    "CLOSE_NONSECURITY_NOOP",
+                    "ANALYSIS_ERROR",
+                    "PASS_ROUTINE",
+                )
+            ),
+        ]
+        for overrides, clear_standin in product(exclusions, (False, True)):
+            with self.subTest(overrides=overrides, clear_standin=clear_standin):
+                item = _item(classification="SECURITY", **overrides)
+                before = copy.deepcopy(item)
+                self.assertIsNone(guardrails.evaluate_item(item, clear_standin))
+                self.assertEqual(before, item)
+
+    def test_security_identity_retains_sorted_path_evidence(self) -> None:
+        item = _item(
+            classification="SECURITY",
+            changed_paths=["scripts/fix.sh", "generated/report.md", ".env", ".env"],
+        )
+        self.assertEqual(
+            {
+                "sensitive_paths": ["generated_output", "secrets", "shell_execution"],
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "guardrail_source": "path_eval",
+                "risk_class": "SENSITIVE",
+            },
+            guardrails.evaluate_item(item, clear_standin=True),
+        )
+
     def test_not_run_with_shell_path_becomes_review_security(self) -> None:
         patch = guardrails.evaluate_item(
             _item(changed_paths=["scripts/report-daemons-watchdog.sh"])
@@ -299,6 +399,111 @@ class EvaluateItemTests(unittest.TestCase):
 
 
 class EvaluateLedgerTests(unittest.TestCase):
+    def test_metadata_repair_preserves_revision_events_and_reports_no_flip(
+        self,
+    ) -> None:
+        """Repair a security hold even when the outcome itself is unchanged."""
+        now = datetime(2026, 10, 9, 12, 0, tzinfo=timezone.utc)
+        item = _item(
+            classification="SECURITY",
+            guardrail_outcome="REVIEW_SECURITY",
+            guardrail_source="stand_in",
+            sensitive_paths=["security_configuration"],
+            risk_class="UNKNOWN",
+            revision=7,
+            updated_at_utc="2026-10-08T12:00:00Z",
+        )
+        ledger = {"items": [item], "events": [], "ledger_revision": 19}
+        before = copy.deepcopy(ledger)
+        with mock.patch.object(guardrails, "datetime") as clock:
+            clock.now.return_value = now
+            result, summary = guardrails.evaluate_ledger(ledger, None)
+
+        self.assertIs(result, ledger)
+        expected = copy.deepcopy(before)
+        expected["items"][0].update(
+            sensitive_paths=[],
+            guardrail_source="path_eval",
+            risk_class="SENSITIVE",
+            updated_at_utc="2026-10-09T12:00:00Z",
+        )
+        self.assertEqual(expected, ledger)
+        self.assertEqual(
+            {
+                "evaluated": 1,
+                "outcomes_unchanged": 1,
+                "skipped": 0,
+                "by_outcome": {"REVIEW_SECURITY": 1, "PASS_ROUTINE": 0},
+                "changes": [],
+            },
+            summary,
+        )
+
+        # A second evaluation must not refresh timestamps or count another repair.
+        with mock.patch.object(guardrails, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 10, 10, tzinfo=timezone.utc)
+            _, repeated = guardrails.evaluate_ledger(ledger, None, clear_standin=True)
+        self.assertEqual(expected, ledger)
+        self.assertEqual(0, repeated["evaluated"])
+        self.assertEqual(1, repeated["skipped"])
+        self.assertEqual([], repeated["changes"])
+
+    def test_outcome_changes_preserve_item_revision(self) -> None:
+        for revision, paths, outcome in product(
+            (0, 1, 42),
+            (["docs/a.md"], ["scripts/fix.sh"]),
+            (None, "NOT_RUN"),
+        ):
+            with self.subTest(revision=revision, paths=paths, outcome=outcome):
+                item = _item(
+                    revision=revision, changed_paths=paths, guardrail_outcome=outcome
+                )
+                ledger = {"items": [item], "events": [], "ledger_revision": 10}
+                _, summary = guardrails.evaluate_ledger(ledger, None)
+                expected_outcome = (
+                    "PASS_ROUTINE" if paths == ["docs/a.md"] else "REVIEW_SECURITY"
+                )
+                self.assertEqual(revision, item["revision"])
+                self.assertEqual([], ledger["events"])
+                self.assertEqual(10, ledger["ledger_revision"])
+                self.assertEqual(1, summary["evaluated"])
+                self.assertEqual(0, summary["outcomes_unchanged"])
+                self.assertEqual(1, summary["by_outcome"][expected_outcome])
+                self.assertEqual(
+                    [
+                        {
+                            "key": item["key"],
+                            "from": outcome,
+                            "to": expected_outcome,
+                            "sensitive_paths": (
+                                []
+                                if expected_outcome == "PASS_ROUTINE"
+                                else ["shell_execution"]
+                            ),
+                        }
+                    ],
+                    summary["changes"],
+                )
+
+    def test_non_bot_items_remain_unchanged_in_mixed_ledger(self) -> None:
+        excluded = [
+            _item(author_type=author_type, guardrail_outcome="REVIEW_SECURITY")
+            for author_type in ("HUMAN", "UNKNOWN", None)
+        ]
+        missing_author = _item()
+        del missing_author["author_type"]
+        excluded.append(missing_author)
+        before = copy.deepcopy(excluded)
+        bot = _item(guardrail_outcome="REVIEW_SECURITY", classification="DEPENDENCY")
+        ledger = {"items": [*excluded, bot]}
+
+        _, summary = guardrails.evaluate_ledger(ledger, None, clear_standin=True)
+
+        self.assertEqual(before, excluded)
+        self.assertEqual("PASS_ROUTINE", bot["guardrail_outcome"])
+        self.assertEqual(1, summary["evaluated"])
+        self.assertEqual(4, summary["skipped"])
+
     def test_preserves_revision_and_filters_repos(self) -> None:
         """revision is a projection of transition events — evaluation must
         not bump it without logging one (ledger consistency check)."""
@@ -378,6 +583,40 @@ class EvaluateLedgerTests(unittest.TestCase):
         validate_schema(ledger)
         config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         validate_runtime_records(ledger, config)
+
+
+class GuardrailSourceSchemaTests(unittest.TestCase):
+    def test_all_documented_sources_are_accepted(self) -> None:
+        from pr_lifecycle_schema import validate_schema
+        from pr_lifecycle_yaml import load_yaml
+
+        for source in ("path_eval", "stand_in", "manual", "review", "human", "octopus"):
+            with self.subTest(source=source):
+                ledger = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
+                ledger["items"][0]["guardrail_source"] = source
+                validate_schema(ledger)
+
+    def test_source_is_optional_for_existing_ledgers(self) -> None:
+        from pr_lifecycle_schema import validate_schema
+        from pr_lifecycle_yaml import load_yaml
+
+        ledger = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
+        for item in ledger["items"]:
+            item.pop("guardrail_source", None)
+        validate_schema(ledger)
+
+    def test_invalid_sources_are_rejected_at_the_item_field(self) -> None:
+        from pr_lifecycle_schema import validate_schema
+        from pr_lifecycle_yaml import load_yaml
+
+        for source in ("", "PATH_EVAL", "unknown", None, 1, True, [], {}):
+            with self.subTest(source=source):
+                ledger = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
+                ledger["items"][0]["guardrail_source"] = source
+                with self.assertRaisesRegex(
+                    ValueError, r"schema items\.0\.guardrail_source:"
+                ):
+                    validate_schema(ledger)
 
 
 class ArgParseTests(unittest.TestCase):
