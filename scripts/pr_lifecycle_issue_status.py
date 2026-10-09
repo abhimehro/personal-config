@@ -536,8 +536,10 @@ def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
         if _is_handoff_row(row) or not row.get("head_sha"):
             continue
         line = _decision_row_line(row)
-        cost = sum(len(line) + 1 for line in header + rows) + len(line) + 1
-        if used + cost > _BACKLOG_TABLE_CHAR_CAP:
+        if (
+            used + sum(len(l) + 1 for l in header + rows + [line])
+            > _BACKLOG_TABLE_CHAR_CAP
+        ):
             omitted += 1
             continue
         rows.append(line)
