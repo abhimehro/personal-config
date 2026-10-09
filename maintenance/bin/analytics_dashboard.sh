@@ -372,6 +372,18 @@ generate_dashboard() {
 	local cap_period
 	cap_period=$(echo "$period" | awk '{print toupper(substr($0,1,1))substr($0,2)}')
 
+	# A report can contain up to three warnings per day; scale the meter to
+	# the selected reporting period so larger aggregates remain distinguishable.
+	local warning_meter_max
+	case "$period" in
+	"daily") warning_meter_max=3 ;;
+	"weekly") warning_meter_max=21 ;;
+	"monthly") warning_meter_max=90 ;;
+	*) warning_meter_max=3 ;;
+	esac
+	local warning_meter_low=$((warning_meter_max / 3))
+	local warning_meter_high=$((warning_meter_max * 2 / 3))
+
 	log_info "Generating $period dashboard"
 
 	local dashboard_file
@@ -483,7 +495,10 @@ EOF
                 <div class="metric-label" id="disk-usage-label">Disk Usage</div>
             </li>
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
-                <div class="metric-value" id="total-warnings-value">${total_warnings}</div>
+                <div class="metric-value" id="total-warnings-value">
+                    ${total_warnings}
+                    <meter value="${total_warnings}" min="0" max="${warning_meter_max}" low="${warning_meter_low}" high="${warning_meter_high}" optimum="0" aria-label="Total Warnings: ${total_warnings}"></meter>
+                </div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
 EOF
@@ -504,8 +519,10 @@ EOF
 			cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
-                    <p>No insights available for this period.</p>
-                    <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
+                    <div role="status">
+                        <p>No insights available for this period.</p>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
+                    </div>
                 </div>
 EOF
 		else
@@ -517,8 +534,10 @@ EOF
 		cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
-                    <p>No insights available for this period.</p>
-                    <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
+                    <div role="status">
+                        <p>No insights available for this period.</p>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
+                    </div>
                 </div>
 EOF
 	fi

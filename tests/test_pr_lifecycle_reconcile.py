@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import types
 import unittest
@@ -37,6 +38,7 @@ sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
 }
 sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
 sys.modules["pr_lifecycle_support"].ROOT = ROOT
+sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
 sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
 sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
@@ -219,27 +221,40 @@ class ClassifyItemTests(unittest.TestCase):
                 self.assertEqual(action["action"], "TERMINAL_CLOSED")
                 self.assertEqual(action["disposition"], expected)
 
-    def test_closed_without_evidence_routes_to_stage3_pending(self):
+    def test_closed_without_evidence_is_closed_noop(self):
+        """Record an unlabeled closed PR as CLOSED_NOOP without Stage 3 escalation."""
         for labels in (None, [], [{"name": "enhancement"}]):
             with self.subTest(labels=labels):
                 live = {"state": "CLOSED", "headRefOid": "a" * 40}
                 if labels is not None:
                     live["labels"] = labels
                 action = _classify({"lifecycle_state": "STAGE1_INTAKE"}, live)
-                self.assertEqual(action["action"], "TERMINAL_PENDING")
-                self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
-                self.assertIsNone(action["disposition"])
+                self.assertEqual(action["action"], "TERMINAL_CLOSED")
+                self.assertEqual(action["to_state"], "TERMINAL")
+                self.assertEqual(action["disposition"], "CLOSED_NOOP")
+                self.assertEqual(
+                    action["evidence"],
+                    {
+                        "labels": [
+                            label["name"]
+                            for label in labels or []
+                            if isinstance(label, dict)
+                        ]
+                    },
+                )
 
-    def test_pending_observed_stage3_item_notes_in_place(self):
+    def test_closed_stage3_item_is_terminal_closed(self):
+        """Finalize an already closed Stage 3 item as CLOSED_NOOP."""
         action = _classify(
             {"lifecycle_state": "STAGE3_RECONCILIATION"},
             {"state": "CLOSED", "headRefOid": "a" * 40},
         )
-        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
-        self.assertNotIn("to_state", action)
-        self.assertEqual(action["observed_state"], "CLOSED")
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["to_state"], "TERMINAL")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
 
-    def test_repeat_reconcile_does_not_reclassify_pending_observation(self):
+    def test_prior_closed_observation_marker_does_not_prevent_terminal_close(self):
+        """Finalize a closed PR even if an earlier observation marker is present."""
         action = _classify(
             {
                 "lifecycle_state": "STAGE3_RECONCILIATION",
@@ -247,7 +262,45 @@ class ClassifyItemTests(unittest.TestCase):
             },
             {"state": "CLOSED", "headRefOid": "a" * 40},
         )
-        self.assertIsNone(action)
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
+
+    def test_closed_security_item_without_label_stays_pending(self) -> None:
+        """Keep an unlabeled closed security item pending for Stage 3 review."""
+        action = _classify(
+            {
+                "lifecycle_state": "STAGE3_RECONCILIATION",
+                "next_action": "Stage 3 classification required.",
+                "guardrail_outcome": "REVIEW_SECURITY",
+            },
+            {"state": "CLOSED", "headRefOid": "c" * 40},
+        )
+        self.assertEqual(action["action"], "TERMINAL_OBSERVED")
+        self.assertEqual(action["observed_state"], "CLOSED")
+        self.assertIn("no disposition-bearing label", action["reason"])
+
+    def test_unlabeled_closed_human_pr_is_bookkeeping_despite_sha_drift(self):
+        action = _classify(
+            {"author_type": "HUMAN", "guardrail_outcome": "NOT_RUN"},
+            {"state": "CLOSED", "headRefOid": "c" * 40, "labels": []},
+        )
+        self.assertEqual(action["action"], "TERMINAL_CLOSED")
+        self.assertEqual(action["disposition"], "CLOSED_NOOP")
+        self.assertEqual(action["to_state"], "TERMINAL")
+
+    def test_unlabeled_closed_security_pr_routes_from_stage1_to_stage3(self):
+        action = _classify(
+            {
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "lifecycle_state": "STAGE1_INTAKE",
+                "current_owner": "stage1",
+                "next_owner": "stage1",
+            },
+            {"state": "CLOSED", "headRefOid": "c" * 40, "labels": []},
+        )
+        self.assertEqual(action["action"], "TERMINAL_PENDING")
+        self.assertEqual(action["to_state"], "STAGE3_RECONCILIATION")
+        self.assertIsNone(action["disposition"])
 
     def test_stale_close_requires_parseable_bot_packet(self):
         cases = (
@@ -332,23 +385,39 @@ class ReconcileHelpersTests(unittest.TestCase):
             "reason": "head changed",
             "live_head_sha": "c" * 40,
         }
+        old_key = item["key"]
+        prior = {
+            "event_id": "evt-prior",
+            "item_key": old_key,
+            "idempotency_key": f"{old_key}:evt-prior",
+        }
+        ledger["events"] = [prior]
+        ledger["stage2_work_items"] = [{"source_item_key": old_key}]
         event = _apply_with_mocks(ledger, item, action)
+        live_head = "c" * 40
         self.assertEqual(item["revision"], 2)
+        self.assertTrue(item["key"].endswith(live_head))
+        self.assertEqual(item["head_sha"], live_head)
+        self.assertEqual(prior["item_key"], item["key"])
+        self.assertEqual(prior["idempotency_key"], f"{item['key']}:evt-prior")
+        self.assertEqual(ledger["stage2_work_items"][0]["source_item_key"], item["key"])
+        self.assertEqual(event["item_key"], item["key"])
         self.assertEqual(item["lifecycle_state"], "STAGE1_INTAKE")
         self.assertEqual(item["current_owner"], "stage1")
         self.assertEqual(item["handoffs"], ["evt-fixed"])
-        self.assertIn("c" * 40, item["next_action"])
+        self.assertIn(live_head, item["next_action"])
         self.assertEqual(ledger["ledger_revision"], 5)
-        self.assertIs(ledger["events"][0], event)
+        self.assertIs(ledger["events"][1], event)
 
     def test_apply_terminal_pending_handoffs_to_stage3_with_marker(self):
+        """Handoff an unclassified terminal observation to Stage 3 with its marker."""
         ledger = {"ledger_revision": 4, "events": []}
         item = _item(lifecycle_state="WAITING_HUMAN", current_owner="human")
         action = {
             "action": "TERMINAL_PENDING",
             "to_state": "STAGE3_RECONCILIATION",
             "disposition": None,
-            "observed_state": "CLOSED",
+            "observed_state": "MERGED",
             "reason": "closed without classifying evidence",
         }
         event = _apply_with_mocks(ledger, item, action)
@@ -356,14 +425,12 @@ class ReconcileHelpersTests(unittest.TestCase):
         self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
         self.assertEqual(item["current_owner"], "stage3")
         self.assertIsNone(item["terminal_disposition"])
-        self.assertIn("Observed CLOSED unclassified", item["next_action"])
+        self.assertIn("Observed MERGED unclassified", item["next_action"])
         self.assertEqual(ledger["events"], [event])
 
     def test_apply_terminal_observed_notes_in_place_without_event(self):
         ledger = {"ledger_revision": 4, "events": []}
-        item = _item(
-            lifecycle_state="STAGE3_RECONCILIATION", current_owner="stage3"
-        )
+        item = _item(lifecycle_state="STAGE3_RECONCILIATION", current_owner="stage3")
         action = {
             "action": "TERMINAL_OBSERVED",
             "observed_state": "MERGED",
@@ -372,22 +439,107 @@ class ReconcileHelpersTests(unittest.TestCase):
         with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
             result = reconcile.apply_action_to_ledger(ledger, item, action)
         self.assertIsNone(result["event_id"])
-        self.assertEqual(item["revision"], 2)
+        self.assertEqual(item["revision"], 1)
         self.assertEqual(item["lifecycle_state"], "STAGE3_RECONCILIATION")
         self.assertIn("Observed MERGED unclassified", item["next_action"])
         self.assertEqual(ledger["events"], [])
         self.assertEqual(ledger["ledger_revision"], 5)
 
+    def test_reanchor_rekeys_without_revision_bump(self):
+        ledger = {"ledger_revision": 4, "events": [], "items": []}
+        item = _item(lifecycle_state="STAGE1_INTAKE", current_owner="stage1")
+        ledger["items"].append(item)
+        action = {
+            "action": "REANCHOR_HEAD",
+            "live_head_sha": "d" * 40,
+            "live_base_sha": "e" * 40,
+        }
+        with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+            result = reconcile.apply_action_to_ledger(ledger, item, action)
+        self.assertIsNone(result["event_id"])
+        self.assertEqual(item["revision"], 1)
+        self.assertEqual(item["head_sha"], "d" * 40)
+        self.assertTrue(item["key"].endswith("d" * 40))
+        self.assertEqual(item["base_sha"], "e" * 40)
+        self.assertEqual(ledger["events"], [])
+        self.assertEqual(ledger["ledger_revision"], 5)
+
+    def test_apply_one_skips_sticky_and_taken_anchors(self):
+        sticky = _item(
+            pr=101,
+            key="abhimehro/personal-config#101@" + "a" * 40,
+            guardrail_outcome="REVIEW_SECURITY",
+            author_type="BOT",
+        )
+        human = _item(
+            pr=102,
+            key="abhimehro/personal-config#102@" + "a" * 40,
+            author_type="HUMAN",
+            guardrail_outcome="HOLD_EVIDENCE",
+        )
+        occupied_head = "f" * 40
+        mover = _item(
+            pr=103,
+            key="abhimehro/personal-config#103@" + "a" * 40,
+            lifecycle_state="STAGE1_INTAKE",
+            current_owner="stage1",
+        )
+        occupant = _item(
+            pr=103,
+            key=f"abhimehro/personal-config#103@{occupied_head}",
+            head_sha=occupied_head,
+        )
+        ledger = {
+            "ledger_revision": 4,
+            "events": [],
+            "items": [sticky, human, mover, occupant],
+        }
+        items_by_key = {item["key"]: item for item in ledger["items"]}
+        sticky_action = {
+            "action": "SHA_DRIFT_REINTAKE",
+            "key": sticky["key"],
+            "to_state": "STAGE1_INTAKE",
+            "live_head_sha": "1" * 40,
+        }
+        human_action = {
+            "action": "REANCHOR_HEAD",
+            "key": human["key"],
+            "live_head_sha": "2" * 40,
+        }
+        taken_action = {
+            "action": "REANCHOR_HEAD",
+            "key": mover["key"],
+            "live_head_sha": occupied_head,
+        }
+        self.assertIsNone(reconcile._apply_one(ledger, sticky_action, items_by_key))
+        self.assertEqual(sticky_action["skipped"], "sticky_anchor")
+        self.assertTrue(sticky["key"].endswith("a" * 40))
+        self.assertIsNone(reconcile._apply_one(ledger, human_action, items_by_key))
+        self.assertEqual(human_action["skipped"], "sticky_anchor")
+        self.assertIsNone(reconcile._apply_one(ledger, taken_action, items_by_key))
+        self.assertEqual(taken_action["skipped"], "anchor_key_taken")
+        self.assertEqual(mover["head_sha"], "a" * 40)
+
     def test_gh_pr_view_handles_success_bad_json_and_command_failure(self):
-        success = types.SimpleNamespace(
+        # Success path uses two gh calls: pr view --json (no baseRefOid) then
+        # REST api for base.sha, mapped into payload["baseRefOid"].
+        # Fail closed (None) if either call fails.
+        view_ok = types.SimpleNamespace(
             returncode=0,
             stdout='{"state": "OPEN", "headRefOid": "abc"}',
         )
-        with mock.patch.object(reconcile.subprocess, "run", return_value=success):
-            self.assertEqual(
-                reconcile._gh_pr_view("owner/repo", 7)["headRefOid"], "abc"
-            )
+        base_ok = types.SimpleNamespace(returncode=0, stdout="def456\n")
+        with mock.patch.object(
+            reconcile.subprocess, "run", side_effect=[view_ok, base_ok]
+        ) as run:
+            payload = reconcile._gh_pr_view("owner/repo", 7)
+            self.assertEqual(payload["headRefOid"], "abc")
+            self.assertEqual(payload["baseRefOid"], "def456")
+            self.assertEqual(run.call_count, 2)
+            self.assertNotIn("baseRefOid", run.call_args_list[0].args[0][6])
+            self.assertIn("repos/owner/repo/pulls/7", run.call_args_list[1].args[0])
 
+        # View fails (returncode / bad json / non-dict) → None
         for completed in (
             types.SimpleNamespace(returncode=1, stdout=""),
             types.SimpleNamespace(returncode=0, stdout="not-json"),
@@ -400,6 +552,25 @@ class ReconcileHelpersTests(unittest.TestCase):
                     self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(reconcile.subprocess, "run", side_effect=OSError):
+            self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+        # Base REST fails / empty → fail closed None (view already succeeded)
+        base_fail = types.SimpleNamespace(returncode=1, stdout="")
+        base_empty = types.SimpleNamespace(returncode=0, stdout="\n")
+        for base_resp in (base_fail, base_empty):
+            with self.subTest(base=base_resp):
+                with mock.patch.object(
+                    reconcile.subprocess,
+                    "run",
+                    side_effect=[view_ok, base_resp],
+                ):
+                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+
+        with mock.patch.object(
+            reconcile.subprocess,
+            "run",
+            side_effect=[view_ok, OSError("boom")],
+        ):
             self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
     def test_close_stale_github_validates_identity_and_runs_all_steps(self):

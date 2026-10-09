@@ -23,3 +23,6 @@ export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
 
 # Added by Antigravity CLI installer
 export PATH="/Users/speedybee/.local/bin:$PATH"
+
+# Octopus CLI
+export PATH="/Users/speedybee/.octopus/bin:$PATH"

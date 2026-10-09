@@ -59,7 +59,7 @@ fi
 
 echo
 echo "=== ctrld / dig ==="
-pgrep -xl ctrld || echo "ctrld: not running"
+pgrep -xl -- ctrld || echo "ctrld: not running"
 dig @127.0.0.1 google.com +short +time=2 +tries=1 2>&1 | head -5 || true
 
 foreign=""

@@ -1,25 +1,63 @@
 # Lessons Learned
 
+## Lesson 0hs: A check must never mutate files (2026-09-26)
+
+**Pattern:** A plain, non-interactive `trunk check <files>` applied deno
+formatter autofixes. It reflowed `docs/cursor-automations/prompts/*.md`, which
+are embedded verbatim in `exports/*.json`, breaking
+`sync_cursor_export_prompts.py --check` and two export-authority tests. The
+pre-push hook was never affected: the pinned `trunk-check-pre-push` action
+already runs `trunk check -n` (`--no-fix`).
+
+**Rule:** (1) Agents and manual runs use `trunk check --no-fix` (or `-n`); fixes
+are explicit via `make lint-fix` / `trunk fmt`. `make lint` runs
+`trunk check --all --no-fix`. (2) Keep the pre-push hook on the built-in
+`trunk-check-pre-push` action (`-n`); do not override it with a fixing variant.
+(3) Prompt sources are excluded from deno in `.trunk/trunk.yaml`; after any
+formatting pass run `python3 scripts/sync_cursor_export_prompts.py --check`.
+
+**Detection cost:** Low: `git status --short` after a check should be unchanged;
+the export sync check and `tests/` catch prompt drift.
+
 ## Lesson 0hr: Three-stage PR pipeline rebalance (2026-09-21)
+
+**Option 3 addendum (2026-09-24):** Keep three stages. Stage 1 reselects live
+CONFLICTING/DIRTY unique-remaining ledger-BOT into ≤5 complete
+`stage2_work_items` (`ENQUEUE_STAGE2_WI`); feed is read-only. Stage 3 hands
+mechanical CONFLICTING HOLD_CONTRACT to Stage 2 (`HANDOFF_MECHANICAL_TO_STAGE2`)
+and defers CLOSED_NOOP Observed-CLOSED off the daily completion cap. Stage 2 /
+Cursor skip-if-empty when usable mechanical WI == 0. Never-touch unchanged.
+Calibration stays DISABLED.
+
+**Live reselect signals addendum (2026-09-26):** FEED_CHECK previously relied on
+offline ledger predicates alone, creating blind spots where stale ledger states
+(e.g., recorded CONFLICTING when live PR is already MERGEABLE, or unrecorded
+`⚡bolt` titles) caused incorrect enqueue decisions or starved reachable items.
+Live reselect signals query `gh pr view` for live title, mergeability,
+headRefOid, author, and paths in Stages 1 & 3. Fail-open with ledger fallback on
+`DEGRADED`; author gate enforces maintainer/bot for title prefixes; drifted
+head-SHA is excluded; executor live-verifies unique paths at CAS time.
 
 **Pattern:** Cursor scheduled automations paused (usage exhausted). Long
 calibration prompts + Notion packets + Stage 2 empty-intake while salvage stock
 remained caused drain failure. Bot review threads (Codacy/qodo/CodeRabbit) with
 no human reply were treated as merge blockers.
 
-**Rule:** (1) Stage agents bootstrap via `python3 scripts/pr_lifecycle_run.py
---stage N` and execute only the emitted plan. (2) Schema-aware CAS only —
-`pr_lifecycle_reconcile.py` / ledger helpers; never raw YAML replace. (3)
-`packet_expiry_close_days: 7` — expired WAITING_HUMAN BOT non-REVIEW_SECURITY →
-salvage-eligible **or** CLOSE_STALE. (4) Stage 2 never merges; Stage 2 intake is
-`self_fed` minimal WIs. (5) Codacy/qodo/CodeRabbit threads with no human reply
-are advisory; Stage 3 may resolve before `/trunk` (Abhi 2026-09-21). (6)
-Calibration stays DISABLED; completion is live Stage 3. (7) Weekly GitHub issue
-digest replaces Notion packets for this path. (8) Archive TERMINAL >30d so the
-active ledger stays under 1MB.
+**Rule:** (1) Stage agents bootstrap via
+`python3 scripts/pr_lifecycle_run.py
+--stage N` and execute only the emitted
+plan. (2) Schema-aware CAS only — `pr_lifecycle_reconcile.py` / ledger helpers;
+never raw YAML replace. (3) `packet_expiry_close_days: 7` — expired
+WAITING_HUMAN BOT non-REVIEW_SECURITY → salvage-eligible **or** CLOSE_STALE. (4)
+Stage 2 never merges; Stage 2 intake is `self_fed` minimal WIs. (5)
+Codacy/qodo/CodeRabbit threads with no human reply are advisory; Stage 3 may
+resolve before `/trunk` (Abhi 2026-09-21). (6) Calibration stays DISABLED;
+completion is live Stage 3. (7) Weekly GitHub issue digest replaces Notion
+packets for this path. (8) Archive TERMINAL >30d so the active ledger stays
+under 1MB.
 
-**Detection cost:** Low — `pr_lifecycle_run.py --stage 1 --dry-run` prints a JSON
-plan; `pr_lifecycle_feed.py` exits 2 on EMPTY_FEED_WITH_ELIGIBLE_STOCK.
+**Detection cost:** Low — `pr_lifecycle_run.py --stage 1 --dry-run` prints a
+JSON plan; `pr_lifecycle_feed.py` exits 2 on EMPTY_FEED_WITH_ELIGIBLE_STOCK.
 
 ## Lesson 0hb: Persisted projection fields halt scheduled Cursor (2026-09-08)
 
@@ -3099,7 +3137,8 @@ commit `0cf4928e` on `origin/main`.
 
 ## Lesson 0hl: HOLD_CANONICAL vs an already-MERGED twin is unique-source salvage (2026-09-18)
 
-**Pattern:** series_correction [#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
+**Pattern:** series_correction
+[#409](https://github.com/abhimehro/series_correction_project_updated/pull/409)
 stayed `HOLD_CANONICAL` / Stage 3 because ledger evidence still named open twin
 [#405](https://github.com/abhimehro/series_correction_project_updated/pull/405).
 Live GitHub showed #405 **MERGED** and #409 still CONFLICTING/DIRTY with unique
@@ -3109,18 +3148,20 @@ canonical hold sat idle. Stage 1 would have failed the feed if it left salvage
 unqueued and called the remainder empty.
 
 **Rule:** (1) SHA_MATCH a Stage 3 `HOLD_CANONICAL` item against **live** twin
-state. If every overlap twin is MERGED/CLOSED and unique source remains, that
-is Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
+state. If every overlap twin is MERGED/CLOSED and unique source remains, that is
+Stage-1-executable salvage — HANDOFF to `STAGE2_QUEUED` and CAS-write one
 complete work item. (2) `.jules/` / `.Jules/` journal path alone is not sticky
 `generated_output` (**0cs**); prohibit copying the journal into the replacement
 draft. (3) Do not invent a work item without a matching ledger key and live
 CONFLICTING/DIRTY unique source. (4) Do not leave the item on Stage 3 for
 another packet when the canonical reason is gone. (5) Keeper of an still-open
-overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins;
-do not queue N salvage WIs for non-keepers.
+overlap cluster stays `HOLD_CANONICAL` until canonical-pick closes the twins; do
+not queue N salvage WIs for non-keepers.
 
-**Detection cost:** Low — `gh pr view` on the named twin; `lifecycle_state:
-STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
+**Detection cost:** Low — `gh pr view` on the named twin;
+`lifecycle_state:
+STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin
+`state: MERGED`.
 
 ## Lesson 0hm: Do not replay a weaker source processor over a stronger main (2026-09-18)
 
@@ -3129,72 +3170,55 @@ STAGE3_RECONCILIATION` + `HOLD_CANONICAL` + live twin `state: MERGED`.
 already used `copy(deep=False)` plus per-column copies / `new_col.loc` /
 `to_numpy(copy=True)`. The CONFLICTING #409 processor was the older unique
 remainder, not a strict upgrade. Wholesale-copying it would have regressed
-isolation. The unique remainder that still failed-closed on current main was
-the three shallow-copy tests.
+isolation. The unique remainder that still failed-closed on current main was the
+three shallow-copy tests.
 
 **Rule:** (1) Diff allowed paths against **current main**, not only against the
 source head. (2) If main already contains a stronger contract, salvage the
 unique tests (or the still-missing hunks) only. (3) Do not wholesale-checkout
-the source processor, journal, workflow, or lockfile. (4) Adapt tests to
-current `main`; do not copy an obsolete test that asserts the weaker API.
-(5) Record the live replacement head after review-bot follow-ons (**0gx**).
+the source processor, journal, workflow, or lockfile. (4) Adapt tests to current
+`main`; do not copy an obsolete test that asserts the weaker API. (5) Record the
+live replacement head after review-bot follow-ons (**0gx**).
 
 **Detection cost:** Low — `git diff origin/main...source -- allowed_paths`;
-search current main for `copy(deep=False)` / column-copy; pytest the named
-file.
+search current main for `copy(deep=False)` / column-copy; pytest the named file.
 
 ## Lesson 0hn: Re-poll UNKNOWN mergeable after a sibling squash (2026-09-18)
 
 **Pattern:** Hydro Dependabot #670 squash-merged first. Immediate re-read of
 siblings #671 and #669 returned `mergeable=UNKNOWN` (GitHub GraphQL lag), not
-CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine
-patch PRs that became CLEAN within ~8–12s and merged with the original head
-SHAs.
+CONFLICTING. Treating UNKNOWN as a conflict would have skipped two routine patch
+PRs that became CLEAN within ~8–12s and merged with the original head SHAs.
 
 **Rule:** (1) After a sibling merge in the same repo, `mergeable=UNKNOWN` is
 transient evidence, not `CONFLICTING`. (2) Re-poll for a bounded window before
 recording HOLD or skipping. (3) Only act when the re-read is OPEN, non-draft,
 CLEAN/MERGEABLE, required checks readable, and `expectedHeadSha` still matches.
 (4) If the re-read becomes CONFLICTING or UNSTABLE, stop; do not squash-bypass.
-(5) Each re-poll that then mutates still counts toward the state-changing
-action cap.
+(5) Each re-poll that then mutates still counts toward the state-changing action
+cap.
 
-**Detection cost:** Low — `gh pr view --json mergeable,mergeStateStatus,headRefOid`
-twice ~10s apart after a sibling squash.
+**Detection cost:** Low —
+`gh pr view --json mergeable,mergeStateStatus,headRefOid` twice ~10s apart after
+a sibling squash.
 
-## Lesson 0hq: Split codeql-action Dependabot PRs are GHAS version-skew, then stale-vs-main (2026-09-21)
+## Lesson 0ho: Jules pushes its whole session workspace — never merge main into an active Jules branch (2026-10-03)
 
-**Pattern:** personal-config Dependabot opened three separate PRs for
-`github/codeql-action/{analyze,autobuild,init}` 4.38.0 → 4.38.1 plus two for
-`gh-aw/actions/{setup,setup-cli}`. Stage 1 Trunk-merged
-[#2247](https://github.com/abhimehro/personal-config/pull/2247) (analyze) first.
-Siblings [#2249](https://github.com/abhimehro/personal-config/pull/2249)
-(autobuild) and [#2251](https://github.com/abhimehro/personal-config/pull/2251)
-(init) then showed CodeQL Analysis **FAILURE**
-(`Loaded a configuration file for version '4.38.0', but running version '4.38.1'`).
-That is GHAS infra from a split pin, not an actionable finding and not
-`HOLD_PLATFORM`. Independently,
-[#2250](https://github.com/abhimehro/personal-config/pull/2250) received
-`trunk-failed` on SHA `dec900a1` because `main` had moved (`behind_by: 1`).
-SBOM Generation FAILURE after the rebase was GitHub HTTP 504 downloading syft —
-also infra noise. Required checks remain verified-zero. Transient
-`trunk-not-ready` flipped to `trunk-merged` in ~45s on the **new** SHA; a
-same-SHA retry would have been wrong.
+**Pattern:** On personal-config#2100 (Sentinel CWE-78 eval removal), a human
+merged `main` into `sentinel-fix-cwe-78-eval-10659358181609819876` while the
+Jules session that owned the branch was still running. Jules' workspace had
+been built on an Aug-26 base, so its next push (`7f3dd9b2`) reverted ~314
+files / −40k lines to that stale snapshot — deleting the new helper, the test
+suite, and dozens of unrelated files, while GitHub still reported the PR as
+"Mergeable" (the branch contained main as an ancestor).
 
-**Rule:** (1) Split `github/codeql-action/*` Dependabot PRs are one logical pin.
-After the first sibling lands, later CodeQL **FAILURE** of the form
-`Loaded … 'X', but running 'Y'` is version-skew until init/autobuild/analyze
-all land. Treat it as GHAS infra; continue `update_pull_request_branch` then
-`/trunk merge` on the **new** head SHA when every other routine predicate
-passes. (2) Real CodeQL findings still block. (3) `trunk-failed` after `main`
-moved is stale-vs-main (**0hj**): update from `main`, wait until up to date,
-then `/trunk merge` on the **new** SHA. Do not re-comment the old SHA. Do not
-squash-bypass. Do not record App/ruleset `HOLD_PLATFORM` while the PR is behind
-`main`. (4) SBOM **FAILURE** whose log is GitHub HTTP 504 downloading syft is
-infra noise, not a merge block for otherwise routine BOT work. (5) Do not
-re-comment `/trunk merge` on an unchanged SHA while Trunk is still
-`trunk-not-ready`; re-poll until `trunk-merged` or a new SHA appears.
+**Rule:** (1) Don't merge main into a branch an active Jules session owns, and
+don't let other bots commit to it — end the Jules session first, or salvage
+onto a new branch. (2) A new branch name is also the only reliable way to take
+bots off the target: a force-push lands on the same branch and Jules will
+"re-fix" it. (3) "Mergeable" means only that the merge won't conflict — always
+check `git diff --stat origin/main...HEAD` for unexpected file counts on
+bot-touched branches.
 
-**Detection cost:** Low — CodeQL log `Loaded a configuration file for version`;
-`behind_by` / `baseRefOid` vs `origin/main`; SBOM log `504` + `syft`; Trunk
-comment `trunk-not-ready` vs `trunk-merged` on the same new SHA.
+**Detection cost:** Low — `git log --format='%an %h %s'` for bot committers;
+`git diff --name-only origin/main...HEAD | wc -l` vs the claimed file list.

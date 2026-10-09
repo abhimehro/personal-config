@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-# BSD sed -i '' syntax is macOS-only; skip on Linux/CI
-[[ "$(uname -s)" == "Darwin" ]] || {
-	echo "SKIP: requires macOS (BSD sed -i '')"
-	exit 77
-}
-
 # Setup mock environment
 TEST_DIR=$(mktemp -d)
+
+# BSD and GNU sed require different in-place-edit syntax. Keep the test active
+# on both macOS and Linux so restore regressions cannot hide behind a CI skip.
+sed_in_place() {
+	if [[ "$(uname -s)" == "Darwin" ]]; then
+		sed -i '' "$@"
+	else
+		sed -i "$@"
+	fi
+}
 
 # Ensure temporary test directory is always removed, even on unexpected exit.
 # This is important because the test handles sensitive backup data and uses `set -e`,
@@ -48,11 +52,11 @@ chmod +x "$TEST_DIR/security_manager.sh"
 # Override CONFIG_DIR and BACKUP_DIR for testing to point to our mock
 # We can't easily source it because it sets constants at top level.
 # So we modify the script to inject our paths.
-sed -i '' "s|LOG_DIR=\"\$HOME/Library/Logs/maintenance\"|LOG_DIR=\"$MOCK_LOGS\"|g" "$TEST_DIR/security_manager.sh"
-sed -i '' "s|BACKUP_DIR=\"\$HOME/Library/Logs/maintenance/backups\"|BACKUP_DIR=\"$MOCK_LOGS/backups\"|g" "$TEST_DIR/security_manager.sh"
+sed_in_place "s|LOG_DIR=\"\$HOME/Library/Logs/maintenance\"|LOG_DIR=\"$MOCK_LOGS\"|g" "$TEST_DIR/security_manager.sh"
+sed_in_place "s|BACKUP_DIR=\"\$HOME/Library/Logs/maintenance/backups\"|BACKUP_DIR=\"$MOCK_LOGS/backups\"|g" "$TEST_DIR/security_manager.sh"
 # Allow CONFIG_DIR override
 # shellcheck disable=SC2016
-sed -i '' 's|CONFIG_DIR=.*BASH_SOURCE.*|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" \&\& pwd)}"|' "$TEST_DIR/security_manager.sh"
+sed_in_place 's|CONFIG_DIR=.*BASH_SOURCE.*|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" \&\& pwd)}"|' "$TEST_DIR/security_manager.sh"
 
 # Create a wrapper script to export internal functions and set CONFIG_DIR
 WRAPPER="$TEST_DIR/wrapper.sh"

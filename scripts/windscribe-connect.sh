@@ -183,7 +183,7 @@ echo ""
 log "Step 4: Verifying configuration..."
 
 # Check Control D is running
-if pgrep -x ctrld >/dev/null; then
+if pgrep -x -- ctrld >/dev/null; then
 	success "Control D service: RUNNING"
 else
 	error "Control D service: STOPPED"
