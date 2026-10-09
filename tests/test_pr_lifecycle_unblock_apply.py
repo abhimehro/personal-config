@@ -219,16 +219,16 @@ class UnblockApplyTests(unittest.TestCase):
             mock.patch.object(unblock.cas, "run_preflight") as fetch,
             mock.patch.object(unblock, "list_open_prs") as inventory,
             mock.patch.object(unblock, "_apply_action") as apply,
+            self.assertRaisesRegex(ValueError, "unknown repository filter"),
         ):
-            with self.assertRaisesRegex(ValueError, "unknown repository filter"):
-                unblock.run_unblock(
-                    unblock._UnblockArgs(
-                        apply=True,
-                        json_out=True,
-                        repos_filter=["unconfigured/repo"],
-                        limit=None,
-                    )
+            unblock.run_unblock(
+                unblock._UnblockArgs(
+                    apply=True,
+                    json_out=True,
+                    repos_filter=["unconfigured/repo"],
+                    limit=None,
                 )
+            )
         fetch.assert_not_called()
         inventory.assert_not_called()
         apply.assert_not_called()
@@ -279,10 +279,11 @@ class UnblockApplyTests(unittest.TestCase):
                     json_out=True,
                     repos_filter=None,
                     limit=None,
+                    decision_issues=True,
                 )
             )
         self.assertEqual(inventory.call_args_list, [mock.call(REPO), mock.call(other)])
-        update.assert_called_once_with(other, [], now=mock.ANY)
+        update.assert_called_once_with(other, [], now=mock.ANY, notify_overdue=False)
         apply.assert_not_called()
         self.assertEqual(
             output["escalation_issues"][REPO]["action"], "ISSUE_UPDATE_SKIPPED"

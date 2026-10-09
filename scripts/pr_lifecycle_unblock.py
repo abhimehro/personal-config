@@ -254,6 +254,8 @@ def _scan_repo(scan: _ScanSpec, *, run: Any) -> tuple[list[dict[str, Any]], int]
     actions: list[dict[str, Any]] = []
     fetched = 0
     for pr in scan.prs:
+        if _is_excluded(scan.repo, pr, scan.exclusions):
+            continue
         fetched += int(_needs_comment_fetch(pr))
         _load_full_comments(pr, run=run)
         verdict = classify_pr_identity(pr, scan.policy)
@@ -283,6 +285,49 @@ class _ScanSpec:
     ledger: dict[str, Any]
     policy: Any
     settings: dict[str, Any]
+    exclusions: frozenset[tuple[str | None, int]] = frozenset()
+
+
+def _is_excluded(
+    repo: str, pr: dict[str, Any], exclusions: frozenset[tuple[str | None, int]]
+) -> bool:
+    """True when (repo, number) matches a repo-scoped or number-only exclusion."""
+    number = pr.get("number")
+    if not isinstance(number, int) or isinstance(number, bool):
+        return False
+    repo_lc = repo.lower()
+    repo_short = repo_lc.rsplit("/", 1)[-1]
+    return any(
+        number == excl_number
+        and (excl_repo is None or excl_repo in (repo_lc, repo_short))
+        for excl_repo, excl_number in exclusions
+    )
+
+
+def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
+    """Parse an exclusion spec into (repo_or_none, pr_number).
+
+    Accepted forms: ``owner/repo#123``, ``repo#123``, ``#123``, ``123``.
+    A repo-less form matches that PR number in every scanned repository.
+    """
+    if not isinstance(raw, str):
+        raise TypeError("exclusion entries must be strings")
+    text = raw.strip()
+    if "#" in text:
+        repo_part, _, num_part = text.partition("#")
+    else:
+        repo_part, num_part = "", text
+    num_part = num_part.strip()
+    if not num_part.isdigit():
+        raise ValueError(f"invalid exclusion PR number: {raw}")
+    repo = repo_part.strip().lower() or None
+    return repo, int(num_part)
+
+
+def _normalized_exclusions(*groups: Any) -> frozenset[tuple[str | None, int]]:
+    """Merge CLI and config exclusion specs into one normalized set."""
+    specs = [spec for group in groups for spec in (group or [])]
+    return frozenset(_normalize_exclusion(spec) for spec in specs)
 
 
 def _apply_mutations(
@@ -314,13 +359,22 @@ def _apply_mutations(
 def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     """Update one repo's decision issue, or render its dry-run body."""
     rows = _rows_for_repo(spec.repo, spec.actions, spec.ledger, spec.days)
-    if not spec.apply:
-        return {
+    if not spec.apply or not spec.decision_issues:
+        result = {
             "row_count": len(rows),
             "body": backlog_issue_body(_BacklogSpec(spec.repo, {}, spec.now), rows),
         }
+        if spec.apply:
+            result["action"] = "ISSUE_UPDATE_SKIPPED"
+            result["reason"] = "DECISION_ISSUES_FLAG_OFF"
+        return result
     try:
-        return update_backlog_issue(spec.repo, rows, now=spec.now)
+        return update_backlog_issue(
+            spec.repo,
+            rows,
+            now=spec.now,
+            notify_overdue=spec.overdue_notifications,
+        )
     except (OSError, subprocess.SubprocessError) as exc:
         return {
             "action": "ISSUE_UPDATE_FAILED",
@@ -339,6 +393,8 @@ class _IssueSpec:
     days: int
     apply: bool
     now: datetime
+    decision_issues: bool = False
+    overdue_notifications: bool = False
 
 
 def _issue_skipped(repo: str) -> dict[str, Any]:
@@ -397,6 +453,9 @@ class _UnblockArgs:
     json_out: bool
     repos_filter: list[str] | None
     limit: int | None
+    exclusions: tuple[str, ...] = ()
+    decision_issues: bool = False
+    overdue_notifications: bool = False
     run: Any = subprocess.run
 
 
@@ -404,18 +463,18 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
     """Build and emit a blocker plan, applying bounded mutations when requested.
 
     Fetch the ledger and open PR inventory, classify identities, and route
-    blockers. In apply mode, refresh decision issues only for repositories
-    whose inventory succeeded. Return zero after emitting the plan.
+    blockers. In apply mode, bounded PR mutations run by default; decision
+    issues refresh only when decision_issues is set, and overdue @-mention
+    comments only when overdue_notifications is set — both render into the
+    plan either way. Return zero after emitting the plan.
 
     limit caps PR mutation proposals, defaults to stage1_actions, and leaves
-    overflow in deferred_by_cap. Decision issue updates are outside this cap.
-    Inventory and issue-update failures become plan entries; PR command
-    failures are recorded on actions. Configuration and ledger fetch errors
-    propagate; unknown repository filters raise ValueError.
+    overflow in deferred_by_cap. Excluded PRs get no actions at all; ledger
+    items owned by human/stage2/stage3 keep only escalation rows. Inventory
+    and issue-update failures become plan entries; PR command failures are
+    recorded on actions. Configuration and ledger fetch errors propagate;
+    unknown repository filters raise ValueError.
     """
-    apply = unblock_args.apply
-    json_out = unblock_args.json_out
-    run = unblock_args.run
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     repositories = _resolve_repositories(config, unblock_args.repos_filter)
@@ -424,12 +483,50 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
     cap = unblock_args.limit
     if cap is None:
         cap = lifecycle["stage_caps"]["stage1_actions"]
+    plan = _scan_and_plan(
+        _ScanPlanSpec(unblock_args, config, repositories, lifecycle, settings, cap)
+    )
+    _emit(plan, unblock_args.json_out)
+    return 0
+
+
+@dataclass(frozen=True)
+class _ScanPlanSpec:
+    """Everything _scan_and_plan needs, folded to respect the arg-count gate."""
+
+    unblock_args: _UnblockArgs
+    config: dict[str, Any]
+    repositories: list[str]
+    lifecycle: dict[str, Any]
+    settings: dict[str, Any]
+    cap: int
+
+
+def _scan_and_plan(spec: _ScanPlanSpec) -> dict[str, Any]:
+    """Fetch the ledger, scan repos, apply mutations, and build the plan."""
+    unblock_args = spec.unblock_args
+    config = spec.config
+    repositories = spec.repositories
+    lifecycle = spec.lifecycle
+    settings = spec.settings
+    cap = spec.cap
+    apply = unblock_args.apply
+    run = unblock_args.run
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-unblock-") as tmp:
         fetch = cas.run_preflight(Path(tmp) / "ledger.yaml")
         ledger = load_yaml(Path(fetch["ledger_path"]))
         policy = identity_policy_from_config(config)
         actions, inventory_failed, fetched = _scan_repositories(
-            _ScanJob(repositories, ledger, policy, settings), run
+            _ScanJob(
+                repositories,
+                ledger,
+                policy,
+                settings,
+                _normalized_exclusions(
+                    unblock_args.exclusions, settings.get("exclusions")
+                ),
+            ),
+            run,
         )
         deferred_by_cap, mutation_count, unconfirmed = _apply_mutations(
             actions, cap, apply
@@ -443,9 +540,11 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
                 inventory_failed,
                 apply,
                 datetime.now(timezone.utc),
+                unblock_args.decision_issues,
+                unblock_args.overdue_notifications,
             )
         )
-        plan = _build_plan(
+        return _build_plan(
             _PlanFields(
                 apply=apply,
                 ledger=ledger,
@@ -460,8 +559,6 @@ def run_unblock(unblock_args: _UnblockArgs) -> int:
                 escalation_issues=escalation_issues,
             )
         )
-        _emit(plan, json_out)
-    return 0
 
 
 @dataclass(frozen=True)
@@ -472,6 +569,7 @@ class _ScanJob:
     ledger: dict[str, Any]
     policy: Any
     settings: dict[str, Any]
+    exclusions: frozenset[tuple[str | None, int]] = frozenset()
 
 
 def _scan_repositories(
@@ -494,7 +592,8 @@ def _scan_repositories(
             )
             continue
         scanned, fetched = _scan_repo(
-            _ScanSpec(repo, prs, job.ledger, job.policy, job.settings), run=run
+            _ScanSpec(repo, prs, job.ledger, job.policy, job.settings, job.exclusions),
+            run=run,
         )
         actions.extend(scanned)
         fetched_count += fetched
@@ -513,6 +612,8 @@ class _DecisionCtx:
     inventory_failed: list[dict[str, str]]
     apply: bool
     now: datetime
+    decision_issues: bool = False
+    overdue_notifications: bool = False
 
 
 def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
@@ -530,7 +631,14 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
             continue
         results[repo] = _one_decision_issue(
             _IssueSpec(
-                repo, ctx.actions, ctx.ledger, packet_expiry_days, ctx.apply, ctx.now
+                repo,
+                ctx.actions,
+                ctx.ledger,
+                packet_expiry_days,
+                ctx.apply,
+                ctx.now,
+                ctx.decision_issues,
+                ctx.overdue_notifications,
             )
         )
     return results
@@ -555,6 +663,34 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true", dest="json_out")
     parser.add_argument("--repo", action="append", dest="repos_filter")
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="REPO#PR",
+        help=(
+            "exclude a PR from every routing action; accepts owner/repo#123, "
+            "repo#123, #123, or 123 (repo-less forms match that number in "
+            "every scanned repository)"
+        ),
+    )
+    parser.add_argument(
+        "--decision-issues",
+        action="store_true",
+        help=(
+            "with --apply, also create or refresh the per-repo human "
+            "decision issues; without it apply only runs bounded mutations "
+            "and renders the issue bodies into the plan"
+        ),
+    )
+    parser.add_argument(
+        "--overdue-notifications",
+        action="store_true",
+        help=(
+            "with --apply and --decision-issues, also post the @-mention "
+            "comments for newly overdue decision rows"
+        ),
+    )
     return parser
 
 
@@ -571,6 +707,9 @@ def main(argv: list[str] | None = None) -> int:
                 json_out=args.json_out,
                 repos_filter=args.repos_filter,
                 limit=args.limit,
+                exclusions=tuple(args.exclude),
+                decision_issues=args.decision_issues,
+                overdue_notifications=args.overdue_notifications,
             )
         )
     except (

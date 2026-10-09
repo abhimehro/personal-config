@@ -127,6 +127,11 @@ lifecycle:
       - "CodeScene*"
     trigger_expiry_days: 3
     lineage_stale_days: 3
+    # PRs Stage 1 unblock must never touch, in code (not only the prompt):
+    # owner/repo#123, repo#123, or #123 (number matches in every repo).
+    exclusions:
+      - "abhimehro/Seatek_Analysis#692"
+      - "abhimehro/ctrld-sync#1206"
   # Keep existing stage_caps / stages / calibration-disabled posture unchanged.
   stage_caps:
     stage1_inventory: 80

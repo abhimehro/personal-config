@@ -154,6 +154,142 @@ def _sticky_security(items: list[dict[str, Any]]) -> bool:
     )
 
 
+_BLOCKED_OWNERS = ("human", "stage2", "stage3")
+
+# Exact GraphQL logins that are bots but carry no ``[bot]`` suffix or
+# ``app/`` prefix. Matched exactly — substring matching would misclassify
+# human logins like ``devin-smith`` or ``kilopascal`` and drop a real hold.
+_KNOWN_BOT_LOGINS = frozenset(
+    {
+        "codacy",
+        "codacy-production",
+        "codescene-access",
+        "coderabbitai",
+        "cursor",
+        "dependabot",
+        "devin",
+        "devin-ai-integration",
+        "github-actions",
+        "google-labs-jules",
+        "greptile-apps",
+        "jules",
+        "kilo",
+        "kilo-code-review",
+        "linear",
+        "octopus-review",
+        "renovate",
+        "snyk",
+        "snyk-bot",
+        "snyk-io",
+        "sonarcloud",
+        "sonarqubecloud",
+        "trunk",
+        "trunk-io",
+    }
+)
+
+# Machine-authored content posted under a human login (e.g. Snyk PR checks
+# comment through the repo owner's OAuth identity). These are signature
+# markers, not ordinary prose — a human who types them still counts as human.
+_COMMENT_BOT_BODY_HINTS = (
+    "<!-- this is an auto-generated comment",
+    "<!-- trunk merge -->",
+    "<!-- pr-lifecycle-",
+    "<!-- jules-",
+    "<!-- octopus-",
+    "<!-- dependency-review-pr-comment-marker -->",
+    "snyk/image/upload",
+    "prcheckscomment",
+    "octopus publication reference",
+)
+
+
+def _login_is_bot(login: str) -> bool:
+    """True when a GraphQL login is a bot account."""
+    if login.endswith(("[bot]", "-bot")):
+        return True
+    if login.startswith("app/"):
+        return True
+    return login in _KNOWN_BOT_LOGINS
+
+
+def _comment_is_human(comment: Any) -> bool:
+    """True when a PR comment's author is a recognizable human.
+
+    Bot-authored comments (``*-bot`` / ``app/*`` logins and the known reviewer
+    and automation bots) never count as human participation, and neither do
+    machine-generated bodies posted under a human login (Snyk's PR-check
+    summaries comment as the repo owner). An author that cannot be read at all
+    counts as human — the safe direction for an automatic close.
+    """
+    if not isinstance(comment, dict):
+        return True
+    author = comment.get("author")
+    login = str(author.get("login") or "").lower() if isinstance(author, dict) else ""
+    if login and _login_is_bot(login):
+        return False
+    body = str(comment.get("body") or "").lower()
+    return not any(hint in body for hint in _COMMENT_BOT_BODY_HINTS)
+
+
+def _has_human_comment(pr: dict[str, Any]) -> bool:
+    """True when the PR has a human comment, or the history is incomplete."""
+    if pr.get("comments_incomplete"):
+        return True
+    comments = pr.get("comments")
+    if not isinstance(comments, list):
+        return True
+    return any(_comment_is_human(comment) for comment in comments)
+
+
+def _ledger_owner_hold(items: list[dict[str, Any]]) -> str | None:
+    """Return the non-stage1 owner holding a nonterminal item, else None.
+
+    A ledger item owned by ``human``, ``stage2``, or ``stage3`` means another
+    stage or a person already owns the next step, so a plain ``--apply`` must
+    not mutate the PR (no close, trigger, or push). The hold lives in the
+    ledger, not only in the Stage 1 wrapper prompt.
+    """
+    owners = [
+        str(item.get("current_owner") or "")
+        for item in items
+        if item.get("lifecycle_state") != "TERMINAL"
+    ]
+    return next((owner for owner in _BLOCKED_OWNERS if owner in owners), None)
+
+
+def _enforce_ledger_owner(
+    ctx: _Route,
+    actions: list[dict[str, Any]],
+    ledger_items_for_pr: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Drop automatic actions when a non-stage1 owner holds the ledger item.
+
+    Human-, stage2-, and stage3-owned nonterminal items keep their ESCALATE
+    rows (they still render on the decision issue, in the matching section)
+    but lose every mutating proposal: no close, trigger, or push, regardless
+    of what branch-name or staleness heuristics would otherwise emit. A
+    ``ledger_owned_by_<owner>`` escalation records why nothing ran.
+    """
+    owner = _ledger_owner_hold(ledger_items_for_pr)
+    if owner is None:
+        return actions
+    hold = _escalation(
+        ctx,
+        _EscalationSpec(
+            blocker=f"ledger_owned_by_{owner}",
+            evidence={"current_owner": owner},
+            recommended_action=(
+                f"Leave open; the {owner} stage owns the next step, so "
+                "Stage 1 apply must not mutate this PR."
+            ),
+            owner=owner,
+        ),
+    )
+    kept = [action for action in actions if action.get("action") == "ESCALATE"]
+    return [hold, *kept]
+
+
 @dataclass(frozen=True)
 class _EscalationSpec:
     """The escalation details: blocker name, evidence, action, ownership."""
@@ -405,5 +541,30 @@ def _terminal_but_open(
                 "should be re-reviewed"
             ),
             security=item.get("guardrail_outcome") == "REVIEW_SECURITY",
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class _ConflictSpec:
+    """The kind, comment body, and action text of a conflict trigger."""
+
+    kind: str
+    body: str
+    action_text: str
+
+
+def _conflict_trigger(
+    ctx: _Route, spec: _ConflictSpec, evidence: Any
+) -> list[dict[str, Any]]:
+    """Propose the family-specific merge-conflict fix trigger."""
+    return _trigger_action(
+        ctx,
+        spec.kind,
+        spec.body,
+        _EscalationSpec(
+            "merge_conflict",
+            evidence=evidence,
+            recommended_action=spec.action_text,
         ),
     )
