@@ -46,6 +46,7 @@ def _with_threads(raw: dict, threads: list, *, has_next: bool = False) -> dict:
 
 class OctopusFindingsTests(unittest.TestCase):
     def test_only_open_octopus_threads_count(self) -> None:
+        """Count only unresolved, current threads authored by the Octopus bot."""
         raw = _with_threads(
             make_inventory_pr(),
             [
@@ -60,10 +61,12 @@ class OctopusFindingsTests(unittest.TestCase):
         self.assertEqual(_normalize_pr(raw, "owner/repo")["openOctopusFindings"], 1)
 
     def test_truncated_thread_page_reports_findings_unknown(self) -> None:
+        """Treat incomplete review-thread pagination as an unknown finding count."""
         raw = _with_threads(make_inventory_pr(), [], has_next=True)
         self.assertIsNone(_normalize_pr(raw, "owner/repo")["openOctopusFindings"])
 
     def test_absent_or_malformed_threads_fail_closed(self) -> None:
+        """Reject inventory whose review threads are missing or malformed."""
         absent = make_inventory_pr()
         absent.pop("reviewThreads")
         for raw in (
@@ -74,12 +77,14 @@ class OctopusFindingsTests(unittest.TestCase):
                 _normalize_pr(raw, "owner/repo")
 
     def test_empty_threads_normalize_to_zero(self) -> None:
+        """Normalize a complete, empty review-thread connection to zero findings."""
         self.assertEqual(
             _normalize_pr(make_inventory_pr(), "owner/repo")["openOctopusFindings"],
             0,
         )
 
     def test_open_findings_escalate_to_the_decision_issue(self) -> None:
+        """Escalate open findings to a human with evidence and a safe default."""
         actions = route_unblock_pr(make_unblock_pr(openOctopusFindings=3))
         self.assertEqual(len(actions), 1)
         action = actions[0]
@@ -92,15 +97,18 @@ class OctopusFindingsTests(unittest.TestCase):
         )
 
     def test_unknown_findings_escalate_fail_closed(self) -> None:
+        """Escalate an unknown finding count with explicit unknown evidence."""
         actions = route_unblock_pr(make_unblock_pr(openOctopusFindings=None))
         self.assertEqual(len(actions), 1)
         self.assertEqual(actions[0]["blocker"], "open_octopus_findings")
         self.assertEqual(actions[0]["evidence"], {"open_octopus_findings": "unknown"})
 
     def test_zero_findings_emit_no_action(self) -> None:
+        """Leave an otherwise unblocked PR with zero findings without actions."""
         self.assertEqual(route_unblock_pr(make_unblock_pr()), [])
 
     def test_findings_escalate_alongside_other_blockers(self) -> None:
+        """Preserve the branch-update action when findings also need escalation."""
         actions = route_unblock_pr(
             make_unblock_pr(openOctopusFindings=2, mergeStateStatus="BEHIND")
         )
