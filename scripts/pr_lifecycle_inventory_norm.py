@@ -107,7 +107,7 @@ def _normalize_comments(
     return comments, total if _nonneg_int(total) else None
 
 
-def _require_str(value: Any, label: str) -> str:
+def _require_str_value(value: Any, label: str) -> str:
     """Return value when it is a string, else raise OSError (fail closed)."""
     if not isinstance(value, str):
         raise OSError(label)
@@ -126,8 +126,8 @@ def _octopus_thread_author(thread: dict[str, Any]) -> bool:
     typename = author.get("__typename") if isinstance(author, dict) else None
     label = "reviewThread comment author unverifiable"
     return (
-        _require_str(typename, label) == "Bot"
-        and _require_str(login, label) == _OCTOPUS_BOT_LOGIN
+        _require_str_value(typename, label) == "Bot"
+        and _require_str_value(login, label) == _OCTOPUS_BOT_LOGIN
     )
 
 
