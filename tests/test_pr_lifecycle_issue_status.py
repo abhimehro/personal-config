@@ -390,7 +390,7 @@ class IssueStatusTests(unittest.TestCase):
                     self.st._BacklogSpec("owner/repo", {}, NOW),
                     [dict(self._backlog_row(), url=url)],
                 )
-                self.assertIn("| [42]() |", body)
+                self.assertIn("| 42 |", body)
                 self.assertNotIn(url, body)
                 self.assertNotIn("[injected]", body)
 

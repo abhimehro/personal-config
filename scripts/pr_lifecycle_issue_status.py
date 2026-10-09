@@ -406,11 +406,17 @@ def _prepare_backlog_rows(
     return prepared, new_state, newly_overdue
 
 
+def _pr_link(row: dict[str, Any]) -> str:
+    """Render the PR cell as a markdown link, or plain text when unsafe."""
+    url = _safe_url(row.get("url"))
+    text = _markdown_cell(row.get("pr"))
+    return f"[{text}]({url})" if url else text
+
+
 def _human_row_line(row: dict[str, Any]) -> str:
     """Render one human-decision backlog row."""
     return (
-        f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({_safe_url(row.get('url'))}) | "
+        f"| {_pr_link(row)} | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "
@@ -424,8 +430,7 @@ def _human_row_line(row: dict[str, Any]) -> str:
 def _handoff_row_line(row: dict[str, Any]) -> str:
     """Render one Stage 2 handoff row (no expiry or status columns)."""
     return (
-        f"| [{_markdown_cell(row.get('pr'))}]"
-        f"({_safe_url(row.get('url'))}) | "
+        f"| {_pr_link(row)} | "
         f"{_markdown_cell(row.get('blocker'))} | "
         f"{_markdown_cell(row.get('evidence'), 160)} | "
         f"{_markdown_cell(row.get('recommended_action'), 200)} | "
