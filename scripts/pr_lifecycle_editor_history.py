@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+__all__ = ["editors"]
+
 _EDITOR_QUERY = (
     "query($owner: String!, $name: String!, $number: Int!, $cursor: String) {"
     " repository(owner: $owner, name: $name) {"
