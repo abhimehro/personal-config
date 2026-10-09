@@ -126,16 +126,16 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
 
 def _evaluable(item: dict[str, Any]) -> bool:
     """True when the item is a nonterminal, unowned, re-evaluatable entry."""
-    if item.get("lifecycle_state") == "TERMINAL":
-        return False
-    if item.get("current_owner") in _BLOCKED_OWNERS:
-        return False
-    if item.get("guardrail_outcome") not in _EVALUATABLE:
-        return False
-    if item.get("guardrail_source") in _PROTECTED_SOURCES:
-        return False
     changed_paths = item.get("changed_paths")
-    return isinstance(changed_paths, list) and bool(changed_paths)
+    return all(
+        (
+            item.get("lifecycle_state") != "TERMINAL",
+            item.get("current_owner") not in _BLOCKED_OWNERS,
+            item.get("guardrail_outcome") in _EVALUATABLE,
+            item.get("guardrail_source") not in _PROTECTED_SOURCES,
+            isinstance(changed_paths, list) and bool(changed_paths),
+        )
+    )
 
 
 def _stand_in_hold(outcome: Any, sticky: list[str]) -> bool:
@@ -164,12 +164,12 @@ def evaluate_item(
     sticky = sorted(classes - _STICKY_EXEMPT)
     if _stand_in_hold(outcome, sticky) and not clear_standin:
         return None
-    new_outcome = "REVIEW_SECURITY" if sticky else "PASS_ROUTINE"
+    sticky_flag = bool(sticky)
     patch = {
         "sensitive_paths": sorted(classes),
-        "guardrail_outcome": new_outcome,
+        "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
-        "risk_class": "SENSITIVE" if sticky else "ROUTINE",
+        "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
     }
     if all(item.get(field) == value for field, value in patch.items()):
         return None
