@@ -54,9 +54,10 @@ def _commit_checks(
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], bool]:
     """Return (normalized commits, checks, checks_incomplete) for a raw PR.
 
-    Only the last commit is normalized. An absent commit, non-dict commit or
-    commit author, or a non-dict statusCheckRollup fails closed: missing
-    rollups mark checks incomplete and a synthetic PENDING check is appended.
+    Only the last commit is normalized. An empty commit list or missing
+    rollup returns incomplete checks with a synthetic PENDING check.
+    Malformed commit or context node lists, non-dict commits, truthy non-dict
+    commit authors, and non-null non-dict rollups raise OSError.
     """
     commits = _nodes(raw.get("commits"), "commits")
     if not commits:

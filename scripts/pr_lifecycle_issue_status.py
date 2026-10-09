@@ -303,7 +303,7 @@ def _markdown_cell(value: object, limit: int = 300) -> str:
 
 
 def _safe_url(value: object) -> str:
-    """Pass a plain https URL through byte-identical; blank anything else.
+    """Strip surrounding whitespace and return a plain https URL, or blank.
 
     Link destinations must not be cell-escaped (escaping corrupts the href)
     and must not carry markdown (a crafted url could break out of the link).
@@ -356,7 +356,8 @@ def _prepare_backlog_rows(
     Absent, empty, or non-string expiry uses packet_expiry_close_days
     (default seven days);
     unparseable expiry strings use seven days from first seen. A row is
-    overdue at or after its deadline.
+    overdue at or after its deadline. Rows with a non-human owner use an
+    em dash for expiry and never become overdue; ownerless rows use deadlines.
     """
     now_utc = _utc(now)
     first_seen_before = state.get("first_seen") or {}

@@ -188,7 +188,7 @@ def _apply_action(action: dict[str, Any], *, run: Any = subprocess.run) -> None:
 def _steps_for_action(
     action: dict[str, Any], *, run: Any = subprocess.run
 ) -> list[dict[str, Any]]:
-    """Return the step plan for one action kind."""
+    """Execute the action's GitHub commands and return their step results."""
     repo = str(action["repository"])
     pr = str(action["pr"])
     if action["action"] == "UPDATE_BRANCH":

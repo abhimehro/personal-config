@@ -45,8 +45,9 @@ def _page_result(
     """Classify one gh api graphql response.
 
     Return (retryable OSError, None) for failures worth retrying, or
-    (None, payload) on success. A GraphQL errors payload whose messages
-    are not transient raises immediately rather than retrying.
+    (None, payload) on success. Raise OSError for an errors payload that is
+    not a non-empty list of entirely transient errors. Structured error
+    types take precedence over messages when classifying transient errors.
     """
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
@@ -65,7 +66,12 @@ def _page_result(
 
 
 def _graphql_page(command: list[str], *, run: Any, sleep: Any) -> Any:
-    """Fetch one GraphQL page, retrying transient failures up to 3 times."""
+    """Return a decoded GraphQL page after at most three attempts.
+
+    Retry process failures, nonzero exits, invalid JSON, and transient API
+    errors with 2- and 4-second waits. Raise OSError immediately for
+    nontransient API errors or after exhausting retryable failures.
+    """
     last_error: OSError | None = None
     for attempt in range(3):
         try:

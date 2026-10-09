@@ -287,7 +287,9 @@ def _apply_mutations(
     """Select up to cap mutating actions; apply them when apply is true.
 
     Return (deferred_by_cap, mutations_selected, mutations_unconfirmed); the
-    unconfirmed count only grows in apply mode for steps GitHub rejected.
+    unconfirmed count only grows in apply mode for failed commands or closes
+    whose CLOSED state could not be confirmed. Applied actions receive step
+    results in place.
     """
     deferred_by_cap: list[dict[str, Any]] = []
     mutation_count = 0

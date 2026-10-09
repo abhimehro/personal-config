@@ -95,7 +95,7 @@ def _trusted_marker_author(comment: dict[str, Any], repo: str) -> bool:
 
 
 def _is_dependabot(login: str, branch: str, pr: dict[str, Any]) -> bool:
-    """Match a Dependabot-authored login."""
+    """Return whether the login contains 'dependabot'."""
     return "dependabot" in login
 
 
@@ -194,8 +194,12 @@ def _escalation(ctx: _Route, spec: _EscalationSpec) -> dict[str, Any]:
 
 
 def _trigger_blocked(ctx: _Route, kind: str) -> bool:
-    """True when a security hold, fork head, or non-bot ownership forbids a
-    trigger — including /cs-agent on an untrusted cross-repository branch."""
+    """Return whether security, repository, or ownership rules block a trigger.
+
+    Security holds, fork heads, and a missing isCrossRepository flag block
+    every kind. On same-repository heads, CodeScene and Jules-family triggers
+    do not require BOT ownership.
+    """
     if ctx.security or ctx.pr.get("isCrossRepository", True):
         return True
     return kind != "codescene" and ctx.author_type != "BOT" and ctx.family != "jules"

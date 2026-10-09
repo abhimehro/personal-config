@@ -77,6 +77,7 @@ def validate_unblock_config(value: Any) -> None:
 
 
 def _require_advisory_checks(advisory: Any) -> None:
+    """Allow None or a list of nonblank strings; otherwise raise ValueError."""
     if advisory is None:
         return
     valid = isinstance(advisory, list) and all(
@@ -90,10 +91,15 @@ def _require_advisory_checks(advisory: Any) -> None:
 
 
 def _positive_int(value: Any) -> bool:
+    """Return whether value is an integer of at least one, excluding booleans."""
     return isinstance(value, int) and not isinstance(value, bool) and value >= 1
 
 
 def _require_positive_days(days: Any, field: str) -> None:
+    """Allow None or positive integer days, excluding booleans.
+
+    Raise ValueError naming the unblock configuration field otherwise.
+    """
     if days is None or _positive_int(days):
         return
     raise ValueError(f"config.lifecycle.unblock.{field}: must be a positive integer")
