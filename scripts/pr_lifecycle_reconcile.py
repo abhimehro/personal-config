@@ -641,51 +641,67 @@ _LIFECYCLE_RANK = {
 }
 
 
+def _dup_groups(
+    items: list[dict[str, Any]],
+) -> dict[tuple[Any, Any], list[dict[str, Any]]]:
+    """Group nonterminal items that share a (repository, pr) identity."""
+    groups: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
+    for item in items:
+        if not isinstance(item, dict) or item.get("lifecycle_state") == "TERMINAL":
+            continue
+        repo, pr = item.get("repository"), item.get("pr")
+        if not repo or not pr:
+            continue
+        groups.setdefault((repo, pr), []).append(item)
+    return groups
+
+
+def _dup_rank(item: dict[str, Any]) -> tuple[int, int, str]:
+    """Rank an item for survivor selection: state, revision, recency."""
+    return (
+        _LIFECYCLE_RANK.get(str(item.get("lifecycle_state")), -1),
+        int(item.get("revision") or 0),
+        str(item.get("updated_at_utc") or ""),
+    )
+
+
+def _dup_action(loser: dict[str, Any], survivor: dict[str, Any]) -> dict[str, Any]:
+    """Build the TERMINAL_DUPLICATE action for one stale duplicate item."""
+    return {
+        "action": "TERMINAL_DUPLICATE",
+        "key": loser.get("key"),
+        "repository": loser.get("repository"),
+        "pr": loser.get("pr"),
+        "to_state": "TERMINAL",
+        "disposition": "CLOSED_DUPLICATE",
+        "reason": (
+            "duplicate ledger item for the same PR; "
+            f"{survivor.get('key')} is the survivor"
+        ),
+    }
+
+
 def _duplicate_terminal_actions(
     items: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], set[Any]]:
-    """Return CLOSED_DUPLICATE actions for stale duplicate items.
+    """
+    Return CLOSED_DUPLICATE actions for stale duplicate items.
 
     Keys embed head_sha, so a re-intake after drift can mint a second
     nonterminal item for the same (repository, pr). The item at the most
     advanced lifecycle state (tiebreak: higher revision, then newer
     updated_at_utc) survives; the rest go TERMINAL/CLOSED_DUPLICATE.
+    Items missing repository or pr keep their normal per-item path.
     """
-    groups: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
-    for item in items:
-        if not isinstance(item, dict) or item.get("lifecycle_state") == "TERMINAL":
-            continue
-        groups.setdefault((item.get("repository"), item.get("pr")), []).append(item)
     actions: list[dict[str, Any]] = []
     losers: set[Any] = set()
-    for dupes in groups.values():
+    for dupes in _dup_groups(items).values():
         if len(dupes) < 2:
             continue
-        dupes.sort(
-            key=lambda i: (
-                _LIFECYCLE_RANK.get(str(i.get("lifecycle_state")), -1),
-                int(i.get("revision") or 0),
-                str(i.get("updated_at_utc") or ""),
-            ),
-            reverse=True,
-        )
-        survivor = dupes[0]
+        dupes.sort(key=_dup_rank, reverse=True)
         for loser in dupes[1:]:
             losers.add(loser.get("key"))
-            actions.append(
-                {
-                    "action": "TERMINAL_DUPLICATE",
-                    "key": loser.get("key"),
-                    "repository": loser.get("repository"),
-                    "pr": loser.get("pr"),
-                    "to_state": "TERMINAL",
-                    "disposition": "CLOSED_DUPLICATE",
-                    "reason": (
-                        "duplicate ledger item for the same PR; "
-                        f"{survivor.get('key')} is the survivor"
-                    ),
-                }
-            )
+            actions.append(_dup_action(loser, dupes[0]))
     return actions, losers
 
 
@@ -699,19 +715,17 @@ def collect_actions(
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
-    items = ledger.get("items") or []
-    actions, dup_losers = _duplicate_terminal_actions(items)
-    if limit is not None and len(actions) >= limit:
-        return actions[:limit]
-    for item in items:
+    actions, dup_losers = _duplicate_terminal_actions(ledger.get("items") or [])
+    for item in ledger.get("items") or []:
         if isinstance(item, dict) and item.get("key") in dup_losers:
             continue
-        action = _action_for_item(item, expiry, clock)
-        if action is None:
-            continue
-        actions.append(action)
         if limit is not None and len(actions) >= limit:
             break
+        action = _action_for_item(item, expiry, clock)
+        if action is not None:
+            actions.append(action)
+    if limit is not None:
+        return actions[:limit]
     return actions
 
 

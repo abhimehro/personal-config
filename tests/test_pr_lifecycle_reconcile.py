@@ -44,7 +44,7 @@ sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
 sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
 sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: 0
 
-import pr_lifecycle_reconcile as reconcile
+import pr_lifecycle_reconcile as reconcile  # noqa: E402
 
 for _name in _STUB_NAMES:
     _saved = _saved_modules[_name]
@@ -385,6 +385,18 @@ class ReconcileHelpersTests(unittest.TestCase):
             )
         self.assertEqual([action["key"] for action in actions], ["first"])
         view.assert_called_once_with("abhimehro/personal-config", 99)
+
+    def test_items_without_identity_are_not_deduped(self):
+        """Items lacking repository/pr keep the per-item path (Octopus)."""
+        ledger = {
+            "items": [
+                _item(key="a", repository=None, pr=None),
+                _item(key="b", repository=None, pr=None),
+            ]
+        }
+        actions, losers = reconcile._duplicate_terminal_actions(ledger["items"])
+        self.assertEqual(actions, [])
+        self.assertEqual(losers, set())
 
     def test_duplicate_items_terminate_stale_copy_once(self):
         """Two nonterminal items for one PR: stale copy → CLOSED_DUPLICATE."""

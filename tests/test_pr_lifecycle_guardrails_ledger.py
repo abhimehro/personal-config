@@ -216,12 +216,18 @@ class ClosedUnreviewedSchemaTests(unittest.TestCase):
 
         self.assertIn("CLOSED_UNREVIEWED", TERMINAL_DISPOSITIONS)
         ledger = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.example.yaml")
-        for event in ledger.get("events") or []:
-            if isinstance(event, dict) and event.get("kind") == "TERMINAL":
-                event["terminal_disposition"] = "CLOSED_UNREVIEWED"
-        for item in ledger.get("items") or []:
-            if isinstance(item, dict) and item.get("lifecycle_state") == "TERMINAL":
-                item["terminal_disposition"] = "CLOSED_UNREVIEWED"
+        surfaces = [
+            e
+            for e in ledger.get("events") or []
+            if isinstance(e, dict) and e.get("kind") == "TERMINAL"
+        ]
+        surfaces += [
+            i
+            for i in ledger.get("items") or []
+            if isinstance(i, dict) and i.get("lifecycle_state") == "TERMINAL"
+        ]
+        for surface in surfaces:
+            surface["terminal_disposition"] = "CLOSED_UNREVIEWED"
         validate_schema(ledger)
 
 
