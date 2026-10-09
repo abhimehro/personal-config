@@ -16,6 +16,13 @@ query($owner: String!, $name: String!, $cursor: String) {
         mergeable mergeStateStatus reviewDecision createdAt updatedAt
         latestReviews(first: 20) { nodes { author { login __typename } state } }
         comments(last: 50) { totalCount nodes { author { login __typename } body createdAt } }
+        reviewThreads(first: 50) {
+          pageInfo { hasNextPage }
+          nodes {
+            isResolved isOutdated
+            comments(first: 1) { nodes { author { login __typename } } }
+          }
+        }
         commits(last: 1) {
           nodes {
             commit {

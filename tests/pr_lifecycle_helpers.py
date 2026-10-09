@@ -324,6 +324,7 @@ def make_unblock_pr(**overrides: object) -> dict[str, object]:
         "comments": [],
         "commentsTotalCount": 0,
         "latestReviews": [],
+        "openOctopusFindings": 0,
     }
     pr.update(overrides)
     return pr
@@ -443,6 +444,10 @@ def inventory_pr_connections() -> dict:
                     "createdAt": "2026-10-02T00:00:00Z",
                 }
             ],
+        },
+        "reviewThreads": {
+            "pageInfo": {"hasNextPage": False},
+            "nodes": [],
         },
         "commits": {
             "nodes": [

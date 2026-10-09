@@ -65,7 +65,11 @@ item to Stage 1 intake.
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
-human-authored PRs never become routine merge or close candidates.
+human-authored PRs never become routine merge or close candidates. A PR with
+open Octopus review findings — unresolved, non-outdated `octopus-review`
+threads, or a thread list that could not be fully read — is likewise never
+routine-merge eligible; the unblock executor escalates it onto the repository
+decision issue.
 
 ## Canonical records and repository authority
 

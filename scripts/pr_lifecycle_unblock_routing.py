@@ -497,6 +497,30 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
     return _review_trigger(ctx, {"reviewDecision": "CHANGES_REQUESTED"})
 
 
+def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
+    """Escalate open Octopus review findings; they block routine merge."""
+    findings = ctx.pr.get("openOctopusFindings")
+    if findings == 0:
+        return []
+    unknown = findings is None
+    return [
+        _escalation(
+            ctx,
+            _EscalationSpec(
+                "open_octopus_findings",
+                evidence={"open_octopus_findings": "unknown" if unknown else findings},
+                recommended_action=(
+                    "resolve the open Octopus review findings on the PR " "or close it"
+                    if not unknown
+                    else "verify the Octopus review threads on the PR "
+                    "(thread list truncated or unreadable), then resolve "
+                    "or close"
+                ),
+            ),
+        )
+    ]
+
+
 @dataclass(frozen=True)
 class _RouteArgs:
     """The non-PR routing inputs carried through to _route_ctx."""
@@ -565,4 +589,5 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     actions = _route_behind(ctx)
     actions.extend(_route_checks(ctx))
     actions.extend(_route_review(ctx))
+    actions.extend(_route_octopus_findings(ctx))
     return actions
