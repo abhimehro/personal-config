@@ -238,6 +238,17 @@ class OpenInventoryTests(unittest.TestCase):
                 self.assertEqual(sleeps, [2])
                 self.assertEqual(timeouts, [120, 120])
 
+    def test_retry_exhaustion_without_recorded_error_has_deliberate_fallback(self):
+        import pr_lifecycle_inventory_pages as pages
+
+        run = mock.Mock()
+        sleep = mock.Mock()
+        with mock.patch.object(pages, "range", return_value=(), create=True):
+            with self.assertRaisesRegex(OSError, "without a recorded error"):
+                pages._graphql_page(["gh"], run=run, sleep=sleep)
+        run.assert_not_called()
+        sleep.assert_not_called()
+
     def test_three_transient_failures_raise_oserror(self):
         """Stop after three failed attempts with two backoff delays."""
         failures = [

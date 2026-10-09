@@ -34,6 +34,18 @@ from tests.pr_lifecycle_helpers import (
 
 
 class UnblockApplyTests(unittest.TestCase):
+    def test_unknown_action_is_rejected_before_any_github_command(self):
+        run = mock.Mock()
+        action = {
+            "action": "CLOSE_UNKNOWN",
+            "repository": REPO,
+            "pr": 23,
+            "comment": "Must not be posted.",
+        }
+        with self.assertRaisesRegex(ValueError, "unsupported action: CLOSE_UNKNOWN"):
+            unblock._apply_action(action, run=run)
+        run.assert_not_called()
+
     def test_inventory_failure_skips_backlog_refresh_in_apply_mode(self):
         """Preserve the existing backlog issue when repository inventory fails."""
         plan, update_issue = _run_unblock_plan(

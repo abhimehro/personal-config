@@ -347,6 +347,8 @@ def _prepare_backlog_rows(
     rows: list[dict[str, Any]],
     state: dict[str, Any],
     now: datetime,
+    *,
+    record_overdue: bool = True,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
     """Deduplicate rows and return prepared rows, state, and new overdue items.
 
@@ -358,6 +360,7 @@ def _prepare_backlog_rows(
     unparseable expiry strings use seven days from first seen. A row is
     overdue at or after its deadline. Rows with a non-human owner use an
     em dash for expiry and never become overdue; ownerless rows use deadlines.
+    Set record_overdue=False to leave new overdue notifications unrecorded.
     """
     now_utc = _utc(now)
     first_seen_before = state.get("first_seen") or {}
@@ -386,7 +389,8 @@ def _prepare_backlog_rows(
             }
         )
         prepared.append(row)
-        _record_overdue(row, notified, newly_overdue)
+        if record_overdue:
+            _record_overdue(row, notified, newly_overdue)
     new_state = {
         "first_seen": first_seen,
         "overdue_notified": sorted(key for key in notified if key in first_seen),
@@ -466,9 +470,13 @@ def backlog_issue_body(
     rows: list[dict[str, Any]],
     state: dict[str, Any],
     now: datetime,
+    *,
+    record_overdue: bool = True,
 ) -> str:
     """Render the per-repository human decision backlog and durable state."""
-    prepared, final_state, _ = _prepare_backlog_rows(repo, rows, state, now)
+    prepared, final_state, _ = _prepare_backlog_rows(
+        repo, rows, state, now, record_overdue=record_overdue
+    )
     updated = _iso(now)
     if not prepared:
         content = f"No open items needing a human decision as of {updated}."
@@ -590,7 +598,9 @@ def _notify_created_issue(
 
 def _create_backlog_issue(work: _BacklogWork) -> dict[str, Any]:
     """Create the backlog issue and notify overdue rows on it when needed."""
-    body = backlog_issue_body(work.repo, work.rows, work.old_state, work.now)
+    body = backlog_issue_body(
+        work.repo, work.rows, work.old_state, work.now, record_overdue=False
+    )
     created = _gh_step(
         ["create", "--title", BACKLOG_ISSUE_TITLE, "--body", body],
         "create",

@@ -195,4 +195,6 @@ def _steps_for_action(
         return [_update_branch_step(repo, pr, action, run=run)]
     if action["action"] == "TRIGGER":
         return [_trigger_step(repo, pr, action, run=run)]
-    return _close_pr_steps(repo, pr, action, run=run)
+    if action["action"] in {"CLOSE_STALE_LINEAGE", "CLOSE_SUPERSEDED"}:
+        return _close_pr_steps(repo, pr, action, run=run)
+    raise ValueError(f"unsupported action: {action['action']}")

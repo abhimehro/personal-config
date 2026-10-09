@@ -278,7 +278,7 @@ An unanswered trigger expires and escalates.
 
 | Live blocker | Safe next action |
 | --- | --- |
-| Stale bot lineage or merged salvage original | Comment, label `superseded`, close and confirm; never close HUMAN or `REVIEW_SECURITY` originals. |
+| Stale bot lineage or merged salvage original | Create and apply the `superseded` label, close the PR, confirm it is closed, then post the comment; never close HUMAN or `REVIEW_SECURITY` originals. |
 | Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
 | Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
 | Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |

@@ -14,10 +14,6 @@ from pr_lifecycle_inventory_check_states import (
     _check_state,
 )
 
-# Structured types take precedence; message markers cover untyped errors only.
-# The "temporar" marker requires a word boundary and no leading "not " so an
-# explicit "not temporary" error does not count as transient.
-
 
 def _nodes(connection: Any, label: str) -> list[dict[str, Any]]:
     """Return connection nodes or raise OSError for malformed node lists."""

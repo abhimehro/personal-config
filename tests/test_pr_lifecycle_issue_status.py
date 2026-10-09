@@ -481,6 +481,28 @@ class IssueStatusTests(unittest.TestCase):
             any("edit" in call.args[0] for call in self.command.call_args_list)
         )
 
+    def test_new_issue_failed_notification_leaves_overdue_state_empty(self):
+        repo = "owner/repo"
+        row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}
+        self.command.side_effect = [
+            self.result("[]"),
+            self.result(f"https://github.com/{repo}/issues/9\n"),
+            self.result(returncode=1, stderr="comment rejected"),
+        ]
+        with self.assertRaisesRegex(OSError, "overdue comment failed"):
+            self.st.update_backlog_issue(repo, [row], now=NOW)
+        self.assertEqual(
+            [call.args[0][2] for call in self.command.call_args_list],
+            ["list", "create", "comment"],
+        )
+        create_argv = self.command.call_args_list[1].args[0]
+        body = create_argv[create_argv.index("--body") + 1]
+        state = self.st._previous_state(body)
+        self.assertEqual(state["overdue_notified"], [])
+        self.assertIn("OVERDUE", body)
+        _, _, overdue = self.st._prepare_backlog_rows(repo, [row], state, NOW)
+        self.assertEqual([item["id"] for item in overdue], [f"{repo}#42:conflict"])
+
     def test_new_overdue_issue_is_created_then_notified_and_persisted(self):
         repo = "owner/repo"
         row = {"pr": 42, "blocker": "conflict", "expires": "2026-08-01T00:00:00Z"}

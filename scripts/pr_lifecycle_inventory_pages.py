@@ -92,5 +92,6 @@ def _graphql_page(command: list[str], *, run: Any, sleep: Any) -> Any:
                 return payload
         if attempt < 2:
             sleep(2 ** (attempt + 1))
-    assert last_error is not None
+    if last_error is None:
+        raise OSError("gh api graphql exhausted retries without a recorded error")
     raise last_error
