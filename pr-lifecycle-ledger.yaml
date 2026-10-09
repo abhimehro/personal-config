@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 312
+ledger_revision: 313
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -19850,16 +19850,20 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: 'Do not squash-merge or close original #2254. Salvage draft #2400
-    holds the unique dated run records; Stage 1 owns draft merge authority after ready.'
-  next_action: Recover unique source only on a new focused draft that excludes journals
-    and sticky paths outside the work-item allowlist.
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge or Trunk #2254 (CONFLICTING). All unique content
+    is on main (#2400) or salvage draft #2482; leave #2254 OPEN until Stage 3 reconciles
+    after #2482 lands or is rejected.'
+  next_action: 'STAGE3_RECONCILIATION: track salvage draft #2482. After #2482 merges,
+    #2254 has no unique content left (dated records via #2400, session-report deltas
+    via #2482) and is a CLOSED_SUPERSEDED candidate under Stage 3 cooldown/evidence.
+    If #2482 is rejected, record the reason; do not re-salvage the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2254
+  - https://github.com/abhimehro/personal-config/pull/2482
   changed_paths:
   - tasks/lessons.md
   - tasks/pr-review-2026-09-21.md
@@ -19868,7 +19872,7 @@ items:
   - tasks/salvage-session-reports.md
   attempts:
     evidence: 1
-    recovery: 1
+    recovery: 2
     mutations: 0
   handoffs:
   - evt-s1-20261003-pc-2254-h
@@ -19876,8 +19880,10 @@ items:
   - evt-reconcile-20261003090641-4b5a8f48
   - evt-reconcile-20261004151408-15947924
   - evt-reconcile-20261005151243-f07f823c
-  revision: 5
-  updated_at_utc: '2026-10-05T15:12:43Z'
+  - evt-s2-20261009-pc-2254-a
+  - evt-s2-20261009-pc-2254-h
+  revision: 7
+  updated_at_utc: '2026-10-09T11:03:02Z'
 - key: abhimehro/personal-config#2400@21ea3387b15a97237443238d7f55afc6cf38dd0d
   repository: abhimehro/personal-config
   pr: 2400
@@ -28587,6 +28593,56 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
+- key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
+  repository: abhimehro/personal-config
+  pr: 2482
+  url: https://github.com/abhimehro/personal-config/pull/2482
+  base_sha: b85bcd41cd1c8da9ac62f6652f8ae6ae48d37610
+  head_sha: ebe4b1946a1970b7e2b7cc502e208306b1530170
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Draft-only salvage of #2254. Stage 2 never merges or marks ready.
+    Do not close original #2254 from Stage 2.'
+  next_action: 'Stage 1: re-ingest salvage draft #2482 (docs-only: lesson 0hq + 2026-09-21
+    Stage 1/Stage 2 session-report appends; git diff --check exit 0; prettier clean).
+    Route via Trunk queue only when unmarked and every routine predicate passes. Original
+    #2254 stays OPEN for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2482
+  - https://github.com/abhimehro/personal-config/pull/2254
+  - https://github.com/abhimehro/personal-config/pull/2400
+  changed_paths:
+  - tasks/lessons.md
+  - tasks/review-session-reports.md
+  - tasks/salvage-session-reports.md
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261009-pc-2482-i
+  - evt-s2-20261009-pc-2482-a
+  - evt-s2-20261009-pc-2482-h
+  revision: 3
+  updated_at_utc: '2026-10-09T11:03:02Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -56694,39 +56750,111 @@ events:
     → CLOSED_NOOP
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261005-personalconfig-2254-docs
-  source_item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
-  repository: abhimehro/personal-config
-  pr: 2254
-  base_sha: 2bd4be5396fdb08ca734d614d9b1c67942ef4f2d
-  head_sha: f66ca9ff7218438acd7a51b0e83264c84d09c5c4
-  allowed_paths:
-  - tasks/lessons.md
-  - tasks/pr-review-2026-09-21.md
-  - tasks/pr-salvage-2026-09-21-1700.md
-  - tasks/review-session-reports.md
-  - tasks/salvage-session-reports.md
-  prohibited_paths:
-  - .jules/
-  - .github/workflows/
-  repair_description: Recover only the unique non-journal session-report deltas from
-    personal-config#2254 onto a new focused draft. Do not rebase the whole pull request.
-    Exclude journals and paths outside the allowlist.
-  required_test_command: git diff --check -- tasks/lessons.md tasks/review-session-reports.md
-    tasks/salvage-session-reports.md tasks/pr-review-2026-09-21.md tasks/pr-salvage-2026-09-21-1700.md
-  expected_test_result: exit 0 and no conflict-marker whitespace errors
-  acceptance_criteria:
-  - Draft diff is limited to the allowed session-report paths.
-  - Journals and sticky paths stay out of the draft.
-  - git diff --check is clean on those paths.
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2254
-  expiry_utc: '2026-10-12T15:12:43Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-reconcile-20261005151243-f07f823c
-  history: []
+- event_id: evt-s2-20261009-pc-2254-a
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 5
+  resulting_item_revision: 6
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-s2-20261009-pc-2254-a
+  status: PROJECTED
+  created_at_utc: '2026-10-09T11:03:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: activate WI s2-20261005-personalconfig-2254-docs (attempt
+    1) for salvage draft #2482.'
+- event_id: evt-s2-20261009-pc-2254-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 6
+  resulting_item_revision: 7
+  idempotency_key: abhimehro/personal-config#2254@f66ca9ff7218438acd7a51b0e83264c84d09c5c4:evt-s2-20261009-pc-2254-h
+  status: PROJECTED
+  created_at_utc: '2026-10-09T11:03:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261005-personalconfig-2254-docs consumed. Draft
+    #2482 (head ebe4b1946a19, base main b85bcd41cd1c) carries the still-unique session-report
+    deltas (tasks/lessons.md lesson 0hq, tasks/review-session-reports.md Stage 1 2026-09-21,
+    tasks/salvage-session-reports.md Stage 2 2026-09-21 17:00). Dated records already
+    on main via #2400. Required test git diff --check exit 0. Original #2254 stays
+    OPEN; Stage 3 reconciles. Do not close from Stage 2.'
+- event_id: evt-s2-20261009-pc-2482-i
+  kind: IMPORT
+  item_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170:evt-s2-20261009-pc-2482-i
+  status: PROJECTED
+  created_at_utc: '2026-10-09T11:03:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #2482 provenance to #2254 via WI s2-20261005-personalconfig-2254-docs.
+    Head ebe4b1946a19; isDraft=true re-read after create (0gd).'
+- event_id: evt-s2-20261009-pc-2482-a
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170:evt-s2-20261009-pc-2482-a
+  status: PROJECTED
+  created_at_utc: '2026-10-09T11:03:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #2482 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261009-pc-2482-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170:evt-s2-20261009-pc-2482-h
+  status: PROJECTED
+  created_at_utc: '2026-10-09T11:03:02Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT salvage complete (docs-only session-report deltas + lesson
+    0hq from #2254). Stage 1 re-ingests draft #2482. Merge authority is never Stage
+    2. PASS_ROUTINE. personal-config merge method TRUNK_QUEUE.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
