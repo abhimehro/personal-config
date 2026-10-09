@@ -14,6 +14,11 @@ import json
 import sys
 from pathlib import Path
 
+if __package__:
+    from .domain_validation import validate_pk
+else:
+    from domain_validation import validate_pk
+
 
 def load_json_file(filepath):
     """Load and parse a JSON file."""
@@ -25,10 +30,10 @@ def load_json_file(filepath):
         return None
 
 
-def extract_domains_from_rules(rules):
+def extract_domains_from_rules(rules, source="tracker rules"):
     """Extract domain names from rules array."""
     # ⚡ Bolt Optimization: Use list comprehension for faster domain extraction
-    return [rule["PK"] for rule in rules if "PK" in rule]
+    return [validate_pk(rule["PK"], source) for rule in rules if "PK" in rule]
 
 
 def process_tracker_files(base_dir, tracker_files):
@@ -42,7 +47,7 @@ def process_tracker_files(base_dir, tracker_files):
             print(f"  Processing: {filename}")
             data = load_json_file(filepath)
             if data and "rules" in data:
-                domains = extract_domains_from_rules(data["rules"])
+                domains = extract_domains_from_rules(data["rules"], filepath)
                 denylist_domains.update(domains)
                 print(f"    Added {len(domains)} domains")
         else:
@@ -66,7 +71,7 @@ def extract_allowlist_from_file(filepath, description):
     # ⚡ Bolt Optimization: Replace list comprehension with generator to avoid memory spikes, and use PEP-8 isinstance
     domains.update(
         (
-            rule["PK"]
+            validate_pk(rule["PK"], filepath, allow_wildcards=True)
             for rule in data["rules"]
             if "PK" in rule
             and "action" in rule
