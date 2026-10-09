@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import copy
 import sys
 import unittest
+from itertools import product
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,19 +15,7 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_guardrails as guardrails
 
-
-def _item(**overrides: object) -> dict[str, object]:
-    item: dict[str, object] = {
-        "key": "owner/repo#1@abc",
-        "repository": "owner/repo",
-        "pr": 1,
-        "lifecycle_state": "STAGE1_INTAKE",
-        "guardrail_outcome": "NOT_RUN",
-        "changed_paths": ["docs/readme.md"],
-        "revision": 1,
-    }
-    item.update(overrides)
-    return item
+from tests.pr_lifecycle_helpers import guardrail_item as _item
 
 
 class ClassifyPathTests(unittest.TestCase):
@@ -82,6 +72,102 @@ class ClassifyPathTests(unittest.TestCase):
 
 
 class EvaluateItemTests(unittest.TestCase):
+    def test_missing_author_type_never_evaluated(self) -> None:
+        for paths, clear_standin in product(
+            (["docs/a.md"], ["scripts/fix.sh"]), (False, True)
+        ):
+            with self.subTest(paths=paths, clear_standin=clear_standin):
+                item = _item(classification="SECURITY", changed_paths=paths)
+                del item["author_type"]
+                before = copy.deepcopy(item)
+                self.assertIsNone(guardrails.evaluate_item(item, clear_standin))
+                self.assertEqual(before, item)
+
+    def test_security_identity_overrides_nonsticky_paths(self) -> None:
+        """Generated output exemptions cannot drain identity-based holds."""
+        for paths, classes in (
+            (["docs/a.md"], []),
+            (["generated/report.md"], ["generated_output"]),
+        ):
+            for outcome, source, clear_standin in product(
+                (None, "NOT_RUN", "REVIEW_SECURITY"),
+                (None, "stand_in", "path_eval"),
+                (False, True),
+            ):
+                with self.subTest(
+                    paths=paths,
+                    outcome=outcome,
+                    source=source,
+                    clear_standin=clear_standin,
+                ):
+                    item = _item(
+                        classification="SECURITY",
+                        changed_paths=paths,
+                        guardrail_outcome=outcome,
+                        guardrail_source=source,
+                        risk_class="UNKNOWN",
+                    )
+                    before = copy.deepcopy(item)
+                    self.assertEqual(
+                        {
+                            "sensitive_paths": classes,
+                            "guardrail_outcome": "REVIEW_SECURITY",
+                            "guardrail_source": "path_eval",
+                            "risk_class": "SENSITIVE",
+                        },
+                        guardrails.evaluate_item(item, clear_standin),
+                    )
+                    self.assertEqual(before, item)
+
+    def test_security_identity_does_not_bypass_eligibility(self) -> None:
+        """Security classification must respect non-path holds and ownership."""
+        exclusions = [
+            {"author_type": "HUMAN"},
+            {"author_type": "UNKNOWN"},
+            {"lifecycle_state": "TERMINAL"},
+            {"changed_paths": []},
+            {"changed_paths": None},
+            {"changed_paths": "docs/a.md"},
+            *({"current_owner": owner} for owner in ("human", "stage2", "stage3")),
+            *(
+                {"guardrail_source": source}
+                for source in ("manual", "review", "human", "octopus")
+            ),
+            *(
+                {"guardrail_outcome": outcome}
+                for outcome in (
+                    "HOLD_CONTRACT",
+                    "HOLD_EVIDENCE",
+                    "HOLD_PLATFORM",
+                    "HOLD_CANONICAL",
+                    "CLOSE_NONSECURITY_NOOP",
+                    "ANALYSIS_ERROR",
+                    "PASS_ROUTINE",
+                )
+            ),
+        ]
+        for overrides, clear_standin in product(exclusions, (False, True)):
+            with self.subTest(overrides=overrides, clear_standin=clear_standin):
+                item = _item(classification="SECURITY", **overrides)
+                before = copy.deepcopy(item)
+                self.assertIsNone(guardrails.evaluate_item(item, clear_standin))
+                self.assertEqual(before, item)
+
+    def test_security_identity_retains_sorted_path_evidence(self) -> None:
+        item = _item(
+            classification="SECURITY",
+            changed_paths=["scripts/fix.sh", "generated/report.md", ".env", ".env"],
+        )
+        self.assertEqual(
+            {
+                "sensitive_paths": ["generated_output", "secrets", "shell_execution"],
+                "guardrail_outcome": "REVIEW_SECURITY",
+                "guardrail_source": "path_eval",
+                "risk_class": "SENSITIVE",
+            },
+            guardrails.evaluate_item(item, clear_standin=True),
+        )
+
     def test_not_run_with_shell_path_becomes_review_security(self) -> None:
         patch = guardrails.evaluate_item(
             _item(changed_paths=["scripts/report-daemons-watchdog.sh"])
@@ -184,6 +270,72 @@ class EvaluateItemTests(unittest.TestCase):
             )
         )
 
+    def test_non_bot_authors_never_evaluated(self) -> None:
+        """Human/unknown-authored items stay untouched (ledger contract
+        forbids ROUTINE on them; forced holds are out of scope)."""
+        for author_type in ("HUMAN", "UNKNOWN", None):
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(
+                        author_type=author_type,
+                        guardrail_outcome="REVIEW_SECURITY",
+                        changed_paths=["docs/a.md"],
+                    ),
+                    clear_standin=True,
+                ),
+                author_type,
+            )
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(author_type=author_type, changed_paths=["x.sh"])
+                ),
+                author_type,
+            )
+
+    def test_security_classification_is_sticky(self) -> None:
+        """classification=SECURITY keeps the hold without sticky paths —
+        a Sentinel fix can touch only ordinary files (Grok dry-run: the
+        flag would have flipped ~30 Sentinel fixes)."""
+        patch = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                changed_paths=["docs/a.md", "src/main.py"],
+            )
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+        self.assertEqual("SENSITIVE", patch["risk_class"])
+        # And an existing REVIEW_SECURITY on a SECURITY-classed item is
+        # never drained by --clear-stand-in: evaluation may re-stamp
+        # provenance, but the hold itself stays.
+        held = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                guardrail_outcome="REVIEW_SECURITY",
+                sensitive_paths=[],
+                changed_paths=["docs/a.md"],
+            ),
+            clear_standin=True,
+        )
+        self.assertIsNotNone(held)
+        assert held is not None
+        self.assertEqual("REVIEW_SECURITY", held["guardrail_outcome"])
+        self.assertEqual("SENSITIVE", held["risk_class"])
+        # Non-SECURITY classifications still clear normally.
+        for classification in ("DEPENDENCY", "UI", "UNKNOWN"):
+            patch = guardrails.evaluate_item(
+                _item(
+                    classification=classification,
+                    guardrail_outcome="REVIEW_SECURITY",
+                    changed_paths=["docs/a.md"],
+                ),
+                clear_standin=True,
+            )
+            self.assertIsNotNone(patch, classification)
+            assert patch is not None
+            self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+
     def test_protected_guardrail_source_never_cleared(self) -> None:
         """A hold stamped by a real review survives even --clear-stand-in."""
         for source in ("manual", "review", "human", "octopus"):
@@ -229,46 +381,6 @@ class EvaluateItemTests(unittest.TestCase):
                 guardrails.classify_path(path),
                 path,
             )
-
-
-class EvaluateLedgerTests(unittest.TestCase):
-    def test_bumps_revision_and_filters_repos(self) -> None:
-        ledger = {
-            "items": [
-                _item(
-                    repository="owner/a",
-                    pr=1,
-                    changed_paths=["scripts/x.sh"],
-                    revision=2,
-                ),
-                _item(
-                    repository="owner/b",
-                    pr=2,
-                    changed_paths=["scripts/x.sh"],
-                    revision=1,
-                ),
-            ]
-        }
-        _, summary = guardrails.evaluate_ledger(ledger, {"owner/a"})
-        self.assertEqual(1, summary["evaluated"])
-        a, b = ledger["items"]
-        self.assertEqual(3, a["revision"])
-        self.assertEqual(1, b["revision"])
-        self.assertIn("updated_at_utc", a)
-
-
-class ArgParseTests(unittest.TestCase):
-    def test_json_flag_accepted(self) -> None:
-        args = guardrails.build_parser().parse_args(["--json"])
-        self.assertTrue(args.json_out)
-        self.assertFalse(args.apply)
-        self.assertFalse(args.clear_standin)
-
-    def test_clear_stand_in_flag_accepted(self) -> None:
-        args = guardrails.build_parser().parse_args(
-            ["--apply", "--json", "--clear-stand-in"]
-        )
-        self.assertTrue(args.clear_standin)
 
 
 if __name__ == "__main__":

@@ -125,6 +125,16 @@
           "enum": ["ROUTINE", "SENSITIVE", "HUMAN_REVIEW", "UNKNOWN"]
         },
         "sensitive_paths": { "type": "array", "items": { "type": "string" } },
+        "guardrail_source": {
+          "enum": [
+            "path_eval",
+            "stand_in",
+            "manual",
+            "review",
+            "human",
+            "octopus"
+          ]
+        },
         "guardrail_outcome": {
           "enum": [
             "PASS_ROUTINE",

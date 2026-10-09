@@ -45,6 +45,10 @@ _BLOCKED_OWNERS = {"human", "stage2", "stage3"}
 # (a human or a security reviewer) rather than path evidence. Even
 # --clear-stand-in never downgrades these.
 _PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
+# Identity classifications the intake classifier marked as security work.
+# These stay held regardless of path evidence — a Sentinel fix can touch
+# only ordinary source files yet still be a security change.
+_SECURITY_CLASSIFICATIONS = {"SECURITY"}
 
 # (taxonomy class, regex matched against each changed path). Patterns are
 # anchored per path segment; order matters only for readability.
@@ -125,11 +129,18 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
 
 
 def _evaluable(item: dict[str, Any]) -> bool:
-    """True when the item is a nonterminal, unowned, re-evaluatable entry."""
+    """True for a nonterminal BOT item eligible for path re-evaluation.
+
+    Non-BOT-authored items are never evaluated: the ledger contract
+    forbids ``risk_class: ROUTINE`` on human-authored PRs, so a path
+    downgrade could never apply anyway, and a forced human hold must
+    not be touched by an unattended path classifier.
+    """
     changed_paths = item.get("changed_paths")
     return all(
         (
             item.get("lifecycle_state") != "TERMINAL",
+            item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("guardrail_outcome") in _EVALUATABLE,
             item.get("guardrail_source") not in _PROTECTED_SOURCES,
@@ -138,33 +149,47 @@ def _evaluable(item: dict[str, Any]) -> bool:
     )
 
 
-def _stand_in_hold(outcome: Any, sticky: list[str]) -> bool:
-    """True for a REVIEW_SECURITY with no sticky path class (stand-in shape)."""
-    return outcome == "REVIEW_SECURITY" and not sticky
+def _security_sticky(item: dict[str, Any], sticky: list[str]) -> bool:
+    """True when a sticky path class or a SECURITY identity holds the item."""
+    return bool(sticky) or item.get("classification") in _SECURITY_CLASSIFICATIONS
+
+
+def _stand_in_hold(item: dict[str, Any], outcome: Any, sticky: list[str]) -> bool:
+    """True for a REVIEW_SECURITY with no sticky evidence (stand-in shape)."""
+    return outcome == "REVIEW_SECURITY" and not _security_sticky(item, sticky)
 
 
 def evaluate_item(
     item: dict[str, Any], clear_standin: bool = False
 ) -> dict[str, Any] | None:
-    """Return the field patch for one item, or None when it is left alone.
+    """Return a field patch without mutating the item, or None if unchanged.
 
-    Only NOT_RUN/REVIEW_SECURITY outcomes on nonterminal items re-evaluate;
-    items without changed_paths keep their current outcome (nothing to
-    classify is not evidence of a clean diff). Items owned by
+    Only NOT_RUN/REVIEW_SECURITY or unset outcomes on nonterminal,
+    BOT-authored items re-evaluate; items without a nonempty changed_paths
+    list keep their current outcome (nothing to classify is not evidence
+    of a clean diff). Items owned by
     human/stage2/stage3 or stamped with a protected ``guardrail_source``
-    (manual/review) are never touched. A ``REVIEW_SECURITY`` outcome
+    (manual/review/human/octopus) are never touched. A ``REVIEW_SECURITY`` outcome
     downgrades to ``PASS_ROUTINE`` only with ``clear_standin=True`` — a
     recorded hold may come from non-path evidence, so clearing it stays an
     explicit opt-in run by hand, not a recurring stage step.
+
+    A sticky path class or ``classification=SECURITY`` produces
+    ``REVIEW_SECURITY`` and ``SENSITIVE``, even with ``clear_standin=True``;
+    otherwise the patch sets ``PASS_ROUTINE`` and ``ROUTINE``. The patch
+    records sorted taxonomy classes in ``sensitive_paths`` (including
+    ``generated_output``, which alone is not sticky) and sets
+    ``guardrail_source`` to ``path_eval``. Return None for ineligible items,
+    preserved stand-in holds, or items already matching all patch fields.
     """
     if not _evaluable(item):
         return None
     outcome = item.get("guardrail_outcome")
     classes = classify_item_paths(item["changed_paths"])
     sticky = sorted(classes - _STICKY_EXEMPT)
-    if _stand_in_hold(outcome, sticky) and not clear_standin:
+    if _stand_in_hold(item, outcome, sticky) and not clear_standin:
         return None
-    sticky_flag = bool(sticky)
+    sticky_flag = _security_sticky(item, sticky)
     patch = {
         "sensitive_paths": sorted(classes),
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
@@ -179,7 +204,13 @@ def evaluate_item(
 def _record_evaluation(
     item: dict[str, Any], patch: dict[str, Any], now: str, summary: dict[str, Any]
 ) -> None:
-    """Apply one item's patch in place and fold it into the summary."""
+    """Apply one item's patch in place and fold it into the summary.
+
+    Set ``updated_at_utc`` to the supplied UTC timestamp ``now``. Patches
+    from ``evaluate_item`` leave the event-projected ``revision`` unchanged.
+    Count every evaluation; append to ``summary["changes"]`` only when the
+    guardrail outcome changes.
+    """
     summary["evaluated"] += 1
     outcome = str(patch["guardrail_outcome"])
     summary["by_outcome"][outcome] += 1
@@ -195,7 +226,8 @@ def _record_evaluation(
             }
         )
     item.update(patch)
-    item["revision"] = int(item.get("revision") or 0) + 1
+    # item.revision is a projection of transition events only — bumping it
+    # here without logging an event breaks the ledger consistency check.
     item["updated_at_utc"] = now
 
 
