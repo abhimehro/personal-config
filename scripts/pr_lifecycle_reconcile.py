@@ -132,7 +132,9 @@ def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
     old path too: `.previous_filename` keeps a file moved OUT of a
     sensitive location from looking clean. An empty result also returns
     None: a real open PR always changes at least one file, so an empty
-    list means the evidence could not be trusted.
+    list means the evidence could not be trusted. The API caps at 3000
+    files even under pagination with no truncation signal, so hitting the
+    cap fails closed as well.
     """
     cmd = [
         "gh",
@@ -151,7 +153,9 @@ def _gh_pr_files(repo: str, pr: int) -> list[str] | None:
     if completed.returncode != 0:
         return None
     paths = sorted({line for line in completed.stdout.splitlines() if line})
-    return paths or None
+    if not paths or len(paths) >= 3000:
+        return None
+    return paths
 
 
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:

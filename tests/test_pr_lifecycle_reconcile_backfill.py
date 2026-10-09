@@ -52,6 +52,12 @@ class PathBackfillTests(unittest.TestCase):
             reconcile._gh_pr_files("owner/repo", 7)
         self.assertIn("previous_filename", " ".join(run.call_args.args[0]))
 
+    def test_gh_pr_files_fails_closed_at_api_cap(self):
+        out = "\n".join(f"f{i}.py" for i in range(3000)) + "\n"
+        completed = types.SimpleNamespace(returncode=0, stdout=out)
+        with mock.patch.object(reconcile.subprocess, "run", return_value=completed):
+            self.assertIsNone(reconcile._gh_pr_files("owner/repo", 7))
+
     def test_gh_pr_files_fails_closed(self):
         for completed in (
             types.SimpleNamespace(returncode=1, stdout=""),
