@@ -210,15 +210,28 @@ def _previous_state(body: object) -> dict[str, Any]:
         return {"first_seen": {}, "overdue_notified": []}
     first_seen = state.get("first_seen")
     notified = state.get("overdue_notified")
+    rows_meta = state.get("rows_meta")
+    migrated: dict[str, Any] = {}
+    if isinstance(first_seen, dict):
+        for key, value in first_seen.items():
+            if not isinstance(key, str):
+                continue
+            # Legacy keys carried a :blocker suffix; one row per PR drops it.
+            migrated.setdefault(key.split(":", 1)[0], value)
     return {
-        "first_seen": first_seen if isinstance(first_seen, dict) else {},
-        "overdue_notified": notified if isinstance(notified, list) else [],
+        "first_seen": migrated,
+        "overdue_notified": (
+            [key.split(":", 1)[0] if isinstance(key, str) else key for key in notified]
+            if isinstance(notified, list)
+            else []
+        ),
+        "rows_meta": rows_meta if isinstance(rows_meta, dict) else {},
     }
 
 
 def _row_key(repo: str, row: dict[str, Any]) -> str:
-    """Identify a backlog item by repository, PR number, and blocker."""
-    return f"{repo}#{row.get('pr')}:{row.get('blocker')}"
+    """Identify a backlog row: one row per repository/PR pair."""
+    return f"{repo}#{row.get('pr')}"
 
 
 def _row_first_seen(
@@ -399,9 +412,18 @@ def _prepare_backlog_rows(
         prepared.append(row)
         if spec.record_overdue:
             _record_overdue(row, notified, newly_overdue)
+    rows_meta = {
+        row["id"]: {
+            "head_sha": str(row.get("head_sha") or ""),
+            "suggested_disposition": str(row.get("suggested_disposition") or ""),
+        }
+        for row in prepared
+        if row.get("head_sha")
+    }
     new_state = {
         "first_seen": first_seen,
         "overdue_notified": sorted(key for key in notified if key in first_seen),
+        "rows_meta": rows_meta,
     }
     return prepared, new_state, newly_overdue
 
@@ -478,6 +500,27 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
         table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
 
 
+def _decision_lines(prepared: list[dict[str, Any]]) -> list[str]:
+    """Render the checkbox task list abhimehro ticks to execute dispositions."""
+    lines = [
+        "",
+        "Decisions — tick a checkbox to execute the suggested disposition.",
+        "Ticks are honored only while the rendered head is still the PR's live head;",
+        "every executed disposition is logged as a ledger event.",
+        "",
+    ]
+    for row in prepared:
+        if _is_handoff_row(row) or not row.get("head_sha"):
+            continue
+        suggested = _markdown_cell(row.get("suggested_disposition") or "KEEP_OPEN")
+        head = _markdown_cell(str(row.get("head_sha") or "")[:7] or "unknown")
+        lines.append(
+            f"- [ ] **{row['id']}** — suggested `{suggested}` "
+            f"· head `{head}` · {_markdown_cell(row.get('blocker'))}"
+        )
+    return lines
+
+
 def backlog_issue_body(
     spec: _BacklogSpec,
     rows: list[dict[str, Any]],
@@ -502,6 +545,7 @@ def backlog_issue_body(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
         _append_handoff_table(table, prepared)
+        table.extend(_decision_lines(prepared))
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"

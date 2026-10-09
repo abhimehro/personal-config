@@ -29,6 +29,9 @@ from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
 from pr_lifecycle_issue_status import (
     _BacklogSpec,
+    _find_backlog_issue,
+    _list_backlog_rows,
+    _previous_state,
     backlog_issue_body,
     update_backlog_issue,
 )
@@ -616,6 +619,20 @@ class _DecisionCtx:
     overdue_notifications: bool = False
 
 
+def _execute_ticks(repo: str, ledger: dict[str, Any]) -> None:
+    """Execute verified decision-issue ticks before the issue re-renders."""
+    import pr_lifecycle_dispositions as dispositions
+
+    try:
+        issue = _find_backlog_issue(_list_backlog_rows(repo))
+        if not issue:
+            return
+        state = _previous_state(issue.get("body"))
+        dispositions.execute(repo, issue, ledger, state)
+    except (OSError, subprocess.SubprocessError):
+        return
+
+
 def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
     """Refresh per-repo decision issues, skipping repos whose inventory failed."""
     packet_expiry_days = ctx.lifecycle.get("packet_expiry_close_days", 7)
@@ -629,6 +646,8 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
         if repo in failed_repos:
             results[repo] = _issue_skipped(repo)
             continue
+        if ctx.apply and ctx.decision_issues:
+            _execute_ticks(repo, ctx.ledger)
         results[repo] = _one_decision_issue(
             _IssueSpec(
                 repo,
