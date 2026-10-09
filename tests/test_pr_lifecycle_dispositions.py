@@ -102,9 +102,17 @@ class ParseTickTests(unittest.TestCase):
     def test_no_edit_history_means_no_execution(self):
         run = _Run(editor=None)
         body = f"- [x] **{REPO}#42** — `CLOSED_STALE`\n"
-        result = dispositions.execute(REPO, _issue(body), _ledger(), _state(), run=run)
+        ctx = dispositions._ExecCtx(REPO, _issue(body), _ledger(), _state(), run)
+        result = dispositions.execute(ctx)
         self.assertEqual(result["accepted"], [])
         self.assertIn("not abhimehro", result["reason"])
+
+    def test_ticked_row_without_token_falls_back(self):
+        ticks = dispositions.parse_ticks("- [x] **owner/repo#2** — no token\n")
+        self.assertEqual(ticks, [{"row_id": "owner/repo#2", "token": None}])
+
+    def test_null_editor_fields_return_empty(self):
+        self.assertEqual(dispositions.editors(REPO, 7, run=_Run(editor=None)), set())
 
 
 class ExecuteTests(unittest.TestCase):
@@ -112,8 +120,9 @@ class ExecuteTests(unittest.TestCase):
         run = _Run(**kw)
         live = live or {"state": "OPEN", "headRefOid": "abc1234"}
         ledger = _ledger()
+        ctx = dispositions._ExecCtx(REPO, _issue(body), ledger, _state(), run)
         with mock.patch.object(dispositions, "_gh_pr_view", lambda repo, pr: live):
-            result = dispositions.execute(REPO, _issue(body), ledger, _state(), run=run)
+            result = dispositions.execute(ctx)
         return result, run, ledger
 
     def test_editor_gate_rejects_other_users(self):
@@ -155,12 +164,11 @@ class ExecuteTests(unittest.TestCase):
         )
         result, _, ledger = self._run(body)
         ledger["items"][0]["lifecycle_state"] = "TERMINAL"
+        ctx = dispositions._ExecCtx(REPO, _issue(body), ledger, _state(), _Run())
         with mock.patch.object(
             dispositions, "_gh_pr_view", lambda repo, pr: {"state": "OPEN"}
         ):
-            second = dispositions.execute(
-                REPO, _issue(body), ledger, _state(), run=_Run()
-            )
+            second = dispositions.execute(ctx)
         self.assertEqual(
             [s.get("skipped") for s in second["skipped"]],
             ["unknown row", "unknown row"],

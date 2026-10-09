@@ -211,15 +211,8 @@ def _previous_state(body: object) -> dict[str, Any]:
     first_seen = state.get("first_seen")
     notified = state.get("overdue_notified")
     rows_meta = state.get("rows_meta")
-    migrated: dict[str, Any] = {}
-    if isinstance(first_seen, dict):
-        for key, value in first_seen.items():
-            if not isinstance(key, str):
-                continue
-            # Legacy keys carried a :blocker suffix; one row per PR drops it.
-            migrated.setdefault(key.split(":", 1)[0], value)
     return {
-        "first_seen": migrated,
+        "first_seen": _migrate_first_seen(first_seen),
         "overdue_notified": (
             [key.split(":", 1)[0] if isinstance(key, str) else key for key in notified]
             if isinstance(notified, list)
@@ -227,6 +220,23 @@ def _previous_state(body: object) -> dict[str, Any]:
         ),
         "rows_meta": rows_meta if isinstance(rows_meta, dict) else {},
     }
+
+
+def _migrate_first_seen(first_seen: Any) -> dict[str, Any]:
+    """Map legacy repo#pr:blocker keys to repo#pr, keeping the earliest time."""
+    migrated: dict[str, Any] = {}
+    if not isinstance(first_seen, dict):
+        return migrated
+    for key, value in first_seen.items():
+        if not isinstance(key, str):
+            continue
+        base = key.split(":", 1)[0]
+        prev = migrated.get(base)
+        if prev is None or (
+            isinstance(value, str) and isinstance(prev, str) and value < prev
+        ):
+            migrated[base] = value
+    return migrated
 
 
 def _row_key(repo: str, row: dict[str, Any]) -> str:
@@ -412,7 +422,17 @@ def _prepare_backlog_rows(
         prepared.append(row)
         if spec.record_overdue:
             _record_overdue(row, notified, newly_overdue)
-    rows_meta = {
+    new_state = {
+        "first_seen": first_seen,
+        "overdue_notified": sorted(key for key in notified if key in first_seen),
+        "rows_meta": _rows_meta(prepared),
+    }
+    return prepared, new_state, newly_overdue
+
+
+def _rows_meta(prepared: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    """Persist each head-backed row's rendered head and suggestion."""
+    return {
         row["id"]: {
             "head_sha": str(row.get("head_sha") or ""),
             "suggested_disposition": str(row.get("suggested_disposition") or ""),
@@ -420,12 +440,6 @@ def _prepare_backlog_rows(
         for row in prepared
         if row.get("head_sha")
     }
-    new_state = {
-        "first_seen": first_seen,
-        "overdue_notified": sorted(key for key in notified if key in first_seen),
-        "rows_meta": rows_meta,
-    }
-    return prepared, new_state, newly_overdue
 
 
 def _pr_link(row: dict[str, Any]) -> str:
@@ -500,8 +514,8 @@ def _append_handoff_table(table: list[str], prepared: list[dict[str, Any]]) -> N
         table.append(f"| — | {omitted} rows omitted (body cap) | | | | |")
 
 
-def _decision_lines(prepared: list[dict[str, Any]]) -> list[str]:
-    """Render the checkbox task list abhimehro ticks to execute dispositions."""
+def _decision_lines(prepared: list[dict[str, Any]], used: int) -> list[str]:
+    """Render tickable disposition rows inside the shared body budget."""
     lines = [
         "",
         "Decisions — tick a checkbox to execute the suggested disposition.",
@@ -509,15 +523,24 @@ def _decision_lines(prepared: list[dict[str, Any]]) -> list[str]:
         "every executed disposition is logged as a ledger event.",
         "",
     ]
+    used += sum(len(line) + 1 for line in lines)
+    omitted = 0
     for row in prepared:
         if _is_handoff_row(row) or not row.get("head_sha"):
             continue
         suggested = _markdown_cell(row.get("suggested_disposition") or "KEEP_OPEN")
         head = _markdown_cell(str(row.get("head_sha") or "")[:7] or "unknown")
-        lines.append(
+        line = (
             f"- [ ] **{row['id']}** — suggested `{suggested}` "
             f"· head `{head}` · {_markdown_cell(row.get('blocker'))}"
         )
+        if used + len(line) + 1 > _BACKLOG_TABLE_CHAR_CAP:
+            omitted += 1
+            continue
+        lines.append(line)
+        used += len(line) + 1
+    if omitted:
+        lines.append(f"- {omitted} decision row(s) omitted (body cap)")
     return lines
 
 
@@ -545,7 +568,7 @@ def backlog_issue_body(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
         _append_handoff_table(table, prepared)
-        table.extend(_decision_lines(prepared))
+        table.extend(_decision_lines(prepared, sum(len(line) + 1 for line in table)))
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"

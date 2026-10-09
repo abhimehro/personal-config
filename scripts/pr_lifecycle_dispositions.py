@@ -1,18 +1,18 @@
-"""Human disposition ticks on the per-repo decision issue.
+"""Decision-issue checkbox dispositions with editor and head verification."""
 
-Each open decision row renders as a task-list checkbox carrying a suggested
-disposition and the head SHA the row was rendered against. abhimehro ticks a
-checkbox (optionally editing the backticked disposition token) to execute it.
-Edits by anyone else are ignored, and ticks are ignored when the PR's live
-head no longer matches the rendered head. Every executed disposition is
-applied through the shared transition path so it lands as a ledger event.
-"""
+# Each decision row renders as a task-list checkbox carrying a suggested
+# disposition and the head SHA the row was rendered against. abhimehro ticks a
+# checkbox (optionally editing the backticked disposition token) to execute it.
+# Ticks are honored only when every recorded body editor is abhimehro and the
+# live head still matches the rendered head. Every executed disposition goes
+# through apply_action_to_ledger so it lands as a ledger event.
 
 from __future__ import annotations
 
 import json
 import re
 import subprocess
+from dataclasses import dataclass
 from typing import Any
 
 from pr_lifecycle_reconcile import _gh_pr_view, apply_action_to_ledger
@@ -32,7 +32,7 @@ _EDITOR_QUERY = (
     "query($owner: String!, $name: String!, $number: Int!) {"
     " repository(owner: $owner, name: $name) {"
     " issue(number: $number) {"
-    " userContentEdits(last: 1) { nodes { editor { login } } } } } }"
+    " userContentEdits(first: 100) { nodes { editor { login } } } } } }"
 )
 
 
@@ -43,12 +43,14 @@ def parse_ticks(body: str) -> list[dict[str, Any]]:
         match = _TICK_RE.match(line.strip())
         if match:
             tokens = _TOKEN_RE.findall(line)
-            ticks.append({"row_id": match.group(1), "token": tokens[-1] or None})
+            ticks.append(
+                {"row_id": match.group(1), "token": tokens[-1] if tokens else None}
+            )
     return ticks
 
 
-def latest_editor(repo: str, number: int, *, run: Any = subprocess.run) -> str | None:
-    """Return the login of the issue body's most recent editor, or None."""
+def editors(repo: str, number: int, *, run: Any = subprocess.run) -> set[str] | None:
+    """Return every recorded body editor login, or None on any failure."""
     owner, _, name = repo.partition("/")
     proc = run(
         [
@@ -69,125 +71,142 @@ def latest_editor(repo: str, number: int, *, run: Any = subprocess.run) -> str |
         check=False,
         timeout=30,
     )
-    if proc.returncode != 0:
+    if proc.returncode:
         return None
-    nodes = (
-        json.loads(proc.stdout or "{}")
-        .get("data", {})
-        .get("repository", {})
-        .get("issue", {})
-        .get("userContentEdits", {})
-        .get("nodes", [])
-    )
-    return nodes[-1].get("editor", {}).get("login") if nodes else None
+    try:
+        data = json.loads(proc.stdout or "{}")
+    except json.JSONDecodeError:
+        return None
+    issue = ((data.get("data") or {}).get("repository") or {}).get("issue") or {}
+    nodes = (issue.get("userContentEdits") or {}).get("nodes") or []
+    return {(node.get("editor") or {}).get("login") for node in nodes} - {None}
 
 
-def _find_item(ledger: dict[str, Any], repo: str, pr: Any) -> dict[str, Any] | None:
+def _find_item(ledger: dict[str, Any], repo: str, pr_num: Any) -> dict[str, Any] | None:
     """Return the nonterminal ledger item for repo#pr, preferring the newest."""
     candidates = [
         item
         for item in ledger.get("items") or []
         if isinstance(item, dict)
         and item.get("repository") == repo
-        and item.get("pr") == pr
+        and item.get("pr") == pr_num
         and item.get("lifecycle_state") != "TERMINAL"
     ]
     candidates.sort(key=lambda i: (int(i.get("revision") or 0)), reverse=True)
     return candidates[0] if candidates else None
 
 
-def _close_pr(repo: str, pr: Any, run: Any) -> bool:
+def _close_pr(repo: str, pr_num: Any, run: Any) -> bool:
     """Close a still-open PR; returns True when it ends up closed."""
     proc = run(
-        ["gh", "pr", "close", str(pr), "--repo", repo],
+        ["gh", "pr", "close", str(pr_num), "--repo", repo],
         capture_output=True,
         text=True,
         check=False,
         timeout=30,
     )
-    return proc.returncode == 0
+    return not proc.returncode
 
 
-def _tick_to_action(
-    tick: dict[str, Any],
-    meta: dict[str, Any],
-    item: dict[str, Any],
-    ledger: dict[str, Any],
-    *,
-    run: Any,
-) -> dict[str, Any]:
-    """Apply one verified tick and return its action record."""
-    repo, _, pr_text = tick["row_id"].partition("#")
-    pr = int(pr_text)
-    disposition = tick.get("token") or meta.get("suggested_disposition")
-    live = _gh_pr_view(repo, pr)
-    head = str(meta.get("head_sha") or "")
-    base = {
-        "action": "EXECUTE_DISPOSITION",
-        "repository": repo,
-        "pr": pr,
-        "key": item["key"],
-        "disposition": disposition,
-    }
-    if not live or str(live.get("headRefOid") or "") != head:
-        return {**base, "skipped": "head moved since rendered"}
+@dataclass(frozen=True)
+class _TickCtx:
+    """One verified tick plus the ledger item and execution context."""
+
+    tick: dict[str, Any]
+    meta: dict[str, Any]
+    item: dict[str, Any]
+    ledger: dict[str, Any]
+    run: Any
+
+
+def _resolve_action(ctx: _TickCtx, base: dict[str, Any], live: dict[str, Any]) -> dict:
+    """Map a verified disposition to its ledger action or a skip record."""
+    disposition = base["disposition"]
     if disposition == "KEEP_OPEN":
-        action = {
+        return {
             **{k: v for k, v in base.items() if k != "disposition"},
             "to_state": "WAITING_HUMAN",
             "reason": "human disposition KEEP_OPEN via decision issue",
         }
-    elif disposition in _DISPOSITIONS:
-        closed = live.get("state") == "CLOSED" or _close_pr(repo, pr, run)
-        if not closed:
-            return {**base, "skipped": "gh pr close failed"}
-        action = {
-            **base,
-            "to_state": "TERMINAL",
-            "reason": f"human disposition {disposition} via decision issue",
-        }
-    else:
+    if disposition not in _DISPOSITIONS:
         return {**base, "skipped": "unknown disposition"}
-    event = apply_action_to_ledger(ledger, item, action)
+    if live.get("state") != "CLOSED" and not _close_pr(
+        base["repository"], base["pr"], ctx.run
+    ):
+        return {**base, "skipped": "gh pr close failed"}
+    return {
+        **base,
+        "to_state": "TERMINAL",
+        "reason": f"human disposition {disposition} via decision issue",
+    }
+
+
+def _tick_to_action(ctx: _TickCtx) -> dict[str, Any]:
+    """Apply one verified tick and return its action record."""
+    repo, _, pr_text = ctx.tick["row_id"].partition("#")
+    base = {
+        "action": "EXECUTE_DISPOSITION",
+        "repository": repo,
+        "pr": int(pr_text),
+        "key": ctx.item["key"],
+        "disposition": ctx.tick.get("token") or ctx.meta.get("suggested_disposition"),
+    }
+    live = _gh_pr_view(repo, int(pr_text))
+    if not live or str(live.get("headRefOid") or "") != str(
+        ctx.meta.get("head_sha") or ""
+    ):
+        return {**base, "skipped": "head moved since rendered"}
+    action = _resolve_action(ctx, base, live)
+    if "to_state" not in action:
+        return action
+    event = apply_action_to_ledger(ctx.ledger, ctx.item, action)
     return {**action, "event_id": event.get("event_id"), "executed": True}
 
 
-def execute(
-    repo: str,
-    issue: dict[str, Any],
-    ledger: dict[str, Any],
-    state: dict[str, Any],
-    *,
-    run: Any = subprocess.run,
-) -> dict[str, Any]:
-    """Execute verified decision-issue ticks for one repository.
+def _process_tick(tick: dict[str, Any], ctx: "_ExecCtx") -> dict[str, Any]:
+    """Resolve one tick to an executed or skipped outcome record."""
+    repo_part, _, pr_part = tick["row_id"].partition("#")
+    meta = (ctx.state.get("rows_meta") or {}).get(tick["row_id"])
+    try:
+        item = _find_item(ctx.ledger, repo_part, int(pr_part or 0))
+    except ValueError:
+        item = None
+    if meta is None or item is None:
+        return {**tick, "skipped": "unknown row"}
+    return _tick_to_action(_TickCtx(tick, meta, item, ctx.ledger, ctx.run))
 
-    Returns {"accepted": [...], "skipped": [...], "reason": ...}; the ledger
-    is mutated in place via apply_action_to_ledger for each accepted tick.
-    """
-    number = issue.get("number")
+
+@dataclass(frozen=True)
+class _ExecCtx:
+    """Inputs for one repository's tick execution pass."""
+
+    repo: str
+    issue: dict[str, Any]
+    ledger: dict[str, Any]
+    state: dict[str, Any]
+    run: Any
+
+
+def execute(ctx: _ExecCtx) -> dict[str, Any]:
+    """Execute verified decision-issue ticks for one repository."""
+    # Returns {"accepted": [...], "skipped": [...], "reason": ...}; the ledger
+    # is mutated in place via apply_action_to_ledger for each accepted tick.
+    number = ctx.issue.get("number")
     if not isinstance(number, int):
         return {"accepted": [], "skipped": [], "reason": "no decision issue"}
-    editor = latest_editor(repo, number, run=run)
-    if editor not in _ALLOWED_EDITORS:
+    logins = editors(ctx.repo, number, run=ctx.run)
+    if logins is None:
+        return {"accepted": [], "skipped": [], "reason": "editor history unreadable"}
+    if not logins or logins - _ALLOWED_EDITORS:
         return {
             "accepted": [],
             "skipped": [],
-            "reason": f"latest body editor {editor!r} not abhimehro",
+            "reason": f"body editors {sorted(logins)!r} not abhimehro-only",
         }
-    rows_meta = state.get("rows_meta") or {}
-    accepted: list[dict[str, Any]] = []
-    skipped: list[dict[str, Any]] = []
-    for tick in parse_ticks(issue.get("body") or ""):
-        repo_part, _, pr_part = tick["row_id"].partition("#")
-        meta = rows_meta.get(tick["row_id"])
-        try:
-            item = _find_item(ledger, repo_part, int(pr_part or 0))
-        except ValueError:
-            item = None
-        if meta is None or item is None:
-            skipped.append({**tick, "skipped": "unknown row"})
-            continue
-        outcome = _tick_to_action(tick, meta, item, ledger, run=run)
-        (accepted if outcome.get("executed") else skipped).append(outcome)
-    return {"accepted": accepted, "skipped": skipped}
+    outcomes = [
+        _process_tick(tick, ctx) for tick in parse_ticks(ctx.issue.get("body") or "")
+    ]
+    return {
+        "accepted": [o for o in outcomes if o.get("executed")],
+        "skipped": [o for o in outcomes if not o.get("executed")],
+    }

@@ -24,6 +24,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position,unused-import
+import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
@@ -621,14 +622,14 @@ class _DecisionCtx:
 
 def _execute_ticks(repo: str, ledger: dict[str, Any]) -> None:
     """Execute verified decision-issue ticks before the issue re-renders."""
-    import pr_lifecycle_dispositions as dispositions
-
     try:
         issue = _find_backlog_issue(_list_backlog_rows(repo))
         if not issue:
             return
-        state = _previous_state(issue.get("body"))
-        dispositions.execute(repo, issue, ledger, state)
+        ctx = dispositions._ExecCtx(
+            repo, issue, ledger, _previous_state(issue.get("body")), subprocess.run
+        )
+        dispositions.execute(ctx)
     except (OSError, subprocess.SubprocessError):
         return
 
