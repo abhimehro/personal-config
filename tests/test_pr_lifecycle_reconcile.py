@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import sys
 import types
 import unittest
@@ -13,47 +12,12 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-# Stub heavy repo modules so classify_item can load without PyYAML / CAS.
-# Restoring sys.modules keeps unittest discovery from leaking the stubs into
-# the rest of the suite.
-_STUB_NAMES = (
-    "pr_lifecycle_ledger",
-    "pr_lifecycle_ledger_cas",
-    "pr_lifecycle_config",
-    "pr_lifecycle_persist",
-    "pr_lifecycle_support",
-    "pr_lifecycle_yaml",
+from tests.pr_lifecycle_helpers import (
+    load_reconcile_with_stubs,
+    reconcile_item,
 )
-_saved_modules = {name: sys.modules.get(name) for name in _STUB_NAMES}
-for name in _STUB_NAMES:
-    sys.modules[name] = types.ModuleType(name)
 
-sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
-    "STAGE1_INTAKE": "stage1",
-    "STAGE2_QUEUED": "stage2",
-    "STAGE2_ACTIVE": "stage2",
-    "STAGE3_RECONCILIATION": "stage3",
-    "WAITING_HUMAN": "human",
-    "TERMINAL": "none",
-}
-sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
-sys.modules["pr_lifecycle_support"].ROOT = ROOT
-sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
-sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
-sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
-sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: 0
-
-import pr_lifecycle_reconcile as reconcile  # noqa: E402
-
-from tests.pr_lifecycle_helpers import reconcile_item  # noqa: E402
-
-for _name in _STUB_NAMES:
-    _saved = _saved_modules[_name]
-    if _saved is None:
-        sys.modules.pop(_name, None)
-    else:
-        sys.modules[_name] = _saved
+reconcile = load_reconcile_with_stubs()
 
 NOW = datetime(2026, 9, 21, 18, 0, tzinfo=timezone.utc)
 
@@ -312,10 +276,9 @@ def _transition_effect(event, projected):
 def _apply_with_mocks(ledger, item, action):
     with mock.patch.object(
         reconcile.ledger_mod, "apply_transition", side_effect=_transition_effect
-    ):
-        with mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
-            with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
-                return reconcile.apply_action_to_ledger(ledger, item, action)
+    ), mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+        with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
+            return reconcile.apply_action_to_ledger(ledger, item, action)
 
 
 class ReconcileHelpersTests(unittest.TestCase):
@@ -529,11 +492,10 @@ class ReconcileHelpersTests(unittest.TestCase):
             types.SimpleNamespace(returncode=0, stdout="not-json"),
             types.SimpleNamespace(returncode=0, stdout="[]"),
         ):
-            with self.subTest(completed=completed):
-                with mock.patch.object(
-                    reconcile.subprocess, "run", return_value=completed
-                ):
-                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+            with self.subTest(completed=completed), mock.patch.object(
+                reconcile.subprocess, "run", return_value=completed
+            ):
+                self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(reconcile.subprocess, "run", side_effect=OSError):
             self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
@@ -542,13 +504,12 @@ class ReconcileHelpersTests(unittest.TestCase):
         base_fail = types.SimpleNamespace(returncode=1, stdout="")
         base_empty = types.SimpleNamespace(returncode=0, stdout="\n")
         for base_resp in (base_fail, base_empty):
-            with self.subTest(base=base_resp):
-                with mock.patch.object(
-                    reconcile.subprocess,
-                    "run",
-                    side_effect=[view_ok, base_resp],
-                ):
-                    self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
+            with self.subTest(base=base_resp), mock.patch.object(
+                reconcile.subprocess,
+                "run",
+                side_effect=[view_ok, base_resp],
+            ):
+                self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
         with mock.patch.object(
             reconcile.subprocess,
