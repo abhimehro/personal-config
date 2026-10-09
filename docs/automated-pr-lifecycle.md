@@ -585,10 +585,14 @@ other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
 `--clear-stand-in` is passed — a recorded hold may come from non-path
 evidence (content review, Octopus or human review), so clearing it is an
-explicit opt-in, not an unattended default. `--clear-stand-in` is the
-correction mechanism for the Stage 1 stand-in over-marking; keep it in the
-Stage 1 command until the over-marked set drains, then drop it so fresh
-`REVIEW_SECURITY` items stay sticky.
+explicit opt-in. The flag is a **one-shot manual drain** for the earlier
+stand-in over-marking and must not appear in the recurring Stage 1 prompt:
+run `python3 scripts/pr_lifecycle_guardrails.py --apply --json
+--clear-stand-in` once, by hand, to drain the over-marked set. Every
+evaluated item is stamped `guardrail_source: path_eval`, and an item whose
+`guardrail_source` is `manual`/`review`/`human`/`octopus` is never touched —
+not even by `--clear-stand-in` — so a hold recorded by a real review cannot
+be silently cleared by a later run.
 
 ### Code-enforced holds in the unblock executor
 

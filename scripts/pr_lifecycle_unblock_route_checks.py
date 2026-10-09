@@ -151,30 +151,13 @@ def _advisory_notes(
     ]
 
 
-def _dependabot_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
-    """Trigger a bounded Dependabot rebase for a conflicted PR."""
-    return _conflict_trigger(
-        ctx,
-        _ConflictSpec(
-            "dependabot_rebase",
-            "@dependabot rebase",
-            "request a bounded conflict rebase",
-        ),
-        evidence,
-    )
+def _conflict_handler(spec: _ConflictSpec):
+    """Build a conflict-route handler bound to one trigger spec."""
 
+    def handle(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+        return _conflict_trigger(ctx, spec, evidence)
 
-def _coderabbit_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
-    """Trigger CodeRabbit conflict resolution for a conflicted PR."""
-    return _conflict_trigger(
-        ctx,
-        _ConflictSpec(
-            "coderabbit_conflict",
-            "@coderabbitai resolve merge conflict",
-            "request merge conflict resolution",
-        ),
-        evidence,
-    )
+    return handle
 
 
 def _jules_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any]]:
@@ -196,8 +179,20 @@ def _jules_conflict(ctx: _Route, evidence: dict[str, Any]) -> list[dict[str, Any
 
 
 _CONFLICT_TRIGGERS = {
-    "dependabot": _dependabot_conflict,
-    "coderabbit": _coderabbit_conflict,
+    "dependabot": _conflict_handler(
+        _ConflictSpec(
+            "dependabot_rebase",
+            "@dependabot rebase",
+            "request a bounded conflict rebase",
+        )
+    ),
+    "coderabbit": _conflict_handler(
+        _ConflictSpec(
+            "coderabbit_conflict",
+            "@coderabbitai resolve merge conflict",
+            "request merge conflict resolution",
+        )
+    ),
     "jules": _jules_conflict,
 }
 

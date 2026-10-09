@@ -176,12 +176,44 @@ class EvaluateItemTests(unittest.TestCase):
             guardrails.evaluate_item(
                 _item(
                     guardrail_outcome="REVIEW_SECURITY",
+                    guardrail_source="path_eval",
                     sensitive_paths=["shell_execution"],
                     risk_class="SENSITIVE",
                     changed_paths=["scripts/x.sh"],
                 )
             )
         )
+
+    def test_protected_guardrail_source_never_cleared(self) -> None:
+        """A hold stamped by a real review survives even --clear-stand-in."""
+        for source in ("manual", "review", "human", "octopus"):
+            self.assertIsNone(
+                guardrails.evaluate_item(
+                    _item(
+                        guardrail_outcome="REVIEW_SECURITY",
+                        guardrail_source=source,
+                        changed_paths=["docs/a.md"],
+                    ),
+                    clear_standin=True,
+                ),
+                source,
+            )
+
+    def test_github_agent_command_and_instruction_files_sticky(self) -> None:
+        for path in (
+            ".github/commands/gemini-invoke.toml",
+            ".github/copilot-instructions.md",
+            ".github/jules-review-rules.md",
+            ".github/hooks/pre-push.sh",
+            ".github/agents/review.agent.md",
+            ".claude/settings.json",
+            ".mcp.json",
+        ):
+            self.assertIn(
+                "workflows_and_permissions",
+                guardrails.classify_path(path),
+                path,
+            )
 
 
 class EvaluateLedgerTests(unittest.TestCase):

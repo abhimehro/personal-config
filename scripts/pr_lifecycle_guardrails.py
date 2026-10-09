@@ -41,22 +41,17 @@ _STICKY_EXEMPT = {"generated_output"}
 # Owners whose holds must never be rewritten by an unattended evaluator,
 # matching the unblock router's blocked-owner set.
 _BLOCKED_OWNERS = {"human", "stage2", "stage3"}
-_MANUAL_OUTCOMES = {
-    "PASS_ROUTINE",
-    "HOLD_CONTRACT",
-    "HOLD_EVIDENCE",
-    "HOLD_PLATFORM",
-    "HOLD_CANONICAL",
-    "CLOSE_NONSECURITY_NOOP",
-    "ANALYSIS_ERROR",
-}
+# guardrail_source values that mark a hold/outcome recorded by a real review
+# (a human or a security reviewer) rather than path evidence. Even
+# --clear-stand-in never downgrades these.
+_PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
 
 # (taxonomy class, regex matched against each changed path). Patterns are
 # anchored per path segment; order matters only for readability.
 _PATH_RULES: tuple[tuple[str, str], ...] = (
     (
         "workflows_and_permissions",
-        r"(^|/)\.github/(workflows|actions|rulesets|scripts|hooks|agents|CODEOWNERS|github-app\.ya?ml|repository-automation\.ya?ml|dependabot\.ya?ml|pull_request_template)|(^|/)(\.claude/|\.windsurf/|\.codeium/|\.mcp\.json$)",
+        r"(^|/)\.github/(workflows|actions|rulesets|scripts|hooks|agents|commands|copilot|jules|CODEOWNERS|github-app\.ya?ml|repository-automation\.ya?ml|dependabot\.ya?ml|pull_request_template)|(^|/)(\.claude/|\.windsurf/|\.codeium/|\.mcp\.json$)",
     ),
     (
         "secrets",
@@ -129,6 +124,25 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
     return classes
 
 
+def _evaluable(item: dict[str, Any]) -> bool:
+    """True when the item is a nonterminal, unowned, re-evaluatable entry."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if item.get("current_owner") in _BLOCKED_OWNERS:
+        return False
+    if item.get("guardrail_outcome") not in _EVALUATABLE:
+        return False
+    if item.get("guardrail_source") in _PROTECTED_SOURCES:
+        return False
+    changed_paths = item.get("changed_paths")
+    return isinstance(changed_paths, list) and bool(changed_paths)
+
+
+def _stand_in_hold(outcome: Any, sticky: list[str]) -> bool:
+    """True for a REVIEW_SECURITY with no sticky path class (stand-in shape)."""
+    return outcome == "REVIEW_SECURITY" and not sticky
+
+
 def evaluate_item(
     item: dict[str, Any], clear_standin: bool = False
 ) -> dict[str, Any] | None:
@@ -137,29 +151,24 @@ def evaluate_item(
     Only NOT_RUN/REVIEW_SECURITY outcomes on nonterminal items re-evaluate;
     items without changed_paths keep their current outcome (nothing to
     classify is not evidence of a clean diff). Items owned by
-    human/stage2/stage3 are never touched. A ``REVIEW_SECURITY`` outcome
+    human/stage2/stage3 or stamped with a protected ``guardrail_source``
+    (manual/review) are never touched. A ``REVIEW_SECURITY`` outcome
     downgrades to ``PASS_ROUTINE`` only with ``clear_standin=True`` — a
-    recorded hold may come from non-path evidence, so clearing it is an
-    explicit opt-in rather than an unattended default.
+    recorded hold may come from non-path evidence, so clearing it stays an
+    explicit opt-in run by hand, not a recurring stage step.
     """
-    if item.get("lifecycle_state") == "TERMINAL":
-        return None
-    if item.get("current_owner") in _BLOCKED_OWNERS:
+    if not _evaluable(item):
         return None
     outcome = item.get("guardrail_outcome")
-    if outcome not in _EVALUATABLE:
-        return None
-    changed_paths = item.get("changed_paths")
-    if not isinstance(changed_paths, list) or not changed_paths:
-        return None
-    classes = classify_item_paths(changed_paths)
+    classes = classify_item_paths(item["changed_paths"])
     sticky = sorted(classes - _STICKY_EXEMPT)
-    if outcome == "REVIEW_SECURITY" and not sticky and not clear_standin:
+    if _stand_in_hold(outcome, sticky) and not clear_standin:
         return None
     new_outcome = "REVIEW_SECURITY" if sticky else "PASS_ROUTINE"
     patch = {
         "sensitive_paths": sorted(classes),
         "guardrail_outcome": new_outcome,
+        "guardrail_source": "path_eval",
         "risk_class": "SENSITIVE" if sticky else "ROUTINE",
     }
     if all(item.get(field) == value for field, value in patch.items()):
