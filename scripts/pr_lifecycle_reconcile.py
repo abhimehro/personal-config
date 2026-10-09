@@ -930,6 +930,7 @@ def run_reconcile(
         result = cas.run_commit(
             out,
             "reconcile: live PR state → ledger transitions",
+            base_blob_sha=fetch["blob_sha"],
             bump_revision=False,
         )
         plan["applied"] = applied

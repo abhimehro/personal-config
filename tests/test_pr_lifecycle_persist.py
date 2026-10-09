@@ -176,11 +176,15 @@ class TestPrLifecyclePersist(unittest.TestCase):
                 cas, "cas_commit", return_value={"commit_sha": "a" * 40}
             ) as commit:
                 result = cas.run_commit(
-                    path, cas.DEFAULT_COMMIT_MESSAGE, bump_revision=False
+                    path,
+                    cas.DEFAULT_COMMIT_MESSAGE,
+                    base_blob_sha="f" * 40,
+                    bump_revision=False,
                 )
         uploaded = commit.call_args.args[1]
         self.assertNotIn("latest_transition:", uploaded)
         self.assertNotIn("latest_transition_kind:", uploaded)
+        self.assertEqual(commit.call_args.args[3], "f" * 40)
         self.assertEqual(result["validator_stripped_fields"], 0)
         self.assertNotIn("latest_transition:", path.read_text(encoding="utf-8"))
 
@@ -200,26 +204,66 @@ class TestPrLifecyclePersist(unittest.TestCase):
                 raise AssertionError(f"CAS expected_sha={expected_sha!r}")
             raise cas.CasError(http_code=422)
 
-        with mock.patch.object(
-            cas, "ensure_data_ref", return_value={"restored": False, "ref": parent}
-        ):
-            with mock.patch.object(
+        with (
+            mock.patch.object(
+                cas, "ensure_data_ref", return_value={"restored": False, "ref": parent}
+            ),
+            mock.patch.object(cas, "require_ledger_base"),
+            mock.patch.object(
                 cas, "read_commit", return_value={"tree": {"sha": "b" * 40}}
-            ):
-                with mock.patch.object(cas, "create_blob", return_value="c" * 40):
-                    with mock.patch.object(cas, "create_tree", return_value="d" * 40):
-                        with mock.patch.object(
-                            cas, "create_commit", return_value="e" * 40
-                        ) as created:
-                            with mock.patch.object(
-                                cas, "update_ref", side_effect=fail_patch
-                            ):
-                                with self.assertRaisesRegex(
-                                    cas.CasError, cas.OPERATOR_CONFLICT
-                                ):
-                                    cas.cas_commit(runtime, "stale-bytes", "msg")
+            ),
+            mock.patch.object(cas, "create_blob", return_value="c" * 40),
+            mock.patch.object(cas, "create_tree", return_value="d" * 40),
+            mock.patch.object(cas, "create_commit", return_value="e" * 40) as created,
+            mock.patch.object(cas, "update_ref", side_effect=fail_patch),
+            self.assertRaisesRegex(cas.CasError, cas.OPERATOR_CONFLICT),
+        ):
+            cas.cas_commit(runtime, "stale-bytes", "msg", "f" * 40)
         self.assertEqual(patches, ["e" * 40])
         created.assert_called_once()
+
+    def test_cas_commit_rejects_ledger_changed_before_tip_sample(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        runtime = {
+            "data_branch": "automation/pr-lifecycle-ledger",
+            "data_path": "pr-lifecycle-ledger.yaml",
+        }
+        latest_ref = {"restored": False, "ref": {"object": {"sha": "a" * 40}}}
+        with (
+            mock.patch.object(cas, "ensure_data_ref", return_value=latest_ref),
+            mock.patch.object(
+                cas, "git_contents_metadata", return_value={"sha": "b" * 40}
+            ),
+            mock.patch.object(cas, "create_blob") as created,
+            self.assertRaisesRegex(cas.CasError, cas.OPERATOR_CONFLICT),
+        ):
+            cas.cas_commit(runtime, "old-ledger", "msg", "c" * 40)
+        created.assert_not_called()
+
+    def test_cas_commit_accepts_new_tip_when_ledger_blob_is_unchanged(self) -> None:
+        import pr_lifecycle_ledger_cas as cas
+
+        runtime = {
+            "data_branch": "automation/pr-lifecycle-ledger",
+            "data_path": "pr-lifecycle-ledger.yaml",
+        }
+        latest_ref = {"restored": False, "ref": {"object": {"sha": "a" * 40}}}
+        with (
+            mock.patch.object(cas, "ensure_data_ref", return_value=latest_ref),
+            mock.patch.object(
+                cas, "git_contents_metadata", return_value={"sha": "b" * 40}
+            ),
+            mock.patch.object(
+                cas, "read_commit", return_value={"tree": {"sha": "c" * 40}}
+            ),
+            mock.patch.object(cas, "create_blob", return_value="d" * 40),
+            mock.patch.object(cas, "create_tree", return_value="e" * 40),
+            mock.patch.object(cas, "create_commit", return_value="f" * 40),
+            mock.patch.object(cas, "update_ref") as updated,
+        ):
+            cas.cas_commit(runtime, "new-ledger", "msg", "b" * 40)
+        updated.assert_called_once_with(runtime["data_branch"], "f" * 40, "a" * 40)
 
     def test_contained_output_rejects_symlink_and_escape(self) -> None:
         import pr_lifecycle_ledger_cas as cas
@@ -238,7 +282,9 @@ class TestPrLifecyclePersist(unittest.TestCase):
     def test_commit_parser_defaults_message(self) -> None:
         import pr_lifecycle_ledger_cas as cas
 
-        args = cas.build_parser().parse_args(["commit", "--file", "ledger.yaml"])
+        args = cas.build_parser().parse_args(
+            ["commit", "--file", "ledger.yaml", "--base-blob-sha", "a" * 40]
+        )
         self.assertEqual(args.message, cas.DEFAULT_COMMIT_MESSAGE)
 
     def test_github_errors_omit_response_body(self) -> None:
