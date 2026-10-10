@@ -221,6 +221,23 @@ class TestSafeUrlopen(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    @patch("lib.safe_http.socket.getaddrinfo", new=_getaddrinfo_stub)
+    def test_cross_host_redirect_strips_body_and_auth(self):
+        handler_instance = safe_http._ValidatingRedirectHandler(
+            allowed_hosts={"example.com", "other.example.com"}
+        )
+        req = safe_http.urllib.request.Request(
+            "https://example.com/api",
+            data=b"sensitive_data",
+            headers={"Authorization": "Bearer secret"},
+            method="POST",
+        )
+        new_req = handler_instance.redirect_request(
+            req, None, 302, "Found", {}, "https://other.example.com/api"
+        )
+        self.assertNotIn("Authorization", new_req.headers)
+        self.assertIsNone(new_req.data)
+
     def test_redirect_to_disallowed_host_fails(self):
         class Handler(http.server.BaseHTTPRequestHandler):
             def do_GET(self):

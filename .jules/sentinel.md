@@ -842,3 +842,9 @@ single-quoted serialization, decodes the handler as data, and calls
 `builtin trap -- "$handler" "$signal"` without evaluating the declaration; a
 declaration it cannot parse is skipped rather than executed, and callers fall
 back to the default disposition so no temporary handler survives a reject.
+
+## 2026-10-18 - Sensitive Request Body Leak on Cross-Host Redirects
+
+**Vulnerability:** Information Disclosure ([CWE-200](https://cwe.mitre.org/data/definitions/200.html)) / Sensitive Data Exposure on HTTP Redirects in `lib/safe_http.py`. The `_ValidatingRedirectHandler.redirect_request` method stripped sensitive authentication headers when a redirect crossed host boundaries, but preserved POST/PUT request body data (`req.data`). An attacker controlling an endpoint or performing a HTTP redirect could receive sensitive POST request payloads sent to an external domain.
+**Learning:** Redirect handlers that sanitize headers on cross-origin or cross-host hops must also sanitize request bodies to ensure defense in depth. Cleaning headers without stripping payload data leaves sensitive request contents exposed to third-party target servers.
+**Prevention:** Always strip both authentication headers and request body payloads (`req.data = None`) when following redirects across host boundaries unless explicitly configured otherwise.

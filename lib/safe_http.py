@@ -462,8 +462,24 @@ def _is_allowed_scheme(scheme: str | None) -> bool:
     return scheme.lower() in ALLOWED_SCHEMES
 
 
-def _redirect_body(req: urllib.request.Request) -> bytes | None:
-    """Preserve the request body for methods that may carry one."""
+def _should_strip_cross_host(strip_auth: bool, old_host: str, new_host: str) -> bool:
+    """Return True if cross-host stripping is enabled and hosts differ."""
+    if not strip_auth:
+        return False
+    if not old_host or not new_host:
+        return False
+    return old_host.lower() != new_host.lower()
+
+
+def _redirect_body(
+    req: urllib.request.Request,
+    old_host: str = "",
+    new_host: str = "",
+    strip_auth: bool = True,
+) -> bytes | None:
+    """Preserve the request body for methods that may carry one unless crossing hosts."""
+    if _should_strip_cross_host(strip_auth, old_host, new_host):
+        return None
     method = req.get_method()
     if method in _BODY_METHODS:
         return req.data
@@ -474,13 +490,8 @@ def _filter_headers(
     headers: dict[str, str], old_host: str, new_host: str, strip_auth: bool
 ) -> dict[str, str]:
     """Preserve auth headers only when the redirect stays on the same host."""
-    if strip_auth and old_host.lower() != new_host.lower():
-        cleaned: dict[str, str] = {}
-        for key, value in headers.items():
-            if key.lower() in _AUTH_HEADERS:
-                continue
-            cleaned[key] = value
-        return cleaned
+    if _should_strip_cross_host(strip_auth, old_host, new_host):
+        return {k: v for k, v in headers.items() if k.lower() not in _AUTH_HEADERS}
     return dict(headers)
 
 
@@ -516,7 +527,7 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
         new_headers = _filter_headers(req.headers, old_host, new_host, strip_auth)
 
         method = req.get_method()
-        data = _redirect_body(req)
+        data = _redirect_body(req, old_host, new_host, strip_auth)
         return urllib.request.Request(
             newurl,
             data=data,
