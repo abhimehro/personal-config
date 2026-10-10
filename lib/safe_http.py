@@ -462,8 +462,15 @@ def _is_allowed_scheme(scheme: str | None) -> bool:
     return scheme.lower() in ALLOWED_SCHEMES
 
 
-def _redirect_body(req: urllib.request.Request) -> bytes | None:
-    """Preserve the request body for methods that may carry one."""
+def _redirect_body(
+    req: urllib.request.Request,
+    old_host: str = "",
+    new_host: str = "",
+    strip_auth: bool = True,
+) -> bytes | None:
+    """Preserve the request body for methods that may carry one unless crossing hosts."""
+    if strip_auth and old_host and new_host and old_host.lower() != new_host.lower():
+        return None
     method = req.get_method()
     if method in _BODY_METHODS:
         return req.data
@@ -516,7 +523,7 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
         new_headers = _filter_headers(req.headers, old_host, new_host, strip_auth)
 
         method = req.get_method()
-        data = _redirect_body(req)
+        data = _redirect_body(req, old_host, new_host, strip_auth)
         return urllib.request.Request(
             newurl,
             data=data,
