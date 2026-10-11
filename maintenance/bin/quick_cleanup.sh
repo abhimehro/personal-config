@@ -421,7 +421,7 @@ fi
 #
 # Removal is gated on Click not running, so WebKit never holds the files open.
 CLICK_RULE_DIR="$HOME/Library/Containers/JackBogdan.Click/Data/Library/WebKit/ContentRuleLists"
-if [[ -d $CLICK_RULE_DIR ]] && ! pgrep -x Click >/dev/null 2>&1; then
+if [[ -d $CLICK_RULE_DIR ]] && ! pgrep -x -- Click >/dev/null 2>&1; then
 	CLICK_BEFORE=$(du -sk "$CLICK_RULE_DIR" 2>/dev/null | cut -f1 || echo "0")
 	log_info "Cleaning orphaned Click ContentRuleLists..."
 
@@ -457,7 +457,7 @@ fi
 # Deletion is gated on no TTS daemon running, so a mid-speech removal cannot
 # happen.
 SIRI_TTS_DIR="$HOME/Library/Group Containers/group.com.apple.SiriTTS/BNNSModels"
-if [[ -d $SIRI_TTS_DIR ]] && ! pgrep -x sirittsd >/dev/null 2>&1; then
+if [[ -d $SIRI_TTS_DIR ]] && ! pgrep -x -- sirittsd >/dev/null 2>&1; then
 	TTS_BEFORE=$(du -sk "$SIRI_TTS_DIR" 2>/dev/null | cut -f1 || echo "0")
 	log_info "Cleaning superseded Siri TTS model generations..."
 

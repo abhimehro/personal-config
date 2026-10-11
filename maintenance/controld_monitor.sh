@@ -66,7 +66,7 @@ rotate_log() {
 check_service() {
 	# ⚡ Bolt Optimization: Use pgrep to avoid sudo/daemon overhead instead of
 	# calling 'sudo ctrld service status', which is much heavier.
-	if pgrep -x "ctrld" >/dev/null 2>&1; then
+	if pgrep -x -- "ctrld" >/dev/null 2>&1; then
 		return 0
 	else
 		return 1
