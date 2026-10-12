@@ -9,6 +9,9 @@ from datetime import datetime, timezone
 from gh_token_env import load_gh_token_env
 from pr_reference import parse_pr_reference, parse_repo_name
 
+# ⚡ Bolt Optimization: Module-level tuple constant avoids re-instantiating list objects on every loop iteration
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+
 
 def run_gh(repo, pr):
     """Call ``gh pr view`` and return JSON, or None on failure/timeout."""
@@ -160,7 +163,7 @@ def _get_pr_category(info, checks, now=None):
     if checks_failing and _is_pr_stale(info.get("updatedAt", ""), now):
         return "STALE"
 
-    if merge_status in ["DIRTY", "CONFLICTING"]:
+    if merge_status in _UNMERGEABLE_STATUSES:
         return "CONFLICTING"
 
     if merge_status == "CLEAN" and not checks_failing:
