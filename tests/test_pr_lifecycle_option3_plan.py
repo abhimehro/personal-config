@@ -156,6 +156,16 @@ class Option3RebalancePlanTests(unittest.TestCase):
         )
         self.assertEqual(plan["actions"][1]["grade"], "PASS")
         self.assertIsNone(plan["stop_class"])
+        self.assertIn(
+            "python3 scripts/pr_lifecycle_reconcile.py --apply --json "
+            "(closed-PR bookkeeping + open-PR ingestion)",
+            plan["allowed_commands"],
+        )
+        self.assertIn(
+            "python3 scripts/pr_lifecycle_unblock.py --apply --json "
+            "(fix-or-trigger blockers, salvage/lineage close, escalation issues)",
+            plan["allowed_commands"],
+        )
 
     def test_stage1_cap_counts_complete_items_after_incomplete_candidates(self) -> None:
         """Incomplete early candidates must not consume the enqueue cap."""

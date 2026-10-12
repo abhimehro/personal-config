@@ -105,6 +105,16 @@ class Config:
     comment_anchor: str = DEFAULT_COMMENT_ANCHOR
     secret_references: dict[str, Any] = dataclasses.field(default_factory=dict)
 
+    @property
+    def issue_key_prefixes(self) -> tuple[str, ...]:
+        """Return the uppercase team prefix when team_id is 2–10 ASCII letters.
+
+        Otherwise return an empty tuple, disabling issue-key prefix filtering.
+        """
+        if re.fullmatch(r"[A-Za-z]{2,10}", self.team_id):
+            return (self.team_id.upper(),)
+        return ()
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Config:
         team_id = data.get("teamId")
@@ -265,6 +275,43 @@ def _map_keyword_to_relationship(keyword: str) -> RelationshipType:
     if normalized == "contributes to":
         return "contributes"
     return "links"
+
+
+def filter_issue_keys(
+    issue_map: dict[str, RelationshipType],
+    allowed_prefixes: tuple[str, ...],
+    keep: frozenset[str] = frozenset(),
+) -> dict[str, RelationshipType]:
+    """Keep keys whose prefix before the first hyphen is allowed or that are in keep.
+
+    Both checks are case-sensitive. An empty allowed_prefixes returns issue_map
+    itself; otherwise return a new mapping without modifying the input.
+    """
+    if not allowed_prefixes:
+        return issue_map
+
+    filtered: dict[str, RelationshipType] = {}
+    for key, relationship in issue_map.items():
+        if key in keep or key.split("-", 1)[0] in allowed_prefixes:
+            filtered[key] = relationship
+        else:
+            logger.info(
+                "Ignoring issue key %s: prefix not in %s", key, allowed_prefixes
+            )
+    return filtered
+
+
+def _explicit_issue_keys(explicit_issues: tuple[str, ...]) -> frozenset[str]:
+    """Return unique, trimmed, uppercase keys from CLI KEY[:relationship] values.
+
+    Ignore blank entries and discard everything after the first colon without
+    validating key syntax.
+    """
+    return frozenset(
+        normalize_issue_key(raw.strip().split(":", 1)[0])
+        for raw in explicit_issues
+        if raw and raw.strip()
+    )
 
 
 def extract_issue_keys(
@@ -1413,9 +1460,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
         else "LINEAR_API_KEY"
     )
     proton_field = (
-        proton_ref.get("field", "Secret")
-        if isinstance(proton_ref, dict)
-        else "Secret"
+        proton_ref.get("field", "Secret") if isinstance(proton_ref, dict) else "Secret"
     )
 
     if dry_run:
@@ -1446,6 +1491,33 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     return 1
 
 
+def _fetch_issue_or_none(
+    linear_client: LinearClient,
+    issue_key: str,
+    dry_run: bool,
+) -> LinearIssue | None:
+    """Fetch an issue by identifier or UUID, including during a dry run.
+
+    Return None for an empty result or a Linear GraphQL error containing
+    'entity not found' (case-insensitive). HTTP and other errors propagate.
+    """
+    try:
+        return linear_client.get_issue(issue_key)
+    except LinearApiError as exc:
+        message = str(exc).lower()
+        if not (
+            message.startswith("linear graphql error:")
+            and "entity not found" in message
+        ):
+            raise
+        if dry_run:
+            logger.info(
+                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
+                issue_key,
+            )
+        return None
+
+
 def _sync_single_issue(
     issue_key: str,
     relationship: RelationshipType,
@@ -1455,30 +1527,29 @@ def _sync_single_issue(
     linear_client: LinearClient | None,
     dry_run: bool,
 ) -> bool:
-    """Reconcile state, upsert comment, and attach diff link for a single Linear issue."""
-    logger.info("--- Processing issue %s (relationship=%s) ---", issue_key, relationship)
+    """Reconcile state, upsert comment, and attach diff link for a single Linear issue.
+
+    Dry runs may fetch the issue but do not mutate Linear. Return True when
+    finished or skipped because the client or issue is missing, including an
+    GraphQL 'entity not found' lookup error. Return False if a state update reports
+    failure; comment and attachment processing still continues in that case.
+    Other lookup errors and errors from mutations propagate.
+    """
+    logger.info(
+        "--- Processing issue %s (relationship=%s) ---", issue_key, relationship
+    )
     if not linear_client:
         logger.info("[DRY RUN] Would fetch and reconcile issue %s", issue_key)
         return True
 
-    try:
-        issue = linear_client.get_issue(issue_key)
-    except LinearApiError as exc:
-        if dry_run and "entity not found" in str(exc).lower():
-            logger.info(
-                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
-                issue_key,
-            )
-            issue = None
-        else:
-            raise
+    issue = _fetch_issue_or_none(linear_client, issue_key, dry_run)
 
-    if not issue:
+    if issue is None:
         if dry_run:
             logger.info("[DRY RUN] Would plan reconciliation for issue %s", issue_key)
             return True
-        logger.error("Linear issue '%s' not found in workspace.", issue_key)
-        return False
+        logger.warning("Linear issue '%s' not found in workspace; skipping.", issue_key)
+        return True
 
     logger.info(
         "Found issue %s: '%s' currently in state '%s' (%s)",
@@ -1568,7 +1639,18 @@ def _sync_single_issue(
 
 
 def run_sync(args: argparse.Namespace) -> int:
-    """Run synchronization between Git/GitHub, GitNexus, and Linear."""
+    """Run synchronization between Git/GitHub, GitNexus, and Linear.
+
+    Filter extracted keys by the configured team prefix, preserving explicit
+    args.issue keys. If none remain, try resolving mirrored GitHub attachments.
+    args.dry_run allows reads and planning but prevents Linear mutations.
+
+    Return 0 on completion, including no matches or skipped missing issues.
+    Return 1 for configuration errors, missing live-mode credentials when issues
+    remain, or per-issue failures. Per-issue exceptions are caught; errors before
+    that loop outside configuration loading propagate, including ValueError for
+    an invalid PR_RECAP_KEY_TIMEOUT value (a timeout in seconds).
+    """
     # 1. Load config
     try:
         config = load_config(Path(args.config) if args.config else None)
@@ -1580,12 +1662,18 @@ def run_sync(args: argparse.Namespace) -> int:
     context = resolve_pr_context(args)
 
     # 3. Extract Issue Keys & Relationships
+    explicit_issues = tuple(getattr(args, "issue", None) or ())
     issue_map = extract_issue_keys(
         branch_name=context.branch_name,
         commit_messages=context.commit_messages,
         pr_title=context.pr_title,
         pr_body=context.pr_body,
-        explicit_issues=getattr(args, "issue", None) or (),
+        explicit_issues=explicit_issues,
+    )
+    issue_map = filter_issue_keys(
+        issue_map,
+        config.issue_key_prefixes,
+        keep=_explicit_issue_keys(explicit_issues),
     )
 
     # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)

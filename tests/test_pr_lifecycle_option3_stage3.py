@@ -141,8 +141,8 @@ class Option3Stage3HandoffTests(unittest.TestCase):
         self.assertEqual(actions[0]["base_sha"], base["base_sha"])
         self.assertEqual(actions[0]["head_sha"], base["head_sha"])
 
-    def test_stage3_handoff_and_closed_noop_deferred(self) -> None:
-        """Verify Stage 3 hands off mechanical work and defers closed no-ops."""
+    def test_stage3_handoff_and_closed_noop_informational_action(self) -> None:
+        """Verify Stage 3 handoff plan treats closed no-op as informational."""
         candidate = {
             "key": "abhimehro/personal-config#2092@abc",
             "repository": "abhimehro/personal-config",
@@ -162,7 +162,19 @@ class Option3Stage3HandoffTests(unittest.TestCase):
         ):
             plan = run.build_stage_plan(3, {"ledger_revision": 3}, {})
         kinds = [a["action"] for a in plan["actions"]]
-        self.assertIn("CLOSED_NOOP_DEFERRED", kinds)
+        self.assertIn("CLOSED_NOOP_RECORDED_BY_RECONCILE", kinds)
+        closed_action = next(
+            action
+            for action in plan["actions"]
+            if action["action"] == "CLOSED_NOOP_RECORDED_BY_RECONCILE"
+        )
+        self.assertIn("records observed-closed", closed_action["reason"])
+        self.assertTrue(
+            any(
+                command.startswith("python3 scripts/pr_lifecycle_unblock.py --apply")
+                for command in plan["allowed_commands"]
+            )
+        )
         self.assertIn("HANDOFF_MECHANICAL_TO_STAGE2", kinds)
         self.assertIn("ADVISORY_BOT_THREADS", kinds)
 

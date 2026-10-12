@@ -189,7 +189,11 @@ close the rest) in this run.
 **Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and
 test/format work follows the current repository merge method. Security-sensitive
 work is never automatically merged and is routed to Stage 3/human decision.
-After each completion, re-check remaining PRs for new conflicts.
+A PR with open Octopus review findings (unresolved, non-outdated
+`octopus-review` threads, or a thread list that could not be fully read) is
+never routine-merge eligible — the unblock executor escalates it onto the
+repository decision issue. After each completion, re-check remaining PRs for
+new conflicts.
 
 **Trunk stale-vs-main (personal-config):** A `trunk-failed` label or "GitHub
 blocked Trunk from preparing the test branch" after `main` moved is the PR being
@@ -265,6 +269,33 @@ calibration, bounded completion. Review automation must not write to
 `tasks/salvage-session-reports.md`. If a deferred PR is blocked by CodeScene
 code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`
 was posted (or post it) before making final salvage/closure disposition.
+
+### Blocker resolution (fix-or-trigger)
+
+Run reconcile with `--apply` to record observed closures and ingest every open
+PR, then run `scripts/pr_lifecycle_unblock.py --apply --json`. The executor
+keeps mutations bounded and never merges or deletes branches.
+Trigger comments (`@google-labs-jules`, `@coderabbitai`, `/cs-agent`) are posted
+through `gh` authenticated with `GH_TOKEN` (the owner's token); agents ignore
+bot-authored triggers, so never run the executor under a bot/app identity.
+An unanswered trigger expires and escalates.
+
+| Live blocker | Safe next action |
+| --- | --- |
+| Stale bot lineage or merged salvage original | Create and apply the `superseded` label, close the PR, confirm it is closed, then post the comment; never close HUMAN or `REVIEW_SECURITY` originals. |
+| Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
+| Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
+| Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
+| Open Octopus review findings | Escalate to the repo decision issue; a PR with unresolved, non-outdated `octopus-review` threads is never routine-merge eligible. Resolve the threads on GitHub (address + mark resolved), then the next run clears the row. |
+
+Human decisions are refreshed on each repository's open **“PR lifecycle: needs
+human decision”** issue. It preserves first-seen dates, flags expired rows, and
+notifies once per newly overdue item. Escalations owned by Stage 2 (BOT blockers
+with no eligible fixer) are listed separately under **“Stage 2 handoffs”** on
+the same issue: they keep their first-seen dates for audit but carry no expiry
+and never trigger an overdue mention — Stage 1's Stage 2 queueing claims them
+once the ledger holds the item. Draft PRs are included in inventory but are not
+otherwise unblocked.
 
 ### Legacy disposition map and compatibility
 

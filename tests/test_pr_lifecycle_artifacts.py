@@ -282,13 +282,64 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ):
             validator.validate_config(config)
 
+    def test_unblock_config_accepts_optional_settings_and_minimum_expiry(self) -> None:
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        config["lifecycle"].pop("unblock")
+        validator.validate_config(config)
+        for settings in (
+            None,
+            {},
+            {"advisory_checks": []},
+            {
+                "advisory_checks": ["CodeScene*", "review"],
+                "trigger_expiry_days": 1,
+                "lineage_stale_days": 1,
+            },
+        ):
+            with self.subTest(settings=settings):
+                config["lifecycle"]["unblock"] = settings
+                validator.validate_config(config)
+
+    def test_unblock_config_rejects_noninteger_expiry_and_blank_check_names(self):
+        for field, invalid_values in (
+            ("trigger_expiry_days", (True, False, -1, 1.5, "3")),
+            ("lineage_stale_days", (True, False, -1, 1.5, "3")),
+            ("advisory_checks", (["   "], [None], [1], {"review": True})),
+        ):
+            for value in invalid_values:
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ValueError, field):
+                        config_validator.validate_unblock_config({field: value})
+
+    def test_unblock_config_requires_a_mapping(self):
+        for value in ([], "enabled", True, 1):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "config.lifecycle.unblock"):
+                    config_validator.validate_unblock_config(value)
+
     def test_rebalance_config_keys_are_allowed_but_unknown_keys_fail_closed(self):
+        """Accept supported lifecycle settings and reject unknown configuration keys."""
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         lifecycle = config["lifecycle"]
         self.assertEqual(lifecycle["packet_expiry_close_days"], 7)
         self.assertEqual(lifecycle["stage2_intake"], "self_fed")
         self.assertFalse(lifecycle["lineage"]["open_as_draft"])
+        self.assertEqual(lifecycle["unblock"]["trigger_expiry_days"], 3)
+        self.assertEqual(lifecycle["unblock"]["lineage_stale_days"], 3)
         validator.validate_config(config)
+
+        for field, invalid in (
+            ("advisory_checks", ["", "review"]),
+            ("advisory_checks", "review"),
+            ("trigger_expiry_days", 0),
+            ("lineage_stale_days", True),
+        ):
+            invalid_config = copy.deepcopy(config)
+            invalid_config["lifecycle"]["unblock"][field] = invalid
+            with self.subTest(field=field, invalid=invalid), self.assertRaises(
+                ValueError
+            ):
+                validator.validate_config(invalid_config)
 
         lifecycle["unexpected_rebalance_option"] = True
         with self.assertRaisesRegex(ValueError, "unsupported fields"):
@@ -362,10 +413,13 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         )
 
     def test_stage_prompts_name_role_based_tools(self):
+        """Require stage prompts to name their role-specific command tools."""
         review = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
         ).read_text(encoding="utf-8")
         self.assertIn("pr_lifecycle_reconcile.py", review)
+        self.assertIn("pr_lifecycle_unblock.py --apply --json", review)
+        self.assertIn("pr_lifecycle_reconcile.py --apply --json", review)
         self.assertIn("pr_lifecycle_feed.py", review)
         self.assertIn("REVIEW.md", review)
         salvage = (

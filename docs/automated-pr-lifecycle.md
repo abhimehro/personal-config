@@ -65,7 +65,11 @@ item to Stage 1 intake.
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
-human-authored PRs never become routine merge or close candidates.
+human-authored PRs never become routine merge or close candidates. A PR with
+open Octopus review findings — unresolved, non-outdated `octopus-review`
+threads, or a thread list that could not be fully read — is likewise never
+routine-merge eligible; the unblock executor escalates it onto the repository
+decision issue.
 
 ## Canonical records and repository authority
 
@@ -558,9 +562,82 @@ single Antigravity/Devin/Grok stage run:
 | 3 Completion | `python3 scripts/pr_lifecycle_run.py --stage 3` | live completion; advisory bot threads   |
 
 Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
-`pr_lifecycle_ledger_archive.py`. Prompts under
+`pr_lifecycle_ledger_archive.py`, `pr_lifecycle_guardrails.py`,
+`pr_lifecycle_unblock.py`. Prompts under
 `docs/cursor-automations/prompts/daily-pr-*.md` are short bootstraps; run
 `python3 scripts/sync_cursor_export_prompts.py --write` after editing.
+
+### Deterministic guardrail evaluation
+
+`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to
+limit, `--json` accepted for stage-prompt parity — output is always JSON)
+refreshes `sensitive_paths` and `guardrail_outcome` from each nonterminal
+ledger item's `changed_paths` against the `sensitive_path_taxonomy` classes.
+Only `NOT_RUN`, `REVIEW_SECURITY`, and unset outcomes re-evaluate — the
+`HOLD_*`, `PASS_ROUTINE`, `CLOSE_NONSECURITY_NOOP`, and `ANALYSIS_ERROR`
+outcomes encode non-path evidence a path classifier cannot clear. Items with
+empty `changed_paths` keep their outcome: no path list is not proof of a
+clean diff. Items whose `current_owner` is `human`/`stage2`/`stage3` are
+never touched, matching the unblock router's blocked-owner set, and items
+whose `author_type` is not `BOT` are never evaluated either — the ledger
+contract forbids `ROUTINE` on human-authored PRs and forced human holds are
+out of scope for a path classifier. The same applies to an item carrying
+`risk_class: HUMAN_REVIEW` regardless of author type — that field is the
+ledger's human-hold marker, so a BOT-authored held PR (pc#2276 shape) is
+never re-stamped `ROUTINE` by path evidence. An item whose `classification` is
+`SECURITY` stays held (`REVIEW_SECURITY` + `SENSITIVE`) regardless of path
+matches: the intake identity classification is authoritative over path
+evidence, so a Sentinel-style fix touching only ordinary files cannot be
+drained. `generated_output` alone is non-sticky (recorded but routes
+routine); any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+Evaluation never bumps `revision` — that field is a projection of transition
+events, and bumping it without logging an event breaks the consistency
+check.
+
+A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
+`--clear-stand-in` is passed — a recorded hold may come from non-path
+evidence (content review, Octopus or human review), so clearing it is an
+explicit opt-in. The flag is a **one-shot manual drain** for the earlier
+stand-in over-marking and must not appear in the recurring Stage 1 prompt:
+run `python3 scripts/pr_lifecycle_guardrails.py --apply --json
+--clear-stand-in` once, by hand, to drain the over-marked set. Every
+evaluated item is stamped `guardrail_source: path_eval`, and an item whose
+`guardrail_source` is `manual`/`review`/`human`/`octopus` is never touched —
+not even by `--clear-stand-in` — so a hold recorded by a real review cannot
+be silently cleared by a later run.
+
+### Code-enforced holds in the unblock executor
+
+Holds live in code, not only in the Stage 1 prompt:
+
+- **Ledger-owner hold.** A nonterminal item whose `current_owner` is `human`,
+  `stage2`, or `stage3` is immune to every mutating action under a plain
+  `unblock --apply` (no close, trigger, or push); `ESCALATE` rows still emit
+  so the repo decision issue keeps visibility. Covers the
+  Stage 3-reconciliation lineage PRs and the Stage 2-queued item without any
+  prompt-side wrapper.
+- **Human-review hold.** A nonterminal item with `risk_class:
+  HUMAN_REVIEW` is a recorded human hold even while `current_owner` is
+  still `stage1` — the router treats it as human-held (`ledger_owned_by_human`
+  escalation, all mutations suppressed). Covers bot-authored human holds like
+  pc#2276, ctrld#1303, and Hydro#722, which previously depended on the
+  prompt's exclusion list alone.
+- **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/`
+  slugs, Snyk, reviewer/automation bots) never counts as human participation
+  for the stale-lineage close — and neither does a machine-generated body
+  posted under a human login (Snyk PR-check summaries comment as the repo
+  owner). A genuinely human-authored comment does hold it, and an unreadable
+  author or incomplete comment history holds too (fail toward not closing).
+- **Exclusions.** `--exclude owner/repo#N` (repeatable; `repo#N`, `#N`, or a
+  bare `N` also accepted — repo-less forms match every repo) and the
+  `lifecycle.unblock.exclusions` config list make a PR never-touch: skipped
+  before any routing.
+- **Bounded side effects.** `--apply` alone performs only per-PR mutations.
+  Repo decision-issue create/update requires `--decision-issues`; the
+  overdue @-mention comments additionally require `--overdue-notifications`.
+  Without the flags the run reports `ISSUE_UPDATE_SKIPPED` and leaves overdue
+  state unrecorded so a later flagged run still catches up. Stage 1 passes
+  both flags explicitly (the issues and mentions are its planned outputs).
 
 Weekly human digest: pinned GitHub issue / issue comment — Notion packets
 retired for this path. Pause/resume: leave Dashboard paused; operators run stage

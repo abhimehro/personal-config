@@ -29,6 +29,8 @@ class TestStagePromptContracts(unittest.TestCase):
         self.assertIn("emitted plan", review)
         self.assertIn("pr_lifecycle_feed.py", review)
         self.assertIn("run record", review)
+        self.assertIn("pr_lifecycle_reconcile.py --apply --json", review)
+        self.assertIn("pr_lifecycle_unblock.py --apply --json", review)
 
     def test_salvage_prompt_heal_forward_without_merging(self) -> None:
         """The salvage prompt must heal starvation without invented merges."""

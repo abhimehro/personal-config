@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -51,13 +52,76 @@ def validate_config(config: dict[str, Any]) -> None:
         "packet_expiry_close_days",
         "stage2_intake",
         "lineage",
+        "unblock",
     }
     require_fields(lifecycle, allowed, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
     validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
+    validate_unblock_config(lifecycle.get("unblock"))
     require_exact_stage_caps(lifecycle["stage_caps"])
     require_exact_stage_contract(lifecycle["stages"])
+
+
+def validate_unblock_config(value: Any) -> None:
+    """Validate optional advisory patterns and positive expiry settings.
+
+    Raise ValueError when a supplied unblock setting has an invalid type
+    or value; an absent configuration is allowed.
+    """
+    if value is None:
+        return
+    unblock = require_mapping(value, "config.lifecycle.unblock")
+    _require_advisory_checks(unblock.get("advisory_checks"))
+    _require_exclusions(unblock.get("exclusions"))
+    for field in ("trigger_expiry_days", "lineage_stale_days"):
+        _require_positive_days(unblock.get(field), field)
+
+
+_EXCLUSION_RE = re.compile(r"^\s*(?:[^#\s]*\s*#)?\s*\d+\s*$")
+
+
+def _require_exclusions(exclusions: Any) -> None:
+    """Allow None or a list of REPO#PR-shaped strings; otherwise raise."""
+    if exclusions is None:
+        return
+    valid = isinstance(exclusions, list) and all(
+        isinstance(entry, str) and _EXCLUSION_RE.match(entry) for entry in exclusions
+    )
+    if not valid:
+        raise ValueError(
+            "config.lifecycle.unblock.exclusions: must be a list of strings "
+            "like owner/repo#123, repo#123, or #123"
+        )
+
+
+def _require_advisory_checks(advisory: Any) -> None:
+    """Allow None or a list of nonblank strings; otherwise raise ValueError."""
+    if advisory is None:
+        return
+    valid = isinstance(advisory, list) and all(
+        isinstance(name, str) and name.strip() for name in advisory
+    )
+    if not valid:
+        raise ValueError(
+            "config.lifecycle.unblock.advisory_checks: "
+            "must be a list of non-empty strings"
+        )
+
+
+def _positive_int(value: Any) -> bool:
+    """Return whether value is an integer of at least one, excluding booleans."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _require_positive_days(days: Any, field: str) -> None:
+    """Allow None or positive integer days, excluding booleans.
+
+    Raise ValueError naming the unblock configuration field otherwise.
+    """
+    if days is None or _positive_int(days):
+        return
+    raise ValueError(f"config.lifecycle.unblock.{field}: must be a positive integer")
 
 
 def require_fetched_ledger_command(command: Any) -> None:
