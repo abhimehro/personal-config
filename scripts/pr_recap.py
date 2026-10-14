@@ -292,7 +292,8 @@ def filter_issue_keys(
 
     filtered: dict[str, RelationshipType] = {}
     for key, relationship in issue_map.items():
-        if key in keep or key.split("-", 1)[0] in allowed_prefixes:
+        # ⚡ Bolt Optimization: str.partition('-')[0] avoids list allocation compared to str.split('-', 1)[0]
+        if key in keep or key.partition("-")[0] in allowed_prefixes:
             filtered[key] = relationship
         else:
             logger.info(
@@ -308,7 +309,8 @@ def _explicit_issue_keys(explicit_issues: tuple[str, ...]) -> frozenset[str]:
     validating key syntax.
     """
     return frozenset(
-        normalize_issue_key(raw.strip().split(":", 1)[0])
+        # ⚡ Bolt Optimization: str.partition(':')[0] avoids list allocation compared to str.split(':', 1)[0]
+        normalize_issue_key(raw.strip().partition(":")[0])
         for raw in explicit_issues
         if raw and raw.strip()
     )
@@ -351,7 +353,8 @@ def extract_issue_keys(
             continue
         cleaned = raw.strip()
         if ":" in cleaned:
-            k, r = cleaned.split(":", 1)
+            # ⚡ Bolt Optimization: str.partition avoids list allocation compared to str.split
+            k, _, r = cleaned.partition(":")
             rel_candidate = r.strip().lower()
             rel = (
                 rel_candidate
@@ -665,16 +668,17 @@ class GitNexusAnalyzer:
         for line in trimmed.splitlines():
             line_str = line.strip().lstrip("→").strip()
             if line_str.lower().startswith("risk:"):
-                val = line_str.split(":", 1)[1].strip().upper()
+                # ⚡ Bolt Optimization: str.partition evita allocation of list
+                val = line_str.partition(":")[2].strip().upper()
                 risk_level = val
             elif line_str.lower().startswith("changed:"):
-                val = line_str.split(":", 1)[1].strip()
+                val = line_str.partition(":")[2].strip()
                 if val:
                     direct_edits.extend(
                         [s.strip() for s in val.split(",") if s.strip()]
                     )
             elif line_str.lower().startswith("affected:"):
-                val = line_str.split(":", 1)[1].strip()
+                val = line_str.partition(":")[2].strip()
                 if val:
                     downstream_impact.extend(
                         [s.strip() for s in val.split(",") if s.strip()]
