@@ -81,11 +81,22 @@ def _is_octopus_issue(issue: dict[str, Any]) -> bool:
     return "pull_request" not in issue and _author_is_octopus(issue)
 
 
+def _as_issue_number(number: object) -> int | None:
+    """Return a positive issue number, rejecting bools and other types."""
+    # SECURITY: bool is an int subclass, so a combined isinstance check is not enough.
+    if isinstance(number, bool):
+        return None
+    if not isinstance(number, int):
+        return None
+    if number < 1:
+        return None
+    return number
+
+
 def _issue_number(issue: dict[str, Any]) -> int:
     """Return a valid Octopus issue number."""
-    number = issue.get("number")
-    # SECURITY: bool is an int subclass, so isinstance(True, int) would accept it.
-    if isinstance(number, bool) or not isinstance(number, int) or number < 1:
+    number = _as_issue_number(issue.get("number"))
+    if number is None:
         raise OSError("malformed Octopus issue number")
     return number
 
