@@ -1,8 +1,8 @@
 # GitHub Actions Workflows
 
-Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **20 active YAML
-workflows** after consolidation (includes `greetings.yml`). Prefer this table
-over hunting through the directory.
+Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **21 active YAML
+workflows** after consolidation (includes `greetings.yml` and `pr-recap.yml`).
+Prefer this table over hunting through the directory.
 
 > **Consolidation history:** Scheduled agentic jobs live in
 > `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
@@ -17,7 +17,7 @@ over hunting through the directory.
 
 | Workflow                | Trigger                                    | Purpose                                                           |
 | ----------------------- | ------------------------------------------ | ----------------------------------------------------------------- |
-| `code-quality.yml`      | PR/push (shell/Python paths), dispatch     | ShellCheck + radon/Trunk quality checks; unit tests               |
+| `code-quality.yml`      | PR/push (shell/Python paths), dispatch     | ShellCheck + radon/ruff/bandit checks; unit tests                 |
 | `security-scan.yml`     | PR/push (ignore docs), weekly, dispatch    | TruffleHog, Gitleaks, ShellCheck (error), pip-audit, CodeQL, SBOM |
 | `dependency-review.yml` | PR → main                                  | GitHub Dependency Review Action on manifest changes               |
 | `case-collision.yml`    | PR/push main, dispatch                     | Detect case-only filename collisions (macOS vs Linux)             |
@@ -31,6 +31,7 @@ over hunting through the directory.
 | `summary.yml`         | Issue opened                                                                                         | Summarize new issues                                                                                                                                                               |
 | `release-drafter.yml` | Push main + `pull_request_target`                                                                    | Maintain draft release notes                                                                                                                                                       |
 | `pr-visual-recap.yml` | PR `opened` / `ready_for_review` / `reopened` / `closed` / label `visual-recap` (**not** every push) | Visual/recap sticky comment. Default agent: **OpenCode + Mistral**. Manual refresh: add label `visual-recap` or re-run from Actions. See `docs/pr-visual-recap-agent-backends.md`. |
+| `pr-recap.yml`        | PR `opened` / `ready_for_review` / `closed`                                                          | Sync Linear issue state and an anchored recap via `scripts/pr_recap.py`. Dry-run when the Linear API token secret is unset.                                             |
 | `stale.yml`           | `workflow_dispatch` only                                                                             | Mark stale issues/PRs (manual; schedule removed)                                                                                                                                   |
 | `main.yml`            | `workflow_dispatch`                                                                                  | Clean stale remote branches (manual)                                                                                                                                               |
 | `greetings.yml`       | First-time contributor PR/issue                                                                      | Welcome message for first interaction                                                                                                                                              |
@@ -63,7 +64,7 @@ over hunting through the directory.
 
 ```bash
 # List workflows
-ls .github/workflows/*.yml | wc -l   # expect 20
+ls .github/workflows/*.yml | wc -l   # expect 21
 
 # Actionlint if installed
 actionlint .github/workflows/*.yml
