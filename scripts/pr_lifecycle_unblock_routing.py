@@ -291,6 +291,26 @@ def _octopus_issue_parts(issues: list[int]) -> tuple[list[str], str | None]:
     return [], None
 
 
+def _findings_label(findings: Any) -> Any:
+    """Return the evidence value for an Octopus thread count."""
+    if findings is None:
+        return "unknown"
+    return findings
+
+
+def _octopus_evidence(findings: Any, issue_numbers: list[str]) -> dict[str, Any]:
+    """Build escalation evidence for threads and linked finding issues."""
+    evidence: dict[str, Any] = {"open_octopus_findings": _findings_label(findings)}
+    if issue_numbers:
+        evidence["open_octopus_issues"] = issue_numbers
+    return evidence
+
+
+def _present_actions(*candidates: str | None) -> list[str]:
+    """Drop empty recommended-action fragments."""
+    return [action for action in candidates if action]
+
+
 def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     """Escalate open Octopus threads or linked issues; they block routine merge."""
     findings = ctx.pr.get("openOctopusFindings")
@@ -298,20 +318,13 @@ def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     if findings == 0 and not issues:
         return []
     issue_numbers, issue_action = _octopus_issue_parts(issues)
-    evidence: dict[str, Any] = {
-        "open_octopus_findings": "unknown" if findings is None else findings
-    }
-    if issue_numbers:
-        evidence["open_octopus_issues"] = issue_numbers
-    actions = [
-        action for action in (_octopus_thread_action(findings), issue_action) if action
-    ]
+    actions = _present_actions(_octopus_thread_action(findings), issue_action)
     return [
         _escalation(
             ctx,
             _EscalationSpec(
                 "open_octopus_findings",
-                evidence=evidence,
+                evidence=_octopus_evidence(findings, issue_numbers),
                 recommended_action="; ".join(actions),
             ),
         )
@@ -385,6 +398,26 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     return _enforce_ledger_owner(ctx, actions, args.ledger_items_for_pr)
 
 
+def _drop_close_actions(prefix: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove automatic closes so an Octopus finding cannot be closed past."""
+    return [
+        action
+        for action in prefix
+        if not str(action.get("action") or "").startswith("CLOSE")
+    ]
+
+
+def _merge_prefix(
+    prefix: list[dict[str, Any]], octopus: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Keep a short-circuit route, suppressing CLOSE when Octopus findings exist."""
+    if not octopus:
+        return prefix
+    actions = _drop_close_actions(prefix)
+    actions.extend(octopus)
+    return actions
+
+
 def _route_candidates(
     ctx: _Route,
     pr: dict[str, Any],
@@ -394,17 +427,7 @@ def _route_candidates(
     """Return every proposal routing would make, before the owner hold."""
     prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
     if prefix is not None:
-        if not octopus:
-            return prefix
-        # SECURITY: a linked Octopus finding suppresses automatic CLOSE while
-        # keeping the finding escalation next to any other short-circuit.
-        actions = [
-            action
-            for action in prefix
-            if not str(action.get("action") or "").startswith("CLOSE")
-        ]
-        actions.extend(octopus)
-        return actions
+        return _merge_prefix(prefix, octopus)
     conflict = _route_conflict(ctx)
     if conflict is not None:
         return conflict + octopus
