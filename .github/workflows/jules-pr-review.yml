@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Advanced Jules PR Reviewer
-        uses: thalesraymond/jules-pr-reviewer@0ef1e60f7ac68a03b15c1a04c2e55f73942e8480 # v1.7.0
+        uses: thalesraymond/jules-pr-reviewer@04cb0a36e5d1a5939147845003fb99746833f7b0 # v1.8.0
         with:
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
