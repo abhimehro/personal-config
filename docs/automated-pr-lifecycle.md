@@ -594,6 +594,17 @@ Evaluation never bumps `revision` — that field is a projection of transition
 events, and bumping it without logging an event breaks the consistency
 check.
 
+Reconcile closes the empty-paths gap itself: while checking a nonterminal
+item against its live PR it emits a `BACKFILL_PATHS` action whenever
+`changed_paths` is missing and the PR is still `OPEN`, fetching the full
+file list via paginated `gh api repos/{repo}/pulls/{pr}/files` (a truncated
+list could hide a sensitive path, so partial fetches fail closed). Apply
+stamps the paths in place — no transition event, no `revision` bump, and
+no `updated_at_utc` refresh (a path list is evidence, not activity, so the
+staleness clock must not reset). A failed or empty fetch surfaces as
+`PATH_BACKFILL_FAILED` in the plan and is never applied, so the item stays
+held until evidence arrives.
+
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
 `--clear-stand-in` is passed — a recorded hold may come from non-path
 evidence (content review, Octopus or human review), so clearing it is an
