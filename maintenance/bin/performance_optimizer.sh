@@ -598,6 +598,7 @@ generate_performance_report() {
         .good { color: #1E7E34; } /* WCAG AA accessible */
         .warning { color: #B45309; } /* WCAG AA accessible */
         .critical { color: #DC2626; } /* WCAG AA accessible */
+        .table-container { overflow-x: auto; }
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
@@ -623,8 +624,9 @@ generate_performance_report() {
     
     <section class="section" aria-labelledby="perf-metrics-heading" role="region">
         <h2 id="perf-metrics-heading"><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
-        <table aria-label="Performance Metrics">
-            <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
+        <div class="table-container" tabindex="0" role="region" aria-label="Performance Metrics data table">
+            <table>
+                <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
 EOF
 
 	# Add current metrics
@@ -643,10 +645,11 @@ EOF
 	[[ $disk_usage -gt 90 ]] && disk_status="critical"
 
 	cat >>"$report_file" <<EOF
-            <tr><th scope="row">CPU Load</th><td><meter aria-label="CPU Load" min="0" max="8" low="2" high="4" optimum="1" value="$cpu_load">$cpu_load</meter></td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
-            <tr><th scope="row">Memory Free Pages</th><td>$memory_usage</td><td class="good">GOOD</td></tr>
-            <tr><th scope="row">Disk Usage</th><td><meter aria-label="Disk Usage" min="0" max="100" low="70" high="90" optimum="50" value="${disk_usage}">${disk_usage}%</meter></td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
-        </table>
+                <tr><th scope="row">CPU Load</th><td><meter aria-label="CPU Load" min="0" max="8" low="2" high="4" optimum="1" value="$cpu_load">$cpu_load</meter></td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
+                <tr><th scope="row">Memory Free Pages</th><td>$memory_usage</td><td class="good">GOOD</td></tr>
+                <tr><th scope="row">Disk Usage</th><td><meter aria-label="Disk Usage" min="0" max="100" low="70" high="90" optimum="50" value="${disk_usage}">${disk_usage}%</meter></td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
+            </table>
+        </div>
     </section>
     
     <section class="section" aria-labelledby="opt-recs-heading" role="region">
