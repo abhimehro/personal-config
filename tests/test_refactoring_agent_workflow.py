@@ -48,6 +48,24 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             condition,
         )
 
+    def test_refactoring_agent_requires_all_guards_before_entering_concurrency(
+        self,
+    ) -> None:
+        condition = " ".join(load_workflow()["jobs"]["refactor"]["if"].split())
+
+        # Presence checks alone allow an OR bypass: an owner-authored status
+        # comment quoting /cs-agent would then enter concurrency and cancel work.
+        # Order is immaterial, but every guard must be joined by AND.
+        self.assertCountEqual(
+            condition.split(" && "),
+            [
+                "github.event.issue.pull_request != null",
+                "contains(github.event.comment.body, '/cs-agent')",
+                "github.event.comment.user.login == github.repository_owner",
+                "!contains(github.event.comment.body, '<!-- cs-agent:status -->')",
+            ],
+        )
+
     def test_refactor_attempts_push_with_owner_token(self):
         steps = load_workflow()["jobs"]["refactor"]["steps"]
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
