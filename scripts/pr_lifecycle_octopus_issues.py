@@ -27,18 +27,18 @@ def linked_prs(repo: str, body: object) -> set[int]:
     return numbers
 
 
-def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
-    """Fetch open Octopus issues, returning linked PR numbers to issue numbers."""
+def _query_issue_payload(repo: str, run: Any) -> Any:
+    """Fetch and decode the paginated Octopus issue response."""
+    endpoint = (
+        f"repos/{repo}/issues?state=open&creator=octopus-review%5Bbot%5D&per_page=100"
+    )
     result = run(
         [
             "gh",
             "api",
             "--paginate",
             "--slurp",
-            (
-                f"repos/{repo}/issues?state=open&creator="
-                "octopus-review%5Bbot%5D&per_page=100"
-            ),
+            endpoint,
         ],
         check=False,
         capture_output=True,
@@ -48,25 +48,38 @@ def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
     if result.returncode != 0:
         raise OSError(f"gh api Octopus issues failed rc={result.returncode}")
     try:
-        payload = json.loads(result.stdout)
+        return json.loads(result.stdout)
     except (TypeError, ValueError) as exc:
         raise OSError("malformed Octopus issue JSON") from exc
-    items = _issue_items(payload)
+
+
+def _is_octopus_issue(issue: dict[str, Any]) -> bool:
+    """Return whether an issue object belongs to the Octopus bot."""
+    user = issue.get("user")
+    return (
+        "pull_request" not in issue
+        and isinstance(user, dict)
+        and user.get("login") == OCTOPUS_ISSUE_AUTHOR
+    )
+
+
+def _issue_number(issue: dict[str, Any]) -> int:
+    """Return a valid Octopus issue number."""
+    number = issue.get("number")
+    if type(number) is not int or number < 1:
+        raise OSError("malformed Octopus issue number")
+    return number
+
+
+def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
+    """Fetch open Octopus issues, returning linked PR numbers to issue numbers."""
+    items = _issue_items(_query_issue_payload(repo, run))
 
     issues_by_pr: dict[int, set[int]] = {}
     for issue in items:
-        if "pull_request" in issue:
+        if not _is_octopus_issue(issue):
             continue
-        user = issue.get("user")
-        if not isinstance(user, dict) or user.get("login") != OCTOPUS_ISSUE_AUTHOR:
-            continue
-        issue_number = issue.get("number")
-        if (
-            not isinstance(issue_number, int)
-            or isinstance(issue_number, bool)
-            or issue_number < 1
-        ):
-            raise OSError("malformed Octopus issue number")
+        issue_number = _issue_number(issue)
         for pr_number in linked_prs(repo, issue.get("body")):
             issues_by_pr.setdefault(pr_number, set()).add(issue_number)
     return {
@@ -79,12 +92,11 @@ def _issue_items(payload: Any) -> list[dict[str, Any]]:
     """Flatten a --slurp page list or validate a flat issue list."""
     if not isinstance(payload, list):
         raise OSError("malformed Octopus issue payload")
-    if all(isinstance(page, list) for page in payload):
-        items = [issue for page in payload for issue in page]
-    elif all(isinstance(issue, dict) for issue in payload):
-        items = payload
-    else:
-        raise OSError("malformed Octopus issue payload")
+    items = (
+        [issue for page in payload for issue in page]
+        if payload and all(isinstance(page, list) for page in payload)
+        else payload
+    )
     if not all(isinstance(issue, dict) for issue in items):
         raise OSError("malformed Octopus issue payload")
     return items

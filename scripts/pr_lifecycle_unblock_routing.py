@@ -267,33 +267,45 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
     return _review_trigger(ctx, {"reviewDecision": "CHANGES_REQUESTED"})
 
 
+def _octopus_thread_action(findings: Any) -> str | None:
+    """Return recommended action text for open or unknown Octopus threads."""
+    if findings is None:
+        return (
+            "verify the Octopus review threads on the PR "
+            "(thread list truncated or unreadable), then resolve or close"
+        )
+    if findings:
+        return "resolve the open Octopus review findings on the PR or close it"
+    return None
+
+
+def _octopus_issue_parts(issues: list[int]) -> tuple[list[str], str | None]:
+    """Format linked issue evidence and its recommended action."""
+    if issues:
+        issue_numbers = [f"#{number}" for number in issues]
+        issue_action = (
+            "resolve or close the open Octopus finding issue(s) "
+            f"{', '.join(issue_numbers)} for this PR, or close the PR"
+        )
+        return issue_numbers, issue_action
+    return [], None
+
+
 def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     """Escalate open Octopus threads or linked issues; they block routine merge."""
     findings = ctx.pr.get("openOctopusFindings")
     issues = ctx.pr.get("openOctopusIssues") or []
     if findings == 0 and not issues:
         return []
-    unknown = findings is None
-    thread_action = None
-    if unknown:
-        thread_action = (
-            "verify the Octopus review threads on the PR "
-            "(thread list truncated or unreadable), then resolve or close"
-        )
-    elif findings:
-        thread_action = "resolve the open Octopus review findings on the PR or close it"
+    issue_numbers, issue_action = _octopus_issue_parts(issues)
     evidence: dict[str, Any] = {
-        "open_octopus_findings": "unknown" if unknown else findings
+        "open_octopus_findings": "unknown" if findings is None else findings
     }
-    issue_action = None
-    if issues:
-        issue_numbers = [f"#{number}" for number in issues]
+    if issue_numbers:
         evidence["open_octopus_issues"] = issue_numbers
-        issue_action = (
-            "resolve or close the open Octopus finding issue(s) "
-            f"{', '.join(issue_numbers)} for this PR, or close the PR"
-        )
-    actions = [action for action in (thread_action, issue_action) if action]
+    actions = [
+        action for action in (_octopus_thread_action(findings), issue_action) if action
+    ]
     return [
         _escalation(
             ctx,
