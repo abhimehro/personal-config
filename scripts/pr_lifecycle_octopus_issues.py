@@ -65,7 +65,7 @@ def _decode_issue_stdout(stdout: str) -> Any:
 def _query_issue_payload(repo: str, run: Any) -> Any:
     """Fetch and decode the paginated Octopus issue response."""
     result = _run_issue_query(run, _issue_endpoint(repo))
-    if result.returncode != 0:
+    if result.returncode:
         raise OSError(f"gh api Octopus issues failed rc={result.returncode}")
     return _decode_issue_stdout(result.stdout)
 
@@ -84,7 +84,8 @@ def _is_octopus_issue(issue: dict[str, Any]) -> bool:
 def _issue_number(issue: dict[str, Any]) -> int:
     """Return a valid Octopus issue number."""
     number = issue.get("number")
-    if type(number) is not int or number < 1:
+    # SECURITY: bool is an int subclass, so isinstance(True, int) would accept it.
+    if isinstance(number, bool) or not isinstance(number, int) or number < 1:
         raise OSError("malformed Octopus issue number")
     return number
 
@@ -108,7 +109,9 @@ def _sorted_issue_map(issues_by_pr: dict[int, set[int]]) -> dict[int, list[int]]
     }
 
 
-def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
+def fetch_open_octopus_issues(  # pylint: disable=unused-function
+    repo: str, *, run: Any
+) -> dict[int, list[int]]:
     """Fetch open Octopus issues, returning linked PR numbers to issue numbers."""
     issues_by_pr: dict[int, set[int]] = {}
     for issue in _issue_items(_query_issue_payload(repo, run)):
@@ -147,9 +150,10 @@ def _issue_items(payload: Any) -> list[dict[str, Any]]:
     return _require_issue_dicts(_flatten_pages(payload))
 
 
-def attach_octopus_issues(
+def attach_octopus_issues(  # pylint: disable=unused-function
     prs: list[dict[str, Any]], issues_by_pr: dict[int, list[int]]
 ) -> None:
     """Attach open finding issue numbers to their linked PR inventory entries."""
-    for pr in prs:
-        pr["openOctopusIssues"] = issues_by_pr.get(pr["number"], [])
+    # unblock.py imports this; the name is the module's public API.
+    for pull_request in prs:
+        pull_request["openOctopusIssues"] = issues_by_pr.get(pull_request["number"], [])

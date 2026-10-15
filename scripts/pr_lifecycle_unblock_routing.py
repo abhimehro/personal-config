@@ -315,7 +315,11 @@ def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     """Escalate open Octopus threads or linked issues; they block routine merge."""
     findings = ctx.pr.get("openOctopusFindings")
     issues = ctx.pr.get("openOctopusIssues") or []
-    if findings == 0 and not issues:
+    # NOTE: None means the thread list was unreadable. Only a real zero skips.
+    # pylint: disable=use-implicit-booleaness-not-comparison
+    no_open_threads = findings == 0
+    # pylint: enable=use-implicit-booleaness-not-comparison
+    if no_open_threads and not issues:
         return []
     issue_numbers, issue_action = _octopus_issue_parts(issues)
     actions = _present_actions(_octopus_thread_action(findings), issue_action)
