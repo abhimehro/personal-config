@@ -10,7 +10,13 @@ concurrency:
 
 jobs:
   refactor:
-    if: github.event.issue.pull_request != null && contains(github.event.comment.body, '/cs-agent')
+    # Owner-only: the job pushes with the owner's GH_TOKEN so the commit can pass
+    # the all-branches "Required pull-request checks" ruleset (github-actions[bot]
+    # is not a bypass actor) and so the pushed commit triggers CI.
+    if: >-
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/cs-agent') &&
+      github.event.comment.user.login == github.repository_owner
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -155,6 +161,7 @@ jobs:
           model: ${{ steps.providers.outputs.model }}
           version: v1.1.1
           codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
           google_api_key: ${{ steps.providers.outputs.enable_google == 'true' && secrets.GOOGLE_API_KEY || '' }}
           opencode_auth_json: ${{ steps.opencode-auth.outputs.json }}
 
@@ -184,6 +191,7 @@ jobs:
           model: ${{ steps.providers.outputs.model }}
           version: v1.1.1
           codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
           google_api_key: ${{ steps.providers.outputs.enable_google == 'true' && secrets.GOOGLE_API_KEY || '' }}
           opencode_auth_json: ${{ steps.opencode-auth.outputs.json }}
 
