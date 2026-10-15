@@ -242,7 +242,9 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
         if not apply:
             _emit_plan(plan, json_out)
             return 0
-        payload, result = _apply_payload(ledger, plan, tmp, after_days)
+        payload, result = _apply_payload(
+            ledger, plan, tmp, after_days, fetch["blob_sha"]
+        )
         _emit_apply(payload, result, json_out)
     return 0
 
@@ -297,7 +299,11 @@ def _cas_commit_path(
 
 
 def _apply_payload(
-    ledger: dict[str, Any], plan: dict[str, Any], tmp: str, after_days: int
+    ledger: dict[str, Any],
+    plan: dict[str, Any],
+    tmp: str,
+    after_days: int,
+    base_blob_sha: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
     runtime = cas.pointer_runtime()
@@ -319,6 +325,7 @@ def _apply_payload(
         Path(result["active_path"]),
         "archive: move TERMINAL items older than "
         f"{after_days}d into archive/YYYY-MM.yaml",
+        base_blob_sha=base_blob_sha,
         bump_revision=False,
     )
     payload = {
