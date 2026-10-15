@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -1075,7 +1076,6 @@ def run_reconcile(
     limit: int | None,
     json_out: bool,
     ingest: bool = True,
-    max_apply: int | None = None,
 ) -> int:
     """Fetch and emit actions, optionally applying and CAS-committing them.
 
@@ -1088,7 +1088,7 @@ def run_reconcile(
     Apply-mode guards:
     - Any INVENTORY_FAILED aborts the apply before any mutation (exit 3).
     - At most ``max_apply`` mutating actions (default 60, env
-      PR_LIFECYCLE_MAX_APPLY) are saved per CAS write: terminal transitions
+      PR_LIFECYCLE_MAX_APPLY; the CLI --max-apply sets it) are saved per CAS write: terminal transitions
       first, then stale closes, re-anchors, other transitions, then intake.
       The remainder is reported as ``deferred_count`` for the next run.
     - A CAS OPERATOR_CONFLICT re-fetches the ledger and re-plans from live
@@ -1098,13 +1098,14 @@ def run_reconcile(
     """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
-    cap = guards.max_apply_from_env(max_apply)
+    cap = guards.max_apply_from_env()
     attempt = 0
     while True:
         attempt += 1
         with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
             out = Path(tmp) / "ledger.yaml"
-            plan, ledger, actions = _build_plan(config, out, limit, ingest, apply)
+            plan, ledger, actions = _build_plan(config, out, limit, ingest)
+            plan["dry_run"] = not apply
             if not apply:
                 _emit(plan, json_out)
                 return 0
@@ -1147,7 +1148,6 @@ def _build_plan(
     out: Path,
     limit: int | None,
     ingest: bool,
-    apply: bool,
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
     """Fetch the ledger and live inventory; return (plan, ledger, actions)."""
     fetch = cas.run_preflight(out)
@@ -1174,7 +1174,7 @@ def _build_plan(
         actions.extend(ingest_actions)
         actions.extend(inventory_failed)
     plan = {
-        "dry_run": not apply,
+        "dry_run": True,
         "ledger_revision": ledger.get("ledger_revision"),
         "action_count": len(actions),
         "actions": actions,
@@ -1324,13 +1324,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
+    if args.max_apply is not None:
+        os.environ["PR_LIFECYCLE_MAX_APPLY"] = str(max(1, args.max_apply))
     try:
         return run_reconcile(
             apply=args.apply,
             limit=args.limit,
             json_out=args.json,
             ingest=not args.no_ingest,
-            max_apply=args.max_apply,
         )
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"PR_LIFECYCLE_RECONCILE_ERROR: {type(exc).__name__}", file=sys.stderr)
