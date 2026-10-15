@@ -19,11 +19,15 @@ def load_workflow():
 
 
 class TestRefactoringAgentWorkflow(unittest.TestCase):
+    """Verify refactoring-agent workflow guards, concurrency, and retries."""
+
     def test_refactoring_agent_enforces_concurrency_per_pr(self):
+        """Ensure per-PR concurrency applies only to eligible refactor jobs."""
         workflow = load_workflow()
 
+        self.assertNotIn("concurrency", workflow)
         self.assertEqual(
-            workflow["concurrency"],
+            workflow["jobs"]["refactor"]["concurrency"],
             {
                 "group": "refactoring-agent-${{ github.event.issue.number }}",
                 "cancel-in-progress": True,
@@ -31,12 +35,35 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         )
 
     def test_refactoring_agent_runs_only_for_repository_owner(self):
+        """Require owner PR commands and exclude the agent's status comments."""
         condition = " ".join(load_workflow()["jobs"]["refactor"]["if"].split())
 
         self.assertIn("github.event.issue.pull_request != null", condition)
         self.assertIn("contains(github.event.comment.body, '/cs-agent')", condition)
         self.assertIn(
             "github.event.comment.user.login == github.repository_owner", condition
+        )
+        self.assertIn(
+            "!contains(github.event.comment.body, '<!-- cs-agent:status -->')",
+            condition,
+        )
+
+    def test_refactoring_agent_requires_all_guards_before_entering_concurrency(
+        self,
+    ) -> None:
+        condition = " ".join(load_workflow()["jobs"]["refactor"]["if"].split())
+
+        # Presence checks alone allow an OR bypass: an owner-authored status
+        # comment quoting /cs-agent would then enter concurrency and cancel work.
+        # Order is immaterial, but every guard must be joined by AND.
+        self.assertCountEqual(
+            condition.split(" && "),
+            [
+                "github.event.issue.pull_request != null",
+                "contains(github.event.comment.body, '/cs-agent')",
+                "github.event.comment.user.login == github.repository_owner",
+                "!contains(github.event.comment.body, '<!-- cs-agent:status -->')",
+            ],
         )
 
     def test_refactor_attempts_push_with_owner_token(self):
