@@ -30,6 +30,26 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             },
         )
 
+    def test_refactoring_agent_runs_only_for_repository_owner(self):
+        condition = " ".join(load_workflow()["jobs"]["refactor"]["if"].split())
+
+        self.assertIn("github.event.issue.pull_request != null", condition)
+        self.assertIn("contains(github.event.comment.body, '/cs-agent')", condition)
+        self.assertIn(
+            "github.event.comment.user.login == github.repository_owner", condition
+        )
+
+    def test_refactor_attempts_push_with_owner_token(self):
+        steps = load_workflow()["jobs"]["refactor"]["steps"]
+        steps_by_id = {step["id"]: step for step in steps if "id" in step}
+
+        for attempt_id in ("refactor-attempt-1", "refactor-attempt-2"):
+            with self.subTest(attempt_id=attempt_id):
+                self.assertEqual(
+                    steps_by_id[attempt_id]["with"]["github_token"],
+                    "${{ secrets.GH_TOKEN }}",
+                )
+
     def test_refactoring_agent_retries_failed_push_once(self):
         steps = load_workflow()["jobs"]["refactor"]["steps"]
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
