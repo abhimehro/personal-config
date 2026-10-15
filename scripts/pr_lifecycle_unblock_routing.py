@@ -268,21 +268,39 @@ def _route_review(ctx: _Route) -> list[dict[str, Any]]:
 
 
 def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
-    """Escalate open Octopus review findings; they block routine merge."""
+    """Escalate open Octopus threads or linked issues; they block routine merge."""
     findings = ctx.pr.get("openOctopusFindings")
-    if findings == 0:
+    issues = ctx.pr.get("openOctopusIssues") or []
+    if findings == 0 and not issues:
         return []
     unknown = findings is None
-    action = "verify the Octopus review threads on the PR (thread list truncated or unreadable), then resolve or close"
-    if not unknown:
-        action = "resolve the open Octopus review findings on the PR or close it"
+    thread_action = None
+    if unknown:
+        thread_action = (
+            "verify the Octopus review threads on the PR "
+            "(thread list truncated or unreadable), then resolve or close"
+        )
+    elif findings:
+        thread_action = "resolve the open Octopus review findings on the PR or close it"
+    evidence: dict[str, Any] = {
+        "open_octopus_findings": "unknown" if unknown else findings
+    }
+    issue_action = None
+    if issues:
+        issue_numbers = [f"#{number}" for number in issues]
+        evidence["open_octopus_issues"] = issue_numbers
+        issue_action = (
+            "resolve or close the open Octopus finding issue(s) "
+            f"{', '.join(issue_numbers)} for this PR, or close the PR"
+        )
+    actions = [action for action in (thread_action, issue_action) if action]
     return [
         _escalation(
             ctx,
             _EscalationSpec(
                 "open_octopus_findings",
-                evidence={"open_octopus_findings": "unknown" if unknown else findings},
-                recommended_action=action,
+                evidence=evidence,
+                recommended_action="; ".join(actions),
             ),
         )
     ]
@@ -345,8 +363,9 @@ def route_pr(pr: dict[str, Any], args: _RouteArgs) -> list[dict[str, Any]]:
     routes precede draft suppression; conflicts precede other blockers.
     Return an empty list when no proposal is needed, including recent duplicate
     triggers. Security holds prevent close and push-capable proposals.
-    Open or unknown Octopus findings always escalate: automatic close actions
-    are suppressed and the escalation is kept alongside any other blockers.
+    Open or unknown Octopus threads and linked finding issues always escalate:
+    automatic close actions are suppressed and the escalation is kept alongside
+    any other blockers.
     """
     ctx = _route_ctx(pr, args)
     octopus = _route_octopus_findings(ctx)

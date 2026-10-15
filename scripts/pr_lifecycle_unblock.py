@@ -32,6 +32,10 @@ from pr_lifecycle_issue_status import (
     backlog_issue_body,
     update_backlog_issue,
 )
+from pr_lifecycle_octopus_issues import (
+    attach_octopus_issues,
+    fetch_open_octopus_issues,
+)
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
@@ -582,6 +586,7 @@ def _scan_repositories(
     for repo in job.repositories:
         try:
             prs = list_open_prs(repo)
+            attach_octopus_issues(prs, fetch_open_octopus_issues(repo, run=run))
         except OSError as exc:
             inventory_failed.append(
                 {

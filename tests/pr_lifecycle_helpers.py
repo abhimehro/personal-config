@@ -403,6 +403,7 @@ def run_unblock_plan(
             return_value={"ledger_path": "ledger.yaml"},
         ),
         inventory_patch,
+        mock.patch.object(unblock, "fetch_open_octopus_issues", return_value={}),
         mock.patch.object(unblock, "_apply_action"),
         mock.patch.object(
             unblock,

@@ -67,9 +67,11 @@ Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
 human-authored PRs never become routine merge or close candidates. A PR with
 open Octopus review findings — unresolved, non-outdated `octopus-review`
-threads, or a thread list that could not be fully read — is likewise never
-routine-merge eligible; the unblock executor escalates it onto the repository
-decision issue.
+threads, a thread list that could not be fully read, or an open
+`octopus-review[bot]` finding issue linked by a same-repository URL or
+`Pull Request: … (#N)` line — is likewise never routine-merge eligible. The
+unblock executor escalates it onto the repository decision issue; an issue
+finding stops blocking when that issue is closed.
 
 ## Canonical records and repository authority
 
