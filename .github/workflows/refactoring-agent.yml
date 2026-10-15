@@ -4,10 +4,6 @@ on:
   issue_comment:
     types: [created]
 
-concurrency:
-  group: refactoring-agent-${{ github.event.issue.number }}
-  cancel-in-progress: true
-
 jobs:
   refactor:
     # Owner-only: the job pushes with the owner's GH_TOKEN so the commit can pass
@@ -16,7 +12,12 @@ jobs:
     if: >-
       github.event.issue.pull_request != null &&
       contains(github.event.comment.body, '/cs-agent') &&
-      github.event.comment.user.login == github.repository_owner
+      github.event.comment.user.login == github.repository_owner &&
+      !contains(github.event.comment.body, '<!-- cs-agent:status -->')
+    # Job-level so comment runs whose job is skipped (bots, the agent's own PAT status comments) don't cancel an in-flight refactor.
+    concurrency:
+      group: refactoring-agent-${{ github.event.issue.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
       contents: write

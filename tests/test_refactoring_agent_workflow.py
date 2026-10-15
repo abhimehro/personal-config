@@ -22,8 +22,9 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
     def test_refactoring_agent_enforces_concurrency_per_pr(self):
         workflow = load_workflow()
 
+        self.assertNotIn("concurrency", workflow)
         self.assertEqual(
-            workflow["concurrency"],
+            workflow["jobs"]["refactor"]["concurrency"],
             {
                 "group": "refactoring-agent-${{ github.event.issue.number }}",
                 "cancel-in-progress": True,
@@ -37,6 +38,10 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         self.assertIn("contains(github.event.comment.body, '/cs-agent')", condition)
         self.assertIn(
             "github.event.comment.user.login == github.repository_owner", condition
+        )
+        self.assertIn(
+            "!contains(github.event.comment.body, '<!-- cs-agent:status -->')",
+            condition,
         )
 
     def test_refactor_attempts_push_with_owner_token(self):
