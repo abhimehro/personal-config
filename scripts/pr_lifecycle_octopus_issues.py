@@ -14,17 +14,7 @@ def linked_prs(repo: str, body: object) -> set[int]:
     """Return same-repository PR numbers in Octopus's structured body forms."""
     if not isinstance(body, str):
         return set()
-    url_pattern = re.compile(
-        rf"https?://github\.com/{re.escape(repo)}/pull/(\d+)\b",
-        re.IGNORECASE,
-    )
-    pull_request_pattern = re.compile(
-        r"^Pull Request:.*\(#(\d+)\)\s*$",
-        re.MULTILINE,
-    )
-    numbers = {int(match.group(1)) for match in url_pattern.finditer(body)}
-    numbers.update(int(match.group(1)) for match in pull_request_pattern.finditer(body))
-    return numbers
+    return _extract_pr_numbers(repo, body)
 
 
 def _query_issue_payload(repo: str, run: Any) -> Any:
@@ -32,25 +22,7 @@ def _query_issue_payload(repo: str, run: Any) -> Any:
     endpoint = (
         f"repos/{repo}/issues?state=open&creator=octopus-review%5Bbot%5D&per_page=100"
     )
-    result = run(
-        [
-            "gh",
-            "api",
-            "--paginate",
-            "--slurp",
-            endpoint,
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-    if result.returncode != 0:
-        raise OSError(f"gh api Octopus issues failed rc={result.returncode}")
-    try:
-        return json.loads(result.stdout)
-    except (TypeError, ValueError) as exc:
-        raise OSError("malformed Octopus issue JSON") from exc
+    return _fetch_issue_payload(run, endpoint)
 
 
 def _is_octopus_issue(issue: dict[str, Any]) -> bool:

@@ -331,19 +331,7 @@ class _RouteArgs:
 
 def _route_ctx(pr: dict[str, Any], args: _RouteArgs) -> _Route:
     """Build the shared routing context for one normalized PR."""
-    safe_base = _safe_ref_name(pr.get("baseRefName"), "base branch")
-    return _Route(
-        pr=pr,
-        author_type=args.author_type,
-        family=_family(pr),
-        security=_sticky_security(args.ledger_items_for_pr),
-        settings=args.settings,
-        now=args.now,
-        repo=str(pr.get("repository") or ""),
-        number=pr.get("number"),
-        head=str(pr.get("headRefOid") or ""),
-        base=safe_base,
-    )
+    return _build_route(pr, args)
 
 
 def _route_prefix(
@@ -393,16 +381,7 @@ def _route_candidates(
 ) -> list[dict[str, Any]]:
     """Return every proposal routing would make, before the owner hold."""
     prefix = _route_prefix(ctx, pr, args.ledger_items_for_pr, args.ledger)
-    if prefix is not None:
-        if not octopus:
-            return prefix
-        actions = [
-            action
-            for action in prefix
-            if not str(action.get("action") or "").startswith("CLOSE")
-        ]
-        actions.extend(octopus)
-        return actions
+    return _combine_prefix_octopus(prefix, octopus)
     conflict = _route_conflict(ctx)
     if conflict is not None:
         return conflict + octopus
