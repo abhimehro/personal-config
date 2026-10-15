@@ -88,15 +88,18 @@ def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
     }
 
 
+def _flatten_pages(payload: list) -> list:
+    """Flatten --slurp pages when the payload contains page lists."""
+    if payload and all(isinstance(page, list) for page in payload):
+        return [issue for page in payload for issue in page]
+    return payload
+
+
 def _issue_items(payload: Any) -> list[dict[str, Any]]:
-    """Flatten a --slurp page list or validate a flat issue list."""
+    """Validate the flattened Octopus issue payload."""
     if not isinstance(payload, list):
         raise OSError("malformed Octopus issue payload")
-    items = (
-        [issue for page in payload for issue in page]
-        if payload and all(isinstance(page, list) for page in payload)
-        else payload
-    )
+    items = _flatten_pages(payload)
     if not all(isinstance(issue, dict) for issue in items):
         raise OSError("malformed Octopus issue payload")
     return items
