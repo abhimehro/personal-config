@@ -220,6 +220,54 @@ class OctopusIssueScanTests(unittest.TestCase):
         self.assertEqual(inventory_failed[0]["repository"], UNBLOCK_REPO)
         self.assertEqual(actions, inventory_failed)
 
+    def test_fetch_timeout_fails_only_affected_repo(self) -> None:
+        first_pr = make_unblock_pr(number=453)
+        second_repo = "owner/other"
+        second_pr = make_unblock_pr(
+            repository=second_repo,
+            url=f"https://github.com/{second_repo}/pull/454",
+            number=454,
+            openOctopusFindings=1,
+        )
+        job = unblock._ScanJob(
+            repositories=[UNBLOCK_REPO, second_repo],
+            ledger={"items": []},
+            policy=unblock.identity_policy_from_config(UNBLOCK_CONFIG),
+            settings=UNBLOCK_SETTINGS,
+        )
+        run = mock.Mock()
+        timeout = subprocess.TimeoutExpired(cmd=["gh"], timeout=60)
+        with (
+            mock.patch.object(
+                unblock, "list_open_prs", side_effect=[[first_pr], [second_pr]]
+            ) as list_prs,
+            mock.patch.object(
+                unblock,
+                "fetch_open_octopus_issues",
+                side_effect=[timeout, {}],
+            ) as fetch_issues,
+        ):
+            actions, inventory_failed, _ = unblock._scan_repositories(job, run)
+
+        self.assertEqual(len(inventory_failed), 1)
+        self.assertEqual(inventory_failed[0]["action"], "INVENTORY_FAILED")
+        self.assertEqual(inventory_failed[0]["repository"], UNBLOCK_REPO)
+        self.assertTrue(inventory_failed[0]["reason"].startswith("TimeoutExpired"))
+        self.assertEqual(
+            list_prs.call_args_list,
+            [mock.call(UNBLOCK_REPO), mock.call(second_repo)],
+        )
+        self.assertEqual(
+            fetch_issues.call_args_list,
+            [mock.call(UNBLOCK_REPO, run=run), mock.call(second_repo, run=run)],
+        )
+        self.assertTrue(
+            any(
+                action.get("repository") == second_repo and action.get("pr") == 454
+                for action in actions
+            )
+        )
+
     def test_success_attaches_issue_and_escalates_only_linked_pr(self) -> None:
         linked = make_unblock_pr(number=453)
         unlinked = make_unblock_pr(number=454)

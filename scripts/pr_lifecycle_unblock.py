@@ -587,7 +587,7 @@ def _scan_repositories(
         try:
             prs = list_open_prs(repo)
             attach_octopus_issues(prs, fetch_open_octopus_issues(repo, run=run))
-        except OSError as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             inventory_failed.append(
                 {
                     "action": "INVENTORY_FAILED",
