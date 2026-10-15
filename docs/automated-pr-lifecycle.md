@@ -71,6 +71,19 @@ threads, or a thread list that could not be fully read — is likewise never
 routine-merge eligible; the unblock executor escalates it onto the repository
 decision issue.
 
+Each decision issue carries one row per open PR needing a human decision plus
+a checkbox task list: every row renders its suggested disposition and the head
+SHA it was rendered against. Ticking a checkbox (optionally editing the
+backticked disposition token) executes that disposition on the next
+`unblock --apply --decision-issues` run — but only when every recorded editor
+of the issue body is `abhimehro` and the PR's live head still matches the
+rendered head; a push since the render ignores the tick. The full edit history is
+paginated; an unreadable or incomplete history also refuses all ticks. Accepted dispositions
+(`CLOSED_STALE`, `CLOSED_DUPLICATE`, `CLOSED_NOOP`, `CLOSED_SUPERSEDED`,
+`CLOSED_UNREVIEWED`, or `KEEP_OPEN` to hand the item back to the human queue)
+are applied through the shared transition path so every executed disposition
+lands as a ledger event, and close dispositions close the live PR first.
+
 ## Canonical records and repository authority
 
 | Record                     | Location                                                  | Writer                                                                  | Purpose                                                                                                    |

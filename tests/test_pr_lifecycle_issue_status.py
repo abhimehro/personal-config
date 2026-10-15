@@ -235,7 +235,7 @@ class IssueStatusTests(unittest.TestCase):
             body.split("<!-- pr-lifecycle-backlog-state ", 1)[1].split(" -->", 1)[0]
         )
         self.assertEqual(
-            state["first_seen"]["owner/repo#42:required_check_failure"],
+            state["first_seen"]["owner/repo#42"],
             "2026-08-30T12:00:00Z",
         )
 
@@ -257,6 +257,7 @@ class IssueStatusTests(unittest.TestCase):
         real = {
             "first_seen": {"real": "2026-02-01T00:00:00Z"},
             "overdue_notified": ["real"],
+            "rows_meta": {},
         }
         body = (
             "<!-- pr-lifecycle-backlog-state "
@@ -320,10 +321,7 @@ class IssueStatusTests(unittest.TestCase):
         )
         self.assertEqual(
             [row["id"] for row in prepared],
-            [
-                "owner/repo#42:conflict",
-                "owner/repo#42:security",
-            ],
+            ["owner/repo#42"],
         )
         self.assertEqual(set(refreshed["first_seen"]), {row["id"] for row in prepared})
         self.assertEqual(overdue, [])
@@ -345,7 +343,7 @@ class IssueStatusTests(unittest.TestCase):
                 self.assertEqual(len(state["overdue_notified"]), int(expected))
 
     def test_invalid_first_seen_and_expiry_recover_to_default_deadline(self):
-        key = "owner/repo#42:conflict"
+        key = "owner/repo#42"
         for expires in (None, "invalid"):
             with self.subTest(expires=expires):
                 rows = [
