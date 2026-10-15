@@ -14,7 +14,19 @@ def linked_prs(repo: str, body: object) -> set[int]:
     """Return same-repository PR numbers in Octopus's structured body forms."""
     if not isinstance(body, str):
         return set()
-    return _extract_pr_numbers(repo, body)
+    # SECURITY: only same-repo pull URLs and Octopus's "Pull Request:" line
+    # count. A body that merely mentions another repo's PR must not block it.
+    url_pattern = re.compile(
+        rf"https?://github\.com/{re.escape(repo)}/pull/(\d+)\b",
+        re.IGNORECASE,
+    )
+    pull_request_pattern = re.compile(
+        r"^Pull Request:.*\(#(\d+)\)\s*$",
+        re.MULTILINE,
+    )
+    numbers = {int(match.group(1)) for match in url_pattern.finditer(body)}
+    numbers.update(int(match.group(1)) for match in pull_request_pattern.finditer(body))
+    return numbers
 
 
 def _query_issue_payload(repo: str, run: Any) -> Any:
@@ -22,7 +34,27 @@ def _query_issue_payload(repo: str, run: Any) -> Any:
     endpoint = (
         f"repos/{repo}/issues?state=open&creator=octopus-review%5Bbot%5D&per_page=100"
     )
-    return _fetch_issue_payload(run, endpoint)
+    # NOTE: check=False so a non-zero gh exit becomes a typed OSError the
+    # scanner can record as this repository's inventory failure.
+    result = run(
+        [
+            "gh",
+            "api",
+            "--paginate",
+            "--slurp",
+            endpoint,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if result.returncode != 0:
+        raise OSError(f"gh api Octopus issues failed rc={result.returncode}")
+    try:
+        return json.loads(result.stdout)
+    except (TypeError, ValueError) as exc:
+        raise OSError("malformed Octopus issue JSON") from exc
 
 
 def _is_octopus_issue(issue: dict[str, Any]) -> bool:
