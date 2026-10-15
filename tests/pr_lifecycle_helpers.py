@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import copy
+import importlib
 import json
+import re
 import subprocess
 import sys
 import types
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -522,3 +524,75 @@ def make_inventory_payload(
             }
         }
     }
+
+
+_RECONCILE_STUB_NAMES = (
+    "pr_lifecycle_ledger",
+    "pr_lifecycle_ledger_cas",
+    "pr_lifecycle_config",
+    "pr_lifecycle_persist",
+    "pr_lifecycle_support",
+    "pr_lifecycle_yaml",
+)
+
+
+def load_reconcile_with_stubs():
+    """Import pr_lifecycle_reconcile with heavy deps stubbed, then restore.
+
+    The module runs without PyYAML / CAS during the import; sys.modules is
+    restored afterwards so the stubs cannot leak into the rest of the suite.
+    """
+    saved = {name: sys.modules.get(name) for name in _RECONCILE_STUB_NAMES}
+    for name in _RECONCILE_STUB_NAMES:
+        sys.modules[name] = types.ModuleType(name)
+
+    sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
+        "STAGE1_INTAKE": "stage1",
+        "STAGE2_QUEUED": "stage2",
+        "STAGE2_ACTIVE": "stage2",
+        "STAGE3_RECONCILIATION": "stage3",
+        "WAITING_HUMAN": "human",
+        "TERMINAL": "none",
+    }
+    sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
+    sys.modules["pr_lifecycle_support"].ROOT = ROOT
+    sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+    sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
+    sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
+    sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
+    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = (
+        lambda *_a, **_k: 0
+    )
+
+    module = importlib.import_module("pr_lifecycle_reconcile")
+
+    for name in _RECONCILE_STUB_NAMES:
+        prior = saved[name]
+        if prior is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = prior
+    return module
+
+
+def reconcile_item(now: datetime = NOW, **overrides: object) -> dict[str, object]:
+    """Build a reconcile ledger item; `now` anchors updated_at_utc 10d back."""
+    base: dict[str, object] = {
+        "key": "abhimehro/personal-config#99@" + "a" * 40,
+        "repository": "abhimehro/personal-config",
+        "pr": 99,
+        "head_sha": "a" * 40,
+        "base_sha": "b" * 40,
+        "author_type": "BOT",
+        "guardrail_outcome": "HOLD_EVIDENCE",
+        "lifecycle_state": "WAITING_HUMAN",
+        "current_owner": "human",
+        "next_owner": "human",
+        "terminal_disposition": None,
+        "revision": 1,
+        "handoffs": [],
+        "updated_at_utc": (now - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "next_action": "Await human",
+    }
+    base.update(overrides)
+    return base
