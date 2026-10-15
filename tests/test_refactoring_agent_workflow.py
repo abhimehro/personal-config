@@ -19,7 +19,10 @@ def load_workflow():
 
 
 class TestRefactoringAgentWorkflow(unittest.TestCase):
+    """Verify refactoring-agent workflow guards, concurrency, and retries."""
+
     def test_refactoring_agent_enforces_concurrency_per_pr(self):
+        """Ensure per-PR concurrency applies only to eligible refactor jobs."""
         workflow = load_workflow()
 
         self.assertNotIn("concurrency", workflow)
@@ -32,6 +35,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         )
 
     def test_refactoring_agent_runs_only_for_repository_owner(self):
+        """Require owner PR commands and exclude the agent's status comments."""
         condition = " ".join(load_workflow()["jobs"]["refactor"]["if"].split())
 
         self.assertIn("github.event.issue.pull_request != null", condition)
