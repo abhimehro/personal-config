@@ -311,15 +311,21 @@ def _present_actions(*candidates: str | None) -> list[str]:
     return [action for action in candidates if action]
 
 
+def _count_is_zero(findings: Any) -> bool:
+    """True only for a real integer zero, not None and not bool."""
+    # NOTE: None means the Octopus thread list was unreadable and must escalate.
+    if isinstance(findings, bool):
+        return False
+    if not isinstance(findings, int):
+        return False
+    return not findings
+
+
 def _route_octopus_findings(ctx: _Route) -> list[dict[str, Any]]:
     """Escalate open Octopus threads or linked issues; they block routine merge."""
     findings = ctx.pr.get("openOctopusFindings")
     issues = ctx.pr.get("openOctopusIssues") or []
-    # NOTE: None means the thread list was unreadable. Only a real zero skips.
-    # pylint: disable=use-implicit-booleaness-not-comparison
-    no_open_threads = findings == 0
-    # pylint: enable=use-implicit-booleaness-not-comparison
-    if no_open_threads and not issues:
+    if _count_is_zero(findings) and not issues:
         return []
     issue_numbers, issue_action = _octopus_issue_parts(issues)
     actions = _present_actions(_octopus_thread_action(findings), issue_action)

@@ -8,6 +8,11 @@ import re
 from typing import Any
 
 OCTOPUS_ISSUE_AUTHOR = "octopus-review[bot]"
+__all__ = [
+    "attach_octopus_issues",
+    "fetch_open_octopus_issues",
+    "linked_prs",
+]
 _PULL_REQUEST_LINE = re.compile(
     r"^Pull Request:.*\(#(\d+)\)\s*$",
     re.MULTILINE,
@@ -120,9 +125,7 @@ def _sorted_issue_map(issues_by_pr: dict[int, set[int]]) -> dict[int, list[int]]
     }
 
 
-def fetch_open_octopus_issues(  # pylint: disable=unused-function
-    repo: str, *, run: Any
-) -> dict[int, list[int]]:
+def fetch_open_octopus_issues(repo: str, *, run: Any) -> dict[int, list[int]]:
     """Fetch open Octopus issues, returning linked PR numbers to issue numbers."""
     issues_by_pr: dict[int, set[int]] = {}
     for issue in _issue_items(_query_issue_payload(repo, run)):
@@ -161,10 +164,9 @@ def _issue_items(payload: Any) -> list[dict[str, Any]]:
     return _require_issue_dicts(_flatten_pages(payload))
 
 
-def attach_octopus_issues(  # pylint: disable=unused-function
+def attach_octopus_issues(
     prs: list[dict[str, Any]], issues_by_pr: dict[int, list[int]]
 ) -> None:
     """Attach open finding issue numbers to their linked PR inventory entries."""
-    # unblock.py imports this; the name is the module's public API.
     for pull_request in prs:
         pull_request["openOctopusIssues"] = issues_by_pr.get(pull_request["number"], [])
