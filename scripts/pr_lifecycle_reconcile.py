@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -26,8 +27,10 @@ if str(SCRIPT_DIR) not in sys.path:
 # pylint: disable=wrong-import-position
 import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
+import pr_lifecycle_reconcile_guards as guards
 from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
+from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
 from pr_lifecycle_support import ROOT, SHA_RE
@@ -1068,75 +1071,130 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
 
 
 def run_reconcile(
-    *, apply: bool, limit: int | None, json_out: bool, ingest: bool = True
+    *,
+    apply: bool,
+    limit: int | None,
+    json_out: bool,
+    ingest: bool = True,
 ) -> int:
     """Fetch and emit actions, optionally applying and CAS-committing them.
 
     limit caps existing-item actions; nonpositive limits still allow the first
-    eligible action. Open-PR intake is uncapped; ingest=False skips its
-    inventory and intake. Inventory OSError failures become INVENTORY_FAILED
-    entries; configuration, ledger fetch, and commit errors propagate.
-    Apply mode may close stale PRs and persists ledger changes.
-    Return zero after emitting the plan, including inventory failure reports.
+    eligible action. Open-PR intake is uncapped in the plan; ingest=False skips
+    its inventory and intake. Inventory OSError failures become
+    INVENTORY_FAILED entries; configuration, ledger fetch, and non-conflict
+    commit errors propagate.
+
+    Apply-mode guards:
+    - Any INVENTORY_FAILED aborts the apply before any mutation (exit 3).
+    - At most ``max_apply`` mutating actions (default 60, env
+      PR_LIFECYCLE_MAX_APPLY; the CLI --max-apply sets it) are saved per CAS write: terminal transitions
+      first, then stale closes, re-anchors, other transitions, then intake.
+      The remainder is reported as ``deferred_count`` for the next run.
+    - A CAS OPERATOR_CONFLICT re-fetches the ledger and re-plans from live
+      state (never replays stale bytes), up to 3 attempts with jittered
+      backoff; exhausting attempts returns exit 4.
+    Return zero after emitting a dry-run plan or a committed apply.
     """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
-    with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
-        out = Path(tmp) / "ledger.yaml"
-        fetch = cas.run_preflight(out)
-        ledger = load_yaml(Path(fetch["ledger_path"]))
-        actions = collect_actions(ledger, config, limit=limit)
-        inventory_failed: list[dict[str, str]] = []
-        open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
-        if ingest:
-            for repo in config["repos"]:
-                try:
-                    open_prs_by_repo[repo] = list_open_prs(repo)
-                except OSError as exc:
-                    inventory_failed.append(
-                        {
-                            "action": "INVENTORY_FAILED",
-                            "repository": repo,
-                            "reason": f"{type(exc).__name__}: {exc}"[:200],
-                        }
-                    )
-            ingest_actions = collect_ingest_actions(
-                ledger, config, open_prs_by_repo, now=_utc_now()
-            )
-            actions.extend(ingest_actions)
-            actions.extend(inventory_failed)
-        else:
-            ingest_actions = []
-        plan = {
-            "dry_run": not apply,
-            "ledger_revision": ledger.get("ledger_revision"),
-            "action_count": len(actions),
-            "actions": actions,
-            "ingest_count": sum(
-                action["action"] == "INGEST_OPEN_PR" for action in ingest_actions
-            ),
-            "terminal_but_open_count": sum(
-                action["action"] == "TERMINAL_BUT_OPEN" for action in ingest_actions
-            ),
-            "inventory_failed": inventory_failed,
-        }
-        if not apply:
+    cap = guards.max_apply_from_env()
+    attempt = 0
+    while True:
+        attempt += 1
+        with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
+            out = Path(tmp) / "ledger.yaml"
+            plan, ledger, actions = _build_plan(config, out, limit, ingest)
+            plan["dry_run"] = not apply
+            if not apply:
+                _emit(plan, json_out)
+                return 0
+            if plan["inventory_failed"]:
+                plan["aborted"] = "INVENTORY_FAILED"
+                _emit(plan, json_out)
+                return guards.INVENTORY_ABORT_EXIT
+            selected, deferred = guards.select_batch(actions, cap)
+            plan["max_apply"] = cap
+            plan["deferred_count"] = len(deferred)
+            plan["cas_attempt"] = attempt
+            applied = _apply_actions(ledger, selected)
+            ingested = _apply_ingest_actions(ledger, selected)
+            strip_in_memory_item_fields(ledger)
+            out.write_text(dump_ledger(ledger), encoding="utf-8")
+            try:
+                result = cas.run_commit(
+                    out,
+                    "reconcile: live PR state → ledger transitions",
+                    bump_revision=False,
+                )
+            except CasError as exc:
+                if exc.code != OPERATOR_CONFLICT:
+                    raise
+                if attempt >= guards.MAX_CAS_ATTEMPTS:
+                    plan["aborted"] = "CAS_CONFLICT_EXHAUSTED"
+                    _emit(plan, json_out)
+                    return guards.CAS_CONFLICT_EXIT
+                guards.sleep(guards.backoff_seconds(attempt))
+                continue
+            plan["applied"] = applied
+            plan["ingested"] = ingested
+            plan["cas"] = result
             _emit(plan, json_out)
             return 0
-        applied = _apply_actions(ledger, actions)
-        ingested = _apply_ingest_actions(ledger, actions)
-        strip_in_memory_item_fields(ledger)
-        out.write_text(dump_ledger(ledger), encoding="utf-8")
-        result = cas.run_commit(
-            out,
-            "reconcile: live PR state → ledger transitions",
-            bump_revision=False,
-        )
-        plan["applied"] = applied
-        plan["ingested"] = ingested
-        plan["cas"] = result
-        _emit(plan, json_out)
-    return 0
+
+
+def _collect_ingest_plan(
+    ledger: dict[str, Any], config: dict[str, Any]
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Collect open-PR intake actions and inventory failure reports."""
+    inventory_failed: list[dict[str, str]] = []
+    open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
+    for repo in config["repos"]:
+        try:
+            open_prs_by_repo[repo] = list_open_prs(repo)
+        except OSError as exc:
+            inventory_failed.append(
+                {
+                    "action": "INVENTORY_FAILED",
+                    "repository": repo,
+                    "reason": f"{type(exc).__name__}: {exc}"[:200],
+                }
+            )
+    ingest_actions = collect_ingest_actions(
+        ledger, config, open_prs_by_repo, now=_utc_now()
+    )
+    return ingest_actions, inventory_failed
+
+
+def _build_plan(
+    config: dict[str, Any],
+    out: Path,
+    limit: int | None,
+    ingest: bool,
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+    """Fetch the ledger and live inventory; return (plan, ledger, actions)."""
+    fetch = cas.run_preflight(out)
+    ledger = load_yaml(Path(fetch["ledger_path"]))
+    actions = collect_actions(ledger, config, limit=limit)
+    ingest_actions, inventory_failed = (
+        _collect_ingest_plan(ledger, config) if ingest else ([], [])
+    )
+    actions.extend(ingest_actions)
+    actions.extend(inventory_failed)
+    plan = {
+        "dry_run": True,
+        "ledger_revision": ledger.get("ledger_revision"),
+        "action_count": len(actions),
+        "actions": actions,
+        "ingest_count": sum(
+            action["action"] == "INGEST_OPEN_PR" for action in ingest_actions
+        ),
+        "terminal_but_open_count": sum(
+            action["action"] == "TERMINAL_BUT_OPEN" for action in ingest_actions
+        ),
+        "inventory_failed": inventory_failed,
+    }
+    return plan, ledger, actions
 
 
 def _apply_close_stale(action: dict[str, Any]) -> bool:
@@ -1262,6 +1320,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="skip live open-PR inventory and Stage 1 intake planning",
     )
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--max-apply",
+        type=int,
+        default=None,
+        help="max mutating actions per CAS save (default 60 or PR_LIFECYCLE_MAX_APPLY)",
+    )
     return parser
 
 
@@ -1269,6 +1333,8 @@ def main(argv: list[str] | None = None) -> int:
     """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
     try:
+        if args.max_apply is not None:
+            os.environ["PR_LIFECYCLE_MAX_APPLY"] = str(max(1, args.max_apply))
         return run_reconcile(
             apply=args.apply,
             limit=args.limit,
