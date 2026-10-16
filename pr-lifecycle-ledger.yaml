@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 512
+ledger_revision: 537
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -32118,7 +32118,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - scripts/batch_correction.py
+  - scripts/tests/test_batch_correction_security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32154,7 +32157,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/requirements-dev.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32190,7 +32194,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32226,7 +32231,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/requirements-dev.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32266,7 +32272,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/Diagnostics/AgentMode/Stress/AgentChatStressHarness.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/ClaudeCode/SDK/ClaudeSDKNDJSONTranslator.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32306,7 +32314,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32385,7 +32394,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenAIProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenRouterProvider.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32464,7 +32477,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32504,7 +32518,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenAIProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenRouterProvider.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32544,7 +32561,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Infrastructure/UI/Components/CompactDualActionButton.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/EnhancedMarkdownView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Markdown/PreHighlightedCodeBlock.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32583,7 +32604,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptTests/Services/FileSystem/ContentReadCancellationTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32622,7 +32644,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/VCS/GitService.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32661,7 +32684,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptTests/Security/MCPTerminalRecordSanitizationTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32740,7 +32764,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/Diagnostics/AgentMode/Stress/AgentChatStressHarness.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/ClaudeCode/SDK/ClaudeSDKNDJSONTranslator.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32780,7 +32806,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenAIProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenRouterProvider.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32820,7 +32850,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32859,7 +32891,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptTests/Services/FileSystem/ContentReadCancellationTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32899,7 +32932,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/Diagnostics/AgentMode/Stress/AgentChatStressHarness.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/ClaudeCode/SDK/ClaudeSDKNDJSONTranslator.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32938,7 +32973,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenAIProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenRouterProvider.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -32978,7 +33017,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Infrastructure/UI/Components/CompactDualActionButton.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Components/DualClickPopoverButton.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33014,7 +33056,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33050,7 +33093,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33086,7 +33130,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/refactoring-agent.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33164,7 +33209,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/Diagnostics/AgentMode/Stress/AgentChatStressHarness.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/ClaudeCode/SDK/ClaudeSDKNDJSONTranslator.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33182,6 +33229,205 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-16T12:42:26Z'
+- key: abhimehro/repoprompt-ce#488@4c4a24ea116467061ebcdd1a7d7f7f0aded0152c
+  repository: abhimehro/repoprompt-ce
+  pr: 488
+  url: https://github.com/abhimehro/repoprompt-ce/pull/488
+  base_sha: b85da61e75cf275919b1df09c3d151f8ac77745b
+  head_sha: 4c4a24ea116467061ebcdd1a7d7f7f0aded0152c
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/488
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:48:49Z'
+- key: abhimehro/repoprompt-ce#490@7a223ad96b0d84ac11e02f74c0ca96c93ed6ce10
+  repository: abhimehro/repoprompt-ce
+  pr: 490
+  url: https://github.com/abhimehro/repoprompt-ce/pull/490
+  base_sha: b85da61e75cf275919b1df09c3d151f8ac77745b
+  head_sha: 7a223ad96b0d84ac11e02f74c0ca96c93ed6ce10
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/490
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:48:49Z'
+- key: abhimehro/repoprompt-ce#491@40766f25d42a2cfdc0f7b13b86298efe503a5b16
+  repository: abhimehro/repoprompt-ce
+  pr: 491
+  url: https://github.com/abhimehro/repoprompt-ce/pull/491
+  base_sha: b85da61e75cf275919b1df09c3d151f8ac77745b
+  head_sha: 40766f25d42a2cfdc0f7b13b86298efe503a5b16
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/491
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:48:49Z'
+- key: abhimehro/repoprompt-ce#492@2ccd5907e9d86c80cd447ae0e72fd4f2ad714dcd
+  repository: abhimehro/repoprompt-ce
+  pr: 492
+  url: https://github.com/abhimehro/repoprompt-ce/pull/492
+  base_sha: b85da61e75cf275919b1df09c3d151f8ac77745b
+  head_sha: 2ccd5907e9d86c80cd447ae0e72fd4f2ad714dcd
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/492
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:48:49Z'
+- key: abhimehro/repoprompt-ce#500@a72685e13bb4597ce699d01eb5dcdafdaad90a6f
+  repository: abhimehro/repoprompt-ce
+  pr: 500
+  url: https://github.com/abhimehro/repoprompt-ce/pull/500
+  base_sha: b85da61e75cf275919b1df09c3d151f8ac77745b
+  head_sha: a72685e13bb4597ce699d01eb5dcdafdaad90a6f
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/500
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:48:49Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
