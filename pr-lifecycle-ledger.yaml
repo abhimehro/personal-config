@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 408
+ledger_revision: 433
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -20892,7 +20892,13 @@ items:
   classification: UNKNOWN
   risk_class: HUMAN_REVIEW
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/jules.yml
+  - .github/workflows/security-scan.yml
+  - scripts/pr_identity.py
+  - tests/test_workflow_action_updates.py
   guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -22679,7 +22685,8 @@ items:
   classification: UNKNOWN
   risk_class: HUMAN_REVIEW
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
   guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -23805,12 +23812,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/Seatek_Analysis#857@a89c9ff88904b7d62440df7253de5b59b6b81971
+- key: abhimehro/Seatek_Analysis#857@b587e2735a386e6842439cdb1051e18e940dedde
   repository: abhimehro/Seatek_Analysis
   pr: 857
   url: https://github.com/abhimehro/Seatek_Analysis/pull/857
   base_sha: fc2cea3fc0b4225dcd10966917b6129ac532548a
-  head_sha: a89c9ff88904b7d62440df7253de5b59b6b81971
+  head_sha: b587e2735a386e6842439cdb1051e18e940dedde
   author:
     login: abhimehro
     identity_source: github_api
@@ -23855,9 +23862,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head b587e2735a386e6842439cdb1051e18e940dedde;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/857
   attempts:
@@ -23866,7 +23872,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/Seatek_Analysis#883@bf4839c154bc31be534d6790c9693f1a1f04263e
   repository: abhimehro/Seatek_Analysis
   pr: 883
@@ -24089,7 +24095,9 @@ items:
   classification: UNKNOWN
   risk_class: HUMAN_REVIEW
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/pr-validation.yml
+  - tests/test_pr_validation_workflow.py
   guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -24234,12 +24242,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/Seatek_Analysis#936@b23528150c350f30a674effd9e1ab1c1f4e419ce
+- key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
   repository: abhimehro/Seatek_Analysis
   pr: 936
   url: https://github.com/abhimehro/Seatek_Analysis/pull/936
   base_sha: f7908d6b1248d2e33e6b682b01e94f3451e2d66e
-  head_sha: b23528150c350f30a674effd9e1ab1c1f4e419ce
+  head_sha: 74db049aa25ea24a0addce04a6b266132296e9d9
   author:
     login: abhimehro
     identity_source: github_api
@@ -24265,9 +24273,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 74db049aa25ea24a0addce04a6b266132296e9d9;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/936
   attempts:
@@ -24276,7 +24283,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/Seatek_Analysis#977@c2bf1306007b6c35fa5903d9121adba8d4196108
   repository: abhimehro/Seatek_Analysis
   pr: 977
@@ -24377,7 +24384,11 @@ items:
   classification: UNKNOWN
   risk_class: HUMAN_REVIEW
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .pre-commit-config.yaml
+  - poetry.lock
+  - pyproject.toml
+  - requirements-ci.txt
   guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -25469,10 +25480,10 @@ items:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     security_configuration). Escalate on the repo decision issue; no automated trigger,
@@ -25483,9 +25494,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-f9548117
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#544@a496f060b75c322a89e0101444ed6f109ea0a929
   repository: abhimehro/series_correction_project_updated
@@ -25509,10 +25521,10 @@ items:
   changed_paths:
   - .github/workflows/release-drafter.yml
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     workflows_and_permissions). Escalate on the repo decision issue; no automated
@@ -25523,9 +25535,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-21e60002
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#549@6d05db815b946dc9d6967e7af7c0d70ea5493ea2
   repository: abhimehro/series_correction_project_updated
@@ -25553,10 +25566,10 @@ items:
   - .jules/bolt.md
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: Re-anchored to live head 6d05db815b946dc9d6967e7af7c0d70ea5493ea2;
     prior evidence void.
@@ -25566,9 +25579,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-reconcile-20261016122327-69531648
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/series_correction_project_updated#550@12cba30dcbedfc021706c27b413870b7893eab38
   repository: abhimehro/series_correction_project_updated
   pr: 550
@@ -25594,10 +25608,10 @@ items:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     security_configuration). Escalate on the repo decision issue; no automated trigger,
@@ -25608,9 +25622,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-9deb0fa7
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#551@972098fbf8135f6f0c963eb0aabc7a343aef6acf
   repository: abhimehro/series_correction_project_updated
@@ -25637,10 +25652,10 @@ items:
   - .jules/bolt.md
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
     paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
@@ -25651,9 +25666,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  handoffs:
+  - evt-reconcile-20261016122327-d49a5085
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/series_correction_project_updated#552@015e6f2dc96d56525221be02374df4cc9836bd24
   repository: abhimehro/series_correction_project_updated
   pr: 552
@@ -25680,10 +25696,10 @@ items:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     security_configuration). Escalate on the repo decision issue; no automated trigger,
@@ -25694,9 +25710,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-8ce035cd
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#554@9d5b8d06b8e9cd9d68d23a9a363a3aba5c271c78
   repository: abhimehro/series_correction_project_updated
@@ -25723,10 +25740,10 @@ items:
   - .jules/bolt.md
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
     paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
@@ -25737,9 +25754,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  handoffs:
+  - evt-reconcile-20261016122327-07c49bc3
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/series_correction_project_updated#555@13201deaa0a04010219782bbb41938197bee2d5c
   repository: abhimehro/series_correction_project_updated
   pr: 555
@@ -25765,10 +25783,10 @@ items:
   changed_paths:
   - scripts/loaders.py
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
     Escalate on the repo decision issue; no automated trigger, branch update, close,
@@ -25779,9 +25797,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-a1a1f29b
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#556@787ed4bb49287b1be3a555edb45cbec81b53c80f
   repository: abhimehro/series_correction_project_updated
@@ -25808,10 +25827,10 @@ items:
   changed_paths:
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: Re-anchored to live head 787ed4bb49287b1be3a555edb45cbec81b53c80f;
     prior evidence void.
@@ -25821,9 +25840,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-reconcile-20261016122327-c1173ddd
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/series_correction_project_updated#557@26bd843a4751a54008ad8362d8252aee0cb9ffac
   repository: abhimehro/series_correction_project_updated
   pr: 557
@@ -25890,10 +25910,10 @@ items:
   changed_paths:
   - scripts/requirements-dev.txt
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     lockfiles_and_major_dependencies). Escalate on the repo decision issue; no automated
@@ -25904,9 +25924,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-bc08ccfe
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#559@3b1e14b60de73383f9e1800c0d4113b19974b056
   repository: abhimehro/series_correction_project_updated
@@ -25930,10 +25951,10 @@ items:
   changed_paths:
   - scripts/requirements-dev.txt
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     lockfiles_and_major_dependencies). Escalate on the repo decision issue; no automated
@@ -25944,9 +25965,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-11336ca7
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#560@c1d89add19b03faf94364fd89ece6d46bdc7bacc
   repository: abhimehro/series_correction_project_updated
@@ -25970,10 +25992,10 @@ items:
   changed_paths:
   - .github/workflows/refactoring-agent.yml
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
     workflows_and_permissions). Escalate on the repo decision issue; no automated
@@ -25984,9 +26006,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-bda17c4d
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#339@22a11d25cdaeeef920e69b45f0746df2285bda51
   repository: abhimehro/repoprompt-ce
@@ -26345,12 +26368,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#361@5f1ae137836254e21b6c25c848c10239aed60ef9
+- key: abhimehro/repoprompt-ce#361@b2c048879f0e609b7e097462660d203920921127
   repository: abhimehro/repoprompt-ce
   pr: 361
   url: https://github.com/abhimehro/repoprompt-ce/pull/361
   base_sha: bfcfa283e68a279027d6715d0b807c73c8911fee
-  head_sha: 5f1ae137836254e21b6c25c848c10239aed60ef9
+  head_sha: b2c048879f0e609b7e097462660d203920921127
   author:
     login: abhimehro
     identity_source: github_api
@@ -26376,9 +26399,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head b2c048879f0e609b7e097462660d203920921127;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/361
   attempts:
@@ -26387,7 +26409,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/repoprompt-ce#362@fbfd927865be502eb57a2176e31948978e241990
   repository: abhimehro/repoprompt-ce
   pr: 362
@@ -26448,7 +26470,9 @@ items:
   classification: UNKNOWN
   risk_class: HUMAN_REVIEW
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/jules.yml
   guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -26864,12 +26888,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-09T10:50:15Z'
-- key: abhimehro/repoprompt-ce#382@8d459eceb3527cc4834fd6a480cfb8f1d2bc1bb1
+- key: abhimehro/repoprompt-ce#382@605093607c7cacdf9322e71f6cc8a35129172812
   repository: abhimehro/repoprompt-ce
   pr: 382
   url: https://github.com/abhimehro/repoprompt-ce/pull/382
   base_sha: 272a0ae89c1f10064fd5d34006255f2bd78dee17
-  head_sha: 8d459eceb3527cc4834fd6a480cfb8f1d2bc1bb1
+  head_sha: 605093607c7cacdf9322e71f6cc8a35129172812
   author:
     login: abhimehro
     identity_source: github_api
@@ -26895,9 +26919,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 605093607c7cacdf9322e71f6cc8a35129172812;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/382
   attempts:
@@ -26906,7 +26929,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/repoprompt-ce#383@33b5371ce2728741bd652e15b2f22bcd890863b9
   repository: abhimehro/repoprompt-ce
   pr: 383
@@ -27039,12 +27062,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-09T13:16:23Z'
   guardrail_source: path_eval
-- key: abhimehro/repoprompt-ce#390@7c27d4a2b9d77da73ef24adfb355984ab584538d
+- key: abhimehro/repoprompt-ce#390@119db3c48c7a0152782e21b5933b249e7918ac95
   repository: abhimehro/repoprompt-ce
   pr: 390
   url: https://github.com/abhimehro/repoprompt-ce/pull/390
   base_sha: e715a900a09eb02307728ffb4fe8ce7b48b02d0d
-  head_sha: 7c27d4a2b9d77da73ef24adfb355984ab584538d
+  head_sha: 119db3c48c7a0152782e21b5933b249e7918ac95
   author:
     login: abhimehro
     identity_source: github_api
@@ -27069,9 +27092,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
-    paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
-    not yet verified; verify before any routine merge. Bounded unblock triggers allowed.'
+  next_action: Re-anchored to live head 119db3c48c7a0152782e21b5933b249e7918ac95;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/390
   attempts:
@@ -27080,7 +27102,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
 - key: abhimehro/repoprompt-ce#391@3e7ff0948dbb104d9e6e2d279e14a4ad3478011f
   repository: abhimehro/repoprompt-ce
   pr: 391
@@ -28514,10 +28536,10 @@ items:
   - Sources/RepoPrompt/Features/AgentMode/Runtime/SessionLinks/AgentSessionLinkTranscriptSanitizer.swift
   - Tests/RepoPromptTests/AgentMode/SessionLinks/AgentSessionLinkTranscriptSanitizerTests.swift
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close without a human security decision.
   next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
     Escalate on the repo decision issue; no automated trigger, branch update, close,
@@ -28528,9 +28550,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  handoffs:
+  - evt-reconcile-20261016122327-e3e5262b
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#453@811b2a2d14c60187208cd3961ada01244a6e79ab
   repository: abhimehro/repoprompt-ce
@@ -28786,10 +28809,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-09
     by reconcile).'
@@ -28799,9 +28822,1099 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
+  handoffs:
+  - evt-reconcile-20261016122327-010ad782
+  revision: 1
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2491@b244be391f88c701982c48380f626f9ce7808a07
+  repository: abhimehro/personal-config
+  pr: 2491
+  url: https://github.com/abhimehro/personal-config/pull/2491
+  base_sha: f6773345e8a306d564a05d0de08ebbd1ac1e1cfe
+  head_sha: b244be391f88c701982c48380f626f9ce7808a07
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2491
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2494@e5fbc5fffc97dc7093d05427e3ab391eab2ebb37
+  repository: abhimehro/personal-config
+  pr: 2494
+  url: https://github.com/abhimehro/personal-config/pull/2494
+  base_sha: f6773345e8a306d564a05d0de08ebbd1ac1e1cfe
+  head_sha: e5fbc5fffc97dc7093d05427e3ab391eab2ebb37
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2494
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2495@68d5632795cdf357beddddebc33319d92a1e89af
+  repository: abhimehro/personal-config
+  pr: 2495
+  url: https://github.com/abhimehro/personal-config/pull/2495
+  base_sha: f6773345e8a306d564a05d0de08ebbd1ac1e1cfe
+  head_sha: 68d5632795cdf357beddddebc33319d92a1e89af
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2495
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2500@26f2166e06149c2cc026c40c8e978a891654912f
+  repository: abhimehro/personal-config
+  pr: 2500
+  url: https://github.com/abhimehro/personal-config/pull/2500
+  base_sha: f6773345e8a306d564a05d0de08ebbd1ac1e1cfe
+  head_sha: 26f2166e06149c2cc026c40c8e978a891654912f
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2500
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2502@9102bab3acda6fdaa5ee4e5be33b135d10eee202
+  repository: abhimehro/personal-config
+  pr: 2502
+  url: https://github.com/abhimehro/personal-config/pull/2502
+  base_sha: f6773345e8a306d564a05d0de08ebbd1ac1e1cfe
+  head_sha: 9102bab3acda6fdaa5ee4e5be33b135d10eee202
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2502
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2516@a7c5f01533c048e12aba9d5f8b7ab762194369f4
+  repository: abhimehro/personal-config
+  pr: 2516
+  url: https://github.com/abhimehro/personal-config/pull/2516
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: a7c5f01533c048e12aba9d5f8b7ab762194369f4
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2516
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2517@ff8a2d44f9e42dd65aba24f5f28c59bde58cdfec
+  repository: abhimehro/personal-config
+  pr: 2517
+  url: https://github.com/abhimehro/personal-config/pull/2517
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: ff8a2d44f9e42dd65aba24f5f28c59bde58cdfec
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2517
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2519@ffd63b9e195de5f3922688bfe6e774cd879a4b36
+  repository: abhimehro/personal-config
+  pr: 2519
+  url: https://github.com/abhimehro/personal-config/pull/2519
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: ffd63b9e195de5f3922688bfe6e774cd879a4b36
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2519
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2520@f0ded46af9c0ab9fdbaec7665a00cc862352a252
+  repository: abhimehro/personal-config
+  pr: 2520
+  url: https://github.com/abhimehro/personal-config/pull/2520
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: f0ded46af9c0ab9fdbaec7665a00cc862352a252
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2520
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2523@32ecb31eb8dc4ae008ab31e5da15055428d0a9c2
+  repository: abhimehro/personal-config
+  pr: 2523
+  url: https://github.com/abhimehro/personal-config/pull/2523
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 32ecb31eb8dc4ae008ab31e5da15055428d0a9c2
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2523
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2524@2e3137560cce708b71ea5686d959e7f8b215c76a
+  repository: abhimehro/personal-config
+  pr: 2524
+  url: https://github.com/abhimehro/personal-config/pull/2524
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 2e3137560cce708b71ea5686d959e7f8b215c76a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2524
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2526@022fb911bd41c20803d8046c99f5089c62505933
+  repository: abhimehro/personal-config
+  pr: 2526
+  url: https://github.com/abhimehro/personal-config/pull/2526
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 022fb911bd41c20803d8046c99f5089c62505933
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2526
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2529@049805e1d5fe1c5b4a45db5c703ae48183db98f7
+  repository: abhimehro/personal-config
+  pr: 2529
+  url: https://github.com/abhimehro/personal-config/pull/2529
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 049805e1d5fe1c5b4a45db5c703ae48183db98f7
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2529
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2530@6ddb2f8f77bd4774a907b417cbece764d05732b8
+  repository: abhimehro/personal-config
+  pr: 2530
+  url: https://github.com/abhimehro/personal-config/pull/2530
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 6ddb2f8f77bd4774a907b417cbece764d05732b8
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2530
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2532@34e241e1a1af71ae523cd3ba1b2c0bb65c14f4c9
+  repository: abhimehro/personal-config
+  pr: 2532
+  url: https://github.com/abhimehro/personal-config/pull/2532
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 34e241e1a1af71ae523cd3ba1b2c0bb65c14f4c9
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2532
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2533@6dfc877c886c7585dfcbb9a29f25ccb98c4efa73
+  repository: abhimehro/personal-config
+  pr: 2533
+  url: https://github.com/abhimehro/personal-config/pull/2533
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 6dfc877c886c7585dfcbb9a29f25ccb98c4efa73
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2533
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2538@213d8b4042104df7d84eaf71d298f51239e7d3aa
+  repository: abhimehro/personal-config
+  pr: 2538
+  url: https://github.com/abhimehro/personal-config/pull/2538
+  base_sha: 5aaa6201bdaf77283c52ecbd7d4fa2b9ea031067
+  head_sha: 213d8b4042104df7d84eaf71d298f51239e7d3aa
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2538
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2546@9438fe85492fecf62d2871b1216745048eb0f97a
+  repository: abhimehro/personal-config
+  pr: 2546
+  url: https://github.com/abhimehro/personal-config/pull/2546
+  base_sha: 7567918730a1cd755a65cd6f3df95312da6e469a
+  head_sha: 9438fe85492fecf62d2871b1216745048eb0f97a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2546
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2549@60c7a9c309033f60bf9e140fad2eca363208cdb1
+  repository: abhimehro/personal-config
+  pr: 2549
+  url: https://github.com/abhimehro/personal-config/pull/2549
+  base_sha: 7567918730a1cd755a65cd6f3df95312da6e469a
+  head_sha: 60c7a9c309033f60bf9e140fad2eca363208cdb1
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2549
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2551@3b741e38321da071a9095dfbe9bb2d9771b98cb3
+  repository: abhimehro/personal-config
+  pr: 2551
+  url: https://github.com/abhimehro/personal-config/pull/2551
+  base_sha: 7567918730a1cd755a65cd6f3df95312da6e469a
+  head_sha: 3b741e38321da071a9095dfbe9bb2d9771b98cb3
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2551
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2552@e29a53d8b12e8603a55edcdcbe7466390a0fbc1b
+  repository: abhimehro/personal-config
+  pr: 2552
+  url: https://github.com/abhimehro/personal-config/pull/2552
+  base_sha: 7567918730a1cd755a65cd6f3df95312da6e469a
+  head_sha: e29a53d8b12e8603a55edcdcbe7466390a0fbc1b
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2552
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/personal-config#2559@eb4b933eacf71fc87151a04b44e5589aaf6578b8
+  repository: abhimehro/personal-config
+  pr: 2559
+  url: https://github.com/abhimehro/personal-config/pull/2559
+  base_sha: 47ab9396e4d7715dd8f7128ca7caefa042d0a9ab
+  head_sha: eb4b933eacf71fc87151a04b44e5589aaf6578b8
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2559
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/ctrld-sync#1337@98c61133f5e99af825a8ce511a48053a87591125
+  repository: abhimehro/ctrld-sync
+  pr: 1337
+  url: https://github.com/abhimehro/ctrld-sync/pull/1337
+  base_sha: 51a0a9dcac1eb528ea2310b965bc517e60fbef77
+  head_sha: 98c61133f5e99af825a8ce511a48053a87591125
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1337
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/email-security-pipeline#1736@ce6f7a6452cc8bbe0d65b25b98e7e75052f85954
+  repository: abhimehro/email-security-pipeline
+  pr: 1736
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1736
+  base_sha: 83b008a0c62247966b92dca1c0fe0036de3ec15e
+  head_sha: ce6f7a6452cc8bbe0d65b25b98e7e75052f85954
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1736
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/email-security-pipeline#1737@78ecb376cf77574f5bf3642924201e54eb7c3539
+  repository: abhimehro/email-security-pipeline
+  pr: 1737
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1737
+  base_sha: 83b008a0c62247966b92dca1c0fe0036de3ec15e
+  head_sha: 78ecb376cf77574f5bf3642924201e54eb7c3539
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1737
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/email-security-pipeline#1738@b4555a93d5282450dc98a4354ab209e4ced87ca7
+  repository: abhimehro/email-security-pipeline
+  pr: 1738
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1738
+  base_sha: 83b008a0c62247966b92dca1c0fe0036de3ec15e
+  head_sha: b4555a93d5282450dc98a4354ab209e4ced87ca7
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1738
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/email-security-pipeline#1741@4e3bfc875a56d5dffbcba193dba61d94f9eed8e6
+  repository: abhimehro/email-security-pipeline
+  pr: 1741
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1741
+  base_sha: 83b008a0c62247966b92dca1c0fe0036de3ec15e
+  head_sha: 4e3bfc875a56d5dffbcba193dba61d94f9eed8e6
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1741
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
+- key: abhimehro/email-security-pipeline#1753@5596d7175c44be42838ffbc0f29c0f7be989ba44
+  repository: abhimehro/email-security-pipeline
+  pr: 1753
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1753
+  base_sha: d722506c9f169852c018832f8688cf384db78f7f
+  head_sha: 5596d7175c44be42838ffbc0f29c0f7be989ba44
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1753
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:23:27Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -58263,6 +59376,282 @@ events:
   acknowledged_at_utc: null
   reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
     label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-f9548117
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#527@56bfd027ab56d87de9b8cb5a3078a25db69ebb35
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#527@56bfd027ab56d87de9b8cb5a3078a25db69ebb35:evt-reconcile-20261016122327-f9548117
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-21e60002
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#544@a496f060b75c322a89e0101444ed6f109ea0a929
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#544@a496f060b75c322a89e0101444ed6f109ea0a929:evt-reconcile-20261016122327-21e60002
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-69531648
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#549@6d05db815b946dc9d6967e7af7c0d70ea5493ea2
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#549@6d05db815b946dc9d6967e7af7c0d70ea5493ea2:evt-reconcile-20261016122327-69531648
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-9deb0fa7
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#550@12cba30dcbedfc021706c27b413870b7893eab38
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#550@12cba30dcbedfc021706c27b413870b7893eab38:evt-reconcile-20261016122327-9deb0fa7
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-d49a5085
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#551@972098fbf8135f6f0c963eb0aabc7a343aef6acf
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#551@972098fbf8135f6f0c963eb0aabc7a343aef6acf:evt-reconcile-20261016122327-d49a5085
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-8ce035cd
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#552@015e6f2dc96d56525221be02374df4cc9836bd24
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#552@015e6f2dc96d56525221be02374df4cc9836bd24:evt-reconcile-20261016122327-8ce035cd
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-07c49bc3
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#554@9d5b8d06b8e9cd9d68d23a9a363a3aba5c271c78
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#554@9d5b8d06b8e9cd9d68d23a9a363a3aba5c271c78:evt-reconcile-20261016122327-07c49bc3
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-a1a1f29b
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#555@13201deaa0a04010219782bbb41938197bee2d5c
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#555@13201deaa0a04010219782bbb41938197bee2d5c:evt-reconcile-20261016122327-a1a1f29b
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-c1173ddd
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#556@787ed4bb49287b1be3a555edb45cbec81b53c80f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#556@787ed4bb49287b1be3a555edb45cbec81b53c80f:evt-reconcile-20261016122327-c1173ddd
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-bc08ccfe
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#558@6323777f5a7f051784ca5036b96a563507741b7d
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#558@6323777f5a7f051784ca5036b96a563507741b7d:evt-reconcile-20261016122327-bc08ccfe
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-11336ca7
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#559@3b1e14b60de73383f9e1800c0d4113b19974b056
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#559@3b1e14b60de73383f9e1800c0d4113b19974b056:evt-reconcile-20261016122327-11336ca7
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-bda17c4d
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#560@c1d89add19b03faf94364fd89ece6d46bdc7bacc
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#560@c1d89add19b03faf94364fd89ece6d46bdc7bacc:evt-reconcile-20261016122327-bda17c4d
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-e3e5262b
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#452@f8ef0ca0197b717b9a311ac28c58f7751a43707f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#452@f8ef0ca0197b717b9a311ac28c58f7751a43707f:evt-reconcile-20261016122327-e3e5262b
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261016122327-010ad782
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#790@837f59dad7b8f47e93e40ad73b7857b4f22ee564
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#790@837f59dad7b8f47e93e40ad73b7857b4f22ee564:evt-reconcile-20261016122327-010ad782
+  status: PROJECTED
+  created_at_utc: '2026-10-16T12:23:27Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro
   successful: null
   policy_revision: null
 stage2_work_items: []
