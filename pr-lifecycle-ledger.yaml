@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 540
+ledger_revision: 541
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -33440,6 +33440,45 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-16T12:48:49Z'
+- key: abhimehro/repoprompt-ce#501@c84ad5e6fd1a1d5e61433aa64f81df0c3b160b88
+  repository: abhimehro/repoprompt-ce
+  pr: 501
+  url: https://github.com/abhimehro/repoprompt-ce/pull/501
+  base_sha: fd30b9b1e031b255e67719064076e3d3ee688367
+  head_sha: c84ad5e6fd1a1d5e61433aa64f81df0c3b160b88
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/501
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T15:08:13Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
