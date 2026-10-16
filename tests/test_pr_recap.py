@@ -695,16 +695,21 @@ class TestConfigValidation(unittest.TestCase):
         self.assertIn("'teamId' is required", str(cm.exception))
 
     def test_invalid_json_raises_value_error(self) -> None:
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
-            tf.write("{malformed json")
-            tf.flush()
-            temp_path = Path(tf.name)
-        try:
-            with self.assertRaises(ValueError) as cm:
-                load_config(temp_path)
-            self.assertIn("invalid JSON", str(cm.exception))
-        finally:
-            temp_path.unlink()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir) / "pr-recap-bad.json"
+            temp_path.write_text("{malformed json", encoding="utf-8")
+            with patch.dict(os.environ, {"PR_RECAP_CONFIG_ALLOWROOT": tmpdir}):
+                with self.assertRaises(ValueError) as cm:
+                    load_config(temp_path)
+                self.assertIn("invalid JSON", str(cm.exception))
+
+    def test_config_path_outside_repo_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as outside:
+            rogue = Path(outside) / "rogue.json"
+            rogue.write_text("{}", encoding="utf-8")
+            cfg = load_config(rogue)
+            self.assertIsNotNone(cfg.team_id)
+            self.assertEqual(cfg.team_id, os.getenv("LINEAR_TEAM_ID", "personal-config"))
 
     def test_load_default_when_no_file(self) -> None:
         cfg = load_config(Path("/nonexistent/.pr-recap.json"))
@@ -1021,12 +1026,9 @@ class TestEndToEndSync(unittest.TestCase):
             },
         }
 
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
-            json.dump(event_data, tf)
-            tf.flush()
-            event_file = Path(tf.name)
-
-        try:
+        with tempfile.TemporaryDirectory() as runner_tmp:
+            event_file = Path(runner_tmp) / "event.json"
+            event_file.write_text(json.dumps(event_data), encoding="utf-8")
             parser = pr_recap.build_parser()
             args = parser.parse_args(
                 [
@@ -1036,22 +1038,36 @@ class TestEndToEndSync(unittest.TestCase):
                     "--dry-run",
                 ]
             )
-            ctx = pr_recap.resolve_pr_context(args)
+            with patch.dict(os.environ, {"RUNNER_TEMP": runner_tmp}):
+                ctx = pr_recap.resolve_pr_context(args)
             self.assertEqual(ctx.pr_number, 123)
             self.assertEqual(ctx.action, "ready_for_review")
             self.assertEqual(ctx.branch_name, "fix/ABHI-777-leak")
             self.assertFalse(ctx.is_draft)
             self.assertFalse(ctx.is_merged)
             self.assertEqual(ctx.diff_url, "https://github.com/org/repo/pull/123.diff")
-
             issues = extract_issue_keys(
                 branch_name=ctx.branch_name,
                 pr_title=ctx.pr_title,
                 pr_body=ctx.pr_body,
             )
             self.assertEqual(issues.get("ABHI-777"), "closes")
-        finally:
-            event_file.unlink()
+
+    def test_event_path_outside_runner_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as outside:
+            rogue = Path(outside) / "rogue-event.json"
+            rogue.write_text("{}", encoding="utf-8")
+            parser = pr_recap.build_parser()
+            args = parser.parse_args(
+                [
+                    "sync",
+                    "--event-path",
+                    str(rogue),
+                    "--dry-run",
+                ]
+            )
+            ctx = pr_recap.resolve_pr_context(args)
+            self.assertIsNone(ctx.pr_number)
 
 
 class TestSecretResolution(unittest.TestCase):
