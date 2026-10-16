@@ -81,9 +81,11 @@ class RunReconcileGuardTest(unittest.TestCase):
                 reconcile, "_emit", side_effect=lambda p, _j: out.update(p)
             ),
         ):
-            env = {"PR_LIFECYCLE_MAX_APPLY": str(kw.get("max_apply", 60))}
+            env = {"PR_LIFECYCLE_MAX_APPLY": str(kw.pop("max_apply", 60))}
             with mock.patch.dict("os.environ", env):
-                rc = reconcile.run_reconcile(apply=True, limit=None, json_out=True)
+                rc = reconcile.run_reconcile(
+                    apply=True, limit=None, json_out=True, **kw
+                )
         return rc, out, build, apply_, commit, sleep
 
     def test_inventory_failure_aborts_before_mutation(self):

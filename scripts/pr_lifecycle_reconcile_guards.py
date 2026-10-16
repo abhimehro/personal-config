@@ -1,8 +1,7 @@
-"""Apply-time guards for reconcile: partial-inventory abort, per-save cap, CAS replan.
+"""Apply-time guards for reconcile: partial-inventory abort, per-save cap, CAS replan."""
 
-Kept separate from pr_lifecycle_reconcile so the planner stays unchanged and the
-guards can be tested without GitHub.
-"""
+# Kept separate from pr_lifecycle_reconcile so the planner stays unchanged and the
+# guards can be tested without GitHub.
 
 from __future__ import annotations
 
@@ -56,11 +55,9 @@ def action_priority(action: dict[str, Any]) -> int:
 def select_batch(
     actions: list[dict[str, Any]], cap: int
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Split actions into (selected, deferred) with at most cap mutating actions.
-
-    Report-only actions are always kept so the plan still reports them. The
-    sort is stable, so the planner's order holds within a priority band.
-    """
+    """Split actions into (selected, deferred) with at most cap mutating actions."""
+    # Report-only actions are always kept so the plan still reports them. The
+    # sort is stable, so the planner's order holds within a priority band.
     report = [a for a in actions if a.get("action") in REPORT_ONLY_ACTIONS]
     mutating = [a for a in actions if a.get("action") not in REPORT_ONLY_ACTIONS]
     mutating.sort(key=action_priority)
@@ -73,6 +70,5 @@ def backoff_seconds(attempt: int, *, rng: Any = random.random) -> float:
     return base * (0.75 + 0.5 * rng())
 
 
-def sleep(seconds: float) -> None:
-    """Patchable sleep for tests."""
-    time.sleep(seconds)
+# Patchable sleep reference for tests.
+sleep = time.sleep

@@ -28,9 +28,9 @@ if str(SCRIPT_DIR) not in sys.path:
 import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
 import pr_lifecycle_reconcile_guards as guards
-from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
 from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
+from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
 from pr_lifecycle_support import ROOT, SHA_RE
@@ -1143,6 +1143,29 @@ def run_reconcile(
             return 0
 
 
+def _collect_ingest_plan(
+    ledger: dict[str, Any], config: dict[str, Any]
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Collect open-PR intake actions and inventory failure reports."""
+    inventory_failed: list[dict[str, str]] = []
+    open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
+    for repo in config["repos"]:
+        try:
+            open_prs_by_repo[repo] = list_open_prs(repo)
+        except OSError as exc:
+            inventory_failed.append(
+                {
+                    "action": "INVENTORY_FAILED",
+                    "repository": repo,
+                    "reason": f"{type(exc).__name__}: {exc}"[:200],
+                }
+            )
+    ingest_actions = collect_ingest_actions(
+        ledger, config, open_prs_by_repo, now=_utc_now()
+    )
+    return ingest_actions, inventory_failed
+
+
 def _build_plan(
     config: dict[str, Any],
     out: Path,
@@ -1153,26 +1176,11 @@ def _build_plan(
     fetch = cas.run_preflight(out)
     ledger = load_yaml(Path(fetch["ledger_path"]))
     actions = collect_actions(ledger, config, limit=limit)
-    inventory_failed: list[dict[str, str]] = []
-    open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
-    ingest_actions: list[dict[str, Any]] = []
-    if ingest:
-        for repo in config["repos"]:
-            try:
-                open_prs_by_repo[repo] = list_open_prs(repo)
-            except OSError as exc:
-                inventory_failed.append(
-                    {
-                        "action": "INVENTORY_FAILED",
-                        "repository": repo,
-                        "reason": f"{type(exc).__name__}: {exc}"[:200],
-                    }
-                )
-        ingest_actions = collect_ingest_actions(
-            ledger, config, open_prs_by_repo, now=_utc_now()
-        )
-        actions.extend(ingest_actions)
-        actions.extend(inventory_failed)
+    ingest_actions, inventory_failed = (
+        _collect_ingest_plan(ledger, config) if ingest else ([], [])
+    )
+    actions.extend(ingest_actions)
+    actions.extend(inventory_failed)
     plan = {
         "dry_run": True,
         "ledger_revision": ledger.get("ledger_revision"),
@@ -1324,9 +1332,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
-    if args.max_apply is not None:
-        os.environ["PR_LIFECYCLE_MAX_APPLY"] = str(max(1, args.max_apply))
     try:
+        if args.max_apply is not None:
+            os.environ["PR_LIFECYCLE_MAX_APPLY"] = str(max(1, args.max_apply))
         return run_reconcile(
             apply=args.apply,
             limit=args.limit,
