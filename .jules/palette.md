@@ -338,7 +338,7 @@ against reducing HTML bloat. **Action:** When adding semantic HTML elements like
 `role="region"` if compatibility with older assistive technologies is a stated
 requirement for the project.
 
-## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
+## 2026-10-16 - Semantic Lists for Grouped Data
 
 **Learning:** When displaying grouped key-value data (like system specs) in
 bash-generated HTML reports, using generic `<div>` elements causes screen
@@ -347,7 +347,7 @@ experience. **Action:** Convert sequential `<div>` data blocks into semantic
 `<ul>` and `<li>` lists to provide screen readers with grouping context and item
 counts.
 
-## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
+## 2026-10-16 - Semantic Lists for Grouped Data
 
 **Learning:** When displaying grouped key-value data (like system specs) in
 bash-generated HTML reports, using generic `<div>` elements causes screen
@@ -429,7 +429,7 @@ disrupts screen reader experiences. Always providing a fallback empty state list
 item (`<li>`) is necessary to maintain proper list semantics. **Action:** Add a
 fallback empty state `<li>` whenever conditional list items are absent.
 
-## $(date +%Y-%m-%d) - Skip-to-content links for generated HTML
+## 2026-10-16 - Skip-to-content links for generated HTML
 
 **Learning:** Shell scripts that generate static HTML reports often omit
 essential keyboard accessibility features like skip-to-content links, making
@@ -439,7 +439,7 @@ include a visually hidden, focusable skip link
 top of the `<body>` and ensure the `<main>` tag has a matching
 `id="main-content"`.
 
-## $(date +%Y-%m-%d) - Preserve list semantics for groups
+## 2026-10-16 - Preserve list semantics for groups
 
 **Learning:** When grouping multiple related UI elements (such as a grid of
 metric cards), replacing the unordered list container (`<ul>`) with a generic
@@ -456,7 +456,7 @@ as simple `<td>` elements. **Action:** Always use `<th scope="row">` for the
 first column in data-heavy tables to ensure proper row-level header associations
 for screen reader users.
 
-## $(date +%Y-%m-%d) - HTML Description Lists
+## 2026-10-16 - HTML Description Lists
 
 **Learning:** Using generic `<div>` tags directly inside a `<dl>` element
 creates invalid HTML markup, which can confuse screen readers and disrupt the
@@ -465,7 +465,7 @@ reading flow of grouped key-value data. Standard HTML `<dl>` lists only allow
 strictly contain valid `<dt>` and `<dd>` elements, and use CSS grid or flexbox
 on the `<dl>` itself if complex alignment is needed.
 
-## $(date +%Y-%m-%d) - ARIA aria-labelledby on Composite UI Elements
+## 2026-10-16 - ARIA aria-labelledby on Composite UI Elements
 
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a
 metric card) that contains both a textual label and a dynamically generated
@@ -533,3 +533,7 @@ to communicate the absence of data clearly and beautifully.
 ## 2026-10-03 - Empty State Accessibility
 **Learning:** When adding role="status" to empty-state containers for screen readers, apply the role to a nested div or span for inline content, never directly on an li element within a ul, as it overrides the implicit listitem role. Ensure block-level elements like p are not wrapped in inline span elements to avoid generating invalid HTML.
 **Action:** Always verify the HTML tag context and apply role="status" to a semantically appropriate inner element for empty states instead of blindly adding it to the outermost container.
+
+## 2026-10-16 - Responsive and Accessible HTML Tables
+**Learning:** When generating data-heavy HTML tables in reports, narrow viewports can cause data clipping. Furthermore, simply adding `overflow-x: auto` to a wrapping element isn't enough for keyboard accessibility, as keyboard users won't be able to scroll the table if it's not focusable.
+**Action:** Always wrap `<table>` elements in a scrollable container (`<div class="table-container" tabindex="0" role="region" aria-label="Data table">`) with CSS `overflow-x: auto` to prevent data clipping and ensure horizontal scrolling is keyboard accessible. Use a generic `aria-label` for the wrapper rather than duplicating the table's specific label/heading to avoid redundant screen reader announcements.
