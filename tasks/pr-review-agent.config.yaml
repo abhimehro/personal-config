@@ -125,6 +125,7 @@ lifecycle:
       - "review"
       - "Kilo Code Review"
       - "CodeScene*"
+      - Octopus Review
     trigger_expiry_days: 3
     lineage_stale_days: 3
     # PRs Stage 1 unblock must never touch, in code (not only the prompt):
