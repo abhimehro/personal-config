@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 458
+ledger_revision: 487
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -29993,7 +29993,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - src/modules/alert_console.py
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_system_console.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30033,7 +30037,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/utils/security_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30073,7 +30079,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/check_mail_connectivity.py
+  - tests/test_ui_palette.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30113,7 +30121,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/utils/security_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30153,7 +30163,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/utils/setup_wizard.py
+  - tests/test_setup_wizard.py
+  - tests/test_ui.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30193,7 +30206,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/modules/email_parser.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30233,7 +30247,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/app_runner.py
+  - src/main.py
+  - tests/test_ui_palette.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30269,7 +30286,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - AGENTS.md
+  - README.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30309,7 +30328,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30349,7 +30370,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/scripts/repository_automation_common.py
+  - .jules/sentinel.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30388,7 +30411,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .trunk/configs/ruff.toml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30428,7 +30452,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30464,7 +30490,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Series_27/Analysis/requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30504,7 +30531,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30543,7 +30572,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .trunk/configs/ruff.toml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30583,7 +30613,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30623,7 +30655,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .trunk/configs/ruff.toml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30662,7 +30695,15 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_app.py
+  - tests/test_config.py
+  - tests/test_data_loader.py
+  - tests/test_data_processor.py
+  - tests/test_refactoring_agent_workflow.py
+  - tests/test_sanitize_filename.py
+  - tests/test_validate_data_cli.py
+  - tests/test_validator.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30701,7 +30742,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
+  - tests/test_sanitize_filename.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30737,7 +30781,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/hydrograph_seatek_analysis/data/processor.py
+  - tests/test_data_processor.py
+  - tests/test_validate_data_cli.py
+  - validate_data.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30777,7 +30825,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30816,7 +30866,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30856,7 +30908,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30896,7 +30950,16 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_app.py
+  - tests/test_config.py
+  - tests/test_data_loader.py
+  - tests/test_data_processor.py
+  - tests/test_refactoring_agent_workflow.py
+  - tests/test_sanitize_filename.py
+  - tests/test_validate_data_cli.py
+  - tests/test_validator.py
+  - tests/visualization/test_chart_generator.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30936,7 +30999,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
+  - tests/test_sanitize_filename.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -30972,7 +31038,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/pr-visual-recap.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -31008,7 +31075,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/refactoring-agent.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -31044,7 +31112,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/release-drafter.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -31062,6 +31131,930 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-16T12:32:46Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#826@13390c7d261b3919b8634595aab5fc2bf00e6ad3
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 826
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/826
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 13390c7d261b3919b8634595aab5fc2bf00e6ad3
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/826
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#827@b5874eedb1d389954fbd53b27424eeee862c902d
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 827
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/827
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: b5874eedb1d389954fbd53b27424eeee862c902d
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/827
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#829@d3bd1885796f2c2ca1cd5aa696ecc729e2b6af5e
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 829
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/829
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: d3bd1885796f2c2ca1cd5aa696ecc729e2b6af5e
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/829
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#831@c0aafe083bb162fd8534f856cf4d872575e961ce
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 831
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/831
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: c0aafe083bb162fd8534f856cf4d872575e961ce
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/831
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#832@cf4b691dfc81e272196c711de79a676f9fc2cc89
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 832
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/832
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: cf4b691dfc81e272196c711de79a676f9fc2cc89
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/832
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#834@4fe35b85b81bb0bc4376c3422e6913db96193dfe
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 834
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/834
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 4fe35b85b81bb0bc4376c3422e6913db96193dfe
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/834
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#837@85d648203c1574c82356cae23e640b071c1072a0
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 837
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/837
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 85d648203c1574c82356cae23e640b071c1072a0
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/837
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#838@cf2fba9e51dc59f7b8b26f3ca225f45236e1afcf
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 838
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/838
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: cf2fba9e51dc59f7b8b26f3ca225f45236e1afcf
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/838
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#840@62c128eb75c040f4a652f18a7bd1c220134c3c78
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 840
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/840
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 62c128eb75c040f4a652f18a7bd1c220134c3c78
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/840
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#841@d3f479609b4fc4e3aa06d678595173fc1dc6abb4
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 841
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/841
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: d3f479609b4fc4e3aa06d678595173fc1dc6abb4
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/841
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#842@9db28abb4226f0426b1ab9ecf05c21bf64c5dcaa
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 842
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/842
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 9db28abb4226f0426b1ab9ecf05c21bf64c5dcaa
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/842
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#569@e32c2de49b28a8718cef539dde0e07aefb52dabb
+  repository: abhimehro/series_correction_project_updated
+  pr: 569
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/569
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: e32c2de49b28a8718cef539dde0e07aefb52dabb
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/569
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#571@65bbf2378499d26b58b0521f704bf6ff38f30db9
+  repository: abhimehro/series_correction_project_updated
+  pr: 571
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/571
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: 65bbf2378499d26b58b0521f704bf6ff38f30db9
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/571
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#572@72d1198f2b10e843163d4d6e4fc894454e027ff1
+  repository: abhimehro/series_correction_project_updated
+  pr: 572
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/572
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: 72d1198f2b10e843163d4d6e4fc894454e027ff1
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/572
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#573@a52a39ce5d44fb70f5abd09bc2e9e1222b1f1162
+  repository: abhimehro/series_correction_project_updated
+  pr: 573
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/573
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: a52a39ce5d44fb70f5abd09bc2e9e1222b1f1162
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/573
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#574@0656a1588395f0eff5cee326ec0b7e296fe2c02a
+  repository: abhimehro/series_correction_project_updated
+  pr: 574
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/574
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: 0656a1588395f0eff5cee326ec0b7e296fe2c02a
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/574
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#575@bc9fc866923dbb1ee9483f4f7eadc02372444cc3
+  repository: abhimehro/series_correction_project_updated
+  pr: 575
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/575
+  base_sha: 824d717991f4184cfd715d657c562cc130d3d364
+  head_sha: bc9fc866923dbb1ee9483f4f7eadc02372444cc3
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/575
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#586@5e1d20e210e46b3dfdace96141163526acf450ce
+  repository: abhimehro/series_correction_project_updated
+  pr: 586
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/586
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 5e1d20e210e46b3dfdace96141163526acf450ce
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/586
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#587@669e7664d71005e1bf390af2d52936b940f94211
+  repository: abhimehro/series_correction_project_updated
+  pr: 587
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/587
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 669e7664d71005e1bf390af2d52936b940f94211
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/587
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#589@2baea914f59cfba10cb596697d8538e029f0d748
+  repository: abhimehro/series_correction_project_updated
+  pr: 589
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/589
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 2baea914f59cfba10cb596697d8538e029f0d748
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/589
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#590@84e02cd2199b94409053571b7fec88396839d218
+  repository: abhimehro/series_correction_project_updated
+  pr: 590
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/590
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 84e02cd2199b94409053571b7fec88396839d218
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/590
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#592@6d43a2004b4c165fba1e49ac8c6dee6d3358e058
+  repository: abhimehro/series_correction_project_updated
+  pr: 592
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/592
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 6d43a2004b4c165fba1e49ac8c6dee6d3358e058
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/592
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#593@145979999d859cf0748c4dbbd9ea94a63a64a50d
+  repository: abhimehro/series_correction_project_updated
+  pr: 593
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/593
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 145979999d859cf0748c4dbbd9ea94a63a64a50d
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/593
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
+- key: abhimehro/series_correction_project_updated#595@8b38325049e4369d23950110073080dbf023801c
+  repository: abhimehro/series_correction_project_updated
+  pr: 595
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/595
+  base_sha: e0851ae8251ac587ba4d683d345406ab41eca49e
+  head_sha: 8b38325049e4369d23950110073080dbf023801c
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/595
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-16T12:37:26Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
