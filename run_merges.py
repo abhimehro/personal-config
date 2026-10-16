@@ -7,6 +7,10 @@ from concurrent.futures import ThreadPoolExecutor
 from gh_token_env import load_gh_token_env
 from pr_reference import PRReference
 
+# ⚡ Bolt Optimization: Hoist static security check tuple constants to module level to avoid re-allocating tuples on every PR loop iteration
+_DANGEROUS_TERMS = ("eval(", "exec(", "dangerouslysetinnerhtml")
+_SENSITIVE_TERMS = ("auth", "payment", "migration", "sql")
+
 
 def run_gh(cmd_list):
     """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
@@ -217,13 +221,15 @@ if __name__ == "__main__":
             results["conflicting"].append((repo, pr, title))
             continue
 
-        diff_lower = diff.lower()
+        # ⚡ Bolt Optimization: Lazy-evaluate diff_lower only when diff is present
+        diff_lower = diff.lower() if diff else ""
 
         # Gate 2: Security check
         escalate = False
         reasons = []
 
-        for dangerous in ("eval(", "exec(", "dangerouslysetinnerhtml"):
+        # ⚡ Bolt Optimization: Use module-level constant _DANGEROUS_TERMS to avoid tuple allocation in loop
+        for dangerous in _DANGEROUS_TERMS:
             if dangerous in diff_lower:
                 escalate = True
                 reasons.append("Dangerous evaluation function detected.")
@@ -238,7 +244,8 @@ if __name__ == "__main__":
             reasons.append("Weakened .env.example.")
 
         title_lower = title.lower()
-        for sensitive in ("auth", "payment", "migration", "sql"):
+        # ⚡ Bolt Optimization: Use module-level constant _SENSITIVE_TERMS to avoid tuple allocation in loop
+        for sensitive in _SENSITIVE_TERMS:
             if sensitive in title_lower:
                 escalate = True
                 reasons.append("Touches sensitive domain (auth/payments/db).")
