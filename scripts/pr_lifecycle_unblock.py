@@ -225,10 +225,12 @@ def _resolve_repositories(
     """Return configured repos narrowed by the filter; raise for unknown names."""
     repositories = list(config["repos"])
     if repos_filter:
-        unknown = sorted(set(repos_filter) - set(repositories))
+        # ⚡ Bolt Optimization: Bind filter_set once to avoid duplicate set instantiation
+        filter_set = set(repos_filter)
+        unknown = sorted(filter_set - set(repositories))
         if unknown:
             raise ValueError(f"unknown repository filter: {', '.join(unknown)}")
-        repositories = [repo for repo in repositories if repo in set(repos_filter)]
+        repositories = [repo for repo in repositories if repo in filter_set]
     return repositories
 
 
