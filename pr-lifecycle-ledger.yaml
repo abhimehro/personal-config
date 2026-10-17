@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 565
+ledger_revision: 567
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -33701,10 +33701,10 @@ items:
   - tests/test_pr_lifecycle_open_inventory.py
   - tests/test_pr_recap.py
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
     by reconcile).'
@@ -33714,9 +33714,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-17T10:21:49Z'
+  handoffs:
+  - evt-reconcile-20261017133535-78f2ac42
+  revision: 1
+  updated_at_utc: '2026-10-17T13:35:35Z'
 - key: abhimehro/personal-config#2562@a1939b5e68b9f1905827f9efc4b25b12922bfc17
   repository: abhimehro/personal-config
   pr: 2562
@@ -34461,6 +34462,86 @@ items:
   revision: 0
   updated_at_utc: '2026-10-17T10:51:31Z'
   guardrail_source: path_eval
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#847@d6c865aca03f306871901276bfec128ce6ccf74c
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 847
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/847
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: d6c865aca03f306871901276bfec128ce6ccf74c
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/847
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-17T13:35:34Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#848@9a53d45074f4fd3ff4d31abf2268b51a24162280
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 848
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/848
+  base_sha: 604aba6f763afb4592cf203d63687e4a37e70c0e
+  head_sha: 9a53d45074f4fd3ff4d31abf2268b51a24162280
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/848
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-17T13:35:34Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -64218,6 +64299,25 @@ events:
   acknowledged_at_utc: null
   reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
     label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261017133535-78f2ac42
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2561@2c82da9eb265468d6b4a6381d0465a2bebde8044
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2561@2c82da9eb265468d6b4a6381d0465a2bebde8044:evt-reconcile-20261017133535-78f2ac42
+  status: PROJECTED
+  created_at_utc: '2026-10-17T13:35:35Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
   successful: null
   policy_revision: null
 stage2_work_items: []
