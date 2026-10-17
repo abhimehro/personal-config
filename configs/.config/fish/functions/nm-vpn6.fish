@@ -1,5 +1,7 @@
 function nm-vpn6
     # Windscribe + Control D with WINDSCRIBE_IPV6=1 (force doh-ipv6).
+    # Default location is BBQ (non-static). Peachtree is the Atlanta override.
+    # windscribe-cli cannot favorite locations; pass a nickname to override.
     # Usage: nm-vpn6 <privacy|browsing|gaming> [location…]
     cd $NM_ROOT
     if test (count $argv) -ge 1

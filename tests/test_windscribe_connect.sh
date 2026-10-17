@@ -214,9 +214,9 @@ else
 	exit 1
 fi
 
-# Test 9: Location defaults — Dallas static (IPv4) / Atlanta non-static (IPv6)
+# Test 9: Location defaults — Dallas static (IPv4) / BBQ non-static (IPv6)
 echo ""
-echo "Test 9: Dallas static + Atlanta IPv6 defaults"
+echo "Test 9: Dallas static + BBQ IPv6 defaults"
 echo "---"
 
 if grep -q 'DEFAULT_STATIC_LOCATION="Dallas"' "$SCRIPT"; then
@@ -226,10 +226,17 @@ else
 	exit 1
 fi
 
-if grep -q 'DEFAULT_IPV6_LOCATION="Atlanta"' "$SCRIPT"; then
-	echo "✅ PASS: DEFAULT_IPV6_LOCATION is Atlanta"
+if grep -q 'DEFAULT_IPV6_LOCATION="BBQ"' "$SCRIPT"; then
+	echo "✅ PASS: DEFAULT_IPV6_LOCATION is BBQ"
 else
-	echo "❌ FAIL: DEFAULT_IPV6_LOCATION is not Atlanta"
+	echo "❌ FAIL: DEFAULT_IPV6_LOCATION is not BBQ"
+	exit 1
+fi
+
+if grep -q 'Peachtree' "$SCRIPT"; then
+	echo "✅ PASS: Peachtree documented as IPv6 nickname override"
+else
+	echo "❌ FAIL: Peachtree override is not documented"
 	exit 1
 fi
 

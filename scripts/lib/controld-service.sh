@@ -529,6 +529,12 @@ _write_controld_status_file() {
 	elif [[ -z $holder ]]; then
 		holder="none"
 	fi
+	# World-readable status must never include resolver IDs or endpoints.
+	if [[ -n $extra ]]; then
+		case "$extra" in
+		ENDPOINT=* | *dns.controld.com* | *PROFILE_ID=* | *CTR_PROFILE_*) extra="" ;;
+		esac
+	fi
 	{
 		echo "STATE=$state"
 		echo "MODE=$mode"
@@ -700,7 +706,7 @@ _start_profile_local_fallback() {
 	ver=$(_ctrld_installed_version)
 	_ensure_ctrld_on_path
 	echo -e "\033[1;33m[INFO]\033[0m Stable path: profile-aware Local Config (ctrld ${ver})." >&2
-	echo -e "\033[1;33m[INFO]\033[0m Endpoint: https://dns.controld.com/${profile_id} (NOT free DNS)." >&2
+	echo -e "\033[1;33m[INFO]\033[0m Endpoint: profile-aware Control D resolver (NOT free DNS)." >&2
 	echo -e "\033[1;33m[INFO]\033[0m CD Mode (--cd) skipped until Control D fixes API exclude schema; force with repair --cd-mode." >&2
 
 	# Stop KeepAlive crash-loop BEFORE writing config — do not leave thrashing daemon.
@@ -730,9 +736,9 @@ _start_profile_local_fallback() {
 
 	_apply_localhost_dns "$listener_ip"
 	echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol\nINTENDED_PROTOCOL=$protocol\nFALLBACK=1\nFALLBACK_REASON=api_schema_or_unreachable" >"$ACTIVE_PROFILE_FILE"
-	# Readable without sudo so fish/bat do not Permission-denied on `cat`.
-	chmod 644 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
-	_write_controld_status_file "WORKING" "local_fallback" "$profile_name" "$protocol" "ENDPOINT=https://dns.controld.com/${profile_id}"
+	# Keep PROFILE_ID private. Public non-secret fields live in /etc/controld/status.
+	chmod 600 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+	_write_controld_status_file "WORKING" "local_fallback" "$profile_name" "$protocol"
 	echo -e "\033[0;32m[OK]\033[0m Profile-aware Local Config listening; dig @$listener_ip OK (stable path until CD Mode API is fixed)." >&2
 	[[ $own_log -eq 1 ]] && rm -f "$start_err_log"
 	return 0
@@ -977,7 +983,7 @@ restart_with_native_profile() {
 	# Record intended profile/protocol early so status/reconcile see intent
 	# even while we wait for DNS readiness. Never rewrite PROTOCOL to doh here.
 	echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol\nINTENDED_PROTOCOL=$protocol" >"$ACTIVE_PROFILE_FILE"
-	chmod 644 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+	chmod 600 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
 
 	local dns_ready=0
 	if _should_static_api_fallback "$start_err_log"; then
@@ -1081,7 +1087,6 @@ show_status() {
 			fi
 
 			echo "Active Profile: $profile_name"
-			echo "Profile ID: $profile_id"
 			echo "Protocol: $protocol"
 		elif [[ -L "$controld_dir/ctrld.toml" ]]; then
 			local current_config
@@ -1100,7 +1105,6 @@ show_status() {
 			fi
 
 			echo "Active Profile: $profile_name (Legacy TOML)"
-			echo "Profile ID: $profile_id"
 			echo "Protocol: $protocol"
 		else
 			echo "Active Profile: Unknown (direct configuration)"
@@ -1138,7 +1142,7 @@ show_status() {
 					profile_id=$(redact_profile_id "$profile_id")
 				fi
 			fi
-			echo "  - $profile ($profile_id) - Default: $default_protocol"
+			echo "  - $profile - Default: $default_protocol"
 		done
 	fi
 

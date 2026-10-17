@@ -137,6 +137,9 @@ id = "personal-config-generic-api"
 description = "Generic API key pattern"
 regex = '''(?i)(api[\-_]?key|apikey)[\-_:=]?['"]?[a-zA-Z0-9\-_]{16,}['"]?'''
 tags = ["api-key", "secret"]
+[rules.allowlist]
+description = "prose-noise rule: skip documentation paths (md/markdown/rst/docs)"
+paths = ['''(?i)docs?/''', '''(?i)\.(md|markdown|rst)$''']
 
 # Generic tokens
 [[rules]]
@@ -154,6 +157,12 @@ id = "personal-config-generic-secret"
 description = "Generic secret pattern"
 regex = '''(?i)(?:secret|password|passwd|pwd)[\s\-_:=]+['"]?(?P<secret>[a-zA-Z0-9\-_.!@#$%^&*]{8,})['"]?'''
 tags = ["secret", "password", "credentials"]
+# WS-A migration: rule-scoped docs allowlist (from the dead legacy
+# "documentation" rule). Scoped here — not globally — so credential-shaped
+# rules (resolver IDs, tokens, keys) keep scanning documentation files.
+[rules.allowlist]
+description = "prose-noise rule: skip documentation paths (md/markdown/rst/docs)"
+paths = ['''(?i)docs?/''', '''(?i)\.(md|markdown|rst)$''']
 
 # Private keys in various formats
 [[rules]]
@@ -183,8 +192,13 @@ description = "Environment file"
 regex = '''(?i)(\.env(|\.[a-zA-Z0-9]+))$'''
 tags = ["env", "environment", "secret"]
 
-# Exclude patterns - files that are known to contain test/fake secrets
-[allowlist]
+# Migrated 2026-08-23 (WS-A follow-up): the deprecated [allowlist] table and
+# the legacy [[allowlist.rules]] entries below were never honored by gitleaks
+# v8 — the `rules` key is not read, so those exclusions were dead config.
+# Everything is migrated to the supported [[allowlists]] array. Functional
+# entries (commits/regexes/paths) are preserved verbatim.
+[[allowlists]]
+description = "migrated from deprecated [allowlist]: FP commits, value-based suppressions (GHA contexts, prose stopwords, WS-A test dummies), and path allowlists"
 # Suppress false positive in lib/safe_http.py docstring that contained the
 # word "password" followed by prose ("components"). The commit was part of
 # PR #1766 and has since been corrected; this suppresses the historical FP.
@@ -252,36 +266,32 @@ paths = [
   '''(?i)scripts/lib/.*\.sh$''',
 ]
 
-# Exclude specific test patterns
-[[allowlist.rules]]
-id = "test-patterns"
-regex = '''(?i)(test|mock|example|sample|dummy|placeholder|fake|stub)'''
-paths = [
-  '''(?i)tests/''',
-  '''(?i)test/''',
-  '''(?i)mock/''',
-  '''(?i)fixtures/''',
-]
+# Migrated from dead [[allowlist.rules]] "test-patterns". The legacy `regex`
+# key was never read; paths carry the intent. Value-shaped dummies are still
+# caught in scanned paths via the value regexes above.
+[[allowlists]]
+description = "test/mock/fixture directory paths (migrated from dead legacy rule)"
+paths = ['''(?i)tests?/''', '''(?i)mock/''', '''(?i)fixtures/''']
 
-# Exclude documentation files
-[[allowlist.rules]]
-id = "documentation"
-regex = '''(?i)'''
-paths = ['''(?i)docs/''', '''(?i)doc/''', '''(?i)\.(md|markdown|txt|rst)$''']
+# NOTE: the legacy "documentation" rule is NOT migrated as a global
+# exclusion. A blanket docs path-exclusion would also hide real secrets
+# pasted into any future .md/.rst (canary- and baseline-verified: it
+# suppressed 20 real historical Control D resolver-ID findings). Instead,
+# the two prose-noise rules carry their own rule-level docs allowlist so
+# credential-shaped rules (resolver IDs, tokens, keys) keep scanning docs.
 
-# Exclude configuration templates
-[[allowlist.rules]]
-id = "templates"
-regex = '''(?i)(template|example|sample)'''
+# Migrated from dead [[allowlist.rules]] "templates".
+[[allowlists]]
+description = "configuration templates and examples (migrated from dead legacy rule)"
 paths = [
   '''(?i)configs/.*\.(template|example|sample|dist)$''',
-  '''(?i)templates/''',
-  '''(?i)examples/''',
+  '''(?i)templates?/''',
+  '''(?i)examples?/''',
 ]
 
-# Exclude known safe files
-[[allowlist.rules]]
-id = "safe-files"
+# Migrated from dead [[allowlist.rules]] "safe-files".
+[[allowlists]]
+description = "known safe files (migrated from dead legacy rule)"
 paths = [
   '''(?i)\.(gitignore|gitattributes|gitmodules)$''',
   '''(?i)Makefile$''',
@@ -309,10 +319,9 @@ sourceCodeEncoding = "utf-8"
 useDefault = true
 # Path to custom config (this file)
 configPath = ".github/gitleaks.toml"
-# Exclude security-related scripts that contain detection patterns
-[[allowlist.rules]]
-id = "security-scripts"
-regex = '''(?i)(pattern|regex|detect|scan|validate|check)'''
+# Migrated from dead [[allowlist.rules]] "security-scripts".
+[[allowlists]]
+description = "security-related scripts containing detection patterns (migrated from dead legacy rule)"
 paths = [
   '''(?i)scripts/validate_repo_structure\.sh$''',
   '''(?i)scripts/lib/.*\.sh$''',
