@@ -134,29 +134,56 @@ fi
 # rsync setup
 RSYNC=(/usr/bin/rsync -aE --ignore-errors --partial --human-readable --stats)
 
+# Keep credential exclusions active even when an installed or custom file exists.
+RSYNC+=(
+	--exclude='.ssh/id_*'
+	--exclude='.ssh/*.pem'
+	--exclude='.ssh/*_rsa'
+	--exclude='.ssh/*_dsa'
+	--exclude='.ssh/*_ed25519'
+	--exclude='.ssh/*_ecdsa'
+	--exclude='.ssh/authorized_keys'
+	--exclude='.ssh/known_hosts'
+	--exclude='.gnupg/'
+	--exclude='.aws/'
+	--exclude='.netrc'
+	--exclude='.npmrc'
+	--exclude='.config/rclone/rclone.conf'
+	--exclude='.config/gh/hosts.yml'
+	--exclude='.gemini/'
+	--exclude='.env'
+	--exclude='.env.*'
+	--exclude='.secrets/'
+	--exclude='*.ovpn'
+	--exclude='*.vpn'
+	--exclude='vpn.conf'
+	--exclude='.bash_history'
+	--exclude='.zsh_history'
+	--exclude='.fish_history'
+	--exclude='node_modules/'
+	--exclude='.git/'
+	--exclude='.DS_Store'
+)
+
 if [[ -f $EXCLUDES_FILE ]]; then
 	echo "Using exclusions from: $EXCLUDES_FILE"
-	RSYNC+=(--exclude-from="$EXCLUDES_FILE")
+	# Accept only exclusions: rsync's ! and + rules can clear or override
+	# the mandatory credential rules above.
+	while IFS= read -r pattern || [[ -n $pattern ]]; do
+		pattern=${pattern%$'\r'}
+		case $pattern in
+		'' | \#* | \;*) continue ;;
+		'!' | '+ '*)
+			echo "ERROR: Excludes file contains a rule that can override credential exclusions" >&2
+			exit 2
+			;;
+		'- '*) pattern=${pattern#- } ;;
+		esac
+		RSYNC+=(--filter="- $pattern")
+	done <"$EXCLUDES_FILE"
 else
 	echo "⚠️  WARNING: Excludes file not found at $EXCLUDES_FILE"
 	echo "🔒 Applying DEFAULT SECURITY EXCLUSIONS to protect sensitive data..."
-
-	# Critical security exclusions (fallback)
-	RSYNC+=(
-		--exclude='.ssh/id_*'
-		--exclude='.ssh/*.pem'
-		--exclude='.ssh/authorized_keys'
-		--exclude='.aws/credentials'
-		--exclude='.netrc'
-		--exclude='.gemini/'
-		--exclude='.env'
-		--exclude='.bash_history'
-		--exclude='.zsh_history'
-		--exclude='.fish_history'
-		--exclude='node_modules/'
-		--exclude='.git/'
-		--exclude='.DS_Store'
-	)
 fi
 
 if [[ $DELETE -eq 1 ]]; then
