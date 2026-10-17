@@ -142,42 +142,13 @@ def _process_pr(pr):
     repo = pr["full_repo"]
     num = pr["number"]
     if pr.get("status_action") == "CLOSE":
-        print(f"Closing {repo}#{num} (duplicate)")
-        run_cmd(
-            [
-                "gh",
-                "pr",
-                "close",
-                str(num),
-                "--repo",
-                repo,
-                "--comment",
-                "Closing as superseded/duplicate of newer PR.",
-            ]
-        )
-        return pr, "closed"
-    elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
-        print(f"Merging {repo}#{num}")
-        success, out, err = run_cmd(
-            [
-                "gh",
-                "pr",
-                "merge",
-                str(num),
-                "--repo",
-                repo,
-                "--squash",
-                "--admin",
-            ]
-        )
-        if success:
-            return pr, "merged"
-        else:
-            print(f"Failed to merge: {err}")
-            return pr, "escalated"
+        reason = "duplicate candidate needs author and diff review"
     else:
-        print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
-        return pr, "escalated"
+        # Merge state alone does not establish author, approval, check, or security eligibility.
+        reason = "merge eligibility has not been reviewed"
+    pr["hold_reason"] = reason
+    print(f"Holding {repo}#{num} ({pr['mergeStateStatus']}): {reason}")
+    return pr, "escalated"
 
 
 if __name__ == "__main__":
@@ -196,10 +167,10 @@ if __name__ == "__main__":
     today_iso = datetime.date.today().isoformat()
 
     triage_md = [
-        f"# PR triage — backlog cleanup test ({today_iso})\n",
-        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-        "## Duplicate / supersede groups\n",
-        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+        f"# PR triage — backlog cleanup report ({today_iso})\n",
+        "**Policy:** report-only; review eligibility before any close or merge.\n",
+        "## Duplicate / supersede candidates\n",
+        "| Candidate to retain | Candidate to close | Rationale |",
         "| --- | --- | --- |",
     ]
 
@@ -227,7 +198,7 @@ if __name__ == "__main__":
     )
     for p in escalated:
         triage_md.append(
-            f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']} status - requires human review or CI fix |"
+            f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']}: {p['hold_reason']} |"
         )
 
     triage_md.extend(
@@ -243,7 +214,7 @@ if __name__ == "__main__":
 
     # Session Report
     report_md = [
-        f"\n## Run — {today_iso} (backlog cleanup E2E, review-and-merge)\n",
+        f"\n## Run — {today_iso} (backlog cleanup, report-only)\n",
         "### Repos processed\n",
     ]
     for i, r in enumerate(repos, 1):
@@ -276,7 +247,7 @@ if __name__ == "__main__":
     report_md.append("\n### Held open / escalated\n")
     for p in escalated:
         report_md.append(
-            f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}"
+            f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}: {p['hold_reason']}"
         )
 
     with open("tasks/review-session-reports.md", "a") as f:
