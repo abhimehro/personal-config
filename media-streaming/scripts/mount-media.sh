@@ -81,7 +81,7 @@ wait_for_fskit() {
 	local waited=0
 	log "🛡️  Safeguard: Waiting for fuse-t process to become ready..."
 	while [[ $waited -lt $max_wait ]]; do
-		if pgrep -qf "/Applications/fuse-t.app/Contents/MacOS/fuse-t"; then
+		if pgrep -f -- "/Applications/fuse-t.app/Contents/MacOS/fuse-t" >/dev/null 2>&1; then
 			log "✅ fuse-t is running (ready after ${waited}s)"
 			return 0
 		fi

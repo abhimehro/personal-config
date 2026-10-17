@@ -137,7 +137,7 @@ check_vpn() {
 		return 0
 	fi
 
-	if pgrep -ix "Windscribe" >/dev/null 2>&1 && ifconfig | grep -q "^${VPN_INTERFACE_PREFIX}"; then
+	if pgrep -ix -- "Windscribe" >/dev/null 2>&1 && ifconfig | grep -q "^${VPN_INTERFACE_PREFIX}"; then
 		return 0
 	fi
 
