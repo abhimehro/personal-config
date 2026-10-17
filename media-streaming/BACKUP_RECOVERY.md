@@ -3,9 +3,12 @@
 **Last Updated**: December 20, 2025\
 **Recovery Time**: ~5 minutes
 
-> Note: Current media auth is 1Password-first. Restoring the media-server
-> credentials file is only needed if you intentionally use the fallback
-> file-based path.
+> Note: The daemon reads the local credentials file when present, then uses
+> 1Password if the file does not supply both values. Restore the file only if
+> you intentionally use file-based credentials.
+> Restore a client-trusted certificate and private key before restarting WebDAV;
+> see [the TLS setup](README.md#-security-note). The server will not start
+> without them.
 
 ---
 
@@ -101,9 +104,14 @@ launchctl kickstart -k gui/$(id -u)/com.speedybee.media.server
 lsof -nP -iTCP:8080 -sTCP:LISTEN | grep rclone
 
 # Test local connection
-curl -u infuse:$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2) \
-     http://localhost:8080/
+curl --resolve "YOUR_WEBDAV_HOST:8080:127.0.0.1" \
+  -u infuse \
+  https://YOUR_WEBDAV_HOST:8080/
 ```
+
+Enter the current `MediaServer` password from 1Password when curl prompts. If
+the daemon uses `~/.config/media-server/credentials`, enter that file's password
+instead.
 
 ---
 
@@ -119,16 +127,16 @@ ipconfig getifaddr en0
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8080
+Address: https://YOUR_WEBDAV_HOST:8080
 Username: infuse
-Password: [from credentials file]
+Password: [1Password MediaServer, or credentials file if it has both values]
 Path: /
 
 Remote backup access through Windscribe uses the external port:
 ```
 
-Protocol: WebDAV Address: http://82.23.253.53:8088 Username: infuse Password:
-[from credentials file] Path: /
+Protocol: WebDAV Address: https://YOUR_WEBDAV_HOST:8088 Username: infuse Password:
+[1Password MediaServer, or credentials file if it has both values] Path: /
 
 ```
 ```
@@ -139,13 +147,19 @@ Protocol: WebDAV Address: http://82.23.253.53:8088 Username: infuse Password:
 
 For experienced users, here's a complete one-liner:
 
+Before starting WebDAV, restore its PEM certificate chain and private key from
+a private backup you control, or reissue a certificate for the WebDAV hostname
+through a CA trusted by Infuse. Install them as
+`~/.config/media-server/tls.crt` and `tls.key`, keep the key mode 600 with no
+macOS ACL entries, and confirm the client trusts the certificate. See the
+[TLS setup](README.md#-security-note). If you intentionally use file-based
+WebDAV credentials, restore them with Step 2 first.
+
 ```bash
-mkdir -p ~/.config/{rclone,media-server} && \
+mkdir -p ~/.config/rclone && \
 op document get "Rclone Config Backup" --vault Personal --output ~/.config/rclone/rclone.conf && \
 chmod 600 ~/.config/rclone/rclone.conf && \
-op document get "Media Server WebDAV Credentials" --vault Personal --output ~/.config/media-server/credentials && \
-chmod 600 ~/.config/media-server/credentials && \
-~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+~/dev/personal-config/media-streaming/scripts/media-server-daemon.sh
 ```
 
 ---
@@ -257,7 +271,7 @@ After recovery, verify everything works:
 - [ ] `rclone listremotes` shows: gdrive:, onedrive:, media:
 - [ ] `rclone lsd media:` shows folder structure
 - [ ] `lsof -nP -iTCP:8080 -sTCP:LISTEN` shows rclone listening
-- [ ] `curl http://localhost:8080/` returns authentication prompt
+- [ ] `curl -f --resolve YOUR_WEBDAV_HOST:8080:127.0.0.1 -u infuse https://YOUR_WEBDAV_HOST:8080/` succeeds after you enter the configured WebDAV password
 - [ ] Infuse can browse media library
 - [ ] Can play a test video in Infuse
 

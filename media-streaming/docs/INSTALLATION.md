@@ -1,7 +1,7 @@
 # 
 
-> Note: Current media auth is 1Password-first. References below to the
-> media-server credentials file are optional fallback only. 🚀 Installation &
+> Note: The daemon reads the local credentials file when present, then uses
+> 1Password if the file does not supply both values. 🚀 Installation &
 > Recovery Guide
 
 ## 📥 **Fresh Installation**
@@ -82,7 +82,7 @@ rclone config reconnect onedrive:
 ### **Unified Cloud Server:**
 
 ```bash
-~/start-media-server-fast.sh
+~/media-server-daemon.sh
 ```
 
 ## 🏥 **Emergency Recovery**
@@ -141,15 +141,15 @@ rclone tree onedrive:Media --level 2
 # Check what's using our ports
 lsof -nP -iTCP:8080 -sTCP:LISTEN  # WebDAV server (stable internal port)
 
-# Stop all rclone servers
-pkill -f "rclone serve"
+# Stop the WebDAV server
+pkill -f "rclone serve webdav"
 ```
 
 ### **Server Logs:**
 
 ```bash
 # Monitor server output
-~/start-media-server-fast.sh  # Shows live logs
+tail -f ~/Library/Logs/media-server.log  # LaunchAgent log
 ```
 
 ## 🎯 **Infuse Configuration**
@@ -170,7 +170,7 @@ Path: /links/
 
 ```bash
 # First, start the server
-~/start-media-server-fast.sh
+~/media-server-daemon.sh
 
 # Get your local IP
 ipconfig getifaddr en0
@@ -178,9 +178,9 @@ ipconfig getifaddr en0
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8080
+Address: https://YOUR_WEBDAV_HOST:8080
 Username: infuse
-Password: [from ~/.config/media-server/credentials]
+Password: [1Password MediaServer, or credentials file if it has both values]
 Path: /
 ```
 
@@ -203,7 +203,7 @@ rclone listremotes  # Check what exists
 
 ```bash
 lsof -nP -iTCP:8080 -sTCP:LISTEN  # Check what's using the port
-pkill -f "rclone serve"  # Kill existing servers
+pkill -f "rclone serve webdav"  # Stop the existing WebDAV server
 ```
 
 ### **Empty Folder in Infuse:**
@@ -214,8 +214,13 @@ rclone lsd media:
 rclone ls media: | head -10
 
 # Verify server is running
-curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/
+curl --resolve YOUR_WEBDAV_HOST:8080:127.0.0.1 \
+  -u infuse \
+  https://YOUR_WEBDAV_HOST:8080/
 ```
+
+Enter the current 1Password `MediaServer` password, or the fallback file's
+password if configured.
 
 ---
 

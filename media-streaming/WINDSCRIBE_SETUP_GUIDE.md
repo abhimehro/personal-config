@@ -44,6 +44,16 @@ device's VPN tunnel IP on their end.
 
 ### For WebDAV (Infuse backup):
 
+Configure the TLS certificate and key in [README.md](README.md#-security-note)
+before enabling this forward. Remove any existing HTTP forward during migration.
+Use a DNS name covered by the certificate for remote Infuse and curl access;
+point it at the Windscribe static IP. The internal listener accepts HTTPS only.
+After verifying HTTPS locally, run `./scripts/rotate-media-webdav.sh` from the
+`media-streaming` directory to replace the password used by the old HTTP route.
+Restart WebDAV, update saved clients to HTTPS with the new password, and verify
+certificate trust before enabling the new forward. If a local credentials file
+exists, the rotation script updates it by default.
+
 | Setting           | Value                          |
 | ----------------- | ------------------------------ |
 | **Static IP**     | 82.23.253.53                   |
@@ -144,7 +154,8 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
 
 ```bash
 # From your Mac (should work)
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://127.0.0.1:8080/
+curl --resolve "YOUR_WEBDAV_HOST:8080:127.0.0.1" \
+  -u infuse https://YOUR_WEBDAV_HOST:8080/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -153,7 +164,8 @@ Expected: HTTP 200 OK with HTML response
 
 ```bash
 # From another device on same WiFi (should work)
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://192.168.0.111:8080/
+curl --resolve "YOUR_WEBDAV_HOST:8080:192.168.0.111" \
+  -u infuse https://YOUR_WEBDAV_HOST:8080/
 ```
 
 Expected: HTTP 200 OK
@@ -172,7 +184,7 @@ Expected: `82.23.253.53`
 **MUST BE DONE FROM EXTERNAL DEVICE (phone on cellular, NOT WiFi):**
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.23.253.53:8088/
+curl -u infuse https://YOUR_WEBDAV_HOST:8088/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -180,7 +192,7 @@ Expected: HTTP 200 OK with HTML response
 Or simply open in mobile browser:
 
 ```
-http://82.23.253.53:8088/
+https://YOUR_WEBDAV_HOST:8088/
 ```
 
 (Will prompt for username/password)
@@ -239,7 +251,7 @@ If after all these steps external access still fails:
 
 ## 📱 Infuse Configuration (Both Connections)
 
-### Primary: LAN (192.168.0.111:8080)
+### Primary: LAN (HTTPS on port 8080)
 
 ✅ **This already works perfectly!**
 
@@ -247,7 +259,7 @@ If after all these steps external access still fails:
 - Best performance, no VPN overhead
 - No re-caching needed when switching between devices on same network
 
-### Secondary: Remote (82.23.253.53:8088)
+### Secondary: Remote (HTTPS on port 8088)
 
 ⏳ **Needs external testing to confirm**
 
@@ -255,7 +267,14 @@ If after all these steps external access still fails:
 - Requires Windscribe VPN connected on your Mac
 - Port forward must be active and properly configured
 
-**Both use the same credentials** (from 1Password):
+**Both use the same configured WebDAV credentials** (local file when complete,
+otherwise 1Password):
+
+In both Infuse connections, enable HTTPS and use the certificate's hostname.
+Set a DNS override on the home router so `YOUR_WEBDAV_HOST` resolves to the
+Mac's LAN IP (for example, `192.168.0.111`) for home clients. Keep its public
+DNS record pointed at the Windscribe static IP for remote clients. The
+`curl --resolve` commands above test one request; they do not configure Infuse.
 
 - Username: `infuse`
 - Password: `${MEDIA_WEBDAV_PASS}`
@@ -317,7 +336,7 @@ ssh speedybee@82.23.253.53 -p 36555
 
    ```
    http://82.23.253.53:8096/   # Jellyfin (default remote)
-   http://82.23.253.53:8088/   # WebDAV backup
+   https://YOUR_WEBDAV_HOST:8088/   # WebDAV backup
    ```
 
 4. If WebDAV works: Configure secondary connection in Infuse!

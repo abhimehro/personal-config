@@ -153,10 +153,10 @@ Use `final-media-server.sh --external` only as an interactive diagnostic helper.
 From another device (phone on cellular, NOT your WiFi):
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.23.253.53:8088/"
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" "https://YOUR_WEBDAV_HOST:8088/"
 ```
 
-Or open in a browser: `http://82.23.253.53:8088/`
+Or open in a browser: `https://YOUR_WEBDAV_HOST:8088/` (use the name on the certificate).
 
 ---
 
@@ -166,7 +166,8 @@ Or open in a browser: `http://82.23.253.53:8088/`
 
 - **Name**: "Home Media (Local)"
 - **Protocol**: WebDAV
-- **Address**: `192.168.0.111`
+- **Address**: `YOUR_WEBDAV_HOST` (resolve to the LAN IP at home)
+- **HTTPS**: On; verify the certificate
 - **Port**: `8080`
 - **Username**: `infuse`
 - **Password**: `${MEDIA_WEBDAV_PASS}`
@@ -177,7 +178,8 @@ Or open in a browser: `http://82.23.253.53:8088/`
 
 - **Name**: "Media (Remote)"
 - **Protocol**: WebDAV
-- **Address**: `82.23.253.53`
+- **Address**: `YOUR_WEBDAV_HOST` (resolves to the Windscribe static IP remotely)
+- **HTTPS**: On; verify the certificate
 - **Port**: `8088`
 - **Username**: `infuse`
 - **Password**: `${MEDIA_WEBDAV_PASS}`

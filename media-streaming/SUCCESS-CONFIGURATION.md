@@ -1,8 +1,11 @@
 # 
 
-> Note: Current media auth is 1Password-first. References below to the
-> media-server credentials file are optional fallback only. 🏆 SUCCESS! Ultimate
+> Note: The current daemon reads the local credentials file when present, then
+> uses 1Password if the file does not supply both values. 🏆 SUCCESS! Ultimate
 > Media Streaming - Working Configuration
+
+> Historical 2025 configuration: current WebDAV startup and client settings
+> require HTTPS. See [README.md](README.md#-security-note).
 
 **Status**: ✅ **FULLY OPERATIONAL** - Achieved October 5, 2025\
 **Result**: **SUPERCALIFRAGILISTICEXPIALIDOCIOUS!** 🎭✨
@@ -24,7 +27,7 @@ Protocol: WebDAV
 Address: [Your en5 IP Address]
 Port: 8088
 Username: infuse
-Password: [from ~/.config/media-server/credentials]
+Password: [1Password MediaServer, or credentials file if it has both values]
 Path: /
 ```
 
@@ -96,7 +99,7 @@ Perfect Infuse-compatible folder structure
 ~/final-media-server.sh
 
 # Manual start
-rclone serve webdav media: --addr "0.0.0.0:8080" --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
+./media-streaming/scripts/media-server-daemon.sh
 ```
 
 ### **Server Status Check:**
@@ -109,8 +112,13 @@ lsof -nP -iTCP:8080 -sTCP:LISTEN
 tail -f ~/media-server.log
 
 # Test connectivity
-curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/
+curl --resolve YOUR_WEBDAV_HOST:8080:127.0.0.1 \
+  -u infuse \
+  https://YOUR_WEBDAV_HOST:8080/
 ```
+
+Enter the current 1Password `MediaServer` password, or the fallback file's
+password if configured.
 
 ### **Stopping Services:**
 
