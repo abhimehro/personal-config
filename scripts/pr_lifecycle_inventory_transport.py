@@ -8,7 +8,7 @@ from typing import Any
 _QUERY = """
 query($owner: String!, $name: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
-    pullRequests(first: 50, states: OPEN, after: $cursor) {
+    pullRequests(first: 25, states: OPEN, after: $cursor) {
       pageInfo { hasNextPage endCursor }
       nodes {
         number url title body isDraft isCrossRepository headRefName headRefOid baseRefName baseRefOid

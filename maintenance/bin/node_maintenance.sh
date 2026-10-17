@@ -94,7 +94,7 @@ if [[ -n $OUTDATED_OUTPUT ]]; then
 		fi
 		if [[ $was_gitnexus_rc -eq 1 ]]; then
 			log_info "Preserving gitnexus release candidate..."
-			npm install -g gitnexus@1.6.13-rc.38 2>&1 | tee -a "$LOG_DIR/node_maintenance.log" || true
+			npm install --ignore-scripts -g gitnexus@1.6.13-rc.38 2>&1 | tee -a "$LOG_DIR/node_maintenance.log" || true
 		fi
 	else
 		log_info "Global package updates disabled (UPDATE_NODE_GLOBAL=0)"

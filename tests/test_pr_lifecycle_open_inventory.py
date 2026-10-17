@@ -149,7 +149,7 @@ class OpenInventoryTests(unittest.TestCase):
         prs = self.fx.inv.list_open_prs("owner/repo", run=run)
         self.assertEqual([pr["number"] for pr in prs], [12, 13])
         self.assertEqual(len(commands), 2)
-        self.assertIn("pullRequests(first: 50, states: OPEN", commands[0][4])
+        self.assertIn("pullRequests(first: 25, states: OPEN", commands[0][4])
         self.assertIn("comments(last: 50) { totalCount nodes", commands[0][4])
         self.assertIn("pageInfo { hasNextPage }", commands[0][4])
         self.assertIn("cursor=cursor-1", commands[1])
