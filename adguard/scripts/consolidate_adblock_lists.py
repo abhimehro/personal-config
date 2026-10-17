@@ -11,8 +11,10 @@ Usage: python3 consolidate_adblock_lists.py --input-dir <input_dir> --output-dir
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 def load_json_file(filepath):
@@ -23,6 +25,33 @@ def load_json_file(filepath):
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         return None
+
+
+def load_required_rules(filepath):
+    """Load a required source, rejecting missing or incomplete rule lists."""
+    if not filepath.is_file():
+        raise FileNotFoundError(f"Required source not found: {filepath}")
+
+    data = load_json_file(filepath)
+    if not isinstance(data, dict) or not isinstance(data.get("rules"), list):
+        # Invalid file content is a value error, even when its JSON type is wrong.
+        raise ValueError(  # noqa: TRY004
+            f"Invalid rules in required source: {filepath}"
+        )
+
+    rules = data["rules"]
+    if not rules or any(
+        not isinstance(rule, dict)
+        or not isinstance(rule.get("PK"), str)
+        or not rule["PK"].strip()
+        or "\n" in rule["PK"]
+        or "\r" in rule["PK"]
+        or not isinstance(rule.get("action"), dict)
+        or rule["action"].get("do") not in (0, 1)
+        for rule in rules
+    ):
+        raise ValueError(f"Invalid or empty rules in required source: {filepath}")
+    return rules
 
 
 def extract_domains_from_rules(rules):
@@ -38,15 +67,10 @@ def process_tracker_files(base_dir, tracker_files):
 
     for filename in tracker_files:
         filepath = base_dir / filename
-        if filepath.exists():
-            print(f"  Processing: {filename}")
-            data = load_json_file(filepath)
-            if data and "rules" in data:
-                domains = extract_domains_from_rules(data["rules"])
-                denylist_domains.update(domains)
-                print(f"    Added {len(domains)} domains")
-        else:
-            print(f"  ⚠️  File not found: {filename}")
+        print(f"  Processing: {filename}")
+        domains = extract_domains_from_rules(load_required_rules(filepath))
+        denylist_domains.update(domains)
+        print(f"    Added {len(domains)} domains")
 
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
     return denylist_domains
@@ -55,19 +79,14 @@ def process_tracker_files(base_dir, tracker_files):
 def extract_allowlist_from_file(filepath, description):
     """Extract allowlist domains from a file with do: 1 rules."""
     domains = set()
-    if not filepath.exists():
-        return domains
-
     print(f"  Processing: {filepath.name}")
-    data = load_json_file(filepath)
-    if not data or "rules" not in data:
-        return domains
+    rules = load_required_rules(filepath)
 
     # ⚡ Bolt Optimization: Replace list comprehension with generator to avoid memory spikes, and use PEP-8 isinstance
     domains.update(
         (
             rule["PK"]
-            for rule in data["rules"]
+            for rule in rules
             if "PK" in rule
             and "action" in rule
             and isinstance(rule["action"], dict)
@@ -76,6 +95,8 @@ def extract_allowlist_from_file(filepath, description):
         )
     )
     count = len(domains)
+    if not count:
+        raise ValueError(f"No allowlist domains in required source: {filepath}")
     print(f"    Added {count} {description}")
     return domains
 
@@ -208,9 +229,23 @@ def run_consolidation(input_dir, output_dir):
     denylist_domains = process_tracker_files(input_dir, tracker_files)
     allowlist_domains = process_allowlist_files(input_dir)
 
-    # Write output files
-    write_json_files(output_dir, denylist_domains, allowlist_domains)
-    write_text_files(output_dir, denylist_domains, allowlist_domains)
+    # Finish all outputs before replacing any existing list.
+    with TemporaryDirectory(prefix=".adguard-consolidate-", dir=output_dir) as staging:
+        staged_dir = Path(staging)
+        staged_paths = (
+            *write_json_files(staged_dir, denylist_domains, allowlist_domains),
+            *write_text_files(staged_dir, denylist_domains, allowlist_domains),
+        )
+        for staged_path in staged_paths:
+            destination = output_dir / staged_path.name
+            if destination.is_symlink():
+                raise ValueError(
+                    f"Refusing to replace symlinked output: {staged_path.name}"
+                )
+            if destination.exists() and not destination.is_file():
+                raise ValueError(f"Output is not a regular file: {staged_path.name}")
+        for staged_path in staged_paths:
+            os.replace(staged_path, output_dir / staged_path.name)
 
     # Print summary
     print_summary(denylist_domains, allowlist_domains, output_dir)
@@ -250,7 +285,10 @@ def main():
             print(f"Error: Could not create output directory '{output_dir}': {e}")
             sys.exit(1)
 
-    run_consolidation(input_dir, output_dir)
+    try:
+        run_consolidation(input_dir, output_dir)
+    except (OSError, ValueError) as exc:
+        parser.exit(1, f"Error: {exc}\n")
 
 
 if __name__ == "__main__":
