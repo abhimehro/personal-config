@@ -111,9 +111,9 @@ class EvaluateItemTests(unittest.TestCase):
                     self.assertEqual(
                         {
                             "sensitive_paths": classes,
-                            "guardrail_outcome": "REVIEW_SECURITY",
+                            "guardrail_outcome": "PASS_ROUTINE",
                             "guardrail_source": "path_eval",
-                            "risk_class": "SENSITIVE",
+                            "risk_class": "ROUTINE",
                         },
                         guardrails.evaluate_item(item, clear_standin),
                     )
@@ -136,8 +136,6 @@ class EvaluateItemTests(unittest.TestCase):
             *(
                 {"guardrail_outcome": outcome}
                 for outcome in (
-                    "HOLD_CONTRACT",
-                    "HOLD_EVIDENCE",
                     "HOLD_PLATFORM",
                     "HOLD_CANONICAL",
                     "CLOSE_NONSECURITY_NOOP",
@@ -193,8 +191,8 @@ class EvaluateItemTests(unittest.TestCase):
         self.assertEqual([], patch["sensitive_paths"])
         self.assertEqual("ROUTINE", patch["risk_class"])
 
-    def test_review_security_preserved_without_clear_standin(self) -> None:
-        """REVIEW_SECURITY is sticky by default; only the opt-in clears it."""
+    def test_review_security_without_sensitive_paths_clears(self) -> None:
+        """A path-clean REVIEW_SECURITY downgrades without an extra flag."""
         patch = guardrails.evaluate_item(
             _item(
                 guardrail_outcome="REVIEW_SECURITY",
@@ -202,7 +200,10 @@ class EvaluateItemTests(unittest.TestCase):
                 changed_paths=["docs/plan.md", "tasks/today.md"],
             )
         )
-        self.assertIsNone(patch)
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+        self.assertEqual([], patch["sensitive_paths"])
 
     def test_owned_items_never_evaluated(self) -> None:
         for owner in ("human", "stage2", "stage3"):
@@ -248,13 +249,33 @@ class EvaluateItemTests(unittest.TestCase):
             )
 
     def test_generated_output_alone_is_not_sticky(self) -> None:
-        patch = guardrails.evaluate_item(
-            _item(changed_paths=[".jules/journal/2026-10-09.md"])
-        )
+        patch = guardrails.evaluate_item(_item(changed_paths=["generated/report.md"]))
         self.assertIsNotNone(patch)
         assert patch is not None
         self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
         self.assertEqual(["generated_output"], patch["sensitive_paths"])
+
+    def test_jules_markdown_journals_are_docs(self) -> None:
+        for path in (
+            ".jules/sentinel.md",
+            ".Jules/sentinel.md",
+            ".jules/journal/2026-10-09.md",
+            "pkg/.jules/notes.MD",
+        ):
+            self.assertEqual(set(), guardrails.classify_path(path), path)
+        self.assertIn("generated_output", guardrails.classify_path(".jules/cache.json"))
+        patch = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                guardrail_outcome="REVIEW_SECURITY",
+                sensitive_paths=["generated_output"],
+                changed_paths=[".jules/sentinel.md"],
+            )
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+        self.assertEqual([], patch["sensitive_paths"])
 
     def test_terminal_and_manual_outcomes_untouched(self) -> None:
         for outcome in (
@@ -320,10 +341,8 @@ class EvaluateItemTests(unittest.TestCase):
                 author_type,
             )
 
-    def test_security_classification_is_sticky(self) -> None:
-        """classification=SECURITY keeps the hold without sticky paths —
-        a Sentinel fix can touch only ordinary files (Grok dry-run: the
-        flag would have flipped ~30 Sentinel fixes)."""
+    def test_security_classification_alone_is_not_a_hold(self) -> None:
+        """classification=SECURITY does not hold a path-clean item."""
         patch = guardrails.evaluate_item(
             _item(
                 classification="SECURITY",
@@ -332,24 +351,28 @@ class EvaluateItemTests(unittest.TestCase):
         )
         self.assertIsNotNone(patch)
         assert patch is not None
-        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
-        self.assertEqual("SENSITIVE", patch["risk_class"])
-        # And an existing REVIEW_SECURITY on a SECURITY-classed item is
-        # never drained by --clear-stand-in: evaluation may re-stamp
-        # provenance, but the hold itself stays.
+        self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+        self.assertEqual("ROUTINE", patch["risk_class"])
         held = guardrails.evaluate_item(
             _item(
                 classification="SECURITY",
                 guardrail_outcome="REVIEW_SECURITY",
                 sensitive_paths=[],
-                changed_paths=["docs/a.md"],
+                changed_paths=["src/main.py"],
             ),
-            clear_standin=True,
+            evidence=guardrails.GuardrailEvidence(
+                diff_text=(
+                    "diff --git a/src/main.py b/src/main.py\n"
+                    "+++ b/src/main.py\n"
+                    "@@\n"
+                    "+subprocess.run(cmd, shell=True)\n"
+                )
+            ),
         )
         self.assertIsNotNone(held)
         assert held is not None
         self.assertEqual("REVIEW_SECURITY", held["guardrail_outcome"])
-        self.assertEqual("SENSITIVE", held["risk_class"])
+        self.assertIn("shell_execution", held["sensitive_paths"])
         # Non-SECURITY classifications still clear normally.
         for classification in ("DEPENDENCY", "UI", "UNKNOWN"):
             patch = guardrails.evaluate_item(
@@ -409,6 +432,193 @@ class EvaluateItemTests(unittest.TestCase):
                 guardrails.classify_path(path),
                 path,
             )
+
+
+class DependabotAndDiffTests(unittest.TestCase):
+    _SHA = "0123456789abcdef0123456789abcdef01234567"
+
+    def _dependabot(self, paths: list[str], **evidence: object) -> dict[str, object]:
+        item = _item(
+            changed_paths=paths,
+            guardrail_outcome="REVIEW_SECURITY",
+            author={"login": "dependabot[bot]", "identity_source": "github_api"},
+        )
+        payload = {
+            "diff_text": (
+                "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml\n"
+                "+++ b/.github/workflows/ci.yml\n"
+                "@@\n"
+                f"-        uses: actions/checkout@{self._SHA}\n"
+                f"+        uses: actions/checkout@{self._SHA}\n"
+            ),
+            "required_checks_green": True,
+            "mergeable": True,
+            "title": "Bump actions/checkout from 4.1.1 to 4.1.2",
+        }
+        payload.update(evidence)
+        patch = guardrails.evaluate_item(
+            item, evidence=guardrails.GuardrailEvidence(**payload)
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        return patch
+
+    def test_dependabot_patch_workflow_is_routine(self) -> None:
+        patch = self._dependabot([".github/workflows/ci.yml"])
+        self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+        self.assertEqual([], patch["sensitive_paths"])
+
+    def test_dependabot_lockfile_minor_is_routine(self) -> None:
+        patch = self._dependabot(
+            ["uv.lock"],
+            title="Bump example from 1.2.3 to 1.3.0",
+            diff_text="diff --git a/uv.lock b/uv.lock\n+++ b/uv.lock\n@@\n+version = 1\n",
+        )
+        self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
+
+    def test_dependabot_major_permissions_unpinned_and_red_ci_stay_held(self) -> None:
+        cases = (
+            {"title": "Bump actions/checkout from 4.1.1 to 5.0.0"},
+            {
+                "diff_text": (
+                    "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml\n"
+                    "+++ b/.github/workflows/ci.yml\n"
+                    "@@\n"
+                    " permissions:\n"
+                    "-  contents: read\n"
+                    "+  contents: write\n"
+                    f"+        uses: actions/checkout@{self._SHA}\n"
+                )
+            },
+            {
+                "diff_text": (
+                    "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml\n"
+                    "+++ b/.github/workflows/ci.yml\n"
+                    "@@\n"
+                    "+        uses: actions/checkout@v4\n"
+                )
+            },
+            {"required_checks_green": False},
+            {"mergeable": False},
+            {"required_checks_green": None},
+        )
+        for overrides in cases:
+            with self.subTest(overrides=sorted(overrides)):
+                patch = self._dependabot([".github/workflows/ci.yml"], **overrides)
+                self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+
+    def test_non_dependabot_workflow_stays_held(self) -> None:
+        patch = guardrails.evaluate_item(
+            _item(
+                changed_paths=[".github/workflows/ci.yml"],
+                author={"login": "renovate[bot]"},
+            )
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+
+    def test_mixed_workflow_and_source_is_not_the_dependabot_lane(self) -> None:
+        patch = self._dependabot([".github/workflows/ci.yml", "src/main.py"])
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+        self.assertIn("workflows_and_permissions", patch["sensitive_paths"])
+
+    def test_advisory_failure_does_not_block_required_green(self) -> None:
+        checks = [
+            {
+                "name": "Codacy Static Code Analysis",
+                "conclusion": "FAILURE",
+                "status": "COMPLETED",
+            },
+            {"name": "jules/review", "conclusion": "FAILURE", "status": "COMPLETED"},
+            {"name": "test", "conclusion": "SUCCESS", "status": "COMPLETED"},
+        ]
+        patterns = ["Codacy Static Code Analysis", "jules/review", "CodeScene*"]
+        self.assertTrue(guardrails.required_checks_green(checks, patterns))
+        self.assertFalse(
+            guardrails.required_checks_green(
+                [
+                    {"name": "test", "conclusion": "FAILURE", "status": "COMPLETED"},
+                    {"name": "review", "conclusion": "SUCCESS", "status": "COMPLETED"},
+                ],
+                ["review"],
+            )
+        )
+        self.assertIsNone(guardrails.required_checks_green([], patterns))
+        self.assertFalse(
+            guardrails.required_checks_green(
+                [{"name": "build", "status": "IN_PROGRESS", "conclusion": ""}],
+                patterns,
+            )
+        )
+
+    def test_diff_security_behavior_holds_and_journal_mentions_do_not(self) -> None:
+        code = (
+            "diff --git a/src/main.py b/src/main.py\n"
+            "+++ b/src/main.py\n"
+            "@@\n"
+            "+html.escape(raw_user_input)\n"
+        )
+        self.assertIn("security_configuration", guardrails.diff_security_signals(code))
+        journal = (
+            "diff --git a/.jules/sentinel.md b/.jules/sentinel.md\n"
+            "+++ b/.jules/sentinel.md\n"
+            "@@\n"
+            "+subprocess.run(cmd, shell=True)\n"
+        )
+        self.assertEqual(set(), guardrails.diff_security_signals(journal))
+        comment = (
+            "diff --git a/src/main.py b/src/main.py\n"
+            "+++ b/src/main.py\n"
+            "@@\n"
+            "+# do not call eval( on user input\n"
+        )
+        self.assertEqual(set(), guardrails.diff_security_signals(comment))
+
+    def test_failed_diff_fetch_keeps_an_existing_security_hold(self) -> None:
+        patch = guardrails.evaluate_item(
+            _item(
+                classification="SECURITY",
+                guardrail_outcome="REVIEW_SECURITY",
+                changed_paths=["src/main.py"],
+            ),
+            evidence=guardrails.GuardrailEvidence(diff_fetch_failed=True),
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+
+    def test_shell_path_stays_held_even_with_a_clean_diff(self) -> None:
+        patch = guardrails.evaluate_item(
+            _item(
+                classification="UNKNOWN",
+                changed_paths=["scripts/fix.sh"],
+            ),
+            evidence=guardrails.GuardrailEvidence(diff_text=""),
+        )
+        self.assertIsNotNone(patch)
+        assert patch is not None
+        self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+        self.assertEqual(["shell_execution"], patch["sensitive_paths"])
+
+    def test_clearance_rule_names(self) -> None:
+        journal = _item(
+            guardrail_outcome="REVIEW_SECURITY",
+            changed_paths=[".jules/sentinel.md"],
+            classification="SECURITY",
+        )
+        patch = guardrails.evaluate_item(journal)
+        self.assertEqual("jules_journal", guardrails.clearance_rule(journal, patch))
+        labeled = _item(
+            guardrail_outcome="REVIEW_SECURITY",
+            classification="CI_INFRA",
+            changed_paths=["README.md"],
+        )
+        patch = guardrails.evaluate_item(labeled)
+        self.assertEqual(
+            "classification_without_sensitive_path",
+            guardrails.clearance_rule(labeled, patch),
+        )
 
 
 if __name__ == "__main__":

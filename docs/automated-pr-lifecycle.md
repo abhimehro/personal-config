@@ -352,8 +352,8 @@ treated as `HUMAN` for every autonomous mutation. Sticky sensitive-path
 classification still blocks autonomous merge and close even when identity is
 `BOT`.
 
-A `.jules/` or `.Jules/` journal path **alone** is not sticky
-`generated_output`. Sibling Bolt/Jules PRs that collide only on that journal
+A `.jules/*.md` or `.Jules/*.md` journal is documentation, not
+`generated_output` and not a sticky class. Sibling Bolt/Jules PRs that collide only on that journal
 follow lesson **0cs** (take `main`'s journal; keep the unique source change). Do
 not send the whole cluster to Stage 3 as `REVIEW_SECURITY` just because the
 journal is in the diff.
@@ -599,12 +599,24 @@ contract forbids `ROUTINE` on human-authored PRs and forced human holds are
 out of scope for a path classifier. The same applies to an item carrying
 `risk_class: HUMAN_REVIEW` regardless of author type — that field is the
 ledger's human-hold marker, so a BOT-authored held PR (pc#2276 shape) is
-never re-stamped `ROUTINE` by path evidence. An item whose `classification` is
-`SECURITY` stays held (`REVIEW_SECURITY` + `SENSITIVE`) regardless of path
-matches: the intake identity classification is authoritative over path
-evidence, so a Sentinel-style fix touching only ordinary files cannot be
-drained. `generated_output` alone is non-sticky (recorded but routes
-routine); any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
+never re-stamped `ROUTINE` by path evidence. A `classification` label,
+including `SECURITY`, does not by itself produce `REVIEW_SECURITY`. The label
+is a hint. The hold requires a sticky sensitive path or a security-behavior
+change in the diff (command or shell execution, authentication or
+authorization, input validation or sanitization, path traversal, secrets, or
+network origins), detected from paths and diff text rather than the PR title.
+`.jules/*.md` journals are documentation: they are not `generated_output` and
+they are not sticky. `generated_output` on other paths is still recorded and
+is still non-sticky by itself. A Dependabot minor or patch bump that changes
+only `.github/workflows/*` or only lockfile-taxonomy paths, does not change a
+`permissions:` block, keeps `uses:` actions pinned to full 40-hex SHAs, has
+green required checks, and is `MERGEABLE` is `PASS_ROUTINE`. Major bumps,
+permission changes, unpinned refs, unknown or red required checks, and a PR
+that is not mergeable stay held. Advisory checks named in
+`lifecycle.unblock.advisory_checks` (Codacy, `jules/review`, `review`, and the
+other configured names) are warnings and do not fail the required-check
+predicate. Any other sticky class still makes the item `REVIEW_SECURITY` +
+`SENSITIVE`.
 Evaluation never bumps `revision` — that field is a projection of transition
 events, and bumping it without logging an event breaks the consistency
 check.

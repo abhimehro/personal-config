@@ -142,9 +142,13 @@ decisions:
 
 Apply in order:
 
-- **Gate 1 — CI health:** Passing → proceed. Failing due to flaky/unrelated test
-  → note and proceed with caution. Failing due to PR changes → attempt auto-fix
-  if applicable; else request changes.
+- **Gate 1 — CI health:** Required checks, builds, and tests must be green.
+  A failing or pending required check blocks. A failure caused by the PR's own
+  changes is auto-fixed when the fix is mechanical; otherwise request changes.
+  Advisory checks listed in `lifecycle.unblock.advisory_checks` — Codacy Static
+  Code Analysis, `jules/review`, `review`, Kilo Code Review, `CodeScene*`, and
+  Octopus Review — are warnings. Record them and continue. They do not fail
+  this gate and do not block MERGE.
 - **CodeScene remediation trigger:** If the failing check includes CodeScene
   code health, post `/cs-agent skill:fix-code-health-degradations` on that PR
   before deferring. Re-check status after the CodeScene refactoring run
@@ -171,7 +175,7 @@ Assign each PR one disposition:
 
 | Disposition        | Criteria                                                              | Action                                                                                                                        |
 | ------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| MERGE              | All gates pass, CI green, no conflicts                                | Squash-merge, delete branch                                                                                                   |
+| MERGE              | All gates pass, required checks green, no conflicts. Advisory check failures do not block. | Squash-merge, delete branch                                                                                                   |
 | MERGE-AFTER-FIX    | Minor issues auto-fixed                                               | Push fix, re-run CI, then merge                                                                                               |
 | REQUEST-CHANGES    | Issues beyond auto-fix                                                | Post review, assign to human                                                                                                  |
 | ESCALATE           | Security gate failure or architectural concern                        | Tag human, block merge                                                                                                        |
@@ -286,7 +290,7 @@ An unanswered trigger expires and escalates.
 | Stale bot lineage or merged salvage original | Create and apply the `superseded` label, close the PR, confirm it is closed, then post the comment; never close HUMAN or `REVIEW_SECURITY` originals. |
 | Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
 | Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
-| Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
+| Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when a required, build, or test check fails. Advisory checks (Codacy, `jules/review`, `review`, and the other `lifecycle.unblock.advisory_checks` names) are warnings and do not block routine merge. CodeScene still gets its remediation trigger. |
 | Open Octopus review findings | Escalate to the repo decision issue; unresolved, non-outdated `octopus-review` threads or an open linked `octopus-review[bot]` finding issue block routine merge. Resolve the threads or close the finding issue, then the next run clears the row. |
 
 Human decisions are refreshed on each repository's open **“PR lifecycle: needs
