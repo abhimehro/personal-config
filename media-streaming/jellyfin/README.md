@@ -1,9 +1,8 @@
 # Jellyfin Migration (Plex → Jellyfin)
 
-**Status (2026-07-17):** Phase 1 **live** + **remote default enabled**. Native
-Jellyfin serves `~/CloudMedia/mounted` on LAN **8096** and via Windscribe
-`http://82.23.253.53:8096`. Colima hosting remains Phase 2 (optional). Plex is
-legacy; WebDAV remains Infuse backup.
+**Status:** Native Jellyfin serves `~/CloudMedia/mounted` on LAN **8096**.
+Direct remote HTTP access is disabled. Colima hosting remains Phase 2
+(optional). Plex is legacy; WebDAV remains Infuse backup.
 
 ## Architecture (keep)
 
@@ -41,21 +40,44 @@ server crash-loops looking for `Contents/MacOS/jellyfin-web`.
 
 | Service                 | Port            | Notes                                                 |
 | ----------------------- | --------------- | ----------------------------------------------------- |
-| Jellyfin HTTP           | **8096**        | Built-in auth; LAN + Windscribe remote (default path) |
+| Jellyfin HTTP           | **8096**        | Built-in auth; loopback + LAN interfaces only         |
 | Jellyfin HTTPS          | 8920            | Leave closed                                          |
 | WebDAV (Infuse)         | 8080            | Unchanged                                             |
 | Plex (legacy)           | 32400           | Not listening on this host; data preserved            |
 | email-security-pipeline | (Colima bridge) | No host port conflict with 8096                       |
 
-**Remote (default path, enabled 2026-07-17):** Windscribe maps
-`82.23.253.53:8096` → host `8096/TCP`. Published Server URI:
-`http://82.23.253.53:8096` (keep a LAN URI for home). Forwarding is on the
-Windscribe side — Jellyfin has no Plex-style remote-access wizard.
+**Remote access:** Delete the old Windscribe external `8096` → internal `8096`
+forward and remove its HTTP Published Server URI in Jellyfin Networking. The
+LaunchAgent now limits Jellyfin HTTP to loopback and validated private IPv4
+addresses on the Mac's LAN interfaces (`en5`/`en0`) and disables Jellyfin remote
+access on each start. If neither interface has a private IPv4 address, Jellyfin
+listens on loopback only. Restart the LaunchAgent after updating this checkout.
+For future remote access, use a
+trusted HTTPS ingress with a valid certificate that proxies to loopback; keep
+the direct HTTP forward closed. Before restoring remote clients, update this
+startup guard for that specific proxy, register it as a Known Proxy in Jellyfin,
+verify its forwarded headers, and enable remote access explicitly. A strong
+admin password remains required
+(1Password item `MediaServer`; local file:
+`~/Library/Application Support/jellyfin/local-admin.credentials`).
 
-**SECURITY:** Strong admin password required (1Password item `MediaServer`;
-local file: `~/Library/Application Support/jellyfin/local-admin.credentials`).
-HTTP over the static IP is intentional for the current VPN forward; harden with
-HTTPS reverse proxy later if needed.
+If startup reports that `network.xml` is missing while `system.xml` exists,
+the daemon stops rather than bypassing Jellyfin's legacy network migration.
+Remove the Windscribe `8096` forward and disconnect the VPN, run the stock
+Jellyfin app once on the trusted LAN to generate `config/network.xml`, then
+quit it. From this checkout, run:
+
+```bash
+python3 media-streaming/scripts/secure-jellyfin-network.py \
+  "$HOME/Library/Application Support/jellyfin/config/network.xml"
+```
+
+Restart the LaunchAgent only after that command succeeds. Then reconnect
+Windscribe.
+
+The daemon also refuses to start if `network.xml` disables `EnableIPv4` or the
+legacy `EnableIPV4`. Set the present value to `true` before restarting; the
+restricted HTTP listener uses IPv4 addresses only.
 
 ## Library settings for fuse-t / rclone mounts
 

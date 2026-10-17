@@ -41,9 +41,9 @@ playback once Jellyfin is verified.
 4. **📡 Serve (Primary Jellyfin + Backup WebDAV; Plex legacy)**
    - **Jellyfin**: Primary media server (native macOS, **8096**). Reads
      `~/CloudMedia/mounted` directly. See `jellyfin/README.md` and
-     `scripts/setup-jellyfin-native.sh`. **Default remote path:** Windscribe
-     `82.23.253.53:8096` → host `8096` + Published Server URI
-     `http://82.23.253.53:8096` (enabled 2026-07-17).
+     `scripts/setup-jellyfin-native.sh`. HTTP is limited to loopback and
+     validated private LAN IPv4 addresses; remote access requires a trusted
+     HTTPS ingress.
    - **Plex**: Legacy server on **32400** until clients migrate; then optional
      retirement.
    - **WebDAV**: Backup Infuse-compatible server. `media-server-daemon.sh`
@@ -220,9 +220,9 @@ deletion occurs.
 - **Password rotation**: `./scripts/rotate-media-webdav.sh` (see
   `docs/CREDENTIAL_ROTATION.md`).
 - **Port Forwarding**: Use stable TCP mappings via Windscribe:
-  - **Jellyfin** (default remote): External **8096** -> internal **8096** at
-    `http://82.23.253.53:8096` (Published Server URI set in Dashboard →
-    Networking).
+  - **Jellyfin**: Remove the old external **8096** -> internal **8096** HTTP
+    forward and its HTTP Published Server URI. Use a trusted HTTPS ingress for
+    remote clients.
   - **Plex** (legacy): External **32400** -> internal **32400** — remove when
     unused.
   - **WebDAV backup**: External **8088** -> internal **8080**. Do not forward

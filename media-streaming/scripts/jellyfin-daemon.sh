@@ -3,7 +3,7 @@
 #
 # Resolves the Jellyfin binary on PATH or common macOS install locations,
 # then execs it so launchd KeepAlive tracks the real process.
-# SECURITY: binds default Jellyfin listen (LAN). No public exposure here.
+# Keep native HTTP bound to the Mac's LAN interfaces, never the public VPN tunnel.
 set -euo pipefail
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
@@ -90,6 +90,13 @@ else
 	else
 		log "WARN: ffmpeg not on PATH — Jellyfin will use its bundled ffmpeg if present"
 	fi
+fi
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+network_config="$HOME/Library/Application Support/jellyfin/config/network.xml"
+if ! python3 "$script_dir/secure-jellyfin-network.py" "$network_config"; then
+	log "ERROR: refusing to start Jellyfin with unverified network configuration"
+	exit 1
 fi
 
 log "Starting Jellyfin: $bin ${args[*]-}"

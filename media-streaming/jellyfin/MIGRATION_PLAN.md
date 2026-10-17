@@ -60,17 +60,16 @@
 
 ## Phase 3 — Remote / retire Plex
 
-**Remote Jellyfin: DONE (2026-07-17) — default path**
+**Remote Jellyfin: suspended pending trusted HTTPS ingress**
 
-- Windscribe: External **8096** → Internal **8096** TCP on MacBook Air
-  (`82.23.253.53`)
-- Jellyfin Dashboard → Networking → Published Server URIs =
-  `http://82.23.253.53:8096` (keep LAN URI for home use)
-- Clients: open `http://82.23.253.53:8096/` when away from LAN (VPN connected on
-  the host so the static IP / forward is live)
+- Delete the old Windscribe external **8096** → internal **8096** TCP forward.
+- Remove the public HTTP Published Server URI from Jellyfin Networking.
+- The native LaunchAgent binds HTTP only to loopback and validated private LAN
+  IPv4 addresses and disables remote access. Restore remote clients only after a
+  trusted HTTPS ingress is configured; do not forward Jellyfin's HTTP port.
 
 **Still open (human):**
 
 - [ ] Retire Plex clients / delete Plex data / remove `32400` forward — only
       with explicit approval
-- [ ] Optional later: HTTPS reverse proxy in front of 8096
+- [ ] Configure a trusted HTTPS ingress before restoring remote Jellyfin access
