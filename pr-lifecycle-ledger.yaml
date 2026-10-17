@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 568
+ledger_revision: 569
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -28945,22 +28945,24 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - lib/safe_http.py
   - tests/test_safe_http.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2495
   attempts:
@@ -28969,8 +28971,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/personal-config#2500@26f2166e06149c2cc026c40c8e978a891654912f
   repository: abhimehro/personal-config
   pr: 2500
@@ -30829,22 +30831,24 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/807
   attempts:
@@ -30853,8 +30857,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#808@a30519057768e841764be20a76267874d712b399
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 808
@@ -30916,21 +30920,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/814
   attempts:
@@ -30939,8 +30945,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#816@eba95084c943465fdbdd1623ecab4fed8e4d96ac
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 816
@@ -30959,21 +30965,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/816
   attempts:
@@ -30982,8 +30990,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#818@5b015adea7610dd5766edff4ff9413e2d5876d39
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 818
@@ -31003,21 +31011,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/818
   attempts:
@@ -31026,8 +31036,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#819@a1262b7a16d9f85927bd126e7cb12beacf61340d
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 819
@@ -31098,22 +31108,24 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/821
   attempts:
@@ -31122,8 +31134,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#822@9359ec75cbd24900ac912f675a9d9c22dfa5f422
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 822
@@ -31340,21 +31352,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/829
   attempts:
@@ -31363,8 +31377,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#831@c0aafe083bb162fd8534f856cf4d872575e961ce
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 831
@@ -31384,22 +31398,24 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
   - tests/test_sanitize_filename.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/831
   attempts:
@@ -31408,8 +31424,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#832@cf4b691dfc81e272196c711de79a676f9fc2cc89
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 832
@@ -31472,21 +31488,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/834
   attempts:
@@ -31495,8 +31513,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#837@85d648203c1574c82356cae23e640b071c1072a0
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 837
@@ -31596,21 +31614,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/840
   attempts:
@@ -31619,8 +31639,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#841@d3f479609b4fc4e3aa06d678595173fc1dc6abb4
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 841
@@ -31727,20 +31747,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/569
   attempts:
@@ -31749,8 +31771,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#571@65bbf2378499d26b58b0521f704bf6ff38f30db9
   repository: abhimehro/series_correction_project_updated
   pr: 571
@@ -32010,20 +32032,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/587
   attempts:
@@ -32032,8 +32056,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#589@2baea914f59cfba10cb596697d8538e029f0d748
   repository: abhimehro/series_correction_project_updated
   pr: 589
@@ -32096,20 +32120,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/590
   attempts:
@@ -32118,8 +32144,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#592@6d43a2004b4c165fba1e49ac8c6dee6d3358e058
   repository: abhimehro/series_correction_project_updated
   pr: 592
@@ -32184,20 +32210,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/593
   attempts:
@@ -32206,8 +32234,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#595@8b38325049e4369d23950110073080dbf023801c
   repository: abhimehro/series_correction_project_updated
   pr: 595
@@ -32270,22 +32298,24 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/599
   attempts:
@@ -32294,8 +32324,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#601@9799a7868845ec9b546abf05c80adccb0c9a94eb
   repository: abhimehro/series_correction_project_updated
   pr: 601
@@ -32859,19 +32889,21 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - Tests/RepoPromptTests/Security/MCPTerminalRecordSanitizationTests.swift
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/471
   attempts:
@@ -32880,8 +32912,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/repoprompt-ce#473@5f416c6ccc6d6a8ac27addd82f707a3c4a75ba32
   repository: abhimehro/repoprompt-ce
   pr: 473
@@ -33451,18 +33483,20 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: UNKNOWN
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths: []
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/488
   attempts:
@@ -33471,7 +33505,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-16T12:48:49Z'
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/repoprompt-ce#490@7a223ad96b0d84ac11e02f74c0ca96c93ed6ce10
   repository: abhimehro/repoprompt-ce
   pr: 490
@@ -34133,21 +34168,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - Series_27/Analysis/test_outlier_analysis_series27.py
   - code_health_scanner.py
   - tests/test_repository_automation_common.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1040
   attempts:
@@ -34156,8 +34193,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T10:51:31Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#844@585a67985e9d2730c71c0ea7c67729a98bfd245a
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 844
@@ -34217,21 +34254,23 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths:
   - generated_output
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/846
   attempts:
@@ -34240,8 +34279,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T10:51:31Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/series_correction_project_updated#604@dcf59c1fd98c6be184654f25dace945a5928fb71
   repository: abhimehro/series_correction_project_updated
   pr: 604
@@ -34304,20 +34343,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: UNKNOWN
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
-    by reconcile).'
+  safe_default: Leave open; no merge or close without a human security decision.
+  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
+    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
+    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/605
   attempts:
@@ -34326,8 +34367,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T10:51:31Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-17T13:51:06Z'
+  guardrail_source: manual
 - key: abhimehro/repoprompt-ce#502@d240a1ab998274b7b38777ea4983baad1b4ed7c1
   repository: abhimehro/repoprompt-ce
   pr: 502
