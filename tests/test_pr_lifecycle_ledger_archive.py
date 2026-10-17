@@ -144,8 +144,8 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(
             plan["months"],
             {
-                "2026-07": {"count": 1, "path": "archive/2026-07.yaml"},
-                "2026-08": {"count": 1, "path": "archive/2026-08.yaml"},
+                "2026-07": {"count": 1, "path": "archive/2026-07-<run-id>.yaml"},
+                "2026-08": {"count": 1, "path": "archive/2026-08-<run-id>.yaml"},
             },
         )
         preview = strip.call_args.args[0]
@@ -199,6 +199,122 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(archived["month"], "2026-08")
         self.assertEqual(archived["source_ledger_revision"], 4)
         self.assertEqual(archived["items"], [old])
+        self.assertEqual(
+            archived["events"], [{"event_id": "old-event", "item_key": "old"}]
+        )
+
+    def test_later_run_preserves_prior_month_archive_and_events(self):
+        def dump(document):
+            return json.dumps(document, sort_keys=True)
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(archive, "_utc_now", return_value=NOW),
+            mock.patch.object(archive, "dump_ledger", side_effect=dump),
+            mock.patch.object(archive, "strip_in_memory_item_fields"),
+        ):
+            legacy = Path(tmp) / "archive/2026-08.yaml"
+            legacy.parent.mkdir(parents=True)
+            legacy.write_text("existing monthly archive", encoding="utf-8")
+            paths = []
+            for key, age in (("first", 45), ("second", 40)):
+                ledger = {
+                    "ledger_revision": 1,
+                    "items": [_item(key, age_days=age)],
+                    "events": [{"event_id": f"{key}-event", "item_key": key}],
+                }
+                result = archive.apply_archive(
+                    ledger, after_days=30, out_dir=Path(tmp)
+                )
+                paths.append(Path(result["archives"]["2026-08"]))
+
+            self.assertNotEqual(paths[0], paths[1])
+            self.assertEqual(paths[0].parent, Path(tmp) / "archive")
+            self.assertEqual(
+                legacy.read_text(encoding="utf-8"), "existing monthly archive"
+            )
+            for key, path in (("first", paths[0]), ("second", paths[1])):
+                document = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual([item["key"] for item in document["items"]], [key])
+                self.assertEqual(
+                    [event["event_id"] for event in document["events"]],
+                    [f"{key}-event"],
+                )
+
+    def test_apply_payload_commits_the_generated_archive_path(self):
+        ledger = {
+            "ledger_revision": 1,
+            "items": [_item("old", age_days=40)],
+            "events": [{"event_id": "old-event", "item_key": "old"}],
+        }
+
+        def dump(document):
+            return json.dumps(document, sort_keys=True)
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(archive, "_utc_now", return_value=NOW),
+            mock.patch.object(archive, "dump_ledger", side_effect=dump),
+            mock.patch.object(archive, "strip_in_memory_item_fields"),
+            mock.patch.object(
+                archive.cas, "pointer_runtime", return_value={}, create=True
+            ),
+            mock.patch.object(
+                archive.cas,
+                "run_commit",
+                return_value={"commit_sha": "b" * 40},
+                create=True,
+            ),
+            mock.patch.object(
+                archive,
+                "_cas_commit_path",
+                return_value={"commit_sha": "a" * 40},
+            ) as commit,
+        ):
+            plan = archive.plan_archive(ledger, now=NOW)
+            payload, _ = archive._apply_payload(ledger, plan, tmp, 30)
+
+        committed_path = commit.call_args.args[1]
+        self.assertEqual(committed_path, plan["months"]["2026-08"]["path"])
+        archive_path = payload["apply_result"]["archives"]["2026-08"]
+        self.assertEqual(committed_path, archive_path.removeprefix(tmp + "/"))
+        self.assertTrue(committed_path.startswith("archive/2026-08-"))
+        self.assertTrue(committed_path.endswith(".yaml"))
+
+    def test_run_archive_keeps_one_cutoff_for_plan_and_apply(self):
+        ledger = {
+            "ledger_revision": 1,
+            "items": [_item("edge", age_days=29)],
+            "events": [{"event_id": "edge-event", "item_key": "edge"}],
+        }
+        with (
+            mock.patch.object(archive, "load_yaml", side_effect=[{}, ledger]),
+            mock.patch.object(
+                archive.cas,
+                "run_preflight",
+                return_value={"ledger_path": "/tmp/ledger.yaml"},
+                create=True,
+            ),
+            mock.patch.object(
+                archive.cas, "pointer_runtime", return_value={}, create=True
+            ),
+            mock.patch.object(
+                archive.cas,
+                "run_commit",
+                return_value={"commit_sha": "b" * 40},
+                create=True,
+            ),
+            mock.patch.object(
+                archive, "_utc_now", side_effect=[NOW, NOW + timedelta(days=1)]
+            ) as clock,
+            mock.patch.object(archive, "_emit_apply") as emit,
+        ):
+            self.assertEqual(
+                archive.run_archive(apply=True, after_days=30, json_out=True), 0
+            )
+
+        self.assertEqual(clock.call_count, 1)
+        self.assertEqual(emit.call_args.args[1]["selected_count"], 0)
 
     def test_build_archive_document_uses_source_revision_and_fixed_clock(self):
         with mock.patch.object(archive, "_utc_now", return_value=NOW):

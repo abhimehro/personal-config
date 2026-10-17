@@ -2,8 +2,8 @@
 """Archive TERMINAL ledger items older than 30 days.
 
 Dry-run by default. ``--apply`` rewrites the active ledger (CAS) and writes
-``archive/YYYY-MM.yaml`` siblings on the data branch layout. Validator accepts
-archives; active ledger target size < 1MB.
+each run to ``archive/YYYY-MM-<run-id>.yaml`` on the data branch. Validator
+accepts archives; active ledger target size < 1MB.
 
 Does not close or merge PRs.
 """
@@ -17,6 +17,7 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -135,7 +136,7 @@ def plan_archive(
         "months": {
             month: {
                 "count": len(items),
-                "path": f"archive/{month}.yaml",
+                "path": f"archive/{month}-<run-id>.yaml",
             }
             for month, items in sorted(buckets.items())
         },
@@ -179,8 +180,9 @@ def _write_month_archives(
     ledger: dict[str, Any],
     dropped_events: list[dict[str, Any]],
 ) -> dict[str, str]:
-    """Write one YAML archive per month and return the written paths."""
+    """Write one uniquely named YAML archive per month for this run."""
     written: dict[str, str] = {}
+    run_id = uuid4().hex
     events_by_month = _month_events(dropped_events, buckets)
     for month, items in sorted(buckets.items()):
         doc = build_archive_document(
@@ -189,7 +191,7 @@ def _write_month_archives(
             source_revision=ledger.get("ledger_revision"),
             events=events_by_month.get(month),
         )
-        path = out_dir / "archive" / f"{month}.yaml"
+        path = out_dir / "archive" / f"{month}-{run_id}.yaml"
         path.parent.mkdir(parents=True, exist_ok=True)
         # Reuse dump_ledger shape for YAML stability.
         path.write_text(dump_ledger(doc), encoding="utf-8")
@@ -202,9 +204,10 @@ def apply_archive(
     *,
     after_days: int,
     out_dir: Path,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """Mutate the ledger to remove eligible items and events, then write outputs."""
-    selected = select_archive_items(ledger, after_days=after_days)
+    selected = select_archive_items(ledger, after_days=after_days, now=now)
     buckets = partition_by_month(selected)
     selected_keys = {item.get("key") for item in selected}
     ledger["items"] = [
@@ -237,12 +240,13 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
         out = Path(tmp) / "ledger.yaml"
         fetch = cas.run_preflight(out)
         ledger = load_yaml(Path(fetch["ledger_path"]))
-        plan = plan_archive(ledger, after_days=after_days)
+        now = _utc_now()
+        plan = plan_archive(ledger, after_days=after_days, now=now)
         plan["dry_run"] = not apply
         if not apply:
             _emit_plan(plan, json_out)
             return 0
-        payload, result = _apply_payload(ledger, plan, tmp, after_days)
+        payload, result = _apply_payload(ledger, plan, tmp, after_days, now=now)
         _emit_apply(payload, result, json_out)
     return 0
 
@@ -297,15 +301,21 @@ def _cas_commit_path(
 
 
 def _apply_payload(
-    ledger: dict[str, Any], plan: dict[str, Any], tmp: str, after_days: int
+    ledger: dict[str, Any],
+    plan: dict[str, Any],
+    tmp: str,
+    after_days: int,
+    *,
+    now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
+    result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp), now=now)
     runtime = cas.pointer_runtime()
-    # Commit each archive/YYYY-MM.yaml before the active-ledger rewrite so a
+    # Commit each unique archive before the active-ledger rewrite so a
     # later failure leaves duplication (re-archivable), never silent loss.
     archive_commits: list[dict[str, Any]] = []
     for month, file_path in sorted(result["archives"].items()):
         rel = str(Path(file_path).relative_to(tmp))
+        plan["months"][month]["path"] = rel
         text = Path(file_path).read_text(encoding="utf-8")
         archive_commits.append(
             _cas_commit_path(
@@ -318,7 +328,7 @@ def _apply_payload(
     cas_result = cas.run_commit(
         Path(result["active_path"]),
         "archive: move TERMINAL items older than "
-        f"{after_days}d into archive/YYYY-MM.yaml",
+        f"{after_days}d into archive/YYYY-MM-<run-id>.yaml",
         bump_revision=False,
     )
     payload = {
