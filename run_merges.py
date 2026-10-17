@@ -7,6 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 from gh_token_env import load_gh_token_env
 from pr_reference import PRReference
 
+# ⚡ Bolt Optimization: Module-level tuple constant avoids re-instantiating list objects on every function invocation
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+
 
 def run_gh(cmd_list):
     """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
@@ -44,7 +47,7 @@ def _fetch_pr_diff_only(item, info):
     repo, pr, title = item
     ref = PRReference.from_parts(repo, pr)
     diff = ""
-    if info and info.get("mergeStateStatus") not in ["DIRTY", "CONFLICTING"]:
+    if info and info.get("mergeStateStatus") not in _UNMERGEABLE_STATUSES:
         diff = get_diff(ref.repo, str(ref.number))
     return ref.repo, str(ref.number), title, info, diff
 
@@ -212,7 +215,7 @@ if __name__ == "__main__":
             continue
 
         status = info.get("mergeStateStatus")
-        if status in ["DIRTY", "CONFLICTING"]:
+        if status in _UNMERGEABLE_STATUSES:
             print(f"Status is {status}, moving to conflicting.")
             results["conflicting"].append((repo, pr, title))
             continue
