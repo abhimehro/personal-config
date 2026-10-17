@@ -601,6 +601,7 @@ generate_performance_report() {
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
+        .table-container { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -623,6 +624,7 @@ generate_performance_report() {
     
     <section class="section" aria-labelledby="perf-metrics-heading" role="region">
         <h2 id="perf-metrics-heading"><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
+        <div class="table-container" tabindex="0" role="region" aria-label="Data table">
         <table aria-label="Performance Metrics">
             <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
 EOF
@@ -647,6 +649,7 @@ EOF
             <tr><th scope="row">Memory Free Pages</th><td>$memory_usage</td><td class="good">GOOD</td></tr>
             <tr><th scope="row">Disk Usage</th><td><meter aria-label="Disk Usage" min="0" max="100" low="70" high="90" optimum="50" value="${disk_usage}">${disk_usage}%</meter></td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
         </table>
+        </div>
     </section>
     
     <section class="section" aria-labelledby="opt-recs-heading" role="region">

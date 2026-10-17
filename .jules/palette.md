@@ -533,3 +533,7 @@ to communicate the absence of data clearly and beautifully.
 ## 2026-10-03 - Empty State Accessibility
 **Learning:** When adding role="status" to empty-state containers for screen readers, apply the role to a nested div or span for inline content, never directly on an li element within a ul, as it overrides the implicit listitem role. Ensure block-level elements like p are not wrapped in inline span elements to avoid generating invalid HTML.
 **Action:** Always verify the HTML tag context and apply role="status" to a semantically appropriate inner element for empty states instead of blindly adding it to the outermost container.
+
+## 2026-10-12 - Keyboard-Accessible Data Tables
+**Learning:** HTML tables with many columns on small screens can clip data. Using CSS `overflow-x: auto` is good for visual scrolling, but we must also wrap the table in a container with `tabindex="0"` and `role="region"` so keyboard-only users can scroll horizontally.
+**Action:** Always wrap data tables in a `.table-container` div with `tabindex="0"`, `role="region"`, and an `aria-labelledby` referencing the table title to ensure horizontal scrolling is fully accessible.
