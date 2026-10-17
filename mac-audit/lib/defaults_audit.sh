@@ -94,7 +94,7 @@ check_defaults() {
 	fi
 
 	info "Remote Management (ARD):"
-	if pgrep -x ARDAgent &>/dev/null; then
+	if pgrep -x -- ARDAgent &>/dev/null; then
 		warn "Apple Remote Desktop agent is running"
 	else
 		pass "Apple Remote Desktop agent not running"
