@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 547
+ledger_revision: 564
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -33693,7 +33693,13 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - maintenance/bin/dev_maintenance.sh
+  - maintenance/bin/node_maintenance.sh
+  - scripts/pr_lifecycle_inventory_transport.py
+  - scripts/pr_recap.py
+  - tests/test_pr_lifecycle_open_inventory.py
+  - tests/test_pr_recap.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33733,7 +33739,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - run_merges.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33773,7 +33780,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/validate_repo_structure.sh
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33813,7 +33821,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - maintenance/bin/performance_optimizer.sh
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33890,7 +33900,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/mac-audit.yml
+  - .github/workflows/pr-recap.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/release-drafter.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
+  - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33930,7 +33950,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/utils/security_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -33970,7 +33992,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - diagnose_docker_connectivity.py
+  - tests/test_ui_palette.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34006,7 +34030,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34042,7 +34067,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - requirements-ci.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34082,7 +34108,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Series_27/Analysis/test_outlier_analysis_series27.py
+  - code_health_scanner.py
+  - tests/test_repository_automation_common.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34118,7 +34147,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - poetry.lock
+  - pyproject.toml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34158,7 +34189,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34198,7 +34231,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/processor.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34238,7 +34272,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/export_comparison_sheets.py
+  - scripts/tests/test_export_comparison_sheets_security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34278,7 +34314,15 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/AgentMode/Services/AgentSessionOrganizingSupport.swift
+  - Sources/RepoPrompt/Features/AgentMode/Services/SessionAdminWorktreeHandler.swift
+  - Sources/RepoPrompt/Features/Diagnostics/AgentMode/Stress/AgentChatStressHarness.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/ClaudeCode/SDK/ClaudeSDKNDJSONTranslator.swift
+  - Sources/RepoPrompt/Infrastructure/AI/RoutingProfiles/RoutingModelProfileResolver.swift
+  - Sources/RepoPrompt/Infrastructure/MCP/Agent/SessionAdminMCPToolService.swift
+  - Tests/RepoPromptSettingsCoreTests/ClaudeRunTelemetryDisplayGateTests.swift
+  - Tests/RepoPromptTests/AgentMode/ClaudeCompatible/ClaudeNativeApprovalAndResumeTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34318,7 +34362,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/sentinel.md
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenAIProvider.swift
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/OpenRouterProvider.swift
+  - Tests/RepoPromptTests/AI/ProviderErrorSanitizationTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34358,7 +34407,13 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentSessionRows.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
+  - Tests/RepoPromptSettingsCoreTests/ClaudeRunTelemetryDisplayGateTests.swift
+  - Tests/RepoPromptTests/AgentMode/ClaudeCompatible/ClaudeNativeApprovalAndResumeTests.swift
+  - Tests/RepoPromptTests/ContextBuilder/ContextBuilderMultiRootDiscoveryTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
