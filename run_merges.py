@@ -1,7 +1,6 @@
 import json
 import subprocess
 import sys
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
@@ -201,14 +200,16 @@ queue = [
     ),
 ]
 
-results = {"merged": [], "escalated": [], "conflicting": []}
 
-if __name__ == "__main__":
-    for repo, pr, title, info, diff in _fetch_all_pr_data_parallel(queue):
+def review_queue(queue_items):
+    """Report legacy queue items for review without exercising merge authority."""
+    results = {"merged": [], "escalated": [], "conflicting": []}
+    for repo, pr, title, info, diff in _fetch_all_pr_data_parallel(queue_items):
         print(f"\nProcessing {repo}#{pr}: {title}")
 
         if not info:
-            print("Failed to get info")
+            reasons = ["PR state unavailable; review in the PR lifecycle workflow."]
+            results["escalated"].append((repo, pr, title, reasons))
             continue
 
         status = info.get("mergeStateStatus")
@@ -217,72 +218,20 @@ if __name__ == "__main__":
             results["conflicting"].append((repo, pr, title))
             continue
 
-        diff_lower = diff.lower()
+        reasons = [
+            "Current security review, CI, approvals, and merge method must be "
+            "verified in the PR lifecycle workflow."
+        ]
+        if not diff:
+            reasons.append("PR diff unavailable.")
+        print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
+        results["escalated"].append((repo, pr, title, reasons))
 
-        # Gate 2: Security check
-        escalate = False
-        reasons = []
+    return results
 
-        for dangerous in ("eval(", "exec(", "dangerouslysetinnerhtml"):
-            if dangerous in diff_lower:
-                escalate = True
-                reasons.append("Dangerous evaluation function detected.")
-                break
-        if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-            escalate = True
-            reasons.append("Dangerous GitHub Actions workflow detected.")
-        if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-            pass
-        if ".env.example" in diff_lower and "- " in diff_lower:
-            escalate = True
-            reasons.append("Weakened .env.example.")
 
-        title_lower = title.lower()
-        for sensitive in ("auth", "payment", "migration", "sql"):
-            if sensitive in title_lower:
-                escalate = True
-                reasons.append("Touches sensitive domain (auth/payments/db).")
-                break
-
-        if escalate:
-            print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
-            results["escalated"].append((repo, pr, title, reasons))
-            continue
-
-        print("Gate 2 passed. Merging...")
-        ref = PRReference.from_parts(repo, pr)
-        env = load_gh_token_env()
-        res = subprocess.run(
-            [
-                "gh",
-                "pr",
-                "merge",
-                str(ref.number),
-                "-R",
-                ref.repo,
-                "--squash",
-                "--delete-branch",
-            ],
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=120,
-            check=False,
-        )
-        if res.returncode == 0:
-            print(f"Successfully merged {repo}#{pr}")
-            results["merged"].append((repo, pr, title))
-        else:
-            error_text = res.stderr.strip() or res.stdout.strip() or "unknown error"
-            print(f"Merge failed: {error_text}")
-            results["escalated"].append(
-                (repo, pr, title, ["Merge command failed", error_text])
-            )
-            continue
-
-        print("Waiting 5 seconds for GitHub to update state...")
-        time.sleep(5)
-
+if __name__ == "__main__":
+    results = review_queue(queue)
     print("\n--- DONE ---")
     with open("tasks/pr-merge-results.json", "w") as f:
         json.dump(results, f, indent=2)

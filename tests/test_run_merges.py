@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from run_merges import (
     _fetch_all_pr_data_parallel,
     get_diff,
+    review_queue,
     run_gh,
 )
 
@@ -140,6 +141,29 @@ class TestRunMerges(unittest.TestCase):
     def test_fetch_all_pr_data_parallel_invalid_reference(self):
         with self.assertRaises(ValueError):
             _fetch_all_pr_data_parallel([("myrepo", "1", "title")])
+
+    @patch("run_merges.subprocess.run")
+    @patch("run_merges._fetch_all_pr_data_parallel")
+    def test_review_queue_never_merges_without_lifecycle_decisions(
+        self, mock_fetch, mock_run
+    ):
+        items = [("owner/repo", str(n), "routine title") for n in range(1, 5)]
+        mock_fetch.return_value = [
+            (*items[0], {"mergeStateStatus": "CLEAN"}, "safe-looking diff"),
+            (*items[1], {"mergeStateStatus": "CLEAN"}, ""),
+            (*items[2], None, ""),
+            (*items[3], {"mergeStateStatus": "DIRTY"}, ""),
+        ]
+
+        results = review_queue(items)
+
+        mock_fetch.assert_called_once_with(items)
+        mock_run.assert_not_called()
+        self.assertEqual(results["merged"], [])
+        self.assertEqual([entry[1] for entry in results["escalated"]], ["1", "2", "3"])
+        self.assertEqual([entry[1] for entry in results["conflicting"]], ["4"])
+        self.assertIn("PR diff unavailable.", results["escalated"][1][3])
+        self.assertIn("PR state unavailable", results["escalated"][2][3][0])
 
 
 if __name__ == "__main__":
