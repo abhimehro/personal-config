@@ -1291,7 +1291,7 @@ def _safe_config_path(raw: Path) -> Path | None:
 
 
 def _default_config_candidates() -> list[Path]:
-    """Default .pr-recap.json lookup: cwd, then the git toplevel."""
+    """List the default .pr-recap.json candidates: cwd, then git toplevel."""
     candidate_paths: list[Path] = [Path(".pr-recap.json")]
     try:
         repo_root = _run_cmd(
