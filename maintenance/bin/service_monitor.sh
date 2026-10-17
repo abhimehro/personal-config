@@ -143,7 +143,7 @@ check_process_running() {
 count_widget_extensions() {
 	# ⚡ Bolt Optimization: Use pgrep to avoid ps aux and multiple process spawns overhead
 	# Note: macOS pgrep doesn't support -c, so we pipe to wc -l
-	pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' '
+	pgrep -f -- "\.appex/Contents/MacOS" | wc -l | tr -d ' '
 }
 
 count_diagnostic_reports() {

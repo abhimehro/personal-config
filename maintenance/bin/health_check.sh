@@ -339,7 +339,7 @@ fi
 
 # 10) Background service monitoring
 # ⚡ Bolt Optimization: Use pgrep to avoid ps aux and multiple process spawns overhead
-WIDGET_COUNT=$(pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' ')
+WIDGET_COUNT=$(pgrep -f -- "\.appex/Contents/MacOS" | wc -l | tr -d ' ')
 WIDGET_COUNT=$(to_int "$WIDGET_COUNT")
 append "Widget extensions running: ${WIDGET_COUNT}"
 if ((WIDGET_COUNT > 60)); then
