@@ -200,14 +200,14 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 			-subtitle "Issues detected" \
 			-message "$STATUS_MSG\n$BACKUP_MSG\nClick for details" \
 			-group "maintenance" \
-			-execute "$HOME/Library/Maintenance/bin/view_logs.sh google_drive_monitor" 2>/dev/null || true
+			-execute "$HOME/Library/Maintenance/bin/view_logs.sh google_drive_monitor" -- 2>/dev/null || true
 		log_warn "Google Drive monitoring detected potential issues"
 	else
 		# Normal operation - simple notification
 		terminal-notifier -title "Google Drive Monitor" \
 			-subtitle "Working normally" \
 			-message "$STATUS_MSG\n$BACKUP_MSG" \
-			-group "maintenance" 2>/dev/null || true
+			-group "maintenance" -- 2>/dev/null || true
 		log_info "Google Drive appears to be working normally"
 	fi
 elif command -v osascript >/dev/null 2>&1; then
