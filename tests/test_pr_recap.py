@@ -695,6 +695,7 @@ class TestConfigValidation(unittest.TestCase):
         self.assertIn("'teamId' is required", str(cm.exception))
 
     def test_invalid_json_raises_value_error(self) -> None:
+        """Malformed JSON inside a trusted root must raise ValueError."""
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_path = Path(tmpdir) / "pr-recap-bad.json"
             temp_path.write_text("{malformed json", encoding="utf-8")
@@ -704,6 +705,7 @@ class TestConfigValidation(unittest.TestCase):
                 self.assertIn("invalid JSON", str(cm.exception))
 
     def test_config_path_outside_repo_rejected(self) -> None:
+        """A config path outside trusted roots must fall back to defaults."""
         with tempfile.TemporaryDirectory() as outside:
             rogue = Path(outside) / "rogue.json"
             rogue.write_text("{}", encoding="utf-8")
@@ -1009,6 +1011,7 @@ class TestEndToEndSync(unittest.TestCase):
         self.assertEqual(exit_code, 0)
 
     def test_github_actions_event_mapping(self) -> None:
+        """A RUNNER_TEMP-contained event payload maps onto the PR context."""
         event_data = {
             "action": "ready_for_review",
             "pull_request": {
@@ -1054,9 +1057,11 @@ class TestEndToEndSync(unittest.TestCase):
             self.assertEqual(issues.get("ABHI-777"), "closes")
 
     def test_event_path_outside_runner_rejected(self) -> None:
+        """An event payload outside trusted runner roots must be ignored."""
+        rogue_payload = {"pull_request": {"number": 999, "title": "rogue"}}
         with tempfile.TemporaryDirectory() as outside:
             rogue = Path(outside) / "rogue-event.json"
-            rogue.write_text("{}", encoding="utf-8")
+            rogue.write_text(json.dumps(rogue_payload), encoding="utf-8")
             parser = pr_recap.build_parser()
             args = parser.parse_args(
                 [
@@ -1066,8 +1071,10 @@ class TestEndToEndSync(unittest.TestCase):
                     "--dry-run",
                 ]
             )
-            ctx = pr_recap.resolve_pr_context(args)
-            self.assertIsNone(ctx.pr_number)
+            with patch.object(pr_recap, "_run_cmd") as run_cmd:
+                ctx = pr_recap.resolve_pr_context(args)
+            self.assertNotEqual(ctx.pr_number, 999)
+            self.assertNotEqual(ctx.pr_title, "rogue")
 
 
 class TestSecretResolution(unittest.TestCase):

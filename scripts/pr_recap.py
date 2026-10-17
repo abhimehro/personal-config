@@ -1066,6 +1066,18 @@ def build_recap_comment(
 # ============================================================
 
 
+def _resolve_under_roots(candidate: Path, allowed_roots: list[Path]) -> Path | None:
+    """Return the resolved candidate only when contained under one root."""
+    try:
+        resolved = candidate.expanduser().resolve()
+    except OSError:
+        return None
+    for root in allowed_roots:
+        if resolved == root or root in resolved.parents:
+            return resolved
+    return None
+
+
 def _safe_event_path(raw: str | None) -> Path | None:
     """Constrain the event payload path to trusted runner/workspace roots.
 
@@ -1075,7 +1087,6 @@ def _safe_event_path(raw: str | None) -> Path | None:
     """
     if not raw:
         return None
-    candidate = Path(raw).expanduser()
     allowed_roots: list[Path] = []
     for var in ("GITHUB_WORKSPACE", "RUNNER_TEMP"):
         root = os.getenv(var)
@@ -1083,14 +1094,7 @@ def _safe_event_path(raw: str | None) -> Path | None:
             allowed_roots.append(Path(root).resolve())
     if not allowed_roots:
         return None
-    try:
-        resolved = candidate.resolve()
-    except OSError:
-        return None
-    for root in allowed_roots:
-        if resolved == root or root in resolved.parents:
-            return resolved
-    return None
+    return _resolve_under_roots(Path(raw), allowed_roots)
 
 
 def resolve_pr_context(args: argparse.Namespace) -> PRContext:
@@ -1258,13 +1262,8 @@ def resolve_pr_context(args: argparse.Namespace) -> PRContext:
 # ============================================================
 
 
-def _safe_config_path(raw: Path) -> Path | None:
-    """Constrain a config path to the current working tree or its git root.
-
-    S8707: a CLI-supplied --config path is untrusted; without containment it
-    can traverse to arbitrary files. Only paths inside the repo root (from git
-    rev-parse, resolved) or the current working directory are readable.
-    """
+def _config_allowed_roots() -> list[Path]:
+    """Trusted config roots: cwd, git toplevel, optional env allow-root."""
     allowed_roots: list[Path] = [Path.cwd().resolve()]
     try:
         repo_root = _run_cmd(
@@ -1278,34 +1277,41 @@ def _safe_config_path(raw: Path) -> Path | None:
     extra_root = os.getenv("PR_RECAP_CONFIG_ALLOWROOT")
     if extra_root:
         allowed_roots.append(Path(extra_root).resolve())
+    return allowed_roots
+
+
+def _safe_config_path(raw: Path) -> Path | None:
+    """Constrain a config path to the current working tree or its git root.
+
+    S8707: a CLI-supplied --config path is untrusted; without containment it
+    can traverse to arbitrary files. Only paths inside the repo root (from git
+    rev-parse, resolved) or the current working directory are readable.
+    """
+    return _resolve_under_roots(raw, _config_allowed_roots())
+
+
+def _default_config_candidates() -> list[Path]:
+    """Default .pr-recap.json lookup: cwd, then the git toplevel."""
+    candidate_paths: list[Path] = [Path(".pr-recap.json")]
     try:
-        resolved = raw.expanduser().resolve()
-    except OSError:
-        return None
-    for root in allowed_roots:
-        if resolved == root or root in resolved.parents:
-            return resolved
-    return None
+        repo_root = _run_cmd(
+            ["git", "rev-parse", "--show-toplevel"],
+            timeout=5,
+        ).stdout.strip()
+        if repo_root:
+            candidate_paths.append(Path(repo_root) / ".pr-recap.json")
+    except Exception as exc:
+        logger.debug("Failed to determine git toplevel: %s", exc)
+    return candidate_paths
 
 
 def load_config(config_path: Path | None = None) -> Config:
     """Load and validate configuration from .pr-recap.json."""
-    candidate_paths: list[Path] = []
     if config_path:
         contained = _safe_config_path(config_path)
-        if contained is not None:
-            candidate_paths.append(contained)
+        candidate_paths = [contained] if contained is not None else []
     else:
-        candidate_paths.append(Path(".pr-recap.json"))
-        try:
-            repo_root = _run_cmd(
-                ["git", "rev-parse", "--show-toplevel"],
-                timeout=5,
-            ).stdout.strip()
-            if repo_root:
-                candidate_paths.append(Path(repo_root) / ".pr-recap.json")
-        except Exception as exc:
-            logger.debug("Failed to determine git toplevel: %s", exc)
+        candidate_paths = _default_config_candidates()
 
     found_path: Path | None = None
     for p in candidate_paths:
