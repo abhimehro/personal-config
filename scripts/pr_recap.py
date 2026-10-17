@@ -1079,12 +1079,7 @@ def _resolve_under_roots(candidate: Path, allowed_roots: list[Path]) -> Path | N
 
 
 def _safe_event_path(raw: str | None) -> Path | None:
-    """Constrain the event payload path to trusted runner/workspace roots.
-
-    S8707: CLI/env values are untrusted input; without containment they can
-    point at arbitrary files (path traversal). Only absolute paths under
-    GITHUB_WORKSPACE or RUNNER_TEMP (resolved, no symlink escapes) are read.
-    """
+    """Constrain the event payload path to trusted runner/workspace roots (S8707)."""
     if not raw:
         return None
     allowed_roots: list[Path] = []
@@ -1281,12 +1276,7 @@ def _config_allowed_roots() -> list[Path]:
 
 
 def _safe_config_path(raw: Path) -> Path | None:
-    """Constrain a config path to the current working tree or its git root.
-
-    S8707: a CLI-supplied --config path is untrusted; without containment it
-    can traverse to arbitrary files. Only paths inside the repo root (from git
-    rev-parse, resolved) or the current working directory are readable.
-    """
+    """Constrain a config path to the current working tree or its git root (S8707)."""
     return _resolve_under_roots(raw, _config_allowed_roots())
 
 
