@@ -11,7 +11,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import yaml
 
@@ -23,6 +23,14 @@ if str(SCRIPT_DIR) not in sys.path:
 from pr_lifecycle_yaml import UniqueKeyLoader, load_yaml
 
 IN_MEMORY_ITEM_FIELDS = frozenset({"latest_transition", "latest_transition_kind"})
+
+
+class SanitizedLedgerFile(TypedDict):
+    removed_fields: int
+    ledger_revision: int
+    content: str
+
+
 DERIVED_ITEM_LINE = re.compile(
     r"^[ ]{2,4}latest_transition(?:_kind)?:[^\n]*\n",
     re.MULTILINE,
@@ -152,13 +160,17 @@ def _sanitize_text(
     return sanitized, removed, new_revision
 
 
-def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> dict[str, int]:
+def sanitize_ledger_file(path: Path, *, bump_revision: bool) -> SanitizedLedgerFile:
     """Strip derived item fields from a fetched runtime ledger file in place."""
     original = path.read_text(encoding="utf-8")
     sanitized, removed, new_revision = _sanitize_text(original, path, bump_revision)
     if sanitized != original:
         path.write_text(sanitized, encoding="utf-8")
-    return {"removed_fields": removed, "ledger_revision": new_revision}
+    return {
+        "removed_fields": removed,
+        "ledger_revision": new_revision,
+        "content": sanitized,
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:

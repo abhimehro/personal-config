@@ -33,9 +33,11 @@ UniqueKeyLoader.add_constructor(
 )
 
 
-def load_yaml(path: Path) -> dict[str, Any]:
+def load_yaml(path: Path, *, content: str | None = None) -> dict[str, Any]:
     try:
-        loader = UniqueKeyLoader(path.read_text(encoding="utf-8"))
+        loader = UniqueKeyLoader(
+            path.read_text(encoding="utf-8") if content is None else content
+        )
         try:
             data = loader.get_single_data()
         finally:

@@ -18,13 +18,15 @@ from pr_lifecycle_yaml import load_yaml
 __all__ = ["validate"]
 
 
-def validate(runtime_ledger: Path, *, include_exports: bool = False) -> int:
+def validate(
+    runtime_ledger: Path, *, content: str | None = None, include_exports: bool = False
+) -> int:
     """Validate policy plus one fetched runtime ledger; strip known projection keys."""
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
     pointer = load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
     validate_bootstrap_pointer(pointer, config)
-    ledger = load_yaml(runtime_ledger)
+    ledger = load_yaml(runtime_ledger, content=content)
     stripped = strip_in_memory_item_fields(ledger)
     validate_schema(ledger)
     validate_runtime_records(ledger, config)
