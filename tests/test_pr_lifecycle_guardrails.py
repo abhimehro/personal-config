@@ -13,9 +13,9 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_guardrails as guardrails
+import pr_lifecycle_guardrails as guardrails  # noqa: E402
 
-from tests.pr_lifecycle_helpers import guardrail_item as _item
+from tests.pr_lifecycle_helpers import guardrail_item as _item  # noqa: E402
 
 
 class ClassifyPathTests(unittest.TestCase):
@@ -482,6 +482,124 @@ class EvaluateItemTests(unittest.TestCase):
                 guardrails.classify_path(path),
                 path,
             )
+
+
+class DependabotEligibilityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.item = _item(
+            author={"login": "dependabot[bot]", "identity_source": "github_api"},
+            changed_paths=[".github/workflows/ci.yml"],
+            guardrail_outcome="REVIEW_SECURITY",
+        )
+        self.evidence_fields = {
+            "diff_text": "+++ b/.github/workflows/ci.yml\n+uses: actions/checkout@"
+            + "a" * 40,
+            "title": "Bump actions/checkout from 4.1.1 to 4.1.2",
+            "required_checks_green": True,
+            "mergeable": True,
+        }
+
+    def test_missing_or_uncertain_evidence_is_ineligible(self) -> None:
+        self.assertFalse(guardrails.dependabot_routine_eligible(self.item, None))
+        for overrides in (
+            {"diff_text": None},
+            {"diff_fetch_failed": True},
+            {"mergeable": None},
+            {"mergeable": False},
+            {"required_checks_green": None},
+            {"required_checks_green": False},
+            {"title": "Update action"},
+            {"diff_text": "+# from 4.1.1 to 4.2.0"},
+        ):
+            with self.subTest(overrides=overrides):
+                evidence = guardrails.GuardrailEvidence(
+                    **(self.evidence_fields | overrides)
+                )
+                self.assertFalse(
+                    guardrails.dependabot_routine_eligible(self.item, evidence)
+                )
+
+    def test_path_lanes_cannot_mix_or_include_non_workflow_files(self) -> None:
+        evidence = guardrails.GuardrailEvidence(**self.evidence_fields)
+        for paths in (
+            [],
+            None,
+            "uv.lock",
+            [".github/workflows/ci.yml", "uv.lock"],
+            [".github/workflows/ci.yml", "README.md"],
+            [".github/actions/setup/action.yml"],
+            [".github/workflows/README.md"],
+            ["uv.lock", "src/main.py"],
+            ["deploy/requirements.txt"],
+        ):
+            with self.subTest(paths=paths):
+                item = {**self.item, "changed_paths": paths}
+                self.assertFalse(guardrails.dependabot_routine_eligible(item, evidence))
+
+    def test_multiple_workflows_or_lockfiles_can_be_routine(self) -> None:
+        evidence = guardrails.GuardrailEvidence(**self.evidence_fields)
+        for paths in (
+            [".github/workflows/ci.yml", ".github/workflows/build.yaml"],
+            ["uv.lock", "pkg/poetry.lock"],
+        ):
+            with self.subTest(paths=paths):
+                self.assertTrue(
+                    guardrails.dependabot_routine_eligible(
+                        {**self.item, "changed_paths": paths}, evidence
+                    )
+                )
+
+    def test_missing_or_other_author_identity_is_ineligible(self) -> None:
+        evidence = guardrails.GuardrailEvidence(**self.evidence_fields)
+        for author in (
+            None,
+            "dependabot[bot]",
+            {},
+            {"login": None},
+            {"login": "renovate[bot]"},
+        ):
+            with self.subTest(author=author):
+                self.assertFalse(
+                    guardrails.dependabot_routine_eligible(
+                        {**self.item, "author": author}, evidence
+                    )
+                )
+
+    def test_routine_dependency_exemption_cannot_clear_security_diff_signals(
+        self,
+    ) -> None:
+        for paths in ([".github/workflows/ci.yml"], ["uv.lock"]):
+            with self.subTest(paths=paths):
+                item = {**self.item, "changed_paths": paths}
+                diff = "+++ b/" + paths[0] + "\n+eval(untrusted_input)\n"
+                evidence = guardrails.GuardrailEvidence(
+                    **(self.evidence_fields | {"diff_text": diff})
+                )
+                patch = guardrails.evaluate_item(item, evidence=evidence)
+                self.assertIsNotNone(patch)
+                self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+                self.assertEqual(["shell_execution"], patch["sensitive_paths"])
+
+    def test_valid_dependabot_evidence_cannot_override_review_or_ownership(
+        self,
+    ) -> None:
+        evidence = guardrails.GuardrailEvidence(**self.evidence_fields)
+        for overrides in (
+            {"author_type": "HUMAN"},
+            {"author_type": "UNKNOWN"},
+            {"risk_class": "HUMAN_REVIEW"},
+            {"lifecycle_state": "TERMINAL"},
+            *({"current_owner": owner} for owner in ("human", "stage2", "stage3")),
+            *(
+                {"guardrail_source": source}
+                for source in ("manual", "review", "human", "octopus")
+            ),
+        ):
+            with self.subTest(overrides=overrides):
+                item = self.item | overrides
+                before = copy.deepcopy(item)
+                self.assertIsNone(guardrails.evaluate_item(item, evidence=evidence))
+                self.assertEqual(before, item)
 
 
 class DependabotAndDiffTests(unittest.TestCase):

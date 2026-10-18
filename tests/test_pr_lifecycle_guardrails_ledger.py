@@ -15,12 +15,48 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_guardrails as guardrails
+import pr_lifecycle_guardrails as guardrails  # noqa: E402
 
-from tests.pr_lifecycle_helpers import guardrail_item as _item
+from tests.pr_lifecycle_helpers import guardrail_item as _item  # noqa: E402
 
 
 class EvaluateLedgerTests(unittest.TestCase):
+    def test_evidence_callback_applies_diff_signals_only_to_selected_repo(self) -> None:
+        selected = _item(
+            key="owner/repo#1@abc",
+            guardrail_outcome="REVIEW_SECURITY",
+            classification="SECURITY",
+            changed_paths=["src/main.py"],
+            revision=7,
+        )
+        excluded = _item(repository="other/repo", key="other/repo#1@def")
+        ledger = {
+            "items": [None, selected, excluded],
+            "ledger_revision": 19,
+            "events": [],
+        }
+        original_excluded = copy.deepcopy(excluded)
+        evidence_for = mock.Mock(
+            return_value=guardrails.GuardrailEvidence(
+                diff_text="+++ b/src/main.py\n+html.escape(value)\n"
+            )
+        )
+        result, summary = guardrails.evaluate_ledger(
+            ledger, {"owner/repo"}, evidence_for=evidence_for
+        )
+        evidence_for.assert_called_once_with(selected)
+        self.assertIs(result, ledger)
+        self.assertEqual("REVIEW_SECURITY", selected["guardrail_outcome"])
+        self.assertEqual(["security_configuration"], selected["sensitive_paths"])
+        self.assertEqual("SENSITIVE", selected["risk_class"])
+        self.assertEqual(7, selected["revision"])
+        self.assertEqual(19, ledger["ledger_revision"])
+        self.assertEqual([], ledger["events"])
+        self.assertEqual(original_excluded, excluded)
+        self.assertEqual(1, summary["evaluated"])
+        self.assertEqual(1, summary["outcomes_unchanged"])
+        self.assertEqual([], summary["changes"])
+
     def test_metadata_repair_preserves_revision_events_and_reports_no_flip(
         self,
     ) -> None:
