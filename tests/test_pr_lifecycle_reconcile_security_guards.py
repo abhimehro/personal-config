@@ -160,6 +160,25 @@ class SecurityDiffEvidenceTests(unittest.TestCase):
                 )
                 self.assertFalse(guards.has_diff_security_backing(diff))
 
+    def test_dashed_content_lines_inside_hunks_are_not_mistaken_for_headers(self):
+        removed = _diff("src/report.py", "--- os.path.realpath(target)")
+        added = _diff("src/report.py", "+++ authenticate(user)")
+        self.assertTrue(guards.has_diff_security_backing(removed))
+        self.assertTrue(guards.has_diff_security_backing(added))
+
+    def test_real_token_shapes_are_backing(self):
+        for token in (
+            "AKIAIOSFODNN7EXAMPLE",
+            "ghp_" + "a" * 36,
+            "xoxb-1234567890-abcdefghij",
+        ):
+            with self.subTest(token=token):
+                self.assertTrue(
+                    guards.has_diff_security_backing(
+                        _diff("src/report.py", f'+TOKEN = "{token}"')
+                    )
+                )
+
     def test_deleted_production_file_after_test_diff_still_supplies_backing(self):
         diff = _diff("tests/test_report.py", "+log.info('ok')") + (
             "diff --git a/src/report.py b/src/report.py\n"

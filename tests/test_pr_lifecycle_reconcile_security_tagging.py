@@ -327,22 +327,17 @@ class SecurityIntakeTests(unittest.TestCase):
 
 
 class SecurityReclassificationTests(unittest.TestCase):
-    def test_collect_actions_keeps_primary_action_before_reclassification(self):
-        item = _security_item(diff_text="")
+    def test_drifted_head_reanchors_without_reclassifying_on_mixed_evidence(self):
+        item = _security_item(
+            head_sha="a" * 40, base_sha="b" * 40, diff_text="+++ b/src/x.py\n+x = 1\n"
+        )
         before = deepcopy(item)
         live = {**_OPEN_LIVE, "baseRefOid": "c" * 40}
         with mock.patch.object(reconcile, "_gh_pr_view", return_value=live):
             actions = reconcile.collect_actions(
                 {"items": [item]}, {"lifecycle": {}}, now=NOW
             )
-            limited = reconcile.collect_actions(
-                {"items": [item]}, {"lifecycle": {}}, now=NOW, limit=1
-            )
-        self.assertEqual(
-            [action["action"] for action in actions],
-            ["REANCHOR_HEAD", "RECLASSIFY_TITLE_SECURITY"],
-        )
-        self.assertEqual(limited, actions[:1])
+        self.assertEqual([action["action"] for action in actions], ["REANCHOR_HEAD"])
         self.assertEqual(item, before)
 
     def test_path_backfill_does_not_clear_security_before_paths_are_applied(self):
@@ -413,6 +408,26 @@ class SecurityReclassificationTests(unittest.TestCase):
                 )
                 fetch.assert_not_called()
 
+    def test_live_head_drift_from_ledger_anchor_skips_reclassification(self):
+        benign = "+++ b/src/report.py\n+log.info(1)\n"
+        anchored = {"head_sha": "a" * 40, "base_sha": "b" * 40, "diff_text": benign}
+        self.assertIsNotNone(
+            reconcile._security_tag_reconcile_action(
+                _security_item(**anchored), _OPEN_LIVE
+            )
+        )
+        for live in (
+            {**_OPEN_LIVE, "headRefOid": "c" * 40},
+            {**_OPEN_LIVE, "baseRefOid": "c" * 40},
+        ):
+            item = _security_item(**anchored)
+            with (
+                self.subTest(live=live),
+                mock.patch.object(reconcile, "_gh_pr_diff") as fetch,
+            ):
+                self.assertIsNone(reconcile._security_tag_reconcile_action(item, live))
+                fetch.assert_not_called()
+
     def test_invalid_lookup_identity_fails_closed(self):
         for fields in (
             {"repository": ""},
@@ -433,11 +448,12 @@ class SecurityReclassificationTests(unittest.TestCase):
                 )
                 fetch.assert_not_called()
 
-    def test_cached_item_diff_precedes_live_diff_and_empty_is_valid(self):
+    def test_cached_item_diff_precedes_live_diff_and_empty_fails_closed(self):
         security_diff = "+++ b/src/report.py\n+authenticate(user)\n"
         for item_diff, live_diff, reclassify in (
-            ("", security_diff, True),
+            ("", security_diff, False),
             (security_diff, "", False),
+            ("+++ b/src/report.py\n+log.info(1)\n", security_diff, True),
         ):
             with (
                 self.subTest(item_diff=item_diff),
@@ -452,7 +468,8 @@ class SecurityReclassificationTests(unittest.TestCase):
 
     def test_live_diff_precedes_fetch_when_item_diff_is_missing(self):
         for diff, reclassify in (
-            ("", True),
+            ("", False),
+            ("+++ b/src/report.py\n+log.info(1)\n", True),
             ("+++ b/src/report.py\n+authenticate(user)\n", False),
         ):
             with (
@@ -468,7 +485,8 @@ class SecurityReclassificationTests(unittest.TestCase):
     def test_diff_fetch_failure_preserves_item_and_success_produces_action(self):
         for diff, reclassify in (
             (None, False),
-            ("", True),
+            ("", False),
+            ("+++ b/src/report.py\n+log.info(1)\n", True),
             ("+++ b/src/report.py\n+authenticate(user)\n", False),
         ):
             item = _security_item()
@@ -553,9 +571,16 @@ class SecurityReclassificationTests(unittest.TestCase):
 
 
 class SecurityDiffLookupTests(unittest.TestCase):
-    def test_successful_lookup_returns_stdout_including_empty_diff(self):
+    def test_successful_lookup_returns_stdout_and_empty_output_fails_closed(self):
         command = ["gh", "pr", "diff", "99", "--repo", REPO]
-        for diff in ("", "+++ b/src/report.py\n+authenticate(user)\n"):
+        for diff, expected in (
+            ("", None),
+            ("  \n", None),
+            (
+                "+++ b/src/report.py\n+authenticate(user)\n",
+                "+++ b/src/report.py\n+authenticate(user)\n",
+            ),
+        ):
             result = reconcile.subprocess.CompletedProcess(command, 0, stdout=diff)
             with (
                 self.subTest(diff=diff),
@@ -563,7 +588,7 @@ class SecurityDiffLookupTests(unittest.TestCase):
                     reconcile.subprocess, "run", return_value=result
                 ) as run,
             ):
-                self.assertEqual(reconcile._gh_pr_diff(REPO, 99), diff)
+                self.assertEqual(reconcile._gh_pr_diff(REPO, 99), expected)
                 run.assert_called_once_with(
                     command, check=False, capture_output=True, text=True, timeout=60
                 )

@@ -162,8 +162,9 @@ def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
 def _gh_pr_diff(repo: str, pr_num: int) -> str | None:
     """Fetch the PR's unified diff via gh CLI.
 
-    Return None on process launch errors, a 60-second timeout, or a nonzero
-    exit status; otherwise return stdout, which may be empty.
+    Return None on process launch errors, a 60-second timeout, a nonzero exit
+    status, or empty output (an open PR always changes at least one file, so
+    empty output is untrusted evidence); otherwise return stdout.
     """
     cmd = ["gh", "pr", "diff", str(pr_num), "--repo", repo]
     try:
@@ -172,7 +173,7 @@ def _gh_pr_diff(repo: str, pr_num: int) -> str | None:
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
-    if completed.returncode != 0:
+    if completed.returncode != 0 or not completed.stdout.strip():
         return None
     return completed.stdout
 
@@ -455,8 +456,8 @@ def _security_tag_reconcile_action(
 ) -> dict[str, Any] | None:
     """Plan reclassification for an open, nonterminal BOT PR lacking backing.
 
-    Return None for forced holds, missing changed paths, security backing,
-    or a failed diff lookup. Prefer the item's diff, then the live PR's diff,
+    Return None for forced holds, head/base drift, missing changed paths,
+    security backing, or a failed or empty diff lookup. Prefer the item's diff, then the live PR's diff,
     fetching via gh only when both are None. Do not mutate the item or PR.
     """
     if not (
@@ -466,6 +467,7 @@ def _security_tag_reconcile_action(
         and item.get("author_type") == "BOT"
         and item.get("classification") == "SECURITY"
         and not guards.is_forced_security_hold(item)
+        and not _drift_fields(item, live)[2]
     ):
         return None
     paths = item.get("changed_paths")
@@ -484,6 +486,8 @@ def _security_tag_reconcile_action(
         diff_text = _gh_pr_diff(repo, int(pr_num))
         if diff_text is None:
             return None
+    if not str(diff_text).strip():
+        return None
     return guards.evaluate_security_tag_reconcile(item, diff_text=str(diff_text))
 
 

@@ -208,9 +208,10 @@ _DIFF_SECURITY_PATTERNS: tuple[re.Pattern[str], ...] = (
     ),
     re.compile(
         r"\b(api_key|secret_key|private_key|gitleaks|hmac\.compare_digest|"
-        r"secrets\.|AKIA\[0-9A-Z\]|gh\[pousr\]_|xox\[abposr\]-)\b",
+        r"secrets\.)\b",
         re.IGNORECASE,
     ),
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b|\bgh[pousr]_\w{20,}|\bxox[abposr]-[\w-]{10,}"),
     re.compile(
         r"\b(allow_redirects|ipaddress|urllib\.parse|SSRF|validate_url|safe_http)\b"
     ),
@@ -272,30 +273,51 @@ def has_path_security_backing(changed_paths: Any) -> bool:
     )
 
 
+def _diff_header_is_scannable(lines: list[str], index: int) -> bool | None:
+    """Return scan eligibility if lines[index] opens a file header pair.
+
+    A header is a ``--- a/`` or ``--- /dev/null`` line directly followed by a
+    ``+++ b/`` or ``+++ /dev/null`` line; the path of the non-null side decides
+    eligibility. Return None when the line is not a header.
+    """
+    line = lines[index]
+    nxt = lines[index + 1] if index + 1 < len(lines) else ""
+    if not (line.startswith("--- ") and nxt.startswith("+++ ")):
+        return None
+    paths = [side[6:].strip() for side in (line, nxt) if side[4:6] in ("a/", "b/")]
+    if not paths:
+        return None
+    return not any(
+        is_jules_journal_path(path) or bool(_TEST_PATH_RE.search(path))
+        for path in paths
+    )
+
+
 def has_diff_security_backing(diff_text: Any) -> bool:
     """Return whether added or removed lines match security-related patterns.
 
-    Exclude file headers and files identified by +++ b/ headers as tests or
-    Jules journals. Lines before such a header are eligible for matching.
-    Empty or non-string diffs provide no backing.
+    A ``--- ``/``+++ `` pair that opens a file section selects the file: tests
+    and Jules journals are skipped, and the ``a/`` side covers deleted files
+    whose ``+++`` header is ``/dev/null``. Content lines that merely begin with
+    ``--`` or ``++`` are still scanned. Lines before any header are eligible
+    for matching. Empty or non-string diffs provide no backing.
     """
     if not isinstance(diff_text, str) or not diff_text.strip():
         return False
-    in_non_test_file = True
-    for line in diff_text.splitlines():
-        if line.startswith("+++ b/"):
-            target = line[6:].strip()
-            in_non_test_file = not (
-                is_jules_journal_path(target) or bool(_TEST_PATH_RE.search(target))
-            )
+    lines = diff_text.splitlines()
+    scannable = True
+    skip_next = False
+    for index, line in enumerate(lines):
+        if skip_next:
+            skip_next = False
             continue
-        if not in_non_test_file:
-            continue
-        is_changed = (line.startswith("+") and not line.startswith("+++")) or (
-            line.startswith("-") and not line.startswith("---")
-        )
-        if is_changed and any(p.search(line) for p in _DIFF_SECURITY_PATTERNS):
-            return True
+        header = _diff_header_is_scannable(lines, index)
+        if header is not None:
+            scannable = header
+            skip_next = True
+        elif scannable and line[:1] in ("+", "-"):
+            if any(p.search(line) for p in _DIFF_SECURITY_PATTERNS):
+                return True
     return False
 
 
