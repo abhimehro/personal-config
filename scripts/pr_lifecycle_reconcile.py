@@ -159,6 +159,25 @@ def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
     return paths
 
 
+def _gh_pr_diff(repo: str, pr_num: int) -> str | None:
+    """Fetch the PR's unified diff via gh CLI.
+
+    Return None on process launch errors, a 60-second timeout, a nonzero exit
+    status, or empty output (an open PR always changes at least one file, so
+    empty output is untrusted evidence); otherwise return stdout.
+    """
+    cmd = ["gh", "pr", "diff", str(pr_num), "--repo", repo]
+    try:
+        completed = subprocess.run(  # nosec B603
+            cmd, check=False, capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return None
+    return completed.stdout
+
+
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     """Return days since the item update, or None for an invalid timestamp."""
     stamp = _parse_utc(item.get("updated_at_utc"))
@@ -432,6 +451,46 @@ def _path_backfill_action(
     }
 
 
+def _security_tag_reconcile_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Plan reclassification for an open, nonterminal BOT PR lacking backing.
+
+    Return None for forced holds, head/base drift, missing changed paths,
+    security backing, or a failed or empty diff lookup. Prefer the item's diff, then the live PR's diff,
+    fetching via gh only when both are None. Do not mutate the item or PR.
+    """
+    if not (
+        isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "OPEN"
+        and item.get("lifecycle_state") != "TERMINAL"
+        and item.get("author_type") == "BOT"
+        and item.get("classification") == "SECURITY"
+        and not guards.is_forced_security_hold(item)
+        and not _drift_fields(item, live)[2]
+    ):
+        return None
+    paths = item.get("changed_paths")
+    if not isinstance(paths, list) or not paths:
+        return None
+    if guards.has_path_security_backing(paths):
+        return None
+    diff_text = item.get("diff_text")
+    if diff_text is None:
+        diff_text = live.get("diff_text")
+    if diff_text is None:
+        repo = str(item.get("repository") or "")
+        pr_num = item.get("pr")
+        if not repo or not _positive_pr_number(pr_num):
+            return None
+        diff_text = _gh_pr_diff(repo, int(pr_num))
+        if diff_text is None:
+            return None
+    if not str(diff_text).strip():
+        return None
+    return guards.evaluate_security_tag_reconcile(item, diff_text=str(diff_text))
+
+
 def classify_item(
     item: dict[str, Any],
     live: dict[str, Any] | None,
@@ -622,7 +681,12 @@ def apply_action_to_ledger(
     item: dict[str, Any],
     action: dict[str, Any],
 ) -> dict[str, Any]:
-    """Apply an action in memory and return the appended transition event."""
+    """Apply an action to the item and ledger in memory.
+
+    Return the appended transition event, or {"event_id": None} for an
+    in-place action that leaves item revision unchanged. ReconcileSkip
+    propagates when an anchor is blocked or an in-place action has no work.
+    """
     _prepare_live_head(ledger, item, action)
     if action.get("action") == "REANCHOR_HEAD":
         return _reanchor_item(ledger, item, action)
@@ -630,6 +694,8 @@ def apply_action_to_ledger(
         return _note_observed_terminal(ledger, item, action)
     if action.get("action") == "BACKFILL_PATHS":
         return _backfill_item_paths(ledger, item, action)
+    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
+        return _reclassify_title_security_item(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -691,6 +757,38 @@ def _backfill_item_paths(
     if item.get("changed_paths") == paths:
         raise ReconcileSkip("backfill_noop")
     item["changed_paths"] = paths
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
+def _reclassify_title_security_item(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply a prevalidated security reclassification to the item in place.
+
+    Replace classification and sensitive paths from the action, defaulting
+    to REFACTOR and no paths. If requested, reset REVIEW_SECURITY to
+    PASS_ROUTINE with routine risk and follow-up guidance. Advance only the
+    ledger revision, leaving item revision and timestamp unchanged, and
+    return {"event_id": None}. Raise ReconcileSkip if already non-SECURITY.
+    """
+    if item.get("classification") != "SECURITY":
+        raise ReconcileSkip("reclassify_noop")
+    to_cls = str(action.get("to_classification") or "REFACTOR")
+    item["classification"] = to_cls
+    item["sensitive_paths"] = list(action.get("sensitive_paths") or [])
+    if (
+        action.get("clear_review_security")
+        and item.get("guardrail_outcome") == "REVIEW_SECURITY"
+    ):
+        item["guardrail_outcome"] = "PASS_ROUTINE"
+        item["risk_class"] = "ROUTINE"
+        item["guardrail_source"] = "path_eval"
+        item["safe_default"] = "Leave open; eligible for Stage 1 routine evaluation."
+        item["next_action"] = (
+            "Stage 1: title-only security tag cleared by reconcile "
+            "(no sensitive path or diff backing)."
+        )
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 
@@ -842,7 +940,9 @@ def build_intake_item(
 
     Use normalized inventory fields and policy to classify the author. Start
     at revision zero with UNKNOWN risk and NOT_RUN guardrails; do not modify
-    the PR or ledger. Missing required inventory fields raise KeyError.
+    the PR or ledger. Infer classification from supplied changed paths and diff,
+    and sensitive classes from paths; title keywords alone do not imply SECURITY.
+    Missing required inventory fields raise KeyError.
     """
     verdict = classify_pr_identity(live, policy)
     author = {
@@ -863,6 +963,18 @@ def build_intake_item(
     pr = int(live["number"])
     head_sha = str(live["headRefOid"])
     url = str(live["url"])
+    raw_paths = live.get("changed_paths")
+    changed_paths = (
+        sorted(
+            {str(p).strip() for p in raw_paths if isinstance(p, str) and str(p).strip()}
+        )
+        if isinstance(raw_paths, list)
+        else []
+    )
+    classification = guards.infer_pr_classification(
+        {**live, "changed_paths": changed_paths},
+        diff_text=live.get("diff_text"),
+    )
     return {
         "key": f"{repository}#{pr}@{head_sha}",
         "repository": repository,
@@ -872,10 +984,10 @@ def build_intake_item(
         "head_sha": head_sha,
         "author": author,
         "author_type": verdict.author_type,
-        "classification": "UNKNOWN",
+        "classification": classification,
         "risk_class": "UNKNOWN",
-        "sensitive_paths": [],
-        "changed_paths": [],
+        "sensitive_paths": guards.sticky_sensitive_classes(changed_paths),
+        "changed_paths": changed_paths,
         "guardrail_outcome": "NOT_RUN",
         "lifecycle_state": "STAGE1_INTAKE",
         "current_owner": "stage1",
@@ -1052,9 +1164,9 @@ def _ingest_action(
 
 
 def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
-    """Look up and classify one nonterminal item; return 0-2 planned actions."""
-    # A changed-paths backfill rides alongside the primary action so the
-    # guardrail evaluator can adjudicate the item on evidence next pass.
+    """Look up and classify one nonterminal item; return planned actions."""
+    # Data-only actions (path backfill and title-only security tag clearing)
+    # ride alongside the primary action so guardrails evaluate real evidence.
     if not isinstance(item, dict):
         return []
     if item.get("lifecycle_state") == "TERMINAL":
@@ -1067,6 +1179,9 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
     backfill = _path_backfill_action(item, live)
     if backfill is not None:
         actions.append(backfill)
+    reclassify = _security_tag_reconcile_action(item, live)
+    if reclassify is not None:
+        actions.append(reclassify)
     return actions
 
 
@@ -1353,3 +1468,7 @@ if __name__ == "__main__":
 # Aliases
 classify_item = classify_item
 collect_actions = collect_actions
+infer_pr_classification = guards.infer_pr_classification
+has_security_backing = guards.has_security_backing
+evaluate_security_tag_reconcile = guards.evaluate_security_tag_reconcile
+reconcile_security_tagging_summary = guards.reconcile_security_tagging_summary
