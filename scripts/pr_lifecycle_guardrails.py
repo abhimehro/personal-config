@@ -237,7 +237,11 @@ def is_sentinel_title_standin(item: dict[str, Any]) -> bool:
 
 
 def classify_path(path: Any) -> set[str]:
-    """Return the taxonomy classes a changed path matches (empty when clean)."""
+    """Return the taxonomy classes a changed path matches (empty when clean).
+
+    Non-string or blank paths and .jules Markdown journals match no classes.
+    Surrounding whitespace is stripped before matching.
+    """
     if not isinstance(path, str) or not path.strip():
         return set()
     text = path.strip()
@@ -321,7 +325,10 @@ def _advisory_name(name: str, patterns: Sequence[str]) -> bool:
 
 
 def _check_records(checks: Any) -> list[dict[str, Any]] | None:
-    """Normalize a gh rollup list or a GraphQL contexts connection."""
+    """Normalize a gh rollup list or a GraphQL contexts connection.
+
+    Discard non-mapping entries; return None for an unsupported shape.
+    """
     if isinstance(checks, list):
         return [item for item in checks if isinstance(item, dict)]
     if isinstance(checks, dict):
@@ -345,11 +352,13 @@ def _check_identity(check: dict[str, Any]) -> tuple[str, str, bool]:
 
 
 def required_checks_green(checks: Any, advisory_patterns: Sequence[str]) -> bool | None:
-    """Return whether required checks are green.
+    """Return whether all non-advisory checks have acceptable conclusions.
 
-    Advisory names are warnings and never make this false. None means the
-    rollup is missing or empty, which is not evidence of a green build.
-    Pending or failing required checks return False.
+    Advisory patterns match exact names or prefixes ending in ``*``. Return
+    True when every record is advisory, or all remaining checks completed
+    with SUCCESS, SKIPPED, NEUTRAL, or PASSED. Pending, failing, or unknown
+    conclusions return False. None means the rollup is missing, unsupported,
+    or contains no mapping records.
     """
     records = _check_records(checks)
     if not records:
@@ -371,7 +380,7 @@ def required_checks_green(checks: Any, advisory_patterns: Sequence[str]) -> bool
 
 
 def _changed_diff_lines(diff_text: str) -> list[tuple[str, str, str]]:
-    """Yield (path, marker, text) for added and removed diff lines."""
+    """Return a list of (path, marker, text) for added and removed diff lines."""
     rows: list[tuple[str, str, str]] = []
     path = ""
     for raw in diff_text.splitlines():
@@ -446,9 +455,11 @@ def _bump_levels(text: str) -> set[str]:
 
 
 def resolved_bump(title: str | None, diff_text: str | None) -> str | None:
-    """Return minor or patch when title and diff agree, else None.
+    """Return a resolved minor or patch bump from title or diff text, else None.
 
-    A major bump, a disagreement, or no parseable bump is not a routine bump.
+    If both sources contain from/to version phrases, their bump-level sets
+    must agree. Major bumps, downgrades, equal versions, and no parseable
+    bump return None. A mix of minor and patch bumps resolves to minor.
     The title phrase is accepted when the diff does not name a different level,
     because SHA-pin diffs often omit the semver text.
     """
@@ -467,7 +478,7 @@ def resolved_bump(title: str | None, diff_text: str | None) -> str | None:
 
 
 def _is_dependabot(item: dict[str, Any]) -> bool:
-    """Return whether the ledger author login is Dependabot."""
+    """Return whether the ledger author login contains dependabot, ignoring case."""
     author = item.get("author")
     if not isinstance(author, dict):
         return False
@@ -495,7 +506,11 @@ def _only_lockfile_paths(paths: Sequence[str]) -> bool:
 
 
 def permissions_block_changed(diff_text: str) -> bool:
-    """Return whether a workflow permissions block gains or loses lines."""
+    """Return whether a diff changes permissions or a recognized permission key.
+
+    Also detect edits within a permissions block visible in hunk context.
+    Indented permission keys are detected even without a visible block header.
+    """
     in_block = False
     block_indent: int | None = None
     for raw in diff_text.splitlines():
@@ -542,7 +557,10 @@ def _action_pin_ok(ref: str) -> bool:
 
 
 def added_actions_pinned(diff_text: str) -> bool:
-    """Return whether every added uses: ref is a full SHA or a local action."""
+    """Return whether every added uses: ref is a full SHA or a local action.
+
+    Return True when no added line contains a uses: ref.
+    """
     for _path, marker, line in _changed_diff_lines(diff_text):
         if marker != "+":
             continue
@@ -555,11 +573,13 @@ def added_actions_pinned(diff_text: str) -> bool:
 def dependabot_routine_eligible(
     item: dict[str, Any], evidence: GuardrailEvidence | None
 ) -> bool:
-    """Return whether a Dependabot workflow or lockfile bump is minor or patch.
+    """Return whether a Dependabot bump qualifies for the routine path exemption.
 
-    Majors, permission edits, unpinned actions, red or unknown required
-    checks, and a non-MERGEABLE PR stay ineligible. Missing evidence fails
-    closed because these paths are otherwise sticky.
+    Paths must be nonempty and exclusively workflow YAML or exclusively the
+    lockfile taxonomy class. Require a resolved minor or patch bump, a fetched
+    diff, green non-advisory checks, and a MERGEABLE PR. Workflow bumps also
+    require no permission edits and only pinned or local added action refs.
+    Missing evidence fails closed because these paths are otherwise sticky.
     """
     paths = item.get("changed_paths")
     if not isinstance(paths, list) or evidence is None or not _is_dependabot(item):
@@ -586,7 +606,12 @@ def dependabot_routine_eligible(
 
 
 def needs_live_evidence(item: dict[str, Any]) -> bool:
-    """Return whether a hold or Dependabot lane needs a diff or check rollup."""
+    """Return whether path evaluation needs a diff or check rollup.
+
+    Require nonempty changed_paths. Dependabot workflow-only or lockfile-only
+    items need evidence; other items with sticky path classes do not. With no
+    sticky classes, only SECURITY classifications or clearable holds need it.
+    """
     paths = item.get("changed_paths")
     if not isinstance(paths, list) or not paths:
         return False
@@ -625,8 +650,10 @@ def fetch_guardrail_evidence(
 ) -> GuardrailEvidence:
     """Read title, diff, mergeability, and checks for one ledger item.
 
-    A failed view or diff is ``diff_fetch_failed`` so the caller can keep
-    the hold. This does not write the ledger.
+    With include_diff=False, skip the diff request and return empty diff_text.
+    A missing repository, a non-integer PR, command failures or timeouts, or invalid
+    view JSON return evidence with diff_fetch_failed=True so the caller can
+    keep the hold. This does not write the ledger.
     """
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
@@ -702,15 +729,18 @@ def evaluate_item(
     """Return a field patch without mutating the item, or None if unchanged.
 
     Only evaluable outcomes on nonterminal BOT items re-evaluate. Items
-    without a nonempty changed_paths list keep their outcome. Items owned by
-    human/stage2/stage3 or stamped with a protected ``guardrail_source``
-    (manual/review/human/octopus) are never touched. ``clear_standin`` is
-    accepted for CLI compatibility and does not gate the downgrade.
+    without a nonempty changed_paths list keep their outcome. HUMAN_REVIEW
+    items and items owned by human/stage2/stage3 are never touched. Protected
+    ``guardrail_source`` values (manual/review/human/octopus) are untouched
+    except for the manual Stage 1 Sentinel-title stand-in. ``clear_standin``
+    is accepted for CLI compatibility and does not gate the downgrade.
 
-    Sticky path classes and security-behavior diff signals produce
-    ``REVIEW_SECURITY``. A classification label does not. ``HOLD_CONTRACT``
-    and ``HOLD_EVIDENCE`` stay put when the new decision is still a hold.
-    A failed diff fetch keeps an existing hold instead of clearing it.
+    Sticky path classes, except eligible Dependabot exemptions, and supplied
+    security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
+    label alone does not. Missing evidence permits path-only evaluation; an
+    explicitly failed fetch preserves clearable holds and holds SECURITY-labeled
+    items. ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision
+    is still a hold.
     """
     del clear_standin  # CLI flag remains; downgrade no longer depends on it.
     if not _evaluable(item):
@@ -786,7 +816,17 @@ def evaluate_ledger(
     clear_standin: bool = False,
     evidence_for: Callable[[dict[str, Any]], GuardrailEvidence | None] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Apply evaluate_item across items; return (ledger, summary)."""
+    """Update ledger items in place; return the same ledger and a summary.
+
+    A nonempty repos_filter limits evaluation to those repositories; None or
+    an empty set includes all. If supplied, evidence_for is called for each
+    mapping item passing that filter, even if evaluation later skips it.
+    Callback errors propagate, leaving any earlier updates in place.
+
+    Applied patches refresh updated_at_utc without changing item revisions or
+    events. The summary counts patches and skipped evaluations and lists only
+    outcome changes; filtered-out and non-mapping entries are not counted.
+    """
     summary: dict[str, Any] = {
         "evaluated": 0,
         "outcomes_unchanged": 0,
@@ -810,7 +850,16 @@ def evaluate_ledger(
 
 
 def run_guardrails(args: argparse.Namespace) -> int:
-    """Fetch the ledger, evaluate items, print or CAS-apply the result."""
+    """Fetch the ledger, evaluate items, print JSON, and return zero on success.
+
+    args.repos_filter optionally limits repositories; args.apply persists
+    changes through CAS only if at least one item receives a patch. Without
+    args.apply, only report proposed changes. Fetch live evidence as needed.
+
+    Raise ValueError if path rules reference unknown taxonomy classes. Errors
+    from configuration loading, ledger preflight, and CAS persistence propagate
+    to the caller.
+    """
     config = load_yaml(CONFIG_PATH)
     taxonomy = (config.get("sensitive_path_taxonomy") or {}).get("classes") or []
     unknown = {name for name, _ in _PATH_RULES} - set(taxonomy)
@@ -825,6 +874,7 @@ def run_guardrails(args: argparse.Namespace) -> int:
     def _evidence_for(item: dict[str, Any]) -> GuardrailEvidence | None:
         # Fetch only when a clean path list would otherwise clear a hold or
         # a Dependabot lane needs checks. Ordinary docs stay offline.
+        """Fetch live evidence only when paths and the current hold require it."""
         if not needs_live_evidence(item):
             return None
         return fetch_guardrail_evidence(item, advisory)

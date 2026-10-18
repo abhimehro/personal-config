@@ -47,7 +47,13 @@ def replay_items(
     items: list[Any],
     evidence_by_key: dict[str, guardrails.GuardrailEvidence | None],
 ) -> dict[str, Any]:
-    """Apply the classifier to items and group moves by rule."""
+    """Return rule-grouped clearance counts and a Sentinel audit without mutation.
+
+    Look up optional evidence by item key and skip non-mapping entries. Include
+    old/new outcomes and PR URLs for moves from clearable holds to PASS_ROUTINE,
+    keys whose evidence reports a failed fetch, and Sentinel persona rows.
+    No evidence is fetched here; missing entries use path-only evaluation.
+    """
     grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in _RULES}
     sentinel: list[dict[str, Any]] = []
     fetch_failed: list[str] = []
@@ -102,6 +108,10 @@ def replay_items(
 
 
 def _advisory_patterns(config: dict[str, Any]) -> list[str]:
+    """Return configured lifecycle.unblock advisory patterns as strings.
+
+    Return an empty list when advisory_checks is missing, empty, or not a list.
+    """
     unblock = (config.get("lifecycle") or {}).get("unblock") or {}
     patterns = unblock.get("advisory_checks") or []
     if not isinstance(patterns, list):
@@ -110,7 +120,7 @@ def _advisory_patterns(config: dict[str, Any]) -> list[str]:
 
 
 def _should_fetch(item: dict[str, Any]) -> bool:
-    """Fetch live evidence for holds, security labels, and Dependabot lanes."""
+    """Return whether a nonterminal BOT item needs live replay evidence."""
     if item.get("lifecycle_state") == "TERMINAL":
         return False
     if item.get("author_type") != "BOT":
@@ -123,12 +133,21 @@ def _should_fetch(item: dict[str, Any]) -> bool:
 
 
 def _load_config() -> dict[str, Any]:
+    """Load the guardrail YAML configuration.
+
+    Raise ValueError for an unreadable file, invalid YAML, or a non-mapping root.
+    """
     loaded = load_yaml(guardrails.CONFIG_PATH)
     return loaded if isinstance(loaded, dict) else {}
 
 
 def replay_ledger(ledger: dict[str, Any], *, fetch: bool) -> dict[str, Any]:
-    """Replay one ledger. ``fetch`` reads GitHub and does not write it."""
+    """Return a replay report with ledger_revision without mutating the ledger.
+
+    When fetch is True, read GitHub evidence for eligible BOT items, including
+    diffs only when needed. Otherwise use ledger fields alone. Configuration
+    is loaded in both modes; configuration and worker exceptions propagate.
+    """
     config = _load_config()
     patterns = _advisory_patterns(config)
     evidence_by_key: dict[str, guardrails.GuardrailEvidence | None] = {}
@@ -198,7 +217,16 @@ def _format_report(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Load a ledger snapshot and print the replay. Default fetches GitHub."""
+    """Print a Markdown or JSON replay report; return zero on success.
+
+    argv defaults to process arguments. --ledger selects a local snapshot;
+    otherwise preflight fetches the runtime ledger. --no-fetch skips per-PR
+    evidence requests but does not skip that ledger fetch.
+
+    A non-mapping ledger raises ArtifactValidationError from load_yaml. Other
+    YAML loading, preflight, and replay errors also propagate; argparse may
+    raise SystemExit.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--ledger",
