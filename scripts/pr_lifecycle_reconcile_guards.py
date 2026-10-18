@@ -262,14 +262,23 @@ def has_security_module_path(changed_paths: Any) -> bool:
 
 
 def has_path_security_backing(changed_paths: Any) -> bool:
-    """Return True when changed_paths back a SECURITY classification."""
+    """Return whether non-journal paths match sticky classes or security modules.
+
+    Test paths are excluded from security-module matching, but can still
+    match sticky classes. Missing or non-list paths provide no backing.
+    """
     return bool(sticky_sensitive_classes(changed_paths)) or has_security_module_path(
         changed_paths
     )
 
 
 def has_diff_security_backing(diff_text: Any) -> bool:
-    """Return True when non-test diff lines touch genuine security behavior."""
+    """Return whether added or removed lines match security-related patterns.
+
+    Exclude file headers and files identified by +++ b/ headers as tests or
+    Jules journals. Lines before such a header are eligible for matching.
+    Empty or non-string diffs provide no backing.
+    """
     if not isinstance(diff_text, str) or not diff_text.strip():
         return False
     in_non_test_file = True
@@ -309,7 +318,13 @@ def has_title_security_hint(record: dict[str, Any]) -> bool:
 def infer_nonsecurity_classification(
     item: dict[str, Any], live: dict[str, Any] | None = None
 ) -> str:
-    """Infer a non-SECURITY classification when path evidence is present."""
+    """Infer DEPENDENCY, CI_INFRA, REFACTOR, or UNKNOWN without security checks.
+
+    Item fields override live fields; falsey changed_paths fall back to live
+    paths. Return UNKNOWN for missing, empty, or non-list paths. Otherwise,
+    dependency-bot authors take priority, followed by workflow-only and
+    dependency-only non-journal paths; all other cases return REFACTOR.
+    """
     merged = {**(live or {}), **item}
     raw_paths = merged.get("changed_paths") or (live or {}).get("changed_paths")
     if not isinstance(raw_paths, list) or not raw_paths:
@@ -357,7 +372,10 @@ def infer_pr_classification(record: dict[str, Any], *, diff_text: Any = None) ->
 
 
 def is_forced_security_hold(item: dict[str, Any]) -> bool:
-    """Return True when an item carries an explicit human/Desk forced hold."""
+    """Return whether risk, ownership, review source, or hold text blocks clearing.
+
+    Human, Stage 2, and Stage 3 ownership all preserve the security tag.
+    """
     next_action = str(item.get("next_action") or "")
     return (
         item.get("risk_class") == "HUMAN_REVIEW"
@@ -369,7 +387,12 @@ def is_forced_security_hold(item: dict[str, Any]) -> bool:
 
 
 def is_title_only_security_hold(item: dict[str, Any]) -> bool:
-    """Return True when REVIEW_SECURITY came from title/path_eval without backing."""
+    """Return whether REVIEW_SECURITY has a source eligible for automatic clearing.
+
+    Exclude forced holds. Accept path_eval, stand_in, or an absent source;
+    manual sources require a security-themed or Sentinel title note.
+    This check does not examine path or diff backing.
+    """
     if item.get("guardrail_outcome") != "REVIEW_SECURITY":
         return False
     if is_forced_security_hold(item):
@@ -384,7 +407,14 @@ def is_title_only_security_hold(item: dict[str, Any]) -> bool:
 def evaluate_security_tag_reconcile(
     item: dict[str, Any], *, diff_text: str | None = None
 ) -> dict[str, Any] | None:
-    """Return a RECLASSIFY_TITLE_SECURITY action dict when SECURITY lacks backing."""
+    """Plan reclassification of a nonterminal BOT item's unbacked SECURITY tag.
+
+    Return None for forced holds, missing or empty changed-path lists, or
+    path/diff backing. A non-None diff_text overrides the item's diff_text;
+    a missing diff provides no backing here. The returned action includes
+    the replacement classification and whether REVIEW_SECURITY may clear,
+    without mutating the item. PR-number conversion errors propagate.
+    """
     if item.get("lifecycle_state") == "TERMINAL":
         return None
     if item.get("author_type") != "BOT" or item.get("classification") != "SECURITY":
@@ -421,7 +451,15 @@ def reconcile_security_tagging_summary(
     *,
     diff_fetcher: Any = None,
 ) -> dict[str, Any]:
-    """Compute before/after security tagging counts across nonterminal ledger items."""
+    """Project security counts and proposed item changes without mutating the ledger.
+
+    Count nonterminal dictionary items and return before/after SECURITY and
+    REVIEW_SECURITY totals, reclassification counts, and reclassified_items.
+    For eligible items lacking a stored diff, call diff_fetcher(repository, pr)
+    when supplied; a None result skips that item. Without a fetcher, missing
+    diffs provide no backing. Fetcher errors and TypeError or ValueError from
+    PR-number conversion propagate.
+    """
     items = [
         i
         for i in (ledger.get("items") or [])

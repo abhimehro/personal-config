@@ -160,7 +160,11 @@ def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
 
 
 def _gh_pr_diff(repo: str, pr_num: int) -> str | None:
-    """Fetch the PR's unified diff via gh CLI; None on any failure."""
+    """Fetch the PR's unified diff via gh CLI.
+
+    Return None on process launch errors, a 60-second timeout, or a nonzero
+    exit status; otherwise return stdout, which may be empty.
+    """
     cmd = ["gh", "pr", "diff", str(pr_num), "--repo", repo]
     try:
         completed = subprocess.run(  # nosec B603
@@ -449,7 +453,12 @@ def _path_backfill_action(
 def _security_tag_reconcile_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """Emit RECLASSIFY_TITLE_SECURITY when a SECURITY tag lacks path/diff backing."""
+    """Plan reclassification for an open, nonterminal BOT PR lacking backing.
+
+    Return None for forced holds, missing changed paths, security backing,
+    or a failed diff lookup. Prefer the item's diff, then the live PR's diff,
+    fetching via gh only when both are None. Do not mutate the item or PR.
+    """
     if not (
         isinstance(live, dict)
         and str(live.get("state") or "").upper() == "OPEN"
@@ -668,7 +677,12 @@ def apply_action_to_ledger(
     item: dict[str, Any],
     action: dict[str, Any],
 ) -> dict[str, Any]:
-    """Apply an action in memory and return the appended transition event."""
+    """Apply an action to the item and ledger in memory.
+
+    Return the appended transition event, or {"event_id": None} for an
+    in-place action that leaves item revision unchanged. ReconcileSkip
+    propagates when an anchor is blocked or an in-place action has no work.
+    """
     _prepare_live_head(ledger, item, action)
     if action.get("action") == "REANCHOR_HEAD":
         return _reanchor_item(ledger, item, action)
@@ -746,7 +760,14 @@ def _backfill_item_paths(
 def _reclassify_title_security_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """Clear a title-only SECURITY tag in place when paths/diff do not back it."""
+    """Apply a prevalidated security reclassification to the item in place.
+
+    Replace classification and sensitive paths from the action, defaulting
+    to REFACTOR and no paths. If requested, reset REVIEW_SECURITY to
+    PASS_ROUTINE with routine risk and follow-up guidance. Advance only the
+    ledger revision, leaving item revision and timestamp unchanged, and
+    return {"event_id": None}. Raise ReconcileSkip if already non-SECURITY.
+    """
     if item.get("classification") != "SECURITY":
         raise ReconcileSkip("reclassify_noop")
     to_cls = str(action.get("to_classification") or "REFACTOR")
@@ -915,7 +936,9 @@ def build_intake_item(
 
     Use normalized inventory fields and policy to classify the author. Start
     at revision zero with UNKNOWN risk and NOT_RUN guardrails; do not modify
-    the PR or ledger. Missing required inventory fields raise KeyError.
+    the PR or ledger. Infer classification from supplied changed paths and diff,
+    and sensitive classes from paths; title keywords alone do not imply SECURITY.
+    Missing required inventory fields raise KeyError.
     """
     verdict = classify_pr_identity(live, policy)
     author = {
