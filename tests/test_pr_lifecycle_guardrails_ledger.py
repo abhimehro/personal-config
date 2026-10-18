@@ -24,7 +24,7 @@ class EvaluateLedgerTests(unittest.TestCase):
     def test_metadata_repair_preserves_revision_events_and_reports_no_flip(
         self,
     ) -> None:
-        """Repair a security hold even when the outcome itself is unchanged."""
+        """A SECURITY label with only docs downgrades and does not bump revision."""
         now = datetime(2026, 10, 9, 12, 0, tzinfo=timezone.utc)
         item = _item(
             classification="SECURITY",
@@ -45,18 +45,26 @@ class EvaluateLedgerTests(unittest.TestCase):
         expected = copy.deepcopy(before)
         expected["items"][0].update(
             sensitive_paths=[],
+            guardrail_outcome="PASS_ROUTINE",
             guardrail_source="path_eval",
-            risk_class="SENSITIVE",
+            risk_class="ROUTINE",
             updated_at_utc="2026-10-09T12:00:00Z",
         )
         self.assertEqual(expected, ledger)
         self.assertEqual(
             {
                 "evaluated": 1,
-                "outcomes_unchanged": 1,
+                "outcomes_unchanged": 0,
                 "skipped": 0,
-                "by_outcome": {"REVIEW_SECURITY": 1, "PASS_ROUTINE": 0},
-                "changes": [],
+                "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 1},
+                "changes": [
+                    {
+                        "key": item["key"],
+                        "from": "REVIEW_SECURITY",
+                        "to": "PASS_ROUTINE",
+                        "sensitive_paths": [],
+                    }
+                ],
             },
             summary,
         )
