@@ -84,7 +84,7 @@ _DEPENDENCY_PATH_RE = re.compile(
     re.IGNORECASE,
 )
 _TEST_PATH_RE = re.compile(
-    r"(^|/)tests?/|(^|/)test_[^/]+|Tests\.(swift|py|ts|js)$",
+    r"(?:(?:^|/)tests?/)|(?:(?:^|/)test_[^/]+)|(?:Tests\.(?:swift|py|ts|js)$)",
     re.IGNORECASE,
 )
 _SECURITY_MODULE_RE = re.compile(
@@ -211,7 +211,7 @@ _DIFF_SECURITY_PATTERNS: tuple[re.Pattern[str], ...] = (
         r"secrets\.)\b",
         re.IGNORECASE,
     ),
-    re.compile(r"\bAKIA[0-9A-Z]{16}\b|\bgh[pousr]_\w{20,}|\bxox[abposr]-[\w-]{10,}"),
+    re.compile(r"\b(?:AKIA[0-9A-Z]{16}|gh[pousr]_\w{20,}|xox[abposr]-[\w-]{10,})\b"),
     re.compile(
         r"\b(allow_redirects|ipaddress|urllib\.parse|SSRF|validate_url|safe_http)\b"
     ),
