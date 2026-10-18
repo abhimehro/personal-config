@@ -43,17 +43,59 @@ def is_sentinel_persona(title: str, head_ref: str) -> bool:
     return ref.startswith(("sentinel/", "sentinel-", "jules/", "jules-"))
 
 
+def _group_rule_moves(
+    item: dict[str, Any], patch: dict[str, Any] | None
+) -> tuple[str | None, dict[str, Any]]:
+    """Return (rule, row) for the item if it qualifies for a rule move."""
+    rule = guardrails.clearance_rule(item, patch)
+    new_outcome = patch["guardrail_outcome"] if patch else item.get("guardrail_outcome")
+    row = {
+        "key": str(item.get("key") or ""),
+        "url": item.get("url"),
+        "repository": item.get("repository"),
+        "pr": item.get("pr"),
+        "old": item.get("guardrail_outcome"),
+        "new": new_outcome,
+    }
+    if rule is not None:
+        row["rule"] = rule
+    return rule, row
+
+
+def _audit_sentinel_persona(
+    item: dict[str, Any],
+    evidence: guardrails.GuardrailEvidence | None,
+    patch: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Return a Sentinel persona row if the item qualifies, else None."""
+    if not (
+        guardrails.is_sentinel_title_standin(item)
+        or (
+            evidence is not None
+            and is_sentinel_persona(evidence.title or "", evidence.head_ref or "")
+        )
+    ):
+        return None
+    reasons = patch.get("sensitive_paths") if patch else item.get("sensitive_paths")
+    return {
+        "key": str(item.get("key") or ""),
+        "url": item.get("url"),
+        "repository": item.get("repository"),
+        "pr": item.get("pr"),
+        "old": item.get("guardrail_outcome"),
+        "new": patch["guardrail_outcome"] if patch else item.get("guardrail_outcome"),
+        "title": evidence.title if evidence else None,
+        "head_ref": evidence.head_ref if evidence else None,
+        "morning_reflagged": guardrails.is_sentinel_title_standin(item),
+        "sensitive_paths": reasons or [],
+    }
+
+
 def replay_items(
     items: list[Any],
     evidence_by_key: dict[str, guardrails.GuardrailEvidence | None],
 ) -> dict[str, Any]:
-    """Return rule-grouped clearance counts and a Sentinel audit without mutation.
-
-    Look up optional evidence by item key and skip non-mapping entries. Include
-    old/new outcomes and PR URLs for moves from clearable holds to PASS_ROUTINE,
-    keys whose evidence reports a failed fetch, and Sentinel persona rows.
-    No evidence is fetched here; missing entries use path-only evaluation.
-    """
+    """Return rule-grouped clearance counts and a Sentinel audit without mutation."""
     grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in _RULES}
     sentinel: list[dict[str, Any]] = []
     fetch_failed: list[str] = []
@@ -65,37 +107,12 @@ def replay_items(
         if evidence is not None and evidence.diff_fetch_failed:
             fetch_failed.append(key)
         patch = guardrails.evaluate_item(item, evidence=evidence)
-        rule = guardrails.clearance_rule(item, patch)
-        new_outcome = (
-            patch["guardrail_outcome"] if patch else item.get("guardrail_outcome")
-        )
-        row = {
-            "key": key,
-            "url": item.get("url"),
-            "repository": item.get("repository"),
-            "pr": item.get("pr"),
-            "old": item.get("guardrail_outcome"),
-            "new": new_outcome,
-        }
+        rule, row = _group_rule_moves(item, patch)
         if rule is not None:
-            row["rule"] = rule
             grouped[rule].append(row)
-        if guardrails.is_sentinel_title_standin(item) or (
-            evidence is not None
-            and is_sentinel_persona(evidence.title or "", evidence.head_ref or "")
-        ):
-            reasons = (
-                patch.get("sensitive_paths") if patch else item.get("sensitive_paths")
-            )
-            sentinel.append(
-                {
-                    **row,
-                    "title": evidence.title if evidence else None,
-                    "head_ref": evidence.head_ref if evidence else None,
-                    "morning_reflagged": guardrails.is_sentinel_title_standin(item),
-                    "sensitive_paths": reasons or [],
-                }
-            )
+        persona_row = _audit_sentinel_persona(item, evidence, patch)
+        if persona_row is not None:
+            sentinel.append(persona_row)
     unique = [row for rows in grouped.values() for row in rows]
     return {
         "rules": {
@@ -175,8 +192,8 @@ def replay_ledger(ledger: dict[str, Any], *, fetch: bool) -> dict[str, Any]:
     return report
 
 
-def _format_report(report: dict[str, Any]) -> str:
-    """Render the replay as markdown for a PR body."""
+def _format_rule_table(report: dict[str, Any]) -> list[str]:
+    """Return markdown lines for the rule summary table."""
     lines = [
         f"Ledger revision: {report.get('ledger_revision')}",
         "",
@@ -186,34 +203,26 @@ def _format_report(report: dict[str, Any]) -> str:
     for name, payload in (report.get("rules") or {}).items():
         lines.append(f"| `{name}` | {payload.get('count', 0)} |")
     lines.append(f"| unique items | {report.get('unique_move_count', 0)} |")
-    lines.append("")
-    lines.append("PR URLs")
+    return lines
+
+
+def _format_pr_urls(report: dict[str, Any]) -> list[str]:
+    """Return markdown lines for PR URLs by rule."""
+    lines = ["PR URLs"]
     for name, payload in (report.get("rules") or {}).items():
         lines.append(f"### {name}")
         for row in payload.get("items") or []:
             lines.append(f"- {row.get('url')} ({row.get('old')} → {row.get('new')})")
-    failed = report.get("fetch_failed") or []
-    lines.append("")
-    lines.append(f"Diff fetch failed (kept held): {len(failed)}")
-    lines.append("")
-    lines.append("Sentinel persona PRs")
-    lines.append("")
-    lines.append("| PR | Morning Re-flagged | Old | New | Why it stays held |")
-    lines.append("| --- | :---: | --- | --- | --- |")
-    for row in report.get("sentinel_persona") or []:
-        repo = row.get("repository")
-        number = row.get("pr")
-        reflagged = "yes" if row.get("morning_reflagged") else "no"
-        held = (
-            ", ".join(row.get("sensitive_paths") or [])
-            or "empty changed_paths (fail-closed)"
-        )
-        if row.get("new") == "PASS_ROUTINE":
-            held = "—"
-        lines.append(
-            f"| {repo}#{number} | {reflagged} | {row.get('old')} | {row.get('new')} | {held} |"
-        )
-    return "\n".join(lines) + "\n"
+    return lines
+
+
+def _format_sentinel_table(report: dict[str, Any]) -> list[str]:
+    """Return markdown lines for the Sentinel persona table."""
+    lines = [
+        "",
+        "Sentinel persona PRs",
+        "",
+        "| PR | Morning Re-flagged | Old | New | Why it stays held |",
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -256,6 +265,50 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(_format_report(report))
     return 0
+
+
+def _format_sentinel_row(row: dict[str, Any]) -> str:
+    """Return a markdown table row for a Sentinel persona PR."""
+    repo = row.get("repository", "")
+    number = row.get("pr", "")
+    reflagged = "yes" if row.get("morning_reflagged") else "no"
+    held = (
+        ", ".join(row.get("sensitive_paths") or [])
+        or "empty changed_paths (fail-closed)"
+    )
+    if row.get("new") == "PASS_ROUTINE":
+        held = "—"
+    return (
+        f"| {repo}#{number} | {reflagged} | {row.get('old')} | "
+        f"{row.get('new')} | {held} |"
+    )
+
+
+def _format_sentinel_table(report: dict[str, Any]) -> list[str]:
+    """Return markdown lines for the Sentinel persona table."""
+    lines = [
+        "",
+        "Sentinel persona PRs",
+        "",
+        "| PR | Morning Re-flagged | Old | New | Why it stays held |",
+        "| --- | :---: | --- | --- | --- |",
+    ]
+    for row in report.get("sentinel_persona") or []:
+        lines.append(_format_sentinel_row(row))
+    return lines
+
+
+def _format_report(report: dict[str, Any]) -> str:
+    """Render the replay as markdown for a PR body."""
+    lines = []
+    lines.extend(_format_rule_table(report))
+    lines.append("")
+    lines.extend(_format_pr_urls(report))
+    failed = report.get("fetch_failed") or []
+    lines.append("")
+    lines.append(f"Diff fetch failed (kept held): {len(failed)}")
+    lines.extend(_format_sentinel_table(report))
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

@@ -721,56 +721,59 @@ def clearance_rule(item: dict[str, Any], patch: dict[str, Any] | None) -> str | 
     return None
 
 
+def _should_downgrade_hold(
+    item: dict[str, Any], effective: set[str]
+) -> bool:
+    """Return whether a clearable hold should downgrade to PASS_ROUTINE."""
+    return (
+        item.get("guardrail_outcome") in _CLEARABLE_HOLDS
+        and not effective
+    )
+
+
+def _record_sensitive_paths(
+    item: dict[str, Any], classes: set[str], signals: set[str], fail_closed: bool
+) -> list[str]:
+    """Return sorted sensitive paths, preserving prior evidence if fail-closed."""
+    recorded = set(classes) | signals
+    if fail_closed and not recorded:
+        prior = item.get("sensitive_paths", [])
+        recorded = {str(value) for value in prior if isinstance(prior, list)}
+    return sorted(recorded)
+
+
+def _effective_path_signals(
+    item: dict[str, Any], evidence: GuardrailEvidence | None
+) -> tuple[set[str], set[str], bool]:
+    """Return (effective, signals, fail_closed) for the item."""
+    from path_classifier import calculate_path_sticky
+    from evidence_evaluator import calculate_signals, should_fail_closed
+
+    path_sticky = calculate_path_sticky(item, evidence)
+    signals = calculate_signals(evidence)
+    effective = path_sticky | signals
+    fail_closed = should_fail_closed(item, evidence, effective)
+    return effective, signals, fail_closed
+
+
 def evaluate_item(
     item: dict[str, Any],
     clear_standin: bool = False,
     evidence: GuardrailEvidence | None = None,
 ) -> dict[str, Any] | None:
-    """Return a field patch without mutating the item, or None if unchanged.
-
-    Only evaluable outcomes on nonterminal BOT items re-evaluate. Items
-    without a nonempty changed_paths list keep their outcome. HUMAN_REVIEW
-    items and items owned by human/stage2/stage3 are never touched. Protected
-    ``guardrail_source`` values (manual/review/human/octopus) are untouched
-    except for the manual Stage 1 Sentinel-title stand-in. ``clear_standin``
-    is accepted for CLI compatibility and does not gate the downgrade.
-
-    Sticky path classes, except eligible Dependabot exemptions, and supplied
-    security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
-    label alone does not. Missing evidence permits path-only evaluation; an
-    explicitly failed fetch preserves clearable holds and holds SECURITY-labeled
-    items. ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision
-    is still a hold.
-    """
+    """Return a field patch without mutating the item, or None if unchanged."""
     del clear_standin  # CLI flag remains; downgrade no longer depends on it.
     if not _evaluable(item):
         return None
-    outcome = item.get("guardrail_outcome")
-    classes = classify_item_paths(item["changed_paths"])
-    path_sticky = classes - _STICKY_EXEMPT
-    signals: set[str] = set()
-    if evidence is not None and evidence.diff_text:
-        signals = diff_security_signals(evidence.diff_text)
-    exempt: set[str] = set()
-    if dependabot_routine_eligible(item, evidence):
-        exempt = path_sticky & _DEPENDABOT_EXEMPT
-    effective = (path_sticky - exempt) | signals
-    fail_closed = bool(
-        evidence is not None
-        and evidence.diff_fetch_failed
-        and not effective
-        and (outcome in _CLEARABLE_HOLDS or item.get("classification") == "SECURITY")
+    effective, signals, fail_closed = _effective_path_signals(item, evidence)
+    if item.get("guardrail_outcome") in _FROZEN_HOLDS and (effective or fail_closed):
+        return None
+    recorded = _record_sensitive_paths(
+        item, classify_item_paths(item["changed_paths"]), signals, fail_closed
     )
     sticky_flag = bool(effective) or fail_closed
-    if outcome in _FROZEN_HOLDS and sticky_flag:
-        return None
-    recorded = (set(classes) | signals) - exempt
-    if fail_closed and not recorded:
-        prior = item.get("sensitive_paths")
-        if isinstance(prior, list):
-            recorded = {str(value) for value in prior}
     patch = {
-        "sensitive_paths": sorted(recorded),
+        "sensitive_paths": recorded,
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
         "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
@@ -849,48 +852,56 @@ def evaluate_ledger(
     return ledger, summary
 
 
-def run_guardrails(args: argparse.Namespace) -> int:
-    """Fetch the ledger, evaluate items, print JSON, and return zero on success.
-
-    args.repos_filter optionally limits repositories; args.apply persists
-    changes through CAS only if at least one item receives a patch. Without
-    args.apply, only report proposed changes. Fetch live evidence as needed.
-
-    Raise ValueError if path rules reference unknown taxonomy classes. Errors
-    from configuration loading, ledger preflight, and CAS persistence propagate
-    to the caller.
-    """
-    config = load_yaml(CONFIG_PATH)
+def _validate_taxonomy_rules(config: dict[str, Any]) -> None:
+    """Raise ValueError if path rules use unknown taxonomy classes."""
     taxonomy = (config.get("sensitive_path_taxonomy") or {}).get("classes") or []
     unknown = {name for name, _ in _PATH_RULES} - set(taxonomy)
     if unknown:
         raise ValueError(f"path rules use unknown taxonomy classes: {sorted(unknown)}")
+
+
+def _build_evidence_callback(
+    advisory: list[str]
+) -> Callable[[dict[str, Any]], GuardrailEvidence | None]:
+    """Return a callback to fetch evidence only when required."""
+    def _evidence_for(item: dict[str, Any]) -> GuardrailEvidence | None:
+        if not needs_live_evidence(item):
+            return None
+        return fetch_guardrail_evidence(item, advisory)
+    return _evidence_for
+
+
+def _persist_ledger_if_applied(
+    ledger_path: Path, ledger: dict[str, Any], apply: bool, summary: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Persist the ledger via CAS if changes were applied and --apply is set."""
+    if not apply or not summary["evaluated"]:
+        return None
+    ledger_path.write_text(dump_ledger(ledger), encoding="utf-8")
+    return cas.run_commit(ledger_path, _COMMIT_MESSAGE, bump_revision=True)
+
+
+def run_guardrails(args: argparse.Namespace) -> int:
+    """Fetch the ledger, evaluate items, print JSON, and return zero on success."""
+    config = load_yaml(CONFIG_PATH)
+    _validate_taxonomy_rules(config)
     repos_filter = set(args.repos_filter) if args.repos_filter else None
     unblock = (config.get("lifecycle") or {}).get("unblock") or {}
     advisory = unblock.get("advisory_checks") or []
     if not isinstance(advisory, list):
         advisory = []
 
-    def _evidence_for(item: dict[str, Any]) -> GuardrailEvidence | None:
-        # Fetch only when a clean path list would otherwise clear a hold or
-        # a Dependabot lane needs checks. Ordinary docs stay offline.
-        """Fetch live evidence only when paths and the current hold require it."""
-        if not needs_live_evidence(item):
-            return None
-        return fetch_guardrail_evidence(item, advisory)
-
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-guardrails-") as tmp:
         ledger_path = Path(tmp) / "ledger.yaml"
         cas.run_preflight(ledger_path)
         ledger = load_yaml(ledger_path)
         ledger, summary = evaluate_ledger(
-            ledger, repos_filter, args.clear_standin, _evidence_for
+            ledger, repos_filter, args.clear_standin, _build_evidence_callback(advisory)
         )
         summary["dry_run"] = not args.apply
         summary["ledger_revision"] = ledger.get("ledger_revision")
-        if args.apply and summary["evaluated"]:
-            ledger_path.write_text(dump_ledger(ledger), encoding="utf-8")
-            committed = cas.run_commit(ledger_path, _COMMIT_MESSAGE, bump_revision=True)
+        committed = _persist_ledger_if_applied(ledger_path, ledger, args.apply, summary)
+        if committed:
             summary["commit_sha"] = committed.get("commit_sha")
         print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
@@ -928,6 +939,17 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"PR_LIFECYCLE_GUARDRAILS_ERROR: {type(exc).__name__}", file=sys.stderr)
         return 1
+
+
+_STICKY_EXEMPT = {"generated_output"}
+_DEPENDABOT_EXEMPT = {
+    "workflows_and_permissions",
+    "lockfiles_and_major_dependencies",
+}
+_CLEARABLE_HOLDS = {"REVIEW_SECURITY", "HOLD_CONTRACT", "HOLD_EVIDENCE"}
+
+
+
 
 
 if __name__ == "__main__":
