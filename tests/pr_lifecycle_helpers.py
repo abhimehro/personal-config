@@ -247,6 +247,7 @@ def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
         "STAGE2_OWNED_STATES": real_health.STAGE2_OWNED_STATES,
         "existing_wi_prefixes": real_health.existing_wi_prefixes,
         "work_item_is_usable": real_health.work_item_is_usable,
+        "NON_SALVAGE_OUTCOMES": real_health.NON_SALVAGE_OUTCOMES,
     }
 
 

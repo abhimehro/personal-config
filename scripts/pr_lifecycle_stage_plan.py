@@ -244,9 +244,19 @@ def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
     return keys
 
 
-def _stage2_can_book(item: dict[str, Any]) -> bool:
-    """Return whether Stage 2 owns this item and may register it."""
+def _stage2_can_book(item: dict[str, Any], signals: health.ReselectSignals) -> bool:
+    """Return whether Stage 2 owns this bot item and may register it."""
+    if item.get("author_type") != "BOT":
+        return False
     if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if (item.get("guardrail_outcome") or "") in health.NON_SALVAGE_OUTCOMES:
+        return False
+    sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
+    if sticky:
+        return False
+    key = str(item.get("key") or "")
+    if key and key in (signals.closed_keys or ()):
         return False
     owned = (
         item.get("current_owner") == "stage2"
@@ -254,7 +264,7 @@ def _stage2_can_book(item: dict[str, Any]) -> bool:
     )
     if not owned:
         return False
-    return not health.is_never_touch_key(item.get("key"))
+    return not health.is_never_touch_key(key)
 
 
 def _stage2_booking_action(
@@ -263,7 +273,7 @@ def _stage2_booking_action(
     already: set[str],
 ) -> dict[str, Any] | None:
     """Return one BOOK_STAGE2_WI action, or None when the item cannot be booked."""
-    if not isinstance(item, dict) or not _stage2_can_book(item):
+    if not isinstance(item, dict) or not _stage2_can_book(item, signals):
         return None
     key = str(item.get("key") or "")
     if not key or key in already:
@@ -374,9 +384,9 @@ def _stage2_feed_summary(
     return {
         "action": "FEED_SUMMARY",
         "feed": {
-            "reason": feed["reason"],
-            "work_item_count": feed["work_item_count"],
-            "eligible_stock_count": feed["eligible_stock_count"],
+            "reason": feed.get("reason"),
+            "work_item_count": feed.get("work_item_count"),
+            "eligible_stock_count": feed.get("eligible_stock_count"),
             "mechanical_candidate_count": len(mechanical),
         },
     }
@@ -388,14 +398,14 @@ def _stage2_empty_actions(
     extras: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], str | None, str]:
     """Choose actions when no mechanical salvage item remains."""
-    if bookings:
-        return bookings, None, "OK"
     if feed.get("non_never_touch_stock_count", 0) > 0:
         return (
             [_stage2_feed_summary(feed, [])],
             "LOGIC_STOP",
             "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
         )
+    if bookings:
+        return bookings, None, "OK"
     extras["skip_cursor"] = True
     extras["empty_intake_skip"] = True
     return (

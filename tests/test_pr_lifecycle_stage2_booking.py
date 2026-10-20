@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
 from tests.pr_lifecycle_helpers import (
     import_lifecycle_run,
@@ -107,6 +108,47 @@ class Stage2BookingTests(unittest.TestCase):
         self.assertEqual(extras["stage2_booking_count"], 1)
         self.assertEqual([action["action"] for action in actions], ["BOOK_STAGE2_WI"])
         self.assertEqual(ledger["stage2_work_items"], [])
+
+    def test_owned_state_books_without_a_stage2_owner(self) -> None:
+        item = _owned(current_owner="stage1", lifecycle_state="STAGE2_ACTIVE")
+        actions = plan.plan_stage2_bookings(make_ledger([item], []))
+        self.assertEqual([action["action"] for action in actions], ["BOOK_STAGE2_WI"])
+
+    def test_human_security_and_closed_items_are_not_booked(self) -> None:
+        human = _owned(author_type="HUMAN")
+        security = _owned(
+            key=f"abhimehro/demo#11@{HEAD}",
+            pr=11,
+            guardrail_outcome="REVIEW_SECURITY",
+            sensitive_paths=["shell_execution"],
+        )
+        closed = _owned(key=f"abhimehro/demo#12@{HEAD}", pr=12)
+        signals = plan.health.ReselectSignals(closed_keys=frozenset({closed["key"]}))
+        actions = plan.plan_stage2_bookings(
+            make_ledger([human, security, closed], []), signals=signals
+        )
+        self.assertEqual(actions, [])
+
+    def test_eligible_stock_stops_even_when_a_booking_exists(self) -> None:
+        ledger = make_ledger([_owned()], [])
+
+        def fake_feed(*_args: object, **_kwargs: object) -> dict[str, object]:
+            return {
+                "reason": "EMPTY",
+                "work_item_count": 0,
+                "eligible_stock_count": 1,
+                "non_never_touch_stock_count": 1,
+                "work_items": [],
+            }
+
+        with mock.patch.object(plan.feed_mod, "build_feed", fake_feed):
+            _allowed, actions, stop, reason, extras = plan._stage2_plan(
+                ledger, {"lifecycle": {}}
+            )
+        self.assertEqual(stop, "LOGIC_STOP")
+        self.assertEqual(reason, "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
+        self.assertEqual(actions[0]["action"], "FEED_SUMMARY")
+        self.assertEqual(extras["stage2_booking_count"], 1)
 
     def test_booking_cap_matches_the_stage2_candidate_cap(self) -> None:
         items = [_owned(key=f"abhimehro/demo#{n}@{HEAD}", pr=n) for n in range(1, 5)]
