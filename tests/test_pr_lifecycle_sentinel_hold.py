@@ -212,6 +212,19 @@ class SentinelFixedHoldTests(unittest.TestCase):
         self.assertEqual(item["guardrail_outcome"], "REVIEW_SECURITY")
         self.assertEqual(item["risk_class"], "HUMAN_REVIEW")
 
+    def test_reanchor_keeps_the_sentinel_marker(self) -> None:
+        item = _security_item(
+            next_action=f"{guards.SENTINEL_HOLD_MARKER}: stays held",
+            head_sha="b" * 40,
+        )
+        reconcile._reanchor_item(
+            {"ledger_revision": 1},
+            item,
+            {"live_base_sha": "c" * 40},
+        )
+        self.assertIn(guards.SENTINEL_HOLD_MARKER, item["next_action"])
+        self.assertIn("Re-anchored to live head", item["next_action"])
+
     def test_package_name_sentinel_is_not_the_persona(self) -> None:
         item = _security_item(guardrail_source="path_eval", next_action="Review")
         live = self._open(

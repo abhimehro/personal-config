@@ -646,12 +646,23 @@ def _prepare_live_head(
         raise ReconcileSkip("anchor_key_taken")
 
 
+def _keep_sentinel_marker(item: dict[str, Any], text: str) -> str:
+    """Keep a stamped Sentinel hold when another action rewrites next_action."""
+    prior = str(item.get("next_action") or "")
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return text
+    if guards.SENTINEL_HOLD_MARKER in text:
+        return text
+    return f"{text} {guards.SENTINEL_HOLD_MARKER} remains in effect."
+
+
 def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
     live_head = action.get("live_head_sha")
     # Head moves only via _rekey_item_head so the key still ends with head_sha.
     if live_head and live_head == item.get("head_sha"):
-        item["next_action"] = (
-            f"Re-anchor intake to live head {live_head}; prior evidence void."
+        item["next_action"] = _keep_sentinel_marker(
+            item,
+            f"Re-anchor intake to live head {live_head}; prior evidence void.",
         )
     live_base = action.get("live_base_sha")
     if live_base:
@@ -670,8 +681,9 @@ def _reanchor_item(
     if live_base:
         item["base_sha"] = live_base
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    item["next_action"] = (
-        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
+    item["next_action"] = _keep_sentinel_marker(
+        item,
+        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void.",
     )
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
