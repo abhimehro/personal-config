@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 718
+ledger_revision: 719
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -22956,25 +22956,29 @@ items:
   - diagnose_docker_connectivity.py
   - tests/test_diagnose_docker_connectivity.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1624 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261017-email-security-pipeline-1624 — recover
-    the bounded unique remainder (diagnose_docker_connectivity.py, tests/test_diagnose_docker_connectivity.py)
-    on a new focused draft. Original stays OPEN.'
+  safe_default: 'Leave #1624 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in salvage draft #1784.'
+  next_action: 'STAGE3_RECONCILIATION: track salvage draft #1784. After #1784 merges,
+    #1624 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #1784 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1624
+  - https://github.com/abhimehro/email-security-pipeline/pull/1784
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261017134704-email-1624-wi
-  revision: 1
-  updated_at_utc: '2026-10-17T13:47:04Z'
+  - evt-s2-20261020-email-1624-a
+  - evt-s2-20261020-email-1624-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
 - key: abhimehro/email-security-pipeline#1636@e90e9648f88335885c732147712c63d0d2f8f242
   repository: abhimehro/email-security-pipeline
   pr: 1636
@@ -23121,25 +23125,29 @@ items:
   - src/modules/alert_console.py
   - tests/test_alert_system_console.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1665 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261017-email-security-pipeline-1665 — recover
-    the bounded unique remainder (src/modules/alert_console.py, tests/test_alert_system_console.py)
-    on a new focused draft. Original stays OPEN.'
+  safe_default: 'Leave #1665 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in salvage draft #1787.'
+  next_action: 'STAGE3_RECONCILIATION: track salvage draft #1787. After #1787 merges,
+    #1665 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #1787 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1665
+  - https://github.com/abhimehro/email-security-pipeline/pull/1787
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261017134704-email-1665-wi
-  revision: 1
-  updated_at_utc: '2026-10-17T13:47:04Z'
+  - evt-s2-20261020-email-1665-a
+  - evt-s2-20261020-email-1665-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
 - key: abhimehro/email-security-pipeline#1672@84d91ae71bc2285994a97ba4face5bcafd4ea8c0
   repository: abhimehro/email-security-pipeline
   pr: 1672
@@ -23211,25 +23219,29 @@ items:
   - src/utils/setup_wizard.py
   - tests/test_ui_palette.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1694 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261017-email-security-pipeline-1694 — recover
-    the bounded unique remainder (src/utils/setup_wizard.py, tests/test_ui_palette.py)
-    on a new focused draft. Original stays OPEN.'
+  safe_default: 'Leave #1694 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in salvage draft #1786.'
+  next_action: 'STAGE3_RECONCILIATION: track salvage draft #1786. After #1786 merges,
+    #1694 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #1786 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1694
+  - https://github.com/abhimehro/email-security-pipeline/pull/1786
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261017134704-email-1694-wi
-  revision: 1
-  updated_at_utc: '2026-10-17T13:47:04Z'
+  - evt-s2-20261020-email-1694-a
+  - evt-s2-20261020-email-1694-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
 - key: abhimehro/email-security-pipeline#1701@28c14345aea6a6a7a21c3ddb103a16618483c85a
   repository: abhimehro/email-security-pipeline
   pr: 1701
@@ -23343,25 +23355,29 @@ items:
   - diagnose_docker_connectivity.py
   - tests/test_diagnose_docker_connectivity.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1720 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261017-email-security-pipeline-1720 — recover
-    the bounded unique remainder (diagnose_docker_connectivity.py, tests/test_diagnose_docker_connectivity.py)
-    on a new focused draft. Original stays OPEN.'
+  safe_default: 'Leave #1720 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in salvage draft #1785.'
+  next_action: 'STAGE3_RECONCILIATION: track salvage draft #1785. After #1785 merges,
+    #1720 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #1785 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1720
+  - https://github.com/abhimehro/email-security-pipeline/pull/1785
   attempts:
     evidence: 1
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261017134704-email-1720-wi
-  revision: 1
-  updated_at_utc: '2026-10-17T13:47:04Z'
+  - evt-s2-20261020-email-1720-a
+  - evt-s2-20261020-email-1720-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
 - key: abhimehro/email-security-pipeline#1723@450385cab115f79da1be72f5eec5a6c4aba533dd
   repository: abhimehro/email-security-pipeline
   pr: 1723
@@ -34923,6 +34939,201 @@ items:
   revision: 0
   updated_at_utc: '2026-10-20T11:20:16Z'
   guardrail_source: path_eval
+- key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  repository: abhimehro/email-security-pipeline
+  pr: 1784
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1784
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Draft-only salvage of #1624. Stage 2 never merges or marks ready.
+    Re-read isDraft (0gd). Do not close original #1624 from Stage 2.'
+  next_action: 'Stage 1: re-ingest salvage draft #1784 (diagnose_docker_connectivity.py,
+    tests/test_diagnose_docker_connectivity.py; python3 -m pytest tests/test_diagnose_docker_connectivity.py
+    -q -> 5 passed; git diff --check exit 0). Route only when unmarked and every routine
+    predicate passes. Original #1624 stays OPEN for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1784
+  - https://github.com/abhimehro/email-security-pipeline/pull/1624
+  changed_paths:
+  - diagnose_docker_connectivity.py
+  - tests/test_diagnose_docker_connectivity.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261020-email-1784-i
+  - evt-s2-20261020-email-1784-a
+  - evt-s2-20261020-email-1784-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
+- key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+  repository: abhimehro/email-security-pipeline
+  pr: 1785
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1785
+  base_sha: 68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  head_sha: b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Draft-only salvage of #1720. Stage 2 never merges or marks ready.
+    Re-read isDraft (0gd). Do not close original #1720 from Stage 2.'
+  next_action: 'Stage 1: re-ingest salvage draft #1785 (diagnose_docker_connectivity.py,
+    tests/test_diagnose_docker_connectivity.py; python3 -m pytest tests/test_diagnose_docker_connectivity.py
+    -q -> 8 passed; git diff --check exit 0). Route only when unmarked and every routine
+    predicate passes. Original #1720 stays OPEN for Stage 3. STACKED on #1784 (baseRefName
+    != main): land #1784 first or merge the stack top via gh stack / merge-async (Lesson
+    0ez); do not gh pr merge this child directly.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1785
+  - https://github.com/abhimehro/email-security-pipeline/pull/1720
+  - https://github.com/abhimehro/email-security-pipeline/pull/1784
+  changed_paths:
+  - diagnose_docker_connectivity.py
+  - tests/test_diagnose_docker_connectivity.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261020-email-1785-i
+  - evt-s2-20261020-email-1785-a
+  - evt-s2-20261020-email-1785-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
+- key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
+  repository: abhimehro/email-security-pipeline
+  pr: 1786
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1786
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Draft-only salvage of #1694. Stage 2 never merges or marks ready.
+    Re-read isDraft (0gd). Do not close original #1694 from Stage 2.'
+  next_action: 'Stage 1: re-ingest salvage draft #1786 (src/utils/setup_wizard.py,
+    tests/test_ui_palette.py; python3 -m pytest tests/test_ui_palette.py -q -> 19
+    passed; git diff --check exit 0). Route only when unmarked and every routine predicate
+    passes. Original #1694 stays OPEN for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1786
+  - https://github.com/abhimehro/email-security-pipeline/pull/1694
+  changed_paths:
+  - src/utils/setup_wizard.py
+  - tests/test_ui_palette.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261020-email-1786-i
+  - evt-s2-20261020-email-1786-a
+  - evt-s2-20261020-email-1786-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
+- key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221
+  repository: abhimehro/email-security-pipeline
+  pr: 1787
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1787
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 1694200a8e8c5970b26ddb73261009a210ba3221
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Draft-only salvage of #1665. Stage 2 never merges or marks ready.
+    Re-read isDraft (0gd). Do not close original #1665 from Stage 2.'
+  next_action: 'Stage 1: re-ingest salvage draft #1787 (src/modules/alert_console.py,
+    tests/test_alert_system_console.py; python3 -m pytest tests/test_alert_system_console.py
+    -q -> 21 passed; git diff --check exit 0). Route only when unmarked and every
+    routine predicate passes. Original #1665 stays OPEN for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1787
+  - https://github.com/abhimehro/email-security-pipeline/pull/1665
+  changed_paths:
+  - src/modules/alert_console.py
+  - tests/test_alert_system_console.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261020-email-1787-i
+  - evt-s2-20261020-email-1787-a
+  - evt-s2-20261020-email-1787-h
+  revision: 3
+  updated_at_utc: '2026-10-20T15:32:53Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -67304,159 +67515,440 @@ events:
     → CLOSED_NOOP
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261017-email-security-pipeline-1624
-  source_item_key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
-  repository: abhimehro/email-security-pipeline
-  pr: 1624
-  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-  head_sha: b45b5b176a6883e41e96fb2f497e387d30530830
-  allowed_paths:
-  - diagnose_docker_connectivity.py
-  - tests/test_diagnose_docker_connectivity.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - requirements*.txt
-  - AGENTS.md
-  repair_description: 'Recover the unique Palette Docker-diagnostics UX change from
-    #1624 (diagnose_docker_connectivity.py output/status formatting plus its new tests)
-    onto current main as a new focused draft. Exclude .jules/ journals. Original #1624
-    stays OPEN. Do not merge, update, or push to the original Jules branch; do not
-    post Jules triggers.'
-  required_test_command: python3 -m pytest tests/test_diagnose_docker_connectivity.py
-    -q
-  expected_test_result: python3 -m pytest tests/test_diagnose_docker_connectivity.py
-    -q exits 0
-  acceptance_criteria:
-  - Diff is limited to diagnose_docker_connectivity.py and tests/test_diagnose_docker_connectivity.py.
-  - python3 -m pytest tests/test_diagnose_docker_connectivity.py -q exits 0.
-  - git diff --check exits 0.
-  - 'Replacement is a new draft PR linking #1624; original #1624 stays OPEN and its
-    branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1624
-  expiry_utc: '2026-10-24T13:47:04Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261017134704-email-1624-wi
-  history: []
-- work_item_id: s2-20261017-email-security-pipeline-1720
-  source_item_key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60
-  repository: abhimehro/email-security-pipeline
-  pr: 1720
-  base_sha: c7be8f67158880fe37ce5f92281422a92bd65e69
-  head_sha: 9e1aeecf15456f993db636ccc892b2e20eed2c60
-  allowed_paths:
-  - diagnose_docker_connectivity.py
-  - tests/test_diagnose_docker_connectivity.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - requirements*.txt
-  - AGENTS.md
-  repair_description: 'Recover the unique argparse/--help support for diagnose_docker_connectivity.py
-    from #1720 onto current main as a new focused draft. Coordinate with the #1624
-    work item on the same file (apply sequentially; do not combine). Exclude .jules/
-    journals. Original #1720 stays OPEN. Do not merge, update, or push to the original
-    Jules branch; do not post Jules triggers.'
-  required_test_command: python3 -m pytest tests/test_diagnose_docker_connectivity.py
-    -q
-  expected_test_result: python3 -m pytest tests/test_diagnose_docker_connectivity.py
-    -q exits 0
-  acceptance_criteria:
-  - Diff is limited to diagnose_docker_connectivity.py and tests/test_diagnose_docker_connectivity.py.
-  - python3 -m pytest tests/test_diagnose_docker_connectivity.py -q exits 0.
-  - git diff --check exits 0.
-  - 'Replacement is a new draft PR linking #1720; original #1720 stays OPEN and its
-    branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1720
-  expiry_utc: '2026-10-24T13:47:04Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261017134704-email-1720-wi
-  history: []
-- work_item_id: s2-20261017-email-security-pipeline-1694
-  source_item_key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e
-  repository: abhimehro/email-security-pipeline
-  pr: 1694
-  base_sha: f693f6a3a4fe0eed374518dcbb942135f61d5810
-  head_sha: 323d8f070ada72597ddc211d34ff663675dd853e
-  allowed_paths:
-  - src/utils/setup_wizard.py
-  - tests/test_ui_palette.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - requirements*.txt
-  - AGENTS.md
-  repair_description: 'Recover only the unique setup-wizard provider prompt default
-    (show "[1-4, default: 1]" and treat empty input as choice 1 in _select_provider)
-    plus a matching test from #1694 onto current main as a new focused draft. The
-    rest of the #1694 branch is stale-main snapshot content (workflows, .github/scripts,
-    docs, other modules) and is prohibited. Fix the test assertion to match _select_provider''s
-    real return value. Original #1694 stays OPEN. Do not merge, update, or push to
-    the original Jules branch; do not post Jules triggers.'
-  required_test_command: python3 -m pytest tests/test_ui_palette.py -q
-  expected_test_result: python3 -m pytest tests/test_ui_palette.py -q exits 0
-  acceptance_criteria:
-  - Diff is limited to src/utils/setup_wizard.py and tests/test_ui_palette.py.
-  - python3 -m pytest tests/test_ui_palette.py -q exits 0.
-  - git diff --check exits 0.
-  - 'Replacement is a new draft PR linking #1694; original #1694 stays OPEN and its
-    branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1694
-  expiry_utc: '2026-10-24T13:47:04Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261017134704-email-1694-wi
-  history: []
-- work_item_id: s2-20261017-email-security-pipeline-1665
-  source_item_key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0
-  repository: abhimehro/email-security-pipeline
-  pr: 1665
-  base_sha: f693f6a3a4fe0eed374518dcbb942135f61d5810
-  head_sha: 475cc0bcc450158ae226c933741a515cb17500e0
-  allowed_paths:
-  - src/modules/alert_console.py
-  - tests/test_alert_system_console.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - requirements*.txt
-  - AGENTS.md
-  repair_description: 'Recover only the unique remainder of #1665: the threat-score
-    meter length in print_threat_score scaling with card width (meter_len = max(20,
-    width - 30)). The render_alert dynamic width is already on main. Add or adapt
-    a focused test. The rest of the #1665 branch is stale-main snapshot content and
-    is prohibited. Original #1665 stays OPEN. Do not merge, update, or push to the
-    original Jules branch; do not post Jules triggers.'
-  required_test_command: python3 -m pytest tests/test_alert_system_console.py -q
-  expected_test_result: python3 -m pytest tests/test_alert_system_console.py -q exits
-    0
-  acceptance_criteria:
-  - Diff is limited to src/modules/alert_console.py and tests/test_alert_system_console.py.
-  - python3 -m pytest tests/test_alert_system_console.py -q exits 0.
-  - git diff --check exits 0.
-  - 'Replacement is a new draft PR linking #1665; original #1665 stays OPEN and its
-    branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1665
-  expiry_utc: '2026-10-24T13:47:04Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261017134704-email-1665-wi
-  history: []
+- event_id: evt-s2-20261020-email-1624-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830:evt-s2-20261020-email-1624-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261020 (single runner, Abhi-cleared via PR Desk 10:17 CT):
+    activate WI s2-20261017-email-security-pipeline-1624 (attempt 1) for salvage draft
+    #1784.'
+- event_id: evt-s2-20261020-email-1624-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830:evt-s2-20261020-email-1624-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261017-email-security-pipeline-1624 consumed. Draft
+    #1784 (head 68d8c35486ab, base 0b7f2f68c58d) carries Outlook-only IMAP-error OAuth2
+    tip (wording aligned to OUTLOOK_TROUBLESHOOTING.md per Kilo) + new test module
+    (empty state, Outlook configured/unconfigured, tip, no tip for Gmail). Left out:
+    _test_provider_account refactor (CodeScene/Kilo/Greptile findings; main already
+    has Outlook via per-provider blocks), #1624 empty-state text (main #1745 is better),
+    .jules/palette.md. Required test: python3 -m pytest tests/test_diagnose_docker_connectivity.py
+    -q -> 5 passed; git diff --check exit 0. Drift: BOT Palette #1775 (2026-10-19)
+    touched diagnose_docker_connectivity.py after WI creation, non-superseding; remainder
+    re-derived on main 0b7f2f68c58d. Original #1624 stays OPEN; Stage 3 reconciles.
+    Do not close from Stage 2.'
+- event_id: evt-s2-20261020-email-1784-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5:evt-s2-20261020-email-1784-i
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1784 provenance to #1624 via WI s2-20261017-email-security-pipeline-1624.
+    Head 68d8c35486ab; isDraft=true re-read after create (0gd not needed).'
+- event_id: evt-s2-20261020-email-1784-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5:evt-s2-20261020-email-1784-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #1784 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261020-email-1784-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5:evt-s2-20261020-email-1784-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT UI salvage complete from #1624. Stage 1 re-ingests draft #1784.
+    Merge authority is never Stage 2. PASS_ROUTINE.'
+- event_id: evt-s2-20261020-email-1720-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60:evt-s2-20261020-email-1720-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261020 (single runner, Abhi-cleared via PR Desk 10:17 CT):
+    activate WI s2-20261017-email-security-pipeline-1720 (attempt 1) for salvage draft
+    #1785.'
+- event_id: evt-s2-20261020-email-1720-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1720@9e1aeecf15456f993db636ccc892b2e20eed2c60:evt-s2-20261020-email-1720-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261017-email-security-pipeline-1720 consumed. Draft
+    #1785 (head b767d7c709cb, base 68d8c35486ab) carries argparse --help/unknown-arg
+    handling before load_dotenv; main(argv=None) means no CLI args, __main__ passes
+    sys.argv[1:]; tests for --help, unknown arg, main([]). Left out: _test_gmail_account/_test_proton_account
+    refactor (pre-Outlook base, would drop Outlook), empty-results exit change (already
+    on main). Required test: python3 -m pytest tests/test_diagnose_docker_connectivity.py
+    -q -> 8 passed; git diff --check exit 0. Stacked: base is the #1784 salvage branch
+    (same files; sequential per WI), not main. Drift: BOT Palette #1775 (2026-10-19)
+    touched diagnose_docker_connectivity.py after WI creation, non-superseding; remainder
+    re-derived on main 0b7f2f68c58d. Original #1720 stays OPEN; Stage 3 reconciles.
+    Do not close from Stage 2.'
+- event_id: evt-s2-20261020-email-1785-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac:evt-s2-20261020-email-1785-i
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1785 provenance to #1720 via WI s2-20261017-email-security-pipeline-1720.
+    Head b767d7c709cb; isDraft=true re-read after create (0gd not needed).'
+- event_id: evt-s2-20261020-email-1785-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac:evt-s2-20261020-email-1785-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #1785 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261020-email-1785-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1785@b767d7c709cb856da6c26ef48f7cf320ca9cc4ac:evt-s2-20261020-email-1785-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT UI salvage complete from #1720. Stage 1 re-ingests draft #1785.
+    Merge authority is never Stage 2. PASS_ROUTINE. Stacked: base is the #1784 salvage
+    branch (same files; sequential per WI), not main.'
+- event_id: evt-s2-20261020-email-1694-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e:evt-s2-20261020-email-1694-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261020 (single runner, Abhi-cleared via PR Desk 10:17 CT):
+    activate WI s2-20261017-email-security-pipeline-1694 (attempt 1) for salvage draft
+    #1786.'
+- event_id: evt-s2-20261020-email-1694-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e:evt-s2-20261020-email-1694-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261017-email-security-pipeline-1694 consumed. Draft
+    #1786 (head 9945c09b4ed3, base 0b7f2f68c58d) carries provider prompt [1-4, default:
+    1] + empty input -> DEFAULT_PROVIDER_CHOICE ''1'' (single constant per Kilo);
+    tests assert return ''1'' and hint text. Left out: stale-main snapshot content
+    (workflows, .github/scripts, .trunk, docs, other modules, unrelated tests). Required
+    test: python3 -m pytest tests/test_ui_palette.py -q -> 19 passed; git diff --check
+    exit 0. Drift: BOT Palette #1775 (2026-10-19) appended diagnose tests to tests/test_ui_palette.py
+    after WI creation; setup_wizard.py unchanged; remainder re-derived on main 0b7f2f68c58d.
+    Original #1694 stays OPEN; Stage 3 reconciles. Do not close from Stage 2.'
+- event_id: evt-s2-20261020-email-1786-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd:evt-s2-20261020-email-1786-i
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1786 provenance to #1694 via WI s2-20261017-email-security-pipeline-1694.
+    Head 9945c09b4ed3; isDraft=true re-read after create (0gd not needed).'
+- event_id: evt-s2-20261020-email-1786-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd:evt-s2-20261020-email-1786-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #1786 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261020-email-1786-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd:evt-s2-20261020-email-1786-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT UI salvage complete from #1694. Stage 1 re-ingests draft #1786.
+    Merge authority is never Stage 2. PASS_ROUTINE.'
+- event_id: evt-s2-20261020-email-1665-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0:evt-s2-20261020-email-1665-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261020 (single runner, Abhi-cleared via PR Desk 10:17 CT):
+    activate WI s2-20261017-email-security-pipeline-1665 (attempt 1) for salvage draft
+    #1787.'
+- event_id: evt-s2-20261020-email-1665-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1665@475cc0bcc450158ae226c933741a515cb17500e0:evt-s2-20261020-email-1665-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261017-email-security-pipeline-1665 consumed. Draft
+    #1787 (head 1694200a8e8c, base 0b7f2f68c58d) carries print_threat_score meter_len
+    = max(20, width - 30) with rationale comment; tests at widths 40/60/70/100 and
+    terminal width 80. Left out: render_alert dynamic width (already on main), stale-main
+    snapshot content; Kilo width-3 geometry and Greptile emoji-width notes recorded
+    as reviewer notes. Required test: python3 -m pytest tests/test_alert_system_console.py
+    -q -> 21 passed; git diff --check exit 0. Drift: no main commits on allowed paths
+    since WI creation; remainder re-derived on main 0b7f2f68c58d. Original #1665 stays
+    OPEN; Stage 3 reconciles. Do not close from Stage 2.'
+- event_id: evt-s2-20261020-email-1787-i
+  kind: IMPORT
+  item_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221:evt-s2-20261020-email-1787-i
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import salvage draft #1787 provenance to #1665 via WI s2-20261017-email-security-pipeline-1665.
+    Head 1694200a8e8c; isDraft=true re-read after create (0gd not needed).'
+- event_id: evt-s2-20261020-email-1787-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221:evt-s2-20261020-email-1787-a
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate replacement draft #1787 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261020-email-1787-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221:evt-s2-20261020-email-1787-h
+  status: PROJECTED
+  created_at_utc: '2026-10-20T15:32:53Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT UI salvage complete from #1665. Stage 1 re-ingests draft #1787.
+    Merge authority is never Stage 2. PASS_ROUTINE.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
