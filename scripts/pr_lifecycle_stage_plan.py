@@ -20,7 +20,6 @@ if str(SCRIPT_DIR) not in sys.path:
 import pr_lifecycle_feed as feed_mod  # noqa: E402
 import pr_lifecycle_pipeline_health as health  # noqa: E402
 import pr_lifecycle_reconcile as reconcile_mod  # noqa: E402
-from pr_lifecycle_health_runtime import work_item_is_usable  # noqa: E402
 from pr_lifecycle_reselect_signals import SignalsResult  # noqa: E402
 
 STAGE2_ENQUEUE_CAP = 5
@@ -235,7 +234,9 @@ def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
     keys: set[str] = set()
     now = _utc_now()
     for work_item in ledger.get("stage2_work_items") or []:
-        if not isinstance(work_item, dict) or not work_item_is_usable(work_item, now):
+        if not isinstance(work_item, dict) or not health.work_item_is_usable(
+            work_item, now
+        ):
             continue
         key = str(work_item.get("source_item_key") or work_item.get("source_key") or "")
         if key:
@@ -244,7 +245,8 @@ def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
 
 
 def _stage2_can_book(item: dict[str, Any]) -> bool:
-    """Return whether Stage 2 owns this item and may register it.
+    """
+    Return whether Stage 2 owns this item and may register it.
 
     Stage 1 reselect skips Stage 2-owned items, and Stage 3 only hands off
     its own reconciliation items. Never-touch keys stay out.
@@ -260,17 +262,46 @@ def _stage2_can_book(item: dict[str, Any]) -> bool:
     return not health.is_never_touch_key(item.get("key"))
 
 
+def _stage2_booking_action(
+    item: Any,
+    signals: health.ReselectSignals,
+    already: set[str],
+) -> dict[str, Any] | None:
+    """Return one BOOK_STAGE2_WI action, or None when the item cannot be booked."""
+    if not isinstance(item, dict) or not _stage2_can_book(item):
+        return None
+    key = str(item.get("key") or "")
+    if not key or key in already:
+        return None
+    allowed_paths = _enqueue_source_paths(item, signals, key)
+    if not _enqueue_fields_complete(item, key, allowed_paths):
+        return None
+    action = _enqueue_action(
+        item,
+        key,
+        allowed_paths,
+        live_base_sha=health.signal_value(signals.live_base_sha_by_key, key),
+    )
+    action["action"] = "BOOK_STAGE2_WI"
+    action["reason"] = "STAGE2_BOOK_OWNED"
+    action["note"] = (
+        "Stage 2 registers its own complete work item; "
+        "same anchors as ENQUEUE_STAGE2_WI and HANDOFF_MECHANICAL_TO_STAGE2"
+    )
+    return action
+
+
 def plan_stage2_bookings(
     ledger: dict[str, Any],
     *,
     signals: health.ReselectSignals | None = None,
     limit: int = STAGE2_ENQUEUE_CAP,
 ) -> list[dict[str, Any]]:
-    """Propose BOOK_STAGE2_WI actions for Stage 2-owned ledger items.
+    """
+    Propose BOOK_STAGE2_WI actions for Stage 2-owned items without a usable work item.
 
     Same anchors as Stage 1 ``ENQUEUE_STAGE2_WI`` and Stage 3
-    ``HANDOFF_MECHANICAL_TO_STAGE2``. Items that already have a usable work
-    item are not registered again. This does not write the ledger.
+    ``HANDOFF_MECHANICAL_TO_STAGE2``. This does not write the ledger.
     """
     signals = signals or health.ReselectSignals()
     already = _booked_source_keys(ledger)
@@ -278,27 +309,9 @@ def plan_stage2_bookings(
     for item in ledger.get("items") or []:
         if len(actions) >= limit:
             break
-        if not isinstance(item, dict) or not _stage2_can_book(item):
-            continue
-        key = str(item.get("key") or "")
-        if not key or key in already:
-            continue
-        allowed_paths = _enqueue_source_paths(item, signals, key)
-        if not _enqueue_fields_complete(item, key, allowed_paths):
-            continue
-        action = _enqueue_action(
-            item,
-            key,
-            allowed_paths,
-            live_base_sha=health.signal_value(signals.live_base_sha_by_key, key),
-        )
-        action["action"] = "BOOK_STAGE2_WI"
-        action["reason"] = "STAGE2_BOOK_OWNED"
-        action["note"] = (
-            "Stage 2 registers its own complete work item; "
-            "same anchors as ENQUEUE_STAGE2_WI and HANDOFF_MECHANICAL_TO_STAGE2"
-        )
-        actions.append(action)
+        action = _stage2_booking_action(item, signals, already)
+        if action is not None:
+            actions.append(action)
     return actions
 
 
