@@ -885,7 +885,9 @@ def _hold_sentinel_security_item(
         "branch stays REVIEW_SECURITY; title-only reconcile cannot clear it."
     )
     item["guardrail_outcome"] = "REVIEW_SECURITY"
-    item["risk_class"] = "SENSITIVE"
+    # SECURITY: HUMAN_REVIEW is a recorded human hold. Do not downgrade it.
+    if item.get("risk_class") != "HUMAN_REVIEW":
+        item["risk_class"] = "SENSITIVE"
     item["next_action"] = marker if not prior else f"{marker} Prior: {prior}"
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}

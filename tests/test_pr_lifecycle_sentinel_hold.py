@@ -197,6 +197,21 @@ class SentinelFixedHoldTests(unittest.TestCase):
         self.assertIn("HOLD_SENTINEL_SECURITY", names)
         self.assertNotIn("CLOSE_STALE", names)
 
+    def test_hold_does_not_downgrade_human_review(self) -> None:
+        item = _security_item(
+            guardrail_outcome="NOT_RUN",
+            risk_class="HUMAN_REVIEW",
+        )
+        live = self._open(
+            title="🛡️ Sentinel: [security improvement]",
+            headRefName="jules-1",
+        )
+        hold = reconcile._sentinel_hold_action(item, live)
+        ledger = {"ledger_revision": 1, "items": [item], "events": []}
+        reconcile.apply_action_to_ledger(ledger, item, hold)
+        self.assertEqual(item["guardrail_outcome"], "REVIEW_SECURITY")
+        self.assertEqual(item["risk_class"], "HUMAN_REVIEW")
+
     def test_package_name_sentinel_is_not_the_persona(self) -> None:
         item = _security_item(guardrail_source="path_eval", next_action="Review")
         live = self._open(
