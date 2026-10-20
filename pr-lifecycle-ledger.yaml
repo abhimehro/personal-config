@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 645
+ledger_revision: 651
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -25230,21 +25230,20 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: SECURITY
-  risk_class: SENSITIVE
+  classification: REFACTOR
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/loaders.py
   - scripts/tests/test_loaders.py
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  safe_default: Leave open; eligible for Stage 1 routine evaluation.
+  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
+    path or diff backing).'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/468
   attempts:
@@ -25357,21 +25356,20 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: SECURITY
-  risk_class: SENSITIVE
+  classification: REFACTOR
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  safe_default: Leave open; eligible for Stage 1 routine evaluation.
+  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
+    path or diff backing).'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/489
   attempts:
@@ -26569,23 +26567,21 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: SECURITY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - generated_output
+  classification: REFACTOR
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .jules/sentinel.md
   - Scripts/extract_staged_release.py
   - Scripts/test_extract_staged_release.py
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  safe_default: Leave open; eligible for Stage 1 routine evaluation.
+  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
+    path or diff backing).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/368
   attempts:
@@ -32945,21 +32941,19 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: SECURITY
-  risk_class: SENSITIVE
+  classification: REFACTOR
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - Tests/RepoPromptTests/Security/MCPTerminalRecordSanitizationTests.swift
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
-    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
-    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  safe_default: Leave open; eligible for Stage 1 routine evaluation.
+  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
+    path or diff backing).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/471
   attempts:
@@ -32969,7 +32963,7 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: manual
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#473@5f416c6ccc6d6a8ac27addd82f707a3c4a75ba32
   repository: abhimehro/repoprompt-ce
   pr: 473
@@ -34415,22 +34409,20 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: SECURITY
-  risk_class: SENSITIVE
+  classification: REFACTOR
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
-  safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
-    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
-    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  safe_default: Leave open; eligible for Stage 1 routine evaluation.
+  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
+    path or diff backing).'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/605
   attempts:
@@ -34440,7 +34432,7 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: manual
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#502@d240a1ab998274b7b38777ea4983baad1b4ed7c1
   repository: abhimehro/repoprompt-ce
   pr: 502
@@ -34673,6 +34665,195 @@ items:
   - evt-reconcile-20261020104946-bc1dddab
   revision: 1
   updated_at_utc: '2026-10-20T10:49:46Z'
+- key: abhimehro/personal-config#2586@86121c7d65796f4d848256c37fb29fb8c3d4f694
+  repository: abhimehro/personal-config
+  pr: 2586
+  url: https://github.com/abhimehro/personal-config/pull/2586
+  base_sha: a0ef05d59059e9bec4f4bdaf53226d887fe82e1d
+  head_sha: 86121c7d65796f4d848256c37fb29fb8c3d4f694
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-20
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2586
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-20T10:54:11Z'
+- key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
+  repository: abhimehro/Seatek_Analysis
+  pr: 1043
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1043
+  base_sha: 1b25a5d8861af3637cfc3f17a6d9f330618b8cd2
+  head_sha: ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-20
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1043
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-20T10:54:11Z'
+- key: abhimehro/repoprompt-ce#506@8a17cd6bac857334953ba93bfe582cea26fe2235
+  repository: abhimehro/repoprompt-ce
+  pr: 506
+  url: https://github.com/abhimehro/repoprompt-ce/pull/506
+  base_sha: fd30b9b1e031b255e67719064076e3d3ee688367
+  head_sha: 8a17cd6bac857334953ba93bfe582cea26fe2235
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-20
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/506
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-20T10:54:11Z'
+- key: abhimehro/repoprompt-ce#508@adcf1044e3797004cfe0f7491d30dfbb79c44568
+  repository: abhimehro/repoprompt-ce
+  pr: 508
+  url: https://github.com/abhimehro/repoprompt-ce/pull/508
+  base_sha: d1c6b5c4fdcd5596619d31d69628a95ba72b8927
+  head_sha: adcf1044e3797004cfe0f7491d30dfbb79c44568
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-20
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/508
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-20T10:54:11Z'
+- key: abhimehro/repoprompt-ce#509@7f35f25793102ca8b01e201ccd39980d7058957d
+  repository: abhimehro/repoprompt-ce
+  pr: 509
+  url: https://github.com/abhimehro/repoprompt-ce/pull/509
+  base_sha: d1c6b5c4fdcd5596619d31d69628a95ba72b8927
+  head_sha: 7f35f25793102ca8b01e201ccd39980d7058957d
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-20
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/repoprompt-ce/pull/509
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-20T10:54:11Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
