@@ -695,10 +695,11 @@ def apply_action_to_ledger(
         return _note_observed_terminal(ledger, item, action)
     if action.get("action") == "BACKFILL_PATHS":
         return _backfill_item_paths(ledger, item, action)
-    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
-        return _reclassify_title_security_item(ledger, item, action)
-    if action.get("action") == "HOLD_SENTINEL_SECURITY":
-        return _hold_sentinel_security_item(ledger, item, action)
+    if action.get("action") in {
+        "RECLASSIFY_TITLE_SECURITY",
+        "HOLD_SENTINEL_SECURITY",
+    }:
+        return _apply_recorded_security_action(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -796,10 +797,17 @@ def _reclassify_title_security_item(
     return {"event_id": None}
 
 
+def _apply_recorded_security_action(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply a title reclassify or a Sentinel hold without a new transition."""
+    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
+        return _reclassify_title_security_item(ledger, item, action)
+    return _hold_sentinel_security_item(ledger, item, action)
+
+
 def _sentinel_already_held(item: dict[str, Any]) -> bool:
-    """
-    Return whether a Sentinel item is already a fixed REVIEW_SECURITY hold.
-    """
+    """Return whether a Sentinel item is already a fixed REVIEW_SECURITY hold."""
     if item.get("guardrail_outcome") != "REVIEW_SECURITY":
         return False
     next_action = str(item.get("next_action") or "")
@@ -814,12 +822,7 @@ def _sentinel_already_held(item: dict[str, Any]) -> bool:
 def _sentinel_hold_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """
-    Plan a fixed REVIEW_SECURITY hold for a Sentinel persona or branch.
-
-    Return None unless the live or recorded identity is Sentinel and the
-    item is not already held. Does not consult path or diff backing.
-    """
+    """Plan a fixed REVIEW_SECURITY hold for a Sentinel persona or branch."""
     if item.get("lifecycle_state") == "TERMINAL" or item.get("author_type") != "BOT":
         return None
     if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
@@ -841,12 +844,7 @@ def _sentinel_hold_action(
 def _hold_sentinel_security_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """
-    Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition.
-
-    Classification is left as recorded. Title text is not copied into the
-    classification field. Item revision stays put.
-    """
+    """Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition."""
     del action
     next_action = str(item.get("next_action") or "")
     if (

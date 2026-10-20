@@ -35,10 +35,7 @@ from typing import Any
 
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_persist import dump_ledger
-from pr_lifecycle_reconcile_guards import (
-    SENTINEL_HOLD_MARKER,
-    is_sentinel_security_pr,
-)
+from pr_lifecycle_reconcile_guards import SENTINEL_HOLD_MARKER
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -727,24 +724,6 @@ def clearance_rule(item: dict[str, Any], patch: dict[str, Any] | None) -> str | 
     return None
 
 
-def _sentinel_evidence_hold(evidence: GuardrailEvidence | None) -> bool:
-    """Return whether supplied evidence names a Sentinel persona or branch."""
-    if evidence is None:
-        return False
-    return is_sentinel_security_pr(
-        {"title": evidence.title, "headRefName": evidence.head_ref}
-    )
-
-
-def _sticky_security_hold(
-    effective: set[str],
-    fail_closed: bool,
-    evidence: GuardrailEvidence | None,
-) -> bool:
-    """Return whether paths, a failed fetch, or Sentinel identity stays held."""
-    return bool(effective) or fail_closed or _sentinel_evidence_hold(evidence)
-
-
 def evaluate_item(
     item: dict[str, Any],
     clear_standin: bool = False,
@@ -785,8 +764,7 @@ def evaluate_item(
         and not effective
         and (outcome in _CLEARABLE_HOLDS or item.get("classification") == "SECURITY")
     )
-    # SECURITY: Sentinel persona or sentinel/ branch stays REVIEW_SECURITY.
-    sticky_flag = _sticky_security_hold(effective, fail_closed, evidence)
+    sticky_flag = bool(effective) or fail_closed
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
     recorded = (set(classes) | signals) - exempt
