@@ -76,6 +76,30 @@ class TestRunCmd(unittest.TestCase):
         self.assertEqual(out, "")
         self.assertEqual(err, "not found")
 
+    @patch("scratch_triage.subprocess.run")
+    def test_fetch_repo_prs_invalid_repo_rejected(self, mock_run):
+        invalid_repos = [
+            "--option-injection/repo",
+            "-f/repo",
+            "invalid_repo_no_slash",
+        ]
+        for bad_repo in invalid_repos:
+            prs = scratch_triage._fetch_repo_prs(bad_repo)
+            self.assertEqual(prs, [])
+        mock_run.assert_not_called()
+
+    @patch("scratch_triage.subprocess.run")
+    def test_process_pr_invalid_repo_or_pr_escalated(self, mock_run):
+        invalid_prs = [
+            {"full_repo": "--option-injection/repo", "number": 123},
+            {"full_repo": "owner/repo", "number": -5},
+            {"full_repo": "owner/repo", "number": "123;injection"},
+        ]
+        for pr in invalid_prs:
+            res_pr, status = scratch_triage._process_pr(pr)
+            self.assertEqual(status, "escalated")
+        mock_run.assert_not_called()
+
 
 class TestContainsAllKeywords(unittest.TestCase):
     def test_contains_all_present(self):
