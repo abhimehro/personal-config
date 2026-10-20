@@ -234,7 +234,9 @@ switch_profile() {
 
 	local test_result
 	local retry=0
-	local max_retries=5
+	# Bounded filter retry after DNS readiness: VPN-off / protocol flips can
+	# answer google.com before profile filters have settled (warm-up race).
+	local max_retries=12
 	while true; do
 		if test_profile_connection "$profile_name" "$LISTENER_IP"; then
 			test_result=0
@@ -253,11 +255,11 @@ switch_profile() {
 
 	if [[ $test_result -eq 0 ]]; then
 		log_success "Successfully switched to $profile_name profile ($protocol)"
-		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active"
+		echo -e "\nProfile: $profile_name\nProtocol: $protocol\nStatus: Active"
 		return 0
 	elif [[ $test_result -eq 2 ]]; then
 		log_warning "Successfully switched to $profile_name profile ($protocol), but ads are not being blocked."
-		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
+		echo -e "\nProfile: $profile_name\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
 		return 0
 	else
 		log_error "Failed to establish connection with $profile_name profile"
