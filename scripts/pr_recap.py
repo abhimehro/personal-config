@@ -105,6 +105,16 @@ class Config:
     comment_anchor: str = DEFAULT_COMMENT_ANCHOR
     secret_references: dict[str, Any] = dataclasses.field(default_factory=dict)
 
+    @property
+    def issue_key_prefixes(self) -> tuple[str, ...]:
+        """Return the uppercase team prefix when team_id is 2–10 ASCII letters.
+
+        Otherwise return an empty tuple, disabling issue-key prefix filtering.
+        """
+        if re.fullmatch(r"[A-Za-z]{2,10}", self.team_id):
+            return (self.team_id.upper(),)
+        return ()
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Config:
         team_id = data.get("teamId")
@@ -265,6 +275,43 @@ def _map_keyword_to_relationship(keyword: str) -> RelationshipType:
     if normalized == "contributes to":
         return "contributes"
     return "links"
+
+
+def filter_issue_keys(
+    issue_map: dict[str, RelationshipType],
+    allowed_prefixes: tuple[str, ...],
+    keep: frozenset[str] = frozenset(),
+) -> dict[str, RelationshipType]:
+    """Keep keys whose prefix before the first hyphen is allowed or that are in keep.
+
+    Both checks are case-sensitive. An empty allowed_prefixes returns issue_map
+    itself; otherwise return a new mapping without modifying the input.
+    """
+    if not allowed_prefixes:
+        return issue_map
+
+    filtered: dict[str, RelationshipType] = {}
+    for key, relationship in issue_map.items():
+        if key in keep or key.split("-", 1)[0] in allowed_prefixes:
+            filtered[key] = relationship
+        else:
+            logger.info(
+                "Ignoring issue key %s: prefix not in %s", key, allowed_prefixes
+            )
+    return filtered
+
+
+def _explicit_issue_keys(explicit_issues: tuple[str, ...]) -> frozenset[str]:
+    """Return unique, trimmed, uppercase keys from CLI KEY[:relationship] values.
+
+    Ignore blank entries and discard everything after the first colon without
+    validating key syntax.
+    """
+    return frozenset(
+        normalize_issue_key(raw.strip().split(":", 1)[0])
+        for raw in explicit_issues
+        if raw and raw.strip()
+    )
 
 
 def extract_issue_keys(
@@ -1019,9 +1066,35 @@ def build_recap_comment(
 # ============================================================
 
 
+def _resolve_under_roots(candidate: Path, allowed_roots: list[Path]) -> Path | None:
+    """Return the resolved candidate only when contained under one root."""
+    try:
+        resolved = candidate.expanduser().resolve()
+    except OSError:
+        return None
+    for root in allowed_roots:
+        if resolved == root or root in resolved.parents:
+            return resolved
+    return None
+
+
+def _safe_event_path(raw: str | None) -> Path | None:
+    """Constrain the event payload path to trusted runner/workspace roots (S8707)."""
+    if not raw:
+        return None
+    allowed_roots: list[Path] = []
+    for var in ("GITHUB_WORKSPACE", "RUNNER_TEMP"):
+        root = os.getenv(var)
+        if root:
+            allowed_roots.append(Path(root).resolve())
+    if not allowed_roots:
+        return None
+    return _resolve_under_roots(Path(raw), allowed_roots)
+
+
 def resolve_pr_context(args: argparse.Namespace) -> PRContext:
     """Resolve PR context from GitHub Actions environment, event JSON, or local git state."""
-    event_path = args.event_path or os.getenv("GITHUB_EVENT_PATH")
+    event_path = _safe_event_path(args.event_path or os.getenv("GITHUB_EVENT_PATH"))
     event_name = (
         args.event_name
         or os.getenv("GITHUB_EVENT_NAME")
@@ -1029,7 +1102,7 @@ def resolve_pr_context(args: argparse.Namespace) -> PRContext:
     )
 
     event_payload: dict[str, Any] = {}
-    if event_path and os.path.isfile(event_path):
+    if event_path and event_path.is_file():
         try:
             with open(event_path, "r", encoding="utf-8") as f:
                 event_payload = json.load(f)
@@ -1184,22 +1257,51 @@ def resolve_pr_context(args: argparse.Namespace) -> PRContext:
 # ============================================================
 
 
+def _config_allowed_roots() -> list[Path]:
+    """Trusted config roots: cwd, git toplevel, optional env allow-root."""
+    allowed_roots: list[Path] = [Path.cwd().resolve()]
+    try:
+        repo_root = _run_cmd(
+            ["git", "rev-parse", "--show-toplevel"],
+            timeout=5,
+        ).stdout.strip()
+        if repo_root:
+            allowed_roots.append(Path(repo_root).resolve())
+    except Exception as exc:
+        logger.debug("Failed to determine git toplevel: %s", exc)
+    extra_root = os.getenv("PR_RECAP_CONFIG_ALLOWROOT")
+    if extra_root:
+        allowed_roots.append(Path(extra_root).resolve())
+    return allowed_roots
+
+
+def _safe_config_path(raw: Path) -> Path | None:
+    """Constrain a config path to the current working tree or its git root (S8707)."""
+    return _resolve_under_roots(raw, _config_allowed_roots())
+
+
+def _default_config_candidates() -> list[Path]:
+    """List the default .pr-recap.json candidates: cwd, then git toplevel."""
+    candidate_paths: list[Path] = [Path(".pr-recap.json")]
+    try:
+        repo_root = _run_cmd(
+            ["git", "rev-parse", "--show-toplevel"],
+            timeout=5,
+        ).stdout.strip()
+        if repo_root:
+            candidate_paths.append(Path(repo_root) / ".pr-recap.json")
+    except Exception as exc:
+        logger.debug("Failed to determine git toplevel: %s", exc)
+    return candidate_paths
+
+
 def load_config(config_path: Path | None = None) -> Config:
     """Load and validate configuration from .pr-recap.json."""
-    candidate_paths: list[Path] = []
     if config_path:
-        candidate_paths.append(config_path)
+        contained = _safe_config_path(config_path)
+        candidate_paths = [contained] if contained is not None else []
     else:
-        candidate_paths.append(Path(".pr-recap.json"))
-        try:
-            repo_root = _run_cmd(
-                ["git", "rev-parse", "--show-toplevel"],
-                timeout=5,
-            ).stdout.strip()
-            if repo_root:
-                candidate_paths.append(Path(repo_root) / ".pr-recap.json")
-        except Exception as exc:
-            logger.debug("Failed to determine git toplevel: %s", exc)
+        candidate_paths = _default_config_candidates()
 
     found_path: Path | None = None
     for p in candidate_paths:
@@ -1396,8 +1498,214 @@ def resolve_linear_api_key(
 # ============================================================
 
 
+def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
+    """Log actionable error or warning when Linear API key cannot be resolved."""
+    op_ref = config.secret_references.get(
+        "onepassword", "op://Personal/LINEAR_API_KEY/credential"
+    )
+    proton_ref = config.secret_references.get("protonpass", {})
+    proton_vault = (
+        proton_ref.get("vault", "Personal")
+        if isinstance(proton_ref, dict)
+        else "Personal"
+    )
+    proton_item = (
+        proton_ref.get("item", "LINEAR_API_KEY")
+        if isinstance(proton_ref, dict)
+        else "LINEAR_API_KEY"
+    )
+    proton_field = (
+        proton_ref.get("field", "Secret") if isinstance(proton_ref, dict) else "Secret"
+    )
+
+    if dry_run:
+        logger.warning(
+            "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
+            "Dry-run mode will plan without network mutations.",
+            op_ref,
+        )
+        return 0
+
+    logger.error(
+        "Linear API key could not be resolved from any available provider:\n"
+        "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
+        "  2. 1Password CLI: %s\n"
+        "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
+        "Action items:\n"
+        "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
+        "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
+        "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
+        "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
+        "  - Shell/CI: Export LINEAR_API_KEY\n"
+        "  - Dry-run: Run with --dry-run to preview actions without mutations.",
+        op_ref,
+        proton_vault,
+        proton_item,
+        proton_field,
+    )
+    return 1
+
+
+def _fetch_issue_or_none(
+    linear_client: LinearClient,
+    issue_key: str,
+    dry_run: bool,
+) -> LinearIssue | None:
+    """Fetch an issue by identifier or UUID, including during a dry run.
+
+    Return None for an empty result or a Linear GraphQL error containing
+    'entity not found' (case-insensitive). HTTP and other errors propagate.
+    """
+    try:
+        return linear_client.get_issue(issue_key)
+    except LinearApiError as exc:
+        message = str(exc).lower()
+        if not (
+            message.startswith("linear graphql error:")
+            and "entity not found" in message
+        ):
+            raise
+        if dry_run:
+            logger.info(
+                "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
+                issue_key,
+            )
+        return None
+
+
+def _sync_single_issue(
+    issue_key: str,
+    relationship: RelationshipType,
+    context: PRContext,
+    config: Config,
+    comment_body: str,
+    linear_client: LinearClient | None,
+    dry_run: bool,
+) -> bool:
+    """Reconcile state, upsert comment, and attach diff link for a single Linear issue.
+
+    Dry runs may fetch the issue but do not mutate Linear. Return True when
+    finished or skipped because the client or issue is missing, including an
+    GraphQL 'entity not found' lookup error. Return False if a state update reports
+    failure; comment and attachment processing still continues in that case.
+    Other lookup errors and errors from mutations propagate.
+    """
+    logger.info(
+        "--- Processing issue %s (relationship=%s) ---", issue_key, relationship
+    )
+    if not linear_client:
+        logger.info("[DRY RUN] Would fetch and reconcile issue %s", issue_key)
+        return True
+
+    issue = _fetch_issue_or_none(linear_client, issue_key, dry_run)
+
+    if issue is None:
+        if dry_run:
+            logger.info("[DRY RUN] Would plan reconciliation for issue %s", issue_key)
+            return True
+        logger.warning("Linear issue '%s' not found in workspace; skipping.", issue_key)
+        return True
+
+    logger.info(
+        "Found issue %s: '%s' currently in state '%s' (%s)",
+        issue.identifier,
+        issue.title,
+        issue.state.name,
+        issue.state.id,
+    )
+
+    # Compute State Transition
+    target_state_id, reason = compute_state_transition(
+        current_state=issue.state,
+        relationship=relationship,
+        context=context,
+        state_map=config.state_map,
+    )
+    logger.info("State transition evaluation: %s", reason)
+
+    had_error = False
+    if target_state_id and not dry_run:
+        updated = linear_client.update_issue_state(issue.id, target_state_id)
+        if updated:
+            logger.info(
+                "Successfully updated state for %s to %s",
+                issue.identifier,
+                target_state_id,
+            )
+        else:
+            logger.error("Failed to update state for %s", issue.identifier)
+            had_error = True
+    elif target_state_id and dry_run:
+        logger.info(
+            "[DRY RUN] Would update state for %s to %s",
+            issue.identifier,
+            target_state_id,
+        )
+
+    # Upsert Recap Comment
+    if not dry_run:
+        comment_id, created = linear_client.upsert_recap_comment(
+            issue=issue,
+            comment_body=comment_body,
+            anchor=config.comment_anchor,
+        )
+        action_str = "Created" if created else "Updated"
+        logger.info(
+            "%s anchored recap comment (%s) on issue %s",
+            action_str,
+            comment_id,
+            issue.identifier,
+        )
+    else:
+        logger.info(
+            "[DRY RUN] Would upsert anchored recap comment on issue %s",
+            issue.identifier,
+        )
+
+    # Attach PR Diff Link
+    if context.diff_url:
+        title = (
+            f"PR #{context.pr_number} Diff"
+            if context.pr_number
+            else f"{context.pr_title} Diff"
+        )
+        if not dry_run:
+            created_link = linear_client.ensure_diff_link(
+                issue=issue,
+                diff_url=context.diff_url,
+                title=title,
+            )
+            if created_link:
+                logger.info(
+                    "Added PR diff link '%s' to %s",
+                    context.diff_url,
+                    issue.identifier,
+                )
+            else:
+                logger.info("PR diff link already present on %s", issue.identifier)
+        else:
+            logger.info(
+                "[DRY RUN] Would attach diff link '%s' to %s",
+                context.diff_url,
+                issue.identifier,
+            )
+
+    return not had_error
+
+
 def run_sync(args: argparse.Namespace) -> int:
-    """Run synchronization between Git/GitHub, GitNexus, and Linear."""
+    """Run synchronization between Git/GitHub, GitNexus, and Linear.
+
+    Filter extracted keys by the configured team prefix, preserving explicit
+    args.issue keys. If none remain, try resolving mirrored GitHub attachments.
+    args.dry_run allows reads and planning but prevents Linear mutations.
+
+    Return 0 on completion, including no matches or skipped missing issues.
+    Return 1 for configuration errors, missing live-mode credentials when issues
+    remain, or per-issue failures. Per-issue exceptions are caught; errors before
+    that loop outside configuration loading propagate, including ValueError for
+    an invalid PR_RECAP_KEY_TIMEOUT value (a timeout in seconds).
+    """
     # 1. Load config
     try:
         config = load_config(Path(args.config) if args.config else None)
@@ -1408,73 +1716,33 @@ def run_sync(args: argparse.Namespace) -> int:
     # 2. Resolve PR Context
     context = resolve_pr_context(args)
 
-    # 3. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
-    key_timeout = float(os.getenv("PR_RECAP_KEY_TIMEOUT", "8.0"))
-    linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
-
-    if not linear_key:
-        op_ref = config.secret_references.get(
-            "onepassword", "op://Personal/LINEAR_API_KEY/credential"
-        )
-        proton_ref = config.secret_references.get("protonpass", {})
-        proton_vault = (
-            proton_ref.get("vault", "Personal")
-            if isinstance(proton_ref, dict)
-            else "Personal"
-        )
-        proton_item = (
-            proton_ref.get("item", "LINEAR_API_KEY")
-            if isinstance(proton_ref, dict)
-            else "LINEAR_API_KEY"
-        )
-        proton_field = (
-            proton_ref.get("field", "Secret")
-            if isinstance(proton_ref, dict)
-            else "Secret"
-        )
-
-        if args.dry_run:
-            logger.warning(
-                "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
-                "Dry-run mode will plan without network mutations.",
-                op_ref,
-            )
-            linear_client = None
-        else:
-            logger.error(
-                "Linear API key could not be resolved from any available provider:\n"
-                "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
-                "  2. 1Password CLI: %s\n"
-                "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
-                "Action items:\n"
-                "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
-                "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
-                "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
-                "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
-                "  - Shell/CI: Export LINEAR_API_KEY\n"
-                "  - Dry-run: Run with --dry-run to preview actions without mutations.",
-                op_ref,
-                proton_vault,
-                proton_item,
-                proton_field,
-            )
-            return 1
-    else:
-        logger.info("Resolved Linear API key via %s", key_source)
-        linear_client = LinearClient(api_key=linear_key)
-
-    # 4. Extract Issue Keys & Relationships
+    # 3. Extract Issue Keys & Relationships
+    explicit_issues = tuple(getattr(args, "issue", None) or ())
     issue_map = extract_issue_keys(
         branch_name=context.branch_name,
         commit_messages=context.commit_messages,
         pr_title=context.pr_title,
         pr_body=context.pr_body,
-        explicit_issues=getattr(args, "issue", None) or (),
+        explicit_issues=explicit_issues,
     )
+    issue_map = filter_issue_keys(
+        issue_map,
+        config.issue_key_prefixes,
+        keep=_explicit_issue_keys(explicit_issues),
+    )
+
+    # 4. Resolve Linear API Key across providers (env -> 1Password -> Proton Pass)
+    key_timeout = float(os.getenv("PR_RECAP_KEY_TIMEOUT", "8.0"))
+    linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
+
+    if linear_key:
+        logger.info("Resolved Linear API key via %s", key_source)
+        linear_client = LinearClient(api_key=linear_key)
+    else:
+        linear_client = None
 
     # 4b. Mirrored Linear Agent resolution fallback (when branch/commits link via GitHub issues or PR URLs)
     if not issue_map and linear_client:
-        # Check if the PR URL itself is linked in Linear via Linear Agent
         if context.pr_number:
             pr_match = linear_client.find_issue_by_attachment_url(
                 f"pull/{context.pr_number}"
@@ -1487,7 +1755,6 @@ def run_sync(args: argparse.Namespace) -> int:
                 )
                 issue_map[pr_match.identifier] = "links"
 
-        # Check if any referenced GitHub issues (e.g. 'Fixes #535') are mirrored in Linear
         gh_issues = extract_github_issue_references(
             commit_messages=context.commit_messages,
             pr_title=context.pr_title,
@@ -1511,6 +1778,11 @@ def run_sync(args: argparse.Namespace) -> int:
         )
         return 0
 
+    if not linear_client:
+        err_code = _handle_missing_linear_key(config, args.dry_run)
+        if err_code != 0 or not args.dry_run:
+            return err_code
+
     logger.info("Extracted %d linked issue(s): %s", len(issue_map), issue_map)
 
     # 5. Run GitNexus Analysis
@@ -1531,122 +1803,18 @@ def run_sync(args: argparse.Namespace) -> int:
     # 7. Synchronize each issue
     had_error = False
     for issue_key, relationship in issue_map.items():
-        logger.info(
-            "--- Processing issue %s (relationship=%s) ---", issue_key, relationship
-        )
         try:
-            if not linear_client:
-                # Dry run without client
-                logger.info("[DRY RUN] Would fetch and reconcile issue %s", issue_key)
-                continue
-
-            try:
-                issue = linear_client.get_issue(issue_key)
-            except LinearApiError as exc:
-                if args.dry_run and "entity not found" in str(exc).lower():
-                    logger.info(
-                        "[DRY RUN] Issue %s not found in Linear workspace; simulating plan.",
-                        issue_key,
-                    )
-                    issue = None
-                else:
-                    raise
-
-            if not issue:
-                if args.dry_run:
-                    logger.info(
-                        "[DRY RUN] Would plan reconciliation for issue %s", issue_key
-                    )
-                    continue
-                logger.error("Linear issue '%s' not found in workspace.", issue_key)
-                had_error = True
-                continue
-
-            logger.info(
-                "Found issue %s: '%s' currently in state '%s' (%s)",
-                issue.identifier,
-                issue.title,
-                issue.state.name,
-                issue.state.id,
-            )
-
-            # Compute State Transition
-            target_state_id, reason = compute_state_transition(
-                current_state=issue.state,
+            ok = _sync_single_issue(
+                issue_key=issue_key,
                 relationship=relationship,
                 context=context,
-                state_map=config.state_map,
+                config=config,
+                comment_body=comment_body,
+                linear_client=linear_client,
+                dry_run=args.dry_run,
             )
-            logger.info("State transition evaluation: %s", reason)
-
-            if target_state_id and not args.dry_run:
-                updated = linear_client.update_issue_state(issue.id, target_state_id)
-                if updated:
-                    logger.info(
-                        "Successfully updated state for %s to %s",
-                        issue.identifier,
-                        target_state_id,
-                    )
-                else:
-                    logger.error("Failed to update state for %s", issue.identifier)
-                    had_error = True
-            elif target_state_id and args.dry_run:
-                logger.info(
-                    "[DRY RUN] Would update state for %s to %s",
-                    issue.identifier,
-                    target_state_id,
-                )
-
-            # Upsert Recap Comment
-            if not args.dry_run:
-                comment_id, created = linear_client.upsert_recap_comment(
-                    issue=issue,
-                    comment_body=comment_body,
-                    anchor=config.comment_anchor,
-                )
-                action_str = "Created" if created else "Updated"
-                logger.info(
-                    "%s anchored recap comment (%s) on issue %s",
-                    action_str,
-                    comment_id,
-                    issue.identifier,
-                )
-            else:
-                logger.info(
-                    "[DRY RUN] Would upsert anchored recap comment on issue %s",
-                    issue.identifier,
-                )
-
-            # Attach PR Diff Link
-            if context.diff_url:
-                title = (
-                    f"PR #{context.pr_number} Diff"
-                    if context.pr_number
-                    else f"{context.pr_title} Diff"
-                )
-                if not args.dry_run:
-                    created_link = linear_client.ensure_diff_link(
-                        issue=issue,
-                        diff_url=context.diff_url,
-                        title=title,
-                    )
-                    if created_link:
-                        logger.info(
-                            "Added PR diff link '%s' to %s",
-                            context.diff_url,
-                            issue.identifier,
-                        )
-                    else:
-                        logger.info(
-                            "PR diff link already present on %s", issue.identifier
-                        )
-                else:
-                    logger.info(
-                        "[DRY RUN] Would attach diff link '%s' to %s",
-                        context.diff_url,
-                        issue.identifier,
-                    )
-
+            if not ok:
+                had_error = True
         except Exception as exc:
             logger.error("Error processing issue %s: %s", issue_key, exc)
             had_error = True

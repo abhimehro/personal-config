@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 from spreadsheet_safety import escape_spreadsheet_formula
 
 FAIL_CONCLUSIONS = frozenset(
@@ -81,59 +82,77 @@ BODY_MARKERS = (
     "signed-off-by: dependabot",
 )
 
-
-def automation_hints(pr: dict) -> str:
-    hints: list[str] = []
-    hints.extend(_get_author_hints(pr.get("author")))
-    hints.extend(_get_branch_hints(pr.get("headRefName")))
-    hints.extend(_get_title_hints(pr.get("title")))
-    hints.extend(_get_body_hints(pr.get("body")))
-
-    if not hints:
-        return "(none — treat as human unless reviews say otherwise)"
-    return "; ".join(sorted(set(hints)))
+# ⚡ Bolt Optimization: Pre-compute formatted signal pairs at module import time
+# to eliminate repetitive string formatting, rstrip calls, and 4 intermediate list
+# allocations per PR evaluation in automation_hints.
+_BRANCH_SIGNAL_PAIRS = tuple(
+    (sig, f"branch:{sig.rstrip('/')}") for sig in BRANCH_SIGNALS
+)
+_TITLE_KW_PAIRS = tuple(
+    (kw, f"title:{kw}") for kw in TITLE_KW
+)
 
 
-def _get_author_hints(author: dict | None) -> list[str]:
-    hints: list[str] = []
+def _add_author_hints(author: dict | None, hints: set[str]) -> None:
+    """Add bot-flag and bot-login hints to the supplied set in place."""
     if not author:
-        return hints
+        return
     if author.get("is_bot"):
-        hints.append("author_is_bot")
+        hints.add("author_is_bot")
     login = author.get("login")
     if login and login.endswith("[bot]"):
-        hints.append("bot_login")
-    return hints
+        hints.add("bot_login")
 
 
-def _get_branch_hints(branch: str | None) -> list[str]:
+def _add_branch_hints(branch: str | None, hints: set[str]) -> None:
+    """Add the first configured signal matching the branch, ignoring case."""
     if not branch:
-        return []
+        return
     branch_lower = branch.lower()
-    for sig in BRANCH_SIGNALS:
+    for sig, label in _BRANCH_SIGNAL_PAIRS:
         if sig in branch_lower:
-            return [f"branch:{sig.rstrip('/')}"]
-    return []
+            hints.add(label)
+            return
 
 
-def _get_title_hints(title: str | None) -> list[str]:
+def _add_title_hints(title: str | None, hints: set[str]) -> None:
+    """Add the first configured keyword matching the title, ignoring case."""
     if not title:
-        return []
+        return
     title_lower = title.lower()
-    for kw in TITLE_KW:
+    for kw, label in _TITLE_KW_PAIRS:
         if kw in title_lower:
-            return [f"title:{kw}"]
-    return []
+            hints.add(label)
+            return
 
 
-def _get_body_hints(body: str | None) -> list[str]:
+def _add_body_hints(body: str | None, hints: set[str]) -> None:
+    """Add a body hint if any automation marker matches, ignoring case."""
     if not body:
-        return []
+        return
     body_lower = body.lower()
     for m in BODY_MARKERS:
         if m in body_lower:
-            return ["body:automation_marker"]
-    return []
+            hints.add("body:automation_marker")
+            return
+
+
+def automation_hints(pr: dict) -> str:
+    """Return sorted, unique automation hints or a human-review fallback.
+
+    Inspect the PR's author, branch, title, and body, tolerating missing or
+    null fields. Join matching hints with semicolons; if none match, advise
+    treating the PR as human unless reviews indicate otherwise.
+    """
+    hints: set[str] = set()
+    _add_author_hints(pr.get("author"), hints)
+    _add_branch_hints(pr.get("headRefName"), hints)
+    _add_title_hints(pr.get("title"), hints)
+    _add_body_hints(pr.get("body"), hints)
+
+    if not hints:
+        return "(none — treat as human unless reviews say otherwise)"
+    return "; ".join(sorted(hints))
 
 
 def esc_cell(s: str, maxlen: int = 48) -> str:
@@ -231,9 +250,13 @@ def _format_pr_row(pr: dict) -> str:
 
 
 def _print_details_section(data: list) -> None:
-    repo = os.environ.get("GH_DETAIL_REPO", "")
-    if not repo:
+    raw_repo = os.environ.get("GH_DETAIL_REPO", "")
+    if not raw_repo:
         print("\n_Details skipped: internal error (no repo env)._")
+        return
+    repo = parse_repo_name(raw_repo, loc=("GH_DETAIL_REPO", None))
+    if not repo:
+        print("\n_Details skipped: invalid repository reference._")
         return
 
     print("\n#### Review / comment context\n")

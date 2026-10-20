@@ -73,6 +73,37 @@ class TestBootstrapJellyfinLocal(unittest.TestCase):
         ):
             self.assertNotIn(secret, out)
 
+    @patch("subprocess.run")
+    def test_lc_run_uses_timeout(self, mock_run):
+        mock_run.return_value = unittest.mock.MagicMock(returncode=0)
+        with tempfile.NamedTemporaryFile("w") as tmp_sys_xml:
+            tmp_sys_xml.write("<IsStartupWizardCompleted>true</IsStartupWizardCompleted>")
+            tmp_sys_xml.flush()
+            with (
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "_launchctl_bin",
+                    return_value="/bin/launchctl",
+                ),
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "SYSTEM_XML",
+                    pathlib.Path(tmp_sys_xml.name),
+                ),
+                patch.object(
+                    bootstrap_jellyfin_local,
+                    "public_info",
+                    return_value={"StartupWizardCompleted": False},
+                ),
+            ):
+                bootstrap_jellyfin_local.reset_wizard_flag()
+
+        self.assertTrue(mock_run.called)
+        for call_args in mock_run.call_args_list:
+            kwargs = call_args.kwargs
+            self.assertIn("timeout", kwargs)
+            self.assertEqual(kwargs["timeout"], 30)
+
 
 if __name__ == "__main__":
     unittest.main()

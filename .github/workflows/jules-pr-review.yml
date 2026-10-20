@@ -19,12 +19,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Advanced Jules PR Reviewer
+        # Advisory only: keep fail_on: never without block_on so jules/review
+        # check-run conclusions stay non-blocking, and continue-on-error: true
+        # so transient Jules API errors do not red the PR.
+        continue-on-error: true
         uses: thalesraymond/jules-pr-reviewer@0ef1e60f7ac68a03b15c1a04c2e55f73942e8480 # v1.7.0
         with:
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fail_on: never
-          block_on: high
           min_severity_to_report: warning
           strictness: assertive
           skip_drafts: true

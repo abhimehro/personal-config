@@ -530,3 +530,6 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+## 2026-10-03 - Empty State Accessibility
+**Learning:** When adding role="status" to empty-state containers for screen readers, apply the role to a nested div or span for inline content, never directly on an li element within a ul, as it overrides the implicit listitem role. Ensure block-level elements like p are not wrapped in inline span elements to avoid generating invalid HTML.
+**Action:** Always verify the HTML tag context and apply role="status" to a semantically appropriate inner element for empty states instead of blindly adding it to the outermost container.

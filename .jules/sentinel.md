@@ -824,3 +824,21 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-10-03 - Command Injection Risk via eval in Trap Restoration
+
+**Vulnerability:** Command Injection (CWE-78 variant). Saved `trap -p`
+declarations were restored with `eval` in Mole's clean, uninstall, and timeout
+paths (e.g. `eval "$previous_int_trap"`), so a corrupted or hostile saved
+string executed arbitrary shell code at restore time. **Learning:** Saved trap
+declarations are data, not commands. Unquoted expansion performs word
+splitting and globbing without parsing the declaration's quotes, and `eval`
+executes the whole line — neither restores the saved handler safely.
+**Prevention:** Prefer isolating temporary traps in a subshell `( ... )` when
+the work allows it. When a trap must be saved and restored in the current
+shell, pass each saved declaration as one quoted argument to
+`mole_restore_trap "$previous_int_trap"`. The helper validates Bash's
+single-quoted serialization, decodes the handler as data, and calls
+`builtin trap -- "$handler" "$signal"` without evaluating the declaration; a
+declaration it cannot parse is skipped rather than executed, and callers fall
+back to the default disposition so no temporary handler survives a reject.

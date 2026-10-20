@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import copy
+import importlib
 import json
+import re
 import subprocess
 import sys
 import types
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +18,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import yaml  # noqa: E402
+import yaml
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -35,6 +37,22 @@ def make_item(**overrides: object) -> dict[str, object]:
             "Recover unique source only on a new focused draft that "
             "excludes .jules/journals/"
         ),
+    }
+    base.update(overrides)
+    return base
+
+
+def guardrail_item(**overrides: object) -> dict[str, object]:
+    """Build an evaluable BOT item for the guardrail evaluator tests."""
+    base: dict[str, object] = {
+        "key": "owner/repo#1@abc",
+        "repository": "owner/repo",
+        "pr": 1,
+        "author_type": "BOT",
+        "lifecycle_state": "STAGE1_INTAKE",
+        "guardrail_outcome": "NOT_RUN",
+        "changed_paths": ["docs/readme.md"],
+        "revision": 1,
     }
     base.update(overrides)
     return base
@@ -282,3 +300,300 @@ def import_lifecycle_run() -> Any:
     finally:
         _restore_run_stubs(saved)
     return module
+
+
+# --- unblock fixtures --------------------------------------------------------
+# Live below so the pr_lifecycle_unblock import binds after the SCRIPTS path
+# insert, matching the layout of every other helper block in this module.
+
+from unittest import mock
+
+import pr_lifecycle_unblock as unblock
+
+UNBLOCK_NOW = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)
+UNBLOCK_CONFIG = yaml.safe_load(
+    (ROOT / "tasks/pr-review-agent.config.yaml").read_text()
+)
+UNBLOCK_REPO = UNBLOCK_CONFIG["repos"][0]
+UNBLOCK_BOT = UNBLOCK_CONFIG["bot_authors"][1]
+UNBLOCK_SETTINGS = {
+    "advisory_checks": ["CodeScene*", "review"],
+    "trigger_expiry_days": 3,
+    "lineage_stale_days": 3,
+}
+
+
+def make_unblock_pr(**overrides: object) -> dict[str, object]:
+    """Build an overridable open bot PR fixture with no initial blockers."""
+    pr: dict[str, object] = {
+        "number": 23,
+        "repository": UNBLOCK_REPO,
+        "url": f"https://github.com/{UNBLOCK_REPO}/pull/23",
+        "author": {"login": UNBLOCK_BOT, "type": "Bot"},
+        "headRefName": "bot/update",
+        "headRefOid": "a" * 40,
+        "baseRefName": "main",
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "reviewDecision": "REVIEW_REQUIRED",
+        "isDraft": False,
+        "isCrossRepository": False,
+        "checks": [],
+        "comments": [],
+        "commentsTotalCount": 0,
+        "latestReviews": [],
+        "openOctopusFindings": 0,
+    }
+    pr.update(overrides)
+    return pr
+
+
+def route_unblock_pr(
+    pr: dict[str, object], **route_kwargs: Any
+) -> list[dict[str, Any]]:
+    """Route a PR fixture with a fixed clock and default ledger and settings."""
+    return unblock.route_pr(
+        pr,
+        unblock._RouteArgs(
+            author_type=route_kwargs.get("author_type", "BOT"),
+            ledger_items_for_pr=route_kwargs.get("items") or [],
+            ledger=route_kwargs.get("ledger") or {"items": []},
+            settings=route_kwargs.get("settings") or UNBLOCK_SETTINGS,
+            now=UNBLOCK_NOW,
+        ),
+    )
+
+
+def make_salvage_item(**overrides: object) -> dict[str, object]:
+    """Build a merged Stage 2 replacement fixture linked to the original PR."""
+    item: dict[str, object] = {
+        "key": f"{UNBLOCK_REPO}#90@{'b' * 40}",
+        "repository": UNBLOCK_REPO,
+        "pr": 90,
+        "url": f"https://github.com/{UNBLOCK_REPO}/pull/90",
+        "evidence_urls": [f"https://github.com/{UNBLOCK_REPO}/pull/23"],
+        "handoffs": ["evt-s2-20261001-salvage"],
+        "lifecycle_state": "TERMINAL",
+        "terminal_disposition": "MERGED_ROUTINE",
+    }
+    item.update(overrides)
+    return item
+
+
+def run_unblock_plan(
+    live: dict[str, Any] | None = None,
+    *,
+    apply: bool = False,
+    run: Any = None,
+    inventory_error: BaseException | None = None,
+) -> tuple[dict[str, Any], Any]:
+    """Capture a one-repository plan with mocked ledger, inventory, and writes."""
+    config = dict(UNBLOCK_CONFIG)
+    config["repos"] = [UNBLOCK_REPO]
+    ledger = {"ledger_revision": 3, "items": []}
+    output: dict[str, Any] = {}
+    inventory_patch = (
+        mock.patch.object(unblock, "list_open_prs", side_effect=inventory_error)
+        if inventory_error is not None
+        else mock.patch.object(unblock, "list_open_prs", return_value=[live])
+    )
+    with (
+        mock.patch.object(unblock, "load_yaml", side_effect=[config, ledger]),
+        mock.patch.object(
+            unblock.cas,
+            "run_preflight",
+            return_value={"ledger_path": "ledger.yaml"},
+        ),
+        inventory_patch,
+        mock.patch.object(unblock, "fetch_open_octopus_issues", return_value={}),
+        mock.patch.object(unblock, "_apply_action"),
+        mock.patch.object(
+            unblock,
+            "update_backlog_issue",
+            return_value={"action": "NOOP_EMPTY"},
+        ) as update_issue,
+        mock.patch.object(
+            unblock, "_emit", side_effect=lambda plan, _json: output.update(plan)
+        ),
+    ):
+        unblock.run_unblock(
+            unblock._UnblockArgs(
+                apply=apply,
+                json_out=True,
+                repos_filter=[UNBLOCK_REPO],
+                limit=0,
+                run=run or subprocess.run,
+            )
+        )
+    return output, update_issue
+
+
+def inventory_check_contexts() -> list[dict]:
+    """Return the mixed CheckRun and legacy StatusContext fixture nodes."""
+    return [
+        {
+            "__typename": "CheckRun",
+            "name": "Build",
+            "conclusion": "SUCCESS",
+            "status": "COMPLETED",
+        },
+        {
+            "__typename": "CheckRun",
+            "name": "Lint",
+            "conclusion": None,
+            "status": "IN_PROGRESS",
+        },
+        {"__typename": "StatusContext", "context": "Legacy", "state": "ERROR"},
+        {"__typename": "StatusContext", "context": "Optional", "state": "EXPECTED"},
+    ]
+
+
+def inventory_pr_connections() -> dict:
+    """Return the nested reviews/comments/commits connections of the fixture."""
+    return {
+        "latestReviews": {
+            "nodes": [{"author": {"login": "reviewer"}, "state": "APPROVED"}]
+        },
+        "comments": {
+            "totalCount": 1,
+            "nodes": [
+                {
+                    "author": {"login": "reviewer"},
+                    "body": "comment",
+                    "createdAt": "2026-10-02T00:00:00Z",
+                }
+            ],
+        },
+        "reviewThreads": {
+            "pageInfo": {"hasNextPage": False},
+            "nodes": [],
+        },
+        "commits": {
+            "nodes": [
+                {
+                    "commit": {
+                        "author": {"email": "bot@example.com"},
+                        "statusCheckRollup": {
+                            "contexts": {
+                                "pageInfo": {"hasNextPage": False},
+                                "nodes": inventory_check_contexts(),
+                            }
+                        },
+                    }
+                }
+            ]
+        },
+    }
+
+
+def make_inventory_pr(number: int = 12) -> dict:
+    """Build a GraphQL PR fixture with reviews, comments, commits, and check states."""
+    return {
+        "number": number,
+        "url": f"https://github.com/owner/repo/pull/{number}",
+        "title": "Example",
+        "body": "x" * 2200,
+        "isDraft": True,
+        "headRefName": "bot/update",
+        "headRefOid": "a" * 40,
+        "baseRefName": "main",
+        "baseRefOid": "b" * 40,
+        "author": {"login": "dependabot[bot]", "__typename": "Bot"},
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "reviewDecision": "REVIEW_REQUIRED",
+        "createdAt": "2026-10-01T00:00:00Z",
+        "updatedAt": "2026-10-02T00:00:00Z",
+        **inventory_pr_connections(),
+    }
+
+
+def make_inventory_payload(
+    nodes: list[dict], *, next_page: bool = False, cursor: str = "cursor-1"
+):
+    """Wrap PR nodes in a GraphQL page with configurable pagination metadata."""
+    return {
+        "data": {
+            "repository": {
+                "pullRequests": {
+                    "pageInfo": {
+                        "hasNextPage": next_page,
+                        "endCursor": cursor if next_page else None,
+                    },
+                    "nodes": nodes,
+                }
+            }
+        }
+    }
+
+
+_RECONCILE_STUB_NAMES = (
+    "pr_lifecycle_ledger",
+    "pr_lifecycle_ledger_cas",
+    "pr_lifecycle_config",
+    "pr_lifecycle_persist",
+    "pr_lifecycle_support",
+    "pr_lifecycle_yaml",
+)
+
+
+def load_reconcile_with_stubs():
+    """Import pr_lifecycle_reconcile with heavy deps stubbed, then restore.
+
+    The module runs without PyYAML / CAS during the import; sys.modules is
+    restored afterwards so the stubs cannot leak into the rest of the suite.
+    """
+    saved = {name: sys.modules.get(name) for name in _RECONCILE_STUB_NAMES}
+    for name in _RECONCILE_STUB_NAMES:
+        sys.modules[name] = types.ModuleType(name)
+
+    sys.modules["pr_lifecycle_ledger"].STATE_OWNERS = {
+        "STAGE1_INTAKE": "stage1",
+        "STAGE2_QUEUED": "stage2",
+        "STAGE2_ACTIVE": "stage2",
+        "STAGE3_RECONCILIATION": "stage3",
+        "WAITING_HUMAN": "human",
+        "TERMINAL": "none",
+    }
+    sys.modules["pr_lifecycle_ledger"].apply_transition = lambda *a, **k: None
+    sys.modules["pr_lifecycle_support"].ROOT = ROOT
+    sys.modules["pr_lifecycle_support"].SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+    sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
+    sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
+    sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
+    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = (
+        lambda *_a, **_k: 0
+    )
+
+    module = importlib.import_module("pr_lifecycle_reconcile")
+
+    for name in _RECONCILE_STUB_NAMES:
+        prior = saved[name]
+        if prior is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = prior
+    return module
+
+
+def reconcile_item(now: datetime = NOW, **overrides: object) -> dict[str, object]:
+    """Build a reconcile ledger item; `now` anchors updated_at_utc 10d back."""
+    base: dict[str, object] = {
+        "key": "abhimehro/personal-config#99@" + "a" * 40,
+        "repository": "abhimehro/personal-config",
+        "pr": 99,
+        "head_sha": "a" * 40,
+        "base_sha": "b" * 40,
+        "author_type": "BOT",
+        "guardrail_outcome": "HOLD_EVIDENCE",
+        "lifecycle_state": "WAITING_HUMAN",
+        "current_owner": "human",
+        "next_owner": "human",
+        "terminal_disposition": None,
+        "revision": 1,
+        "handoffs": [],
+        "updated_at_utc": (now - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "next_action": "Await human",
+    }
+    base.update(overrides)
+    return base

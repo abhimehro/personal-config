@@ -221,8 +221,8 @@ def reset_wizard_flag() -> None:
     ) -> subprocess.CompletedProcess[bytes]:
         # nosec B603 — fixed /bin/launchctl argv only
         if capture:
-            return subprocess.run(args, capture_output=True)  # nosec B603
-        return subprocess.run(args, check=False)  # nosec B603
+            return subprocess.run(args, capture_output=True, timeout=30)  # nosec B603
+        return subprocess.run(args, check=False, timeout=30)  # nosec B603
 
     _lc_run([lc, "kickstart", "-k", label])
     # If kickstart fails (label not loaded), try bootstrap

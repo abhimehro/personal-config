@@ -61,14 +61,16 @@ def identity_policy_from_config(config: Mapping[str, Any]) -> IdentityPolicy:
     identity = _require_identity_mapping(config)
     bots = _require_bot_authors(config)
     required = _require_independent_signals(identity)
+    # ⚡ Bolt Optimization: Pre-lowercase string tuples at policy creation time
+    # to avoid redundant .lower() calls and intermediate allocations in hot matching loops.
     return IdentityPolicy(
         bot_authors=tuple(str(item) for item in bots),
         maintainer_token_logins=_require_str_tuple(identity, "maintainer_token_logins"),
         required_independent_signals=required,
-        branch_prefixes=_require_str_tuple(identity, "branch_prefixes"),
-        title_keywords=_require_str_tuple(identity, "title_keywords"),
-        body_markers=_require_str_tuple(identity, "body_markers"),
-        bot_commit_email_suffixes=_require_str_tuple(
+        branch_prefixes=_require_lowered_str_tuple(identity, "branch_prefixes"),
+        title_keywords=_require_lowered_str_tuple(identity, "title_keywords"),
+        body_markers=_require_lowered_str_tuple(identity, "body_markers"),
+        bot_commit_email_suffixes=_require_lowered_str_tuple(
             identity, "bot_commit_email_suffixes"
         ),
         source=str(identity.get("source") or ""),
@@ -268,12 +270,20 @@ def _prefix_match(value: str, prefixes: Sequence[str]) -> bool:
     # NOTE: Jules/Bolt/Palette/Sentinel often use hyphen prefixes (`jules-`)
     # rather than slash (`jules/`). Matching is startswith; both forms must be
     # versioned in config. Ordinary `feat/` / `fix/` are not bot prefixes.
-    # ⚡ Bolt Optimization: Use tuple in startswith to evaluate all prefixes simultaneously in C
-    return value.startswith(tuple(prefix.lower() for prefix in prefixes if prefix))
+    # ⚡ Bolt Optimization: Evaluating str.startswith with a tuple directly in C
+    # avoids generator expression overhead and iterator allocation in Python.
+    if isinstance(prefixes, tuple):
+        return value.startswith(prefixes)
+    return any(value.startswith(prefix.lower()) for prefix in prefixes if prefix)
 
 
 def _keyword_match(value: str, keywords: Sequence[str]) -> bool:
-    return any(keyword.lower() in value for keyword in keywords if keyword)
+    # ⚡ Bolt Optimization: Explicit for loop over pre-lowered keywords avoids
+    # generator allocation overhead in CPython and short-circuits instantly.
+    for kw in keywords:
+        if kw and kw in value:
+            return True
+    return False
 
 
 def _allowlisted_commenter(pr: Mapping[str, Any], policy: IdentityPolicy) -> bool:
@@ -299,10 +309,11 @@ def _comment_logins(value: Any) -> tuple[str, ...]:
 
 
 def _bot_commit_email(pr: Mapping[str, Any], policy: IdentityPolicy) -> bool:
-    suffixes = tuple(item.lower() for item in policy.bot_commit_email_suffixes)
+    # ⚡ Bolt Optimization: Use str.endswith on pre-lowered policy tuple directly
+    # to evaluate endswith matching entirely within C code.
+    suffixes = policy.bot_commit_email_suffixes
     for email in _commit_emails(pr):
-        lowered = email.lower()
-        if any(lowered.endswith(suffix) for suffix in suffixes):
+        if email.lower().endswith(suffixes):
             return True
     return False
 
@@ -329,6 +340,15 @@ def _require_str_tuple(identity: Mapping[str, Any], key: str) -> tuple[str, ...]
             f"config.identity_classification.{key}: non-empty list required"
         )
     return tuple(str(item) for item in value)
+
+
+def _require_lowered_str_tuple(identity: Mapping[str, Any], key: str) -> tuple[str, ...]:
+    value = identity.get(key)
+    if not isinstance(value, list) or not value:
+        raise ValueError(
+            f"config.identity_classification.{key}: non-empty list required"
+        )
+    return tuple(str(item).lower() for item in value if item)
 
 
 def _mapping(value: Any) -> dict[str, Any]:

@@ -343,15 +343,18 @@ batch_uninstall_applications() {
 		fi
 	}
 
+	# Stop the sudo keepalive and reapply the saved INT/TERM traps, resetting
+	# either signal to its default when no previous trap was installed or its
+	# declaration cannot be parsed (a stale handler must not survive a reject).
 	_restore_uninstall_traps() {
 		_cleanup_sudo_keepalive
 		if [[ -n $old_trap_int ]]; then
-			if [[ $old_trap_int == "trap -- "* ]]; then eval "$old_trap_int"; fi
+			mole_restore_trap "$old_trap_int" || trap - INT
 		else
 			trap - INT
 		fi
 		if [[ -n $old_trap_term ]]; then
-			if [[ $old_trap_term == "trap -- "* ]]; then eval "$old_trap_term"; fi
+			mole_restore_trap "$old_trap_term" || trap - TERM
 		else
 			trap - TERM
 		fi

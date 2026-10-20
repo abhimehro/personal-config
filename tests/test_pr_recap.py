@@ -20,7 +20,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 # Ensure scripts dir is on sys.path
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
@@ -43,6 +43,7 @@ from pr_recap import (  # noqa: E402
     compute_state_transition,
     extract_github_issue_references,
     extract_issue_keys,
+    filter_issue_keys,
     load_config,
     run_sync,
 )
@@ -173,6 +174,29 @@ class TestIssueExtraction(unittest.TestCase):
         self.assertEqual(result.get("ABHI-901"), "links")
         self.assertEqual(result.get("ABHI-902"), "closes")
         self.assertEqual(result.get("ABHI-903"), "contributes")
+
+    def test_filter_issue_keys_by_prefix_and_explicit_keep(self) -> None:
+        issue_map = {
+            "ABHI-12": "closes",
+            "CWE-88": "links",
+            "CVE-2024": "links",
+        }
+        self.assertEqual(
+            filter_issue_keys(issue_map, ("ABHI",)),
+            {"ABHI-12": "closes"},
+        )
+        self.assertIs(filter_issue_keys(issue_map, ()), issue_map)
+        with_ops = {**issue_map, "OPS-1": "links"}
+        self.assertEqual(
+            filter_issue_keys(with_ops, ("ABHI",), keep=frozenset({"OPS-1"})),
+            {"ABHI-12": "closes", "OPS-1": "links"},
+        )
+
+    def test_explicit_issue_keys_normalize_cli_values(self) -> None:
+        self.assertEqual(
+            pr_recap._explicit_issue_keys((" ops-1:closes ", "", "ABHI-2")),
+            {"OPS-1", "ABHI-2"},
+        )
 
     def test_expanded_branch_categories(self) -> None:
         test_cases = [
@@ -653,22 +677,41 @@ class TestConfigValidation(unittest.TestCase):
         self.assertEqual(cfg.state_map["done"], CANONICAL_STATES["done"])
         self.assertEqual(cfg.comment_anchor, "<!-- custom-anchor -->")
 
+    def test_issue_key_prefixes_from_team_id(self) -> None:
+        for team_id, expected in (
+            ("ABHI", ("ABHI",)),
+            ("abhi", ("ABHI",)),
+            ("personal-config", ()),
+        ):
+            with self.subTest(team_id=team_id):
+                self.assertEqual(
+                    Config.from_dict({"teamId": team_id}).issue_key_prefixes,
+                    expected,
+                )
+
     def test_missing_team_id_raises_value_error(self) -> None:
         with self.assertRaises(ValueError) as cm:
             Config.from_dict({"stateMap": {}})
         self.assertIn("'teamId' is required", str(cm.exception))
 
     def test_invalid_json_raises_value_error(self) -> None:
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
-            tf.write("{malformed json")
-            tf.flush()
-            temp_path = Path(tf.name)
-        try:
-            with self.assertRaises(ValueError) as cm:
-                load_config(temp_path)
-            self.assertIn("invalid JSON", str(cm.exception))
-        finally:
-            temp_path.unlink()
+        """Malformed JSON inside a trusted root must raise ValueError."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir) / "pr-recap-bad.json"
+            temp_path.write_text("{malformed json", encoding="utf-8")
+            with patch.dict(os.environ, {"PR_RECAP_CONFIG_ALLOWROOT": tmpdir}):
+                with self.assertRaises(ValueError) as cm:
+                    load_config(temp_path)
+                self.assertIn("invalid JSON", str(cm.exception))
+
+    def test_config_path_outside_repo_rejected(self) -> None:
+        """A config path outside trusted roots must fall back to defaults."""
+        with tempfile.TemporaryDirectory() as outside:
+            rogue = Path(outside) / "rogue.json"
+            rogue.write_text("{}", encoding="utf-8")
+            cfg = load_config(rogue)
+            self.assertIsNotNone(cfg.team_id)
+            self.assertEqual(cfg.team_id, os.getenv("LINEAR_TEAM_ID", "personal-config"))
 
     def test_load_default_when_no_file(self) -> None:
         cfg = load_config(Path("/nonexistent/.pr-recap.json"))
@@ -759,10 +802,146 @@ class TestLinearClientReliability(unittest.TestCase):
             self.assertEqual(issue.state.name, "Done")
 
 
+class TestSyncSingleIssue(unittest.TestCase):
+    def setUp(self) -> None:
+        self.context = PRContext(
+            event_name="pull_request",
+            action="synchronize",
+            pr_number=123,
+            pr_title="Issue sync",
+            pr_body="",
+            pr_url="https://github.com/org/repo/pull/123",
+            branch_name="main",
+            head_sha="abcdef123456",
+            is_draft=False,
+            is_merged=False,
+            is_closed=False,
+            commit_messages=(),
+        )
+        self.config = Config.from_dict({"teamId": "ABHI"})
+
+    def _sync(self, client: MagicMock) -> bool:
+        return pr_recap._sync_single_issue(
+            issue_key="ABHI-12",
+            relationship="links",
+            context=self.context,
+            config=self.config,
+            comment_body="recap",
+            linear_client=client,
+            dry_run=False,
+        )
+
+    def test_live_not_found_error_is_skipped_without_mutations(self) -> None:
+        client = MagicMock()
+        client.get_issue.side_effect = LinearApiError(
+            "Linear GraphQL error: Entity not found: Issue"
+        )
+
+        self.assertTrue(self._sync(client))
+        client.update_issue_state.assert_not_called()
+        client.upsert_recap_comment.assert_not_called()
+        client.ensure_diff_link.assert_not_called()
+
+    def test_fetch_issue_or_none_live_not_found_returns_none(self) -> None:
+        client = MagicMock()
+        client.get_issue.side_effect = LinearApiError(
+            "Linear GraphQL error: Entity not found: Issue"
+        )
+
+        self.assertIsNone(
+            pr_recap._fetch_issue_or_none(client, "ABHI-12", dry_run=False)
+        )
+
+    def test_live_none_issue_is_skipped_without_mutations(self) -> None:
+        client = MagicMock()
+        client.get_issue.return_value = None
+
+        self.assertTrue(self._sync(client))
+        client.update_issue_state.assert_not_called()
+        client.upsert_recap_comment.assert_not_called()
+        client.ensure_diff_link.assert_not_called()
+
+    def test_live_other_linear_api_errors_still_raise(self) -> None:
+        client = MagicMock()
+        client.get_issue.side_effect = LinearApiError("Linear HTTP 401 error: ")
+
+        with self.assertRaises(LinearApiError):
+            self._sync(client)
+        client.update_issue_state.assert_not_called()
+        client.upsert_recap_comment.assert_not_called()
+
+
 class TestEndToEndSync(unittest.TestCase):
     """Test end-to-end sync, CLI invocation, and safe no-op handling."""
 
-    def test_sync_no_issue_keys_is_safe_noop(self) -> None:
+    def _run_sync_for_inputs(
+        self,
+        commit_messages: tuple[str, ...],
+        explicit_issues: tuple[str, ...] = (),
+    ) -> tuple[int, MagicMock]:
+        parser = pr_recap.build_parser()
+        command = ["sync", "--branch", "main", "--dry-run"]
+        for issue in explicit_issues:
+            command.extend(["--issue", issue])
+        args = parser.parse_args(command)
+        context = PRContext(
+            event_name="pull_request",
+            action="synchronize",
+            pr_number=123,
+            pr_title="",
+            pr_body="",
+            pr_url="https://github.com/org/repo/pull/123",
+            branch_name="main",
+            head_sha="abcdef123456",
+            is_draft=False,
+            is_merged=False,
+            is_closed=False,
+            commit_messages=commit_messages,
+        )
+        with (
+            patch(
+                "pr_recap.load_config",
+                return_value=Config.from_dict({"teamId": "ABHI"}),
+            ),
+            patch("pr_recap.resolve_pr_context", return_value=context),
+            patch(
+                "pr_recap.resolve_linear_api_key",
+                return_value=("test-api-key", "test"),
+            ),
+            patch("pr_recap.LinearClient", autospec=True) as client_class,
+            patch("pr_recap.GitNexusAnalyzer", autospec=True),
+        ):
+            client = client_class.return_value
+            client.find_issue_by_attachment_url.return_value = None
+            client.get_issue.return_value = None
+            exit_code = run_sync(args)
+        return exit_code, client
+
+    def test_sync_filters_out_other_team_keys_before_mirror_fallback(self) -> None:
+        exit_code, client = self._run_sync_for_inputs(("fix CWE-88 injection",))
+
+        self.assertEqual(exit_code, 0)
+        client.get_issue.assert_not_called()
+        client.find_issue_by_attachment_url.assert_called_once_with("pull/123")
+
+    def test_sync_only_processes_keys_for_configured_team(self) -> None:
+        exit_code, client = self._run_sync_for_inputs(
+            ("fix CWE-88 injection and closes ABHI-12",)
+        )
+
+        self.assertEqual(exit_code, 0)
+        client.get_issue.assert_called_once_with("ABHI-12")
+
+    def test_sync_explicit_issue_bypasses_prefix_filter(self) -> None:
+        exit_code, client = self._run_sync_for_inputs(
+            ("fix CWE-88 injection",), (" ops-1:closes ",)
+        )
+
+        self.assertEqual(exit_code, 0)
+        client.get_issue.assert_called_once_with("OPS-1")
+
+    @patch("pr_recap.resolve_linear_api_key", return_value=("fake-key", "environment"))
+    def test_sync_no_issue_keys_is_safe_noop(self, mock_key: MagicMock) -> None:
         parser = pr_recap.build_parser()
         args = parser.parse_args(
             [
@@ -775,8 +954,46 @@ class TestEndToEndSync(unittest.TestCase):
                 "chore: bump deps",
             ]
         )
-        exit_code = run_sync(args)
+        context = PRContext(
+            event_name="pull_request",
+            action="synchronize",
+            pr_number=123,
+            pr_title=args.pr_title,
+            pr_body="Routine maintenance",
+            pr_url="https://github.com/org/repo/pull/123",
+            branch_name=args.branch,
+            head_sha="abcdef123456",
+            is_draft=False,
+            is_merged=False,
+            is_closed=False,
+            commit_messages=(args.commit_message,),
+        )
+        # No textual keys can still require an authenticated lookup of a
+        # mirrored PR attachment. Keep credentials and CI PR metadata synthetic.
+        with (
+            patch(
+                "pr_recap.load_config",
+                return_value=Config.from_dict({"teamId": "test"}),
+            ),
+            patch("pr_recap.resolve_pr_context", return_value=context),
+            patch(
+                "pr_recap.resolve_linear_api_key",
+                return_value=("test-api-key", "test"),
+            ),
+            patch("pr_recap.LinearClient", autospec=True) as client_class,
+            patch("pr_recap.GitNexusAnalyzer", autospec=True) as analyzer_class,
+        ):
+            client = client_class.return_value
+            client.find_issue_by_attachment_url.return_value = None
+            exit_code = run_sync(args)
+
         self.assertEqual(exit_code, 0)
+        client_class.assert_called_once_with(api_key="test-api-key")
+        self.assertEqual(
+            client.method_calls,
+            [call.find_issue_by_attachment_url("pull/123")],
+        )
+        analyzer_class.assert_not_called()
 
     def test_sync_dry_run(self) -> None:
         parser = pr_recap.build_parser()
@@ -794,6 +1011,7 @@ class TestEndToEndSync(unittest.TestCase):
         self.assertEqual(exit_code, 0)
 
     def test_github_actions_event_mapping(self) -> None:
+        """A RUNNER_TEMP-contained event payload maps onto the PR context."""
         event_data = {
             "action": "ready_for_review",
             "pull_request": {
@@ -811,12 +1029,9 @@ class TestEndToEndSync(unittest.TestCase):
             },
         }
 
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
-            json.dump(event_data, tf)
-            tf.flush()
-            event_file = Path(tf.name)
-
-        try:
+        with tempfile.TemporaryDirectory() as runner_tmp:
+            event_file = Path(runner_tmp) / "event.json"
+            event_file.write_text(json.dumps(event_data), encoding="utf-8")
             parser = pr_recap.build_parser()
             args = parser.parse_args(
                 [
@@ -826,22 +1041,40 @@ class TestEndToEndSync(unittest.TestCase):
                     "--dry-run",
                 ]
             )
-            ctx = pr_recap.resolve_pr_context(args)
+            with patch.dict(os.environ, {"RUNNER_TEMP": runner_tmp}):
+                ctx = pr_recap.resolve_pr_context(args)
             self.assertEqual(ctx.pr_number, 123)
             self.assertEqual(ctx.action, "ready_for_review")
             self.assertEqual(ctx.branch_name, "fix/ABHI-777-leak")
             self.assertFalse(ctx.is_draft)
             self.assertFalse(ctx.is_merged)
             self.assertEqual(ctx.diff_url, "https://github.com/org/repo/pull/123.diff")
-
             issues = extract_issue_keys(
                 branch_name=ctx.branch_name,
                 pr_title=ctx.pr_title,
                 pr_body=ctx.pr_body,
             )
             self.assertEqual(issues.get("ABHI-777"), "closes")
-        finally:
-            event_file.unlink()
+
+    def test_event_path_outside_runner_rejected(self) -> None:
+        """An event payload outside trusted runner roots must be ignored."""
+        rogue_payload = {"pull_request": {"number": 999, "title": "rogue"}}
+        with tempfile.TemporaryDirectory() as outside:
+            rogue = Path(outside) / "rogue-event.json"
+            rogue.write_text(json.dumps(rogue_payload), encoding="utf-8")
+            parser = pr_recap.build_parser()
+            args = parser.parse_args(
+                [
+                    "sync",
+                    "--event-path",
+                    str(rogue),
+                    "--dry-run",
+                ]
+            )
+            with patch.object(pr_recap, "_run_cmd") as run_cmd:
+                ctx = pr_recap.resolve_pr_context(args)
+            self.assertNotEqual(ctx.pr_number, 999)
+            self.assertNotEqual(ctx.pr_title, "rogue")
 
 
 class TestSecretResolution(unittest.TestCase):

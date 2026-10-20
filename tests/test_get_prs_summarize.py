@@ -1,3 +1,4 @@
+import copy
 import sys
 import unittest
 from pathlib import Path
@@ -6,7 +7,18 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from get_prs_summarize import automation_hints, check_summary
+import io
+import os
+from unittest.mock import patch
+from get_prs_summarize import (
+    _add_author_hints,
+    _add_body_hints,
+    _add_branch_hints,
+    _add_title_hints,
+    _print_details_section,
+    automation_hints,
+    check_summary,
+)
 
 
 class TestAutomationHints(unittest.TestCase):
@@ -103,6 +115,171 @@ class TestAutomationHints(unittest.TestCase):
             automation_hints(pr), "(none — treat as human unless reviews say otherwise)"
         )
 
+    def test_missing_and_empty_fields(self):
+        for pr in ({}, {"author": {}, "headRefName": "", "title": "", "body": ""}):
+            with self.subTest(pr=pr):
+                self.assertEqual(
+                    automation_hints(pr),
+                    "(none — treat as human unless reviews say otherwise)",
+                )
+
+    def test_partial_author_records(self):
+        cases = [
+            ({"is_bot": True}, "author_is_bot"),
+            ({"is_bot": True, "login": None}, "author_is_bot"),
+            ({"is_bot": True, "login": ""}, "author_is_bot"),
+            ({"login": "helper[bot]"}, "bot_login"),
+            ({"is_bot": None, "login": "helper[bot]"}, "bot_login"),
+        ]
+        for author, expected in cases:
+            with self.subTest(author=author):
+                self.assertEqual(automation_hints({"author": author}), expected)
+
+    def test_bot_login_requires_exact_suffix(self):
+        for login in (
+            None, "", "helperbot", "[bot]helper", "helper[bot]-old", "helper[BOT]"
+        ):
+            with self.subTest(login=login):
+                self.assertEqual(
+                    automation_hints({"author": {"login": login}}),
+                    "(none — treat as human unless reviews say otherwise)",
+                )
+
+    def test_text_signals_are_case_insensitive(self):
+        cases = [
+            ("headRefName", "FEATURE/BOLT/Fix", "branch:bolt"),
+            ("headRefName", "DEPENDABOT/npm", "branch:dependabot"),
+            ("title", "Fix by SeNtInEl", "title:sentinel"),
+            ("title", "Apply AUTOFIX", "title:autofix"),
+            ("body", "See JULES.GOOGLE.COM/task/1", "body:automation_marker"),
+            ("body", "CREATED AUTOMATICALLY BY JULES", "body:automation_marker"),
+            (
+                "body",
+                "PULL REQUEST WAS AUTOMATICALLY generated",
+                "body:automation_marker",
+            ),
+            ("body", "SIGNED-OFF-BY: DEPENDABOT", "body:automation_marker"),
+        ]
+        for field, value, expected in cases:
+            with self.subTest(field=field, value=value):
+                self.assertEqual(automation_hints({field: value}), expected)
+
+    def test_branch_signal_priority_is_independent_of_text_order(self):
+        cases = [
+            ("copilot/renovate/dependabot/npm", "branch:renovate"),
+            ("bolt/fix-sentinel", "branch:sentinel"),
+            ("palette/ui-bolt/fix", "branch:bolt"),
+            ("dependabot/npm-jules", "branch:jules"),
+        ]
+        for branch, expected in cases:
+            with self.subTest(branch=branch):
+                self.assertEqual(automation_hints({"headRefName": branch}), expected)
+
+    def test_title_keyword_priority_is_independent_of_text_order(self):
+        cases = [
+            ("Automation by Palette and Bolt", "title:bolt"),
+            ("Renovate and Dependabot", "title:dependabot"),
+            ("Autofix by Sentinel", "title:sentinel"),
+            ("Sentinel fix by Jules", "title:jules"),
+        ]
+        for title, expected in cases:
+            with self.subTest(title=title):
+                self.assertEqual(automation_hints({"title": title}), expected)
+
+    def test_branch_delimiters_are_required_for_slash_signals(self):
+        for branch in (
+            "bolt", "bolt-fix", "palette-ui", "cursor-agent-fix", "dependabot-npm"
+        ):
+            with self.subTest(branch=branch):
+                self.assertEqual(
+                    automation_hints({"headRefName": branch}),
+                    "(none — treat as human unless reviews say otherwise)",
+                )
+
+    def test_branch_signals_match_inside_names_and_without_trailing_content(self):
+        cases = [
+            ("feature/bolt/fix", "branch:bolt"),
+            ("bolt/", "branch:bolt"),
+            ("automation-", "branch:automation-"),
+            ("feature/renovate-config", "branch:renovate"),
+        ]
+        for branch, expected in cases:
+            with self.subTest(branch=branch):
+                self.assertEqual(automation_hints({"headRefName": branch}), expected)
+
+    def test_repeated_and_distinct_body_markers_produce_one_hint(self):
+        pr = {
+            "body": (
+                "jules.google.com jules.google.com\n"
+                "created automatically by jules\n"
+                "pull request was automatically generated\n"
+                "signed-off-by: dependabot"
+            )
+        }
+        self.assertEqual(automation_hints(pr), "body:automation_marker")
+
+    def test_body_near_misses_do_not_signal_automation(self):
+        for body in ("Jules helped", "created manually by jules", "signed-off-by: alice"):
+            with self.subTest(body=body):
+                self.assertEqual(
+                    automation_hints({"body": body}),
+                    "(none — treat as human unless reviews say otherwise)",
+                )
+
+    def test_calls_are_independent_and_leave_input_unchanged(self):
+        pr = {
+            "author": {"is_bot": True, "login": "helper[bot]"},
+            "headRefName": "bolt/fix",
+            "title": "Autofix",
+            "body": "jules.google.com",
+        }
+        original = copy.deepcopy(pr)
+        expected = (
+            "author_is_bot; body:automation_marker; bot_login; branch:bolt; title:autofix"
+        )
+        self.assertEqual(automation_hints(pr), expected)
+        self.assertEqual(
+            automation_hints({}), "(none — treat as human unless reviews say otherwise)"
+        )
+        self.assertEqual(automation_hints({"title": "Palette"}), "title:palette")
+        self.assertEqual(automation_hints(pr), expected)
+        self.assertEqual(pr, original)
+
+
+class TestAddAutomationHints(unittest.TestCase):
+    def test_helpers_accumulate_in_place_and_are_idempotent(self):
+        cases = [
+            (
+                _add_author_hints,
+                {"is_bot": True, "login": "helper[bot]"},
+                {"author_is_bot", "bot_login"},
+            ),
+            (_add_branch_hints, "bolt/fix", {"branch:bolt"}),
+            (_add_title_hints, "Autofix", {"title:autofix"}),
+            (_add_body_hints, "jules.google.com", {"body:automation_marker"}),
+        ]
+        for helper, value, expected in cases:
+            with self.subTest(helper=helper.__name__):
+                hints = {"existing_hint"}
+                self.assertIsNone(helper(value, hints))
+                self.assertEqual(hints, {"existing_hint"} | expected)
+                self.assertIsNone(helper(value, hints))
+                self.assertEqual(hints, {"existing_hint"} | expected)
+
+    def test_helpers_preserve_existing_hints_without_a_match(self):
+        cases = [
+            (_add_author_hints, (None, {}, {"is_bot": False, "login": "alice"})),
+            (_add_branch_hints, (None, "", "feature/button")),
+            (_add_title_hints, (None, "", "Add a button")),
+            (_add_body_hints, (None, "", "A manual update")),
+        ]
+        for helper, values in cases:
+            for value in values:
+                with self.subTest(helper=helper.__name__, value=value):
+                    hints = {"existing_hint"}
+                    self.assertIsNone(helper(value, hints))
+                    self.assertEqual(hints, {"existing_hint"})
+
 
 class TestCheckSummary(unittest.TestCase):
     def test_none_rollup(self):
@@ -167,6 +344,34 @@ class TestCheckSummary(unittest.TestCase):
             {"status": "COMPLETED", "conclusion": "failure"},
         ]
         self.assertEqual(check_summary(rollup), "FAIL_1")
+
+
+class TestPrintDetailsSection(unittest.TestCase):
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": ""}, clear=True)
+    def test_missing_repo_env(self):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            _print_details_section([{"number": 1}])
+        self.assertIn("_Details skipped: internal error (no repo env)._", buf.getvalue())
+
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": "-oProxyCommand=calc.exe"}, clear=True)
+    def test_invalid_repo_env(self):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf), patch("sys.stderr", io.StringIO()):
+            _print_details_section([{"number": 1}])
+        self.assertIn("_Details skipped: invalid repository reference._", buf.getvalue())
+
+    @patch.dict(os.environ, {"GH_DETAIL_REPO": "owner/valid-repo"}, clear=True)
+    @patch("get_prs_summarize.fetch_details", return_value="- reviewDecision: `APPROVED`")
+    def test_valid_repo_env(self, mock_fetch):
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            _print_details_section([{"number": 123}])
+        output = buf.getvalue()
+        self.assertIn("#### Review / comment context", output)
+        self.assertIn("**PR #123**", output)
+        self.assertIn("- reviewDecision: `APPROVED`", output)
+        mock_fetch.assert_called_once_with("owner/valid-repo", 123)
 
 
 if __name__ == "__main__":

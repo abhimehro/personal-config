@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,9 +27,13 @@ if str(SCRIPT_DIR) not in sys.path:
 # pylint: disable=wrong-import-position
 import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
+import pr_lifecycle_reconcile_guards as guards
+from pr_identity import classify_pr_identity, identity_policy_from_config
 from pr_lifecycle_config import validate_config
+from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
+from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
-from pr_lifecycle_support import ROOT
+from pr_lifecycle_support import ROOT, SHA_RE
 from pr_lifecycle_yaml import load_yaml
 
 DEFAULT_EXPIRY_DAYS = 7
@@ -121,6 +127,57 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
     return payload
 
 
+def _gh_pr_files(repo: str, pr_num: int) -> list[str] | None:
+    """Fetch the PR's changed-file paths via REST; None on any failure."""
+    # Paginates so a large diff cannot silently truncate evidence (a hidden
+    # sensitive path must never downgrade a hold). Renames contribute their
+    # old path too: `.previous_filename` keeps a file moved OUT of a
+    # sensitive location from looking clean. An empty result also returns
+    # None: a real open PR always changes at least one file, so an empty
+    # list means the evidence could not be trusted. The API caps at 3000
+    # files even under pagination with no truncation signal, so hitting the
+    # cap fails closed as well.
+    cmd = [
+        "gh",
+        "api",
+        f"repos/{repo}/pulls/{pr_num}/files",
+        "--paginate",
+        "--jq",
+        ".[] | .filename, (.previous_filename // empty)",
+    ]
+    try:
+        completed = subprocess.run(
+            cmd, check=False, capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    paths = sorted({line for line in completed.stdout.splitlines() if line})
+    if not paths or len(paths) >= 3000:
+        return None
+    return paths
+
+
+def _gh_pr_diff(repo: str, pr_num: int) -> str | None:
+    """Fetch the PR's unified diff via gh CLI.
+
+    Return None on process launch errors, a 60-second timeout, a nonzero exit
+    status, or empty output (an open PR always changes at least one file, so
+    empty output is untrusted evidence); otherwise return stdout.
+    """
+    cmd = ["gh", "pr", "diff", str(pr_num), "--repo", repo]
+    try:
+        completed = subprocess.run(  # nosec B603
+            cmd, check=False, capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return None
+    return completed.stdout
+
+
 def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     """Return days since the item update, or None for an invalid timestamp."""
     stamp = _parse_utc(item.get("updated_at_utc"))
@@ -129,8 +186,8 @@ def _item_age_days(item: dict[str, Any], now: datetime) -> float | None:
     return (now - stamp).total_seconds() / 86400.0
 
 
-# Only labels that make one disposition unambiguous evidence; anything else
-# leaves classification pending rather than guessing.
+# Only labels that make one disposition unambiguous evidence; other
+# unlabeled closures are recorded as CLOSED_NOOP rather than guessed.
 _CLOSED_LABEL_DISPOSITIONS = {
     "duplicate": "CLOSED_DUPLICATE",
     "superseded": "CLOSED_SUPERSEDED",
@@ -173,6 +230,13 @@ def _classify_live_merge(
 def _classify_live_close(
     item: dict[str, Any], live: dict[str, Any], key: str
 ) -> dict[str, Any] | None:
+    """Classify a closed PR by its labels.
+
+    Without a disposition label: a REVIEW_SECURITY item closed unmerged was
+    never security-reviewed, so it terminates CLOSED_UNREVIEWED; anything
+    else terminates CLOSED_NOOP. (Pending classification remains merge-only:
+    a MERGED live state without merger evidence still routes to Stage 3.)
+    """
     labels = _label_names(live)
     disposition = next(
         (
@@ -183,7 +247,30 @@ def _classify_live_close(
         None,
     )
     if disposition is None:
-        return _pending_terminal(item, key, "CLOSED", "no disposition-bearing label")
+        if item.get("guardrail_outcome") == "REVIEW_SECURITY":
+            return {
+                "action": "TERMINAL_CLOSED",
+                "key": key,
+                "to_state": "TERMINAL",
+                "disposition": "CLOSED_UNREVIEWED",
+                "reason": (
+                    "live PR state=CLOSED unmerged under REVIEW_SECURITY "
+                    "without disposition label; closed before review "
+                    "→ CLOSED_UNREVIEWED"
+                ),
+                "evidence": {"labels": labels},
+            }
+        return {
+            "action": "TERMINAL_CLOSED",
+            "key": key,
+            "to_state": "TERMINAL",
+            "disposition": "CLOSED_NOOP",
+            "reason": (
+                "live PR state=CLOSED without disposition label; "
+                "closed outside lifecycle → CLOSED_NOOP"
+            ),
+            "evidence": {"labels": labels},
+        }
     return {
         "action": "TERMINAL_CLOSED",
         "key": key,
@@ -197,7 +284,7 @@ def _classify_live_close(
 def _pending_terminal(
     item: dict[str, Any], key: str, observed: str, detail: str
 ) -> dict[str, Any] | None:
-    """Observed a terminal live state without evidence to classify it.
+    """Route an unclassified merge to Stage 3 when merger evidence is absent.
 
     Non-Stage-3 items route to Stage 3 for classification; an item already
     Stage-3-owned gets an in-place observation note (same-state handoffs are
@@ -236,6 +323,10 @@ def _classify_live_terminal(
     if live_state == "MERGED":
         return _classify_live_merge(item, live, key)
     if live_state == "CLOSED":
+        # A closed PR with a mergedAt timestamp was merged, not abandoned —
+        # mergedAt is the authoritative signal, not the state label.
+        if live.get("mergedAt"):
+            return _classify_live_merge(item, live, key)
         return _classify_live_close(item, live, key)
     return None
 
@@ -309,6 +400,97 @@ def _classify_stale(
     }
 
 
+def _needs_path_backfill(item: dict[str, Any]) -> bool:
+    """True for a nonterminal item whose changed-path evidence is absent."""
+    paths = item.get("changed_paths")
+    return item.get("lifecycle_state") != "TERMINAL" and not (
+        isinstance(paths, list) and paths
+    )
+
+
+def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
+    """True only when a pathless nonterminal item faces an open live PR."""
+    return (
+        _needs_path_backfill(item)
+        and isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "OPEN"
+        and bool(str(item.get("repository") or ""))
+        and _positive_pr_number(item.get("pr"))
+    )
+
+
+def _path_backfill_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Emit a changed_paths backfill for an open live PR missing path evidence."""
+    # Data-only action: it stamps `changed_paths` so the guardrail evaluator
+    # can judge the item on real evidence instead of holding it forever on a
+    # missing list. Fetch failures emit PATH_BACKFILL_FAILED for visibility
+    # (never applied); non-OPEN live states skip the fetch entirely.
+    if not _backfill_eligible(item, live):
+        return None
+    repo = str(item["repository"])
+    pr_num = int(item["pr"])
+    key = str(item.get("key") or "")
+    paths = _gh_pr_files(repo, pr_num)
+    if paths is None:
+        return {
+            "action": "PATH_BACKFILL_FAILED",
+            "key": key,
+            "repository": repo,
+            "pr": pr_num,
+            "reason": "changed-paths fetch failed; item stays unevaluated",
+        }
+    return {
+        "action": "BACKFILL_PATHS",
+        "key": key,
+        "repository": repo,
+        "pr": pr_num,
+        "paths": paths,
+        "reason": f"backfill changed_paths ({len(paths)} files) for guardrail evidence",
+    }
+
+
+def _security_tag_reconcile_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Plan reclassification for an open, nonterminal BOT PR lacking backing.
+
+    Return None for forced holds, head/base drift, missing changed paths,
+    security backing, or a failed or empty diff lookup. Prefer the item's diff, then the live PR's diff,
+    fetching via gh only when both are None. Do not mutate the item or PR.
+    """
+    if not (
+        isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "OPEN"
+        and item.get("lifecycle_state") != "TERMINAL"
+        and item.get("author_type") == "BOT"
+        and item.get("classification") == "SECURITY"
+        and not guards.is_forced_security_hold(item)
+        and not _drift_fields(item, live)[2]
+    ):
+        return None
+    paths = item.get("changed_paths")
+    if not isinstance(paths, list) or not paths:
+        return None
+    if guards.has_path_security_backing(paths):
+        return None
+    diff_text = item.get("diff_text")
+    if diff_text is None:
+        diff_text = live.get("diff_text")
+    if diff_text is None:
+        repo = str(item.get("repository") or "")
+        pr_num = item.get("pr")
+        if not repo or not _positive_pr_number(pr_num):
+            return None
+        diff_text = _gh_pr_diff(repo, int(pr_num))
+        if diff_text is None:
+            return None
+    if not str(diff_text).strip():
+        return None
+    return guards.evaluate_security_tag_reconcile(item, diff_text=str(diff_text))
+
+
 def classify_item(
     item: dict[str, Any],
     live: dict[str, Any] | None,
@@ -326,10 +508,14 @@ def classify_item(
             "key": key,
             "reason": "gh pr view failed; skip mutation",
         }
-    return (
-        _classify_live_terminal(item, live, key)
-        or _classify_sha_drift(item, live, key)
-        or _classify_stale(item, expiry_days=expiry_days, now=now, key=key)
+    # A merged or closed PR is done. An already-noted observation returns None;
+    # do not fall through into SHA re-intake just because the recorded head
+    # differs from the closed head.
+    live_state = str(live.get("state") or "").upper()
+    if live_state in {"MERGED", "CLOSED"}:
+        return _classify_live_terminal(item, live, key)
+    return _classify_sha_drift(item, live, key) or _classify_stale(
+        item, expiry_days=expiry_days, now=now, key=key
     )
 
 
@@ -379,10 +565,90 @@ def build_transition_event(
     }
 
 
+class ReconcileSkip(Exception):
+    """One action cannot be applied; the rest of the batch may continue."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _anchor_blocked(item: dict[str, Any], action: dict[str, Any]) -> bool:
+    """Sticky security and non-bot head moves stay on their recorded anchor.
+
+    REVIEW_SECURITY and human-authored packets are not silently re-intaken.
+    """
+    if action.get("action") not in {"SHA_DRIFT_REINTAKE", "REANCHOR_HEAD"}:
+        return False
+    if item.get("guardrail_outcome") == "REVIEW_SECURITY":
+        return True
+    if item.get("author_type") != "BOT":
+        return True
+    return False
+
+
+def _rekey_item_head(
+    ledger: dict[str, Any], item: dict[str, Any], live_head: str
+) -> bool:
+    """Point key at live_head. False if that key is already taken.
+
+    Schema requires key.endswith(head_sha) and
+    idempotency_key == f"{item_key}:{event_id}". Rewrite this item's events
+    and any stage2 work-item source keys. Do not bump item revision here.
+    """
+    if not live_head or live_head == item.get("head_sha"):
+        return True
+    if SHA_RE.fullmatch(live_head) is None:
+        return False
+    repository = item.get("repository")
+    pr = item.get("pr")
+    if not repository or pr is None:
+        return False
+    new_key = f"{repository}#{pr}@{live_head}"
+    for other in ledger.get("items") or []:
+        taken = (
+            isinstance(other, dict)
+            and other is not item
+            and other.get("key") == new_key
+        )
+        if taken:
+            return False
+    old_key = item["key"]
+    item["key"] = new_key
+    item["head_sha"] = live_head
+    for event in ledger.get("events") or []:
+        if isinstance(event, dict) and event.get("item_key") == old_key:
+            event_id = event.get("event_id")
+            event["item_key"] = new_key
+            if isinstance(event_id, str) and event_id:
+                event["idempotency_key"] = f"{new_key}:{event_id}"
+    for work in ledger.get("stage2_work_items") or []:
+        if isinstance(work, dict) and work.get("source_item_key") == old_key:
+            work["source_item_key"] = new_key
+    return True
+
+
+def _prepare_live_head(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> None:
+    """Rekey before a transition event is built. Skip leaves the item unchanged."""
+    if action.get("action") not in {"SHA_DRIFT_REINTAKE", "REANCHOR_HEAD"}:
+        return
+    if _anchor_blocked(item, action):
+        raise ReconcileSkip("sticky_anchor")
+    live_head = str(action.get("live_head_sha") or "")
+    if not live_head or live_head == item.get("head_sha"):
+        return
+    if SHA_RE.fullmatch(live_head) is None:
+        raise ReconcileSkip("anchor_invalid_head")
+    if not _rekey_item_head(ledger, item, live_head):
+        raise ReconcileSkip("anchor_key_taken")
+
+
 def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
     live_head = action.get("live_head_sha")
-    if live_head:
-        item["head_sha"] = live_head
+    # Head moves only via _rekey_item_head so the key still ends with head_sha.
+    if live_head and live_head == item.get("head_sha"):
         item["next_action"] = (
             f"Re-anchor intake to live head {live_head}; prior evidence void."
         )
@@ -394,14 +660,14 @@ def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
 def _reanchor_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """In-place head/base re-anchor for items already in STAGE1_INTAKE."""
-    live_head = action.get("live_head_sha")
-    if live_head:
-        item["head_sha"] = live_head
+    """In-place base note for items already in STAGE1_INTAKE.
+
+    The live head is written by _prepare_live_head. Item revision stays put:
+    this path records no transition event, and the projection must match events.
+    """
     live_base = action.get("live_base_sha")
     if live_base:
         item["base_sha"] = live_base
-    item["revision"] = int(item.get("revision") or 0) + 1
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     item["next_action"] = (
         f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
@@ -415,11 +681,21 @@ def apply_action_to_ledger(
     item: dict[str, Any],
     action: dict[str, Any],
 ) -> dict[str, Any]:
-    """Apply an action in memory and return the appended transition event."""
+    """Apply an action to the item and ledger in memory.
+
+    Return the appended transition event, or {"event_id": None} for an
+    in-place action that leaves item revision unchanged. ReconcileSkip
+    propagates when an anchor is blocked or an in-place action has no work.
+    """
+    _prepare_live_head(ledger, item, action)
     if action.get("action") == "REANCHOR_HEAD":
         return _reanchor_item(ledger, item, action)
     if action.get("action") == "TERMINAL_OBSERVED":
         return _note_observed_terminal(ledger, item, action)
+    if action.get("action") == "BACKFILL_PATHS":
+        return _backfill_item_paths(ledger, item, action)
+    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
+        return _reclassify_title_security_item(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -457,10 +733,62 @@ def apply_action_to_ledger(
 def _note_observed_terminal(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
-    """In-place observation note for a Stage-3-owned unclassified terminal."""
-    item["revision"] = int(item.get("revision") or 0) + 1
+    """In-place observation note for a Stage-3-owned unclassified terminal.
+
+    Do not bump item revision: this note has no transition event, and the
+    projection validator requires revision to match the event chain.
+    """
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     item["next_action"] = str(action.get("reason") or "Observed unclassified")
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
+def _backfill_item_paths(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Stamp `changed_paths` in place from a BACKFILL_PATHS action."""
+    # Data-only write: no transition event, no revision bump, and no
+    # updated_at_utc refresh (a path list is evidence, not activity — the
+    # staleness clock must not reset on a backfill).
+    paths = sorted({str(path) for path in action.get("paths") or [] if str(path)})
+    if not paths:
+        raise ReconcileSkip("backfill_empty_paths")
+    if item.get("changed_paths") == paths:
+        raise ReconcileSkip("backfill_noop")
+    item["changed_paths"] = paths
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
+def _reclassify_title_security_item(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply a prevalidated security reclassification to the item in place.
+
+    Replace classification and sensitive paths from the action, defaulting
+    to REFACTOR and no paths. If requested, reset REVIEW_SECURITY to
+    PASS_ROUTINE with routine risk and follow-up guidance. Advance only the
+    ledger revision, leaving item revision and timestamp unchanged, and
+    return {"event_id": None}. Raise ReconcileSkip if already non-SECURITY.
+    """
+    if item.get("classification") != "SECURITY":
+        raise ReconcileSkip("reclassify_noop")
+    to_cls = str(action.get("to_classification") or "REFACTOR")
+    item["classification"] = to_cls
+    item["sensitive_paths"] = list(action.get("sensitive_paths") or [])
+    if (
+        action.get("clear_review_security")
+        and item.get("guardrail_outcome") == "REVIEW_SECURITY"
+    ):
+        item["guardrail_outcome"] = "PASS_ROUTINE"
+        item["risk_class"] = "ROUTINE"
+        item["guardrail_source"] = "path_eval"
+        item["safe_default"] = "Leave open; eligible for Stage 1 routine evaluation."
+        item["next_action"] = (
+            "Stage 1: title-only security tag cleared by reconcile "
+            "(no sensitive path or diff backing)."
+        )
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 
@@ -507,6 +835,83 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     return steps, confirmed
 
 
+_LIFECYCLE_RANK = {
+    "STAGE1_INTAKE": 0,
+    "STAGE2_QUEUED": 1,
+    "STAGE2_ACTIVE": 2,
+    "STAGE3_RECONCILIATION": 3,
+    "WAITING_HUMAN": 4,
+}
+
+
+def _dup_groups(
+    items: list[dict[str, Any]],
+) -> dict[tuple[Any, Any], list[dict[str, Any]]]:
+    """Group nonterminal items that share a (repository, pr) identity."""
+    groups: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
+    for item in items:
+        if not isinstance(item, dict) or item.get("lifecycle_state") == "TERMINAL":
+            continue
+        repo, pr_num = item.get("repository"), item.get("pr")
+        if not repo or not pr_num:
+            continue
+        groups.setdefault((repo, pr_num), []).append(item)
+    return groups
+
+
+def _dup_rank(item: dict[str, Any]) -> tuple[int, int, str]:
+    """Rank an item for survivor selection: state, revision, recency."""
+    return (
+        _LIFECYCLE_RANK.get(str(item.get("lifecycle_state")), -1),
+        int(item.get("revision") or 0),
+        str(item.get("updated_at_utc") or ""),
+    )
+
+
+def _dup_action(loser: dict[str, Any], survivor: dict[str, Any]) -> dict[str, Any]:
+    """Build the TERMINAL_DUPLICATE action for one stale duplicate item."""
+    return {
+        "action": "TERMINAL_DUPLICATE",
+        "key": loser.get("key"),
+        "repository": loser.get("repository"),
+        "pr": loser.get("pr"),
+        "to_state": "TERMINAL",
+        "disposition": "CLOSED_DUPLICATE",
+        "reason": (
+            "duplicate ledger item for the same PR; "
+            f"{survivor.get('key')} is the survivor"
+        ),
+    }
+
+
+def _duplicate_terminal_actions(
+    items: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], set[Any]]:
+    """Return CLOSED_DUPLICATE actions and loser keys for stale dupes."""
+    # Keys embed head_sha, so a re-intake after drift can mint a second
+    # nonterminal item for the same (repository, pr). The item at the most
+    # advanced lifecycle state (tiebreak: higher revision, then newer
+    # updated_at_utc) survives; the rest go TERMINAL/CLOSED_DUPLICATE.
+    # Items missing repository or pr keep their normal per-item path.
+    actions: list[dict[str, Any]] = []
+    losers: set[Any] = set()
+    for dupes in _dup_groups(items).values():
+        if len(dupes) < 2:
+            continue
+        dupes.sort(key=_dup_rank, reverse=True)
+        for loser in dupes[1:]:
+            losers.add(loser.get("key"))
+            actions.append(_dup_action(loser, dupes[0]))
+    return actions, losers
+
+
+def _live_items(items: list[dict[str, Any]], dup_losers: set[Any]) -> Any:
+    """Yield items that are not stale duplicates."""
+    for item in items:
+        if not isinstance(item, dict) or item.get("key") not in dup_losers:
+            yield item
+
+
 def collect_actions(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -517,59 +922,394 @@ def collect_actions(
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
-    actions: list[dict[str, Any]] = []
-    for item in ledger.get("items") or []:
-        action = _action_for_item(item, expiry, clock)
-        if action is None:
-            continue
-        actions.append(action)
+    # Duplicate termination runs first so a loser is not also backfilled.
+    items = ledger.get("items") or []
+    actions, dup_losers = _duplicate_terminal_actions(items)
+    for item in _live_items(items, dup_losers):
+        actions.extend(_action_for_item(item, expiry, clock))
         if limit is not None and len(actions) >= limit:
+            del actions[limit:]
             break
     return actions
 
 
-def _action_for_item(item: Any, expiry: int, clock: datetime) -> dict[str, Any] | None:
-    """Look up and classify one nonterminal ledger item."""
+def build_intake_item(
+    live: dict[str, Any], policy: Any, now: datetime
+) -> dict[str, Any]:
+    """Construct a fail-closed Stage 1 ledger projection for an open PR.
+
+    Use normalized inventory fields and policy to classify the author. Start
+    at revision zero with UNKNOWN risk and NOT_RUN guardrails; do not modify
+    the PR or ledger. Infer classification from supplied changed paths and diff,
+    and sensitive classes from paths; title keywords alone do not imply SECURITY.
+    Missing required inventory fields raise KeyError.
+    """
+    verdict = classify_pr_identity(live, policy)
+    author = {
+        "login": verdict.login,
+        "identity_source": "github_api",
+        "app_slug": verdict.app_slug,
+    }
+    if verdict.method in {
+        "allowlist_login",
+        "allowlist_app_slug",
+        "token_authored_signals",
+    }:
+        author["identity_provenance"] = {
+            "method": verdict.method,
+            "signals": list(verdict.signals),
+        }
+    repository = str(live["repository"])
+    pr = int(live["number"])
+    head_sha = str(live["headRefOid"])
+    url = str(live["url"])
+    raw_paths = live.get("changed_paths")
+    changed_paths = (
+        sorted(
+            {str(p).strip() for p in raw_paths if isinstance(p, str) and str(p).strip()}
+        )
+        if isinstance(raw_paths, list)
+        else []
+    )
+    classification = guards.infer_pr_classification(
+        {**live, "changed_paths": changed_paths},
+        diff_text=live.get("diff_text"),
+    )
+    return {
+        "key": f"{repository}#{pr}@{head_sha}",
+        "repository": repository,
+        "pr": pr,
+        "url": url,
+        "base_sha": str(live["baseRefOid"]),
+        "head_sha": head_sha,
+        "author": author,
+        "author_type": verdict.author_type,
+        "classification": classification,
+        "risk_class": "UNKNOWN",
+        "sensitive_paths": guards.sticky_sensitive_classes(changed_paths),
+        "changed_paths": changed_paths,
+        "guardrail_outcome": "NOT_RUN",
+        "lifecycle_state": "STAGE1_INTAKE",
+        "current_owner": "stage1",
+        "next_owner": "stage1",
+        "terminal_disposition": None,
+        "safe_default": "Leave open; no merge or close until Stage 1 guardrails run.",
+        "next_action": (
+            "Stage 1: run guardrails on newly ingested open PR "
+            f"(ingested {now.strftime('%Y-%m-%d')} by reconcile)."
+        ),
+        "evidence_urls": [url],
+        "attempts": {"evidence": 0, "recovery": 0, "mutations": 0},
+        "handoffs": [],
+        "revision": 0,
+        "updated_at_utc": now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
+def collect_ingest_actions(
+    ledger: dict[str, Any],
+    config: dict[str, Any],
+    open_prs_by_repo: dict[str, list[dict[str, Any]]],
+    *,
+    now: datetime,
+) -> list[dict[str, Any]]:
+    """Plan uncapped intake actions for configured open PRs without changing inputs.
+
+    Skip PRs with any active ledger item, even at an older head. Report invalid
+    identity anchors as INGEST_SKIPPED and terminal current heads as
+    TERMINAL_BUT_OPEN; otherwise return INGEST_OPEN_PR with an intake item.
+    Duplicate inventory entries produce at most one intake item per PR.
+    """
+    items = [item for item in ledger.get("items") or [] if isinstance(item, dict)]
+    ctx = _IngestCtx(items, identity_policy_from_config(config), now)
+    actions: list[dict[str, Any]] = []
+    for repo in config.get("repos") or []:
+        for live in open_prs_by_repo.get(repo, []):
+            action = _ingest_action(repo, live, ctx)
+            if action is not None:
+                actions.append(action)
+    return actions
+
+
+def _author_login_str(author: Any) -> str:
+    """Return the stripped author login from a live PR entry."""
+    if not isinstance(author, dict):
+        return ""
+    return str(author.get("login") or "").strip()
+
+
+def _ingest_skipped(
+    repo: str, reason: str, pr_number: Any = None, *, include_pr: bool = False
+) -> dict[str, Any]:
+    """Build an INGEST_SKIPPED entry, optionally carrying the PR number."""
+    action: dict[str, Any] = {
+        "action": "INGEST_SKIPPED",
+        "repository": repo,
+        "reason": reason,
+    }
+    if include_pr:
+        action["pr"] = pr_number
+    return action
+
+
+def _terminal_open(
+    key: str, live: dict[str, Any], terminal: dict[str, Any]
+) -> dict[str, Any]:
+    """Build a TERMINAL_BUT_OPEN entry for a live PR at a terminal head."""
+    return {
+        "action": "TERMINAL_BUT_OPEN",
+        "key": key,
+        "repository": live.get("repository"),
+        "pr": live.get("number"),
+        "url": live.get("url"),
+        "terminal_disposition": terminal.get("terminal_disposition"),
+        "reason": "PR is open at a head already recorded as terminal",
+    }
+
+
+def _positive_pr_number(value: Any) -> bool:
+    """Require a positive int PR number (bool excluded)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _sha_pair(live: dict[str, Any]) -> bool:
+    """Require 40-hex head and base SHAs on a live PR entry."""
+    return bool(
+        SHA_RE.fullmatch(str(live.get("headRefOid") or ""))
+        and SHA_RE.fullmatch(str(live.get("baseRefOid") or ""))
+    )
+
+
+def _https_url(url: Any) -> bool:
+    """Require a string URL with an https scheme."""
+    return isinstance(url, str) and url.startswith("https://")
+
+
+def _ingest_skip_reason(live: dict[str, Any]) -> tuple[str, bool] | None:
+    """Return (reason, include_pr) for an invalid live entry, or None."""
+    if not _positive_pr_number(live.get("number")):
+        return "invalid pull request number", False
+    if not _sha_pair(live):
+        return "invalid base/head SHA", True
+    if not _author_login_str(live.get("author")):
+        return "empty identity login", True
+    if not _https_url(live.get("url")):
+        return "invalid pull request URL", True
+    return None
+
+
+def _repo_candidates(
+    items: list[dict[str, Any]], repo: str, pr_number: Any
+) -> list[dict[str, Any]]:
+    """Return ledger items matching this repo and PR number."""
+    return [
+        item
+        for item in items
+        if item.get("repository") == repo and item.get("pr") == pr_number
+    ]
+
+
+def _terminal_at(candidates: list[dict[str, Any]], key: str) -> dict[str, Any] | None:
+    """Return the terminal ledger item recorded at this head key, if any."""
+    return next(
+        (
+            item
+            for item in candidates
+            if item.get("key") == key and item.get("lifecycle_state") == "TERMINAL"
+        ),
+        None,
+    )
+
+
+@dataclass(frozen=True)
+class _IngestCtx:
+    """The shared ingest state: ledger items, identity policy, timestamp."""
+
+    items: list[dict[str, Any]]
+    policy: Any
+    now: datetime
+
+
+def _ingest_action(
+    repo: str, live: dict[str, Any], ctx: _IngestCtx
+) -> dict[str, Any] | None:
+    """Classify one live PR: skip/terminal/ingest action, or None when tracked.
+
+    Skip PRs with any active ledger item, even at an older head. New intake
+    items are appended to items so duplicate inventory entries dedupe.
+    """
+    items = ctx.items
+    pr_number = live.get("number")
+    head_sha = str(live.get("headRefOid") or "")
+    skipped = _ingest_skip_reason(live)
+    if skipped is not None:
+        reason, include_pr = skipped
+        return _ingest_skipped(repo, reason, pr_number, include_pr=include_pr)
+    candidates = _repo_candidates(items, repo, pr_number)
+    if any(item.get("lifecycle_state") != "TERMINAL" for item in candidates):
+        return None
+    key = f"{repo}#{pr_number}@{head_sha}"
+    terminal = _terminal_at(candidates, key)
+    if terminal is not None:
+        return _terminal_open(key, live, terminal)
+    item = build_intake_item(live, ctx.policy, ctx.now)
+    items.append(item)
+    return {
+        "action": "INGEST_OPEN_PR",
+        "key": key,
+        "repository": repo,
+        "pr": pr_number,
+        "item": item,
+    }
+
+
+def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
+    """Look up and classify one nonterminal item; return planned actions."""
+    # Data-only actions (path backfill and title-only security tag clearing)
+    # ride alongside the primary action so guardrails evaluate real evidence.
     if not isinstance(item, dict):
-        return None
+        return []
     if item.get("lifecycle_state") == "TERMINAL":
-        return None
+        return []
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-    return classify_item(item, live, expiry_days=expiry, now=clock)
+    primary = classify_item(item, live, expiry_days=expiry, now=clock)
+    actions = [primary] if primary is not None else []
+    backfill = _path_backfill_action(item, live)
+    if backfill is not None:
+        actions.append(backfill)
+    reclassify = _security_tag_reconcile_action(item, live)
+    if reclassify is not None:
+        actions.append(reclassify)
+    return actions
 
 
-def run_reconcile(*, apply: bool, limit: int | None, json_out: bool) -> int:
-    """Fetch and emit actions, optionally applying and CAS-committing them."""
+def run_reconcile(
+    *,
+    apply: bool,
+    limit: int | None,
+    json_out: bool,
+    ingest: bool = True,
+) -> int:
+    """Fetch and emit actions, optionally applying and CAS-committing them.
+
+    limit caps existing-item actions; nonpositive limits still allow the first
+    eligible action. Open-PR intake is uncapped in the plan; ingest=False skips
+    its inventory and intake. Inventory OSError failures become
+    INVENTORY_FAILED entries; configuration, ledger fetch, and non-conflict
+    commit errors propagate.
+
+    Apply-mode guards:
+    - Any INVENTORY_FAILED aborts the apply before any mutation (exit 3).
+    - At most ``max_apply`` mutating actions (default 60, env
+      PR_LIFECYCLE_MAX_APPLY; the CLI --max-apply sets it) are saved per CAS write: terminal transitions
+      first, then stale closes, re-anchors, other transitions, then intake.
+      The remainder is reported as ``deferred_count`` for the next run.
+    - A CAS OPERATOR_CONFLICT re-fetches the ledger and re-plans from live
+      state (never replays stale bytes), up to 3 attempts with jittered
+      backoff; exhausting attempts returns exit 4.
+    Return zero after emitting a dry-run plan or a committed apply.
+    """
     config = load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
     validate_config(config)
-    with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
-        out = Path(tmp) / "ledger.yaml"
-        fetch = cas.run_preflight(out)
-        ledger = load_yaml(Path(fetch["ledger_path"]))
-        actions = collect_actions(ledger, config, limit=limit)
-        plan = {
-            "dry_run": not apply,
-            "ledger_revision": ledger.get("ledger_revision"),
-            "action_count": len(actions),
-            "actions": actions,
-        }
-        if not apply:
+    cap = guards.max_apply_from_env()
+    attempt = 0
+    while True:
+        attempt += 1
+        with tempfile.TemporaryDirectory(prefix="pr-lifecycle-reconcile-") as tmp:
+            out = Path(tmp) / "ledger.yaml"
+            plan, ledger, actions = _build_plan(config, out, limit, ingest)
+            plan["dry_run"] = not apply
+            if not apply:
+                _emit(plan, json_out)
+                return 0
+            if plan["inventory_failed"]:
+                plan["aborted"] = "INVENTORY_FAILED"
+                _emit(plan, json_out)
+                return guards.INVENTORY_ABORT_EXIT
+            selected, deferred = guards.select_batch(actions, cap)
+            plan["max_apply"] = cap
+            plan["deferred_count"] = len(deferred)
+            plan["cas_attempt"] = attempt
+            applied = _apply_actions(ledger, selected)
+            ingested = _apply_ingest_actions(ledger, selected)
+            strip_in_memory_item_fields(ledger)
+            out.write_text(dump_ledger(ledger), encoding="utf-8")
+            try:
+                result = cas.run_commit(
+                    out,
+                    "reconcile: live PR state → ledger transitions",
+                    bump_revision=False,
+                )
+            except CasError as exc:
+                if exc.code != OPERATOR_CONFLICT:
+                    raise
+                if attempt >= guards.MAX_CAS_ATTEMPTS:
+                    plan["aborted"] = "CAS_CONFLICT_EXHAUSTED"
+                    _emit(plan, json_out)
+                    return guards.CAS_CONFLICT_EXIT
+                guards.sleep(guards.backoff_seconds(attempt))
+                continue
+            plan["applied"] = applied
+            plan["ingested"] = ingested
+            plan["cas"] = result
             _emit(plan, json_out)
             return 0
-        applied = _apply_actions(ledger, actions)
-        strip_in_memory_item_fields(ledger)
-        out.write_text(dump_ledger(ledger), encoding="utf-8")
-        result = cas.run_commit(
-            out,
-            "reconcile: live PR state → ledger transitions",
-            bump_revision=False,
-        )
-        plan["applied"] = applied
-        plan["cas"] = result
-        _emit(plan, json_out)
-    return 0
+
+
+def _collect_ingest_plan(
+    ledger: dict[str, Any], config: dict[str, Any]
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Collect open-PR intake actions and inventory failure reports."""
+    inventory_failed: list[dict[str, str]] = []
+    open_prs_by_repo: dict[str, list[dict[str, Any]]] = {}
+    for repo in config["repos"]:
+        try:
+            open_prs_by_repo[repo] = list_open_prs(repo)
+        except OSError as exc:
+            inventory_failed.append(
+                {
+                    "action": "INVENTORY_FAILED",
+                    "repository": repo,
+                    "reason": f"{type(exc).__name__}: {exc}"[:200],
+                }
+            )
+    ingest_actions = collect_ingest_actions(
+        ledger, config, open_prs_by_repo, now=_utc_now()
+    )
+    return ingest_actions, inventory_failed
+
+
+def _build_plan(
+    config: dict[str, Any],
+    out: Path,
+    limit: int | None,
+    ingest: bool,
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+    """Fetch the ledger and live inventory; return (plan, ledger, actions)."""
+    fetch = cas.run_preflight(out)
+    ledger = load_yaml(Path(fetch["ledger_path"]))
+    actions = collect_actions(ledger, config, limit=limit)
+    ingest_actions, inventory_failed = (
+        _collect_ingest_plan(ledger, config) if ingest else ([], [])
+    )
+    actions.extend(ingest_actions)
+    actions.extend(inventory_failed)
+    plan = {
+        "dry_run": True,
+        "ledger_revision": ledger.get("ledger_revision"),
+        "action_count": len(actions),
+        "actions": actions,
+        "ingest_count": sum(
+            action["action"] == "INGEST_OPEN_PR" for action in ingest_actions
+        ),
+        "terminal_but_open_count": sum(
+            action["action"] == "TERMINAL_BUT_OPEN" for action in ingest_actions
+        ),
+        "inventory_failed": inventory_failed,
+    }
+    return plan, ledger, actions
 
 
 def _apply_close_stale(action: dict[str, Any]) -> bool:
@@ -584,6 +1324,11 @@ def _apply_close_stale(action: dict[str, Any]) -> bool:
 def _apply_actions(
     ledger: dict[str, Any], actions: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
+    """Apply reconciliation actions to the ledger and return successful events.
+
+    Inventory reports and intake actions are skipped; intake is applied
+    separately by the ingestion path.
+    """
     items_by_key = {
         item["key"]: item
         for item in ledger.get("items") or []
@@ -591,12 +1336,49 @@ def _apply_actions(
     }
     applied: list[dict[str, Any]] = []
     for action in actions:
-        if action["action"] == "LIVE_LOOKUP_FAILED":
+        if action["action"] in {
+            "LIVE_LOOKUP_FAILED",
+            "INGEST_OPEN_PR",
+            "INGEST_SKIPPED",
+            "TERMINAL_BUT_OPEN",
+            "INVENTORY_FAILED",
+            "PATH_BACKFILL_FAILED",
+        }:
             continue
         result = _apply_one(ledger, action, items_by_key)
         if result is not None:
             applied.append(result)
     return applied
+
+
+def _apply_ingest_actions(
+    ledger: dict[str, Any], actions: list[dict[str, Any]]
+) -> list[dict[str, str]]:
+    """Append intake rows in place and return their key/repository summaries.
+
+    Mark duplicate-key actions as skipped. Increment ledger_revision once
+    only if at least one item was appended; do not create transition events.
+    """
+    items = ledger.setdefault("items", [])
+    existing = {
+        item.get("key")
+        for item in items
+        if isinstance(item, dict) and isinstance(item.get("key"), str)
+    }
+    ingested: list[dict[str, str]] = []
+    for action in actions:
+        if action.get("action") != "INGEST_OPEN_PR":
+            continue
+        item = action["item"]
+        if item["key"] in existing:
+            action["skipped"] = "duplicate key"
+            continue
+        items.append(item)
+        existing.add(item["key"])
+        ingested.append({"key": item["key"], "repository": item["repository"]})
+    if ingested:
+        ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return ingested
 
 
 def _apply_one(
@@ -610,7 +1392,11 @@ def _apply_one(
     if action["action"] == "CLOSE_STALE":
         if not _apply_close_stale(action):
             return None
-    event = apply_action_to_ledger(ledger, item, action)
+    try:
+        event = apply_action_to_ledger(ledger, item, action)
+    except ReconcileSkip as exc:
+        action["skipped"] = exc.reason
+        return None
     return {"action": action, "event_id": event["event_id"]}
 
 
@@ -643,7 +1429,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="CAS-write transitions (default: dry-run plan only)",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--no-ingest",
+        action="store_true",
+        help="skip live open-PR inventory and Stage 1 intake planning",
+    )
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--max-apply",
+        type=int,
+        default=None,
+        help="max mutating actions per CAS save (default 60 or PR_LIFECYCLE_MAX_APPLY)",
+    )
     return parser
 
 
@@ -651,7 +1448,14 @@ def main(argv: list[str] | None = None) -> int:
     """Run the reconcile CLI, returning 1 for expected operational errors."""
     args = build_parser().parse_args(argv)
     try:
-        return run_reconcile(apply=args.apply, limit=args.limit, json_out=args.json)
+        if args.max_apply is not None:
+            os.environ["PR_LIFECYCLE_MAX_APPLY"] = str(max(1, args.max_apply))
+        return run_reconcile(
+            apply=args.apply,
+            limit=args.limit,
+            json_out=args.json,
+            ingest=not args.no_ingest,
+        )
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"PR_LIFECYCLE_RECONCILE_ERROR: {type(exc).__name__}", file=sys.stderr)
         return 1
@@ -664,3 +1468,7 @@ if __name__ == "__main__":
 # Aliases
 classify_item = classify_item
 collect_actions = collect_actions
+infer_pr_classification = guards.infer_pr_classification
+has_security_backing = guards.has_security_backing
+evaluate_security_tag_reconcile = guards.evaluate_security_tag_reconcile
+reconcile_security_tagging_summary = guards.reconcile_security_tagging_summary
