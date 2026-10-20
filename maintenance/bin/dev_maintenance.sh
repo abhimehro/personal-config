@@ -15,7 +15,7 @@ if command -v npm &>/dev/null; then
 	fi
 	npm update -g 2>/dev/null || true
 	if [[ $was_gitnexus_rc -eq 1 ]]; then
-		npm install -g gitnexus@1.6.13-rc.38 2>/dev/null || true
+		npm install --ignore-scripts -g gitnexus@1.6.13-rc.38 2>/dev/null || true
 	fi
 	npm_outdated=$(npm outdated -g --depth=0 2>/dev/null | wc -l | xargs)
 	echo "   npm: Updated global packages ($npm_outdated were outdated)"
