@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -177,6 +178,24 @@ class SentinelFixedHoldTests(unittest.TestCase):
         item["lifecycle_state"] = "TERMINAL"
         with self.assertRaises(reconcile.ReconcileSkip):
             reconcile._hold_sentinel_security_item(ledger, item, hold)
+
+    def test_sentinel_hold_suppresses_stale_close(self) -> None:
+        item = _security_item(
+            lifecycle_state="WAITING_HUMAN",
+            guardrail_outcome="PASS_ROUTINE",
+            risk_class="ROUTINE",
+        )
+        live = self._open(
+            title="🛡️ Sentinel: [security improvement]",
+            headRefName="jules-1",
+        )
+        with mock.patch.object(reconcile, "_gh_pr_view", return_value=live):
+            actions = reconcile._action_for_item(
+                item, 7, datetime(2026, 10, 20, tzinfo=timezone.utc)
+            )
+        names = [action["action"] for action in actions]
+        self.assertIn("HOLD_SENTINEL_SECURITY", names)
+        self.assertNotIn("CLOSE_STALE", names)
 
     def test_package_name_sentinel_is_not_the_persona(self) -> None:
         item = _security_item(guardrail_source="path_eval", next_action="Review")

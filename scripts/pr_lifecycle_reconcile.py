@@ -1282,6 +1282,10 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
         actions.append(reclassify)
     sentinel_hold = _sentinel_hold_action(item, live)
     if sentinel_hold is not None:
+        # SECURITY: do not stale-close a PR this pass is about to hold.
+        actions = [
+            action for action in actions if action.get("action") != "CLOSE_STALE"
+        ]
         actions.append(sentinel_hold)
     return actions
 
