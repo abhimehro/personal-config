@@ -35,6 +35,10 @@ from typing import Any
 
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_persist import dump_ledger
+from pr_lifecycle_reconcile_guards import (
+    SENTINEL_HOLD_MARKER,
+    is_sentinel_security_pr,
+)
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -275,6 +279,8 @@ def _evaluable(item: dict[str, Any]) -> bool:
     routine stamp.
     """
     changed_paths = item.get("changed_paths")
+    if SENTINEL_HOLD_MARKER in str(item.get("next_action") or ""):
+        return False
     source = item.get("guardrail_source")
     protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
         item
@@ -756,13 +762,18 @@ def evaluate_item(
     if dependabot_routine_eligible(item, evidence):
         exempt = path_sticky & _DEPENDABOT_EXEMPT
     effective = (path_sticky - exempt) | signals
+    # A Sentinel persona or sentinel/ branch stays REVIEW_SECURITY even when
+    # the diff has no other security signal. Title-only reconcile cannot clear it.
+    sentinel_hold = evidence is not None and is_sentinel_security_pr(
+        {"title": evidence.title, "headRefName": evidence.head_ref}
+    )
     fail_closed = bool(
         evidence is not None
         and evidence.diff_fetch_failed
         and not effective
         and (outcome in _CLEARABLE_HOLDS or item.get("classification") == "SECURITY")
     )
-    sticky_flag = bool(effective) or fail_closed
+    sticky_flag = bool(effective) or fail_closed or sentinel_hold
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
     recorded = (set(classes) | signals) - exempt

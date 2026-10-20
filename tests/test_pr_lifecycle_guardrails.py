@@ -764,6 +764,29 @@ class DependabotAndDiffTests(unittest.TestCase):
         assert patch is not None
         self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
 
+    def test_sentinel_persona_or_branch_stays_review_security(self) -> None:
+        item = _item(
+            guardrail_outcome="REVIEW_SECURITY",
+            changed_paths=["src/main.py"],
+            classification="REFACTOR",
+        )
+        for title, branch in (
+            ("🛡️ Sentinel: [security improvement]", "jules-1"),
+            ("chore: format", "sentinel/fix-loaders"),
+        ):
+            patch = guardrails.evaluate_item(
+                item,
+                evidence=guardrails.GuardrailEvidence(
+                    diff_text="+++ b/src/main.py\n+return 1\n",
+                    title=title,
+                    head_ref=branch,
+                    diff_fetch_failed=False,
+                ),
+            )
+            self.assertIsNotNone(patch, branch)
+            assert patch is not None
+            self.assertEqual("REVIEW_SECURITY", patch["guardrail_outcome"])
+
     def test_shell_path_stays_held_even_with_a_clean_diff(self) -> None:
         patch = guardrails.evaluate_item(
             _item(
