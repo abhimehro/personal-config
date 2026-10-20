@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 653
+ledger_revision: 663
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -21763,12 +21763,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
-- key: abhimehro/personal-config#2390@52c095ab6985a065237579a333c885b72f2d058d
+- key: abhimehro/personal-config#2390@d1927a0f619ad0015a78f8305866add5cb61cb0a
   repository: abhimehro/personal-config
   pr: 2390
   url: https://github.com/abhimehro/personal-config/pull/2390
-  base_sha: eeee67f5849c44d97b2ddb5ceb3836f859de166b
-  head_sha: 52c095ab6985a065237579a333c885b72f2d058d
+  base_sha: 2db13070f87d0a515f2e18390ac452b9bdd5159a
+  head_sha: d1927a0f619ad0015a78f8305866add5cb61cb0a
   author:
     login: dependabot[bot]
     identity_source: github_api
@@ -21789,9 +21789,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    workflows_and_permissions). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: Re-anchored to live head d1927a0f619ad0015a78f8305866add5cb61cb0a;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2390
   attempts:
@@ -21800,7 +21799,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  updated_at_utc: '2026-10-20T11:19:58Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2412@aded8f2d55aeffe93a4c490b262b3b5303a1454b
   repository: abhimehro/personal-config
@@ -22627,12 +22626,12 @@ items:
   - evt-reconcile-20261020104946-770cbaa9
   revision: 1
   updated_at_utc: '2026-10-20T10:49:46Z'
-- key: abhimehro/ctrld-sync#1302@1cf2ef12c7df9315548e41164b7a440a9f6d734d
+- key: abhimehro/ctrld-sync#1302@8797c69b61de84843a0921932486b51e2c608310
   repository: abhimehro/ctrld-sync
   pr: 1302
   url: https://github.com/abhimehro/ctrld-sync/pull/1302
-  base_sha: 9a0d5af1e7aba09035c21557279f310a695d48f6
-  head_sha: 1cf2ef12c7df9315548e41164b7a440a9f6d734d
+  base_sha: 4ee85b4e523ce02652c02eaf12576efd63e49c6a
+  head_sha: 8797c69b61de84843a0921932486b51e2c608310
   author:
     login: dependabot[bot]
     identity_source: github_api
@@ -22653,9 +22652,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    workflows_and_permissions). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: Re-anchored to live head 8797c69b61de84843a0921932486b51e2c608310;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1302
   attempts:
@@ -22664,7 +22662,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  updated_at_utc: '2026-10-20T11:19:58Z'
   guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1303@7ec3fcc2b9df68cbddf7a8e9dc2fd3943682aaaa
   repository: abhimehro/ctrld-sync
@@ -22744,12 +22742,12 @@ items:
   revision: 1
   updated_at_utc: '2026-10-16T08:55:16Z'
   guardrail_source: path_eval
-- key: abhimehro/ctrld-sync#1315@caef3c41d0a1fad5179e185590f12460e86f88f8
+- key: abhimehro/ctrld-sync#1315@4bc7551a3863c659e2cd04687ac023aa66703093
   repository: abhimehro/ctrld-sync
   pr: 1315
   url: https://github.com/abhimehro/ctrld-sync/pull/1315
-  base_sha: 67f91dacfe0400e8a067fd0f910aa293fe4e2a2d
-  head_sha: caef3c41d0a1fad5179e185590f12460e86f88f8
+  base_sha: 4ee85b4e523ce02652c02eaf12576efd63e49c6a
+  head_sha: 4bc7551a3863c659e2cd04687ac023aa66703093
   author:
     login: dependabot[bot]
     identity_source: github_api
@@ -22770,9 +22768,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    workflows_and_permissions). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: Re-anchored to live head 4bc7551a3863c659e2cd04687ac023aa66703093;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1315
   attempts:
@@ -22781,14 +22778,14 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  updated_at_utc: '2026-10-20T11:19:58Z'
   guardrail_source: path_eval
-- key: abhimehro/ctrld-sync#1316@711acc84e9dd68bc3ed7c44f9b360f934c329b38
+- key: abhimehro/ctrld-sync#1316@63976103094fd33cd27b797207563a2d0d62bf2b
   repository: abhimehro/ctrld-sync
   pr: 1316
   url: https://github.com/abhimehro/ctrld-sync/pull/1316
-  base_sha: 67f91dacfe0400e8a067fd0f910aa293fe4e2a2d
-  head_sha: 711acc84e9dd68bc3ed7c44f9b360f934c329b38
+  base_sha: 4ee85b4e523ce02652c02eaf12576efd63e49c6a
+  head_sha: 63976103094fd33cd27b797207563a2d0d62bf2b
   author:
     login: dependabot[bot]
     identity_source: github_api
@@ -22809,9 +22806,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    workflows_and_permissions). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: Re-anchored to live head 63976103094fd33cd27b797207563a2d0d62bf2b;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1316
   attempts:
@@ -22820,7 +22816,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  updated_at_utc: '2026-10-20T11:19:58Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1584@71bec5b1293f28f488d4ae93acd159b82212bf04
   repository: abhimehro/email-security-pipeline
@@ -24203,12 +24199,12 @@ items:
   revision: 0
   updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
-- key: abhimehro/Seatek_Analysis#932@4a6a9472d4566fa37d6c5649e98c6e0a62706edf
+- key: abhimehro/Seatek_Analysis#932@207bcefb01e538915fa1d7485e6e405d4dfec7b6
   repository: abhimehro/Seatek_Analysis
   pr: 932
   url: https://github.com/abhimehro/Seatek_Analysis/pull/932
-  base_sha: f7908d6b1248d2e33e6b682b01e94f3451e2d66e
-  head_sha: 4a6a9472d4566fa37d6c5649e98c6e0a62706edf
+  base_sha: 13c0478040efba75fad76947c532cb103779e6f2
+  head_sha: 207bcefb01e538915fa1d7485e6e405d4dfec7b6
   author:
     login: dependabot[bot]
     identity_source: github_api
@@ -24229,9 +24225,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    workflows_and_permissions). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: Re-anchored to live head 207bcefb01e538915fa1d7485e6e405d4dfec7b6;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/932
   attempts:
@@ -24240,7 +24235,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  updated_at_utc: '2026-10-20T11:19:58Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
   repository: abhimehro/Seatek_Analysis
@@ -34680,7 +34675,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/mac-audit.yml
+  - .github/workflows/pr-recap.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/release-drafter.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
+  - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34720,7 +34725,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34759,7 +34766,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptSettingsCoreTests/ClaudeRunTelemetryDisplayGateTests.swift
+  - Tests/RepoPromptTests/AgentMode/ClaudeCompatible/ClaudeNativeApprovalAndResumeTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34795,7 +34804,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -34831,7 +34841,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
