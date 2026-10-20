@@ -236,6 +236,7 @@ def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
         "signal_value": real_health.signal_value,
+        "signal_contains": real_health.signal_contains,
         "is_never_touch_key": real_health.is_never_touch_key,
         "list_reselect_candidates": lambda *_a, **_k: [],
         "MECHANICAL_RESELECT_NA": real_health.MECHANICAL_RESELECT_NA,
@@ -247,7 +248,6 @@ def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
         "STAGE2_OWNED_STATES": real_health.STAGE2_OWNED_STATES,
         "existing_wi_prefixes": real_health.existing_wi_prefixes,
         "work_item_is_usable": real_health.work_item_is_usable,
-        "NON_SALVAGE_OUTCOMES": real_health.NON_SALVAGE_OUTCOMES,
     }
 
 

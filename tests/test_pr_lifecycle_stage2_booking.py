@@ -129,6 +129,18 @@ class Stage2BookingTests(unittest.TestCase):
         )
         self.assertEqual(actions, [])
 
+    def test_closed_prefix_and_unqueried_keys_are_not_booked(self) -> None:
+        item = _owned()
+        prefix = str(item["key"]).split("@", 1)[0]
+        closed = plan.health.ReselectSignals(closed_keys=frozenset({prefix}))
+        unseen = plan.health.ReselectSignals(unqueried_keys=frozenset({item["key"]}))
+        self.assertEqual(
+            plan.plan_stage2_bookings(make_ledger([item], []), signals=closed), []
+        )
+        self.assertEqual(
+            plan.plan_stage2_bookings(make_ledger([item], []), signals=unseen), []
+        )
+
     def test_eligible_stock_stops_even_when_a_booking_exists(self) -> None:
         ledger = make_ledger([_owned()], [])
 

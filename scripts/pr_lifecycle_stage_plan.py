@@ -244,6 +244,15 @@ def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
     return keys
 
 
+def _stage2_lacks_live_open_proof(key: str, signals: health.ReselectSignals) -> bool:
+    """Return whether live signals say this key is closed or was never queried."""
+    if not key:
+        return False
+    return health.signal_contains(signals.closed_keys, key) or health.signal_contains(
+        signals.unqueried_keys, key
+    )
+
+
 def _stage2_can_book(item: dict[str, Any], signals: health.ReselectSignals) -> bool:
     """Return whether Stage 2 owns this bot item and may register it."""
     if item.get("author_type") != "BOT":
@@ -256,7 +265,8 @@ def _stage2_can_book(item: dict[str, Any], signals: health.ReselectSignals) -> b
     if sticky:
         return False
     key = str(item.get("key") or "")
-    if key and key in (signals.closed_keys or ()):
+    # SECURITY: a closed or unqueried PR must not be registered from a stale ledger.
+    if _stage2_lacks_live_open_proof(key, signals):
         return False
     owned = (
         item.get("current_owner") == "stage2"
@@ -385,8 +395,8 @@ def _stage2_feed_summary(
         "action": "FEED_SUMMARY",
         "feed": {
             "reason": feed.get("reason"),
-            "work_item_count": feed.get("work_item_count"),
-            "eligible_stock_count": feed.get("eligible_stock_count"),
+            "work_item_count": feed.get("work_item_count", 0),
+            "eligible_stock_count": feed.get("eligible_stock_count", 0),
             "mechanical_candidate_count": len(mechanical),
         },
     }
@@ -632,7 +642,7 @@ def build_stage_plan(
     or discarding supplied signals. Invalid stages return LOGIC_STOP.
     Proposed commands and actions are not executed.
     """
-    # Signals apply only to Stage 1 and Stage 3; an invalid stage yields
+    # Every valid stage receives the supplied signals. An invalid stage yields
     # LOGIC_STOP with no permitted commands or actions.
     result = signals_result or SignalsResult(status="SKIPPED")
     signals_status = result.status
