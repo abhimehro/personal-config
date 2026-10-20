@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 663
+ledger_revision: 664
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -28427,7 +28427,7 @@ items:
   - Scripts/validate_codex_update_workflow.py
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerPromptTab.swift
   - Tests/RepoPromptTests/Services/FileSystem/FileSystemLivenessCorrectionTests.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -28443,7 +28443,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#450@4fe0121652abddb29883369c01b990c5c9ad13f7
   repository: abhimehro/repoprompt-ce
   pr: 450
@@ -34673,8 +34674,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/jules-pr-review.yml
@@ -34686,7 +34688,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -34702,7 +34704,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T10:54:11Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
   repository: abhimehro/Seatek_Analysis
   pr: 1043
@@ -34723,12 +34726,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -34744,7 +34747,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T10:54:11Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#506@8a17cd6bac857334953ba93bfe582cea26fe2235
   repository: abhimehro/repoprompt-ce
   pr: 506
@@ -34764,12 +34768,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - Tests/RepoPromptSettingsCoreTests/ClaudeRunTelemetryDisplayGateTests.swift
   - Tests/RepoPromptTests/AgentMode/ClaudeCompatible/ClaudeNativeApprovalAndResumeTests.swift
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -34785,7 +34789,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T10:54:11Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#508@adcf1044e3797004cfe0f7491d30dfbb79c44568
   repository: abhimehro/repoprompt-ce
   pr: 508
@@ -34802,11 +34807,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/security.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -34822,7 +34828,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T10:54:11Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#509@7f35f25793102ca8b01e201ccd39980d7058957d
   repository: abhimehro/repoprompt-ce
   pr: 509
@@ -34839,11 +34846,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/security.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -34859,7 +34867,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-20T10:54:11Z'
+  updated_at_utc: '2026-10-20T11:20:16Z'
+  guardrail_source: path_eval
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
