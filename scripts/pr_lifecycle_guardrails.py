@@ -279,8 +279,6 @@ def _evaluable(item: dict[str, Any]) -> bool:
     routine stamp.
     """
     changed_paths = item.get("changed_paths")
-    if SENTINEL_HOLD_MARKER in str(item.get("next_action") or ""):
-        return False
     source = item.get("guardrail_source")
     protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
         item
@@ -293,6 +291,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("risk_class") != "HUMAN_REVIEW",
             item.get("guardrail_outcome") in _EVALUATABLE,
             not protected_source,
+            SENTINEL_HOLD_MARKER not in str(item.get("next_action") or ""),
             isinstance(changed_paths, list) and bool(changed_paths),
         )
     )
@@ -728,6 +727,24 @@ def clearance_rule(item: dict[str, Any], patch: dict[str, Any] | None) -> str | 
     return None
 
 
+def _sentinel_evidence_hold(evidence: GuardrailEvidence | None) -> bool:
+    """Return whether supplied evidence names a Sentinel persona or branch."""
+    if evidence is None:
+        return False
+    return is_sentinel_security_pr(
+        {"title": evidence.title, "headRefName": evidence.head_ref}
+    )
+
+
+def _sticky_security_hold(
+    effective: set[str],
+    fail_closed: bool,
+    evidence: GuardrailEvidence | None,
+) -> bool:
+    """Return whether paths, a failed fetch, or Sentinel identity stays held."""
+    return bool(effective) or fail_closed or _sentinel_evidence_hold(evidence)
+
+
 def evaluate_item(
     item: dict[str, Any],
     clear_standin: bool = False,
@@ -762,18 +779,14 @@ def evaluate_item(
     if dependabot_routine_eligible(item, evidence):
         exempt = path_sticky & _DEPENDABOT_EXEMPT
     effective = (path_sticky - exempt) | signals
-    # A Sentinel persona or sentinel/ branch stays REVIEW_SECURITY even when
-    # the diff has no other security signal. Title-only reconcile cannot clear it.
-    sentinel_hold = evidence is not None and is_sentinel_security_pr(
-        {"title": evidence.title, "headRefName": evidence.head_ref}
-    )
     fail_closed = bool(
         evidence is not None
         and evidence.diff_fetch_failed
         and not effective
         and (outcome in _CLEARABLE_HOLDS or item.get("classification") == "SECURITY")
     )
-    sticky_flag = bool(effective) or fail_closed or sentinel_hold
+    # SECURITY: Sentinel persona or sentinel/ branch stays REVIEW_SECURITY.
+    sticky_flag = _sticky_security_hold(effective, fail_closed, evidence)
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
     recorded = (set(classes) | signals) - exempt

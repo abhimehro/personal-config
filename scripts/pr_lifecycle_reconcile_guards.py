@@ -397,7 +397,8 @@ def infer_pr_classification(record: dict[str, Any], *, diff_text: Any = None) ->
 
 
 def is_sentinel_security_pr(record: dict[str, Any]) -> bool:
-    """Return whether a record is a Jules Sentinel persona or sentinel/ branch.
+    """
+    Return whether a record is a Jules Sentinel persona or sentinel/ branch.
 
     A title containing the persona name Sentinel, or a head ref that starts
     with ``sentinel/`` or ``sentinel-``, is a fixed security hold. Other
