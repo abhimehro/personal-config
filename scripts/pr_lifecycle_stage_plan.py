@@ -244,12 +244,26 @@ def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
     return keys
 
 
-def _stage2_lacks_live_open_proof(key: str, signals: health.ReselectSignals) -> bool:
-    """Return whether live signals say this key is closed or was never queried."""
+def _stage2_lacks_live_open_proof(
+    item: dict[str, Any], key: str, signals: health.ReselectSignals
+) -> bool:
+    """Return whether live signals do not show this PR open at the ledger head.
+
+    Closed, unqueried, failed, and degraded scans omit a matching head, so
+    booking does not register from a stale ledger anchor.
+    """
     if not key:
-        return False
-    return health.signal_contains(signals.closed_keys, key) or health.signal_contains(
+        return True
+    if health.signal_contains(signals.closed_keys, key) or health.signal_contains(
         signals.unqueried_keys, key
+    ):
+        return True
+    live_head = health.signal_value(signals.live_head_sha_by_key, key)
+    ledger_head = str(item.get("head_sha") or "").strip().lower()
+    return not (
+        isinstance(live_head, str)
+        and ledger_head
+        and live_head.strip().lower() == ledger_head
     )
 
 
@@ -265,8 +279,8 @@ def _stage2_can_book(item: dict[str, Any], signals: health.ReselectSignals) -> b
     if sticky:
         return False
     key = str(item.get("key") or "")
-    # SECURITY: a closed or unqueried PR must not be registered from a stale ledger.
-    if _stage2_lacks_live_open_proof(key, signals):
+    # SECURITY: book only with live proof the PR is open at this head.
+    if _stage2_lacks_live_open_proof(item, key, signals):
         return False
     owned = (
         item.get("current_owner") == "stage2"

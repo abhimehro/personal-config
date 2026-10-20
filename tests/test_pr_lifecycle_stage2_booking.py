@@ -19,6 +19,13 @@ SHA = "a" * 40
 HEAD = "b" * 40
 
 
+def _open_at(*items: dict[str, object]) -> plan.health.ReselectSignals:
+    """Signals that show each item open at its ledger head."""
+    return plan.health.ReselectSignals(
+        live_head_sha_by_key={str(item["key"]): str(item["head_sha"]) for item in items}
+    )
+
+
 def _owned(**overrides: object) -> dict[str, object]:
     item: dict[str, object] = {
         "key": f"abhimehro/demo#8@{HEAD}",
@@ -40,7 +47,7 @@ class Stage2BookingTests(unittest.TestCase):
     def test_stage2_books_an_owned_item_that_is_not_yet_a_work_item(self) -> None:
         item = _owned()
         ledger = make_ledger([item], [])
-        actions = plan.plan_stage2_bookings(ledger)
+        actions = plan.plan_stage2_bookings(ledger, signals=_open_at(item))
         self.assertEqual(len(actions), 1)
         action = actions[0]
         self.assertEqual(action["action"], "BOOK_STAGE2_WI")
@@ -96,8 +103,9 @@ class Stage2BookingTests(unittest.TestCase):
 
     def test_stage2_plan_emits_booking_when_the_feed_is_empty(self) -> None:
         ledger = make_ledger([_owned()], [])
+        item = ledger["items"][0]
         allowed, actions, stop, reason, extras = plan._stage2_plan(
-            ledger, {"lifecycle": {}}
+            ledger, {"lifecycle": {}}, signals=_open_at(item)
         )
         self.assertIn(
             "BOOK_STAGE2_WI for Stage 2-owned items that are not yet registered",
@@ -111,7 +119,9 @@ class Stage2BookingTests(unittest.TestCase):
 
     def test_owned_state_books_without_a_stage2_owner(self) -> None:
         item = _owned(current_owner="stage1", lifecycle_state="STAGE2_ACTIVE")
-        actions = plan.plan_stage2_bookings(make_ledger([item], []))
+        actions = plan.plan_stage2_bookings(
+            make_ledger([item], []), signals=_open_at(item)
+        )
         self.assertEqual([action["action"] for action in actions], ["BOOK_STAGE2_WI"])
 
     def test_human_security_and_closed_items_are_not_booked(self) -> None:
@@ -155,16 +165,35 @@ class Stage2BookingTests(unittest.TestCase):
 
         with mock.patch.object(plan.feed_mod, "build_feed", fake_feed):
             _allowed, actions, stop, reason, extras = plan._stage2_plan(
-                ledger, {"lifecycle": {}}
+                ledger,
+                {"lifecycle": {}},
+                signals=_open_at(ledger["items"][0]),
             )
         self.assertEqual(stop, "LOGIC_STOP")
         self.assertEqual(reason, "EMPTY_FEED_WITH_ELIGIBLE_STOCK")
         self.assertEqual(actions[0]["action"], "FEED_SUMMARY")
         self.assertEqual(extras["stage2_booking_count"], 1)
 
+    def test_missing_or_drifted_live_head_is_not_booked(self) -> None:
+        item = _owned()
+        ledger = make_ledger([item], [])
+        self.assertEqual(plan.plan_stage2_bookings(ledger), [])
+        drifted = plan.health.ReselectSignals(
+            live_head_sha_by_key={str(item["key"]): "c" * 40}
+        )
+        self.assertEqual(plan.plan_stage2_bookings(ledger, signals=drifted), [])
+        prefix = str(item["key"]).split("@", 1)[0]
+        prefixed = plan.health.ReselectSignals(
+            live_head_sha_by_key={prefix: str(item["head_sha"]).upper()}
+        )
+        actions = plan.plan_stage2_bookings(ledger, signals=prefixed)
+        self.assertEqual([action["action"] for action in actions], ["BOOK_STAGE2_WI"])
+
     def test_booking_cap_matches_the_stage2_candidate_cap(self) -> None:
         items = [_owned(key=f"abhimehro/demo#{n}@{HEAD}", pr=n) for n in range(1, 5)]
-        actions = plan.plan_stage2_bookings(make_ledger(items, []), limit=2)
+        actions = plan.plan_stage2_bookings(
+            make_ledger(items, []), signals=_open_at(*items), limit=2
+        )
         self.assertEqual([action["pr"] for action in actions], [1, 2])
 
 
