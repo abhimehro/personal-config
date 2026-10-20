@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 651
+ledger_revision: 652
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -21736,7 +21736,9 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - security_configuration
+  - shell_execution
   changed_paths:
   - scratch_inventory.py
   - scratch_triage.py
@@ -21759,7 +21761,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2390@52c095ab6985a065237579a333c885b72f2d058d
   repository: abhimehro/personal-config
@@ -21777,12 +21779,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/jules-pr-review.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -21799,7 +21800,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2412@aded8f2d55aeffe93a4c490b262b3b5303a1454b
   repository: abhimehro/personal-config
@@ -21903,12 +21904,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/release-drafter.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -21925,7 +21925,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2422@fff0919855194edfc1bab8d1b8900fcaa70f4a72
   repository: abhimehro/personal-config
@@ -21943,12 +21943,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -21965,7 +21964,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2437@771e59cb67e0edda55ab3e5b50675019fa512981
   repository: abhimehro/personal-config
@@ -22644,12 +22643,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -22666,7 +22664,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1303@7ec3fcc2b9df68cbddf7a8e9dc2fd3943682aaaa
   repository: abhimehro/ctrld-sync
@@ -22762,12 +22760,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/bandit.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -22784,7 +22781,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/ctrld-sync#1316@711acc84e9dd68bc3ed7c44f9b360f934c329b38
   repository: abhimehro/ctrld-sync
@@ -22802,12 +22799,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/release-drafter.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -22824,7 +22820,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1584@71bec5b1293f28f488d4ae93acd159b82212bf04
   repository: abhimehro/email-security-pipeline
@@ -22890,7 +22886,6 @@ items:
   classification: UI
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - lockfiles_and_major_dependencies
   changed_paths:
   - .jules/palette.md
@@ -22914,7 +22909,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1624@b45b5b176a6883e41e96fb2f497e387d30530830
   repository: abhimehro/email-security-pipeline
@@ -23147,13 +23142,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UI
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - authentication_and_authorization
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - src/utils/gh_token_cli.py
   - tests/test_gh_token_env.py
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -23170,7 +23164,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1694@323d8f070ada72597ddc211d34ff663675dd853e
   repository: abhimehro/email-security-pipeline
   pr: 1694
@@ -23365,12 +23360,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/release-drafter.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -23387,7 +23381,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1724@005e5899a3e398224197d8559d5c5540e939f063
   repository: abhimehro/email-security-pipeline
@@ -23753,7 +23747,6 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
@@ -23776,7 +23769,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#852@cea2815f136a9a2025087d1b5d1d1f873b4d5fa5
   repository: abhimehro/Seatek_Analysis
@@ -23800,7 +23793,6 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
@@ -23823,7 +23815,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#857@b587e2735a386e6842439cdb1051e18e940dedde
   repository: abhimehro/Seatek_Analysis
@@ -23869,7 +23861,7 @@ items:
   - tests/testthat/test-validate_sensor_file.R
   - tests/testthat/test-write_summary_sheets.R
   - tests/testthat/test-write_year_sheet.R
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -23885,7 +23877,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-16T12:23:27Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#883@bf4839c154bc31be534d6790c9693f1a1f04263e
   repository: abhimehro/Seatek_Analysis
   pr: 883
@@ -23948,7 +23941,6 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
@@ -23971,7 +23963,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#903@decb3d53dddabbfbde2f86741ce3a00221d0351f
   repository: abhimehro/Seatek_Analysis
@@ -24030,12 +24022,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/r-testthat.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24052,7 +24043,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#905@efc80ad2548c18a603c51fd01da22b26c8852b39
   repository: abhimehro/Seatek_Analysis
@@ -24070,12 +24061,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/r-testthat.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24092,7 +24082,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#909@e91eabbfd171d3ac745285777894b3f67db4a1b7
   repository: abhimehro/Seatek_Analysis
@@ -24150,7 +24140,6 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
@@ -24173,7 +24162,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#931@6edddcc03eb7b88c7d05bda5108c58fb65426ac4
   repository: abhimehro/Seatek_Analysis
@@ -24191,12 +24180,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/changelog.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24213,7 +24201,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#932@4a6a9472d4566fa37d6c5649e98c6e0a62706edf
   repository: abhimehro/Seatek_Analysis
@@ -24231,12 +24219,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: DEPENDENCY
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/refactoring-agent.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24253,7 +24240,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
   repository: abhimehro/Seatek_Analysis
@@ -24280,7 +24267,7 @@ items:
   changed_paths:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24296,7 +24283,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-16T12:23:27Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#977@c2bf1306007b6c35fa5903d9121adba8d4196108
   repository: abhimehro/Seatek_Analysis
   pr: 977
@@ -24318,7 +24306,7 @@ items:
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -24335,7 +24323,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
   repository: abhimehro/Seatek_Analysis
   pr: 986
@@ -24439,7 +24428,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - security_configuration
   changed_paths:
   - src/hydrograph_seatek_analysis/app.py
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -24462,7 +24452,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#769@e4d1dd5bba0da7739d13e47e3f3188504e4e6160
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -25876,7 +25866,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - file_read_write_boundaries
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
@@ -25897,7 +25888,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#558@6323777f5a7f051784ca5036b96a563507741b7d
   repository: abhimehro/series_correction_project_updated
@@ -26092,7 +26083,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/Process/CLIEnvironmentCache.swift
@@ -26115,7 +26105,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#349@30107c432a71109eb798236fd356b3715d58b2de
   repository: abhimehro/repoprompt-ce
@@ -26139,7 +26129,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
+  - file_read_write_boundaries
   changed_paths:
   - .jules/sentinel.md
   - Scripts/extract_staged_release.py
@@ -26161,7 +26151,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#351@a16cc2d755e9185448a2171d3bc747230f264e82
   repository: abhimehro/repoprompt-ce
@@ -26227,7 +26217,9 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - authentication_and_authorization
+  - file_read_write_boundaries
   changed_paths:
   - Sources/RepoPromptDomainRuntime/DomainMutationPolicy.swift
   guardrail_outcome: REVIEW_SECURITY
@@ -26247,7 +26239,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#355@8f40af8a24fb1b2dec7ed9814bc9c7cff9eae645
   repository: abhimehro/repoprompt-ce
@@ -26318,7 +26310,7 @@ items:
   - .jules/bolt.md
   - Sources/RepoPromptShared/MCP/MCPControlMessages.swift
   - Tests/RepoPromptTests/MCP/Control/MCPControlMessagesTests.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -26335,7 +26327,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#358@601cd0100951a7217999cc00045cc5a75eaf9f36
   repository: abhimehro/repoprompt-ce
   pr: 358
@@ -26357,7 +26350,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - file_read_write_boundaries
   changed_paths:
   - Scripts/embedded_provisioning_profile.py
   guardrail_outcome: REVIEW_SECURITY
@@ -26377,7 +26371,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#361@b2c048879f0e609b7e097462660d203920921127
   repository: abhimehro/repoprompt-ce
@@ -26404,7 +26398,7 @@ items:
   changed_paths:
   - .jules/bolt.md
   - Sources/RepoPromptShared/MCP/MCPControlMessages.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -26420,7 +26414,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-16T12:23:27Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#362@fbfd927865be502eb57a2176e31948978e241990
   repository: abhimehro/repoprompt-ce
   pr: 362
@@ -26530,7 +26525,7 @@ items:
   - Sources/RepoPromptDomainRuntime/DomainAgentSessionModels.swift
   - Sources/RepoPromptShared/MCP/MCPControlMessages.swift
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -26547,7 +26542,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#368@077a29151241225867c266aad7db25dc66879593
   repository: abhimehro/repoprompt-ce
   pr: 368
@@ -26701,7 +26697,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/Process/CLI/CLIPathInstaller.swift
@@ -26722,7 +26717,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#375@d09de3fb26de26a738da90433f541d075b4093a6
   repository: abhimehro/repoprompt-ce
@@ -26790,7 +26785,7 @@ items:
   sensitive_paths: []
   changed_paths:
   - Sources/RepoPrompt/Features/Workspaces/ViewModels/WorkspaceManagerViewModel.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -26806,7 +26801,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#378@772849eaa7f471ad789a2a83e58f5a757da5727e
   repository: abhimehro/repoprompt-ce
   pr: 378
@@ -26830,7 +26826,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/MCP/MCPConfigExportService.swift
@@ -26852,7 +26847,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#380@8a94ac7489d95d7461a8d69cd19f462ca15a6bc5
   repository: abhimehro/repoprompt-ce
@@ -26922,7 +26917,7 @@ items:
   changed_paths:
   - .jules/bolt.md
   - Sources/RepoPromptShared/MCP/MCPControlMessages.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -26938,7 +26933,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-16T12:23:27Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#383@33b5371ce2728741bd652e15b2f22bcd890863b9
   repository: abhimehro/repoprompt-ce
   pr: 383
@@ -26962,7 +26958,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/Antigravity/AntigravityRuntimeManager.swift
@@ -26983,7 +26978,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#385@c5851389170a0397f6fce56b47a4e5396aad2f4c
   repository: abhimehro/repoprompt-ce
@@ -27048,7 +27043,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - secrets
   changed_paths:
   - Sources/RepoPrompt/Features/AgentMode/Runtime/SessionLinks/AgentSessionLinkTranscriptSanitizer.swift
   - Tests/RepoPromptTests/AgentMode/SessionLinks/AgentSessionLinkTranscriptSanitizerTests.swift
@@ -27069,7 +27065,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#390@119db3c48c7a0152782e21b5933b249e7918ac95
   repository: abhimehro/repoprompt-ce
@@ -27177,7 +27173,7 @@ items:
   changed_paths:
   - .jules/bolt.md
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27193,7 +27189,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#395@e325dcef2317d2a853680bbe8f7ae4219ee35b6b
   repository: abhimehro/repoprompt-ce
   pr: 395
@@ -27299,7 +27296,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - file_read_write_boundaries
   changed_paths:
   - Scripts/test_validate_json.py
   - Scripts/validate_json.py
@@ -27320,7 +27318,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#403@bf44b58a65674cc0573f687ac7bb16ad1707c890
   repository: abhimehro/repoprompt-ce
@@ -27386,7 +27384,7 @@ items:
   sensitive_paths: []
   changed_paths:
   - Sources/RepoPromptDomainRuntime/StringExtensions.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27402,7 +27400,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#405@d75b6d482a9d55833c732aa4deb03acb37e993f4
   repository: abhimehro/repoprompt-ce
   pr: 405
@@ -27424,7 +27423,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - secrets
   changed_paths:
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
   - Tests/RepoPromptMCPCoreTests/MCPProxyTerminalRecordTests.swift
@@ -27445,7 +27445,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#408@fea32f080e9b8668170cf46e02a88c0cb30512db
   repository: abhimehro/repoprompt-ce
@@ -27514,7 +27514,7 @@ items:
   sensitive_paths: []
   changed_paths:
   - .jules/qa_review.md
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27531,7 +27531,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#413@cb48af7a8875377d5deff68ae19f59e09aac0945
   repository: abhimehro/repoprompt-ce
   pr: 413
@@ -27598,7 +27599,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/App/ApplicationSecurity.swift
@@ -27621,7 +27621,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#416@cd394267ca72b765d1f2cda5b723006cd5163b89
   repository: abhimehro/repoprompt-ce
@@ -27656,7 +27656,7 @@ items:
   - Sources/RepoPrompt/Features/Workspaces/Views/OptimizedPresetRow.swift
   - Sources/RepoPrompt/Features/Workspaces/Views/OptimizedWorkspaceRow.swift
   - Sources/RepoPrompt/Features/Workspaces/Views/WorkspaceLandingView.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27672,7 +27672,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#426@066aaf1a5ebf2954d4067af3507d36c1d29d8ccd
   repository: abhimehro/repoprompt-ce
   pr: 426
@@ -27730,7 +27731,7 @@ items:
   sensitive_paths: []
   changed_paths:
   - Scripts/validate_codex_update_workflow.py
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27747,7 +27748,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#428@2abe4662075c424a771dfc22f0218cee9793595e
   repository: abhimehro/repoprompt-ce
   pr: 428
@@ -27813,7 +27815,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
+  - secrets
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Features/AgentMode/Runtime/SessionLinks/AgentSessionLinkTranscriptSanitizer.swift
@@ -27835,7 +27837,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#431@ab5b5ef5bda469483116c91290ae55ad4f7741fa
   repository: abhimehro/repoprompt-ce
@@ -27863,7 +27865,7 @@ items:
   - .jules/palette.md
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerPromptTab.swift
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextSelectedFilesContent.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27879,7 +27881,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#432@9f8195d0ac97c44b119998d3eac181f92777c76b
   repository: abhimehro/repoprompt-ce
   pr: 432
@@ -27901,7 +27904,7 @@ items:
   changed_paths:
   - Scripts/validate_codex_update_workflow.py
   - docs/open-source-readiness.md
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27918,7 +27921,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#433@a191431138d721e54c142bfb1233d3aa53114064
   repository: abhimehro/repoprompt-ce
   pr: 433
@@ -27942,7 +27946,7 @@ items:
   sensitive_paths: []
   changed_paths:
   - Scripts/validate_codex_update_workflow.py
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -27959,7 +27963,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#434@e0437376fe49ae5481a8b736928faf8c637b97ec
   repository: abhimehro/repoprompt-ce
   pr: 434
@@ -28198,7 +28203,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
+  - security_configuration
   changed_paths:
   - .jules/sentinel.md
   - Scripts/validate_codex_update_workflow.py
@@ -28222,7 +28227,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#441@ed2fac9b982b7f527271a690d7e835fc70e4a3cc
   repository: abhimehro/repoprompt-ce
@@ -28249,7 +28254,7 @@ items:
   changed_paths:
   - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentSessionRows.swift
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerPromptTab.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -28265,7 +28270,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:43:41Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#442@1cce978abc59690852a82d4ab84e2fffd898fcf0
   repository: abhimehro/repoprompt-ce
   pr: 442
@@ -28372,7 +28378,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - secrets
   changed_paths:
   - Scripts/validate_codex_update_workflow.py
   - Sources/RepoPrompt/Features/AgentMode/Runtime/SessionLinks/AgentSessionLinkTranscriptSanitizer.swift
@@ -28394,7 +28401,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#445@d3e76c466767e9caf00f3baa939181970c2f7646
   repository: abhimehro/repoprompt-ce
@@ -28680,7 +28687,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - secrets
   changed_paths:
   - Sources/RepoPromptShared/MCP/MCPTerminalRecord.swift
   - Tests/RepoPromptMCPCoreTests/MCPProxyTerminalRecordTests.swift
@@ -28701,7 +28709,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#456@a61361e9740b7eae79e321e5bde9abe0bf964476
   repository: abhimehro/repoprompt-ce
@@ -28728,7 +28736,7 @@ items:
   changed_paths:
   - .jules/palette.md
   - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
-  guardrail_outcome: HOLD_EVIDENCE
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -28745,7 +28753,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2482@ebe4b1946a1970b7e2b7cc502e208306b1530170
   repository: abhimehro/personal-config
   pr: 2482
@@ -28948,7 +28957,8 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
+  - authentication_and_authorization
+  - network_and_browser_origins
   changed_paths:
   - .jules/sentinel.md
   - lib/safe_http.py
@@ -28971,8 +28981,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: manual
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/personal-config#2500@26f2166e06149c2cc026c40c8e978a891654912f
   repository: abhimehro/personal-config
   pr: 2500
@@ -29853,12 +29863,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -29874,7 +29883,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1737@78ecb376cf77574f5bf3642924201e54eb7c3539
   repository: abhimehro/email-security-pipeline
@@ -29892,12 +29901,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/refactoring-agent.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -29913,7 +29921,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1738@b4555a93d5282450dc98a4354ab209e4ced87ca7
   repository: abhimehro/email-security-pipeline
@@ -29931,12 +29939,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -29952,7 +29959,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/email-security-pipeline#1741@4e3bfc875a56d5dffbcba193dba61d94f9eed8e6
   repository: abhimehro/email-security-pipeline
@@ -30462,7 +30469,6 @@ items:
   classification: UNKNOWN
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
@@ -30483,7 +30489,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Seatek_Analysis#1019@ae4e78ec0a19c0a57eeeb6697cbf2cb0cae32cab
   repository: abhimehro/Seatek_Analysis
@@ -31182,12 +31188,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31203,7 +31208,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#823@49985019090c76c35e56d4dd51f819460391230b
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -31221,12 +31226,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/refactoring-agent.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31242,7 +31246,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#824@f257b147888eb0ab78bc116faea87d65e6f57244
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -31260,12 +31264,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/release-drafter.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31281,7 +31284,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#826@13390c7d261b3919b8634595aab5fc2bf00e6ad3
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -31567,12 +31570,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/changelog.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31588,7 +31590,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#838@cf2fba9e51dc59f7b8b26f3ca225f45236e1afcf
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -31789,7 +31791,8 @@ items:
   author_type: BOT
   classification: SECURITY
   risk_class: SENSITIVE
-  sensitive_paths: []
+  sensitive_paths:
+  - file_read_write_boundaries
   changed_paths:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction_security.py
@@ -31811,8 +31814,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: manual
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#571@65bbf2378499d26b58b0521f704bf6ff38f30db9
   repository: abhimehro/series_correction_project_updated
   pr: 571
@@ -31829,12 +31832,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/changelog.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31850,7 +31852,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#572@72d1198f2b10e843163d4d6e4fc894454e027ff1
   repository: abhimehro/series_correction_project_updated
@@ -31868,12 +31870,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/release-drafter.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31889,7 +31890,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#573@a52a39ce5d44fb70f5abd09bc2e9e1222b1f1162
   repository: abhimehro/series_correction_project_updated
@@ -31907,12 +31908,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31928,7 +31928,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#574@0656a1588395f0eff5cee326ec0b7e296fe2c02a
   repository: abhimehro/series_correction_project_updated
@@ -31946,12 +31946,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -31967,7 +31966,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#575@bc9fc866923dbb1ee9483f4f7eadc02372444cc3
   repository: abhimehro/series_correction_project_updated
@@ -31985,12 +31984,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: SENSITIVE
-  sensitive_paths:
-  - workflows_and_permissions
+  risk_class: ROUTINE
+  sensitive_paths: []
   changed_paths:
   - .github/workflows/refactoring-agent.yml
-  guardrail_outcome: REVIEW_SECURITY
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -32006,7 +32004,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#586@5e1d20e210e46b3dfdace96141163526acf450ce
   repository: abhimehro/series_correction_project_updated
@@ -32642,7 +32640,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
@@ -32664,7 +32661,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#464@aaf77b4ed0c13f10d60f79c199d27c67ed87fad3
   repository: abhimehro/repoprompt-ce
@@ -32816,7 +32813,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/palette.md
   - Sources/RepoPrompt/Infrastructure/UI/Components/CompactDualActionButton.swift
@@ -32838,7 +32834,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#469@2cffd4a8e035f3d4e7150e7c1736c4104d0e4fa9
   repository: abhimehro/repoprompt-ce
@@ -33071,7 +33067,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
@@ -33093,7 +33088,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#477@b4ffae2e20ba536a782cc744c73fe9b49b18aa63
   repository: abhimehro/repoprompt-ce
@@ -33246,7 +33241,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
@@ -33268,7 +33262,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#482@7dde30b7e7bbccf544b368f3292af71f3c62b3c0
   repository: abhimehro/repoprompt-ce
@@ -33293,7 +33287,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/palette.md
   - Sources/RepoPrompt/Infrastructure/UI/Components/CompactDualActionButton.swift
@@ -33314,7 +33307,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#483@86fd9d141f8409922fb278697ffaea55f863f5b8
   repository: abhimehro/repoprompt-ce
@@ -33717,7 +33710,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
@@ -33739,7 +33731,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T09:47:38Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#501@7b07fe62f16442042fbde753c051837043bcfc1c
   repository: abhimehro/repoprompt-ce
@@ -33930,7 +33922,6 @@ items:
   classification: UNKNOWN
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
   - shell_execution
   changed_paths:
   - .jules/palette.md
@@ -33951,7 +33942,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T10:51:31Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/personal-config#2566@150b15b591a23a4e09a74bb1b4f4bd13318e1298
   repository: abhimehro/personal-config
@@ -34322,7 +34313,7 @@ items:
   classification: SECURITY
   risk_class: SENSITIVE
   sensitive_paths:
-  - generated_output
+  - security_configuration
   changed_paths:
   - .jules/sentinel.md
   - src/hydrograph_seatek_analysis/utils/security.py
@@ -34344,8 +34335,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: manual
+  updated_at_utc: '2026-10-20T11:02:06Z'
+  guardrail_source: path_eval
 - key: abhimehro/series_correction_project_updated#604@dcf59c1fd98c6be184654f25dace945a5928fb71
   repository: abhimehro/series_correction_project_updated
   pr: 604
@@ -34506,7 +34497,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - deployment_and_infrastructure
-  - generated_output
   changed_paths:
   - .jules/sentinel.md
   - Sources/RepoPrompt/Infrastructure/AI/Providers/GeminiProvider.swift
@@ -34529,7 +34519,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T10:51:31Z'
+  updated_at_utc: '2026-10-20T11:02:06Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#505@e459cb127d2287bfade237c7f624c6b1381afc87
   repository: abhimehro/repoprompt-ce
