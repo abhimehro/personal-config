@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 652
+ledger_revision: 653
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -25220,20 +25220,21 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: REFACTOR
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/loaders.py
   - scripts/tests/test_loaders.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; eligible for Stage 1 routine evaluation.
-  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
-    path or diff backing).'
+  next_action: 'Stage 1 review hold 2026-10-20: Jules Sentinel security PR stays REVIEW_SECURITY
+    per Abhi standing rule (Sentinel fixes never PASS_ROUTINE); reconcile #2573 had
+    cleared the title-only tag. Needs security review, not routine merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/468
   attempts:
@@ -25242,8 +25243,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-20T11:11:24Z'
+  guardrail_source: review
 - key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
   repository: abhimehro/series_correction_project_updated
   pr: 484
@@ -25346,20 +25347,21 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: REFACTOR
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/apply_refined_corrections.py
   - scripts/tests/test_apply_refined_corrections_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; eligible for Stage 1 routine evaluation.
-  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
-    path or diff backing).'
+  next_action: 'Stage 1 review hold 2026-10-20: Jules Sentinel security PR stays REVIEW_SECURITY
+    per Abhi standing rule (Sentinel fixes never PASS_ROUTINE); reconcile #2573 had
+    cleared the title-only tag. Needs security review, not routine merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/489
   attempts:
@@ -25368,8 +25370,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-20T11:11:24Z'
+  guardrail_source: review
 - key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
   repository: abhimehro/series_correction_project_updated
   pr: 499
@@ -26563,21 +26565,22 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: REFACTOR
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - .jules/sentinel.md
   - Scripts/extract_staged_release.py
   - Scripts/test_extract_staged_release.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; eligible for Stage 1 routine evaluation.
-  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
-    path or diff backing).'
+  next_action: 'Stage 1 review hold 2026-10-20: Jules Sentinel security PR stays REVIEW_SECURITY
+    per Abhi standing rule (Sentinel fixes never PASS_ROUTINE); reconcile #2573 had
+    cleared the title-only tag. Needs security review, not routine merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/368
   attempts:
@@ -26586,8 +26589,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-09T13:16:23Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-20T11:11:24Z'
+  guardrail_source: review
 - key: abhimehro/repoprompt-ce#370@d37381e95ccc2fe1c9ce2241b3da625bbbad0072
   repository: abhimehro/repoprompt-ce
   pr: 370
@@ -32937,19 +32940,20 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: REFACTOR
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - Tests/RepoPromptTests/Security/MCPTerminalRecordSanitizationTests.swift
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; eligible for Stage 1 routine evaluation.
-  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
-    path or diff backing).'
+  next_action: 'Stage 1 review hold 2026-10-20: Jules Sentinel security PR stays REVIEW_SECURITY
+    per Abhi standing rule (Sentinel fixes never PASS_ROUTINE); reconcile #2573 had
+    cleared the title-only tag. Needs security review, not routine merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/471
   attempts:
@@ -32958,8 +32962,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-20T11:11:24Z'
+  guardrail_source: review
 - key: abhimehro/repoprompt-ce#473@5f416c6ccc6d6a8ac27addd82f707a3c4a75ba32
   repository: abhimehro/repoprompt-ce
   pr: 473
@@ -34400,20 +34404,21 @@ items:
       - timeline_comment
       - commit_email
   author_type: BOT
-  classification: REFACTOR
-  risk_class: ROUTINE
+  classification: SECURITY
+  risk_class: SENSITIVE
   sensitive_paths: []
   changed_paths:
   - scripts/export_comparison_sheets.py
   - scripts/tests/test_export_comparison_sheets_security.py
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; eligible for Stage 1 routine evaluation.
-  next_action: 'Stage 1: title-only security tag cleared by reconcile (no sensitive
-    path or diff backing).'
+  next_action: 'Stage 1 review hold 2026-10-20: Jules Sentinel security PR stays REVIEW_SECURITY
+    per Abhi standing rule (Sentinel fixes never PASS_ROUTINE); reconcile #2573 had
+    cleared the title-only tag. Needs security review, not routine merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/605
   attempts:
@@ -34422,8 +34427,8 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-17T13:51:06Z'
-  guardrail_source: path_eval
+  updated_at_utc: '2026-10-20T11:11:24Z'
+  guardrail_source: review
 - key: abhimehro/repoprompt-ce#502@d240a1ab998274b7b38777ea4983baad1b4ed7c1
   repository: abhimehro/repoprompt-ce
   pr: 502
