@@ -174,6 +174,44 @@ class Stage2BookingTests(unittest.TestCase):
         self.assertEqual(actions[0]["action"], "FEED_SUMMARY")
         self.assertEqual(extras["stage2_booking_count"], 1)
 
+    def test_same_pull_request_is_booked_once(self) -> None:
+        current = _owned()
+        older_head = "d" * 40
+        older = _owned(key=f"abhimehro/demo#8@{older_head}", head_sha=older_head)
+        prior = make_work_item(
+            source_item_key=older["key"],
+            repository="abhimehro/demo",
+            pr=8,
+            base_sha=SHA,
+            head_sha=older_head,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        bare = make_work_item(
+            source_item_key="abhimehro/demo#8",
+            repository="abhimehro/demo",
+            pr=8,
+            base_sha=SHA,
+            head_sha=HEAD,
+            expiry_utc="2999-01-01T00:00:00Z",
+        )
+        self.assertEqual(
+            plan.plan_stage2_bookings(
+                make_ledger([current], [prior]), signals=_open_at(current)
+            ),
+            [],
+        )
+        self.assertEqual(
+            plan.plan_stage2_bookings(
+                make_ledger([current], [bare]), signals=_open_at(current)
+            ),
+            [],
+        )
+        actions = plan.plan_stage2_bookings(
+            make_ledger([current, older], []), signals=_open_at(current, older)
+        )
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["head_sha"], HEAD)
+
     def test_missing_or_drifted_live_head_is_not_booked(self) -> None:
         item = _owned()
         ledger = make_ledger([item], [])

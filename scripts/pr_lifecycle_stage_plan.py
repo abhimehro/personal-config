@@ -230,18 +230,8 @@ def plan_stage3_mechanical_handoffs(
 
 
 def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
-    """Return source keys that already have a usable Stage 2 work item."""
-    keys: set[str] = set()
-    now = _utc_now()
-    for work_item in ledger.get("stage2_work_items") or []:
-        if not isinstance(work_item, dict) or not health.work_item_is_usable(
-            work_item, now
-        ):
-            continue
-        key = str(work_item.get("source_item_key") or work_item.get("source_key") or "")
-        if key:
-            keys.add(key)
-    return keys
+    """Return repo#PR prefixes that already have a usable Stage 2 work item."""
+    return health.existing_wi_prefixes(ledger, _utc_now())
 
 
 def _stage2_lacks_live_open_proof(
@@ -300,7 +290,9 @@ def _stage2_booking_action(
     if not isinstance(item, dict) or not _stage2_can_book(item, signals):
         return None
     key = str(item.get("key") or "")
-    if not key or key in already:
+    prefix = health.source_pr_prefix(key)
+    # NOTE: already holds repo#PR prefixes, including bookings added earlier in this run.
+    if not key or not prefix or prefix in already:
         return None
     allowed_paths = _enqueue_source_paths(item, signals, key)
     if not _enqueue_fields_complete(item, key, allowed_paths):
@@ -317,6 +309,7 @@ def _stage2_booking_action(
         "Stage 2 registers its own complete work item; "
         "same anchors as ENQUEUE_STAGE2_WI and HANDOFF_MECHANICAL_TO_STAGE2"
     )
+    already.add(prefix)
     return action
 
 
