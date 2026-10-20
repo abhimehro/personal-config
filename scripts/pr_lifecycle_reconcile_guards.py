@@ -225,7 +225,9 @@ _TITLE_SECURITY_HINT_RE = re.compile(
     re.IGNORECASE,
 )
 _SENTINEL_BRANCH_RE = re.compile(r"^(?:sentinel/|sentinel-)", re.IGNORECASE)
-_SENTINEL_PERSONA_RE = re.compile(r"\bsentinel\b", re.IGNORECASE)
+# SECURITY: Jules persona titles start with "Sentinel:" (optional emoji).
+# A bare word such as redis-sentinel is not this hold.
+_SENTINEL_PERSONA_RE = re.compile(r"^\W*sentinel\s*:", re.IGNORECASE)
 SENTINEL_HOLD_MARKER = "SENTINEL_SECURITY_HOLD"
 
 

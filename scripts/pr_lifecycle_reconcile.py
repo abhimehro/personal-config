@@ -819,11 +819,18 @@ def _sentinel_already_held(item: dict[str, Any]) -> bool:
     )
 
 
+_SENTINEL_REPLACEABLE_OUTCOMES = {None, "NOT_RUN", "PASS_ROUTINE", "REVIEW_SECURITY"}
+
+
 def _sentinel_hold_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """Plan a fixed REVIEW_SECURITY hold for a Sentinel persona or branch."""
+    """Plan a fixed REVIEW_SECURITY hold for an open Sentinel persona or branch."""
     if item.get("lifecycle_state") == "TERMINAL" or item.get("author_type") != "BOT":
+        return None
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return None
+    if not isinstance(live, dict) or str(live.get("state") or "").upper() != "OPEN":
         return None
     if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
         return None
@@ -846,18 +853,23 @@ def _hold_sentinel_security_item(
 ) -> dict[str, Any]:
     """Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition."""
     del action
-    next_action = str(item.get("next_action") or "")
+    if item.get("lifecycle_state") == "TERMINAL":
+        raise ReconcileSkip("sentinel_hold_terminal")
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        raise ReconcileSkip("sentinel_hold_frozen")
+    prior = str(item.get("next_action") or "").strip()
     if (
         item.get("guardrail_outcome") == "REVIEW_SECURITY"
-        and guards.SENTINEL_HOLD_MARKER in next_action
+        and guards.SENTINEL_HOLD_MARKER in prior
     ):
         raise ReconcileSkip("sentinel_hold_noop")
-    item["guardrail_outcome"] = "REVIEW_SECURITY"
-    item["risk_class"] = "SENSITIVE"
-    item["next_action"] = (
+    marker = (
         f"{guards.SENTINEL_HOLD_MARKER}: Jules Sentinel persona or sentinel/ "
         "branch stays REVIEW_SECURITY; title-only reconcile cannot clear it."
     )
+    item["guardrail_outcome"] = "REVIEW_SECURITY"
+    item["risk_class"] = "SENSITIVE"
+    item["next_action"] = marker if not prior else f"{marker} Prior: {prior}"
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 

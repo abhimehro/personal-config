@@ -2,15 +2,40 @@
 
 from __future__ import annotations
 
+import sys
 import unittest
+from pathlib import Path
 from unittest import mock
 
-from tests.test_pr_lifecycle_reconcile_security_tagging import (
-    _OPEN_LIVE,
-    _security_item,
-    guards,
-    reconcile,
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+import pr_lifecycle_reconcile_guards as guards  # noqa: E402
+from tests.pr_lifecycle_helpers import (  # noqa: E402
+    load_reconcile_with_stubs,
+    reconcile_item,
 )
+
+reconcile = load_reconcile_with_stubs()
+_OPEN_LIVE = {"state": "OPEN", "headRefOid": "a" * 40, "baseRefOid": "b" * 40}
+
+
+def _security_item(**overrides: object) -> dict[str, object]:
+    fields: dict[str, object] = {
+        "lifecycle_state": "STAGE1_INTAKE",
+        "current_owner": "stage1",
+        "next_owner": "stage1",
+        "classification": "SECURITY",
+        "risk_class": "SENSITIVE",
+        "guardrail_outcome": "REVIEW_SECURITY",
+        "guardrail_source": "path_eval",
+        "changed_paths": ["src/report.py"],
+        "next_action": "Review Sentinel title",
+    }
+    fields.update(overrides)
+    return reconcile_item(**fields)
 
 
 class SentinelFixedHoldTests(unittest.TestCase):
@@ -122,6 +147,47 @@ class SentinelFixedHoldTests(unittest.TestCase):
                     self.assertIsNone(
                         reconcile._security_tag_reconcile_action(item, live)
                     )
+
+    def test_closed_live_pr_and_frozen_outcome_are_not_held(self) -> None:
+        item = _security_item()
+        closed = self._open(
+            state="MERGED",
+            title="🛡️ Sentinel: [security improvement]",
+            headRefName="sentinel/fix-loaders",
+        )
+        self.assertIsNone(reconcile._sentinel_hold_action(item, closed))
+        frozen = _security_item(guardrail_outcome="HOLD_CONTRACT")
+        live = self._open(
+            title="🛡️ Sentinel: [security improvement]",
+            headRefName="jules-1",
+        )
+        self.assertIsNone(reconcile._sentinel_hold_action(frozen, live))
+
+    def test_hold_keeps_prior_next_action_and_skips_a_terminal_item(self) -> None:
+        item = _security_item(next_action="HUMAN_HOLD: stay with the owner")
+        live = self._open(
+            title="🛡️ Sentinel: [security improvement]",
+            headRefName="jules-1",
+        )
+        hold = reconcile._sentinel_hold_action(item, live)
+        ledger = {"ledger_revision": 1, "items": [item], "events": []}
+        reconcile.apply_action_to_ledger(ledger, item, hold)
+        self.assertIn(guards.SENTINEL_HOLD_MARKER, item["next_action"])
+        self.assertIn("HUMAN_HOLD: stay with the owner", item["next_action"])
+        item["lifecycle_state"] = "TERMINAL"
+        with self.assertRaises(reconcile.ReconcileSkip):
+            reconcile._hold_sentinel_security_item(ledger, item, hold)
+
+    def test_package_name_sentinel_is_not_the_persona(self) -> None:
+        item = _security_item(guardrail_source="path_eval", next_action="Review")
+        live = self._open(
+            title="Bump redis-sentinel from 4.0 to 5.0",
+            headRefName="dependabot/pip/redis-sentinel-5.0",
+        )
+        self.assertFalse(
+            guards.is_sentinel_security_pr(guards.sentinel_record(item, live))
+        )
+        self.assertIsNone(reconcile._sentinel_hold_action(item, live))
 
 
 if __name__ == "__main__":
