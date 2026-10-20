@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 715
+ledger_revision: 718
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -26901,10 +26901,10 @@ items:
   - .jules/palette.md
   - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
     paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
@@ -26915,9 +26915,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T10:50:15Z'
+  handoffs:
+  - evt-reconcile-20261020135432-2a01e316
+  revision: 1
+  updated_at_utc: '2026-10-20T13:54:32Z'
 - key: abhimehro/repoprompt-ce#382@605093607c7cacdf9322e71f6cc8a35129172812
   repository: abhimehro/repoprompt-ce
   pr: 382
@@ -27118,10 +27119,10 @@ items:
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: Re-anchored to live head 119db3c48c7a0152782e21b5933b249e7918ac95;
     prior evidence void.
@@ -27131,9 +27132,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-16T12:23:27Z'
+  handoffs:
+  - evt-reconcile-20261020135432-bc106bb7
+  revision: 1
+  updated_at_utc: '2026-10-20T13:54:32Z'
 - key: abhimehro/repoprompt-ce#391@3e7ff0948dbb104d9e6e2d279e14a4ad3478011f
   repository: abhimehro/repoprompt-ce
   pr: 391
@@ -27974,10 +27976,10 @@ items:
   changed_paths:
   - Scripts/validate_codex_update_workflow.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: 'Stage 1 guardrail 2026-10-09: path/title scan clean (no sticky sensitive
     paths). Routine predicates (required checks, mergeability, reviews, Octopus findings)
@@ -27988,9 +27990,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-20T11:02:06Z'
+  handoffs:
+  - evt-reconcile-20261020135432-c2056913
+  revision: 1
+  updated_at_utc: '2026-10-20T13:54:32Z'
   guardrail_source: path_eval
 - key: abhimehro/repoprompt-ce#434@e0437376fe49ae5481a8b736928faf8c637b97ec
   repository: abhimehro/repoprompt-ce
@@ -67239,6 +67242,66 @@ events:
   acknowledged_at_utc: null
   reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
     label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261020135432-2a01e316
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#380@8a94ac7489d95d7461a8d69cd19f462ca15a6bc5
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#380@8a94ac7489d95d7461a8d69cd19f462ca15a6bc5:evt-reconcile-20261020135432-2a01e316
+  status: PROJECTED
+  created_at_utc: '2026-10-20T13:54:32Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261020135432-bc106bb7
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#390@119db3c48c7a0152782e21b5933b249e7918ac95
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#390@119db3c48c7a0152782e21b5933b249e7918ac95:evt-reconcile-20261020135432-bc106bb7
+  status: PROJECTED
+  created_at_utc: '2026-10-20T13:54:32Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261020135432-c2056913
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#433@a191431138d721e54c142bfb1233d3aa53114064
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#433@a191431138d721e54c142bfb1233d3aa53114064:evt-reconcile-20261020135432-c2056913
+  status: PROJECTED
+  created_at_utc: '2026-10-20T13:54:32Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
   policy_revision: null
 stage2_work_items:
