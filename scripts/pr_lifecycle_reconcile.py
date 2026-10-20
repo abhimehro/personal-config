@@ -822,19 +822,28 @@ def _sentinel_already_held(item: dict[str, Any]) -> bool:
 _SENTINEL_REPLACEABLE_OUTCOMES = {None, "NOT_RUN", "PASS_ROUTINE", "REVIEW_SECURITY"}
 
 
+def _sentinel_hold_eligible(item: dict[str, Any], live: dict[str, Any] | None) -> bool:
+    """Return whether this open BOT item may receive a Sentinel hold."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if item.get("author_type") != "BOT":
+        return False
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return False
+    if not isinstance(live, dict):
+        return False
+    if str(live.get("state") or "").upper() != "OPEN":
+        return False
+    if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
+        return False
+    return not _sentinel_already_held(item)
+
+
 def _sentinel_hold_action(
     item: dict[str, Any], live: dict[str, Any] | None
 ) -> dict[str, Any] | None:
     """Plan a fixed REVIEW_SECURITY hold for an open Sentinel persona or branch."""
-    if item.get("lifecycle_state") == "TERMINAL" or item.get("author_type") != "BOT":
-        return None
-    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
-        return None
-    if not isinstance(live, dict) or str(live.get("state") or "").upper() != "OPEN":
-        return None
-    if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
-        return None
-    if _sentinel_already_held(item):
+    if not _sentinel_hold_eligible(item, live):
         return None
     return {
         "action": "HOLD_SENTINEL_SECURITY",
@@ -848,21 +857,29 @@ def _sentinel_hold_action(
     }
 
 
+def _sentinel_apply_skip(item: dict[str, Any]) -> str | None:
+    """Return why a planned Sentinel hold must not be stamped."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return "sentinel_hold_terminal"
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return "sentinel_hold_frozen"
+    prior = str(item.get("next_action") or "")
+    if item.get("guardrail_outcome") != "REVIEW_SECURITY":
+        return None
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return None
+    return "sentinel_hold_noop"
+
+
 def _hold_sentinel_security_item(
     ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
 ) -> dict[str, Any]:
     """Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition."""
     del action
-    if item.get("lifecycle_state") == "TERMINAL":
-        raise ReconcileSkip("sentinel_hold_terminal")
-    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
-        raise ReconcileSkip("sentinel_hold_frozen")
+    skip = _sentinel_apply_skip(item)
+    if skip is not None:
+        raise ReconcileSkip(skip)
     prior = str(item.get("next_action") or "").strip()
-    if (
-        item.get("guardrail_outcome") == "REVIEW_SECURITY"
-        and guards.SENTINEL_HOLD_MARKER in prior
-    ):
-        raise ReconcileSkip("sentinel_hold_noop")
     marker = (
         f"{guards.SENTINEL_HOLD_MARKER}: Jules Sentinel persona or sentinel/ "
         "branch stays REVIEW_SECURITY; title-only reconcile cannot clear it."
