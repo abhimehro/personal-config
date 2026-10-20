@@ -132,7 +132,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install automation runner dependencies
-        run: python -m pip install --upgrade pip "pyyaml==6.0.3" "jsonschema==4.26.0"
+        run: python -m pip install --upgrade pip "pyyaml==6.0.3" "jsonschema==4.26.0" "requests==2.34.2"
 
       - name: Setup ShellCheck (cached)
         uses: ./.github/actions/setup-shellcheck
