@@ -186,9 +186,13 @@ tags = ["env", "environment", "secret"]
 # Exclude patterns - files that are known to contain test/fake secrets
 [allowlist]
 # Suppress false positive in lib/safe_http.py docstring that contained the
-# word "password" followed by prose ("components"). The commit was part of
-# PR #1766 and has since been corrected; this suppresses the historical FP.
-commits = ["ab406fd5d21d059451b7aa3dcfd01a0eb7fd11eb"]
+# word "password" followed by prose ("components") (PR #1766) and in
+# scripts/pr_lifecycle_guardrails.py regex pattern string in commit 23de3b5d
+# (PR #2571), which was corrected by splitting the regex string across lines.
+commits = [
+  "ab406fd5d21d059451b7aa3dcfd01a0eb7fd11eb",
+  "23de3b5d4bdc4c4a9a1313d35426e14be2dcfdd4",
+]
 
 # Suppress GitHub Actions built-in context refs that are not real credentials.
 # The personal-config-generic-secret rule matches "secret" as a substring, which
