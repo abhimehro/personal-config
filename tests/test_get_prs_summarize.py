@@ -10,6 +10,7 @@ sys.path.append(str(scripts_dir))
 import io
 import os
 from unittest.mock import patch
+
 from get_prs_summarize import (
     _add_author_hints,
     _add_body_hints,
@@ -137,7 +138,12 @@ class TestAutomationHints(unittest.TestCase):
 
     def test_bot_login_requires_exact_suffix(self):
         for login in (
-            None, "", "helperbot", "[bot]helper", "helper[bot]-old", "helper[BOT]"
+            None,
+            "",
+            "helperbot",
+            "[bot]helper",
+            "helper[bot]-old",
+            "helper[BOT]",
         ):
             with self.subTest(login=login):
                 self.assertEqual(
@@ -188,7 +194,11 @@ class TestAutomationHints(unittest.TestCase):
 
     def test_branch_delimiters_are_required_for_slash_signals(self):
         for branch in (
-            "bolt", "bolt-fix", "palette-ui", "cursor-agent-fix", "dependabot-npm"
+            "bolt",
+            "bolt-fix",
+            "palette-ui",
+            "cursor-agent-fix",
+            "dependabot-npm",
         ):
             with self.subTest(branch=branch):
                 self.assertEqual(
@@ -219,7 +229,11 @@ class TestAutomationHints(unittest.TestCase):
         self.assertEqual(automation_hints(pr), "body:automation_marker")
 
     def test_body_near_misses_do_not_signal_automation(self):
-        for body in ("Jules helped", "created manually by jules", "signed-off-by: alice"):
+        for body in (
+            "Jules helped",
+            "created manually by jules",
+            "signed-off-by: alice",
+        ):
             with self.subTest(body=body):
                 self.assertEqual(
                     automation_hints({"body": body}),
@@ -234,9 +248,7 @@ class TestAutomationHints(unittest.TestCase):
             "body": "jules.google.com",
         }
         original = copy.deepcopy(pr)
-        expected = (
-            "author_is_bot; body:automation_marker; bot_login; branch:bolt; title:autofix"
-        )
+        expected = "author_is_bot; body:automation_marker; bot_login; branch:bolt; title:autofix"
         self.assertEqual(automation_hints(pr), expected)
         self.assertEqual(
             automation_hints({}), "(none — treat as human unless reviews say otherwise)"
@@ -352,17 +364,23 @@ class TestPrintDetailsSection(unittest.TestCase):
         buf = io.StringIO()
         with patch("sys.stdout", buf):
             _print_details_section([{"number": 1}])
-        self.assertIn("_Details skipped: internal error (no repo env)._", buf.getvalue())
+        self.assertIn(
+            "_Details skipped: internal error (no repo env)._", buf.getvalue()
+        )
 
     @patch.dict(os.environ, {"GH_DETAIL_REPO": "-oProxyCommand=calc.exe"}, clear=True)
     def test_invalid_repo_env(self):
         buf = io.StringIO()
         with patch("sys.stdout", buf), patch("sys.stderr", io.StringIO()):
             _print_details_section([{"number": 1}])
-        self.assertIn("_Details skipped: invalid repository reference._", buf.getvalue())
+        self.assertIn(
+            "_Details skipped: invalid repository reference._", buf.getvalue()
+        )
 
     @patch.dict(os.environ, {"GH_DETAIL_REPO": "owner/valid-repo"}, clear=True)
-    @patch("get_prs_summarize.fetch_details", return_value="- reviewDecision: `APPROVED`")
+    @patch(
+        "get_prs_summarize.fetch_details", return_value="- reviewDecision: `APPROVED`"
+    )
     def test_valid_repo_env(self, mock_fetch):
         buf = io.StringIO()
         with patch("sys.stdout", buf):

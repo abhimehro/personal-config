@@ -43,6 +43,9 @@ from pr_lifecycle_octopus_issues import (
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
+
+# Re-exports keep per-name noqa markers; isort would split them.
+# isort: off
 from pr_lifecycle_unblock_routing import (
     _JULES_PREFIXES,  # noqa: F401
     _LINEAGE_RE,  # noqa: F401
@@ -68,6 +71,8 @@ from pr_lifecycle_unblock_rows import (
     _repo_counts,
     _rows_for_repo,
 )
+
+# isort: on
 from pr_lifecycle_yaml import load_yaml
 
 # pylint: enable=wrong-import-position,unused-import
