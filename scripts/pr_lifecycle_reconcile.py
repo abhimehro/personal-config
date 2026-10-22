@@ -86,7 +86,7 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
         "--repo",
         repo,
         "--json",
-        "state,mergedAt,closedAt,headRefOid,url,mergedBy,labels",
+        "state,mergedAt,closedAt,headRefOid,headRefName,title,url,mergedBy,labels",
     ]
     try:
         completed = subprocess.run(
@@ -466,7 +466,8 @@ def _security_tag_reconcile_action(
         and item.get("lifecycle_state") != "TERMINAL"
         and item.get("author_type") == "BOT"
         and item.get("classification") == "SECURITY"
-        and not guards.is_forced_security_hold(item)
+        # SECURITY: live Sentinel persona or sentinel/ branch is a forced hold.
+        and not guards.is_forced_security_hold(guards.sentinel_record(item, live))
         and not _drift_fields(item, live)[2]
     ):
         return None
@@ -645,12 +646,23 @@ def _prepare_live_head(
         raise ReconcileSkip("anchor_key_taken")
 
 
+def _keep_sentinel_marker(item: dict[str, Any], text: str) -> str:
+    """Keep a stamped Sentinel hold when another action rewrites next_action."""
+    prior = str(item.get("next_action") or "")
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return text
+    if guards.SENTINEL_HOLD_MARKER in text:
+        return text
+    return f"{text} {guards.SENTINEL_HOLD_MARKER} remains in effect."
+
+
 def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
     live_head = action.get("live_head_sha")
     # Head moves only via _rekey_item_head so the key still ends with head_sha.
     if live_head and live_head == item.get("head_sha"):
-        item["next_action"] = (
-            f"Re-anchor intake to live head {live_head}; prior evidence void."
+        item["next_action"] = _keep_sentinel_marker(
+            item,
+            f"Re-anchor intake to live head {live_head}; prior evidence void.",
         )
     live_base = action.get("live_base_sha")
     if live_base:
@@ -669,8 +681,9 @@ def _reanchor_item(
     if live_base:
         item["base_sha"] = live_base
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    item["next_action"] = (
-        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
+    item["next_action"] = _keep_sentinel_marker(
+        item,
+        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void.",
     )
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
@@ -694,8 +707,11 @@ def apply_action_to_ledger(
         return _note_observed_terminal(ledger, item, action)
     if action.get("action") == "BACKFILL_PATHS":
         return _backfill_item_paths(ledger, item, action)
-    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
-        return _reclassify_title_security_item(ledger, item, action)
+    if action.get("action") in {
+        "RECLASSIFY_TITLE_SECURITY",
+        "HOLD_SENTINEL_SECURITY",
+    }:
+        return _apply_recorded_security_action(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -789,6 +805,102 @@ def _reclassify_title_security_item(
             "Stage 1: title-only security tag cleared by reconcile "
             "(no sensitive path or diff backing)."
         )
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+
+def _apply_recorded_security_action(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply a title reclassify or a Sentinel hold without a new transition."""
+    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
+        return _reclassify_title_security_item(ledger, item, action)
+    return _hold_sentinel_security_item(ledger, item, action)
+
+
+def _sentinel_already_held(item: dict[str, Any]) -> bool:
+    """Return whether a Sentinel item is already a fixed REVIEW_SECURITY hold."""
+    if item.get("guardrail_outcome") != "REVIEW_SECURITY":
+        return False
+    next_action = str(item.get("next_action") or "")
+    return (
+        guards.SENTINEL_HOLD_MARKER in next_action
+        or item.get("guardrail_source") in {"review", "human", "octopus"}
+        or item.get("current_owner") in {"human", "stage2", "stage3"}
+        or item.get("risk_class") == "HUMAN_REVIEW"
+    )
+
+
+_SENTINEL_REPLACEABLE_OUTCOMES = {None, "NOT_RUN", "PASS_ROUTINE", "REVIEW_SECURITY"}
+
+
+def _sentinel_hold_eligible(item: dict[str, Any], live: dict[str, Any] | None) -> bool:
+    """Return whether this open BOT item may receive a Sentinel hold."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if item.get("author_type") != "BOT":
+        return False
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return False
+    if not isinstance(live, dict):
+        return False
+    if str(live.get("state") or "").upper() != "OPEN":
+        return False
+    if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
+        return False
+    return not _sentinel_already_held(item)
+
+
+def _sentinel_hold_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Plan a fixed REVIEW_SECURITY hold for an open Sentinel persona or branch."""
+    if not _sentinel_hold_eligible(item, live):
+        return None
+    return {
+        "action": "HOLD_SENTINEL_SECURITY",
+        "key": str(item.get("key") or ""),
+        "repository": str(item.get("repository") or ""),
+        "pr": item.get("pr"),
+        "reason": (
+            "Jules Sentinel persona or sentinel/ branch is a fixed "
+            "REVIEW_SECURITY hold; title-only reconcile cannot clear it"
+        ),
+    }
+
+
+def _sentinel_apply_skip(item: dict[str, Any]) -> str | None:
+    """Return why a planned Sentinel hold must not be stamped."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return "sentinel_hold_terminal"
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return "sentinel_hold_frozen"
+    prior = str(item.get("next_action") or "")
+    if item.get("guardrail_outcome") != "REVIEW_SECURITY":
+        return None
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return None
+    return "sentinel_hold_noop"
+
+
+def _hold_sentinel_security_item(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition."""
+    del action
+    skip = _sentinel_apply_skip(item)
+    if skip is not None:
+        raise ReconcileSkip(skip)
+    prior = str(item.get("next_action") or "").strip()
+    marker = (
+        f"{guards.SENTINEL_HOLD_MARKER}: Jules Sentinel persona or sentinel/ "
+        "branch stays REVIEW_SECURITY; title-only reconcile cannot clear it."
+    )
+    item["guardrail_outcome"] = "REVIEW_SECURITY"
+    # SECURITY: HUMAN_REVIEW is a recorded human hold. Do not downgrade it.
+    if item.get("risk_class") != "HUMAN_REVIEW":
+        item["risk_class"] = "SENSITIVE"
+    item["next_action"] = marker if not prior else f"{marker} Prior: {prior}"
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 
@@ -1182,6 +1294,13 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
     reclassify = _security_tag_reconcile_action(item, live)
     if reclassify is not None:
         actions.append(reclassify)
+    sentinel_hold = _sentinel_hold_action(item, live)
+    if sentinel_hold is not None:
+        # SECURITY: do not stale-close a PR this pass is about to hold.
+        actions = [
+            action for action in actions if action.get("action") != "CLOSE_STALE"
+        ]
+        actions.append(sentinel_hold)
     return actions
 
 

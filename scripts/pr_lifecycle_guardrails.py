@@ -35,6 +35,7 @@ from typing import Any
 
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_persist import dump_ledger
+from pr_lifecycle_reconcile_guards import SENTINEL_HOLD_MARKER
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -287,6 +288,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("risk_class") != "HUMAN_REVIEW",
             item.get("guardrail_outcome") in _EVALUATABLE,
             not protected_source,
+            SENTINEL_HOLD_MARKER not in str(item.get("next_action") or ""),
             isinstance(changed_paths, list) and bool(changed_paths),
         )
     )
