@@ -98,8 +98,9 @@ decisions:
     items. The informational `SIGNALS_DEGRADED` action adds no signal-specific
     stop. Other planner stops still apply. In Stage 1, this includes
     `FEED_CHECK_FAIL` from `FEED_CHECK`.
-  - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals`
-    flag).
+  - `SKIPPED`: Live fetch bypassed (`--no-live-signals`). Stages 1, 2, and 3
+    otherwise query live signals. Stage 2 also queries records it already owns
+    so booking can see a closed or merged PR.
 - **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or
   `mergeStateStatus` values of `CONFLICTING`, `DIRTY`, `MERGEABLE`, `CLEAN`,
   `BLOCKED`, `BEHIND`, `UNSTABLE`, or `HAS_HOOKS` take precedence over ledger
