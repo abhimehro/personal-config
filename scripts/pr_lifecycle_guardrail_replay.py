@@ -67,7 +67,9 @@ def replay_items(
         patch = guardrails.evaluate_item(item, evidence=evidence)
         rule = guardrails.clearance_rule(item, patch)
         new_outcome = (
-            patch["guardrail_outcome"] if patch else item.get("guardrail_outcome")
+            patch.get("guardrail_outcome", item.get("guardrail_outcome"))
+            if patch
+            else item.get("guardrail_outcome")
         )
         row = {
             "key": key,

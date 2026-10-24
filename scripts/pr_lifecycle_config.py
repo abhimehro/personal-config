@@ -95,6 +95,47 @@ def _require_exclusions(exclusions: Any) -> None:
         )
 
 
+def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
+    """Parse one exclusion as (repository-or-none, pull-request number)."""
+    if not isinstance(raw, str):
+        raise TypeError("exclusion entries must be strings")
+    text = raw.strip()
+    if "#" in text:
+        repo_part, _, num_part = text.partition("#")
+    else:
+        repo_part, num_part = "", text
+    num_part = num_part.strip()
+    if not num_part.isdigit():
+        raise ValueError(f"invalid exclusion PR number: {raw}")
+    return repo_part.strip().lower() or None, int(num_part)
+
+
+def normalize_exclusions(*groups: Any) -> frozenset[tuple[str | None, int]]:
+    """Merge exclusion groups in owner/repo#PR, repo#PR, #PR, or PR form."""
+    specs = [
+        spec
+        for group in groups
+        for spec in ([group] if isinstance(group, str) else (group or []))
+    ]
+    return frozenset(_normalize_exclusion(spec) for spec in specs)
+
+
+def is_excluded(
+    repo: str, number: Any, exclusions: frozenset[tuple[str | None, int]]
+) -> bool:
+    """Return whether a repository and PR number match an exclusion."""
+    pr_number = number.get("number") if isinstance(number, dict) else number
+    if not isinstance(pr_number, int) or isinstance(pr_number, bool):
+        return False
+    repo_lc = repo.lower()
+    repo_short = repo_lc.rsplit("/", 1)[-1]
+    return any(
+        pr_number == excl_number
+        and (excl_repo is None or excl_repo in (repo_lc, repo_short))
+        for excl_repo, excl_number in exclusions
+    )
+
+
 def _require_advisory_checks(advisory: Any) -> None:
     """Allow None or a list of nonblank strings; otherwise raise ValueError."""
     if advisory is None:
