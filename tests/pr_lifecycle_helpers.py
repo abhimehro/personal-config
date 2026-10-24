@@ -18,7 +18,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import yaml  # noqa: E402
+import yaml
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -308,9 +308,9 @@ def import_lifecycle_run() -> Any:
 # Live below so the pr_lifecycle_unblock import binds after the SCRIPTS path
 # insert, matching the layout of every other helper block in this module.
 
-from unittest import mock  # noqa: E402
+from unittest import mock
 
-import pr_lifecycle_unblock as unblock  # noqa: E402
+import pr_lifecycle_unblock as unblock
 
 UNBLOCK_NOW = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)
 UNBLOCK_CONFIG = yaml.safe_load(

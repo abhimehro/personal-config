@@ -24,19 +24,11 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position,unused-import
-import pr_lifecycle_dispositions as dispositions  # noqa: E402
-import pr_lifecycle_ledger_cas as cas  # noqa: E402
-from pr_identity import (  # noqa: E402
-    classify_pr_identity,
-    identity_policy_from_config,
-)
-from pr_lifecycle_config import (  # noqa: E402
-    _normalize_exclusion as _config_normalize_exclusion,
-    is_excluded,
-    normalize_exclusions,
-    validate_config,
-)
-from pr_lifecycle_issue_status import (  # noqa: E402
+import pr_lifecycle_dispositions as dispositions
+import pr_lifecycle_ledger_cas as cas
+from pr_identity import classify_pr_identity, identity_policy_from_config
+from pr_lifecycle_config import _normalize_exclusion as _config_normalize_exclusion, is_excluded, normalize_exclusions, validate_config  # noqa: I001
+from pr_lifecycle_issue_status import (
     _BacklogSpec,
     _find_backlog_issue,
     _list_backlog_rows,
@@ -44,20 +36,17 @@ from pr_lifecycle_issue_status import (  # noqa: E402
     backlog_issue_body,
     update_backlog_issue,
 )
-from pr_lifecycle_octopus_issues import (  # noqa: E402
+from pr_lifecycle_octopus_issues import (
     attach_octopus_issues,
     fetch_open_octopus_issues,
 )
-from pr_lifecycle_open_inventory import list_open_prs  # noqa: E402
-from pr_lifecycle_support import ROOT  # noqa: E402
-from pr_lifecycle_unblock_apply import (  # noqa: E402
-    _MUTATING_ACTIONS,
-    _apply_action,
-)
+from pr_lifecycle_open_inventory import list_open_prs
+from pr_lifecycle_support import ROOT
+from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
 
 # Re-exports keep per-name noqa markers; isort would split them.
 # isort: off
-from pr_lifecycle_unblock_routing import (  # noqa: E402
+from pr_lifecycle_unblock_routing import (
     _JULES_PREFIXES,  # noqa: F401
     _LINEAGE_RE,  # noqa: F401
     _S2_HANDOFF_PREFIX,  # noqa: F401
@@ -76,15 +65,15 @@ from pr_lifecycle_unblock_routing import (  # noqa: E402
     _trigger_action,  # noqa: F401
     _utc,  # noqa: F401
     route_pr,
-)  # noqa: E402
-from pr_lifecycle_unblock_rows import (  # noqa: E402
+)
+from pr_lifecycle_unblock_rows import (
     _human_ledger_rows,  # noqa: F401
     _repo_counts,
     _rows_for_repo,
 )
 
 # isort: on
-from pr_lifecycle_yaml import load_yaml  # noqa: E402
+from pr_lifecycle_yaml import load_yaml
 
 # pylint: enable=wrong-import-position,unused-import
 
@@ -133,7 +122,7 @@ def _flatten_comment_pages(payload: Any) -> list[dict[str, Any]]:
 
 
 def _optional_str(value: Any) -> bool:
-    """Return True for None or a string value."""
+    """True for None or a string value."""
     return value is None or isinstance(value, str)
 
 
@@ -249,7 +238,7 @@ def _resolve_repositories(
 
 
 def _needs_comment_fetch(pr: dict[str, Any]) -> bool:
-    """Return True when the inventory page holds fewer comments than the total count."""
+    """True when the inventory page holds fewer comments than the total count."""
     comments = pr.get("comments")
     comment_count = len(comments) if isinstance(comments, list) else 0
     total_count = pr.get("commentsTotalCount")
