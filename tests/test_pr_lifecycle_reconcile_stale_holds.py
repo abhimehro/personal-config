@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import types
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest import mock
 
@@ -14,17 +14,12 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from pr_lifecycle_config import (  # noqa: E402
-    is_excluded,
-    normalize_exclusions,
-)
-from tests.pr_lifecycle_helpers import (  # noqa: E402
-    load_reconcile_with_stubs,
-    reconcile_item,
-)
+from pr_lifecycle_config import is_excluded, normalize_exclusions
+
+from tests.pr_lifecycle_helpers import load_reconcile_with_stubs, reconcile_item
 
 reconcile = load_reconcile_with_stubs()
-NOW = datetime(2026, 10, 21, 18, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 21, 18, 0, tzinfo=UTC)
 HEAD_SHA = "a" * 40
 MOVED_SHA = "c" * 40
 _OPEN_LIVE = {"state": "OPEN", "headRefOid": HEAD_SHA}
@@ -54,10 +49,10 @@ def _classify(
 ):
     return reconcile._classify_stale(
         _item(**(item_overrides or {})),
-        expiry_days=7,
-        now=NOW,
         key="abhimehro/personal-config#99@" + HEAD_SHA,
-        exclusions=exclusions,
+        policy=reconcile.StalePolicy(
+            expiry_days=7, now=NOW, exclusions=exclusions
+        ),
     )
 
 

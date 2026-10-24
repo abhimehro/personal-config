@@ -45,6 +45,13 @@ STALE_COMMENT = (
 )
 
 
+@dataclass(frozen=True)
+class StalePolicy:
+    expiry_days: int
+    now: datetime
+    exclusions: frozenset[tuple[str | None, int]] = frozenset()
+
+
 def _utc_now() -> datetime:
     """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
@@ -376,10 +383,8 @@ def _classify_sha_drift(
 def _classify_stale(
     item: dict[str, Any],
     *,
-    expiry_days: int,
-    now: datetime,
     key: str,
-    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
+    policy: StalePolicy,
 ) -> dict[str, Any] | None:
     """Return a stale-close action for an expired eligible bot packet."""
     stale_candidate = (
@@ -389,10 +394,10 @@ def _classify_stale(
     )
     if not stale_candidate:
         return None
-    if guards.stale_close_hold_reason(item, exclusions) is not None:
+    if guards.stale_close_hold_reason(item, policy.exclusions) is not None:
         return None
-    age = _item_age_days(item, now)
-    if age is None or age <= expiry_days:
+    age = _item_age_days(item, policy.now)
+    if age is None or age <= policy.expiry_days:
         return None
     return {
         "action": "CLOSE_STALE",
@@ -400,7 +405,8 @@ def _classify_stale(
         "to_state": "TERMINAL",
         "disposition": "CLOSED_STALE",
         "reason": (
-            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d > {expiry_days}d"
+            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d "
+            f"> {policy.expiry_days}d"
         ),
         "repository": item.get("repository"),
         "pr": item.get("pr"),
@@ -409,7 +415,7 @@ def _classify_stale(
 
 
 def _needs_path_backfill(item: dict[str, Any]) -> bool:
-    """Return True for a nonterminal item whose changed-path evidence is absent."""
+    """True for a nonterminal item whose changed-path evidence is absent."""
     paths = item.get("changed_paths")
     return item.get("lifecycle_state") != "TERMINAL" and not (
         isinstance(paths, list) and paths
@@ -417,7 +423,7 @@ def _needs_path_backfill(item: dict[str, Any]) -> bool:
 
 
 def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
-    """Return True only when a pathless nonterminal item faces an open live PR."""
+    """True only when a pathless nonterminal item faces an open live PR."""
     return (
         _needs_path_backfill(item)
         and isinstance(live, dict)
@@ -503,9 +509,7 @@ def classify_item(
     item: dict[str, Any],
     live: dict[str, Any] | None,
     *,
-    expiry_days: int,
-    now: datetime,
-    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
+    policy: StalePolicy,
 ) -> dict[str, Any] | None:
     """Return a proposed action, or None when no change is needed."""
     if item.get("lifecycle_state") == "TERMINAL":
@@ -524,7 +528,7 @@ def classify_item(
     if live_state in {"MERGED", "CLOSED"}:
         return _classify_live_terminal(item, live, key)
     return _classify_sha_drift(item, live, key) or _classify_stale(
-        item, expiry_days=expiry_days, now=now, key=key, exclusions=exclusions
+        item, key=key, policy=policy
     )
 
 
@@ -803,23 +807,29 @@ def _reclassify_title_security_item(
     return {"event_id": None}
 
 
+def _stale_close_preflight(
+    action: dict[str, Any], repo: str, pr: int
+) -> str | None:
+    if not repo or not pr:
+        return "skip github close: missing repository/pr"
+    live = _gh_pr_view(repo, pr)
+    if live is None:
+        return "skip github close: live PR view unavailable"
+    if str(live.get("state") or "").upper() != "OPEN":
+        return "skip github close: live PR is not OPEN"
+    if live.get("headRefOid") != action.get("head_sha"):
+        return "skip github close: live head SHA changed"
+    return None
+
+
 def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     """Close the stale PR on GitHub; confirm only when a re-read shows CLOSED."""
     repo = str(action.get("repository") or "")
     pr = int(action.get("pr") or 0)
     steps: list[str] = []
-    if not repo or not pr:
-        steps.append("skip github close: missing repository/pr")
-        return steps, False
-    live = _gh_pr_view(repo, pr)
-    if live is None:
-        steps.append("skip github close: live PR view unavailable")
-        return steps, False
-    if str(live.get("state") or "").upper() != "OPEN":
-        steps.append("skip github close: live PR is not OPEN")
-        return steps, False
-    if live.get("headRefOid") != action.get("head_sha"):
-        steps.append("skip github close: live head SHA changed")
+    preflight = _stale_close_preflight(action, repo, pr)
+    if preflight is not None:
+        steps.append(preflight)
         return steps, False
     comment = subprocess.run(
         ["gh", "pr", "comment", str(pr), "--repo", repo, "--body", STALE_COMMENT],
@@ -941,14 +951,17 @@ def collect_actions(
 ) -> list[dict[str, Any]]:
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
-    expiry = _expiry_days(config)
     unblock = (config.get("lifecycle") or {}).get("unblock") or {}
-    exclusions = normalize_exclusions(unblock.get("exclusions"))
+    policy = StalePolicy(
+        expiry_days=_expiry_days(config),
+        now=clock,
+        exclusions=normalize_exclusions(unblock.get("exclusions")),
+    )
     # Duplicate termination runs first so a loser is not also backfilled.
     items = ledger.get("items") or []
     actions, dup_losers = _duplicate_terminal_actions(items)
     for item in _live_items(items, dup_losers):
-        actions.extend(_action_for_item(item, expiry, clock, exclusions))
+        actions.extend(_action_for_item(item, policy))
         if limit is not None and len(actions) >= limit:
             del actions[limit:]
             break
@@ -1187,9 +1200,7 @@ def _ingest_action(
 
 def _action_for_item(
     item: Any,
-    expiry: int,
-    clock: datetime,
-    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
+    policy: StalePolicy,
 ) -> list[dict[str, Any]]:
     """Look up and classify one nonterminal item; return planned actions."""
     # Data-only actions (path backfill and title-only security tag clearing)
@@ -1201,9 +1212,7 @@ def _action_for_item(
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-    primary = classify_item(
-        item, live, expiry_days=expiry, now=clock, exclusions=exclusions
-    )
+    primary = classify_item(item, live, policy=policy)
     actions = [primary] if primary is not None else []
     backfill = _path_backfill_action(item, live)
     if backfill is not None:

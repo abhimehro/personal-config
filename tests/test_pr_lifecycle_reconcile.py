@@ -12,7 +12,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from tests.pr_lifecycle_helpers import (  # noqa: E402
+from tests.pr_lifecycle_helpers import (
     load_reconcile_with_stubs,
     reconcile_item,
 )
@@ -36,8 +36,7 @@ def _classify(item_overrides=None, live=_DEFAULT):
     return reconcile.classify_item(
         _item(**overrides),
         _OPEN_LIVE if live is _DEFAULT else live,
-        expiry_days=7,
-        now=NOW,
+        policy=reconcile.StalePolicy(expiry_days=7, now=NOW),
     )
 
 
@@ -266,7 +265,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["disposition"], "CLOSED_UNREVIEWED")
 
     def test_closed_state_with_merged_at_is_not_closed_unreviewed(self):
-        """MergedAt is authoritative: a CLOSED PR that merged is not unreviewed."""
+        """mergedAt is authoritative: a CLOSED PR that merged is not unreviewed."""
         action = _classify(
             {
                 "guardrail_outcome": "REVIEW_SECURITY",
