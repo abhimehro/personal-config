@@ -50,9 +50,7 @@ def _classify(
     return reconcile._classify_stale(
         _item(**(item_overrides or {})),
         key="abhimehro/personal-config#99@" + HEAD_SHA,
-        policy=reconcile.StalePolicy(
-            expiry_days=7, now=NOW, exclusions=exclusions
-        ),
+        policy=reconcile.StalePolicy(expiry_days=7, now=NOW, exclusions=exclusions),
     )
 
 
@@ -110,6 +108,7 @@ class StaleCloseHoldTests(unittest.TestCase):
             "HOLD_CONTRACT",
             "HOLD_CANONICAL",
             "HOLD_PLATFORM",
+            "HOLD_EVIDENCE",
         ):
             with self.subTest(outcome=outcome):
                 self.assertIsNone(_classify({"guardrail_outcome": outcome}))
@@ -246,6 +245,27 @@ class LiveHeadCloseTests(unittest.TestCase):
             [call.args[0][2] for call in command.call_args_list],
             ["comment", "edit", "close"],
         )
+
+    def test_moved_head_after_close_is_not_confirmed(self) -> None:
+        views = [
+            {"state": "OPEN", "headRefOid": HEAD_SHA},
+            {"state": "CLOSED", "headRefOid": MOVED_SHA},
+        ]
+        commands = [
+            types.SimpleNamespace(returncode=0),
+            types.SimpleNamespace(returncode=0),
+            types.SimpleNamespace(returncode=0),
+        ]
+        with (
+            mock.patch.object(reconcile, "_gh_pr_view", side_effect=views),
+            mock.patch.object(reconcile.subprocess, "run", side_effect=commands),
+        ):
+            steps, closed = reconcile._close_stale_github(self._action())
+        self.assertEqual(
+            ["comment exit=0", "label exit=0", "close exit=0", "confirm=unconfirmed"],
+            steps,
+        )
+        self.assertFalse(closed)
 
     def test_unconfirmed_live_head_skip_keeps_apply_item_nonterminal(self) -> None:
         item = _item()

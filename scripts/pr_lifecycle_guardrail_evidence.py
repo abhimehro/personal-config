@@ -42,14 +42,19 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".js",
         ".mjs",
         ".cjs",
+        ".cts",
         ".jsx",
+        ".mts",
         ".ts",
         ".tsx",
+        ".awk",
+        ".bat",
         ".rb",
         ".go",
         ".rs",
         ".swift",
         ".r",
+        ".asm",
         ".pl",
         ".php",
         ".java",
@@ -58,6 +63,10 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".ps1",
         ".psm1",
         ".vbs",
+        ".cxx",
+        ".hh",
+        ".hpp",
+        ".hxx",
         ".lua",
         ".c",
         ".h",
@@ -70,17 +79,81 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".groovy",
         ".gradle",
         ".applescript",
+        ".dart",
+        ".el",
+        ".erl",
+        ".ex",
+        ".exs",
+        ".fs",
+        ".fsx",
+        ".ml",
+        ".nim",
+        ".nu",
+        ".pas",
+        ".sed",
+        ".vim",
+        ".zig",
     }
 )
-_EXECUTABLE_BASENAMES = frozenset({"Makefile", "Dockerfile", "Justfile", "Rakefile"})
+_EXECUTABLE_BASENAMES = frozenset(
+    {
+        "makefile",
+        "dockerfile",
+        "justfile",
+        "rakefile",
+        "gnumakefile",
+        "gemfile",
+        "vagrantfile",
+        "jenkinsfile",
+        "containerfile",
+        "procfile",
+        "taskfile",
+        "podfile",
+        "fastfile",
+        "dangerfile",
+        "brewfile",
+    }
+)
 _SHELL_RC_BASENAME_RE = re.compile(
-    r"^\.?(?:zshrc|zshenv|zprofile|zlogin|zlogout|bashrc|bash_profile|"
-    r"bash_login|bash_logout|profile|kshrc|cshrc|tcshrc|envrc|gitconfig)$|"
+    r"^\.?(?:zshrc|zshenv|zprofile|zlogin|zlogout|zsh_aliases|bashrc|"
+    r"bash_profile|bash_login|bash_logout|bash_aliases|profile|kshrc|"
+    r"mkshrc|cshrc|tcshrc|shrc|aliases|functions|xprofile|xsession|"
+    r"xinitrc|envrc|gitconfig)$|"
     r"^[^/]*\.gitconfig$",
     re.IGNORECASE,
 )
-_GIT_CONFIG_PATH_RE = re.compile(r"(?:^|/)git/config$")
-_SCRIPT_DIRECTORY_RE = re.compile(r"(?:^|/)(?:bin|scripts|hooks|git-hooks|\.husky)/")
+_GIT_CONFIG_PATH_RE = re.compile(r"(?:^|/)git/config$", re.IGNORECASE)
+_NON_EXECUTABLE_SUFFIXLESS_BASENAMES = frozenset(
+    {
+        "license",
+        "licence",
+        "copying",
+        "notice",
+        "authors",
+        "contributors",
+        "changelog",
+        "readme",
+        "codeowners",
+        "owners",
+        "version",
+        ".gitignore",
+        ".gitattributes",
+        ".gitmodules",
+        ".gitkeep",
+        ".keep",
+        ".editorconfig",
+        ".dockerignore",
+        ".npmignore",
+        ".prettierignore",
+        ".eslintignore",
+        ".trunkignore",
+        ".mailmap",
+        ".nvmrc",
+        ".python-version",
+        ".ruby-version",
+        ".tool-versions",
+    }
+)
 _SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 _FAILURE_CONCLUSIONS = frozenset(
     {
@@ -187,14 +260,18 @@ def is_executable_path(path: Any) -> bool:
         return True
     if os.path.splitext(basename)[1].lower() in _EXECUTABLE_SUFFIXES:
         return True
-    return not os.path.splitext(basename)[1] and bool(_SCRIPT_DIRECTORY_RE.search(text))
+    suffixless_basename = basename.removeprefix(".")
+    return (
+        not os.path.splitext(suffixless_basename)[1]
+        and basename.lower() not in _NON_EXECUTABLE_SUFFIXLESS_BASENAMES
+    )
 
 
 def _is_executable_name(basename: str, text: str) -> bool:
     """Return whether a basename or Git config path is directly executable."""
     return any(
         (
-            basename in _EXECUTABLE_BASENAMES,
+            basename.lower() in _EXECUTABLE_BASENAMES,
             _SHELL_RC_BASENAME_RE.fullmatch(basename) is not None,
             _GIT_CONFIG_PATH_RE.search(text) is not None,
         )
@@ -263,7 +340,15 @@ def routine_stamp_only_patch(
 def has_current_evidence_stamp(item: dict[str, Any]) -> bool:
     """Return whether the item's evidence stamp matches its current head."""
     stamp = item.get("guardrail_evidence")
-    return isinstance(stamp, dict) and stamp.get("head_sha") == item.get("head_sha")
+    return (
+        isinstance(stamp, dict)
+        and is_sha40(stamp.get("head_sha"))
+        and stamp.get("head_sha") == item.get("head_sha")
+        and (
+            stamp.get("basis") == "head_bound_diff"
+            or not has_executable_path(item.get("changed_paths") or [])
+        )
+    )
 
 
 def owner_held_stamp_candidate(

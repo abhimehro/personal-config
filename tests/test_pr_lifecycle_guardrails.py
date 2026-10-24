@@ -302,8 +302,8 @@ class EvaluateItemTests(unittest.TestCase):
                 "guardrail_outcome": "PASS_ROUTINE",
                 "guardrail_evidence": {
                     "head_sha": "a" * 40,
-                    "basis": "non_executable_paths",
-                    "diff_sha256": None,
+                    "basis": "head_bound_diff",
+                    "diff_sha256": "d" * 64,
                 },
             },
             "HOLD_CONTRACT",

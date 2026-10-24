@@ -632,13 +632,25 @@ applied, so the item stays held until evidence arrives.
 
 Executable paths cannot receive a routine decision from paths alone. When no
 sticky path class applies and any changed path is executable (including test
-files, source/script suffixes case-insensitively such as `.ksh`, `.csh`,
-`.tcsh`, `.cmd`, `.psm1`, and `.vbs`, `Makefile`/`Dockerfile`/`Justfile`/
-`Rakefile`, shell rc basenames such as `.zshrc`, `.bash_profile`, `.cshrc`, and
-`.tcshrc`, Git config files such as `.gitconfig`, `*.gitconfig`, and XDG
-`git/config`, or suffixless paths under `bin/`, `scripts/`, `hooks/`, `git-hooks/`,
-or `.husky/`),
-guardrails require a nonempty diff fetched with
+files, case-insensitive source/script suffixes such as `.py`, `.sh`, `.js`,
+`.ts`, `.mts`, `.cts`, `.hpp`, `.hh`, `.hxx`, `.cxx`, `.awk`, `.sed`, `.vim`,
+`.el`, `.ex`, `.exs`, `.dart`, `.fs`, `.fsx`, `.ml`, `.zig`, `.erl`, `.nim`,
+`.pas`, `.asm`, `.nu`, `.bat`, `.ksh`, `.csh`, `.tcsh`, `.cmd`, `.psm1`, and
+`.vbs`; executable basenames such as `Makefile`, `Dockerfile`, `Justfile`,
+`Rakefile`, `GNUmakefile`, `Gemfile`, `Vagrantfile`, `Jenkinsfile`,
+`Containerfile`, `Procfile`, `Taskfile`, `Podfile`, `Fastfile`, `Dangerfile`,
+and `Brewfile`; shell rc names such as `.zshrc`,
+`.bash_profile`, `.cshrc`, `.tcshrc`, `.bash_aliases`, `.zsh_aliases`,
+`aliases`, `functions`, `.shrc`, `.mkshrc`, `.xprofile`, `.xsession`, and
+`.xinitrc`; Git config paths such as `*.gitconfig` and `git/config`; or any
+suffixless basename after stripping one leading dot,
+regardless of directory, unless it is a known non-executable metadata name such
+as `LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `AUTHORS`, `CONTRIBUTORS`,
+`CHANGELOG`, `README`, `CODEOWNERS`, `OWNERS`, `VERSION`, `.gitignore`,
+`.gitattributes`, `.gitmodules`, `.gitkeep`, `.keep`, `.editorconfig`,
+`.dockerignore`, `.npmignore`, `.prettierignore`, `.eslintignore`,
+`.trunkignore`, `.mailmap`, `.nvmrc`, `.python-version`, `.ruby-version`, or
+`.tool-versions`), guardrails require a nonempty diff fetched with
 `gh api -H "Accept: application/vnd.github.diff"
 repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
 only after confirming the live `headRefOid` still equals the item's `head_sha`.
@@ -647,9 +659,11 @@ A routine patch stamps `guardrail_evidence` with that head and
 `basis: non_executable_paths` and a null digest when no diff was needed.
 Security review patches clear the stamp. `PASS_ROUTINE` items with no stamp or
 a stamp for another head are re-evaluated; a matching-head stamp is left alone.
-Routine merge eligibility requires both `guardrail_outcome: PASS_ROUTINE` and
-`guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; a missing or
-stale stamp is not merge-eligible.
+The Stage 1 and Stage 3 Cursor prompts currently enforce routine merge
+eligibility by requiring both `guardrail_outcome: PASS_ROUTINE` and
+`guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; the
+planner/executor code does not enforce this stamp check. A missing or stale
+stamp is not merge-eligible under those prompts.
 An owner-held or protected-source `PASS_ROUTINE` item with a missing or stale
 stamp may receive only a stamp-only patch when normal evaluation remains
 routine; its outcome, source, risk, and sensitive paths are not changed. An

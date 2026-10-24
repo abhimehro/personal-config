@@ -879,7 +879,9 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
         return steps, False
     live = _gh_pr_view(repo, pr_number)
     confirmed = (
-        isinstance(live, dict) and str(live.get("state") or "").upper() == "CLOSED"
+        isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "CLOSED"
+        and live.get("headRefOid") == action.get("head_sha")
     )
     steps.append(f"confirm={'closed' if confirmed else 'unconfirmed'}")
     return steps, confirmed
