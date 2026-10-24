@@ -27,72 +27,23 @@ __all__ = [
     "unstamped_routine_keys",
 ]
 
-_EXECUTABLE_SUFFIXES = frozenset(
+_NON_EXECUTABLE_SUFFIXES = frozenset(
     {
-        ".py",
-        ".pyw",
-        ".sh",
-        ".bash",
-        ".zsh",
-        ".ksh",
-        ".csh",
-        ".tcsh",
-        ".cmd",
-        ".fish",
-        ".js",
-        ".mjs",
-        ".cjs",
-        ".cts",
-        ".jsx",
-        ".mts",
-        ".ts",
-        ".tsx",
-        ".awk",
-        ".bat",
-        ".rb",
-        ".go",
-        ".rs",
-        ".swift",
-        ".r",
-        ".asm",
-        ".pl",
-        ".php",
-        ".java",
-        ".kt",
-        ".kts",
-        ".ps1",
-        ".psm1",
-        ".vbs",
-        ".cxx",
-        ".hh",
-        ".hpp",
-        ".hxx",
-        ".lua",
-        ".c",
-        ".h",
-        ".cc",
-        ".cpp",
-        ".m",
-        ".mm",
-        ".cs",
-        ".scala",
-        ".groovy",
-        ".gradle",
-        ".applescript",
-        ".dart",
-        ".el",
-        ".erl",
-        ".ex",
-        ".exs",
-        ".fs",
-        ".fsx",
-        ".ml",
-        ".nim",
-        ".nu",
-        ".pas",
-        ".sed",
-        ".vim",
-        ".zig",
+        ".md",
+        ".markdown",
+        ".rst",
+        ".txt",
+        ".adoc",
+        ".csv",
+        ".tsv",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".ico",
+        ".webp",
+        ".pdf",
+        ".log",
     }
 )
 _EXECUTABLE_BASENAMES = frozenset(
@@ -258,13 +209,7 @@ def is_executable_path(path: Any) -> bool:
     basename = text.rsplit("/", 1)[-1]
     if _is_executable_name(basename, text):
         return True
-    if os.path.splitext(basename)[1].lower() in _EXECUTABLE_SUFFIXES:
-        return True
-    suffixless_basename = basename.removeprefix(".")
-    return (
-        not os.path.splitext(suffixless_basename)[1]
-        and basename.lower() not in _NON_EXECUTABLE_SUFFIXLESS_BASENAMES
-    )
+    return _is_executable_suffix_or_suffixless_basename(basename)
 
 
 def _is_executable_name(basename: str, text: str) -> bool:
@@ -276,6 +221,13 @@ def _is_executable_name(basename: str, text: str) -> bool:
             _GIT_CONFIG_PATH_RE.search(text) is not None,
         )
     )
+
+
+def _is_executable_suffix_or_suffixless_basename(basename: str) -> bool:
+    suffix = os.path.splitext(basename.removeprefix("."))[1].lower()
+    if suffix:
+        return suffix not in _NON_EXECUTABLE_SUFFIXES
+    return basename.lower() not in _NON_EXECUTABLE_SUFFIXLESS_BASENAMES
 
 
 def has_executable_path(paths: Any) -> bool:
@@ -340,14 +292,21 @@ def routine_stamp_only_patch(
 def has_current_evidence_stamp(item: dict[str, Any]) -> bool:
     """Return whether the item's evidence stamp matches its current head."""
     stamp = item.get("guardrail_evidence")
+    return _stamp_head_current(item, stamp) and _stamp_basis_sufficient(item, stamp)
+
+
+def _stamp_head_current(item: dict[str, Any], stamp: Any) -> bool:
     return (
         isinstance(stamp, dict)
         and is_sha40(stamp.get("head_sha"))
         and stamp.get("head_sha") == item.get("head_sha")
-        and (
-            stamp.get("basis") == "head_bound_diff"
-            or not has_executable_path(item.get("changed_paths") or [])
-        )
+    )
+
+
+def _stamp_basis_sufficient(item: dict[str, Any], stamp: Any) -> bool:
+    return isinstance(stamp, dict) and (
+        stamp.get("basis") == "head_bound_diff"
+        or not has_executable_path(item.get("changed_paths") or [])
     )
 
 

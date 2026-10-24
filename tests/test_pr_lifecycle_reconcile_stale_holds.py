@@ -196,6 +196,20 @@ class LiveHeadCloseTests(unittest.TestCase):
             "head_sha": HEAD_SHA,
         }
 
+    def _run_close_with_responses(
+        self,
+        views: list[dict[str, str]],
+        commands: list[types.SimpleNamespace],
+    ) -> tuple[list[str], bool, mock.Mock]:
+        with (
+            mock.patch.object(reconcile, "_gh_pr_view", side_effect=views),
+            mock.patch.object(
+                reconcile.subprocess, "run", side_effect=commands
+            ) as command,
+        ):
+            steps, closed = reconcile._close_stale_github(self._action())
+        return steps, closed, command
+
     def test_missing_closed_and_moved_live_prs_skip_mutations(self) -> None:
         cases = (
             (None, "skip github close: live PR view unavailable"),
@@ -229,13 +243,7 @@ class LiveHeadCloseTests(unittest.TestCase):
             types.SimpleNamespace(returncode=1),
             types.SimpleNamespace(returncode=0),
         ]
-        with (
-            mock.patch.object(reconcile, "_gh_pr_view", side_effect=views),
-            mock.patch.object(
-                reconcile.subprocess, "run", side_effect=commands
-            ) as command,
-        ):
-            steps, closed = reconcile._close_stale_github(self._action())
+        steps, closed, command = self._run_close_with_responses(views, commands)
         self.assertEqual(
             ["comment exit=0", "label exit=1", "close exit=0", "confirm=closed"],
             steps,
@@ -256,11 +264,7 @@ class LiveHeadCloseTests(unittest.TestCase):
             types.SimpleNamespace(returncode=0),
             types.SimpleNamespace(returncode=0),
         ]
-        with (
-            mock.patch.object(reconcile, "_gh_pr_view", side_effect=views),
-            mock.patch.object(reconcile.subprocess, "run", side_effect=commands),
-        ):
-            steps, closed = reconcile._close_stale_github(self._action())
+        steps, closed, _ = self._run_close_with_responses(views, commands)
         self.assertEqual(
             ["comment exit=0", "label exit=0", "close exit=0", "confirm=unconfirmed"],
             steps,

@@ -630,27 +630,27 @@ list is evidence, not activity, so the staleness clock must not reset). A failed
 or empty fetch surfaces as `PATH_BACKFILL_FAILED` in the plan and is never
 applied, so the item stays held until evidence arrives.
 
-Executable paths cannot receive a routine decision from paths alone. When no
-sticky path class applies and any changed path is executable (including test
-files, case-insensitive source/script suffixes such as `.py`, `.sh`, `.js`,
-`.ts`, `.mts`, `.cts`, `.hpp`, `.hh`, `.hxx`, `.cxx`, `.awk`, `.sed`, `.vim`,
-`.el`, `.ex`, `.exs`, `.dart`, `.fs`, `.fsx`, `.ml`, `.zig`, `.erl`, `.nim`,
-`.pas`, `.asm`, `.nu`, `.bat`, `.ksh`, `.csh`, `.tcsh`, `.cmd`, `.psm1`, and
-`.vbs`; executable basenames such as `Makefile`, `Dockerfile`, `Justfile`,
-`Rakefile`, `GNUmakefile`, `Gemfile`, `Vagrantfile`, `Jenkinsfile`,
-`Containerfile`, `Procfile`, `Taskfile`, `Podfile`, `Fastfile`, `Dangerfile`,
-and `Brewfile`; shell rc names such as `.zshrc`,
-`.bash_profile`, `.cshrc`, `.tcshrc`, `.bash_aliases`, `.zsh_aliases`,
-`aliases`, `functions`, `.shrc`, `.mkshrc`, `.xprofile`, `.xsession`, and
-`.xinitrc`; Git config paths such as `*.gitconfig` and `git/config`; or any
-suffixless basename after stripping one leading dot,
-regardless of directory, unless it is a known non-executable metadata name such
-as `LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `AUTHORS`, `CONTRIBUTORS`,
+Executable paths cannot receive a routine decision from paths alone. Unless a
+changed path has a known document/image suffix (`.md`, `.markdown`, `.rst`,
+`.txt`, `.adoc`, `.csv`, `.tsv`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.ico`,
+`.webp`, `.pdf`, or `.log`) or a suffixless metadata basename such as
+`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `AUTHORS`, `CONTRIBUTORS`,
 `CHANGELOG`, `README`, `CODEOWNERS`, `OWNERS`, `VERSION`, `.gitignore`,
 `.gitattributes`, `.gitmodules`, `.gitkeep`, `.keep`, `.editorconfig`,
 `.dockerignore`, `.npmignore`, `.prettierignore`, `.eslintignore`,
 `.trunkignore`, `.mailmap`, `.nvmrc`, `.python-version`, `.ruby-version`, or
-`.tool-versions`), guardrails require a nonempty diff fetched with
+`.tool-versions`, it is treated as executable. This fail-closed default
+includes unknown extensions and config/data formats such as `.json`, `.yaml`,
+`.toml`, `.ini`, `.conf`, `.plist`, `.lock`, `.svg`, and `.xml`. Executable
+basenames such as `Makefile`, `Dockerfile`, `Justfile`, `Rakefile`,
+`GNUmakefile`, `Gemfile`, `Vagrantfile`, `Jenkinsfile`, `Containerfile`,
+`Procfile`, `Taskfile`, `Podfile`, `Fastfile`, `Dangerfile`, and `Brewfile`;
+shell rc names such as `.zshrc`, `.bash_profile`, `.cshrc`, `.tcshrc`,
+`.bash_aliases`, `.zsh_aliases`, `aliases`, `functions`, `.shrc`, `.mkshrc`,
+`.xprofile`, `.xsession`, and `.xinitrc`; Git config paths such as
+`*.gitconfig` and `git/config`; and suffixless basenames not on the metadata
+allowlist are also treated as executable. When no sticky path class applies and
+any changed path is executable, guardrails require a nonempty diff fetched with
 `gh api -H "Accept: application/vnd.github.diff"
 repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
 only after confirming the live `headRefOid` still equals the item's `head_sha`.

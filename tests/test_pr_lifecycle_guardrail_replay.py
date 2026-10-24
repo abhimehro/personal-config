@@ -24,10 +24,12 @@ from tests.pr_lifecycle_helpers import guardrail_item as _item  # noqa: E402
 
 
 def _evidence(
-    title: str, head_ref: str, diff_text: str = ""
+    title: str, head_ref: str, diff_text: str = "", *, head_sha: str | None = None
 ) -> guardrails.GuardrailEvidence:
     return guardrails.GuardrailEvidence(
         diff_text=diff_text,
+        head_sha=head_sha,
+        diff_sha256=guardrails.diff_sha256(diff_text) if diff_text else None,
         title=title,
         head_ref=head_ref,
         required_checks_green=True,
@@ -158,6 +160,7 @@ class ReplayItemsTests(unittest.TestCase):
                     "@@\n"
                     f"+        uses: actions/checkout@{sha}\n"
                 ),
+                head_sha=dependabot["head_sha"],
             ),
         }
         report = replay.replay_items([journal, labeled, shell, dependabot], evidence)

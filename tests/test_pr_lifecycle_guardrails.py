@@ -667,6 +667,10 @@ class DependabotAndDiffTests(unittest.TestCase):
             "title": "Bump actions/checkout from 4.1.1 to 4.1.2",
         }
         payload.update(evidence)
+        diff_text = payload["diff_text"]
+        if isinstance(diff_text, str) and diff_text:
+            payload["head_sha"] = item["head_sha"]
+            payload["diff_sha256"] = guardrails.diff_sha256(diff_text)
         patch = guardrails.evaluate_item(
             item, evidence=guardrails.GuardrailEvidence(**payload)
         )
