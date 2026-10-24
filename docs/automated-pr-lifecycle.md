@@ -650,7 +650,9 @@ shell rc names such as `.zshrc`, `.bash_profile`, `.cshrc`, `.tcshrc`,
 `.xprofile`, `.xsession`, and `.xinitrc`; Git config paths such as
 `*.gitconfig` and `git/config`; and suffixless basenames not on the metadata
 allowlist are also treated as executable. When no sticky path class applies and
-any changed path is executable, guardrails require a nonempty diff fetched with
+`CMakeLists.txt`, `constraints*.txt`, and `requirements*.txt` are executable
+despite the `.txt` allowlist. When no sticky path class applies and any changed
+path is executable, guardrails require a nonempty diff fetched with
 `gh api -H "Accept: application/vnd.github.diff"
 repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
 only after confirming the live `headRefOid` still equals the item's `head_sha`.

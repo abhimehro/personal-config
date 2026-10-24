@@ -46,6 +46,9 @@ _NON_EXECUTABLE_SUFFIXES = frozenset(
         ".log",
     }
 )
+_EXECUTABLE_TXT_BASENAME_RE = re.compile(
+    r"^(cmakelists|constraints.*|requirements.*)\.txt$", re.IGNORECASE
+)
 _EXECUTABLE_BASENAMES = frozenset(
     {
         "makefile",
@@ -224,6 +227,8 @@ def _is_executable_name(basename: str, text: str) -> bool:
 
 
 def _is_executable_suffix_or_suffixless_basename(basename: str) -> bool:
+    if _EXECUTABLE_TXT_BASENAME_RE.match(basename):
+        return True
     suffix = os.path.splitext(basename.removeprefix("."))[1].lower()
     if suffix:
         return suffix not in _NON_EXECUTABLE_SUFFIXES
