@@ -99,6 +99,7 @@ class EvaluateLedgerTests(unittest.TestCase):
                 "skipped": 0,
                 "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 1},
                 "evidence_stamped": 1,
+                "unstamped_routine": [],
                 "changes": [
                     {
                         "key": item["key"],
@@ -177,7 +178,7 @@ class EvaluateLedgerTests(unittest.TestCase):
         self.assertEqual(4, summary["skipped"])
 
     def test_preserves_revision_and_filters_repos(self) -> None:
-        """Revision is a projection of transition events — evaluation must
+        """revision is a projection of transition events — evaluation must
         not bump it without logging one (ledger consistency check)."""
         ledger = {
             "items": [

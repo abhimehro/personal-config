@@ -16,11 +16,11 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_guardrails as guardrails  # noqa: E402
-from pr_lifecycle_schema import validate_schema  # noqa: E402
-from pr_lifecycle_yaml import load_yaml  # noqa: E402
+import pr_lifecycle_guardrails as guardrails
+from pr_lifecycle_schema import validate_schema
+from pr_lifecycle_yaml import load_yaml
 
-from tests.pr_lifecycle_helpers import (  # noqa: E402
+from tests.pr_lifecycle_helpers import (
     guardrail_item,
     load_reconcile_with_stubs,
 )
@@ -100,10 +100,20 @@ class ExecutablePathTests(unittest.TestCase):
             "bin/tool",
             "pkg/scripts/run",
             "src/bin/test_helper",
+            "configs/.zshrc",
+            "configs/.config/agent-shell/zshrc",
+            "configs/.bash_profile",
+            ".husky/pre-commit",
         ):
             with self.subTest(path=path):
                 self.assertTrue(guardrails.is_executable_path(path))
-        for path in ("README.md", "assets/icon.svg", "src/data.json", "bin/tool.pyc"):
+        for path in (
+            "README.md",
+            "assets/icon.svg",
+            "src/data.json",
+            "bin/tool.pyc",
+            "configs/.gitconfig",
+        ):
             with self.subTest(path=path):
                 self.assertFalse(guardrails.is_executable_path(path))
 
@@ -221,6 +231,76 @@ class HeadBoundDecisionTests(unittest.TestCase):
         self.assertTrue(guardrails._evaluable(stale))
         self.assertIsNotNone(guardrails.evaluate_item(stale, evidence=_evidence()))
 
+    def test_owner_held_routine_items_get_stamp_only_patches(self) -> None:
+        cases = (
+            {"current_owner": "stage3", "guardrail_source": "path_eval"},
+            {"current_owner": "stage1", "guardrail_source": "manual"},
+        )
+        stamp = {
+            "head_sha": HEAD_SHA,
+            "basis": "head_bound_diff",
+            "diff_sha256": hashlib.sha256(BENIGN_DIFF.encode("utf-8")).hexdigest(),
+        }
+        for overrides in cases:
+            with self.subTest(overrides=overrides):
+                item = guardrail_item(
+                    changed_paths=["src/worker.py"],
+                    guardrail_outcome="PASS_ROUTINE",
+                    **overrides,
+                )
+                self.assertFalse(guardrails._evaluable(item))
+                self.assertTrue(guardrails.needs_live_evidence(item))
+                self.assertEqual(
+                    {"guardrail_evidence": stamp},
+                    guardrails.evaluate_item(item, evidence=_evidence()),
+                )
+
+    def test_owner_held_routine_stays_unstamped_for_security_diff(self) -> None:
+        shell_diff = (
+            "diff --git a/src/worker.py b/src/worker.py\n"
+            "--- a/src/worker.py\n"
+            "+++ b/src/worker.py\n"
+            "@@\n"
+            "+subprocess.run(user_input, shell=True)\n"
+        )
+        cases = (
+            {"current_owner": "stage3", "guardrail_source": "path_eval"},
+            {"current_owner": "stage1", "guardrail_source": "manual"},
+        )
+        for overrides in cases:
+            with self.subTest(overrides=overrides):
+                item = guardrail_item(
+                    changed_paths=["src/worker.py"],
+                    guardrail_outcome="PASS_ROUTINE",
+                    **overrides,
+                )
+                self.assertIsNone(
+                    guardrails.evaluate_item(item, evidence=_evidence(shell_diff))
+                )
+
+    def test_human_review_routine_item_never_gets_stamp_only_patch(self) -> None:
+        item = guardrail_item(
+            changed_paths=["src/worker.py"],
+            guardrail_outcome="PASS_ROUTINE",
+            current_owner="stage3",
+            risk_class="HUMAN_REVIEW",
+        )
+        self.assertIsNone(guardrails.evaluate_item(item, evidence=_evidence()))
+
+    def test_unstamped_routine_summary_lists_unstamped_owner_item(self) -> None:
+        key = "abhimehro/personal-config#123@" + HEAD_SHA
+        item = guardrail_item(
+            key=key,
+            changed_paths=["src/worker.py"],
+            guardrail_outcome="PASS_ROUTINE",
+            current_owner="stage3",
+        )
+        ledger = {"items": [item], "events": [], "ledger_revision": 0}
+        _, summary = guardrails.evaluate_ledger(
+            ledger, None, evidence_for=lambda _item: None
+        )
+        self.assertEqual([key], summary["unstamped_routine"])
+
     def test_invalid_item_head_and_unstamped_routine_without_diff_stay_unchanged(
         self,
     ) -> None:
@@ -241,6 +321,7 @@ class HeadBoundDecisionTests(unittest.TestCase):
             ledger, None, evidence_for=lambda _item: _evidence()
         )
         self.assertEqual(1, summary["evidence_stamped"])
+        self.assertEqual([], summary["unstamped_routine"])
         self.assertEqual(HEAD_SHA, item["guardrail_evidence"]["head_sha"])
 
     def test_title_security_clear_invalidates_prior_stamp(self) -> None:

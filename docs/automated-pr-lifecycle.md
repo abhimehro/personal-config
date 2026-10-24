@@ -633,8 +633,10 @@ applied, so the item stays held until evidence arrives.
 Executable paths cannot receive a routine decision from paths alone. When no
 sticky path class applies and any changed path is executable (including test
 files, source suffixes case-insensitively, `Makefile`/`Dockerfile`/`Justfile`/
-`Rakefile`, or suffixless paths under `bin/` or `scripts/`), guardrails require
-a nonempty diff fetched with `gh api -H "Accept: application/vnd.github.diff"
+`Rakefile`, shell rc basenames such as `.zshrc` and `.bash_profile`, or
+suffixless paths under `bin/`, `scripts/`, `hooks/`, `git-hooks/`, or `.husky/`),
+guardrails require a nonempty diff fetched with
+`gh api -H "Accept: application/vnd.github.diff"
 repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
 only after confirming the live `headRefOid` still equals the item's `head_sha`.
 A routine patch stamps `guardrail_evidence` with that head and
@@ -645,6 +647,12 @@ a stamp for another head are re-evaluated; a matching-head stamp is left alone.
 Routine merge eligibility requires both `guardrail_outcome: PASS_ROUTINE` and
 `guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; a missing or
 stale stamp is not merge-eligible.
+An owner-held or protected-source `PASS_ROUTINE` item with a missing or stale
+stamp may receive only a stamp-only patch when normal evaluation remains
+routine; its outcome, source, risk, and sensitive paths are not changed. An
+executable-path item still needs a head-bound diff, and a security decision or
+missing diff leaves it unstamped. The run summary lists remaining nonterminal
+routine items without a current stamp in sorted `unstamped_routine`.
 
 Reconcile stale-close actions are held for `risk_class: HUMAN_REVIEW`,
 `guardrail_source` manual/review/human/octopus, `REVIEW_SECURITY` or `HOLD_*`

@@ -35,15 +35,23 @@ from typing import Any
 
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_guardrail_evidence import (
-    content_matches_head,
+    _fetch_head_bound_diff,
+    _live_view_payload,
     diff_sha256,
-    is_executable_path,
+    has_current_evidence_stamp,
+    has_executable_path,
     is_sha40,
+    owner_held_routine_stamp_candidate,
+    routine_blocked,
+    routine_stamp,
+    unstamped_routine_keys,
 )
+from pr_lifecycle_guardrail_evidence import is_executable_path as _is_executable_path
 from pr_lifecycle_persist import dump_ledger
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+is_executable_path = _is_executable_path
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 
 _COMMIT_MESSAGE = "chore(lifecycle): deterministic guardrail path evaluation"
@@ -284,7 +292,6 @@ def _evaluable(item: dict[str, Any]) -> bool:
     changed_paths = item.get("changed_paths")
     source = item.get("guardrail_source")
     outcome = item.get("guardrail_outcome")
-    stamp = item.get("guardrail_evidence")
     protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
         item
     )
@@ -295,9 +302,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("risk_class") != "HUMAN_REVIEW",
             outcome in _EVALUATABLE,
-            outcome != "PASS_ROUTINE"
-            or not isinstance(stamp, dict)
-            or stamp.get("head_sha") != item.get("head_sha"),
+            outcome != "PASS_ROUTINE" or not has_current_evidence_stamp(item),
             not protected_source,
             isinstance(changed_paths, list) and bool(changed_paths),
         )
@@ -631,6 +636,10 @@ def needs_live_evidence(item: dict[str, Any]) -> bool:
     paths = item.get("changed_paths")
     if not isinstance(paths, list) or not paths:
         return False
+    if owner_held_routine_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    ) and has_executable_path(paths):
+        return True
     path_sticky = classify_item_paths(paths) - _STICKY_EXEMPT
     if _is_dependabot(item) and (
         _only_workflow_paths(paths) or _only_lockfile_paths(paths)
@@ -639,7 +648,7 @@ def needs_live_evidence(item: dict[str, Any]) -> bool:
     if path_sticky:
         return False
     return (
-        any(is_executable_path(path) for path in paths)
+        has_executable_path(paths)
         or item.get("classification") == "SECURITY"
         or item.get("guardrail_outcome") in _CLEARABLE_HOLDS
     )
@@ -675,53 +684,33 @@ def fetch_guardrail_evidence(
     """
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
-    if not repo or not isinstance(pr, int):
-        return GuardrailEvidence(diff_fetch_failed=True)
     head_sha = item.get("head_sha")
     base_sha = item.get("base_sha")
-    if not is_sha40(head_sha) or not is_sha40(base_sha):
+    if not all((repo, isinstance(pr, int), is_sha40(head_sha), is_sha40(base_sha))):
         return GuardrailEvidence(diff_fetch_failed=True)
-    view = _gh_capture(
-        [
-            "gh",
-            "pr",
-            "view",
-            str(pr),
-            "--repo",
-            repo,
-            "--json",
-            "title,mergeable,statusCheckRollup,headRefName,headRefOid",
-        ]
+    payload = _live_view_payload(
+        _gh_capture(
+            [
+                "gh",
+                "pr",
+                "view",
+                str(pr),
+                "--repo",
+                repo,
+                "--json",
+                "title,mergeable,statusCheckRollup,headRefName,headRefOid",
+            ]
+        ),
+        head_sha,
     )
-    if view is None or view.returncode != 0:
-        return GuardrailEvidence(diff_fetch_failed=True)
-    try:
-        payload = json.loads(view.stdout)
-    except json.JSONDecodeError:
-        return GuardrailEvidence(diff_fetch_failed=True)
-    if not isinstance(payload, dict):
-        return GuardrailEvidence(diff_fetch_failed=True)
-    if payload.get("headRefOid") != head_sha:
+    if payload is None:
         return GuardrailEvidence(diff_fetch_failed=True)
     diff_text = ""
     digest = None
     if include_diff:
-        diff_proc = _gh_capture(
-            [
-                "gh",
-                "api",
-                "-H",
-                "Accept: application/vnd.github.diff",
-                f"repos/{repo}/compare/{base_sha}...{head_sha}",
-            ]
-        )
-        if (
-            diff_proc is None
-            or diff_proc.returncode != 0
-            or not diff_proc.stdout.strip()
-        ):
+        diff_text = _fetch_head_bound_diff(repo, base_sha, head_sha, _gh_capture)
+        if diff_text is None:
             return GuardrailEvidence(diff_fetch_failed=True)
-        diff_text = diff_proc.stdout
         digest = diff_sha256(diff_text)
     return GuardrailEvidence(
         diff_text=diff_text,
@@ -778,12 +767,17 @@ def evaluate_item(
     Sticky path classes, except eligible Dependabot exemptions, and supplied
     security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
     label alone does not. Executable paths require a nonempty diff bound to the
-    item's 40-hex head SHA before they can receive ``PASS_ROUTINE``. Non-executable
-    paths can be stamped without diff content. ``HOLD_CONTRACT`` and
-    ``HOLD_EVIDENCE`` stay put when the new decision is still a hold.
+    item's 40-hex head SHA before they can receive ``PASS_ROUTINE``.
+    Non-executable paths can be stamped without diff content.
+    ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision is
+    still a hold. Owner-held routine items receive only a stamp when their
+    existing decision remains routine.
     """
     del clear_standin  # CLI flag remains; downgrade no longer depends on it.
-    if not _evaluable(item):
+    stamp_only = owner_held_routine_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    )
+    if not _evaluable(item) and not stamp_only:
         return None
     outcome = item.get("guardrail_outcome")
     classes = classify_item_paths(item["changed_paths"])
@@ -804,16 +798,15 @@ def evaluate_item(
     sticky_flag = bool(effective) or fail_closed
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
-    content_ok = content_matches_head(evidence, item.get("head_sha"))
-    if not sticky_flag:
-        head_sha = item.get("head_sha")
-        if not is_sha40(head_sha):
-            return None
-        if (
-            any(is_executable_path(path) for path in item["changed_paths"])
-            and not content_ok
-        ):
-            return None
+    if not sticky_flag and routine_blocked(item, evidence):
+        return None
+    if stamp_only and sticky_flag:
+        return None
+    if stamp_only:
+        stamp = routine_stamp(item, evidence)
+        return None if item.get("guardrail_evidence") == stamp else {
+            "guardrail_evidence": stamp
+        }
     recorded = (set(classes) | signals) - exempt
     if fail_closed and not recorded:
         prior = item.get("sensitive_paths")
@@ -824,15 +817,7 @@ def evaluate_item(
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
         "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
-        "guardrail_evidence": None
-        if sticky_flag
-        else {
-            "head_sha": item["head_sha"],
-            "basis": "head_bound_diff" if content_ok else "non_executable_paths",
-            "diff_sha256": evidence.diff_sha256
-            if content_ok and evidence is not None
-            else None,
-        },
+        "guardrail_evidence": None if sticky_flag else routine_stamp(item, evidence),
     }
     if all(item.get(field) == value for field, value in patch.items()):
         return None
@@ -850,7 +835,7 @@ def _record_evaluation(
     guardrail outcome changes.
     """
     summary["evaluated"] += 1
-    outcome = str(patch["guardrail_outcome"])
+    outcome = str(patch.get("guardrail_outcome", item.get("guardrail_outcome")))
     summary["by_outcome"][outcome] += 1
     if item.get("guardrail_outcome") == outcome:
         summary["outcomes_unchanged"] += 1
@@ -892,6 +877,7 @@ def evaluate_ledger(
         "skipped": 0,
         "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 0},
         "evidence_stamped": 0,
+        "unstamped_routine": [],
         "changes": [],
     }
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -908,6 +894,7 @@ def evaluate_ledger(
         if patch.get("guardrail_evidence") is not None:
             summary["evidence_stamped"] += 1
         _record_evaluation(item, patch, now, summary)
+    summary["unstamped_routine"] = unstamped_routine_keys(ledger.get("items"))
     return ledger, summary
 
 
