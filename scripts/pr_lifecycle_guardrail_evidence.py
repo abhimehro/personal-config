@@ -16,6 +16,10 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".sh",
         ".bash",
         ".zsh",
+        ".ksh",
+        ".csh",
+        ".tcsh",
+        ".cmd",
         ".fish",
         ".js",
         ".mjs",
@@ -34,6 +38,8 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".kt",
         ".kts",
         ".ps1",
+        ".psm1",
+        ".vbs",
         ".lua",
         ".c",
         ".h",
@@ -51,9 +57,11 @@ _EXECUTABLE_SUFFIXES = frozenset(
 _EXECUTABLE_BASENAMES = frozenset({"Makefile", "Dockerfile", "Justfile", "Rakefile"})
 _SHELL_RC_BASENAME_RE = re.compile(
     r"^\.?(?:zshrc|zshenv|zprofile|zlogin|zlogout|bashrc|bash_profile|"
-    r"bash_login|bash_logout|profile|kshrc|envrc)$",
+    r"bash_login|bash_logout|profile|kshrc|cshrc|tcshrc|envrc|gitconfig)$|"
+    r"^[^/]*\.gitconfig$",
     re.IGNORECASE,
 )
+_GIT_CONFIG_PATH_RE = re.compile(r"(?:^|/)git/config$")
 _SCRIPT_DIRECTORY_RE = re.compile(
     r"(?:^|/)(?:bin|scripts|hooks|git-hooks|\.husky)/"
 )
@@ -69,6 +77,7 @@ def is_executable_path(path: Any) -> bool:
     if (
         basename in _EXECUTABLE_BASENAMES
         or _SHELL_RC_BASENAME_RE.fullmatch(basename)
+        or _GIT_CONFIG_PATH_RE.search(text)
     ):
         return True
     if os.path.splitext(basename)[1].lower() in _EXECUTABLE_SUFFIXES:

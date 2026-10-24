@@ -55,6 +55,10 @@ class ExecutablePathTests(unittest.TestCase):
             ".sh",
             ".bash",
             ".zsh",
+            ".ksh",
+            ".csh",
+            ".tcsh",
+            ".cmd",
             ".fish",
             ".js",
             ".mjs",
@@ -73,6 +77,8 @@ class ExecutablePathTests(unittest.TestCase):
             ".kt",
             ".kts",
             ".ps1",
+            ".psm1",
+            ".vbs",
             ".lua",
             ".c",
             ".h",
@@ -103,22 +109,37 @@ class ExecutablePathTests(unittest.TestCase):
             "configs/.zshrc",
             "configs/.config/agent-shell/zshrc",
             "configs/.bash_profile",
+            "configs/.gitconfig",
+            "gitconfig",
+            "work.gitconfig",
+            "configs/.config/git/config",
+            ".cshrc",
+            "configs/.tcshrc",
+            "x.ksh",
+            "x.psm1",
             ".husky/pre-commit",
         ):
             with self.subTest(path=path):
                 self.assertTrue(guardrails.is_executable_path(path))
         for path in (
             "README.md",
+            "docs/readme.md",
+            "config.yaml",
             "assets/icon.svg",
             "src/data.json",
             "bin/tool.pyc",
-            "configs/.gitconfig",
         ):
             with self.subTest(path=path):
                 self.assertFalse(guardrails.is_executable_path(path))
 
 
 class HeadBoundDecisionTests(unittest.TestCase):
+    def test_git_config_path_without_diff_cannot_receive_routine_patch(self) -> None:
+        item = guardrail_item(changed_paths=["configs/.gitconfig"])
+
+        self.assertTrue(guardrails.needs_live_evidence(item))
+        self.assertIsNone(guardrails.evaluate_item(item))
+
     def test_not_run_executable_requires_live_evidence(self) -> None:
         item = guardrail_item(changed_paths=["src/worker.py"])
         before = copy.deepcopy(item)

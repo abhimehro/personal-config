@@ -632,9 +632,12 @@ applied, so the item stays held until evidence arrives.
 
 Executable paths cannot receive a routine decision from paths alone. When no
 sticky path class applies and any changed path is executable (including test
-files, source suffixes case-insensitively, `Makefile`/`Dockerfile`/`Justfile`/
-`Rakefile`, shell rc basenames such as `.zshrc` and `.bash_profile`, or
-suffixless paths under `bin/`, `scripts/`, `hooks/`, `git-hooks/`, or `.husky/`),
+files, source/script suffixes case-insensitively such as `.ksh`, `.csh`,
+`.tcsh`, `.cmd`, `.psm1`, and `.vbs`, `Makefile`/`Dockerfile`/`Justfile`/
+`Rakefile`, shell rc basenames such as `.zshrc`, `.bash_profile`, `.cshrc`, and
+`.tcshrc`, Git config files such as `.gitconfig`, `*.gitconfig`, and XDG
+`git/config`, or suffixless paths under `bin/`, `scripts/`, `hooks/`, `git-hooks/`,
+or `.husky/`),
 guardrails require a nonempty diff fetched with
 `gh api -H "Accept: application/vnd.github.diff"
 repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
