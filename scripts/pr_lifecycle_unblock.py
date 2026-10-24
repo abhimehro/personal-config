@@ -27,7 +27,8 @@ if str(SCRIPT_DIR) not in sys.path:
 import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
-from pr_lifecycle_config import _normalize_exclusion as _config_normalize_exclusion, is_excluded, normalize_exclusions, validate_config  # noqa: I001
+from pr_lifecycle_config import _normalize_exclusion as _config_normalize_exclusion
+from pr_lifecycle_config import is_excluded, normalize_exclusions, validate_config
 from pr_lifecycle_issue_status import (
     _BacklogSpec,
     _find_backlog_issue,

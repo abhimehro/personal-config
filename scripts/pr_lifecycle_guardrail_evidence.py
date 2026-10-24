@@ -6,8 +6,26 @@ import hashlib
 import json
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from typing import Any
+
+__all__ = [
+    "GuardrailEvidence",
+    "content_matches_head",
+    "diff_sha256",
+    "fetch_guardrail_evidence",
+    "has_current_evidence_stamp",
+    "has_executable_path",
+    "is_executable_path",
+    "is_sha40",
+    "owner_held_stamp_candidate",
+    "required_checks_green",
+    "routine_blocked",
+    "routine_stamp",
+    "routine_stamp_only_patch",
+    "unstamped_routine_keys",
+]
 
 _EXECUTABLE_SUFFIXES = frozenset(
     {
@@ -62,10 +80,101 @@ _SHELL_RC_BASENAME_RE = re.compile(
     re.IGNORECASE,
 )
 _GIT_CONFIG_PATH_RE = re.compile(r"(?:^|/)git/config$")
-_SCRIPT_DIRECTORY_RE = re.compile(
-    r"(?:^|/)(?:bin|scripts|hooks|git-hooks|\.husky)/"
-)
+_SCRIPT_DIRECTORY_RE = re.compile(r"(?:^|/)(?:bin|scripts|hooks|git-hooks|\.husky)/")
 _SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
+_FAILURE_CONCLUSIONS = frozenset(
+    {
+        "FAILURE",
+        "TIMED_OUT",
+        "CANCELLED",
+        "ACTION_REQUIRED",
+        "STARTUP_FAILURE",
+        "ERROR",
+    }
+)
+_OK_CONCLUSIONS = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL", "PASSED"})
+
+
+@dataclass(frozen=True)
+class GuardrailEvidence:
+    """
+    Live evidence for exemptions that paths alone cannot decide.
+
+    ``diff_text`` is a unified diff. ``diff_fetch_failed`` means a fetch was
+    attempted and did not return one; clearing an existing hold then fails
+    closed. ``required_checks_green`` is True only when every non-advisory
+    check succeeded, skipped, or was neutral. ``mergeable`` is True only for
+    GitHub's MERGEABLE state. ``title`` is used to read a Dependabot semver
+    bump and is not a security classification.
+    """
+
+    diff_text: str | None = None
+    diff_fetch_failed: bool = False
+    required_checks_green: bool | None = None
+    mergeable: bool | None = None
+    title: str | None = None
+    head_ref: str | None = None
+    head_sha: str | None = None
+    diff_sha256: str | None = None
+
+
+def _advisory_name(name: str, patterns: Sequence[str]) -> bool:
+    """Match advisory names exactly or by a trailing-star prefix."""
+    return any(
+        name.startswith(pattern[:-1]) if pattern.endswith("*") else name == pattern
+        for pattern in patterns
+        if pattern
+    )
+
+
+def _check_records(checks: Any) -> list[dict[str, Any]] | None:
+    """Normalize a GitHub rollup list or GraphQL contexts connection."""
+    if isinstance(checks, list):
+        return [item for item in checks if isinstance(item, dict)]
+    if isinstance(checks, dict):
+        contexts = checks.get("contexts")
+        nodes = contexts.get("nodes") if isinstance(contexts, dict) else None
+        if isinstance(nodes, list):
+            return [item for item in nodes if isinstance(item, dict)]
+    return None
+
+
+def _check_identity(check: dict[str, Any]) -> tuple[str, str, bool]:
+    """Return (name, conclusion, pending) for one rollup record."""
+    name = str(check.get("name") or check.get("context") or "")
+    conclusion = str(check.get("conclusion") or check.get("state") or "").upper()
+    status = str(check.get("status") or "").upper()
+    pending = (status not in {"", "COMPLETED"}) or conclusion in {
+        "PENDING",
+        "EXPECTED",
+    }
+    return name, conclusion, pending
+
+
+def required_checks_green(checks: Any, advisory_patterns: Sequence[str]) -> bool | None:
+    """
+    Return whether every non-advisory check has an acceptable conclusion.
+
+    Return True when all required checks pass or every record is advisory.
+    Pending, failing, or unknown conclusions return False. None means the
+    rollup is missing, unsupported, or contains no mapping records.
+    """
+    records = _check_records(checks)
+    if not records:
+        return None
+    saw_required = False
+    for check in records:
+        name, conclusion, pending = _check_identity(check)
+        if _advisory_name(name, advisory_patterns):
+            continue
+        saw_required = True
+        if pending or conclusion in _FAILURE_CONCLUSIONS:
+            return False
+        if conclusion not in _OK_CONCLUSIONS:
+            return False
+    if not saw_required:
+        return True
+    return True
 
 
 def is_executable_path(path: Any) -> bool:
@@ -74,15 +183,22 @@ def is_executable_path(path: Any) -> bool:
         return False
     text = path.strip()
     basename = text.rsplit("/", 1)[-1]
-    if (
-        basename in _EXECUTABLE_BASENAMES
-        or _SHELL_RC_BASENAME_RE.fullmatch(basename)
-        or _GIT_CONFIG_PATH_RE.search(text)
-    ):
+    if _is_executable_name(basename, text):
         return True
     if os.path.splitext(basename)[1].lower() in _EXECUTABLE_SUFFIXES:
         return True
     return not os.path.splitext(basename)[1] and bool(_SCRIPT_DIRECTORY_RE.search(text))
+
+
+def _is_executable_name(basename: str, text: str) -> bool:
+    """Return whether a basename or Git config path is directly executable."""
+    return any(
+        (
+            basename in _EXECUTABLE_BASENAMES,
+            _SHELL_RC_BASENAME_RE.fullmatch(basename) is not None,
+            _GIT_CONFIG_PATH_RE.search(text) is not None,
+        )
+    )
 
 
 def has_executable_path(paths: Any) -> bool:
@@ -130,17 +246,33 @@ def routine_stamp(item: dict[str, Any], evidence: Any) -> dict[str, Any]:
     }
 
 
+def routine_stamp_only_patch(
+    item: dict[str, Any], evidence: Any, sticky_flag: bool
+) -> dict[str, Any] | None:
+    """Build an evidence-only routine patch for an owner-held item."""
+    if sticky_flag:
+        return None
+    stamp = routine_stamp(item, evidence)
+    return (
+        None
+        if item.get("guardrail_evidence") == stamp
+        else {"guardrail_evidence": stamp}
+    )
+
+
 def has_current_evidence_stamp(item: dict[str, Any]) -> bool:
+    """Return whether the item's evidence stamp matches its current head."""
     stamp = item.get("guardrail_evidence")
     return isinstance(stamp, dict) and stamp.get("head_sha") == item.get("head_sha")
 
 
-def owner_held_routine_stamp_candidate(
+def owner_held_stamp_candidate(
     item: dict[str, Any],
     blocked_owners: frozenset[str],
     protected_sources: frozenset[str],
     sentinel_standin: Callable[[dict[str, Any]], bool],
 ) -> bool:
+    """Return whether an owner-held routine item may receive only a stamp."""
     changed_paths = item.get("changed_paths")
     source = item.get("guardrail_source")
     protected_source = source in protected_sources and not sentinel_standin(item)
@@ -159,6 +291,7 @@ def owner_held_routine_stamp_candidate(
 
 
 def unstamped_routine_keys(items: Any) -> list[str]:
+    """Return sorted keys of nonterminal routine items without a current stamp."""
     return sorted(
         str(item.get("key") or "")
         for item in items or []
@@ -172,7 +305,7 @@ def unstamped_routine_keys(items: Any) -> list[str]:
 
 def _live_view_payload(view: Any, head_sha: Any) -> dict[str, Any] | None:
     """Parse a successful PR view only when it is anchored to the requested head."""
-    if view is None or view.returncode != 0:
+    if view is None or view.returncode:
         return None
     try:
         payload = json.loads(view.stdout)
@@ -185,9 +318,7 @@ def _live_view_payload(view: Any, head_sha: Any) -> dict[str, Any] | None:
 
 def _diff_response_is_usable(response: Any) -> bool:
     return bool(
-        response is not None
-        and response.returncode == 0
-        and response.stdout.strip()
+        response is not None and not response.returncode and response.stdout.strip()
     )
 
 
@@ -210,3 +341,69 @@ def _fetch_head_bound_diff(
     if not _diff_response_is_usable(response):
         return None
     return response.stdout
+
+
+def fetch_guardrail_evidence(
+    item: dict[str, Any],
+    advisory_patterns: Sequence[str],
+    capture: Callable[[list[str]], Any],
+    *,
+    include_diff: bool = True,
+) -> GuardrailEvidence:
+    """
+    Fetch live guardrail evidence with diffs pinned to the item's SHAs.
+
+    With include_diff=False, skip the diff request and return empty diff_text.
+    A missing repository, invalid SHA, command failure, or invalid view JSON
+    returns evidence with diff_fetch_failed=True. The live head must match
+    the item's head before the compare API is called.
+    """
+    repo = str(item.get("repository") or "")
+    pull_number = item.get("pr")
+    head_sha = item.get("head_sha")
+    base_sha = item.get("base_sha")
+    if not all(
+        (
+            repo,
+            isinstance(pull_number, int),
+            is_sha40(head_sha),
+            is_sha40(base_sha),
+        )
+    ):
+        return GuardrailEvidence(diff_fetch_failed=True)
+    payload = _live_view_payload(
+        capture(
+            [
+                "gh",
+                "pr",
+                "view",
+                str(pull_number),
+                "--repo",
+                repo,
+                "--json",
+                "title,mergeable,statusCheckRollup,headRefName,headRefOid",
+            ]
+        ),
+        head_sha,
+    )
+    if payload is None:
+        return GuardrailEvidence(diff_fetch_failed=True)
+    diff_text = ""
+    digest = None
+    if include_diff:
+        diff_text = _fetch_head_bound_diff(repo, base_sha, head_sha, capture)
+        if diff_text is None:
+            return GuardrailEvidence(diff_fetch_failed=True)
+        digest = diff_sha256(diff_text)
+    return GuardrailEvidence(
+        diff_text=diff_text,
+        diff_fetch_failed=False,
+        required_checks_green=required_checks_green(
+            payload.get("statusCheckRollup"), advisory_patterns
+        ),
+        mergeable=payload.get("mergeable") == "MERGEABLE",
+        title=str(payload.get("title") or ""),
+        head_ref=str(payload.get("headRefName") or ""),
+        head_sha=head_sha,
+        diff_sha256=digest,
+    )

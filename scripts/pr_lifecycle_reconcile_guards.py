@@ -48,6 +48,7 @@ def max_apply_from_env(explicit: int | None = None) -> int:
 def _human_review_hold(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
     if item.get("risk_class") == "HUMAN_REVIEW":
         return "human_review"
+    return None
 
 
 def _protected_source_hold(
@@ -56,12 +57,14 @@ def _protected_source_hold(
     source = item.get("guardrail_source")
     if source in _PROTECTED_GUARDRAIL_SOURCES:
         return f"protected_source:{source}"
+    return None
 
 
 def _outcome_hold(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
     outcome = str(item.get("guardrail_outcome") or "")
     if outcome == "REVIEW_SECURITY" or outcome.startswith("HOLD_"):
         return f"hold_outcome:{outcome}"
+    return None
 
 
 def _security_classification_hold(
@@ -69,17 +72,20 @@ def _security_classification_hold(
 ) -> str | None:
     if item.get("classification") == "SECURITY":
         return "classification_security"
+    return None
 
 
 def _forced_hold_note(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
     next_action = str(item.get("next_action") or "")
     if "HUMAN_HOLD" in next_action or "PR Desk forced hold" in next_action:
         return "forced_hold_note"
+    return None
 
 
 def _excluded_hold(item: dict[str, Any], exclusions: _Exclusions) -> str | None:
     if is_excluded(str(item.get("repository") or ""), item.get("pr"), exclusions):
         return "excluded"
+    return None
 
 
 _HOLD_CHECKS: tuple[_HoldCheck, ...] = (

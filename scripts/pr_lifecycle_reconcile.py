@@ -47,6 +47,8 @@ STALE_COMMENT = (
 
 @dataclass(frozen=True)
 class StalePolicy:
+    """Inputs shared across stale-item classification."""
+
     expiry_days: int
     now: datetime
     exclusions: frozenset[tuple[str | None, int]] = frozenset()
@@ -808,11 +810,11 @@ def _reclassify_title_security_item(
 
 
 def _stale_close_preflight(
-    action: dict[str, Any], repo: str, pr: int
+    action: dict[str, Any], repository: str, pr_number: int
 ) -> str | None:
-    if not repo or not pr:
+    if not repository or not pr_number:
         return "skip github close: missing repository/pr"
-    live = _gh_pr_view(repo, pr)
+    live = _gh_pr_view(repository, pr_number)
     if live is None:
         return "skip github close: live PR view unavailable"
     if str(live.get("state") or "").upper() != "OPEN":
@@ -825,14 +827,23 @@ def _stale_close_preflight(
 def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     """Close the stale PR on GitHub; confirm only when a re-read shows CLOSED."""
     repo = str(action.get("repository") or "")
-    pr = int(action.get("pr") or 0)
+    pr_number = int(action.get("pr") or 0)
     steps: list[str] = []
-    preflight = _stale_close_preflight(action, repo, pr)
+    preflight = _stale_close_preflight(action, repo, pr_number)
     if preflight is not None:
         steps.append(preflight)
         return steps, False
     comment = subprocess.run(
-        ["gh", "pr", "comment", str(pr), "--repo", repo, "--body", STALE_COMMENT],
+        [
+            "gh",
+            "pr",
+            "comment",
+            str(pr_number),
+            "--repo",
+            repo,
+            "--body",
+            STALE_COMMENT,
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -840,7 +851,16 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     )
     steps.append(f"comment exit={comment.returncode}")
     label = subprocess.run(
-        ["gh", "pr", "edit", str(pr), "--repo", repo, "--add-label", STALE_LABEL],
+        [
+            "gh",
+            "pr",
+            "edit",
+            str(pr_number),
+            "--repo",
+            repo,
+            "--add-label",
+            STALE_LABEL,
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -848,7 +868,7 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     )
     steps.append(f"label exit={label.returncode}")
     close = subprocess.run(
-        ["gh", "pr", "close", str(pr), "--repo", repo],
+        ["gh", "pr", "close", str(pr_number), "--repo", repo],
         check=False,
         capture_output=True,
         text=True,
@@ -857,7 +877,7 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     steps.append(f"close exit={close.returncode}")
     if close.returncode != 0:
         return steps, False
-    live = _gh_pr_view(repo, pr)
+    live = _gh_pr_view(repo, pr_number)
     confirmed = (
         isinstance(live, dict) and str(live.get("state") or "").upper() == "CLOSED"
     )

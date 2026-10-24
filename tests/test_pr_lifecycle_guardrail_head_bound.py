@@ -147,6 +147,45 @@ class HeadBoundDecisionTests(unittest.TestCase):
         self.assertIsNone(guardrails.evaluate_item(item))
         self.assertEqual(before, item)
 
+    def test_terminal_executable_item_does_not_need_live_evidence(self) -> None:
+        item = guardrail_item(
+            lifecycle_state="TERMINAL",
+            changed_paths=["src/worker.py"],
+        )
+
+        self.assertFalse(guardrails.needs_live_evidence(item))
+
+    def test_currently_stamped_routine_item_does_not_need_live_evidence(self) -> None:
+        item = guardrail_item(
+            changed_paths=["src/worker.py"],
+            guardrail_outcome="PASS_ROUTINE",
+            guardrail_evidence={
+                "head_sha": HEAD_SHA,
+                "basis": "head_bound_diff",
+                "diff_sha256": hashlib.sha256(BENIGN_DIFF.encode("utf-8")).hexdigest(),
+            },
+        )
+
+        self.assertFalse(guardrails.needs_live_evidence(item))
+
+    def test_human_owned_nonroutine_item_does_not_need_live_evidence(self) -> None:
+        item = guardrail_item(
+            changed_paths=["src/worker.py"],
+            current_owner="human",
+            guardrail_outcome="NOT_RUN",
+        )
+
+        self.assertFalse(guardrails.needs_live_evidence(item))
+
+    def test_owner_held_stamp_candidate_needs_live_evidence(self) -> None:
+        item = guardrail_item(
+            changed_paths=["src/worker.py"],
+            current_owner="stage3",
+            guardrail_outcome="PASS_ROUTINE",
+        )
+
+        self.assertTrue(guardrails.needs_live_evidence(item))
+
     def test_benign_matching_head_diff_stamps_routine_decision(self) -> None:
         item = guardrail_item(changed_paths=["src/worker.py"])
         patch = guardrails.evaluate_item(item, evidence=_evidence())
