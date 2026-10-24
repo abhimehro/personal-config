@@ -584,7 +584,8 @@ def fetch_guardrail_evidence(
     *,
     include_diff: bool = True,
 ) -> GuardrailEvidence:
-    """Read title, head-bound diff, mergeability, and checks for one item.
+    """
+    Read title, head-bound diff, mergeability, and checks for one item.
 
     The evidence module performs the SHA-pinned requests; this wrapper keeps
     the capture point patchable for CLI tests and callers.

@@ -401,13 +401,14 @@ def _classify_stale(
     age = _item_age_days(item, policy.now)
     if age is None or age <= policy.expiry_days:
         return None
+    age_label = str(round(age, 1))
     return {
         "action": "CLOSE_STALE",
         "key": key,
         "to_state": "TERMINAL",
         "disposition": "CLOSED_STALE",
         "reason": (
-            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d "
+            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age_label}d "
             f"> {policy.expiry_days}d"
         ),
         "repository": item.get("repository"),

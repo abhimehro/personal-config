@@ -124,8 +124,7 @@ _OK_CONCLUSIONS = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL", "PASSED"})
 
 @dataclass(frozen=True)
 class GuardrailEvidence:
-    """
-    Live evidence for exemptions that paths alone cannot decide.
+    """Live evidence for exemptions that paths alone cannot decide.
 
     ``diff_text`` is a unified diff. ``diff_fetch_failed`` means a fetch was
     attempted and did not return one; clearing an existing hold then fails
@@ -392,6 +391,27 @@ def _fetch_head_bound_diff(
     return response.stdout
 
 
+def _fetch_live_view_payload(
+    repo: str,
+    pull_number: int,
+    head_sha: str,
+    capture: Callable[[list[str]], Any],
+) -> dict[str, Any] | None:
+    response = capture(
+        [
+            "gh",
+            "pr",
+            "view",
+            str(pull_number),
+            "--repo",
+            repo,
+            "--json",
+            "title,mergeable,statusCheckRollup,headRefName,headRefOid",
+        ]
+    )
+    return _live_view_payload(response, head_sha)
+
+
 def fetch_guardrail_evidence(
     item: dict[str, Any],
     advisory_patterns: Sequence[str],
@@ -411,29 +431,20 @@ def fetch_guardrail_evidence(
     pull_number = item.get("pr")
     head_sha = item.get("head_sha")
     base_sha = item.get("base_sha")
-    if not all(
-        (
-            repo,
-            isinstance(pull_number, int),
-            is_sha40(head_sha),
-            is_sha40(base_sha),
-        )
+    if (
+        not repo
+        or not isinstance(pull_number, int)
+        or not isinstance(head_sha, str)
+        or not is_sha40(head_sha)
+        or not isinstance(base_sha, str)
+        or not is_sha40(base_sha)
     ):
         return GuardrailEvidence(diff_fetch_failed=True)
-    payload = _live_view_payload(
-        capture(
-            [
-                "gh",
-                "pr",
-                "view",
-                str(pull_number),
-                "--repo",
-                repo,
-                "--json",
-                "title,mergeable,statusCheckRollup,headRefName,headRefOid",
-            ]
-        ),
+    payload = _fetch_live_view_payload(
+        repo,
+        pull_number,
         head_sha,
+        capture,
     )
     if payload is None:
         return GuardrailEvidence(diff_fetch_failed=True)
