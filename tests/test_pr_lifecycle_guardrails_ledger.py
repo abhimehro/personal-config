@@ -84,6 +84,11 @@ class EvaluateLedgerTests(unittest.TestCase):
             guardrail_outcome="PASS_ROUTINE",
             guardrail_source="path_eval",
             risk_class="ROUTINE",
+            guardrail_evidence={
+                "head_sha": item["head_sha"],
+                "basis": "non_executable_paths",
+                "diff_sha256": None,
+            },
             updated_at_utc="2026-10-09T12:00:00Z",
         )
         self.assertEqual(expected, ledger)
@@ -93,6 +98,7 @@ class EvaluateLedgerTests(unittest.TestCase):
                 "outcomes_unchanged": 0,
                 "skipped": 0,
                 "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 1},
+                "evidence_stamped": 1,
                 "changes": [
                     {
                         "key": item["key"],
@@ -171,7 +177,7 @@ class EvaluateLedgerTests(unittest.TestCase):
         self.assertEqual(4, summary["skipped"])
 
     def test_preserves_revision_and_filters_repos(self) -> None:
-        """revision is a projection of transition events — evaluation must
+        """Revision is a projection of transition events — evaluation must
         not bump it without logging one (ledger consistency check)."""
         ledger = {
             "items": [

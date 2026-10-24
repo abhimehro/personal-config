@@ -11,6 +11,8 @@ import re
 import time
 from typing import Any
 
+from pr_lifecycle_config import is_excluded
+
 # Report-only actions never mutate the ledger and never count against the cap.
 REPORT_ONLY_ACTIONS = frozenset(
     {
@@ -26,6 +28,7 @@ MAX_CAS_ATTEMPTS = 3
 BACKOFF_BASE_SECONDS = 20.0
 INVENTORY_ABORT_EXIT = 3
 CAS_CONFLICT_EXIT = 4
+_PROTECTED_GUARDRAIL_SOURCES = frozenset({"manual", "review", "human", "octopus"})
 
 
 def max_apply_from_env(explicit: int | None = None) -> int:
@@ -37,6 +40,28 @@ def max_apply_from_env(explicit: int | None = None) -> int:
         return max(1, int(raw)) if raw.strip() else DEFAULT_MAX_APPLY
     except ValueError:
         return DEFAULT_MAX_APPLY
+
+
+def stale_close_hold_reason(
+    item: dict[str, Any], exclusions: frozenset[tuple[str | None, int]]
+) -> str | None:
+    """Return the first marker that prevents stale-closing this ledger item."""
+    if item.get("risk_class") == "HUMAN_REVIEW":
+        return "human_review"
+    source = item.get("guardrail_source")
+    if source in _PROTECTED_GUARDRAIL_SOURCES:
+        return f"protected_source:{source}"
+    outcome = str(item.get("guardrail_outcome") or "")
+    if outcome == "REVIEW_SECURITY" or outcome.startswith("HOLD_"):
+        return f"hold_outcome:{outcome}"
+    if item.get("classification") == "SECURITY":
+        return "classification_security"
+    next_action = str(item.get("next_action") or "")
+    if "HUMAN_HOLD" in next_action or "PR Desk forced hold" in next_action:
+        return "forced_hold_note"
+    if is_excluded(str(item.get("repository") or ""), item.get("pr"), exclusions):
+        return "excluded"
+    return None
 
 
 def action_priority(action: dict[str, Any]) -> int:

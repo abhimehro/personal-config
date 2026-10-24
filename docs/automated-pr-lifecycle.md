@@ -630,6 +630,31 @@ list is evidence, not activity, so the staleness clock must not reset). A failed
 or empty fetch surfaces as `PATH_BACKFILL_FAILED` in the plan and is never
 applied, so the item stays held until evidence arrives.
 
+Executable paths cannot receive a routine decision from paths alone. When no
+sticky path class applies and any changed path is executable (including test
+files, source suffixes case-insensitively, `Makefile`/`Dockerfile`/`Justfile`/
+`Rakefile`, or suffixless paths under `bin/` or `scripts/`), guardrails require
+a nonempty diff fetched with `gh api -H "Accept: application/vnd.github.diff"
+repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
+only after confirming the live `headRefOid` still equals the item's `head_sha`.
+A routine patch stamps `guardrail_evidence` with that head and
+`basis: head_bound_diff` plus the UTF-8 diff's SHA-256, or with
+`basis: non_executable_paths` and a null digest when no diff was needed.
+Security review patches clear the stamp. `PASS_ROUTINE` items with no stamp or
+a stamp for another head are re-evaluated; a matching-head stamp is left alone.
+Routine merge eligibility requires both `guardrail_outcome: PASS_ROUTINE` and
+`guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; a missing or
+stale stamp is not merge-eligible.
+
+Reconcile stale-close actions are held for `risk_class: HUMAN_REVIEW`,
+`guardrail_source` manual/review/human/octopus, `REVIEW_SECURITY` or `HOLD_*`
+outcomes, `classification: SECURITY`, a `HUMAN_HOLD` or `PR Desk forced hold`
+note in `next_action`, and configured `lifecycle.unblock.exclusions`. Before
+any close comment, label, or close call, reconcile re-reads the live PR and
+skips mutation if the PR is missing, not OPEN, or its `headRefOid` differs
+from the action's `head_sha`. `current_owner` is deliberately not a stale-close
+hold marker; WAITING_HUMAN BOT items ordinarily have a human owner.
+
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
 `--clear-stand-in` is passed — a recorded hold may come from non-path evidence
 (content review, Octopus or human review), so clearing it is an explicit opt-in.

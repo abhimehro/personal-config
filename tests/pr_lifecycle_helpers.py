@@ -18,7 +18,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import yaml
+import yaml  # noqa: E402
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
@@ -48,6 +48,8 @@ def guardrail_item(**overrides: object) -> dict[str, object]:
         "key": "owner/repo#1@abc",
         "repository": "owner/repo",
         "pr": 1,
+        "base_sha": "b" * 40,
+        "head_sha": "a" * 40,
         "author_type": "BOT",
         "lifecycle_state": "STAGE1_INTAKE",
         "guardrail_outcome": "NOT_RUN",
@@ -306,9 +308,9 @@ def import_lifecycle_run() -> Any:
 # Live below so the pr_lifecycle_unblock import binds after the SCRIPTS path
 # insert, matching the layout of every other helper block in this module.
 
-from unittest import mock
+from unittest import mock  # noqa: E402
 
-import pr_lifecycle_unblock as unblock
+import pr_lifecycle_unblock as unblock  # noqa: E402
 
 UNBLOCK_NOW = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)
 UNBLOCK_CONFIG = yaml.safe_load(
@@ -561,8 +563,8 @@ def load_reconcile_with_stubs():
     sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
     sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
     sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
-    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = (
-        lambda *_a, **_k: 0
+    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: (
+        0
     )
 
     module = importlib.import_module("pr_lifecycle_reconcile")

@@ -29,7 +29,7 @@ import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
 import pr_lifecycle_reconcile_guards as guards
 from pr_identity import classify_pr_identity, identity_policy_from_config
-from pr_lifecycle_config import validate_config
+from pr_lifecycle_config import normalize_exclusions, validate_config
 from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
@@ -374,7 +374,12 @@ def _classify_sha_drift(
 
 
 def _classify_stale(
-    item: dict[str, Any], *, expiry_days: int, now: datetime, key: str
+    item: dict[str, Any],
+    *,
+    expiry_days: int,
+    now: datetime,
+    key: str,
+    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
 ) -> dict[str, Any] | None:
     """Return a stale-close action for an expired eligible bot packet."""
     stale_candidate = (
@@ -383,6 +388,8 @@ def _classify_stale(
         and item.get("guardrail_outcome") != "REVIEW_SECURITY"
     )
     if not stale_candidate:
+        return None
+    if guards.stale_close_hold_reason(item, exclusions) is not None:
         return None
     age = _item_age_days(item, now)
     if age is None or age <= expiry_days:
@@ -397,11 +404,12 @@ def _classify_stale(
         ),
         "repository": item.get("repository"),
         "pr": item.get("pr"),
+        "head_sha": item.get("head_sha"),
     }
 
 
 def _needs_path_backfill(item: dict[str, Any]) -> bool:
-    """True for a nonterminal item whose changed-path evidence is absent."""
+    """Return True for a nonterminal item whose changed-path evidence is absent."""
     paths = item.get("changed_paths")
     return item.get("lifecycle_state") != "TERMINAL" and not (
         isinstance(paths, list) and paths
@@ -409,7 +417,7 @@ def _needs_path_backfill(item: dict[str, Any]) -> bool:
 
 
 def _backfill_eligible(item: dict[str, Any], live: Any) -> bool:
-    """True only when a pathless nonterminal item faces an open live PR."""
+    """Return True only when a pathless nonterminal item faces an open live PR."""
     return (
         _needs_path_backfill(item)
         and isinstance(live, dict)
@@ -497,6 +505,7 @@ def classify_item(
     *,
     expiry_days: int,
     now: datetime,
+    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
 ) -> dict[str, Any] | None:
     """Return a proposed action, or None when no change is needed."""
     if item.get("lifecycle_state") == "TERMINAL":
@@ -515,7 +524,7 @@ def classify_item(
     if live_state in {"MERGED", "CLOSED"}:
         return _classify_live_terminal(item, live, key)
     return _classify_sha_drift(item, live, key) or _classify_stale(
-        item, expiry_days=expiry_days, now=now, key=key
+        item, expiry_days=expiry_days, now=now, key=key, exclusions=exclusions
     )
 
 
@@ -782,6 +791,7 @@ def _reclassify_title_security_item(
         and item.get("guardrail_outcome") == "REVIEW_SECURITY"
     ):
         item["guardrail_outcome"] = "PASS_ROUTINE"
+        item["guardrail_evidence"] = None
         item["risk_class"] = "ROUTINE"
         item["guardrail_source"] = "path_eval"
         item["safe_default"] = "Leave open; eligible for Stage 1 routine evaluation."
@@ -800,6 +810,16 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     steps: list[str] = []
     if not repo or not pr:
         steps.append("skip github close: missing repository/pr")
+        return steps, False
+    live = _gh_pr_view(repo, pr)
+    if live is None:
+        steps.append("skip github close: live PR view unavailable")
+        return steps, False
+    if str(live.get("state") or "").upper() != "OPEN":
+        steps.append("skip github close: live PR is not OPEN")
+        return steps, False
+    if live.get("headRefOid") != action.get("head_sha"):
+        steps.append("skip github close: live head SHA changed")
         return steps, False
     comment = subprocess.run(
         ["gh", "pr", "comment", str(pr), "--repo", repo, "--body", STALE_COMMENT],
@@ -922,11 +942,13 @@ def collect_actions(
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
     expiry = _expiry_days(config)
+    unblock = (config.get("lifecycle") or {}).get("unblock") or {}
+    exclusions = normalize_exclusions(unblock.get("exclusions"))
     # Duplicate termination runs first so a loser is not also backfilled.
     items = ledger.get("items") or []
     actions, dup_losers = _duplicate_terminal_actions(items)
     for item in _live_items(items, dup_losers):
-        actions.extend(_action_for_item(item, expiry, clock))
+        actions.extend(_action_for_item(item, expiry, clock, exclusions))
         if limit is not None and len(actions) >= limit:
             del actions[limit:]
             break
@@ -1163,7 +1185,12 @@ def _ingest_action(
     }
 
 
-def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
+def _action_for_item(
+    item: Any,
+    expiry: int,
+    clock: datetime,
+    exclusions: frozenset[tuple[str | None, int]] = frozenset(),
+) -> list[dict[str, Any]]:
     """Look up and classify one nonterminal item; return planned actions."""
     # Data-only actions (path backfill and title-only security tag clearing)
     # ride alongside the primary action so guardrails evaluate real evidence.
@@ -1174,7 +1201,9 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-    primary = classify_item(item, live, expiry_days=expiry, now=clock)
+    primary = classify_item(
+        item, live, expiry_days=expiry, now=clock, exclusions=exclusions
+    )
     actions = [primary] if primary is not None else []
     backfill = _path_backfill_action(item, live)
     if backfill is not None:

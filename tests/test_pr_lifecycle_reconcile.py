@@ -12,7 +12,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from tests.pr_lifecycle_helpers import (
+from tests.pr_lifecycle_helpers import (  # noqa: E402
     load_reconcile_with_stubs,
     reconcile_item,
 )
@@ -31,8 +31,10 @@ _DEFAULT = object()
 
 
 def _classify(item_overrides=None, live=_DEFAULT):
+    overrides = {"guardrail_outcome": "NOT_RUN"}
+    overrides.update(item_overrides or {})
     return reconcile.classify_item(
-        _item(**(item_overrides or {})),
+        _item(**overrides),
         _OPEN_LIVE if live is _DEFAULT else live,
         expiry_days=7,
         now=NOW,
@@ -264,7 +266,7 @@ class ClassifyItemTests(unittest.TestCase):
         self.assertEqual(action["disposition"], "CLOSED_UNREVIEWED")
 
     def test_closed_state_with_merged_at_is_not_closed_unreviewed(self):
-        """mergedAt is authoritative: a CLOSED PR that merged is not unreviewed."""
+        """MergedAt is authoritative: a CLOSED PR that merged is not unreviewed."""
         action = _classify(
             {
                 "guardrail_outcome": "REVIEW_SECURITY",
@@ -306,9 +308,12 @@ def _transition_effect(event, projected):
 
 
 def _apply_with_mocks(ledger, item, action):
-    with mock.patch.object(
-        reconcile.ledger_mod, "apply_transition", side_effect=_transition_effect
-    ), mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"):
+    with (
+        mock.patch.object(
+            reconcile.ledger_mod, "apply_transition", side_effect=_transition_effect
+        ),
+        mock.patch.object(reconcile, "_event_id", return_value="evt-fixed"),
+    ):
         with mock.patch.object(reconcile, "_utc_now", return_value=NOW):
             return reconcile.apply_action_to_ledger(ledger, item, action)
 
@@ -574,8 +579,9 @@ class ReconcileHelpersTests(unittest.TestCase):
             types.SimpleNamespace(returncode=0, stdout="not-json"),
             types.SimpleNamespace(returncode=0, stdout="[]"),
         ):
-            with self.subTest(completed=completed), mock.patch.object(
-                reconcile.subprocess, "run", return_value=completed
+            with (
+                self.subTest(completed=completed),
+                mock.patch.object(reconcile.subprocess, "run", return_value=completed),
             ):
                 self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
@@ -586,10 +592,13 @@ class ReconcileHelpersTests(unittest.TestCase):
         base_fail = types.SimpleNamespace(returncode=1, stdout="")
         base_empty = types.SimpleNamespace(returncode=0, stdout="\n")
         for base_resp in (base_fail, base_empty):
-            with self.subTest(base=base_resp), mock.patch.object(
-                reconcile.subprocess,
-                "run",
-                side_effect=[view_ok, base_resp],
+            with (
+                self.subTest(base=base_resp),
+                mock.patch.object(
+                    reconcile.subprocess,
+                    "run",
+                    side_effect=[view_ok, base_resp],
+                ),
             ):
                 self.assertIsNone(reconcile._gh_pr_view("owner/repo", 7))
 
@@ -610,11 +619,15 @@ class ReconcileHelpersTests(unittest.TestCase):
             types.SimpleNamespace(returncode=1),
             types.SimpleNamespace(returncode=2),
         ]
-        with mock.patch.object(
-            reconcile.subprocess, "run", side_effect=completed
-        ) as command:
+        live = {"state": "OPEN", "headRefOid": "a" * 40}
+        with (
+            mock.patch.object(reconcile, "_gh_pr_view", return_value=live),
+            mock.patch.object(
+                reconcile.subprocess, "run", side_effect=completed
+            ) as command,
+        ):
             steps, confirmed = reconcile._close_stale_github(
-                {"repository": "owner/repo", "pr": 7}
+                {"repository": "owner/repo", "pr": 7, "head_sha": "a" * 40}
             )
         self.assertEqual(steps, ["comment exit=0", "label exit=1", "close exit=2"])
         self.assertFalse(confirmed)

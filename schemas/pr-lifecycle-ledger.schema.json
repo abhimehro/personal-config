@@ -148,6 +148,19 @@
             "NOT_RUN"
           ]
         },
+        "guardrail_evidence": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["head_sha", "basis"],
+          "properties": {
+            "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "basis": { "enum": ["head_bound_diff", "non_executable_paths"] },
+            "diff_sha256": {
+              "type": ["string", "null"],
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
         "lifecycle_state": {
           "enum": [
             "STAGE1_INTAKE",

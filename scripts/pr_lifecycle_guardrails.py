@@ -34,6 +34,12 @@ from pathlib import Path
 from typing import Any
 
 import pr_lifecycle_ledger_cas as cas
+from pr_lifecycle_guardrail_evidence import (
+    content_matches_head,
+    diff_sha256,
+    is_executable_path,
+    is_sha40,
+)
 from pr_lifecycle_persist import dump_ledger
 from pr_lifecycle_yaml import load_yaml
 
@@ -46,6 +52,7 @@ _EVALUATABLE = {
     "REVIEW_SECURITY",
     "HOLD_CONTRACT",
     "HOLD_EVIDENCE",
+    "PASS_ROUTINE",
     None,
 }
 _STICKY_EXEMPT = {"generated_output"}
@@ -276,6 +283,8 @@ def _evaluable(item: dict[str, Any]) -> bool:
     """
     changed_paths = item.get("changed_paths")
     source = item.get("guardrail_source")
+    outcome = item.get("guardrail_outcome")
+    stamp = item.get("guardrail_evidence")
     protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
         item
     )
@@ -285,7 +294,10 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("risk_class") != "HUMAN_REVIEW",
-            item.get("guardrail_outcome") in _EVALUATABLE,
+            outcome in _EVALUATABLE,
+            outcome != "PASS_ROUTINE"
+            or not isinstance(stamp, dict)
+            or stamp.get("head_sha") != item.get("head_sha"),
             not protected_source,
             isinstance(changed_paths, list) and bool(changed_paths),
         )
@@ -310,6 +322,8 @@ class GuardrailEvidence:
     mergeable: bool | None = None
     title: str | None = None
     head_ref: str | None = None
+    head_sha: str | None = None
+    diff_sha256: str | None = None
 
 
 def _advisory_name(name: str, patterns: Sequence[str]) -> bool:
@@ -611,7 +625,8 @@ def needs_live_evidence(item: dict[str, Any]) -> bool:
 
     Require nonempty changed_paths. Dependabot workflow-only or lockfile-only
     items need evidence; other items with sticky path classes do not. With no
-    sticky classes, only SECURITY classifications or clearable holds need it.
+    sticky classes, executable paths always need a head-bound diff, as do
+    SECURITY classifications and clearable holds.
     """
     paths = item.get("changed_paths")
     if not isinstance(paths, list) or not paths:
@@ -624,7 +639,8 @@ def needs_live_evidence(item: dict[str, Any]) -> bool:
     if path_sticky:
         return False
     return (
-        item.get("classification") == "SECURITY"
+        any(is_executable_path(path) for path in paths)
+        or item.get("classification") == "SECURITY"
         or item.get("guardrail_outcome") in _CLEARABLE_HOLDS
     )
 
@@ -649,16 +665,21 @@ def fetch_guardrail_evidence(
     *,
     include_diff: bool = True,
 ) -> GuardrailEvidence:
-    """Read title, diff, mergeability, and checks for one ledger item.
+    """Read title, head-bound diff, mergeability, and checks for one item.
 
     With include_diff=False, skip the diff request and return empty diff_text.
     A missing repository, a non-integer PR, command failures or timeouts, or invalid
-    view JSON return evidence with diff_fetch_failed=True so the caller can
-    keep the hold. This does not write the ledger.
+    view JSON return evidence with diff_fetch_failed=True. Diffs are fetched
+    against the ledger's base/head SHAs only after the live head matches the
+    ledger head. This does not write the ledger.
     """
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     if not repo or not isinstance(pr, int):
+        return GuardrailEvidence(diff_fetch_failed=True)
+    head_sha = item.get("head_sha")
+    base_sha = item.get("base_sha")
+    if not is_sha40(head_sha) or not is_sha40(base_sha):
         return GuardrailEvidence(diff_fetch_failed=True)
     view = _gh_capture(
         [
@@ -669,23 +690,39 @@ def fetch_guardrail_evidence(
             "--repo",
             repo,
             "--json",
-            "title,mergeable,statusCheckRollup,headRefName",
+            "title,mergeable,statusCheckRollup,headRefName,headRefOid",
         ]
     )
     if view is None or view.returncode != 0:
         return GuardrailEvidence(diff_fetch_failed=True)
-    diff_text = ""
-    if include_diff:
-        diff_proc = _gh_capture(["gh", "pr", "diff", str(pr), "--repo", repo])
-        if diff_proc is None or diff_proc.returncode != 0:
-            return GuardrailEvidence(diff_fetch_failed=True)
-        diff_text = diff_proc.stdout
     try:
         payload = json.loads(view.stdout)
     except json.JSONDecodeError:
         return GuardrailEvidence(diff_fetch_failed=True)
     if not isinstance(payload, dict):
         return GuardrailEvidence(diff_fetch_failed=True)
+    if payload.get("headRefOid") != head_sha:
+        return GuardrailEvidence(diff_fetch_failed=True)
+    diff_text = ""
+    digest = None
+    if include_diff:
+        diff_proc = _gh_capture(
+            [
+                "gh",
+                "api",
+                "-H",
+                "Accept: application/vnd.github.diff",
+                f"repos/{repo}/compare/{base_sha}...{head_sha}",
+            ]
+        )
+        if (
+            diff_proc is None
+            or diff_proc.returncode != 0
+            or not diff_proc.stdout.strip()
+        ):
+            return GuardrailEvidence(diff_fetch_failed=True)
+        diff_text = diff_proc.stdout
+        digest = diff_sha256(diff_text)
     return GuardrailEvidence(
         diff_text=diff_text,
         diff_fetch_failed=False,
@@ -695,6 +732,8 @@ def fetch_guardrail_evidence(
         mergeable=payload.get("mergeable") == "MERGEABLE",
         title=str(payload.get("title") or ""),
         head_ref=str(payload.get("headRefName") or ""),
+        head_sha=head_sha,
+        diff_sha256=digest,
     )
 
 
@@ -738,10 +777,10 @@ def evaluate_item(
 
     Sticky path classes, except eligible Dependabot exemptions, and supplied
     security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
-    label alone does not. Missing evidence permits path-only evaluation; an
-    explicitly failed fetch preserves clearable holds and holds SECURITY-labeled
-    items. ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision
-    is still a hold.
+    label alone does not. Executable paths require a nonempty diff bound to the
+    item's 40-hex head SHA before they can receive ``PASS_ROUTINE``. Non-executable
+    paths can be stamped without diff content. ``HOLD_CONTRACT`` and
+    ``HOLD_EVIDENCE`` stay put when the new decision is still a hold.
     """
     del clear_standin  # CLI flag remains; downgrade no longer depends on it.
     if not _evaluable(item):
@@ -765,6 +804,16 @@ def evaluate_item(
     sticky_flag = bool(effective) or fail_closed
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
+    content_ok = content_matches_head(evidence, item.get("head_sha"))
+    if not sticky_flag:
+        head_sha = item.get("head_sha")
+        if not is_sha40(head_sha):
+            return None
+        if (
+            any(is_executable_path(path) for path in item["changed_paths"])
+            and not content_ok
+        ):
+            return None
     recorded = (set(classes) | signals) - exempt
     if fail_closed and not recorded:
         prior = item.get("sensitive_paths")
@@ -775,6 +824,15 @@ def evaluate_item(
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
         "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
+        "guardrail_evidence": None
+        if sticky_flag
+        else {
+            "head_sha": item["head_sha"],
+            "basis": "head_bound_diff" if content_ok else "non_executable_paths",
+            "diff_sha256": evidence.diff_sha256
+            if content_ok and evidence is not None
+            else None,
+        },
     }
     if all(item.get(field) == value for field, value in patch.items()):
         return None
@@ -833,6 +891,7 @@ def evaluate_ledger(
         "outcomes_unchanged": 0,
         "skipped": 0,
         "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 0},
+        "evidence_stamped": 0,
         "changes": [],
     }
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -846,6 +905,8 @@ def evaluate_ledger(
         if patch is None:
             summary["skipped"] += 1
             continue
+        if patch.get("guardrail_evidence") is not None:
+            summary["evidence_stamped"] += 1
         _record_evaluation(item, patch, now, summary)
     return ledger, summary
 
