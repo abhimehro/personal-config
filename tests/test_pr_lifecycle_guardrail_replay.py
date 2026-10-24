@@ -185,6 +185,21 @@ class ReplayItemsTests(unittest.TestCase):
         self.assertTrue(replay.is_sentinel_persona("Sentinel: note", "jules/note"))
         self.assertTrue(replay.is_sentinel_persona("sentinel note", "sentinel-fix"))
 
+    def test_owner_held_routine_stamp_preserves_reported_outcome(self) -> None:
+        item = _item(
+            current_owner="stage3",
+            guardrail_outcome="PASS_ROUTINE",
+            changed_paths=["README.md"],
+        )
+        self.assertNotIn("guardrail_evidence", item)
+
+        report = replay.replay_items(
+            [item], {item["key"]: _evidence("Sentinel: routine note", "jules/note")}
+        )
+
+        row = report["sentinel_persona"][0]
+        self.assertEqual(("PASS_ROUTINE", "PASS_ROUTINE"), (row["old"], row["new"]))
+
 
 class ReplayLedgerTests(unittest.TestCase):
     def test_no_fetch_keeps_snapshot_unchanged_and_never_calls_github(self) -> None:
