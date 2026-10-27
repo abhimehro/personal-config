@@ -28,16 +28,30 @@ import subprocess  # nosec B404
 import sys
 import tempfile
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pr_lifecycle_guardrail_evidence as evidence_module
 import pr_lifecycle_ledger_cas as cas
+from pr_lifecycle_guardrail_evidence import (
+    GuardrailEvidence,
+    has_current_evidence_stamp,
+    has_executable_path,
+    owner_held_stamp_candidate,
+    routine_blocked,
+    routine_stamp,
+    routine_stamp_only_patch,
+    unstamped_routine_keys,
+)
+from pr_lifecycle_guardrail_evidence import fetch_guardrail_evidence as _fetch_evidence
 from pr_lifecycle_persist import dump_ledger
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+diff_sha256 = evidence_module.diff_sha256
+is_executable_path = evidence_module.is_executable_path
+required_checks_green = evidence_module.required_checks_green
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 
 _COMMIT_MESSAGE = "chore(lifecycle): deterministic guardrail path evaluation"
@@ -46,6 +60,7 @@ _EVALUATABLE = {
     "REVIEW_SECURITY",
     "HOLD_CONTRACT",
     "HOLD_EVIDENCE",
+    "PASS_ROUTINE",
     None,
 }
 _STICKY_EXEMPT = {"generated_output"}
@@ -57,11 +72,11 @@ _DEPENDABOT_EXEMPT = {
 }
 # Owners whose holds must never be rewritten by an unattended evaluator,
 # matching the unblock router's blocked-owner set.
-_BLOCKED_OWNERS = {"human", "stage2", "stage3"}
+_BLOCKED_OWNERS = frozenset({"human", "stage2", "stage3"})
 # guardrail_source values that mark a hold/outcome recorded by a real review
 # (a human or a security reviewer) rather than path evidence. Even
 # --clear-stand-in never downgrades these.
-_PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
+_PROTECTED_SOURCES = frozenset({"manual", "review", "human", "octopus"})
 # (taxonomy class, regex matched against each changed path). Patterns are
 # anchored per path segment; order matters only for readability.
 _PATH_RULES: tuple[tuple[str, str], ...] = (
@@ -128,17 +143,6 @@ _TEST_PATH_RE = re.compile(
     r"(^|/)(tests?|specs?)/|(^|/)test_[^/]+$|[^/]+_test\.[^/]+$|Tests\.swift$",
     re.IGNORECASE,
 )
-_FAILURE_CONCLUSIONS = frozenset(
-    {
-        "FAILURE",
-        "TIMED_OUT",
-        "CANCELLED",
-        "ACTION_REQUIRED",
-        "STARTUP_FAILURE",
-        "ERROR",
-    }
-)
-_OK_CONCLUSIONS = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL", "PASSED"})
 _BUMP_RE = re.compile(
     r"from\s+v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.]+)?\s+to\s+"
     r"v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.]+)?",
@@ -276,6 +280,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
     """
     changed_paths = item.get("changed_paths")
     source = item.get("guardrail_source")
+    outcome = item.get("guardrail_outcome")
     protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
         item
     )
@@ -285,99 +290,12 @@ def _evaluable(item: dict[str, Any]) -> bool:
             item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("risk_class") != "HUMAN_REVIEW",
-            item.get("guardrail_outcome") in _EVALUATABLE,
+            outcome in _EVALUATABLE,
+            outcome != "PASS_ROUTINE" or not has_current_evidence_stamp(item),
             not protected_source,
             isinstance(changed_paths, list) and bool(changed_paths),
         )
     )
-
-
-@dataclass(frozen=True)
-class GuardrailEvidence:
-    """Live evidence for exemptions that paths alone cannot decide.
-
-    ``diff_text`` is a unified diff. ``diff_fetch_failed`` means a fetch was
-    attempted and did not return one; clearing an existing hold then fails
-    closed. ``required_checks_green`` is True only when every non-advisory
-    check succeeded, skipped, or was neutral. ``mergeable`` is True only for
-    GitHub's MERGEABLE state. ``title`` is used to read a Dependabot semver
-    bump and is not a security classification.
-    """
-
-    diff_text: str | None = None
-    diff_fetch_failed: bool = False
-    required_checks_green: bool | None = None
-    mergeable: bool | None = None
-    title: str | None = None
-    head_ref: str | None = None
-
-
-def _advisory_name(name: str, patterns: Sequence[str]) -> bool:
-    """Match advisory check names the same way unblock routing does.
-
-    Exact name, or a trailing ``*`` prefix. Kept inline so a guardrail
-    decision does not import the unblock router.
-    """
-    return any(
-        name.startswith(pattern[:-1]) if pattern.endswith("*") else name == pattern
-        for pattern in patterns
-        if pattern
-    )
-
-
-def _check_records(checks: Any) -> list[dict[str, Any]] | None:
-    """Normalize a gh rollup list or a GraphQL contexts connection.
-
-    Discard non-mapping entries; return None for an unsupported shape.
-    """
-    if isinstance(checks, list):
-        return [item for item in checks if isinstance(item, dict)]
-    if isinstance(checks, dict):
-        contexts = checks.get("contexts")
-        nodes = contexts.get("nodes") if isinstance(contexts, dict) else None
-        if isinstance(nodes, list):
-            return [item for item in nodes if isinstance(item, dict)]
-    return None
-
-
-def _check_identity(check: dict[str, Any]) -> tuple[str, str, bool]:
-    """Return (name, conclusion, pending) for one rollup record."""
-    name = str(check.get("name") or check.get("context") or "")
-    conclusion = str(check.get("conclusion") or check.get("state") or "").upper()
-    status = str(check.get("status") or "").upper()
-    pending = (status not in {"", "COMPLETED"}) or conclusion in {
-        "PENDING",
-        "EXPECTED",
-    }
-    return name, conclusion, pending
-
-
-def required_checks_green(checks: Any, advisory_patterns: Sequence[str]) -> bool | None:
-    """Return whether all non-advisory checks have acceptable conclusions.
-
-    Advisory patterns match exact names or prefixes ending in ``*``. Return
-    True when every record is advisory, or all remaining checks completed
-    with SUCCESS, SKIPPED, NEUTRAL, or PASSED. Pending, failing, or unknown
-    conclusions return False. None means the rollup is missing, unsupported,
-    or contains no mapping records.
-    """
-    records = _check_records(checks)
-    if not records:
-        return None
-    saw_required = False
-    for check in records:
-        name, conclusion, pending = _check_identity(check)
-        if _advisory_name(name, advisory_patterns):
-            continue
-        saw_required = True
-        if pending or conclusion in _FAILURE_CONCLUSIONS:
-            return False
-        if conclusion not in _OK_CONCLUSIONS:
-            return False
-    if not saw_required:
-        # Every reported check was advisory. Required checks did not fail.
-        return True
-    return True
 
 
 def _changed_diff_lines(diff_text: str) -> list[tuple[str, str, str]]:
@@ -606,16 +524,32 @@ def dependabot_routine_eligible(
     )
 
 
+def _evidence_item_eligible(item: dict[str, Any], stamp_candidate: bool) -> bool:
+    return _evaluable(item) or stamp_candidate
+
+
+def _owner_stamp_needs_diff(stamp_candidate: bool, paths: list[Any]) -> bool:
+    return stamp_candidate and has_executable_path(paths)
+
+
 def needs_live_evidence(item: dict[str, Any]) -> bool:
     """Return whether path evaluation needs a diff or check rollup.
 
     Require nonempty changed_paths. Dependabot workflow-only or lockfile-only
     items need evidence; other items with sticky path classes do not. With no
-    sticky classes, only SECURITY classifications or clearable holds need it.
+    sticky classes, executable paths always need a head-bound diff, as do
+    SECURITY classifications and clearable holds.
     """
     paths = item.get("changed_paths")
     if not isinstance(paths, list) or not paths:
         return False
+    stamp_candidate = owner_held_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    )
+    if not _evidence_item_eligible(item, stamp_candidate):
+        return False
+    if _owner_stamp_needs_diff(stamp_candidate, paths):
+        return True
     path_sticky = classify_item_paths(paths) - _STICKY_EXEMPT
     if _is_dependabot(item) and (
         _only_workflow_paths(paths) or _only_lockfile_paths(paths)
@@ -624,7 +558,8 @@ def needs_live_evidence(item: dict[str, Any]) -> bool:
     if path_sticky:
         return False
     return (
-        item.get("classification") == "SECURITY"
+        has_executable_path(paths)
+        or item.get("classification") == "SECURITY"
         or item.get("guardrail_outcome") in _CLEARABLE_HOLDS
     )
 
@@ -649,52 +584,17 @@ def fetch_guardrail_evidence(
     *,
     include_diff: bool = True,
 ) -> GuardrailEvidence:
-    """Read title, diff, mergeability, and checks for one ledger item.
-
-    With include_diff=False, skip the diff request and return empty diff_text.
-    A missing repository, a non-integer PR, command failures or timeouts, or invalid
-    view JSON return evidence with diff_fetch_failed=True so the caller can
-    keep the hold. This does not write the ledger.
     """
-    repo = str(item.get("repository") or "")
-    pr = item.get("pr")
-    if not repo or not isinstance(pr, int):
-        return GuardrailEvidence(diff_fetch_failed=True)
-    view = _gh_capture(
-        [
-            "gh",
-            "pr",
-            "view",
-            str(pr),
-            "--repo",
-            repo,
-            "--json",
-            "title,mergeable,statusCheckRollup,headRefName",
-        ]
-    )
-    if view is None or view.returncode != 0:
-        return GuardrailEvidence(diff_fetch_failed=True)
-    diff_text = ""
-    if include_diff:
-        diff_proc = _gh_capture(["gh", "pr", "diff", str(pr), "--repo", repo])
-        if diff_proc is None or diff_proc.returncode != 0:
-            return GuardrailEvidence(diff_fetch_failed=True)
-        diff_text = diff_proc.stdout
-    try:
-        payload = json.loads(view.stdout)
-    except json.JSONDecodeError:
-        return GuardrailEvidence(diff_fetch_failed=True)
-    if not isinstance(payload, dict):
-        return GuardrailEvidence(diff_fetch_failed=True)
-    return GuardrailEvidence(
-        diff_text=diff_text,
-        diff_fetch_failed=False,
-        required_checks_green=required_checks_green(
-            payload.get("statusCheckRollup"), advisory_patterns
-        ),
-        mergeable=payload.get("mergeable") == "MERGEABLE",
-        title=str(payload.get("title") or ""),
-        head_ref=str(payload.get("headRefName") or ""),
+    Read title, head-bound diff, mergeability, and checks for one item.
+
+    The evidence module performs the SHA-pinned requests; this wrapper keeps
+    the capture point patchable for CLI tests and callers.
+    """
+    return _fetch_evidence(
+        item,
+        advisory_patterns,
+        _gh_capture,
+        include_diff=include_diff,
     )
 
 
@@ -738,13 +638,18 @@ def evaluate_item(
 
     Sticky path classes, except eligible Dependabot exemptions, and supplied
     security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
-    label alone does not. Missing evidence permits path-only evaluation; an
-    explicitly failed fetch preserves clearable holds and holds SECURITY-labeled
-    items. ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision
-    is still a hold.
+    label alone does not. Executable paths require a nonempty diff bound to the
+    item's 40-hex head SHA before they can receive ``PASS_ROUTINE``.
+    Non-executable paths can be stamped without diff content.
+    ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision is
+    still a hold. Owner-held routine items receive only a stamp when their
+    existing decision remains routine.
     """
     del clear_standin  # CLI flag remains; downgrade no longer depends on it.
-    if not _evaluable(item):
+    stamp_only = owner_held_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    )
+    if not _evaluable(item) and not stamp_only:
         return None
     outcome = item.get("guardrail_outcome")
     classes = classify_item_paths(item["changed_paths"])
@@ -765,6 +670,10 @@ def evaluate_item(
     sticky_flag = bool(effective) or fail_closed
     if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
+    if not sticky_flag and routine_blocked(item, evidence):
+        return None
+    if stamp_only:
+        return routine_stamp_only_patch(item, evidence, sticky_flag)
     recorded = (set(classes) | signals) - exempt
     if fail_closed and not recorded:
         prior = item.get("sensitive_paths")
@@ -775,6 +684,7 @@ def evaluate_item(
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
         "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
+        "guardrail_evidence": None if sticky_flag else routine_stamp(item, evidence),
     }
     if all(item.get(field) == value for field, value in patch.items()):
         return None
@@ -792,7 +702,7 @@ def _record_evaluation(
     guardrail outcome changes.
     """
     summary["evaluated"] += 1
-    outcome = str(patch["guardrail_outcome"])
+    outcome = str(patch.get("guardrail_outcome", item.get("guardrail_outcome")))
     summary["by_outcome"][outcome] += 1
     if item.get("guardrail_outcome") == outcome:
         summary["outcomes_unchanged"] += 1
@@ -833,6 +743,8 @@ def evaluate_ledger(
         "outcomes_unchanged": 0,
         "skipped": 0,
         "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 0},
+        "evidence_stamped": 0,
+        "unstamped_routine": [],
         "changes": [],
     }
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -846,7 +758,10 @@ def evaluate_ledger(
         if patch is None:
             summary["skipped"] += 1
             continue
+        if patch.get("guardrail_evidence") is not None:
+            summary["evidence_stamped"] += 1
         _record_evaluation(item, patch, now, summary)
+    summary["unstamped_routine"] = unstamped_routine_keys(ledger.get("items"))
     return ledger, summary
 
 
