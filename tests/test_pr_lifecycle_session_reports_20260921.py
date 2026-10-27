@@ -36,9 +36,9 @@ class TestSessionReports20260921(unittest.TestCase):
         cls.review_record = (ROOT / "tasks/pr-review-2026-09-21.md").read_text(
             encoding="utf-8"
         )
-        cls.salvage_record = (
-            ROOT / "tasks/pr-salvage-2026-09-21-1700.md"
-        ).read_text(encoding="utf-8")
+        cls.salvage_record = (ROOT / "tasks/pr-salvage-2026-09-21-1700.md").read_text(
+            encoding="utf-8"
+        )
 
     def test_salvaged_entries_occur_exactly_once(self) -> None:
         """Repeated salvage must not duplicate the run or reuse its lesson ID."""
@@ -94,9 +94,7 @@ class TestSessionReports20260921(unittest.TestCase):
         closed = re.findall(r"^\|.*\| CLOSED_(?:NOOP|SUPERSEDED)\b", evidence, re.M)
         self.assertEqual(int(metrics["Merged"]), len(merged))
         self.assertEqual(int(metrics["Closed"]), len(closed))
-        self.assertGreater(
-            int(metrics["Product mutations"]), len(merged) + len(closed)
-        )
+        self.assertGreater(int(metrics["Product mutations"]), len(merged) + len(closed))
 
     def test_feed_fingerprint_agrees_across_stage_handoff(self) -> None:
         fingerprint = _two_column_table(
@@ -162,7 +160,9 @@ class TestSessionReports20260921(unittest.TestCase):
                 self.assertIn(f"head `{head}`", rows[0])
                 self.assertIn("did not merge", rows[0])
 
-    def test_handoff_preserves_stage_authority_and_retracted_work_boundary(self) -> None:
+    def test_handoff_preserves_stage_authority_and_retracted_work_boundary(
+        self,
+    ) -> None:
         handoff = " ".join(_section(self.salvage, "### Handoff").split())
         for guard in (
             "unmarked **and** every routine predicate passes",

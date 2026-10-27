@@ -229,6 +229,109 @@ def plan_stage3_mechanical_handoffs(
     return actions
 
 
+def _booked_source_keys(ledger: dict[str, Any]) -> set[str]:
+    """Return repo#PR prefixes that already have a usable Stage 2 work item."""
+    return health.existing_wi_prefixes(ledger, _utc_now())
+
+
+def _stage2_lacks_live_open_proof(
+    item: dict[str, Any], key: str, signals: health.ReselectSignals
+) -> bool:
+    """Return whether live signals do not show this PR open at the ledger head.
+
+    Closed, unqueried, failed, and degraded scans omit a matching head, so
+    booking does not register from a stale ledger anchor.
+    """
+    if not key:
+        return True
+    if health.signal_contains(signals.closed_keys, key) or health.signal_contains(
+        signals.unqueried_keys, key
+    ):
+        return True
+    live_head = health.signal_value(signals.live_head_sha_by_key, key)
+    ledger_head = str(item.get("head_sha") or "").strip().lower()
+    return not (
+        isinstance(live_head, str)
+        and ledger_head
+        and live_head.strip().lower() == ledger_head
+    )
+
+
+def _stage2_can_book(item: dict[str, Any], signals: health.ReselectSignals) -> bool:
+    """Return whether Stage 2 owns this bot item and may register it."""
+    if item.get("author_type") != "BOT":
+        return False
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if (item.get("guardrail_outcome") or "") in health.NON_SALVAGE_OUTCOMES:
+        return False
+    sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
+    if sticky:
+        return False
+    key = str(item.get("key") or "")
+    # SECURITY: book only with live proof the PR is open at this head.
+    if _stage2_lacks_live_open_proof(item, key, signals):
+        return False
+    owned = (
+        item.get("current_owner") == "stage2"
+        or item.get("lifecycle_state") in health.STAGE2_OWNED_STATES
+    )
+    if not owned:
+        return False
+    return not health.is_never_touch_key(key)
+
+
+def _stage2_booking_action(
+    item: Any,
+    signals: health.ReselectSignals,
+    already: set[str],
+) -> dict[str, Any] | None:
+    """Return one BOOK_STAGE2_WI action, or None when the item cannot be booked."""
+    if not isinstance(item, dict) or not _stage2_can_book(item, signals):
+        return None
+    key = str(item.get("key") or "")
+    prefix = health.source_pr_prefix(key)
+    # NOTE: already holds repo#PR prefixes, including bookings added earlier in this run.
+    if not key or not prefix or prefix in already:
+        return None
+    allowed_paths = _enqueue_source_paths(item, signals, key)
+    if not _enqueue_fields_complete(item, key, allowed_paths):
+        return None
+    action = _enqueue_action(
+        item,
+        key,
+        allowed_paths,
+        live_base_sha=health.signal_value(signals.live_base_sha_by_key, key),
+    )
+    action["action"] = "BOOK_STAGE2_WI"
+    action["reason"] = "STAGE2_BOOK_OWNED"
+    action["note"] = (
+        "Stage 2 registers its own complete work item; "
+        "same anchors as ENQUEUE_STAGE2_WI and HANDOFF_MECHANICAL_TO_STAGE2"
+    )
+    already.add(prefix)
+    return action
+
+
+def plan_stage2_bookings(
+    ledger: dict[str, Any],
+    *,
+    signals: health.ReselectSignals | None = None,
+    limit: int = STAGE2_ENQUEUE_CAP,
+) -> list[dict[str, Any]]:
+    """Propose BOOK_STAGE2_WI actions for owned items. Does not write the ledger."""
+    signals = signals or health.ReselectSignals()
+    already = _booked_source_keys(ledger)
+    actions: list[dict[str, Any]] = []
+    for item in ledger.get("items") or []:
+        if len(actions) >= limit:
+            break
+        action = _stage2_booking_action(item, signals, already)
+        if action is not None:
+            actions.append(action)
+    return actions
+
+
 def _stage1_plan(
     ledger: dict[str, Any],
     config: dict[str, Any],
@@ -291,47 +394,39 @@ def _stage1_plan(
     return allowed, actions, stop_class, reason
 
 
-def _stage2_plan(
-    ledger: dict[str, Any], config: dict[str, Any]
-) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
-    """Plan Stage 2 work after excluding never-touch feed items."""
-    # Empty feed with eligible stock is LOGIC_STOP; no remaining feed items
-    # emits SKIP_IF_EMPTY + skip flags, else feed + salvage actions. The result
-    # also reports skipped sources and the remaining item count.
-    allowed = [
-        "python3 scripts/pr_lifecycle_feed.py --json",
-        "open/update draft salvage PRs only (never merge/approve/close originals)",
-        "CAS write complete Stage 2 work items + handoff events",
-        "skip-if-empty: exit success with no docs PR when usable WI==0",
-    ]
-    cap = _stage_cap(config, "stage2_salvage_candidates", 10)
-    # Build the complete feed so never-touch entries cannot hide usable salvage
-    # items. Apply the candidate cap only after filtering those entries out.
-    feed = feed_mod.build_feed(ledger, config)
-    mechanical, never_touch = _filter_never_touch_work_items(
-        list(feed.get("work_items") or [])
-    )
-    mechanical = mechanical[:cap]
-    extras: dict[str, Any] = {
-        "skip_cursor": False,
-        "empty_intake_skip": False,
-        "mechanical_candidate_count": len(mechanical),
-        "never_touch_skipped": [
-            {"source_key": _wi_source_key(wi), "reason": "NEVER_TOUCH"}
-            for wi in never_touch
-        ],
+def _stage2_feed_summary(
+    feed: dict[str, Any], mechanical: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Return the FEED_SUMMARY action for the filtered Stage 2 feed."""
+    return {
+        "action": "FEED_SUMMARY",
+        "feed": {
+            "reason": feed.get("reason"),
+            "work_item_count": feed.get("work_item_count", 0),
+            "eligible_stock_count": feed.get("eligible_stock_count", 0),
+            "mechanical_candidate_count": len(mechanical),
+        },
     }
-    stop_class = None
-    reason = "OK"
-    if not mechanical and feed.get("non_never_touch_stock_count", 0) > 0:
-        stop_class = "LOGIC_STOP"
-        reason = "EMPTY_FEED_WITH_ELIGIBLE_STOCK"
-    elif not mechanical:
-        # True empty or only never-touch leftovers → success skip (no docs PR).
-        reason = "EMPTY_INTAKE_SKIP"
-        extras["skip_cursor"] = True
-        extras["empty_intake_skip"] = True
-        actions = [
+
+
+def _stage2_empty_actions(
+    feed: dict[str, Any],
+    bookings: list[dict[str, Any]],
+    extras: dict[str, Any],
+) -> tuple[list[dict[str, Any]], str | None, str]:
+    """Choose actions when no mechanical salvage item remains."""
+    if feed.get("non_never_touch_stock_count", 0) > 0:
+        return (
+            [_stage2_feed_summary(feed, [])],
+            "LOGIC_STOP",
+            "EMPTY_FEED_WITH_ELIGIBLE_STOCK",
+        )
+    if bookings:
+        return bookings, None, "OK"
+    extras["skip_cursor"] = True
+    extras["empty_intake_skip"] = True
+    return (
+        [
             {
                 "action": "SKIP_IF_EMPTY",
                 "reason": (
@@ -343,22 +438,63 @@ def _stage2_plan(
                 "work_item_count": feed.get("work_item_count"),
                 "eligible_stock_count": feed.get("eligible_stock_count"),
             }
-        ]
-        return allowed, actions, stop_class, reason, extras
-    actions = [
-        {
-            "action": "FEED_SUMMARY",
-            "feed": {
-                "reason": feed["reason"],
-                "work_item_count": feed["work_item_count"],
-                "eligible_stock_count": feed["eligible_stock_count"],
-                "mechanical_candidate_count": len(mechanical),
-            },
-        }
-    ]
+        ],
+        None,
+        "EMPTY_INTAKE_SKIP",
+    )
+
+
+def _stage2_actions(
+    feed: dict[str, Any],
+    mechanical: list[dict[str, Any]],
+    bookings: list[dict[str, Any]],
+    extras: dict[str, Any],
+) -> tuple[list[dict[str, Any]], str | None, str]:
+    """Choose Stage 2 actions for the filtered feed and owned-item bookings."""
+    if not mechanical:
+        return _stage2_empty_actions(feed, bookings, extras)
+    actions = [_stage2_feed_summary(feed, mechanical)]
     actions.extend(
         {"action": "SALVAGE_WI", "wi": work_item} for work_item in mechanical
     )
+    actions.extend(bookings)
+    return actions, None, "OK"
+
+
+def _stage2_plan(
+    ledger: dict[str, Any],
+    config: dict[str, Any],
+    *,
+    signals: health.ReselectSignals | None = None,
+) -> tuple[list[str], list[dict[str, Any]], str | None, str, dict[str, Any]]:
+    """Plan Stage 2 work after excluding never-touch feed items."""
+    allowed = [
+        "python3 scripts/pr_lifecycle_feed.py --json",
+        "open/update draft salvage PRs only (never merge/approve/close originals)",
+        "CAS write complete Stage 2 work items + handoff events",
+        "BOOK_STAGE2_WI for Stage 2-owned items that are not yet registered",
+        "skip-if-empty: exit success with no docs PR when usable WI==0",
+    ]
+    cap = _stage_cap(config, "stage2_salvage_candidates", 10)
+    # Build the complete feed so never-touch entries cannot hide usable salvage
+    # items. Apply the candidate cap only after filtering those entries out.
+    feed = feed_mod.build_feed(ledger, config)
+    mechanical, never_touch = _filter_never_touch_work_items(
+        list(feed.get("work_items") or [])
+    )
+    mechanical = mechanical[:cap]
+    bookings = plan_stage2_bookings(ledger, signals=signals, limit=cap)
+    extras: dict[str, Any] = {
+        "skip_cursor": False,
+        "empty_intake_skip": False,
+        "mechanical_candidate_count": len(mechanical),
+        "stage2_booking_count": len(bookings),
+        "never_touch_skipped": [
+            {"source_key": _wi_source_key(wi), "reason": "NEVER_TOUCH"}
+            for wi in never_touch
+        ],
+    }
+    actions, stop_class, reason = _stage2_actions(feed, mechanical, bookings, extras)
     return allowed, actions, stop_class, reason, extras
 
 
@@ -418,7 +554,7 @@ def _dispatch_stage_plan(
     elif stage == 3:
         plan = _stage3_plan(ledger, signals=signals_result.signals)
     elif stage == 2:
-        return _stage2_plan(ledger, config)
+        return _stage2_plan(ledger, config, signals=signals_result.signals)
     else:
         plan = ([], [], "LOGIC_STOP", f"invalid stage {stage}")
     return (*plan, {})
@@ -513,7 +649,7 @@ def build_stage_plan(
     or discarding supplied signals. Invalid stages return LOGIC_STOP.
     Proposed commands and actions are not executed.
     """
-    # Signals apply only to Stage 1 and Stage 3; an invalid stage yields
+    # Every valid stage receives the supplied signals. An invalid stage yields
     # LOGIC_STOP with no permitted commands or actions.
     result = signals_result or SignalsResult(status="SKIPPED")
     signals_status = result.status

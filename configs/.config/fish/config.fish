@@ -9,6 +9,9 @@ if not set -q __fish_path_initialized
     # Homebrew (Apple Silicon)
     fish_add_path --global --prepend /opt/homebrew/bin /opt/homebrew/sbin
 
+    # Keg-only trash formula must beat /usr/bin/trash (macOS built-in)
+    fish_add_path --global --prepend /opt/homebrew/opt/trash/bin
+
     # User binaries (prepend to prioritize local overrides)
     fish_add_path --global --prepend $HOME/bin $HOME/.local/bin
 
@@ -16,6 +19,8 @@ if not set -q __fish_path_initialized
     fish_add_path --global --append $HOME/.cache/lm-studio/bin
     fish_add_path --global --append $HOME/scripts
     fish_add_path --global --append $HOME/.antigravity-ide/antigravity-ide/bin
+    fish_add_path --global --append $HOME/.codeium/windsurf/bin
+    fish_add_path --global --append $HOME/.octopus/bin
 
     set -g __fish_path_initialized 1
 end
@@ -110,8 +115,7 @@ end
 # ============================================
 set -gx NM_ROOT $HOME/dev/personal-config
 
-# Homebrew
-set -gx HOMEBREW_NO_REQUIRE_TAP_TRUST 1
+# Homebrew (third-party taps are trusted per-formula via brew trust; see ~/.homebrew/trust.json)
 set -gx HOMEBREW_NO_ENV_HINTS 1
 set -gx HOMEBREW_CASK_OPTS "--no-quarantine"
 
@@ -195,6 +199,10 @@ abbr -a gd  git diff
 abbr -a gb  git branch
 abbr -a gco git checkout
 abbr -a gmc git-mirror-clean
+abbr -a tigst tig status
+abbr -a tigb tig blame
+abbr -a tigl tig log
+abbr -a tigr tig refs
 
 # Cursor IDE (SSH)
 abbr -a scv ssh cursor-vpn
@@ -311,17 +319,6 @@ set -g fish_history_limit 10000
 # 1Password shell plugins (fish-native loader; bash plugins.sh is not sourceable)
 source /Users/speedybee/.config/op/op-plugin-loader.fish
 
-# Added by Devin - Next
-fish_add_path /Users/speedybee/.codeium/windsurf/bin
-
-
-# Added by Antigravity CLI installer
-set -gx PATH "/Users/speedybee/.local/bin" $PATH
-set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
-
-# Octopus CLI
-fish_add_path /Users/speedybee/.octopus/bin
-
 # ============================================
 # Proton Pass SSH Agent (auto-select when alive)
 # ============================================
@@ -339,3 +336,10 @@ if status is-interactive; and test "$PROTON_AGENT_SKIP" != "1"; and not set -q C
         set -gx SSH_AUTH_SOCK $_proton_sock
     end
 end
+
+# pnpm
+set -gx PNPM_HOME '/Users/speedybee/Library/pnpm'
+if test "$PATH[1]" != "$PNPM_HOME/bin"
+  set -gx PATH "$PNPM_HOME/bin" $PATH
+end
+# pnpm end

@@ -78,14 +78,18 @@ class ProducerWiringTests(unittest.TestCase):
         self.assertEqual(plan["signals_status"], "OK")
         self.assertEqual(plan["signals_queried"], 2)
 
-    def test_stage2_skips_live_signals_producer(self):
-        """Stage 2 never calls live signals producer and reports SKIPPED."""
-        mock_producer = mock.Mock()
+    def test_stage2_queries_live_signals_for_owned_items(self):
+        """Stage 2 calls the live signals producer, including records it owns."""
+        mock_producer = mock.Mock(
+            return_value=SignalsResult(
+                signals=real_health.ReselectSignals(), status="OK"
+            )
+        )
         ledger = {"ledger_revision": 1, "items": []}
         code, plan = _exec_stage(2, ledger, producer_override=mock_producer)
         self.assertEqual(code, 0)
-        mock_producer.assert_not_called()
-        self.assertEqual(plan["signals_status"], "SKIPPED")
+        mock_producer.assert_called_once_with(ledger, include_stage2_owned=True)
+        self.assertEqual(plan["signals_status"], "OK")
 
     def test_producer_raises_fails_open_with_degraded_status(self):
         """Producer exceptions fail open, yield DEGRADED status, exit 0, and emit action."""

@@ -7,9 +7,11 @@ then write ``sensitive_paths``, ``guardrail_outcome``, and ``risk_class``.
 This replaces the Stage 1 stand-in that bulk-marked 127+ items
 ``REVIEW_SECURITY`` without evaluating paths: items whose paths hit a sticky
 class keep ``REVIEW_SECURITY``; paths hitting only ``generated_output`` or no
-class become ``PASS_ROUTINE``. ``HOLD_*`` outcomes, ``CLOSE_NONSECURITY_NOOP``,
-``ANALYSIS_ERROR``, and ``TERMINAL`` items are never touched — they encode
-non-path holds a path classifier cannot clear.
+class become ``PASS_ROUTINE``. A ``classification`` label, including
+``SECURITY``, does not hold an item by itself. ``HOLD_PLATFORM``,
+``HOLD_CANONICAL``, ``CLOSE_NONSECURITY_NOOP``, ``ANALYSIS_ERROR``, and
+``TERMINAL`` items are never touched. ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE``
+downgrade only when the new decision is ``PASS_ROUTINE``.
 
 Dry-run by default; ``--apply`` CAS-commits through ``pr_lifecycle_ledger_cas``.
 The path rules are heuristic v1 (revision 2026-08-19 taxonomy): a missed
@@ -22,34 +24,60 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess  # nosec B404
 import sys
 import tempfile
+from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pr_lifecycle_guardrail_evidence as evidence_module
 import pr_lifecycle_ledger_cas as cas
+from pr_lifecycle_guardrail_evidence import (
+    GuardrailEvidence,
+    has_current_evidence_stamp,
+    has_executable_path,
+    owner_held_stamp_candidate,
+    routine_blocked,
+    routine_stamp,
+    routine_stamp_only_patch,
+    unstamped_routine_keys,
+)
+from pr_lifecycle_guardrail_evidence import fetch_guardrail_evidence as _fetch_evidence
 from pr_lifecycle_persist import dump_ledger
+from pr_lifecycle_reconcile_guards import SENTINEL_HOLD_MARKER
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+diff_sha256 = evidence_module.diff_sha256
+is_executable_path = evidence_module.is_executable_path
+required_checks_green = evidence_module.required_checks_green
 CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 
 _COMMIT_MESSAGE = "chore(lifecycle): deterministic guardrail path evaluation"
-_EVALUATABLE = {"NOT_RUN", "REVIEW_SECURITY", None}
+_EVALUATABLE = {
+    "NOT_RUN",
+    "REVIEW_SECURITY",
+    "HOLD_CONTRACT",
+    "HOLD_EVIDENCE",
+    "PASS_ROUTINE",
+    None,
+}
 _STICKY_EXEMPT = {"generated_output"}
+_CLEARABLE_HOLDS = {"REVIEW_SECURITY", "HOLD_CONTRACT", "HOLD_EVIDENCE"}
+_FROZEN_HOLDS = {"HOLD_CONTRACT", "HOLD_EVIDENCE"}
+_DEPENDABOT_EXEMPT = {
+    "workflows_and_permissions",
+    "lockfiles_and_major_dependencies",
+}
 # Owners whose holds must never be rewritten by an unattended evaluator,
 # matching the unblock router's blocked-owner set.
-_BLOCKED_OWNERS = {"human", "stage2", "stage3"}
+_BLOCKED_OWNERS = frozenset({"human", "stage2", "stage3"})
 # guardrail_source values that mark a hold/outcome recorded by a real review
 # (a human or a security reviewer) rather than path evidence. Even
 # --clear-stand-in never downgrades these.
-_PROTECTED_SOURCES = {"manual", "review", "human", "octopus"}
-# Identity classifications the intake classifier marked as security work.
-# These stay held regardless of path evidence — a Sentinel fix can touch
-# only ordinary source files yet still be a security change.
-_SECURITY_CLASSIFICATIONS = {"SECURITY"}
-
+_PROTECTED_SOURCES = frozenset({"manual", "review", "human", "octopus"})
 # (taxonomy class, regex matched against each changed path). Patterns are
 # anchored per path segment; order matters only for readability.
 _PATH_RULES: tuple[tuple[str, str], ...] = (
@@ -75,7 +103,7 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "security_configuration",
-        r"(^|/)(\.trunk/|\.github/gitleaks\.toml|[^/]*gitleaks[^/]*|[^/]*codeql[^/]*|[^/]*semgrep[^/]*|[^/]*trufflehog[^/]*|[^/]*trivy[^/]*|[^/]*snyk[^/]*|\.codacy\.ya?ml|[^/]*sonar[^/]*\.(ya?ml|properties)|[^/]*zizmor[^/]*|SECURITY\.md|\.github/SECURITY[^/]*)",
+        r"(^|/)(\.trunk/|\.github/gitleaks\.toml|[^/]*gitleaks[^/]*|[^/]*codeql[^/]*|[^/]*semgrep[^/]*|[^/]*trufflehog[^/]*|[^/]*trivy[^/]*|[^/]*snyk[^/]*|\.codacy\.ya?ml|[^/]*sonar[^/]*\.(ya?ml|properties)|[^/]*zizmor[^/]*|SECURITY\.md|\.github/SECURITY[^/]*|security\.py$)",
     ),
     (
         "database_migrations",
@@ -109,13 +137,125 @@ _PATH_RULES: tuple[tuple[str, str], ...] = (
 _COMPILED_RULES: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
     (name, re.compile(pattern, re.IGNORECASE)) for name, pattern in _PATH_RULES
 )
+# Journals are documentation. Match the whole suffix so nested
+# `.jules/journal/day.md` is included and `.jules/foo.json` is not.
+_JULES_JOURNAL_RE = re.compile(r"(^|/)\.jules/.+\.md$", re.IGNORECASE)
+_TEST_PATH_RE = re.compile(
+    r"(^|/)(tests?|specs?)/|(^|/)test_[^/]+$|[^/]+_test\.[^/]+$|Tests\.swift$",
+    re.IGNORECASE,
+)
+_BUMP_RE = re.compile(
+    r"from\s+v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.]+)?\s+to\s+"
+    r"v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.]+)?",
+    re.IGNORECASE,
+)
+_USES_RE = re.compile(r"(?i)uses:\s*(\S+)")
+_PERMISSION_KEY_RE = re.compile(
+    r"(?i)^\s+(?:actions|attestations|checks|contents|deployments|discussions|"
+    r"id-token|issues|models|packages|pages|pull-requests|repository-projects|"
+    r"security-events|statuses)\s*:"
+)
+_SHA40_RE = re.compile(r"[0-9a-f]{40}")
+_DIFF_FILE_RE = re.compile(r"^\+\+\+ b/(.+)$")
+# Added or removed code lines, not titles. Each pattern names an existing
+# taxonomy class so the hold stays inside the sensitive-path vocabulary.
+# security_configuration covers input validation/sanitization, which has no
+# separate class in the taxonomy.
+_DIFF_SIGNAL_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "shell_execution",
+        re.compile(
+            r"subprocess\.|os\.system\s*\(|os\.popen\s*\(|shell\s*=\s*True|"
+            r"\beval\s*\(|\bexec\s*\(|\bPopen\s*\(|\b(?:bash|sh)\s+-c\b|"
+            r"\brun_cmd\s*\(|posix_spawn",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "authentication_and_authorization",
+        re.compile(
+            r"login_required|check_password|verify_password|is_authorized|"
+            r"permission_required|hmac\.compare_digest|jwt\.(?:decode|encode)|"
+            r"\bauthorize\s*\(|def\s+authenticate\b|\boauth\b|"
+            r"_AUTH_HEADERS|\bstrip_auth\b|\bauthorizedRoot\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "security_configuration",
+        re.compile(
+            r"\bsanitize(?:d|r|_filename|\w*)\b|html\.escape|markupsafe|"
+            r"shlex\.quote|\bbleach\.|defusedxml|escape_html|"
+            r"flags\s*=\s*re\.(?:ASCII|A)\b|parse_repo_name|"
+            r"parse_pr_reference|DYLD_INSERT_LIBRARIES",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "file_read_write_boundaries",
+        re.compile(
+            r"os\.path\.realpath|os\.path\.commonpath|\bnormpath\b|"
+            r"secure_filename|\.\./|\.\.\\|\bos\.f?chmod\s*\(|\bstat\.S_ISREG\b|"
+            r"\blstat\s*\(|standardizedFileURL",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "secrets",
+        re.compile(
+            r"BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY|"
+            r"aws_secret_"
+            r"access_key|AKIA[0-9A-Z]{16}|AKIA\[0-9A-Z\]|"
+            r"\b(?:password|api_key|secret|token)\s*=\s*['\"][^'\"]+['\"]|"
+            r"os\.environ[\[\(].*(?:SECRET|TOKEN|PASSWORD|API_KEY)|"
+            r"github_pat_|AIzaSy|\bgh[pousr]_|gh\[pousr\]_|"
+            r"\bxox[abposr]-|xox\[abposr\]-|://\)?\s*\[\^/\\s:@\]\+:",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "network_and_browser_origins",
+        re.compile(
+            r"Access-Control-Allow-Origin|allow_origins|cors_allowed|"
+            r"\bCORS\s*\(|_should_strip_cross_host|\bredirect_request\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
+
+
+def is_jules_journal(path: str) -> bool:
+    """Return whether `path` is a `.jules` markdown journal."""
+    return _JULES_JOURNAL_RE.search(path) is not None
+
+
+def _is_test_path(path: str) -> bool:
+    """Return whether `path` is a test file whose fixtures should not trigger diff holds."""
+    return _TEST_PATH_RE.search(path) is not None
+
+
+def is_sentinel_title_standin(item: dict[str, Any]) -> bool:
+    """Return whether a manual guardrail_source is the Stage 1 Sentinel-title stand-in."""
+    if item.get("guardrail_source") != "manual":
+        return False
+    next_action = str(item.get("next_action") or "").lower()
+    return "security-themed sentinel title" in next_action
 
 
 def classify_path(path: Any) -> set[str]:
-    """Return the taxonomy classes a changed path matches (empty when clean)."""
+    """Return the taxonomy classes a changed path matches (empty when clean).
+
+    Non-string or blank paths and .jules Markdown journals match no classes.
+    Surrounding whitespace is stripped before matching.
+    """
     if not isinstance(path, str) or not path.strip():
         return set()
-    return {name for name, pattern in _COMPILED_RULES if pattern.search(path.strip())}
+    text = path.strip()
+    # SECURITY: journals are docs. Classifying them as generated_output made
+    # Sentinel persona notes look like sensitive output.
+    if is_jules_journal(text):
+        return set()
+    return {name for name, pattern in _COMPILED_RULES if pattern.search(text)}
 
 
 def classify_item_paths(changed_paths: Any) -> set[str]:
@@ -129,7 +269,7 @@ def classify_item_paths(changed_paths: Any) -> set[str]:
 
 
 def _evaluable(item: dict[str, Any]) -> bool:
-    """True for a nonterminal BOT item eligible for path re-evaluation.
+    """Return whether a nonterminal BOT item is eligible for path re-evaluation.
 
     Non-BOT-authored items are never evaluated: the ledger contract
     forbids ``risk_class: ROUTINE`` on human-authored PRs, so a path
@@ -140,65 +280,413 @@ def _evaluable(item: dict[str, Any]) -> bool:
     routine stamp.
     """
     changed_paths = item.get("changed_paths")
+    source = item.get("guardrail_source")
+    outcome = item.get("guardrail_outcome")
+    protected_source = source in _PROTECTED_SOURCES and not is_sentinel_title_standin(
+        item
+    )
     return all(
         (
             item.get("lifecycle_state") != "TERMINAL",
             item.get("author_type") == "BOT",
             item.get("current_owner") not in _BLOCKED_OWNERS,
             item.get("risk_class") != "HUMAN_REVIEW",
-            item.get("guardrail_outcome") in _EVALUATABLE,
-            item.get("guardrail_source") not in _PROTECTED_SOURCES,
+            outcome in _EVALUATABLE,
+            outcome != "PASS_ROUTINE" or not has_current_evidence_stamp(item),
+            not protected_source,
+            SENTINEL_HOLD_MARKER not in str(item.get("next_action") or ""),
             isinstance(changed_paths, list) and bool(changed_paths),
         )
     )
 
 
-def _security_sticky(item: dict[str, Any], sticky: list[str]) -> bool:
-    """True when a sticky path class or a SECURITY identity holds the item."""
-    return bool(sticky) or item.get("classification") in _SECURITY_CLASSIFICATIONS
+def _changed_diff_lines(diff_text: str) -> list[tuple[str, str, str]]:
+    """Return a list of (path, marker, text) for added and removed diff lines."""
+    rows: list[tuple[str, str, str]] = []
+    path = ""
+    for raw in diff_text.splitlines():
+        file_match = _DIFF_FILE_RE.match(raw)
+        if file_match:
+            path = file_match.group(1)
+            continue
+        if raw.startswith(("diff ", "--- ", "@@")):
+            continue
+        if len(raw) >= 1 and raw[0] in "+-" and not raw.startswith(("+++", "---")):
+            rows.append((path, raw[0], raw[1:]))
+    return rows
 
 
-def _stand_in_hold(item: dict[str, Any], outcome: Any, sticky: list[str]) -> bool:
-    """True for a REVIEW_SECURITY with no sticky evidence (stand-in shape)."""
-    return outcome == "REVIEW_SECURITY" and not _security_sticky(item, sticky)
+def _doc_or_journal(path: str) -> bool:
+    """Skip journals and markdown docs when scanning diff behavior."""
+    if is_jules_journal(path):
+        return True
+    lowered = path.lower()
+    return lowered.endswith((".md", ".rst", ".markdown"))
+
+
+def _comment_line(path: str, line: str) -> bool:
+    """Ignore comment-only lines so a mention of eval in prose is not a hold."""
+    stripped = line.strip()
+    if not stripped:
+        return True
+    if path.endswith(
+        (".js", ".ts", ".tsx", ".jsx", ".java", ".c", ".cc", ".go", ".rs", ".swift")
+    ):
+        return stripped.startswith("//")
+    return stripped.startswith("#")
+
+
+def diff_security_signals(diff_text: str) -> set[str]:
+    """Return taxonomy classes for security-behavior changes in a diff.
+
+    Title text is not consulted. Markdown journals and test files are skipped.
+    The match is on added or removed code lines.
+    """
+    if not diff_text:
+        return set()
+    signals: set[str] = set()
+    for path, _marker, line in _changed_diff_lines(diff_text):
+        if _doc_or_journal(path) or _is_test_path(path) or _comment_line(path, line):
+            continue
+        for name, pattern in _DIFF_SIGNAL_RULES:
+            if pattern.search(line):
+                signals.add(name)
+    return signals
+
+
+def _semver_level(old: tuple[int, int, int], new: tuple[int, int, int]) -> str:
+    """Classify one numeric version pair. Downgrades and equals are unknown."""
+    if new[0] != old[0]:
+        return "major" if new[0] > old[0] else "unknown"
+    if new[1] != old[1]:
+        return "minor" if new[1] > old[1] else "unknown"
+    if new[2] != old[2]:
+        return "patch" if new[2] > old[2] else "unknown"
+    return "unknown"
+
+
+def _bump_levels(text: str) -> set[str]:
+    """Collect semver bump levels named by Dependabot's from/to phrase."""
+    levels: set[str] = set()
+    for match in _BUMP_RE.finditer(text):
+        old = (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        new = (int(match.group(4)), int(match.group(5)), int(match.group(6)))
+        levels.add(_semver_level(old, new))
+    return levels
+
+
+def resolved_bump(title: str | None, diff_text: str | None) -> str | None:
+    """Return a resolved minor or patch bump from title or diff text, else None.
+
+    If both sources contain from/to version phrases, their bump-level sets
+    must agree. Major bumps, downgrades, equal versions, and no parseable
+    bump return None. A mix of minor and patch bumps resolves to minor.
+    The title phrase is accepted when the diff does not name a different level,
+    because SHA-pin diffs often omit the semver text.
+    """
+    title_levels = _bump_levels(title or "")
+    diff_levels = _bump_levels(diff_text or "")
+    if title_levels and diff_levels and title_levels != diff_levels:
+        return None
+    levels = title_levels or diff_levels
+    if not levels or "unknown" in levels or "major" in levels:
+        return None
+    if "minor" in levels:
+        return "minor"
+    if levels == {"patch"}:
+        return "patch"
+    return None
+
+
+def _is_dependabot(item: dict[str, Any]) -> bool:
+    """Return whether the ledger author login contains dependabot, ignoring case."""
+    author = item.get("author")
+    if not isinstance(author, dict):
+        return False
+    return "dependabot" in str(author.get("login") or "").lower()
+
+
+def _only_workflow_paths(paths: Sequence[str]) -> bool:
+    """Return whether every path is a workflow YAML file."""
+    if not paths:
+        return False
+    return all(
+        path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
+        for path in paths
+    )
+
+
+def _only_lockfile_paths(paths: Sequence[str]) -> bool:
+    """Return whether every path is only the lockfile taxonomy class."""
+    if not paths:
+        return False
+    for path in paths:
+        if classify_path(path) != {"lockfiles_and_major_dependencies"}:
+            return False
+    return True
+
+
+def permissions_block_changed(diff_text: str) -> bool:
+    """Return whether a diff changes permissions or a recognized permission key.
+
+    Also detect edits within a permissions block visible in hunk context.
+    Indented permission keys are detected even without a visible block header.
+    """
+    in_block = False
+    block_indent: int | None = None
+    for raw in diff_text.splitlines():
+        if raw.startswith(("diff ", "+++", "---", "@@")):
+            in_block = False
+            block_indent = None
+            continue
+        if not raw or raw[0] not in "+- ":
+            continue
+        body = raw[1:]
+        if raw[0] in "+-" and _PERMISSION_KEY_RE.match(body):
+            return True
+        if not body.strip():
+            continue
+        indent = len(body) - len(body.lstrip(" "))
+        stripped = body.strip()
+        if re.match(r"(?i)permissions\s*:", stripped):
+            if raw[0] in "+-":
+                return True
+            in_block = True
+            block_indent = indent
+            continue
+        if (
+            in_block
+            and block_indent is not None
+            and indent <= block_indent
+            and not stripped.startswith("#")
+        ):
+            in_block = False
+        if in_block and raw[0] in "+-":
+            return True
+    return False
+
+
+def _action_pin_ok(ref: str) -> bool:
+    """Return whether a ref is a local action or a full 40-hex SHA pin."""
+    text = ref.strip().strip("'\"")
+    if text.startswith("./"):
+        return True
+    if "@" not in text:
+        return False
+    pin = text.rsplit("@", 1)[-1].split("#", 1)[0]
+    return _SHA40_RE.fullmatch(pin) is not None
+
+
+def added_actions_pinned(diff_text: str) -> bool:
+    """Return whether every added uses: ref is a full SHA or a local action.
+
+    Return True when no added line contains a uses: ref.
+    """
+    for _path, marker, line in _changed_diff_lines(diff_text):
+        if marker != "+":
+            continue
+        match = _USES_RE.search(line)
+        if match and not _action_pin_ok(match.group(1)):
+            return False
+    return True
+
+
+def dependabot_routine_eligible(
+    item: dict[str, Any], evidence: GuardrailEvidence | None
+) -> bool:
+    """Return whether a Dependabot bump qualifies for the routine path exemption.
+
+    Paths must be nonempty and exclusively workflow YAML or exclusively the
+    lockfile taxonomy class. Require a resolved minor or patch bump, a fetched
+    diff, green non-advisory checks, and a MERGEABLE PR. Workflow bumps also
+    require no permission edits and only pinned or local added action refs.
+    Missing evidence fails closed because these paths are otherwise sticky.
+    """
+    paths = item.get("changed_paths")
+    if not isinstance(paths, list) or evidence is None or not _is_dependabot(item):
+        return False
+    workflows = _only_workflow_paths(paths)
+    lockfiles = _only_lockfile_paths(paths)
+    if workflows == lockfiles:
+        # Neither lane, or both at once. Mixed diffs stay held.
+        return False
+    if evidence.required_checks_green is not True or evidence.mergeable is not True:
+        return False
+    if evidence.diff_fetch_failed or evidence.diff_text is None:
+        return False
+    bump = resolved_bump(evidence.title, evidence.diff_text)
+    if bump not in {"minor", "patch"}:
+        return False
+    return not (
+        workflows
+        and (
+            permissions_block_changed(evidence.diff_text)
+            or not added_actions_pinned(evidence.diff_text)
+        )
+    )
+
+
+def _evidence_item_eligible(item: dict[str, Any], stamp_candidate: bool) -> bool:
+    return _evaluable(item) or stamp_candidate
+
+
+def _owner_stamp_needs_diff(stamp_candidate: bool, paths: list[Any]) -> bool:
+    return stamp_candidate and has_executable_path(paths)
+
+
+def needs_live_evidence(item: dict[str, Any]) -> bool:
+    """Return whether path evaluation needs a diff or check rollup.
+
+    Require nonempty changed_paths. Dependabot workflow-only or lockfile-only
+    items need evidence; other items with sticky path classes do not. With no
+    sticky classes, executable paths always need a head-bound diff, as do
+    SECURITY classifications and clearable holds.
+    """
+    paths = item.get("changed_paths")
+    if not isinstance(paths, list) or not paths:
+        return False
+    stamp_candidate = owner_held_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    )
+    if not _evidence_item_eligible(item, stamp_candidate):
+        return False
+    if _owner_stamp_needs_diff(stamp_candidate, paths):
+        return True
+    path_sticky = classify_item_paths(paths) - _STICKY_EXEMPT
+    if _is_dependabot(item) and (
+        _only_workflow_paths(paths) or _only_lockfile_paths(paths)
+    ):
+        return True
+    if path_sticky:
+        return False
+    return (
+        has_executable_path(paths)
+        or item.get("classification") == "SECURITY"
+        or item.get("guardrail_outcome") in _CLEARABLE_HOLDS
+    )
+
+
+def _gh_capture(args: list[str]) -> subprocess.CompletedProcess[str] | None:
+    """Run a fixed gh argv. None on timeout or exec failure."""
+    try:
+        return subprocess.run(  # nosec B603
+            args,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def fetch_guardrail_evidence(
+    item: dict[str, Any],
+    advisory_patterns: Sequence[str],
+    *,
+    include_diff: bool = True,
+) -> GuardrailEvidence:
+    """
+    Read title, head-bound diff, mergeability, and checks for one item.
+
+    The evidence module performs the SHA-pinned requests; this wrapper keeps
+    the capture point patchable for CLI tests and callers.
+    """
+    return _fetch_evidence(
+        item,
+        advisory_patterns,
+        _gh_capture,
+        include_diff=include_diff,
+    )
+
+
+def clearance_rule(item: dict[str, Any], patch: dict[str, Any] | None) -> str | None:
+    """Name which rule moved a hold to PASS_ROUTINE, if one did."""
+    if not isinstance(patch, dict) or patch.get("guardrail_outcome") != "PASS_ROUTINE":
+        return None
+    if item.get("guardrail_outcome") not in _CLEARABLE_HOLDS:
+        return None
+    paths = item.get("changed_paths")
+    if not isinstance(paths, list):
+        return None
+    if _is_dependabot(item) and (
+        _only_workflow_paths(paths) or _only_lockfile_paths(paths)
+    ):
+        return "dependabot_routine"
+    if (
+        paths
+        and not (classify_item_paths(paths) - _STICKY_EXEMPT)
+        and any(is_jules_journal(path) for path in paths)
+    ):
+        return "jules_journal"
+    if not (classify_item_paths(paths) - _STICKY_EXEMPT):
+        return "classification_without_sensitive_path"
+    return None
 
 
 def evaluate_item(
-    item: dict[str, Any], clear_standin: bool = False
+    item: dict[str, Any],
+    clear_standin: bool = False,
+    evidence: GuardrailEvidence | None = None,
 ) -> dict[str, Any] | None:
     """Return a field patch without mutating the item, or None if unchanged.
 
-    Only NOT_RUN/REVIEW_SECURITY or unset outcomes on nonterminal,
-    BOT-authored items re-evaluate; items without a nonempty changed_paths
-    list keep their current outcome (nothing to classify is not evidence
-    of a clean diff). Items owned by
-    human/stage2/stage3 or stamped with a protected ``guardrail_source``
-    (manual/review/human/octopus) are never touched. A ``REVIEW_SECURITY`` outcome
-    downgrades to ``PASS_ROUTINE`` only with ``clear_standin=True`` — a
-    recorded hold may come from non-path evidence, so clearing it stays an
-    explicit opt-in run by hand, not a recurring stage step.
+    Only evaluable outcomes on nonterminal BOT items re-evaluate. Items
+    without a nonempty changed_paths list keep their outcome. HUMAN_REVIEW
+    items and items owned by human/stage2/stage3 are never touched. Protected
+    ``guardrail_source`` values (manual/review/human/octopus) are untouched
+    except for the manual Stage 1 Sentinel-title stand-in. ``clear_standin``
+    is accepted for CLI compatibility and does not gate the downgrade.
 
-    A sticky path class or ``classification=SECURITY`` produces
-    ``REVIEW_SECURITY`` and ``SENSITIVE``, even with ``clear_standin=True``;
-    otherwise the patch sets ``PASS_ROUTINE`` and ``ROUTINE``. The patch
-    records sorted taxonomy classes in ``sensitive_paths`` (including
-    ``generated_output``, which alone is not sticky) and sets
-    ``guardrail_source`` to ``path_eval``. Return None for ineligible items,
-    preserved stand-in holds, or items already matching all patch fields.
+    Sticky path classes, except eligible Dependabot exemptions, and supplied
+    security-behavior diff signals produce ``REVIEW_SECURITY``. A classification
+    label alone does not. Executable paths require a nonempty diff bound to the
+    item's 40-hex head SHA before they can receive ``PASS_ROUTINE``.
+    Non-executable paths can be stamped without diff content.
+    ``HOLD_CONTRACT`` and ``HOLD_EVIDENCE`` stay put when the new decision is
+    still a hold. Owner-held routine items receive only a stamp when their
+    existing decision remains routine.
     """
-    if not _evaluable(item):
+    del clear_standin  # CLI flag remains; downgrade no longer depends on it.
+    stamp_only = owner_held_stamp_candidate(
+        item, _BLOCKED_OWNERS, _PROTECTED_SOURCES, is_sentinel_title_standin
+    )
+    if not _evaluable(item) and not stamp_only:
         return None
     outcome = item.get("guardrail_outcome")
     classes = classify_item_paths(item["changed_paths"])
-    sticky = sorted(classes - _STICKY_EXEMPT)
-    if _stand_in_hold(item, outcome, sticky) and not clear_standin:
+    path_sticky = classes - _STICKY_EXEMPT
+    signals: set[str] = set()
+    if evidence is not None and evidence.diff_text:
+        signals = diff_security_signals(evidence.diff_text)
+    exempt: set[str] = set()
+    if dependabot_routine_eligible(item, evidence):
+        exempt = path_sticky & _DEPENDABOT_EXEMPT
+    effective = (path_sticky - exempt) | signals
+    fail_closed = bool(
+        evidence is not None
+        and evidence.diff_fetch_failed
+        and not effective
+        and (outcome in _CLEARABLE_HOLDS or item.get("classification") == "SECURITY")
+    )
+    sticky_flag = bool(effective) or fail_closed
+    if outcome in _FROZEN_HOLDS and sticky_flag:
         return None
-    sticky_flag = _security_sticky(item, sticky)
+    if not sticky_flag and routine_blocked(item, evidence):
+        return None
+    if stamp_only:
+        return routine_stamp_only_patch(item, evidence, sticky_flag)
+    recorded = (set(classes) | signals) - exempt
+    if fail_closed and not recorded:
+        prior = item.get("sensitive_paths")
+        if isinstance(prior, list):
+            recorded = {str(value) for value in prior}
     patch = {
-        "sensitive_paths": sorted(classes),
+        "sensitive_paths": sorted(recorded),
         "guardrail_outcome": ("PASS_ROUTINE", "REVIEW_SECURITY")[sticky_flag],
         "guardrail_source": "path_eval",
         "risk_class": ("ROUTINE", "SENSITIVE")[sticky_flag],
+        "guardrail_evidence": None if sticky_flag else routine_stamp(item, evidence),
     }
     if all(item.get(field) == value for field, value in patch.items()):
         return None
@@ -216,7 +704,7 @@ def _record_evaluation(
     guardrail outcome changes.
     """
     summary["evaluated"] += 1
-    outcome = str(patch["guardrail_outcome"])
+    outcome = str(patch.get("guardrail_outcome", item.get("guardrail_outcome")))
     summary["by_outcome"][outcome] += 1
     if item.get("guardrail_outcome") == outcome:
         summary["outcomes_unchanged"] += 1
@@ -239,13 +727,26 @@ def evaluate_ledger(
     ledger: dict[str, Any],
     repos_filter: set[str] | None,
     clear_standin: bool = False,
+    evidence_for: Callable[[dict[str, Any]], GuardrailEvidence | None] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Apply evaluate_item across items; return (ledger, summary)."""
+    """Update ledger items in place; return the same ledger and a summary.
+
+    A nonempty repos_filter limits evaluation to those repositories; None or
+    an empty set includes all. If supplied, evidence_for is called for each
+    mapping item passing that filter, even if evaluation later skips it.
+    Callback errors propagate, leaving any earlier updates in place.
+
+    Applied patches refresh updated_at_utc without changing item revisions or
+    events. The summary counts patches and skipped evaluations and lists only
+    outcome changes; filtered-out and non-mapping entries are not counted.
+    """
     summary: dict[str, Any] = {
         "evaluated": 0,
         "outcomes_unchanged": 0,
         "skipped": 0,
         "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 0},
+        "evidence_stamped": 0,
+        "unstamped_routine": [],
         "changes": [],
     }
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -254,27 +755,55 @@ def evaluate_ledger(
             continue
         if repos_filter and item.get("repository") not in repos_filter:
             continue
-        patch = evaluate_item(item, clear_standin)
+        evidence = evidence_for(item) if evidence_for is not None else None
+        patch = evaluate_item(item, clear_standin, evidence)
         if patch is None:
             summary["skipped"] += 1
             continue
+        if patch.get("guardrail_evidence") is not None:
+            summary["evidence_stamped"] += 1
         _record_evaluation(item, patch, now, summary)
+    summary["unstamped_routine"] = unstamped_routine_keys(ledger.get("items"))
     return ledger, summary
 
 
 def run_guardrails(args: argparse.Namespace) -> int:
-    """Fetch the ledger, evaluate items, print or CAS-apply the result."""
+    """Fetch the ledger, evaluate items, print JSON, and return zero on success.
+
+    args.repos_filter optionally limits repositories; args.apply persists
+    changes through CAS only if at least one item receives a patch. Without
+    args.apply, only report proposed changes. Fetch live evidence as needed.
+
+    Raise ValueError if path rules reference unknown taxonomy classes. Errors
+    from configuration loading, ledger preflight, and CAS persistence propagate
+    to the caller.
+    """
     config = load_yaml(CONFIG_PATH)
     taxonomy = (config.get("sensitive_path_taxonomy") or {}).get("classes") or []
     unknown = {name for name, _ in _PATH_RULES} - set(taxonomy)
     if unknown:
         raise ValueError(f"path rules use unknown taxonomy classes: {sorted(unknown)}")
     repos_filter = set(args.repos_filter) if args.repos_filter else None
+    unblock = (config.get("lifecycle") or {}).get("unblock") or {}
+    advisory = unblock.get("advisory_checks") or []
+    if not isinstance(advisory, list):
+        advisory = []
+
+    def _evidence_for(item: dict[str, Any]) -> GuardrailEvidence | None:
+        # Fetch only when a clean path list would otherwise clear a hold or
+        # a Dependabot lane needs checks. Ordinary docs stay offline.
+        """Fetch live evidence only when paths and the current hold require it."""
+        if not needs_live_evidence(item):
+            return None
+        return fetch_guardrail_evidence(item, advisory)
+
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-guardrails-") as tmp:
         ledger_path = Path(tmp) / "ledger.yaml"
         cas.run_preflight(ledger_path)
         ledger = load_yaml(ledger_path)
-        ledger, summary = evaluate_ledger(ledger, repos_filter, args.clear_standin)
+        ledger, summary = evaluate_ledger(
+            ledger, repos_filter, args.clear_standin, _evidence_for
+        )
         summary["dry_run"] = not args.apply
         summary["ledger_revision"] = ledger.get("ledger_revision")
         if args.apply and summary["evaluated"]:
@@ -301,10 +830,9 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="clear_standin",
         help=(
-            "allow REVIEW_SECURITY outcomes to downgrade to PASS_ROUTINE "
-            "when no sticky path class matches (corrects the Stage 1 "
-            "stand-in over-marking; human/stage-owned items are never "
-            "touched either way)"
+            "accepted for older invocations; a non-sticky REVIEW_SECURITY "
+            "now downgrades without this flag. Protected sources and human "
+            "holds are still never touched"
         ),
     )
     return parser

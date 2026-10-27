@@ -149,6 +149,11 @@ class TestPrefilterLedgerItems(unittest.TestCase):
 
         self.assertEqual(len(survivors), 1)
         self.assertEqual(survivors[0]["key"], valid_candidate["key"])
+        owned_scan = prefilter_ledger_items(ledger, include_stage2_owned=True)
+        self.assertEqual(
+            [item["key"] for item in owned_scan],
+            [stage2_owner["key"], stage2_state["key"], valid_candidate["key"]],
+        )
 
     def test_prefilter_drops_records_failing_non_live_gates(self) -> None:
         """Records that cannot pass non-live gates never consume a query slot.
