@@ -170,18 +170,67 @@ def _ledger_survivors(ledger: dict[str, Any]) -> list[dict[str, Any]]:
     return stage1_3 + others
 
 
+def _stage2_owned_signal_candidate(item: dict[str, Any]) -> bool:
+    """Return whether booking needs a live query this reselect prefilter drops.
+
+    Reselect excludes Stage 2-owned records so they are not enqueued twice.
+    Booking still has to learn whether that PR is closed.
+    """
+    owned = (
+        item.get("current_owner") == "stage2"
+        or item.get("lifecycle_state") in health.STAGE2_OWNED_STATES
+    )
+    if not owned or item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if health.is_never_touch_key(item.get("key")):
+        return False
+    if (item.get("guardrail_outcome") or "") in health.NON_SALVAGE_OUTCOMES:
+        return False
+    return bool(
+        str(item.get("base_sha") or "").strip()
+        and str(item.get("head_sha") or "").strip()
+    )
+
+
+def _signal_query_items(
+    ledger: dict[str, Any], *, include_stage2_owned: bool = False
+) -> list[dict[str, Any]]:
+    """Return live-query candidates. Stage 2 puts records it owns first."""
+    survivors = _ledger_survivors(ledger)
+    if not include_stage2_owned:
+        return survivors
+    seen = {str(item.get("key") or "") for item in survivors}
+    owned: list[dict[str, Any]] = []
+    raw_items = ledger.get("items")
+    if not isinstance(raw_items, list):
+        return survivors
+    for item in raw_items:
+        if not isinstance(item, dict) or not _prefilter_anchors(item):
+            continue
+        key = str(item.get("key") or "")
+        if not key or key in seen or not _stage2_owned_signal_candidate(item):
+            continue
+        owned.append(item)
+        seen.add(key)
+    return owned + survivors
+
+
 def prefilter_ledger_items(
     ledger: dict[str, Any],
     *,
     max_prs: int = 40,
+    include_stage2_owned: bool = False,
 ) -> list[dict[str, Any]]:
     """Return ledger candidates for live queries, prioritizing Stage 1/3 owners.
 
-    Candidates are the first max_prs of _ledger_survivors. Apply max_prs as a
+    Candidates are the first max_prs of the query list. Apply max_prs as a
     Python slice stop: zero returns no items, and a negative value omits that
-    many items from the end.
+    many items from the end. include_stage2_owned prepends Stage 2-owned
+    records the reselect prefilter drops, so a Stage 2 scan can see closed PRs.
     """
-    return _ledger_survivors(ledger)[:max_prs]
+    return _signal_query_items(ledger, include_stage2_owned=include_stage2_owned)[
+        :max_prs
+    ]
 
 
 def _fetch_base_sha(
@@ -355,15 +404,17 @@ def produce_reselect_signals(
         Callable[[list[str], float], subprocess.CompletedProcess[str]] | None
     ) = None,
     limits: SignalQueryLimits = _DEFAULT_LIMITS,
+    include_stage2_owned: bool = False,
 ) -> SignalsResult:
     """Query GitHub for live signals on prefiltered ledger candidates.
 
     Use gh pr view unless runner is supplied; runner receives argv and the
     per-call timeout in seconds. limits.max_prs bounds the candidate slice
-    taken from _ledger_survivors; the clipped surplus lands in
-    signals.unqueried_keys. Check limits.total_budget_s before each query,
-    so an in-flight call can exceed the total budget. A nonpositive budget
-    prevents queries.
+    taken from _signal_query_items; the clipped surplus lands in
+    signals.unqueried_keys. include_stage2_owned prepends Stage 2-owned
+    records so booking can observe closed PRs. Check limits.total_budget_s
+    before each query, so an in-flight call can exceed the total budget. A
+    nonpositive budget prevents queries.
 
     Return signals keyed by full ledger keys, attempted-query count, failed
     and truncated keys, and elapsed seconds. Closed/merged PRs populate only
@@ -392,7 +443,9 @@ def produce_reselect_signals(
     run_cmd = runner or _default_runner
 
     try:
-        survivors = _ledger_survivors(ledger)
+        survivors = _signal_query_items(
+            ledger, include_stage2_owned=include_stage2_owned
+        )
         candidates = survivors[: limits.max_prs]
         acc = SignalsAccum()
         queried_count = 0

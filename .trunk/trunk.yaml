@@ -29,31 +29,37 @@ lint:
     - linters: [deno]
       paths:
         - docs/cursor-automations/prompts/**
+    # tasks/*.md are machine-parsed run records (session reports, lessons,
+    # pr-review/pr-salvage records). deno fmt reflow splits tokens such as
+    # "Full record: ..." across lines and breaks test_pr_lifecycle_*.
+    - linters: [deno]
+      paths:
+        - tasks/**/*.md
   disabled:
     - markdownlint
     - prettier
   enabled:
-    - grype@0.120.0
+    - grype@0.121.0
     # pinact v5 rejects single-dash -format; trunk plugins v1.11.0 still pass
     # -format via pinact_run.py. Stay on 4.1.1 until plugins emit --format.
     - pinact@4.1.1
     - actionlint@1.7.12
     - bandit@1.9.4
-    - black@26.5.1
-    - checkov@3.3.22
-    - deno@2.9.7
+    - black@26.10.1
+    - checkov@3.3.30
+    - deno@2.9.8
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.15.1
     - isort@9.0.2
-    - osv-scanner@2.6.0
-    - ruff@0.16.10
+    - osv-scanner@2.7.0
+    - ruff@0.17.1
     - shellcheck@0.11.0
     - shfmt@3.14.1
     - taplo@0.10.0
     - terrascan@1.19.9
-    - trivy@0.75.0
-    - trufflehog@3.97.9
+    - trivy@0.76.1
+    - trufflehog@3.99.3
     - yamllint@1.38.0
 actions:
   definitions:
@@ -84,5 +90,5 @@ tools:
     - ruby
   enabled:
     - snyk@1.1295.0
-    - trivy@0.75.0
-    - trufflehog@3.97.9
+    - trivy@0.76.1
+    - trufflehog@3.99.3
