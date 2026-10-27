@@ -29,7 +29,7 @@ import pr_lifecycle_ledger as ledger_mod
 import pr_lifecycle_ledger_cas as cas
 import pr_lifecycle_reconcile_guards as guards
 from pr_identity import classify_pr_identity, identity_policy_from_config
-from pr_lifecycle_config import validate_config
+from pr_lifecycle_config import normalize_exclusions, validate_config
 from pr_lifecycle_github_http import OPERATOR_CONFLICT, CasError
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_persist import dump_ledger, strip_in_memory_item_fields
@@ -43,6 +43,15 @@ STALE_COMMENT = (
     "packet_expiry_close_days with no REVIEW_SECURITY hold "
     "(policy 2026-09-21). Re-open or comment if this should stay open."
 )
+
+
+@dataclass(frozen=True)
+class StalePolicy:
+    """Inputs shared across stale-item classification."""
+
+    expiry_days: int
+    now: datetime
+    exclusions: frozenset[tuple[str | None, int]] = frozenset()
 
 
 def _utc_now() -> datetime:
@@ -86,7 +95,7 @@ def _gh_pr_view(repo: str, pr: int) -> dict[str, Any] | None:
         "--repo",
         repo,
         "--json",
-        "state,mergedAt,closedAt,headRefOid,url,mergedBy,labels",
+        "state,mergedAt,closedAt,headRefOid,headRefName,title,url,mergedBy,labels",
     ]
     try:
         completed = subprocess.run(
@@ -374,7 +383,10 @@ def _classify_sha_drift(
 
 
 def _classify_stale(
-    item: dict[str, Any], *, expiry_days: int, now: datetime, key: str
+    item: dict[str, Any],
+    *,
+    key: str,
+    policy: StalePolicy,
 ) -> dict[str, Any] | None:
     """Return a stale-close action for an expired eligible bot packet."""
     stale_candidate = (
@@ -384,19 +396,24 @@ def _classify_stale(
     )
     if not stale_candidate:
         return None
-    age = _item_age_days(item, now)
-    if age is None or age <= expiry_days:
+    if guards.stale_close_hold_reason(item, policy.exclusions) is not None:
         return None
+    age = _item_age_days(item, policy.now)
+    if age is None or age <= policy.expiry_days:
+        return None
+    age_label = str(round(age, 1))
     return {
         "action": "CLOSE_STALE",
         "key": key,
         "to_state": "TERMINAL",
         "disposition": "CLOSED_STALE",
         "reason": (
-            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age:.1f}d > {expiry_days}d"
+            f"WAITING_HUMAN BOT non-REVIEW_SECURITY age={age_label}d "
+            f"> {policy.expiry_days}d"
         ),
         "repository": item.get("repository"),
         "pr": item.get("pr"),
+        "head_sha": item.get("head_sha"),
     }
 
 
@@ -466,7 +483,8 @@ def _security_tag_reconcile_action(
         and item.get("lifecycle_state") != "TERMINAL"
         and item.get("author_type") == "BOT"
         and item.get("classification") == "SECURITY"
-        and not guards.is_forced_security_hold(item)
+        # SECURITY: live Sentinel persona or sentinel/ branch is a forced hold.
+        and not guards.is_forced_security_hold(guards.sentinel_record(item, live))
         and not _drift_fields(item, live)[2]
     ):
         return None
@@ -495,8 +513,7 @@ def classify_item(
     item: dict[str, Any],
     live: dict[str, Any] | None,
     *,
-    expiry_days: int,
-    now: datetime,
+    policy: StalePolicy,
 ) -> dict[str, Any] | None:
     """Return a proposed action, or None when no change is needed."""
     if item.get("lifecycle_state") == "TERMINAL":
@@ -515,7 +532,7 @@ def classify_item(
     if live_state in {"MERGED", "CLOSED"}:
         return _classify_live_terminal(item, live, key)
     return _classify_sha_drift(item, live, key) or _classify_stale(
-        item, expiry_days=expiry_days, now=now, key=key
+        item, key=key, policy=policy
     )
 
 
@@ -645,12 +662,23 @@ def _prepare_live_head(
         raise ReconcileSkip("anchor_key_taken")
 
 
+def _keep_sentinel_marker(item: dict[str, Any], text: str) -> str:
+    """Keep a stamped Sentinel hold when another action rewrites next_action."""
+    prior = str(item.get("next_action") or "")
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return text
+    if guards.SENTINEL_HOLD_MARKER in text:
+        return text
+    return f"{text} {guards.SENTINEL_HOLD_MARKER} remains in effect."
+
+
 def _apply_drift_fields(item: dict[str, Any], action: dict[str, Any]) -> None:
     live_head = action.get("live_head_sha")
     # Head moves only via _rekey_item_head so the key still ends with head_sha.
     if live_head and live_head == item.get("head_sha"):
-        item["next_action"] = (
-            f"Re-anchor intake to live head {live_head}; prior evidence void."
+        item["next_action"] = _keep_sentinel_marker(
+            item,
+            f"Re-anchor intake to live head {live_head}; prior evidence void.",
         )
     live_base = action.get("live_base_sha")
     if live_base:
@@ -669,8 +697,9 @@ def _reanchor_item(
     if live_base:
         item["base_sha"] = live_base
     item["updated_at_utc"] = _utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    item["next_action"] = (
-        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void."
+    item["next_action"] = _keep_sentinel_marker(
+        item,
+        f"Re-anchored to live head {item.get('head_sha')}; prior evidence void.",
     )
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
@@ -694,8 +723,11 @@ def apply_action_to_ledger(
         return _note_observed_terminal(ledger, item, action)
     if action.get("action") == "BACKFILL_PATHS":
         return _backfill_item_paths(ledger, item, action)
-    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
-        return _reclassify_title_security_item(ledger, item, action)
+    if action.get("action") in {
+        "RECLASSIFY_TITLE_SECURITY",
+        "HOLD_SENTINEL_SECURITY",
+    }:
+        return _apply_recorded_security_action(ledger, item, action)
     to_state = action["to_state"]
     kind = "TERMINAL" if to_state == "TERMINAL" else "HANDOFF"
     event = build_transition_event(item, action, kind=kind)
@@ -782,6 +814,7 @@ def _reclassify_title_security_item(
         and item.get("guardrail_outcome") == "REVIEW_SECURITY"
     ):
         item["guardrail_outcome"] = "PASS_ROUTINE"
+        item["guardrail_evidence"] = None
         item["risk_class"] = "ROUTINE"
         item["guardrail_source"] = "path_eval"
         item["safe_default"] = "Leave open; eligible for Stage 1 routine evaluation."
@@ -793,16 +826,136 @@ def _reclassify_title_security_item(
     return {"event_id": None}
 
 
+def _apply_recorded_security_action(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply a title reclassify or a Sentinel hold without a new transition."""
+    if action.get("action") == "RECLASSIFY_TITLE_SECURITY":
+        return _reclassify_title_security_item(ledger, item, action)
+    return _hold_sentinel_security_item(ledger, item, action)
+
+
+def _sentinel_already_held(item: dict[str, Any]) -> bool:
+    """Return whether a Sentinel item is already a fixed REVIEW_SECURITY hold."""
+    if item.get("guardrail_outcome") != "REVIEW_SECURITY":
+        return False
+    next_action = str(item.get("next_action") or "")
+    return (
+        guards.SENTINEL_HOLD_MARKER in next_action
+        or item.get("guardrail_source") in {"review", "human", "octopus"}
+        or item.get("current_owner") in {"human", "stage2", "stage3"}
+        or item.get("risk_class") == "HUMAN_REVIEW"
+    )
+
+
+_SENTINEL_REPLACEABLE_OUTCOMES = {None, "NOT_RUN", "PASS_ROUTINE", "REVIEW_SECURITY"}
+
+
+def _sentinel_hold_eligible(item: dict[str, Any], live: dict[str, Any] | None) -> bool:
+    """Return whether this open BOT item may receive a Sentinel hold."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return False
+    if item.get("author_type") != "BOT":
+        return False
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return False
+    if not isinstance(live, dict):
+        return False
+    if str(live.get("state") or "").upper() != "OPEN":
+        return False
+    if not guards.is_sentinel_security_pr(guards.sentinel_record(item, live)):
+        return False
+    return not _sentinel_already_held(item)
+
+
+def _sentinel_hold_action(
+    item: dict[str, Any], live: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Plan a fixed REVIEW_SECURITY hold for an open Sentinel persona or branch."""
+    if not _sentinel_hold_eligible(item, live):
+        return None
+    return {
+        "action": "HOLD_SENTINEL_SECURITY",
+        "key": str(item.get("key") or ""),
+        "repository": str(item.get("repository") or ""),
+        "pr": item.get("pr"),
+        "reason": (
+            "Jules Sentinel persona or sentinel/ branch is a fixed "
+            "REVIEW_SECURITY hold; title-only reconcile cannot clear it"
+        ),
+    }
+
+
+def _sentinel_apply_skip(item: dict[str, Any]) -> str | None:
+    """Return why a planned Sentinel hold must not be stamped."""
+    if item.get("lifecycle_state") == "TERMINAL":
+        return "sentinel_hold_terminal"
+    if item.get("guardrail_outcome") not in _SENTINEL_REPLACEABLE_OUTCOMES:
+        return "sentinel_hold_frozen"
+    prior = str(item.get("next_action") or "")
+    if item.get("guardrail_outcome") != "REVIEW_SECURITY":
+        return None
+    if guards.SENTINEL_HOLD_MARKER not in prior:
+        return None
+    return "sentinel_hold_noop"
+
+
+def _hold_sentinel_security_item(
+    ledger: dict[str, Any], item: dict[str, Any], action: dict[str, Any]
+) -> dict[str, Any]:
+    """Stamp REVIEW_SECURITY for a Sentinel PR without a lifecycle transition."""
+    del action
+    skip = _sentinel_apply_skip(item)
+    if skip is not None:
+        raise ReconcileSkip(skip)
+    prior = str(item.get("next_action") or "").strip()
+    marker = (
+        f"{guards.SENTINEL_HOLD_MARKER}: Jules Sentinel persona or sentinel/ "
+        "branch stays REVIEW_SECURITY; title-only reconcile cannot clear it."
+    )
+    item["guardrail_outcome"] = "REVIEW_SECURITY"
+    # SECURITY: HUMAN_REVIEW is a recorded human hold. Do not downgrade it.
+    if item.get("risk_class") != "HUMAN_REVIEW":
+        item["risk_class"] = "SENSITIVE"
+    item["next_action"] = marker if not prior else f"{marker} Prior: {prior}"
+    ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
+    return {"event_id": None}
+
+def _stale_close_preflight(
+    action: dict[str, Any], repository: str, pr_number: int
+) -> str | None:
+    if not repository or not pr_number:
+        return "skip github close: missing repository/pr"
+    live = _gh_pr_view(repository, pr_number)
+    if live is None:
+        return "skip github close: live PR view unavailable"
+    if str(live.get("state") or "").upper() != "OPEN":
+        return "skip github close: live PR is not OPEN"
+    if live.get("headRefOid") != action.get("head_sha"):
+        return "skip github close: live head SHA changed"
+    return None
+
+
 def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     """Close the stale PR on GitHub; confirm only when a re-read shows CLOSED."""
     repo = str(action.get("repository") or "")
-    pr = int(action.get("pr") or 0)
+    pr_number = int(action.get("pr") or 0)
     steps: list[str] = []
-    if not repo or not pr:
-        steps.append("skip github close: missing repository/pr")
+    preflight = _stale_close_preflight(action, repo, pr_number)
+    if preflight is not None:
+        steps.append(preflight)
         return steps, False
     comment = subprocess.run(
-        ["gh", "pr", "comment", str(pr), "--repo", repo, "--body", STALE_COMMENT],
+        [
+            "gh",
+            "pr",
+            "comment",
+            str(pr_number),
+            "--repo",
+            repo,
+            "--body",
+            STALE_COMMENT,
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -810,7 +963,16 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     )
     steps.append(f"comment exit={comment.returncode}")
     label = subprocess.run(
-        ["gh", "pr", "edit", str(pr), "--repo", repo, "--add-label", STALE_LABEL],
+        [
+            "gh",
+            "pr",
+            "edit",
+            str(pr_number),
+            "--repo",
+            repo,
+            "--add-label",
+            STALE_LABEL,
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -818,7 +980,7 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     )
     steps.append(f"label exit={label.returncode}")
     close = subprocess.run(
-        ["gh", "pr", "close", str(pr), "--repo", repo],
+        ["gh", "pr", "close", str(pr_number), "--repo", repo],
         check=False,
         capture_output=True,
         text=True,
@@ -827,9 +989,11 @@ def _close_stale_github(action: dict[str, Any]) -> tuple[list[str], bool]:
     steps.append(f"close exit={close.returncode}")
     if close.returncode != 0:
         return steps, False
-    live = _gh_pr_view(repo, pr)
+    live = _gh_pr_view(repo, pr_number)
     confirmed = (
-        isinstance(live, dict) and str(live.get("state") or "").upper() == "CLOSED"
+        isinstance(live, dict)
+        and str(live.get("state") or "").upper() == "CLOSED"
+        and live.get("headRefOid") == action.get("head_sha")
     )
     steps.append(f"confirm={'closed' if confirmed else 'unconfirmed'}")
     return steps, confirmed
@@ -921,12 +1085,17 @@ def collect_actions(
 ) -> list[dict[str, Any]]:
     """Collect reconciliation actions for ledger items in item order."""
     clock = now or _utc_now()
-    expiry = _expiry_days(config)
+    unblock = (config.get("lifecycle") or {}).get("unblock") or {}
+    policy = StalePolicy(
+        expiry_days=_expiry_days(config),
+        now=clock,
+        exclusions=normalize_exclusions(unblock.get("exclusions")),
+    )
     # Duplicate termination runs first so a loser is not also backfilled.
     items = ledger.get("items") or []
     actions, dup_losers = _duplicate_terminal_actions(items)
     for item in _live_items(items, dup_losers):
-        actions.extend(_action_for_item(item, expiry, clock))
+        actions.extend(_action_for_item(item, policy))
         if limit is not None and len(actions) >= limit:
             del actions[limit:]
             break
@@ -1163,7 +1332,10 @@ def _ingest_action(
     }
 
 
-def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, Any]]:
+def _action_for_item(
+    item: Any,
+    policy: StalePolicy,
+) -> list[dict[str, Any]]:
     """Look up and classify one nonterminal item; return planned actions."""
     # Data-only actions (path backfill and title-only security tag clearing)
     # ride alongside the primary action so guardrails evaluate real evidence.
@@ -1174,7 +1346,7 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
     repo = str(item.get("repository") or "")
     pr = item.get("pr")
     live = _gh_pr_view(repo, int(pr)) if repo and pr else None
-    primary = classify_item(item, live, expiry_days=expiry, now=clock)
+    primary = classify_item(item, live, policy=policy)
     actions = [primary] if primary is not None else []
     backfill = _path_backfill_action(item, live)
     if backfill is not None:
@@ -1182,6 +1354,13 @@ def _action_for_item(item: Any, expiry: int, clock: datetime) -> list[dict[str, 
     reclassify = _security_tag_reconcile_action(item, live)
     if reclassify is not None:
         actions.append(reclassify)
+    sentinel_hold = _sentinel_hold_action(item, live)
+    if sentinel_hold is not None:
+        # SECURITY: do not stale-close a PR this pass is about to hold.
+        actions = [
+            action for action in actions if action.get("action") != "CLOSE_STALE"
+        ]
+        actions.append(sentinel_hold)
     return actions
 
 

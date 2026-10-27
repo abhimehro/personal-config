@@ -13,15 +13,9 @@ if str(SCRIPTS) not in sys.path:
 
 import pr_lifecycle_unblock as unblock
 
-from tests.pr_lifecycle_helpers import (
-    UNBLOCK_REPO as REPO,
-)
-from tests.pr_lifecycle_helpers import (
-    make_unblock_pr as _pr,
-)
-from tests.pr_lifecycle_helpers import (
-    route_unblock_pr as _route,
-)
+from tests.pr_lifecycle_helpers import UNBLOCK_REPO as REPO
+from tests.pr_lifecycle_helpers import make_unblock_pr as _pr
+from tests.pr_lifecycle_helpers import route_unblock_pr as _route
 
 
 class LedgerOwnerHoldTests(unittest.TestCase):
