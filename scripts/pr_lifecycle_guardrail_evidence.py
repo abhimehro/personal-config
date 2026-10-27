@@ -423,21 +423,19 @@ def _evidence_identity(item: dict[str, Any]) -> tuple[str, int, str, str] | None
     base_sha = item.get("base_sha")
     if not (repo and _valid_pr_number(pull_number)):
         return None
+    if not (isinstance(head_sha, str) and isinstance(base_sha, str)):
+        return None
     if not (is_sha40(head_sha) and is_sha40(base_sha)):
         return None
     return repo, pull_number, head_sha, base_sha
 
 
-def _optional_head_bound_diff(
+def _digested_head_bound_diff(
     repo: str,
     base_sha: str,
     head_sha: str,
     capture: Callable[[list[str]], Any],
-    *,
-    include_diff: bool,
 ) -> tuple[str, str | None] | None:
-    if not include_diff:
-        return "", None
     diff_text = _fetch_head_bound_diff(repo, base_sha, head_sha, capture)
     if diff_text is None:
         return None
@@ -466,8 +464,10 @@ def fetch_guardrail_evidence(
     payload = _fetch_live_view_payload(repo, pull_number, head_sha, capture)
     if payload is None:
         return GuardrailEvidence(diff_fetch_failed=True)
-    diff = _optional_head_bound_diff(
-        repo, base_sha, head_sha, capture, include_diff=include_diff
+    diff = (
+        _digested_head_bound_diff(repo, base_sha, head_sha, capture)
+        if include_diff
+        else ("", None)
     )
     if diff is None:
         return GuardrailEvidence(diff_fetch_failed=True)
