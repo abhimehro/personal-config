@@ -1,10 +1,15 @@
 import os
+import re
 import shutil
 import subprocess  # nosec B404
 import unittest
 from pathlib import Path
 
 import yaml
+
+REFACTOR_ACTION_USES_RE = re.compile(
+    r"^codescene-oss/pr-refactoring-agent@[0-9a-f]{40}$"
+)
 
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[1]
@@ -16,6 +21,25 @@ WORKFLOW_PATH = (
 
 def load_workflow():
     return yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
+
+
+def refactor_action_expectations_from_workflow(workflow):
+    """Pin and skill version taken from refactor-attempt-1 (workflow source of truth)."""
+    steps_by_id = {
+        step["id"]: step
+        for step in workflow["jobs"]["refactor"]["steps"]
+        if "id" in step
+    }
+    first_attempt = steps_by_id["refactor-attempt-1"]
+    uses = first_attempt["uses"]
+    if not REFACTOR_ACTION_USES_RE.match(uses):
+        raise AssertionError(
+            f"refactor action must be pinned to a full commit SHA, got: {uses}"
+        )
+    return {
+        "uses": uses,
+        "version": first_attempt["with"]["version"],
+    }
 
 
 class TestRefactoringAgentWorkflow(unittest.TestCase):
@@ -78,13 +102,11 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
                 )
 
     def test_refactoring_agent_retries_failed_push_once(self):
-        steps = load_workflow()["jobs"]["refactor"]["steps"]
+        workflow = load_workflow()
+        steps = workflow["jobs"]["refactor"]["steps"]
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
         steps_by_name = {step["name"]: step for step in steps if "name" in step}
-        approved_refactor_action = {
-            "uses": "codescene-oss/pr-refactoring-agent@abd82295d700c9e3b51f2692ac73710e00cdb601",
-            "version": "v1.1.1",
-        }
+        approved_refactor_action = refactor_action_expectations_from_workflow(workflow)
 
         for attempt_id in ("refactor-attempt-1", "refactor-attempt-2"):
             with self.subTest(attempt_id=attempt_id):
