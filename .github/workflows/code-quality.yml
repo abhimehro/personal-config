@@ -15,6 +15,9 @@ on:
       - "tasks/pr-review-agent.config.yaml"
       - "tasks/pr-lifecycle-ledger.example.yaml"
       - ".github/workflows/code-quality.yml"
+      # Pin-contract tests read these workflows. A pin-only PR must still run this gate.
+      - ".github/workflows/agentics-maintenance.yml"
+      - ".github/workflows/security-scan.yml"
   push:
     branches:
       - main

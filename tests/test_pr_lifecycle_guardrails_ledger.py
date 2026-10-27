@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import sys
 import unittest
 from datetime import datetime, timezone
@@ -21,6 +22,47 @@ from tests.pr_lifecycle_helpers import guardrail_item as _item  # noqa: E402
 
 
 class EvaluateLedgerTests(unittest.TestCase):
+    def test_owner_held_routine_stamp_is_evaluated_in_place(self) -> None:
+        item = _item(
+            current_owner="stage3",
+            guardrail_outcome="PASS_ROUTINE",
+            changed_paths=["src/worker.py"],
+            revision=7,
+        )
+        ledger = {"items": [item], "events": [], "ledger_revision": 19}
+        diff_text = (
+            "diff --git a/src/worker.py b/src/worker.py\n"
+            "--- a/src/worker.py\n"
+            "+++ b/src/worker.py\n"
+            "@@\n"
+            "+print('ready')\n"
+        )
+        evidence = guardrails.GuardrailEvidence(
+            diff_text=diff_text,
+            head_sha=item["head_sha"],
+            diff_sha256=hashlib.sha256(diff_text.encode("utf-8")).hexdigest(),
+        )
+
+        _, summary = guardrails.evaluate_ledger(
+            ledger, None, evidence_for=lambda _item: evidence
+        )
+
+        self.assertEqual(
+            {
+                "head_sha": item["head_sha"],
+                "basis": "head_bound_diff",
+                "diff_sha256": evidence.diff_sha256,
+            },
+            item["guardrail_evidence"],
+        )
+        self.assertEqual("PASS_ROUTINE", item["guardrail_outcome"])
+        self.assertEqual([], ledger["events"])
+        self.assertEqual(7, item["revision"])
+        self.assertEqual(19, ledger["ledger_revision"])
+        self.assertEqual(1, summary["evidence_stamped"])
+        self.assertEqual(1, summary["outcomes_unchanged"])
+        self.assertEqual([], summary["unstamped_routine"])
+
     def test_evidence_callback_applies_diff_signals_only_to_selected_repo(self) -> None:
         selected = _item(
             key="owner/repo#1@abc",
@@ -84,6 +126,11 @@ class EvaluateLedgerTests(unittest.TestCase):
             guardrail_outcome="PASS_ROUTINE",
             guardrail_source="path_eval",
             risk_class="ROUTINE",
+            guardrail_evidence={
+                "head_sha": item["head_sha"],
+                "basis": "non_executable_paths",
+                "diff_sha256": None,
+            },
             updated_at_utc="2026-10-09T12:00:00Z",
         )
         self.assertEqual(expected, ledger)
@@ -93,6 +140,8 @@ class EvaluateLedgerTests(unittest.TestCase):
                 "outcomes_unchanged": 0,
                 "skipped": 0,
                 "by_outcome": {"REVIEW_SECURITY": 0, "PASS_ROUTINE": 1},
+                "evidence_stamped": 1,
+                "unstamped_routine": [],
                 "changes": [
                     {
                         "key": item["key"],

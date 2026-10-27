@@ -9,7 +9,10 @@ import os
 import random
 import re
 import time
+from collections.abc import Callable
 from typing import Any
+
+from pr_lifecycle_config import is_excluded
 
 # Report-only actions never mutate the ledger and never count against the cap.
 REPORT_ONLY_ACTIONS = frozenset(
@@ -26,6 +29,9 @@ MAX_CAS_ATTEMPTS = 3
 BACKOFF_BASE_SECONDS = 20.0
 INVENTORY_ABORT_EXIT = 3
 CAS_CONFLICT_EXIT = 4
+_PROTECTED_GUARDRAIL_SOURCES = frozenset({"manual", "review", "human", "octopus"})
+_Exclusions = frozenset[tuple[str | None, int]]
+_HoldCheck = Callable[[dict[str, Any], _Exclusions], str | None]
 
 
 def max_apply_from_env(explicit: int | None = None) -> int:
@@ -37,6 +43,69 @@ def max_apply_from_env(explicit: int | None = None) -> int:
         return max(1, int(raw)) if raw.strip() else DEFAULT_MAX_APPLY
     except ValueError:
         return DEFAULT_MAX_APPLY
+
+
+def _human_review_hold(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
+    if item.get("risk_class") == "HUMAN_REVIEW":
+        return "human_review"
+    return None
+
+
+def _protected_source_hold(
+    item: dict[str, Any], _exclusions: _Exclusions
+) -> str | None:
+    source = item.get("guardrail_source")
+    if source in _PROTECTED_GUARDRAIL_SOURCES:
+        return f"protected_source:{source}"
+    return None
+
+
+def _outcome_hold(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
+    outcome = str(item.get("guardrail_outcome") or "")
+    if outcome == "REVIEW_SECURITY" or outcome.startswith("HOLD_"):
+        return f"hold_outcome:{outcome}"
+    return None
+
+
+def _security_classification_hold(
+    item: dict[str, Any], _exclusions: _Exclusions
+) -> str | None:
+    if item.get("classification") == "SECURITY":
+        return "classification_security"
+    return None
+
+
+def _forced_hold_note(item: dict[str, Any], _exclusions: _Exclusions) -> str | None:
+    next_action = str(item.get("next_action") or "")
+    if "HUMAN_HOLD" in next_action or "PR Desk forced hold" in next_action:
+        return "forced_hold_note"
+    return None
+
+
+def _excluded_hold(item: dict[str, Any], exclusions: _Exclusions) -> str | None:
+    if is_excluded(str(item.get("repository") or ""), item.get("pr"), exclusions):
+        return "excluded"
+    return None
+
+
+_HOLD_CHECKS: tuple[_HoldCheck, ...] = (
+    _human_review_hold,
+    _protected_source_hold,
+    _outcome_hold,
+    _security_classification_hold,
+    _forced_hold_note,
+    _excluded_hold,
+)
+
+
+def stale_close_hold_reason(
+    item: dict[str, Any], exclusions: _Exclusions
+) -> str | None:
+    """Return the first marker that prevents stale-closing this ledger item."""
+    return next(
+        (reason for check in _HOLD_CHECKS if (reason := check(item, exclusions))),
+        None,
+    )
 
 
 def action_priority(action: dict[str, Any]) -> int:

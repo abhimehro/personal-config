@@ -191,7 +191,11 @@ class SentinelFixedHoldTests(unittest.TestCase):
         )
         with mock.patch.object(reconcile, "_gh_pr_view", return_value=live):
             actions = reconcile._action_for_item(
-                item, 7, datetime(2026, 10, 20, tzinfo=timezone.utc)
+                item,
+                reconcile.StalePolicy(
+                    expiry_days=7,
+                    now=datetime(2026, 10, 20, tzinfo=timezone.utc),
+                ),
             )
         names = [action["action"] for action in actions]
         self.assertIn("HOLD_SENTINEL_SECURITY", names)
