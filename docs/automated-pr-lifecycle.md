@@ -630,6 +630,58 @@ list is evidence, not activity, so the staleness clock must not reset). A failed
 or empty fetch surfaces as `PATH_BACKFILL_FAILED` in the plan and is never
 applied, so the item stays held until evidence arrives.
 
+Executable paths cannot receive a routine decision from paths alone. Unless a
+changed path has a known document/image suffix (`.md`, `.markdown`, `.rst`,
+`.txt`, `.adoc`, `.csv`, `.tsv`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.ico`,
+`.webp`, `.pdf`, or `.log`) or a suffixless metadata basename such as
+`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `AUTHORS`, `CONTRIBUTORS`,
+`CHANGELOG`, `README`, `CODEOWNERS`, `OWNERS`, `VERSION`, `.gitignore`,
+`.gitattributes`, `.gitmodules`, `.gitkeep`, `.keep`, `.editorconfig`,
+`.dockerignore`, `.npmignore`, `.prettierignore`, `.eslintignore`,
+`.trunkignore`, `.mailmap`, `.nvmrc`, `.python-version`, `.ruby-version`, or
+`.tool-versions`, it is treated as executable. This fail-closed default
+includes unknown extensions and config/data formats such as `.json`, `.yaml`,
+`.toml`, `.ini`, `.conf`, `.plist`, `.lock`, `.svg`, and `.xml`. Executable
+basenames such as `Makefile`, `Dockerfile`, `Justfile`, `Rakefile`,
+`GNUmakefile`, `Gemfile`, `Vagrantfile`, `Jenkinsfile`, `Containerfile`,
+`Procfile`, `Taskfile`, `Podfile`, `Fastfile`, `Dangerfile`, and `Brewfile`;
+shell rc names such as `.zshrc`, `.bash_profile`, `.cshrc`, `.tcshrc`,
+`.bash_aliases`, `.zsh_aliases`, `aliases`, `functions`, `.shrc`, `.mkshrc`,
+`.xprofile`, `.xsession`, and `.xinitrc`; Git config paths such as
+`*.gitconfig` and `git/config`; and suffixless basenames not on the metadata
+allowlist are also treated as executable. When no sticky path class applies and
+`CMakeLists.txt`, `constraints*.txt`, and `requirements*.txt` are executable
+despite the `.txt` allowlist. When no sticky path class applies and any changed
+path is executable, guardrails require a nonempty diff fetched with
+`gh api -H "Accept: application/vnd.github.diff"
+repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
+only after confirming the live `headRefOid` still equals the item's `head_sha`.
+A routine patch stamps `guardrail_evidence` with that head and
+`basis: head_bound_diff` plus the UTF-8 diff's SHA-256, or with
+`basis: non_executable_paths` and a null digest when no diff was needed.
+Security review patches clear the stamp. `PASS_ROUTINE` items with no stamp or
+a stamp for another head are re-evaluated; a matching-head stamp is left alone.
+The Stage 1 and Stage 3 Cursor prompts currently enforce routine merge
+eligibility by requiring both `guardrail_outcome: PASS_ROUTINE` and
+`guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; the
+planner/executor code does not enforce this stamp check. A missing or stale
+stamp is not merge-eligible under those prompts.
+An owner-held or protected-source `PASS_ROUTINE` item with a missing or stale
+stamp may receive only a stamp-only patch when normal evaluation remains
+routine; its outcome, source, risk, and sensitive paths are not changed. An
+executable-path item still needs a head-bound diff, and a security decision or
+missing diff leaves it unstamped. The run summary lists remaining nonterminal
+routine items without a current stamp in sorted `unstamped_routine`.
+
+Reconcile stale-close actions are held for `risk_class: HUMAN_REVIEW`,
+`guardrail_source` manual/review/human/octopus, `REVIEW_SECURITY` or `HOLD_*`
+outcomes, `classification: SECURITY`, a `HUMAN_HOLD` or `PR Desk forced hold`
+note in `next_action`, and configured `lifecycle.unblock.exclusions`. Before
+any close comment, label, or close call, reconcile re-reads the live PR and
+skips mutation if the PR is missing, not OPEN, or its `headRefOid` differs
+from the action's `head_sha`. `current_owner` is deliberately not a stale-close
+hold marker; WAITING_HUMAN BOT items ordinarily have a human owner.
+
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
 `--clear-stand-in` is passed — a recorded hold may come from non-path evidence
 (content review, Octopus or human review), so clearing it is an explicit opt-in.

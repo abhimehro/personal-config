@@ -18,18 +18,10 @@ import types
 
 import pr_lifecycle_unblock as unblock
 
-from tests.pr_lifecycle_helpers import (
-    UNBLOCK_CONFIG as CONFIG,
-)
-from tests.pr_lifecycle_helpers import (
-    UNBLOCK_REPO as REPO,
-)
-from tests.pr_lifecycle_helpers import (
-    make_unblock_pr as _pr,
-)
-from tests.pr_lifecycle_helpers import (
-    run_unblock_plan as _run_unblock_plan,
-)
+from tests.pr_lifecycle_helpers import UNBLOCK_CONFIG as CONFIG
+from tests.pr_lifecycle_helpers import UNBLOCK_REPO as REPO
+from tests.pr_lifecycle_helpers import make_unblock_pr as _pr
+from tests.pr_lifecycle_helpers import run_unblock_plan as _run_unblock_plan
 
 
 class UnblockApplyMutationTests(unittest.TestCase):

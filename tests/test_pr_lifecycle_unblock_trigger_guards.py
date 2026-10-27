@@ -11,12 +11,8 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from tests.pr_lifecycle_helpers import (
-    make_unblock_pr as _pr,
-)
-from tests.pr_lifecycle_helpers import (
-    route_unblock_pr as _route,
-)
+from tests.pr_lifecycle_helpers import make_unblock_pr as _pr
+from tests.pr_lifecycle_helpers import route_unblock_pr as _route
 
 
 class TriggerMarkerGuardsTests(unittest.TestCase):
@@ -64,7 +60,6 @@ class TriggerMarkerGuardsTests(unittest.TestCase):
                     )
                 )
                 self.assertEqual(actions[0]["action"], "TRIGGER")
-
 
     def test_codescene_not_triggered_on_fork_pr(self):
         """A fork PR never receives the push-capable /cs-agent trigger."""

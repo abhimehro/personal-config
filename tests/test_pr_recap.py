@@ -711,7 +711,9 @@ class TestConfigValidation(unittest.TestCase):
             rogue.write_text("{}", encoding="utf-8")
             cfg = load_config(rogue)
             self.assertIsNotNone(cfg.team_id)
-            self.assertEqual(cfg.team_id, os.getenv("LINEAR_TEAM_ID", "personal-config"))
+            self.assertEqual(
+                cfg.team_id, os.getenv("LINEAR_TEAM_ID", "personal-config")
+            )
 
     def test_load_default_when_no_file(self) -> None:
         cfg = load_config(Path("/nonexistent/.pr-recap.json"))
