@@ -106,6 +106,7 @@ class FetchEvidenceTests(unittest.TestCase):
         payload = {
             "title": "Bump lib from 1.2.3 to 1.2.4",
             "headRefName": "dependabot/lib",
+            "headRefOid": _item()["head_sha"],
             "mergeable": "MERGEABLE",
             "statusCheckRollup": [
                 {"name": "build", "conclusion": "SUCCESS"},
@@ -125,6 +126,8 @@ class FetchEvidenceTests(unittest.TestCase):
                 mergeable=True,
                 title=payload["title"],
                 head_ref=payload["headRefName"],
+                head_sha=payload["headRefOid"],
+                diff_sha256=guardrails.diff_sha256(diff.stdout),
             ),
             evidence,
         )
@@ -139,7 +142,7 @@ class FetchEvidenceTests(unittest.TestCase):
                         "--repo",
                         "owner/repo",
                         "--json",
-                        "title,mergeable,statusCheckRollup,headRefName",
+                        "title,mergeable,statusCheckRollup,headRefName,headRefOid",
                     ],
                     check=False,
                     capture_output=True,
@@ -147,7 +150,13 @@ class FetchEvidenceTests(unittest.TestCase):
                     timeout=60,
                 ),
                 mock.call(
-                    ["gh", "pr", "diff", "1", "--repo", "owner/repo"],
+                    [
+                        "gh",
+                        "api",
+                        "-H",
+                        "Accept: application/vnd.github.diff",
+                        f"repos/owner/repo/compare/{_item()['base_sha']}...{_item()['head_sha']}",
+                    ],
                     check=False,
                     capture_output=True,
                     text=True,
@@ -163,7 +172,14 @@ class FetchEvidenceTests(unittest.TestCase):
         for mergeable in ("CONFLICTING", "UNKNOWN", None):
             with self.subTest(mergeable=mergeable):
                 view = subprocess.CompletedProcess(
-                    [], 0, stdout=json.dumps({"mergeable": mergeable})
+                    [],
+                    0,
+                    stdout=json.dumps(
+                        {
+                            "mergeable": mergeable,
+                            "headRefOid": _item()["head_sha"],
+                        }
+                    ),
                 )
                 with mock.patch.object(
                     guardrails.subprocess, "run", return_value=view
@@ -178,6 +194,8 @@ class FetchEvidenceTests(unittest.TestCase):
                 self.assertEqual("", evidence.diff_text)
                 self.assertEqual("", evidence.title)
                 self.assertEqual("", evidence.head_ref)
+                self.assertEqual(_item()["head_sha"], evidence.head_sha)
+                self.assertIsNone(evidence.diff_sha256)
 
     def test_invalid_item_identity_never_calls_github(self) -> None:
         for overrides in (
@@ -185,6 +203,7 @@ class FetchEvidenceTests(unittest.TestCase):
             {"repository": None},
             {"pr": "1"},
             {"pr": None},
+            {"pr": True},
         ):
             with self.subTest(overrides=overrides):
                 with mock.patch.object(guardrails.subprocess, "run") as run:
@@ -197,7 +216,9 @@ class FetchEvidenceTests(unittest.TestCase):
                 run.assert_not_called()
 
     def test_failed_view_or_diff_fails_closed(self) -> None:
-        success = subprocess.CompletedProcess([], 0, stdout="{}")
+        success = subprocess.CompletedProcess(
+            [], 0, stdout=json.dumps({"headRefOid": _item()["head_sha"]})
+        )
         for failure in (
             subprocess.CompletedProcess([], 1, stdout=""),
             OSError("gh unavailable"),
@@ -275,6 +296,7 @@ class EvidenceDecisionTests(unittest.TestCase):
                 "guardrail_source": "path_eval",
                 "risk_class": "SENSITIVE",
                 "sensitive_paths": ["secrets", "shell_execution"],
+                "guardrail_evidence": None,
             },
             patch,
         )
@@ -292,8 +314,14 @@ class EvidenceDecisionTests(unittest.TestCase):
                 with self.subTest(outcome=outcome, evidence=evidence):
                     self.assertIsNone(guardrails.evaluate_item(item, evidence=evidence))
             with self.subTest(outcome=outcome, clean=True):
+                diff_text = "+++ b/src/main.py\n+print('ready')\n"
                 patch = guardrails.evaluate_item(
-                    item, evidence=guardrails.GuardrailEvidence(diff_text="")
+                    item,
+                    evidence=guardrails.GuardrailEvidence(
+                        diff_text=diff_text,
+                        head_sha=item["head_sha"],
+                        diff_sha256=guardrails.diff_sha256(diff_text),
+                    ),
                 )
                 self.assertIsNotNone(patch)
                 self.assertEqual("PASS_ROUTINE", patch["guardrail_outcome"])
