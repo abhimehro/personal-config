@@ -510,18 +510,6 @@ attributes are set.
 
 ## 2026-08-04 - HTML Reports Missing Data Fallback UX
 
-<<<<<<< Updated upstream **Learning:** Raw fallback text ("Insights not
-available") inside `<pre>` tags for missing report sections feels like a
-technical error to the user rather than an expected empty state. **Action:**
-When generating HTML reports or dashboards with potentially missing data, always
-conditionally render a dedicated `.empty-state` component with flexbox layout,
-muted colors, and a relevant icon to communicate the absence of data clearly and
-beautifully.
-
-## 2026-08-14 - Add actionable hints to empty states
-
-# **Learning:** Empty states in generated reports lacked actionable next steps, leaving users unsure of how to populate missing data (like insights or optimizations). **Action:** Always include a helpful call-to-action or instructional hint (such as the specific command to run, formatted with <kbd>) in empty states to guide the user.
-
 **Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags
 for missing report sections feels like a technical error to the user rather than
 an expected empty state. **Action:** When generating HTML reports or dashboards
@@ -529,7 +517,20 @@ with potentially missing data, always conditionally render a dedicated
 `.empty-state` component with flexbox layout, muted colors, and a relevant icon
 to communicate the absence of data clearly and beautifully.
 
->>>>>>> Stashed changes
+## 2026-08-14 - Add actionable hints to empty states
+
+**Learning:** Empty states in generated reports lacked actionable next steps,
+leaving users unsure of how to populate missing data (like insights or
+optimizations). **Action:** Always include a helpful call-to-action or
+instructional hint (such as the specific command to run, formatted with <kbd>)
+in empty states to guide the user.
+
 ## 2026-10-03 - Empty State Accessibility
-**Learning:** When adding role="status" to empty-state containers for screen readers, apply the role to a nested div or span for inline content, never directly on an li element within a ul, as it overrides the implicit listitem role. Ensure block-level elements like p are not wrapped in inline span elements to avoid generating invalid HTML.
-**Action:** Always verify the HTML tag context and apply role="status" to a semantically appropriate inner element for empty states instead of blindly adding it to the outermost container.
+
+**Learning:** When adding role="status" to empty-state containers for screen
+readers, apply the role to a nested div or span for inline content, never
+directly on an li element within a ul, as it overrides the implicit listitem
+role. Ensure block-level elements like p are not wrapped in inline span elements
+to avoid generating invalid HTML. **Action:** Always verify the HTML tag context
+and apply role="status" to a semantically appropriate inner element for empty
+states instead of blindly adding it to the outermost container.

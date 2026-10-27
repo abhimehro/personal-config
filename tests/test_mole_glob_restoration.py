@@ -13,7 +13,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 STATES = tuple(itertools.product((False, True), repeat=2))
 FUNCTIONS = (
@@ -27,7 +26,7 @@ FUNCTIONS = (
     "clean_orphaned_container_stubs",
 )
 
-HARNESS = r'''
+HARNESS = r"""
 source "$REPO_ROOT/configs/.config/mole/lib/clean/user.sh"
 source "$REPO_ROOT/configs/.config/mole/lib/clean/apps.sh"
 
@@ -112,7 +111,7 @@ for option in nullglob dotglob extglob; do
     fi
 done
 if [[ -o pipefail ]]; then printf 'pipefail=1\n'; else printf 'pipefail=0\n'; fi
-'''
+"""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -123,6 +122,7 @@ class RunOptions:
     dry_run: bool = False
     remove_status: int = 0
     pipefail: bool = True
+
 
 class TestMoleGlobRestoration(unittest.TestCase):
     def setUp(self):
@@ -136,7 +136,10 @@ class TestMoleGlobRestoration(unittest.TestCase):
         self.group = self.home / "Library/Group Containers/group.org.example.app/Caches"
         self.support = self.home / "Library/Application Support/Example/GPUCache"
         for directory in (
-            self.cache, self.group, self.support, self.home / "Library/Caches",
+            self.cache,
+            self.group,
+            self.support,
+            self.home / "Library/Caches",
         ):
             directory.mkdir(parents=True)
 
@@ -165,14 +168,24 @@ class TestMoleGlobRestoration(unittest.TestCase):
             "REMOVE_STATUS": str(options.remove_status),
         }
         for key in (
-            "REMOVE_LOG", "CLEAN_LOG", "CAPTURE_LOG", "RESULT_FILE", "INJECTION_MARKER",
+            "REMOVE_LOG",
+            "CLEAN_LOG",
+            "CAPTURE_LOG",
+            "RESULT_FILE",
+            "INJECTION_MARKER",
         ):
             path = self.home / key.lower()
             path.unlink(missing_ok=True)
             env[key] = str(path)
         result = subprocess.run(
             [
-                "bash", "--noprofile", "--norc", "-c", HARNESS, "mole-test", function,
+                "bash",
+                "--noprofile",
+                "--norc",
+                "-c",
+                HARNESS,
+                "mole-test",
+                function,
                 *(str(arg) for arg in args),
             ],
             env=env,
@@ -184,11 +197,14 @@ class TestMoleGlobRestoration(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stderr, "")
         self.assertFalse(
-            Path(env["INJECTION_MARKER"]).exists(), "saved state executed code",
+            Path(env["INJECTION_MARKER"]).exists(),
+            "saved state executed code",
         )
         observed = dict(line.split("=", 1) for line in result.stdout.splitlines())
         self.assertEqual(
-            observed["extglob"], "0", "restoration changed an unrelated option",
+            observed["extglob"],
+            "0",
+            "restoration changed an unrelated option",
         )
         return observed
 
@@ -214,18 +230,29 @@ class TestMoleGlobRestoration(unittest.TestCase):
         (self.entries / "broken").symlink_to(self.entries / "missing")
         for state, cap in itertools.product(STATES, (1, 2, 3, 4)):
             with self.subTest(state=state, cap=cap):
-                observed = self.run_function("cache_top_level_entry_count_capped", self.entries, cap, options=RunOptions(state=state))
+                observed = self.run_function(
+                    "cache_top_level_entry_count_capped",
+                    self.entries,
+                    cap,
+                    options=RunOptions(state=state),
+                )
                 self.assert_restored(observed, state)
                 self.assertEqual(
-                    (self.home / "result_file").read_text(), f"{min(cap, 3)}\n",
+                    (self.home / "result_file").read_text(),
+                    f"{min(cap, 3)}\n",
                 )
 
     def test_count_empty_and_missing_directories(self):
         for state, directory in itertools.product(
-            STATES, (self.entries, self.home / "absent"),
+            STATES,
+            (self.entries, self.home / "absent"),
         ):
             with self.subTest(state=state, directory=directory):
-                observed = self.run_function("cache_top_level_entry_count_capped", directory, options=RunOptions(state=state))
+                observed = self.run_function(
+                    "cache_top_level_entry_count_capped",
+                    directory,
+                    options=RunOptions(state=state),
+                )
                 self.assert_restored(observed, state)
                 self.assertEqual((self.home / "result_file").read_text(), "0\n")
 
@@ -237,10 +264,15 @@ class TestMoleGlobRestoration(unittest.TestCase):
                 (self.entries / f".hidden-{count}").touch()
             for state in STATES:
                 with self.subTest(count=count, state=state):
-                    observed = self.run_function("cache_top_level_entry_count_capped", self.entries, options=RunOptions(state=state))
+                    observed = self.run_function(
+                        "cache_top_level_entry_count_capped",
+                        self.entries,
+                        options=RunOptions(state=state),
+                    )
                     self.assert_restored(observed, state)
                     self.assertEqual(
-                        (self.home / "result_file").read_text(), f"{min(count, 101)}\n",
+                        (self.home / "result_file").read_text(),
+                        f"{min(count, 101)}\n",
                     )
 
     def test_predicate_restores_options_on_all_return_paths(self):
@@ -249,48 +281,73 @@ class TestMoleGlobRestoration(unittest.TestCase):
         (hidden / ".entry").touch()
         (self.entries / "dangling").symlink_to(self.home / "missing")
         for state, (directory, status) in itertools.product(
-            STATES, ((self.entries, "1"), (self.home / "missing", "1"), (hidden, "0")),
+            STATES,
+            ((self.entries, "1"), (self.home / "missing", "1"), (hidden, "0")),
         ):
             with self.subTest(state=state, directory=directory):
-                observed = self.run_function("directory_has_entries", directory, options=RunOptions(state=state))
+                observed = self.run_function(
+                    "directory_has_entries", directory, options=RunOptions(state=state)
+                )
                 self.assertEqual(observed["RETURN"], status)
                 self.assert_restored(observed, state)
 
     def test_cleanup_restores_options_with_no_matching_items(self):
         for function, state in itertools.product(FUNCTIONS[2:], STATES):
             with self.subTest(function=function, state=state):
-                observed = self.run_function(function, *self.arguments(function), options=RunOptions(state=state))
+                observed = self.run_function(
+                    function, *self.arguments(function), options=RunOptions(state=state)
+                )
                 self.assert_restored(observed, state)
                 self.assertEqual(self.recorded_paths("remove_log"), [])
 
     def test_container_cleanup_restores_options_even_when_removal_fails(self):
         paths = self.populate(self.cache)
         for state, remove_status, dry_run in itertools.product(
-            STATES, (0, 1), (False, True),
+            STATES,
+            (0, 1),
+            (False, True),
         ):
-            with self.subTest(state=state, remove_status=remove_status, dry_run=dry_run):
-                observed = self.run_function("process_container_cache", self.container, options=RunOptions(state=state, remove_status=remove_status, dry_run=dry_run))
+            with self.subTest(
+                state=state, remove_status=remove_status, dry_run=dry_run
+            ):
+                observed = self.run_function(
+                    "process_container_cache",
+                    self.container,
+                    options=RunOptions(
+                        state=state, remove_status=remove_status, dry_run=dry_run
+                    ),
+                )
                 self.assert_restored(observed, state)
                 self.assertCountEqual(
-                    self.recorded_paths("remove_log"), [] if dry_run else list(map(str, paths)),
+                    self.recorded_paths("remove_log"),
+                    [] if dry_run else list(map(str, paths)),
                 )
 
     def test_app_cache_loop_restores_options_after_processing_a_container(self):
         paths = self.populate(self.cache)
         for state in STATES:
             with self.subTest(state=state):
-                observed = self.run_function("clean_app_caches", options=RunOptions(state=state))
+                observed = self.run_function(
+                    "clean_app_caches", options=RunOptions(state=state)
+                )
                 self.assert_restored(observed, state)
-                self.assertCountEqual(self.recorded_paths("remove_log"), list(map(str, paths)))
+                self.assertCountEqual(
+                    self.recorded_paths("remove_log"), list(map(str, paths))
+                )
 
     def test_application_support_preserves_pipefail_and_glob_options(self):
         paths = self.populate(self.support)
         for state, pipefail in itertools.product(STATES, (False, True)):
             with self.subTest(state=state, pipefail=pipefail):
-                observed = self.run_function("clean_application_support_logs", options=RunOptions(state=state, pipefail=pipefail))
+                observed = self.run_function(
+                    "clean_application_support_logs",
+                    options=RunOptions(state=state, pipefail=pipefail),
+                )
                 self.assert_restored(observed, state)
                 self.assertEqual(observed["pipefail"], str(int(pipefail)))
-                self.assertCountEqual(self.recorded_paths("remove_log"), list(map(str, paths)))
+                self.assertCountEqual(
+                    self.recorded_paths("remove_log"), list(map(str, paths))
+                )
 
     def test_orphan_sweep_restores_options_between_resource_directories(self):
         paths = [
@@ -301,19 +358,27 @@ class TestMoleGlobRestoration(unittest.TestCase):
             path.mkdir(parents=True)
         for state in STATES:
             with self.subTest(state=state):
-                observed = self.run_function("clean_orphaned_app_data", options=RunOptions(state=state))
+                observed = self.run_function(
+                    "clean_orphaned_app_data", options=RunOptions(state=state)
+                )
                 self.assert_restored(observed, state)
-                self.assertCountEqual(self.recorded_paths("clean_log"), list(map(str, paths)))
+                self.assertCountEqual(
+                    self.recorded_paths("clean_log"), list(map(str, paths))
+                )
 
     def test_group_cleanup_restores_dotglob_after_processing_items(self):
         paths = self.populate(self.group)
         for dotglob, dry_run in itertools.product((False, True), repeat=2):
             with self.subTest(dotglob=dotglob, dry_run=dry_run):
                 state = (True, dotglob)
-                observed = self.run_function("clean_group_container_caches", options=RunOptions(state=state, dry_run=dry_run))
+                observed = self.run_function(
+                    "clean_group_container_caches",
+                    options=RunOptions(state=state, dry_run=dry_run),
+                )
                 self.assert_restored(observed, state)
                 self.assertCountEqual(
-                    self.recorded_paths("remove_log"), [] if dry_run else list(map(str, paths)),
+                    self.recorded_paths("remove_log"),
+                    [] if dry_run else list(map(str, paths)),
                 )
 
     def test_group_cleanup_restores_disabled_nullglob_after_processing_items(self):
@@ -328,16 +393,26 @@ class TestMoleGlobRestoration(unittest.TestCase):
             directory.mkdir(parents=True, exist_ok=True)
             paths.extend(self.populate(directory))
         for dotglob, dry_run, remove_status in itertools.product(
-            (False, True), (False, True), (0, 1),
+            (False, True),
+            (False, True),
+            (0, 1),
         ):
             with self.subTest(
-                dotglob=dotglob, dry_run=dry_run, remove_status=remove_status,
+                dotglob=dotglob,
+                dry_run=dry_run,
+                remove_status=remove_status,
             ):
                 state = (False, dotglob)
-                observed = self.run_function("clean_group_container_caches", options=RunOptions(state=state, dry_run=dry_run, remove_status=remove_status))
+                observed = self.run_function(
+                    "clean_group_container_caches",
+                    options=RunOptions(
+                        state=state, dry_run=dry_run, remove_status=remove_status
+                    ),
+                )
                 self.assert_restored(observed, state)
                 self.assertCountEqual(
-                    self.recorded_paths("remove_log"), [] if dry_run else list(map(str, paths)),
+                    self.recorded_paths("remove_log"),
+                    [] if dry_run else list(map(str, paths)),
                 )
 
     def test_group_cleanup_restores_options_across_bulk_cleanup_boundary(self):
@@ -350,12 +425,22 @@ class TestMoleGlobRestoration(unittest.TestCase):
                 hidden.touch()
                 paths.append(hidden)
             for state, dry_run, remove_status in itertools.product(
-                STATES, (False, True), (0, 1),
+                STATES,
+                (False, True),
+                (0, 1),
             ):
                 with self.subTest(
-                    count=count, state=state, dry_run=dry_run, remove_status=remove_status,
+                    count=count,
+                    state=state,
+                    dry_run=dry_run,
+                    remove_status=remove_status,
                 ):
-                    observed = self.run_function("clean_group_container_caches", options=RunOptions(state=state, dry_run=dry_run, remove_status=remove_status))
+                    observed = self.run_function(
+                        "clean_group_container_caches",
+                        options=RunOptions(
+                            state=state, dry_run=dry_run, remove_status=remove_status
+                        ),
+                    )
                     self.assert_restored(observed, state)
                     self.assertCountEqual(
                         self.recorded_paths("remove_log"),
@@ -370,7 +455,9 @@ class TestMoleGlobRestoration(unittest.TestCase):
         (self.group / ".hidden link").symlink_to(self.entries, target_is_directory=True)
         for state in STATES:
             with self.subTest(state=state):
-                observed = self.run_function("clean_group_container_caches", options=RunOptions(state=state))
+                observed = self.run_function(
+                    "clean_group_container_caches", options=RunOptions(state=state)
+                )
                 self.assert_restored(observed, state)
                 self.assertEqual(self.recorded_paths("remove_log"), [])
                 self.assertEqual(target.read_text(), "preserved\n")
@@ -386,7 +473,11 @@ class TestMoleGlobRestoration(unittest.TestCase):
         )
         for function, state, payload in itertools.product(FUNCTIONS, STATES, payloads):
             with self.subTest(function=function, state=state, payload=payload):
-                observed = self.run_function(function, *self.arguments(function), options=RunOptions(state=state, mode="append", suffix=payload))
+                observed = self.run_function(
+                    function,
+                    *self.arguments(function),
+                    options=RunOptions(state=state, mode="append", suffix=payload),
+                )
                 self.assert_restored(observed, state)
                 self.assertIn("nullglob", (self.home / "capture_log").read_text())
 
@@ -395,42 +486,76 @@ class TestMoleGlobRestoration(unittest.TestCase):
             self.populate(directory)
         for function in FUNCTIONS:
             with self.subTest(function=function):
-                observed = self.run_function(function, *self.arguments(function), options=RunOptions(state=(True, True), mode="other_option"))
+                observed = self.run_function(
+                    function,
+                    *self.arguments(function),
+                    options=RunOptions(state=(True, True), mode="other_option"),
+                )
                 self.assert_restored(observed, (True, True))
 
     def test_saved_state_for_other_glob_option_is_ignored(self):
         self.populate(self.entries)
-        observed = self.run_function("cache_top_level_entry_count_capped", self.entries, options=RunOptions(state=(False, False), mode="other_glob"))
+        observed = self.run_function(
+            "cache_top_level_entry_count_capped",
+            self.entries,
+            options=RunOptions(state=(False, False), mode="other_glob"),
+        )
         self.assertEqual(observed["nullglob"], "1")
         self.assertEqual(observed["dotglob"], "0")
 
     def test_predicate_empty_return_does_not_execute_saved_state(self):
         for state in STATES:
             with self.subTest(state=state):
-                observed = self.run_function("directory_has_entries", self.entries, options=RunOptions(state=state, mode="append", suffix='; printf injected > "$INJECTION_MARKER"'))
+                observed = self.run_function(
+                    "directory_has_entries",
+                    self.entries,
+                    options=RunOptions(
+                        state=state,
+                        mode="append",
+                        suffix='; printf injected > "$INJECTION_MARKER"',
+                    ),
+                )
                 self.assertEqual(observed["RETURN"], "1")
                 self.assert_restored(observed, state)
 
-    def test_container_stub_loop_restores_options_when_matching_container_has_data(self):
+    def test_container_stub_loop_restores_options_when_matching_container_has_data(
+        self,
+    ):
         container = self.home / "Library/Containers/com.macpaw.CleanMyMac.test"
         (container / "Data").mkdir(parents=True)
         metadata = container / ".com.apple.containermanagerd.metadata.plist"
         metadata.touch()
         for state in STATES:
             with self.subTest(state=state):
-                observed = self.run_function("clean_orphaned_container_stubs", options=RunOptions(state=state))
+                observed = self.run_function(
+                    "clean_orphaned_container_stubs", options=RunOptions(state=state)
+                )
                 self.assert_restored(observed, state)
                 self.assertTrue(metadata.exists())
                 self.assertTrue((container / "Data").is_dir())
 
     def test_malformed_saved_state_is_ignored(self):
         for payload in (
-            "", "unrecognized", 'printf injected > "$INJECTION_MARKER"',
-            "shopt -u", "shopt -unullglob", "shopt -x nullglob", " shopt -u nullglob",
+            "",
+            "unrecognized",
+            'printf injected > "$INJECTION_MARKER"',
+            "shopt -u",
+            "shopt -unullglob",
+            "shopt -x nullglob",
+            " shopt -u nullglob",
         ):
-            for function in ("cache_top_level_entry_count_capped", "directory_has_entries"):
+            for function in (
+                "cache_top_level_entry_count_capped",
+                "directory_has_entries",
+            ):
                 with self.subTest(function=function, payload=payload):
-                    observed = self.run_function(function, self.entries, options=RunOptions(state=(True, True), mode="invalid", suffix=payload))
+                    observed = self.run_function(
+                        function,
+                        self.entries,
+                        options=RunOptions(
+                            state=(True, True), mode="invalid", suffix=payload
+                        ),
+                    )
                     self.assert_restored(observed, (True, True))
 
 

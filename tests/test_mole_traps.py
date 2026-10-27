@@ -1,13 +1,12 @@
 """Regression coverage for Mole's trap serialization and restoration callers."""
 
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import tempfile
 import unittest
-
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MOLE = REPO_ROOT / "configs/.config/mole"
@@ -48,7 +47,9 @@ class MoleTrapTests(unittest.TestCase):
         for candidate in (override, "bash"):
             if not candidate:
                 continue
-            resolved = candidate if os.path.isabs(candidate) else shutil.which(candidate)
+            resolved = (
+                candidate if os.path.isabs(candidate) else shutil.which(candidate)
+            )
             if resolved:
                 return resolved
         self.skipTest("no bash interpreter available")
@@ -59,11 +60,17 @@ class MoleTrapTests(unittest.TestCase):
         env.pop("BASH_ENV", None)
         result = subprocess.run(
             [
-                self.bash_bin(), "-c",
+                self.bash_bin(),
+                "-c",
                 'set -euo pipefail\nsource "$1"\nshift\n' + script,
-                "mole-trap-test", str(MOLE / "lib/core/timeout.sh"), *args,
+                "mole-trap-test",
+                str(MOLE / "lib/core/timeout.sh"),
+                *args,
             ],
-            text=True, capture_output=True, timeout=10, env=env,
+            text=True,
+            capture_output=True,
+            timeout=10,
+            env=env,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
@@ -71,7 +78,9 @@ class MoleTrapTests(unittest.TestCase):
     def test_round_trip_preserves_handler_data(self):
         """Verify restoration preserves handler text without executing shell syntax."""
         handlers = [
-            "", ":", "printf '%s %s\\n' 'hello world' \"quoted\"",
+            "",
+            ":",
+            "printf '%s %s\\n' 'hello world' \"quoted\"",
             "mutated=1; : $(mutated=2) `mutated=3` $HOME * ? [abc]",
             "# apostrophes: ''' and backslashes: \\\\ and trailing quote '",
             "printf 'first line\\n'\n# tab\tand trailing newlines\n\n",
@@ -80,7 +89,7 @@ class MoleTrapTests(unittest.TestCase):
             for handler in handlers:
                 with self.subTest(signal=signal, handler=handler):
                     self.run_bash(
-                        '''
+                        """
 mutated=0
 trap -- "$1" "$2"
 saved=$(trap -p "$2")
@@ -89,7 +98,9 @@ mole_restore_trap "$saved"
 actual=$(trap -p "$2")
 trap - "$2"
 [[ $saved == "$actual" && $mutated == 0 ]]
-''', handler, signal,
+""",
+                        handler,
+                        signal,
                     )
 
     def test_rejects_malformed_declarations_without_execution(self):
@@ -99,28 +110,30 @@ trap - "$2"
             "trap -- 'ok'; mutated=1; 'more' SIGINT",
             "trap -- $(mutated=1) SIGINT",
             "trap -- ':' SIGUSR1",
-            "", "not a trap",
+            "",
+            "not a trap",
         ):
             with self.subTest(declaration=declaration):
                 self.run_bash(
-                    '''
+                    """
 mutated=0
 trap ':' INT
 saved=$(trap -p INT)
 if mole_restore_trap "$1"; then exit 1; fi
 [[ $(trap -p INT) == "$saved" && $mutated == 0 ]]
-''', declaration,
+""",
+                    declaration,
                 )
         # Zero arguments must be a clean reject under set -u, not an abort.
         with self.subTest(declaration="<no argument>"):
             self.run_bash(
-                '''
+                """
 mutated=0
 trap ':' INT
 saved=$(trap -p INT)
 if mole_restore_trap; then exit 1; fi
 [[ $(trap -p INT) == "$saved" && $mutated == 0 ]]
-''',
+""",
             )
 
     def test_restoration_callers_preserve_saved_arguments(self):
@@ -128,7 +141,7 @@ if mole_restore_trap; then exit 1; fi
         project = (MOLE / "lib/clean/project.sh").read_text()
         scan_restore = project.split(
             "\t# Restore caller traps after this function completes.\n", 1
-        )[1].split('\n\tif [[ ${#all_found_items[@]}', 1)[0]
+        )[1].split("\n\tif [[ ${#all_found_items[@]}", 1)[0]
         callers = [
             nested_function("lib/clean/project.sh", "restore_terminal")
             + "\ntrap ':' EXIT INT TERM\nrestore_terminal\nrestore_terminal",
@@ -139,7 +152,7 @@ if mole_restore_trap; then exit 1; fi
             "trap ':' INT TERM\n" + scan_restore,
             # Force the actual shell fallback without depending on bc/coreutils/Perl.
             'MO_TIMEOUT_BIN=""; MO_TIMEOUT_PERL_BIN=""\n'
-            'bc() { cat >/dev/null; echo 0; }\nrun_with_timeout 5 true',
+            "bc() { cat >/dev/null; echo 0; }\nrun_with_timeout 5 true",
         ]
         for index, caller in enumerate(callers):
             for handler in (None, "", "printf '%s\\n' 'spaces and quotes'; : $HOME *"):
@@ -148,7 +161,7 @@ if mole_restore_trap; then exit 1; fi
                     # matching the real nested-function scoping (bash is
                     # dynamically scoped) instead of exercising globals.
                     self.run_bash(
-                        '''
+                        """
 harness() {
     show_cursor() { :; }
     _cleanup_sudo_keepalive() { :; }
@@ -166,9 +179,9 @@ harness() {
     previous_term_trap=$(trap -p TERM)
     old_trap_int=$previous_int_trap
     old_trap_term=$previous_term_trap
-'''
+"""
                         + caller
-                        + '''
+                        + """
     local actual_exit actual_int actual_term
     actual_exit=$(trap -p EXIT)
     actual_int=$(trap -p INT)
@@ -179,14 +192,16 @@ harness() {
     [[ $actual_term == "$previous_term_trap" ]]
 }
 harness "$@"
-''', "unset" if handler is None else "set", handler or "",
+""",
+                        "unset" if handler is None else "set",
+                        handler or "",
                     )
 
     def test_accepts_legacy_and_prefixed_signal_names(self):
         for signal in ("EXIT", "INT", "SIGINT", "TERM", "SIGTERM"):
             with self.subTest(signal=signal):
                 self.run_bash(
-                    '''
+                    """
 trap ':' EXIT INT TERM
 saved_exit=$(trap -p EXIT)
 saved_int=$(trap -p INT)
@@ -201,25 +216,38 @@ case "$1" in
     *TERM) [[ $(trap -p EXIT) == "$saved_exit" && $(trap -p INT) == "$saved_int" ]] ;;
 esac
 trap - EXIT INT TERM
-''', signal,
+""",
+                    signal,
                 )
 
     def test_rejects_noncanonical_serialization_without_changing_traps(self):
         declarations = (
-            "trap -- ':' DEBUG", "trap -- ':' RETURN", "trap -- ':' ERR",
-            "trap -- ':' 2", "trap -- ':' SIGEXIT", "trap -- ':' sigint",
-            "trap -- ':' INT TERM", "trap ':' INT", "trap -- : INT",
-            'trap -- ":" INT', "trap -- $':' INT", "trap -- 'unterminated INT",
-            "trap -- 'a'b' INT", "trap -- 'a''b' INT",
-            " trap -- ':' INT", "trap -- ':'  INT", "trap -- ':'\tINT",
-            "trap -- ':' INT ", "trap -- ':' INT\n",
+            "trap -- ':' DEBUG",
+            "trap -- ':' RETURN",
+            "trap -- ':' ERR",
+            "trap -- ':' 2",
+            "trap -- ':' SIGEXIT",
+            "trap -- ':' sigint",
+            "trap -- ':' INT TERM",
+            "trap ':' INT",
+            "trap -- : INT",
+            'trap -- ":" INT',
+            "trap -- $':' INT",
+            "trap -- 'unterminated INT",
+            "trap -- 'a'b' INT",
+            "trap -- 'a''b' INT",
+            " trap -- ':' INT",
+            "trap -- ':'  INT",
+            "trap -- ':'\tINT",
+            "trap -- ':' INT ",
+            "trap -- ':' INT\n",
             "trap -- ':' INT\ntrap -- ':' TERM",
             "trap -- 'ok'; printf injected; 'more' INT",
         )
         for declaration in declarations:
             with self.subTest(declaration=declaration):
                 output = self.run_bash(
-                    '''
+                    """
 trap ':' EXIT INT TERM
 saved=$(trap -p EXIT INT TERM)
 status=0
@@ -227,7 +255,8 @@ mole_restore_trap "$1" || status=$?
 [[ $status == 1 && $(trap -p EXIT INT TERM) == "$saved" ]]
 trap - EXIT INT TERM
 echo rejected
-''', declaration,
+""",
+                    declaration,
                 )
                 self.assertEqual(output, "rejected\n")
 
@@ -243,7 +272,7 @@ echo rejected
                     with tempfile.TemporaryDirectory() as directory:
                         marker = Path(directory) / "handler marker"
                         self.run_bash(
-                            '''
+                            """
 marker=$1
 trap -- "$2" "$3"
 saved=$(trap -p "$3")
@@ -251,13 +280,16 @@ trap - "$3"
 mole_restore_trap "$saved"
 [[ ! -e $marker ]]
 if [[ $3 != EXIT ]]; then kill -s "$3" "$$"; fi
-''', str(marker), handler, signal,
+""",
+                            str(marker),
+                            handler,
+                            signal,
                         )
                         self.assertEqual(marker.read_text(), "executed")
 
     def test_restore_uses_builtin_trap_even_when_trap_is_shadowed(self):
         self.run_bash(
-            '''
+            """
 trap 'handled=1' INT
 saved=$(trap -p INT)
 trap - INT
@@ -265,12 +297,12 @@ trap() { return 99; }
 mole_restore_trap "$saved"
 [[ $(builtin trap -p INT) == "$saved" ]]
 builtin trap - INT
-''',
+""",
         )
 
     def test_sourcing_trap_library_again_preserves_installed_handler(self):
         self.run_bash(
-            '''
+            """
 trap ':' INT
 saved=$(trap -p INT)
 source "$1"
@@ -280,31 +312,41 @@ mole_restore_trap "trap -- 'handled=1' INT"
 handled=0
 kill -s INT "$$"
 [[ $handled == 1 ]]
-''', str(MOLE / "lib/core/traps.sh"),
+""",
+            str(MOLE / "lib/core/traps.sh"),
         )
 
     def test_callers_reset_rejected_trap_and_restore_other_signals(self):
         project = (MOLE / "lib/clean/project.sh").read_text()
         scan_restore = project.split(
             "\t# Restore caller traps after this function completes.\n", 1
-        )[1].split('\n\tif [[ ${#all_found_items[@]}', 1)[0]
+        )[1].split("\n\tif [[ ${#all_found_items[@]}", 1)[0]
         callers = (
-            ("terminal", ("EXIT", "INT", "TERM"),
-             nested_function("lib/clean/project.sh", "restore_terminal")
-             + "\nrestore_terminal\n[[ $cleanup_calls == 1 ]]"),
-            ("application scan", ("INT",),
-             nested_function("bin/uninstall.sh", "restore_scan_int_trap")
-             + "\nrestore_scan_int_trap"),
-            ("batch uninstall", ("INT", "TERM"),
-             nested_function("lib/uninstall/batch.sh", "_restore_uninstall_traps")
-             + "\n_restore_uninstall_traps\n[[ $cleanup_calls == 1 ]]"),
+            (
+                "terminal",
+                ("EXIT", "INT", "TERM"),
+                nested_function("lib/clean/project.sh", "restore_terminal")
+                + "\nrestore_terminal\n[[ $cleanup_calls == 1 ]]",
+            ),
+            (
+                "application scan",
+                ("INT",),
+                nested_function("bin/uninstall.sh", "restore_scan_int_trap")
+                + "\nrestore_scan_int_trap",
+            ),
+            (
+                "batch uninstall",
+                ("INT", "TERM"),
+                nested_function("lib/uninstall/batch.sh", "_restore_uninstall_traps")
+                + "\n_restore_uninstall_traps\n[[ $cleanup_calls == 1 ]]",
+            ),
             ("project scan", ("INT", "TERM"), scan_restore),
         )
         for name, signals, caller in callers:
             for rejected_signal in signals:
                 with self.subTest(caller=name, rejected_signal=rejected_signal):
                     self.run_bash(
-                        '''
+                        """
 harness() {
     local cleanup_calls=0 mutated=0
     show_cursor() { cleanup_calls=$((cleanup_calls + 1)); }
@@ -333,9 +375,9 @@ harness() {
     old_trap_term=$previous_term_trap
     shift
     trap 'stale_handler=1' "$@"
-'''
+"""
                         + caller
-                        + '''
+                        + """
     [[ $(trap -p EXIT) == "$expected_exit" ]]
     [[ $(trap -p INT) == "$expected_int" ]]
     [[ $(trap -p TERM) == "$expected_term" ]]
@@ -343,14 +385,16 @@ harness() {
     trap - EXIT INT TERM
 }
 harness "$@"
-''', rejected_signal, *signals,
+""",
+                        rejected_signal,
+                        *signals,
                     )
 
     def test_timeout_reject_cleanup_preserves_command_status(self):
         for command_status in (0, 7):
             with self.subTest(command_status=command_status):
                 self.run_bash(
-                    '''
+                    """
 MO_TIMEOUT_BIN=""
 MO_TIMEOUT_PERL_BIN=""
 bc() { cat >/dev/null; echo 0; }
@@ -376,7 +420,8 @@ fi
 [[ -z $(builtin trap -p INT) ]]
 [[ $(builtin trap -p TERM) == "$saved_term" ]]
 [[ -z $(jobs -pr) ]]
-''', str(command_status),
+""",
+                    str(command_status),
                 )
 
     def test_no_eval_remains_in_restore_path_files(self):
@@ -402,14 +447,15 @@ fi
         for signal in ("EXIT", "INT", "TERM"):
             with self.subTest(signal=signal):
                 output = self.run_bash(
-                    '''
+                    """
 trap 'printf "%s\\n" "handler ran"' "$1"
 saved=$(trap -p "$1")
 trap - "$1"
 mole_restore_trap "$saved"
 echo restored
 if [[ $1 != EXIT ]]; then kill -s "$1" "$$"; fi
-''', signal,
+""",
+                    signal,
                 )
                 self.assertEqual(output, "restored\nhandler ran\n")
 

@@ -98,8 +98,9 @@ decisions:
     items. The informational `SIGNALS_DEGRADED` action adds no signal-specific
     stop. Other planner stops still apply. In Stage 1, this includes
     `FEED_CHECK_FAIL` from `FEED_CHECK`.
-  - `SKIPPED`: Live fetch bypassed (Stage 2 execution or `--no-live-signals`
-    flag).
+  - `SKIPPED`: Live fetch bypassed (`--no-live-signals`). Stages 1, 2, and 3
+    otherwise query live signals. Stage 2 also queries records it already owns
+    so booking can see a closed or merged PR.
 - **Authoritative Mergeability & UNKNOWN Fallback:** Live `mergeable` or
   `mergeStateStatus` values of `CONFLICTING`, `DIRTY`, `MERGEABLE`, `CLEAN`,
   `BLOCKED`, `BEHIND`, `UNSTABLE`, or `HAS_HOOKS` take precedence over ledger
@@ -142,9 +143,13 @@ decisions:
 
 Apply in order:
 
-- **Gate 1 — CI health:** Passing → proceed. Failing due to flaky/unrelated test
-  → note and proceed with caution. Failing due to PR changes → attempt auto-fix
-  if applicable; else request changes.
+- **Gate 1 — CI health:** Required checks, builds, and tests must be green. A
+  failing or pending required check blocks. A failure caused by the PR's own
+  changes is auto-fixed when the fix is mechanical; otherwise request changes.
+  Advisory checks listed in `lifecycle.unblock.advisory_checks` — Codacy Static
+  Code Analysis, `jules/review`, `review`, Kilo Code Review, `CodeScene*`, and
+  Octopus Review — are warnings. Record them and continue. They do not fail this
+  gate and do not block MERGE.
 - **CodeScene remediation trigger:** If the failing check includes CodeScene
   code health, post `/cs-agent skill:fix-code-health-degradations` on that PR
   before deferring. Re-check status after the CodeScene refactoring run
@@ -169,17 +174,17 @@ security failures, or architectural changes.
 
 Assign each PR one disposition:
 
-| Disposition        | Criteria                                                              | Action                                                                                                                        |
-| ------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| MERGE              | All gates pass, CI green, no conflicts                                | Squash-merge, delete branch                                                                                                   |
-| MERGE-AFTER-FIX    | Minor issues auto-fixed                                               | Push fix, re-run CI, then merge                                                                                               |
-| REQUEST-CHANGES    | Issues beyond auto-fix                                                | Post review, assign to human                                                                                                  |
-| ESCALATE           | Security gate failure or architectural concern                        | Tag human, block merge                                                                                                        |
-| CLOSE-DUPLICATE    | Duplicate or superseded                                               | Close with linked explanation                                                                                                 |
-| CLOSE-STALE        | Stale per config threshold                                            | Close with reopen instructions                                                                                                |
-| CONSOLIDATE        | Multiple small PRs should be one                                      | Do not implement recovery here. Create one complete Stage 2 work item when the rebase is salvage-eligible; otherwise Stage 3. |
-| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                           | Create a Stage 2 ledger handoff with a complete work item                                                                     |
-| HANDOFF-COMPLETION | Sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. Mechanical `HOLD_CONTRACT` is HANDOFF-SALVAGE.            |
+| Disposition        | Criteria                                                                                   | Action                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| MERGE              | All gates pass, required checks green, no conflicts. Advisory check failures do not block. | Squash-merge, delete branch                                                                                                   |
+| MERGE-AFTER-FIX    | Minor issues auto-fixed                                                                    | Push fix, re-run CI, then merge                                                                                               |
+| REQUEST-CHANGES    | Issues beyond auto-fix                                                                     | Post review, assign to human                                                                                                  |
+| ESCALATE           | Security gate failure or architectural concern                                             | Tag human, block merge                                                                                                        |
+| CLOSE-DUPLICATE    | Duplicate or superseded                                                                    | Close with linked explanation                                                                                                 |
+| CLOSE-STALE        | Stale per config threshold                                                                 | Close with reopen instructions                                                                                                |
+| CONSOLIDATE        | Multiple small PRs should be one                                                           | Do not implement recovery here. Create one complete Stage 2 work item when the rebase is salvage-eligible; otherwise Stage 3. |
+| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                                                | Create a Stage 2 ledger handoff with a complete work item                                                                     |
+| HANDOFF-COMPLETION | Sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy                      | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. Mechanical `HOLD_CONTRACT` is HANDOFF-SALVAGE.            |
 
 **Consolidation:** Stage 1 does not implement recovery. If several BOT
 non-sensitive PRs should become one rebase, create one complete Stage 2 work
@@ -188,12 +193,13 @@ close the rest) in this run.
 
 **Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and
 test/format work follows the current repository merge method. Security-sensitive
-work is never automatically merged and is routed to Stage 3/human decision.
-A PR with open Octopus review findings (unresolved, non-outdated
-`octopus-review` threads, or a thread list that could not be fully read) is
-never routine-merge eligible — the unblock executor escalates it onto the
-repository decision issue. After each completion, re-check remaining PRs for
-new conflicts.
+work is never automatically merged and is routed to Stage 3/human decision. A PR
+with unresolved, non-outdated `octopus-review` threads (or a thread list that
+could not be fully read), or an open `octopus-review[bot]` finding issue linked
+by a same-repository URL or `Pull Request: … (#N)` line, is never routine-merge
+eligible. The unblock executor escalates it onto the repository decision issue;
+the issue finding stops blocking when that issue is closed. After each
+completion, re-check remaining PRs for new conflicts.
 
 **Trunk stale-vs-main (personal-config):** A `trunk-failed` label or "GitHub
 blocked Trunk from preparing the test branch" after `main` moved is the PR being
@@ -274,19 +280,19 @@ was posted (or post it) before making final salvage/closure disposition.
 
 Run reconcile with `--apply` to record observed closures and ingest every open
 PR, then run `scripts/pr_lifecycle_unblock.py --apply --json`. The executor
-keeps mutations bounded and never merges or deletes branches.
-Trigger comments (`@google-labs-jules`, `@coderabbitai`, `/cs-agent`) are posted
-through `gh` authenticated with `GH_TOKEN` (the owner's token); agents ignore
-bot-authored triggers, so never run the executor under a bot/app identity.
-An unanswered trigger expires and escalates.
+keeps mutations bounded and never merges or deletes branches. Trigger comments
+(`@google-labs-jules`, `@coderabbitai`, `/cs-agent`) are posted through `gh`
+authenticated with `GH_TOKEN` (the owner's token); agents ignore bot-authored
+triggers, so never run the executor under a bot/app identity. An unanswered
+trigger expires and escalates.
 
-| Live blocker | Safe next action |
-| --- | --- |
-| Stale bot lineage or merged salvage original | Create and apply the `superseded` label, close the PR, confirm it is closed, then post the comment; never close HUMAN or `REVIEW_SECURITY` originals. |
-| Merge conflict | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate. |
-| Behind base | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate. |
-| Required checks / review changes | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when eligible; otherwise escalate. Advisory checks are informational; CodeScene gets its remediation trigger. |
-| Open Octopus review findings | Escalate to the repo decision issue; a PR with unresolved, non-outdated `octopus-review` threads is never routine-merge eligible. Resolve the threads on GitHub (address + mark resolved), then the next run clears the row. |
+| Live blocker                                 | Safe next action                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stale bot lineage or merged salvage original | Create and apply the `superseded` label, close the PR, confirm it is closed, then post the comment; never close HUMAN or `REVIEW_SECURITY` originals.                                                                                                                                                                                     |
+| Merge conflict                               | Request a bounded Dependabot, CodeRabbit, or Jules repair; otherwise route BOT work to Stage 2 or escalate.                                                                                                                                                                                                                               |
+| Behind base                                  | Request Dependabot rebase or update a non-security BOT branch; otherwise escalate.                                                                                                                                                                                                                                                        |
+| Required checks / review changes             | Trigger Jules or CodeRabbit (`@coderabbitai autofix` / `@coderabbitai fix-ci commit`) when a required, build, or test check fails. Advisory checks (Codacy, `jules/review`, `review`, and the other `lifecycle.unblock.advisory_checks` names) are warnings and do not block routine merge. CodeScene still gets its remediation trigger. |
+| Open Octopus review findings                 | Escalate to the repo decision issue; unresolved, non-outdated `octopus-review` threads or an open linked `octopus-review[bot]` finding issue block routine merge. Resolve the threads or close the finding issue, then the next run clears the row.                                                                                       |
 
 Human decisions are refreshed on each repository's open **“PR lifecycle: needs
 human decision”** issue. It preserves first-seen dates, flags expired rows, and

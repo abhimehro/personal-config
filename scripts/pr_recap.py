@@ -1066,9 +1066,35 @@ def build_recap_comment(
 # ============================================================
 
 
+def _resolve_under_roots(candidate: Path, allowed_roots: list[Path]) -> Path | None:
+    """Return the resolved candidate only when contained under one root."""
+    try:
+        resolved = candidate.expanduser().resolve()
+    except OSError:
+        return None
+    for root in allowed_roots:
+        if resolved == root or root in resolved.parents:
+            return resolved
+    return None
+
+
+def _safe_event_path(raw: str | None) -> Path | None:
+    """Constrain the event payload path to trusted runner/workspace roots (S8707)."""
+    if not raw:
+        return None
+    allowed_roots: list[Path] = []
+    for var in ("GITHUB_WORKSPACE", "RUNNER_TEMP"):
+        root = os.getenv(var)
+        if root:
+            allowed_roots.append(Path(root).resolve())
+    if not allowed_roots:
+        return None
+    return _resolve_under_roots(Path(raw), allowed_roots)
+
+
 def resolve_pr_context(args: argparse.Namespace) -> PRContext:
     """Resolve PR context from GitHub Actions environment, event JSON, or local git state."""
-    event_path = args.event_path or os.getenv("GITHUB_EVENT_PATH")
+    event_path = _safe_event_path(args.event_path or os.getenv("GITHUB_EVENT_PATH"))
     event_name = (
         args.event_name
         or os.getenv("GITHUB_EVENT_NAME")
@@ -1076,7 +1102,7 @@ def resolve_pr_context(args: argparse.Namespace) -> PRContext:
     )
 
     event_payload: dict[str, Any] = {}
-    if event_path and os.path.isfile(event_path):
+    if event_path and event_path.is_file():
         try:
             with open(event_path, "r", encoding="utf-8") as f:
                 event_payload = json.load(f)
@@ -1231,22 +1257,51 @@ def resolve_pr_context(args: argparse.Namespace) -> PRContext:
 # ============================================================
 
 
+def _config_allowed_roots() -> list[Path]:
+    """Trusted config roots: cwd, git toplevel, optional env allow-root."""
+    allowed_roots: list[Path] = [Path.cwd().resolve()]
+    try:
+        repo_root = _run_cmd(
+            ["git", "rev-parse", "--show-toplevel"],
+            timeout=5,
+        ).stdout.strip()
+        if repo_root:
+            allowed_roots.append(Path(repo_root).resolve())
+    except Exception as exc:
+        logger.debug("Failed to determine git toplevel: %s", exc)
+    extra_root = os.getenv("PR_RECAP_CONFIG_ALLOWROOT")
+    if extra_root:
+        allowed_roots.append(Path(extra_root).resolve())
+    return allowed_roots
+
+
+def _safe_config_path(raw: Path) -> Path | None:
+    """Constrain a config path to the current working tree or its git root (S8707)."""
+    return _resolve_under_roots(raw, _config_allowed_roots())
+
+
+def _default_config_candidates() -> list[Path]:
+    """List the default .pr-recap.json candidates: cwd, then git toplevel."""
+    candidate_paths: list[Path] = [Path(".pr-recap.json")]
+    try:
+        repo_root = _run_cmd(
+            ["git", "rev-parse", "--show-toplevel"],
+            timeout=5,
+        ).stdout.strip()
+        if repo_root:
+            candidate_paths.append(Path(repo_root) / ".pr-recap.json")
+    except Exception as exc:
+        logger.debug("Failed to determine git toplevel: %s", exc)
+    return candidate_paths
+
+
 def load_config(config_path: Path | None = None) -> Config:
     """Load and validate configuration from .pr-recap.json."""
-    candidate_paths: list[Path] = []
     if config_path:
-        candidate_paths.append(config_path)
+        contained = _safe_config_path(config_path)
+        candidate_paths = [contained] if contained is not None else []
     else:
-        candidate_paths.append(Path(".pr-recap.json"))
-        try:
-            repo_root = _run_cmd(
-                ["git", "rev-parse", "--show-toplevel"],
-                timeout=5,
-            ).stdout.strip()
-            if repo_root:
-                candidate_paths.append(Path(repo_root) / ".pr-recap.json")
-        except Exception as exc:
-            logger.debug("Failed to determine git toplevel: %s", exc)
+        candidate_paths = _default_config_candidates()
 
     found_path: Path | None = None
     for p in candidate_paths:

@@ -24,17 +24,29 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # pylint: disable=wrong-import-position,unused-import
+import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
-from pr_lifecycle_config import validate_config
+from pr_lifecycle_config import _normalize_exclusion as _config_normalize_exclusion
+from pr_lifecycle_config import is_excluded, normalize_exclusions, validate_config
 from pr_lifecycle_issue_status import (
     _BacklogSpec,
+    _find_backlog_issue,
+    _list_backlog_rows,
+    _previous_state,
     backlog_issue_body,
     update_backlog_issue,
+)
+from pr_lifecycle_octopus_issues import (
+    attach_octopus_issues,
+    fetch_open_octopus_issues,
 )
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
+
+# Re-exports keep per-name noqa markers; isort would split them.
+# isort: off
 from pr_lifecycle_unblock_routing import (
     _JULES_PREFIXES,  # noqa: F401
     _LINEAGE_RE,  # noqa: F401
@@ -60,6 +72,8 @@ from pr_lifecycle_unblock_rows import (
     _repo_counts,
     _rows_for_repo,
 )
+
+# isort: on
 from pr_lifecycle_yaml import load_yaml
 
 # pylint: enable=wrong-import-position,unused-import
@@ -291,17 +305,8 @@ class _ScanSpec:
 def _is_excluded(
     repo: str, pr: dict[str, Any], exclusions: frozenset[tuple[str | None, int]]
 ) -> bool:
-    """True when (repo, number) matches a repo-scoped or number-only exclusion."""
-    number = pr.get("number")
-    if not isinstance(number, int) or isinstance(number, bool):
-        return False
-    repo_lc = repo.lower()
-    repo_short = repo_lc.rsplit("/", 1)[-1]
-    return any(
-        number == excl_number
-        and (excl_repo is None or excl_repo in (repo_lc, repo_short))
-        for excl_repo, excl_number in exclusions
-    )
+    """Match (repo, number) against repository-scoped or number-only exclusions."""
+    return is_excluded(repo, pr, exclusions)
 
 
 def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
@@ -310,24 +315,12 @@ def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
     Accepted forms: ``owner/repo#123``, ``repo#123``, ``#123``, ``123``.
     A repo-less form matches that PR number in every scanned repository.
     """
-    if not isinstance(raw, str):
-        raise TypeError("exclusion entries must be strings")
-    text = raw.strip()
-    if "#" in text:
-        repo_part, _, num_part = text.partition("#")
-    else:
-        repo_part, num_part = "", text
-    num_part = num_part.strip()
-    if not num_part.isdigit():
-        raise ValueError(f"invalid exclusion PR number: {raw}")
-    repo = repo_part.strip().lower() or None
-    return repo, int(num_part)
+    return _config_normalize_exclusion(raw)
 
 
 def _normalized_exclusions(*groups: Any) -> frozenset[tuple[str | None, int]]:
     """Merge CLI and config exclusion specs into one normalized set."""
-    specs = [spec for group in groups for spec in (group or [])]
-    return frozenset(_normalize_exclusion(spec) for spec in specs)
+    return normalize_exclusions(*groups)
 
 
 def _apply_mutations(
@@ -360,7 +353,7 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
     """Update one repo's decision issue, or render its dry-run body."""
     rows = _rows_for_repo(spec.repo, spec.actions, spec.ledger, spec.days)
     if not spec.apply or not spec.decision_issues:
-        result = {
+        result: dict[str, Any] = {
             "row_count": len(rows),
             "body": backlog_issue_body(_BacklogSpec(spec.repo, {}, spec.now), rows),
         }
@@ -368,19 +361,24 @@ def _one_decision_issue(spec: _IssueSpec) -> dict[str, Any]:
             result["action"] = "ISSUE_UPDATE_SKIPPED"
             result["reason"] = "DECISION_ISSUES_FLAG_OFF"
         return result
+    tick_outcome = _execute_ticks(spec.repo, spec.ledger, spec.run)
+    result: dict[str, Any]
     try:
-        return update_backlog_issue(
+        result = update_backlog_issue(
             spec.repo,
             rows,
             now=spec.now,
             notify_overdue=spec.overdue_notifications,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        return {
+        result = {
             "action": "ISSUE_UPDATE_FAILED",
             "repository": spec.repo,
             "reason": type(exc).__name__,
         }
+    if tick_outcome is not None:
+        result["ticks"] = tick_outcome
+    return result
 
 
 @dataclass(frozen=True)
@@ -395,6 +393,7 @@ class _IssueSpec:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
 
 
 def _issue_skipped(repo: str) -> dict[str, Any]:
@@ -542,6 +541,7 @@ def _scan_and_plan(spec: _ScanPlanSpec) -> dict[str, Any]:
                 datetime.now(timezone.utc),
                 unblock_args.decision_issues,
                 unblock_args.overdue_notifications,
+                unblock_args.run,
             )
         )
         return _build_plan(
@@ -582,7 +582,8 @@ def _scan_repositories(
     for repo in job.repositories:
         try:
             prs = list_open_prs(repo)
-        except OSError as exc:
+            attach_octopus_issues(prs, fetch_open_octopus_issues(repo, run=run))
+        except (OSError, subprocess.SubprocessError) as exc:
             inventory_failed.append(
                 {
                     "action": "INVENTORY_FAILED",
@@ -614,6 +615,27 @@ class _DecisionCtx:
     now: datetime
     decision_issues: bool = False
     overdue_notifications: bool = False
+    run: Any = subprocess.run
+
+
+def _execute_ticks(
+    repo: str, ledger: dict[str, Any], run: Any
+) -> dict[str, Any] | None:
+    """Execute verified decision-issue ticks before the issue re-renders."""
+    try:
+        issue = _find_backlog_issue(_list_backlog_rows(repo))
+        if not issue:
+            return None
+        ctx = dispositions.ExecCtx(
+            repo, issue, ledger, _previous_state(issue.get("body")), run
+        )
+        outcome = dispositions.execute(ctx)
+    except (OSError, subprocess.SubprocessError) as exc:
+        outcome = {"accepted": [], "skipped": [], "reason": type(exc).__name__}
+    if outcome.get("reason") or outcome.get("skipped"):
+        detail = outcome.get("reason") or [s.get("skipped") for s in outcome["skipped"]]
+        print(f"decision-issue ticks for {repo}: {detail}", file=sys.stderr)
+    return outcome
 
 
 def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
@@ -639,6 +661,7 @@ def _decision_issue_updates(ctx: _DecisionCtx) -> dict[str, Any]:
                 ctx.now,
                 ctx.decision_issues,
                 ctx.overdue_notifications,
+                ctx.run,
             )
         )
     return results
