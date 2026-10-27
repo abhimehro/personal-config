@@ -77,7 +77,9 @@ class TestBootstrapJellyfinLocal(unittest.TestCase):
     def test_lc_run_uses_timeout(self, mock_run):
         mock_run.return_value = unittest.mock.MagicMock(returncode=0)
         with tempfile.NamedTemporaryFile("w") as tmp_sys_xml:
-            tmp_sys_xml.write("<IsStartupWizardCompleted>true</IsStartupWizardCompleted>")
+            tmp_sys_xml.write(
+                "<IsStartupWizardCompleted>true</IsStartupWizardCompleted>"
+            )
             tmp_sys_xml.flush()
             with (
                 patch.object(

@@ -12,6 +12,9 @@ from datetime import datetime
 from typing import Any
 
 from pr_lifecycle_unblock_route_checks import _CONFLICT_TRIGGERS, _route_checks
+
+# Re-exports keep per-name noqa markers; isort would split them.
+# isort: off
 from pr_lifecycle_unblock_route_support import (
     _JULES_PREFIXES,  # noqa: F401
     _LINEAGE_RE,  # noqa: F401
@@ -36,6 +39,8 @@ from pr_lifecycle_unblock_route_support import (
     _unanswered_trigger,  # noqa: F401
     _utc,
 )
+
+# isort: on
 
 
 def _lineage_closable(ctx: _Route) -> bool:

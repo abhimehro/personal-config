@@ -125,13 +125,13 @@ class TestPRReference(unittest.TestCase):
         old_stderr = sys.stderr
         sys.stderr = captured
         try:
-            result = parse_pr_reference(
-                "owner/repo/", "7", loc=("tasks/test.md", 4)
-            )
+            result = parse_pr_reference("owner/repo/", "7", loc=("tasks/test.md", 4))
         finally:
             sys.stderr = old_stderr
         self.assertIsNone(result)
-        self.assertIn("skipping invalid repo name at tasks/test.md:4", captured.getvalue())
+        self.assertIn(
+            "skipping invalid repo name at tasks/test.md:4", captured.getvalue()
+        )
         self.assertIn("got 2 '/'", captured.getvalue())
 
     def test_repo_leading_hyphen(self):

@@ -48,6 +48,8 @@ def guardrail_item(**overrides: object) -> dict[str, object]:
         "key": "owner/repo#1@abc",
         "repository": "owner/repo",
         "pr": 1,
+        "base_sha": "b" * 40,
+        "head_sha": "a" * 40,
         "author_type": "BOT",
         "lifecycle_state": "STAGE1_INTAKE",
         "guardrail_outcome": "NOT_RUN",
@@ -236,6 +238,7 @@ def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
     return {
         "summarize": lambda *_a, **_k: make_health_report(),
         "signal_value": real_health.signal_value,
+        "signal_contains": real_health.signal_contains,
         "is_never_touch_key": real_health.is_never_touch_key,
         "list_reselect_candidates": lambda *_a, **_k: [],
         "MECHANICAL_RESELECT_NA": real_health.MECHANICAL_RESELECT_NA,
@@ -246,6 +249,7 @@ def _health_stub_attrs(real_health: Any) -> dict[str, Any]:
         "NON_SALVAGE_OUTCOMES": real_health.NON_SALVAGE_OUTCOMES,
         "STAGE2_OWNED_STATES": real_health.STAGE2_OWNED_STATES,
         "existing_wi_prefixes": real_health.existing_wi_prefixes,
+        "work_item_is_usable": real_health.work_item_is_usable,
     }
 
 
@@ -561,8 +565,8 @@ def load_reconcile_with_stubs():
     sys.modules["pr_lifecycle_config"].validate_config = lambda *_a, **_k: None
     sys.modules["pr_lifecycle_yaml"].load_yaml = lambda *_a, **_k: {}
     sys.modules["pr_lifecycle_persist"].dump_ledger = lambda *_a, **_k: ""
-    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = (
-        lambda *_a, **_k: 0
+    sys.modules["pr_lifecycle_persist"].strip_in_memory_item_fields = lambda *_a, **_k: (
+        0
     )
 
     module = importlib.import_module("pr_lifecycle_reconcile")

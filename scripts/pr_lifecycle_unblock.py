@@ -27,7 +27,8 @@ if str(SCRIPT_DIR) not in sys.path:
 import pr_lifecycle_dispositions as dispositions
 import pr_lifecycle_ledger_cas as cas
 from pr_identity import classify_pr_identity, identity_policy_from_config
-from pr_lifecycle_config import validate_config
+from pr_lifecycle_config import _normalize_exclusion as _config_normalize_exclusion
+from pr_lifecycle_config import is_excluded, normalize_exclusions, validate_config
 from pr_lifecycle_issue_status import (
     _BacklogSpec,
     _find_backlog_issue,
@@ -43,6 +44,9 @@ from pr_lifecycle_octopus_issues import (
 from pr_lifecycle_open_inventory import list_open_prs
 from pr_lifecycle_support import ROOT
 from pr_lifecycle_unblock_apply import _MUTATING_ACTIONS, _apply_action
+
+# Re-exports keep per-name noqa markers; isort would split them.
+# isort: off
 from pr_lifecycle_unblock_routing import (
     _JULES_PREFIXES,  # noqa: F401
     _LINEAGE_RE,  # noqa: F401
@@ -68,6 +72,8 @@ from pr_lifecycle_unblock_rows import (
     _repo_counts,
     _rows_for_repo,
 )
+
+# isort: on
 from pr_lifecycle_yaml import load_yaml
 
 # pylint: enable=wrong-import-position,unused-import
@@ -299,17 +305,8 @@ class _ScanSpec:
 def _is_excluded(
     repo: str, pr: dict[str, Any], exclusions: frozenset[tuple[str | None, int]]
 ) -> bool:
-    """True when (repo, number) matches a repo-scoped or number-only exclusion."""
-    number = pr.get("number")
-    if not isinstance(number, int) or isinstance(number, bool):
-        return False
-    repo_lc = repo.lower()
-    repo_short = repo_lc.rsplit("/", 1)[-1]
-    return any(
-        number == excl_number
-        and (excl_repo is None or excl_repo in (repo_lc, repo_short))
-        for excl_repo, excl_number in exclusions
-    )
+    """Match (repo, number) against repository-scoped or number-only exclusions."""
+    return is_excluded(repo, pr, exclusions)
 
 
 def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
@@ -318,24 +315,12 @@ def _normalize_exclusion(raw: Any) -> tuple[str | None, int]:
     Accepted forms: ``owner/repo#123``, ``repo#123``, ``#123``, ``123``.
     A repo-less form matches that PR number in every scanned repository.
     """
-    if not isinstance(raw, str):
-        raise TypeError("exclusion entries must be strings")
-    text = raw.strip()
-    if "#" in text:
-        repo_part, _, num_part = text.partition("#")
-    else:
-        repo_part, num_part = "", text
-    num_part = num_part.strip()
-    if not num_part.isdigit():
-        raise ValueError(f"invalid exclusion PR number: {raw}")
-    repo = repo_part.strip().lower() or None
-    return repo, int(num_part)
+    return _config_normalize_exclusion(raw)
 
 
 def _normalized_exclusions(*groups: Any) -> frozenset[tuple[str | None, int]]:
     """Merge CLI and config exclusion specs into one normalized set."""
-    specs = [spec for group in groups for spec in (group or [])]
-    return frozenset(_normalize_exclusion(spec) for spec in specs)
+    return normalize_exclusions(*groups)
 
 
 def _apply_mutations(
