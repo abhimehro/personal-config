@@ -293,6 +293,11 @@ _TITLE_SECURITY_HINT_RE = re.compile(
     r"traversal|sanitiz\w*|hardening|auth\w*|redaction|permission\w*)\b",
     re.IGNORECASE,
 )
+_SENTINEL_BRANCH_RE = re.compile(r"^(?:sentinel/|sentinel-)", re.IGNORECASE)
+# SECURITY: Jules persona titles start with "Sentinel:" (optional emoji).
+# A bare word such as redis-sentinel is not this hold.
+_SENTINEL_PERSONA_RE = re.compile(r"^\W*sentinel\s*:", re.IGNORECASE)
+SENTINEL_HOLD_MARKER = "SENTINEL_SECURITY_HOLD"
 
 
 def is_jules_journal_path(path: Any) -> bool:
@@ -462,10 +467,36 @@ def infer_pr_classification(record: dict[str, Any], *, diff_text: Any = None) ->
     return infer_nonsecurity_classification(record)
 
 
+def is_sentinel_security_pr(record: dict[str, Any]) -> bool:
+    """Return whether a record is a Jules Sentinel persona or sentinel/ branch."""
+    branch = str(record.get("headRefName") or record.get("head_ref") or "").strip()
+    if _SENTINEL_BRANCH_RE.match(branch):
+        return True
+    title = str(record.get("title") or "")
+    return _SENTINEL_PERSONA_RE.search(title) is not None
+
+
+def sentinel_record(
+    item: dict[str, Any], live: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Merge live title and head ref over the ledger item for Sentinel checks."""
+    record = dict(item)
+    if isinstance(live, dict):
+        title = live.get("title")
+        branch = live.get("headRefName")
+        if isinstance(title, str) and title:
+            record["title"] = title
+        if isinstance(branch, str) and branch:
+            record["headRefName"] = branch
+    return record
+
+
 def is_forced_security_hold(item: dict[str, Any]) -> bool:
     """Return whether risk, ownership, review source, or hold text blocks clearing.
 
     Human, Stage 2, and Stage 3 ownership all preserve the security tag.
+    A Jules Sentinel persona or sentinel/ branch is also forced, so the
+    title-only reclassify cannot clear it.
     """
     next_action = str(item.get("next_action") or "")
     return (
@@ -474,6 +505,8 @@ def is_forced_security_hold(item: dict[str, Any]) -> bool:
         or item.get("guardrail_source") in {"review", "human", "octopus"}
         or "HUMAN_HOLD" in next_action
         or "PR Desk forced hold" in next_action
+        or SENTINEL_HOLD_MARKER in next_action
+        or is_sentinel_security_pr(item)
     )
 
 

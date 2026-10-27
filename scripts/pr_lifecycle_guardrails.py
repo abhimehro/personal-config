@@ -46,6 +46,7 @@ from pr_lifecycle_guardrail_evidence import (
 )
 from pr_lifecycle_guardrail_evidence import fetch_guardrail_evidence as _fetch_evidence
 from pr_lifecycle_persist import dump_ledger
+from pr_lifecycle_reconcile_guards import SENTINEL_HOLD_MARKER
 from pr_lifecycle_yaml import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -293,6 +294,7 @@ def _evaluable(item: dict[str, Any]) -> bool:
             outcome in _EVALUATABLE,
             outcome != "PASS_ROUTINE" or not has_current_evidence_stamp(item),
             not protected_source,
+            SENTINEL_HOLD_MARKER not in str(item.get("next_action") or ""),
             isinstance(changed_paths, list) and bool(changed_paths),
         )
     )
