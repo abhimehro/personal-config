@@ -421,7 +421,7 @@ def _evidence_identity(item: dict[str, Any]) -> tuple[str, int, str, str] | None
     pull_number = item.get("pr")
     head_sha = item.get("head_sha")
     base_sha = item.get("base_sha")
-    if not (repo and _valid_pr_number(pull_number)):
+    if not (repo and isinstance(pull_number, int) and _valid_pr_number(pull_number)):
         return None
     if not (isinstance(head_sha, str) and isinstance(base_sha, str)):
         return None
