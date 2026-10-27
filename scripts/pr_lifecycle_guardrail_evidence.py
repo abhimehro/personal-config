@@ -412,6 +412,38 @@ def _fetch_live_view_payload(
     return _live_view_payload(response, head_sha)
 
 
+def _valid_pr_number(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _evidence_identity(item: dict[str, Any]) -> tuple[str, int, str, str] | None:
+    repo = str(item.get("repository") or "")
+    pull_number = item.get("pr")
+    head_sha = item.get("head_sha")
+    base_sha = item.get("base_sha")
+    if not (repo and _valid_pr_number(pull_number)):
+        return None
+    if not (is_sha40(head_sha) and is_sha40(base_sha)):
+        return None
+    return repo, pull_number, head_sha, base_sha
+
+
+def _optional_head_bound_diff(
+    repo: str,
+    base_sha: str,
+    head_sha: str,
+    capture: Callable[[list[str]], Any],
+    *,
+    include_diff: bool,
+) -> tuple[str, str | None] | None:
+    if not include_diff:
+        return "", None
+    diff_text = _fetch_head_bound_diff(repo, base_sha, head_sha, capture)
+    if diff_text is None:
+        return None
+    return diff_text, diff_sha256(diff_text)
+
+
 def fetch_guardrail_evidence(
     item: dict[str, Any],
     advisory_patterns: Sequence[str],
@@ -427,34 +459,19 @@ def fetch_guardrail_evidence(
     returns evidence with diff_fetch_failed=True. The live head must match
     the item's head before the compare API is called.
     """
-    repo = str(item.get("repository") or "")
-    pull_number = item.get("pr")
-    head_sha = item.get("head_sha")
-    base_sha = item.get("base_sha")
-    if (
-        not repo
-        or not isinstance(pull_number, int)
-        or not isinstance(head_sha, str)
-        or not is_sha40(head_sha)
-        or not isinstance(base_sha, str)
-        or not is_sha40(base_sha)
-    ):
+    identity = _evidence_identity(item)
+    if identity is None:
         return GuardrailEvidence(diff_fetch_failed=True)
-    payload = _fetch_live_view_payload(
-        repo,
-        pull_number,
-        head_sha,
-        capture,
-    )
+    repo, pull_number, head_sha, base_sha = identity
+    payload = _fetch_live_view_payload(repo, pull_number, head_sha, capture)
     if payload is None:
         return GuardrailEvidence(diff_fetch_failed=True)
-    diff_text = ""
-    digest = None
-    if include_diff:
-        diff_text = _fetch_head_bound_diff(repo, base_sha, head_sha, capture)
-        if diff_text is None:
-            return GuardrailEvidence(diff_fetch_failed=True)
-        digest = diff_sha256(diff_text)
+    diff = _optional_head_bound_diff(
+        repo, base_sha, head_sha, capture, include_diff=include_diff
+    )
+    if diff is None:
+        return GuardrailEvidence(diff_fetch_failed=True)
+    diff_text, digest = diff
     return GuardrailEvidence(
         diff_text=diff_text,
         diff_fetch_failed=False,

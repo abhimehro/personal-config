@@ -203,6 +203,7 @@ class FetchEvidenceTests(unittest.TestCase):
             {"repository": None},
             {"pr": "1"},
             {"pr": None},
+            {"pr": True},
         ):
             with self.subTest(overrides=overrides):
                 with mock.patch.object(guardrails.subprocess, "run") as run:
