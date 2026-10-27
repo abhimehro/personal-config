@@ -20,13 +20,19 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from pr_lifecycle_decision_rows import (
+    _BACKLOG_TABLE_CHAR_CAP,
+    _is_handoff_row,
+    _markdown_cell,
+    decision_lines,
+)
+
 PINNED_ISSUE_TITLE = "PR pipeline status"
 BACKLOG_ISSUE_TITLE = "PR lifecycle: needs human decision"
 _ISSUE_REPO = "abhimehro/personal-config"
 _BACKLOG_MARKER = "<!-- pr-lifecycle-backlog -->"
 # GitHub caps issue bodies at 65,536 chars; reserve room for the marker,
 # preamble lines, and the durable-state JSON block.
-_BACKLOG_TABLE_CHAR_CAP = 45_000
 _STATE_PATTERN = re.compile(r"<!-- pr-lifecycle-backlog-state (\{.*\}) -->")
 _DEFAULT_PACKET_EXPIRY_DAYS = 7
 
@@ -210,15 +216,36 @@ def _previous_state(body: object) -> dict[str, Any]:
         return {"first_seen": {}, "overdue_notified": []}
     first_seen = state.get("first_seen")
     notified = state.get("overdue_notified")
+    rows_meta = state.get("rows_meta")
     return {
-        "first_seen": first_seen if isinstance(first_seen, dict) else {},
-        "overdue_notified": notified if isinstance(notified, list) else [],
+        "first_seen": _migrate_first_seen(first_seen),
+        "overdue_notified": (
+            [key.split(":", 1)[0] if isinstance(key, str) else key for key in notified]
+            if isinstance(notified, list)
+            else []
+        ),
+        "rows_meta": rows_meta if isinstance(rows_meta, dict) else {},
     }
 
 
+def _migrate_first_seen(first_seen: Any) -> dict[str, Any]:
+    """Map legacy repo#pr:blocker keys to repo#pr, keeping the earliest time."""
+    migrated: dict[str, Any] = {}
+    if not isinstance(first_seen, dict):
+        return migrated
+    for key, value in first_seen.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            continue
+        base = key.split(":", 1)[0]
+        prev = migrated.get(base)
+        if prev is None or value < prev:
+            migrated[base] = value
+    return migrated
+
+
 def _row_key(repo: str, row: dict[str, Any]) -> str:
-    """Identify a backlog item by repository, PR number, and blocker."""
-    return f"{repo}#{row.get('pr')}:{row.get('blocker')}"
+    """Identify a backlog row: one row per repository/PR pair."""
+    return f"{repo}#{row.get('pr')}"
 
 
 def _row_first_seen(
@@ -294,14 +321,6 @@ def _find_backlog_issue(rows: list[Any]) -> dict[str, Any] | None:
     return issue
 
 
-def _markdown_cell(value: object, limit: int = 300) -> str:
-    """Bound cell text and neutralize pipes, comment markers, and mentions."""
-    text = " ".join(str(value or "").replace("|", "\\|").split())
-    text = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
-    text = text.replace("@", "@\u200b")
-    return text[:limit]
-
-
 def _safe_url(value: object) -> str:
     """Strip surrounding whitespace and return a plain https URL, or blank.
 
@@ -312,15 +331,6 @@ def _safe_url(value: object) -> str:
     if re.fullmatch(r"https://[^\s()\[\]<>\"'`]+", text):
         return text
     return ""
-
-
-def _is_handoff_row(row: dict[str, Any]) -> bool:
-    """True for rows handed to a non-human owner (e.g. stage2 escalations).
-
-    Rows without an owner, or owned by "human", stay on the human decision
-    table with real expiry and overdue state.
-    """
-    return row.get("owner") not in (None, "human")
 
 
 def _row_deadline(
@@ -402,8 +412,21 @@ def _prepare_backlog_rows(
     new_state = {
         "first_seen": first_seen,
         "overdue_notified": sorted(key for key in notified if key in first_seen),
+        "rows_meta": _rows_meta(prepared),
     }
     return prepared, new_state, newly_overdue
+
+
+def _rows_meta(prepared: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    """Persist each head-backed row's rendered head and suggestion."""
+    return {
+        row["id"]: {
+            "head_sha": str(row.get("head_sha") or ""),
+            "suggested_disposition": str(row.get("suggested_disposition") or ""),
+        }
+        for row in prepared
+        if row.get("head_sha")
+    }
 
 
 def _pr_link(row: dict[str, Any]) -> str:
@@ -502,6 +525,7 @@ def backlog_issue_body(
                 f"| — | {omitted} more rows omitted (body cap) | | | | | | | |"
             )
         _append_handoff_table(table, prepared)
+        table.extend(decision_lines(prepared, sum(len(line) + 1 for line in table)))
         content = "\n".join(table)
     return (
         f"{_BACKLOG_MARKER}\n"

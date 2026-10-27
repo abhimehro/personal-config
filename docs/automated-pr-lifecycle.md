@@ -49,8 +49,8 @@ Calibration stays self-contained (no includes).
 Every in-scope PR must have either a terminal disposition or a single current
 owner. A terminal disposition is `MERGED_ROUTINE`, `MERGED_BOUNDED_COMPLETION`,
 `CLOSED_NOOP`, `CLOSED_DUPLICATE`, `CLOSED_STALE`, `CLOSED_SUPERSEDED`,
-`HUMAN_REJECTED`, or `HUMAN_DEFERRED`. A **guardrail outcome** is intermediate
-eligibility evidence, not a terminal disposition.
+`CLOSED_UNREVIEWED`, `HUMAN_REJECTED`, or `HUMAN_DEFERRED`. A **guardrail
+outcome** is intermediate eligibility evidence, not a terminal disposition.
 
 Every nonterminal item must carry immutable base and head SHA anchors, a risk
 class, one guardrail outcome, a safe default, the next owner, and a bounded next
@@ -67,9 +67,25 @@ Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
 human-authored PRs never become routine merge or close candidates. A PR with
 open Octopus review findings — unresolved, non-outdated `octopus-review`
-threads, or a thread list that could not be fully read — is likewise never
-routine-merge eligible; the unblock executor escalates it onto the repository
-decision issue.
+threads, a thread list that could not be fully read, or an open
+`octopus-review[bot]` finding issue linked by a same-repository URL or
+`Pull Request: … (#N)` line — is likewise never routine-merge eligible. The
+unblock executor escalates it onto the repository decision issue; an issue
+finding stops blocking when that issue is closed.
+
+Each decision issue carries one row per open PR needing a human decision plus a
+checkbox task list: every row renders its suggested disposition and the head SHA
+it was rendered against. Ticking a checkbox (optionally editing the backticked
+disposition token) executes that disposition on the next
+`unblock --apply --decision-issues` run — but only when every recorded editor of
+the issue body is `abhimehro` and the PR's live head still matches the rendered
+head; a push since the render ignores the tick. The full edit history is
+paginated; an unreadable or incomplete history also refuses all ticks. Accepted
+dispositions (`CLOSED_STALE`, `CLOSED_DUPLICATE`, `CLOSED_NOOP`,
+`CLOSED_SUPERSEDED`, `CLOSED_UNREVIEWED`, or `KEEP_OPEN` to hand the item back
+to the human queue) are applied through the shared transition path so every
+executed disposition lands as a ledger event, and close dispositions close the
+live PR first.
 
 ## Canonical records and repository authority
 
@@ -337,11 +353,11 @@ treated as `HUMAN` for every autonomous mutation. Sticky sensitive-path
 classification still blocks autonomous merge and close even when identity is
 `BOT`.
 
-A `.jules/` or `.Jules/` journal path **alone** is not sticky
-`generated_output`. Sibling Bolt/Jules PRs that collide only on that journal
-follow lesson **0cs** (take `main`'s journal; keep the unique source change). Do
-not send the whole cluster to Stage 3 as `REVIEW_SECURITY` just because the
-journal is in the diff.
+A `.jules/*.md` or `.Jules/*.md` journal is documentation, not
+`generated_output` and not a sticky class. Sibling Bolt/Jules PRs that collide
+only on that journal follow lesson **0cs** (take `main`'s journal; keep the
+unique source change). Do not send the whole cluster to Stage 3 as
+`REVIEW_SECURITY` just because the journal is in the diff.
 
 The sensitive-path taxonomy includes workflows and permissions, secrets,
 authentication and authorization, deployment and infrastructure, lockfiles and
@@ -569,42 +585,115 @@ Supporting scripts: `pr_lifecycle_reconcile.py`, `pr_lifecycle_feed.py`,
 
 ### Deterministic guardrail evaluation
 
-`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to
-limit, `--json` accepted for stage-prompt parity — output is always JSON)
-refreshes `sensitive_paths` and `guardrail_outcome` from each nonterminal
-ledger item's `changed_paths` against the `sensitive_path_taxonomy` classes.
-Only `NOT_RUN`, `REVIEW_SECURITY`, and unset outcomes re-evaluate — the
-`HOLD_*`, `PASS_ROUTINE`, `CLOSE_NONSECURITY_NOOP`, and `ANALYSIS_ERROR`
-outcomes encode non-path evidence a path classifier cannot clear. Items with
-empty `changed_paths` keep their outcome: no path list is not proof of a
-clean diff. Items whose `current_owner` is `human`/`stage2`/`stage3` are
-never touched, matching the unblock router's blocked-owner set, and items
-whose `author_type` is not `BOT` are never evaluated either — the ledger
-contract forbids `ROUTINE` on human-authored PRs and forced human holds are
-out of scope for a path classifier. The same applies to an item carrying
-`risk_class: HUMAN_REVIEW` regardless of author type — that field is the
-ledger's human-hold marker, so a BOT-authored held PR (pc#2276 shape) is
-never re-stamped `ROUTINE` by path evidence. An item whose `classification` is
-`SECURITY` stays held (`REVIEW_SECURITY` + `SENSITIVE`) regardless of path
-matches: the intake identity classification is authoritative over path
-evidence, so a Sentinel-style fix touching only ordinary files cannot be
-drained. `generated_output` alone is non-sticky (recorded but routes
-routine); any other class makes the item `REVIEW_SECURITY` + `SENSITIVE`.
-Evaluation never bumps `revision` — that field is a projection of transition
-events, and bumping it without logging an event breaks the consistency
-check.
+`python3 scripts/pr_lifecycle_guardrails.py --apply --json` (`--repo` to limit,
+`--json` accepted for stage-prompt parity — output is always JSON) refreshes
+`sensitive_paths` and `guardrail_outcome` from each nonterminal ledger item's
+`changed_paths` against the `sensitive_path_taxonomy` classes. Only `NOT_RUN`,
+`REVIEW_SECURITY`, and unset outcomes re-evaluate — the `HOLD_*`,
+`PASS_ROUTINE`, `CLOSE_NONSECURITY_NOOP`, and `ANALYSIS_ERROR` outcomes encode
+non-path evidence a path classifier cannot clear. Items with empty
+`changed_paths` keep their outcome: no path list is not proof of a clean diff.
+Items whose `current_owner` is `human`/`stage2`/`stage3` are never touched,
+matching the unblock router's blocked-owner set, and items whose `author_type`
+is not `BOT` are never evaluated either — the ledger contract forbids `ROUTINE`
+on human-authored PRs and forced human holds are out of scope for a path
+classifier. The same applies to an item carrying `risk_class: HUMAN_REVIEW`
+regardless of author type — that field is the ledger's human-hold marker, so a
+BOT-authored held PR (pc#2276 shape) is never re-stamped `ROUTINE` by path
+evidence. A `classification` label, including `SECURITY`, does not by itself
+produce `REVIEW_SECURITY`. The label is a hint. The hold requires a sticky
+sensitive path or a security-behavior change in the diff (command or shell
+execution, authentication or authorization, input validation or sanitization,
+path traversal, secrets, or network origins), detected from paths and diff text
+rather than the PR title. `.jules/*.md` journals are documentation: they are not
+`generated_output` and they are not sticky. `generated_output` on other paths is
+still recorded and is still non-sticky by itself. A Dependabot minor or patch
+bump that changes only `.github/workflows/*` or only lockfile-taxonomy paths,
+does not change a `permissions:` block, keeps `uses:` actions pinned to full
+40-hex SHAs, has green required checks, and is `MERGEABLE` is `PASS_ROUTINE`.
+Major bumps, permission changes, unpinned refs, unknown or red required checks,
+and a PR that is not mergeable stay held. Advisory checks named in
+`lifecycle.unblock.advisory_checks` (Codacy, `jules/review`, `review`, and the
+other configured names) are warnings and do not fail the required-check
+predicate. Any other sticky class still makes the item `REVIEW_SECURITY` +
+`SENSITIVE`. Evaluation never bumps `revision` — that field is a projection of
+transition events, and bumping it without logging an event breaks the
+consistency check.
+
+Reconcile closes the empty-paths gap itself: while checking a nonterminal item
+against its live PR it emits a `BACKFILL_PATHS` action whenever `changed_paths`
+is missing and the PR is still `OPEN`, fetching the full file list via paginated
+`gh api repos/{repo}/pulls/{pr}/files` (a truncated list could hide a sensitive
+path, so partial fetches fail closed). Apply stamps the paths in place — no
+transition event, no `revision` bump, and no `updated_at_utc` refresh (a path
+list is evidence, not activity, so the staleness clock must not reset). A failed
+or empty fetch surfaces as `PATH_BACKFILL_FAILED` in the plan and is never
+applied, so the item stays held until evidence arrives.
+
+Executable paths cannot receive a routine decision from paths alone. Unless a
+changed path has a known document/image suffix (`.md`, `.markdown`, `.rst`,
+`.txt`, `.adoc`, `.csv`, `.tsv`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.ico`,
+`.webp`, `.pdf`, or `.log`) or a suffixless metadata basename such as
+`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `AUTHORS`, `CONTRIBUTORS`,
+`CHANGELOG`, `README`, `CODEOWNERS`, `OWNERS`, `VERSION`, `.gitignore`,
+`.gitattributes`, `.gitmodules`, `.gitkeep`, `.keep`, `.editorconfig`,
+`.dockerignore`, `.npmignore`, `.prettierignore`, `.eslintignore`,
+`.trunkignore`, `.mailmap`, `.nvmrc`, `.python-version`, `.ruby-version`, or
+`.tool-versions`, it is treated as executable. This fail-closed default
+includes unknown extensions and config/data formats such as `.json`, `.yaml`,
+`.toml`, `.ini`, `.conf`, `.plist`, `.lock`, `.svg`, and `.xml`. Executable
+basenames such as `Makefile`, `Dockerfile`, `Justfile`, `Rakefile`,
+`GNUmakefile`, `Gemfile`, `Vagrantfile`, `Jenkinsfile`, `Containerfile`,
+`Procfile`, `Taskfile`, `Podfile`, `Fastfile`, `Dangerfile`, and `Brewfile`;
+shell rc names such as `.zshrc`, `.bash_profile`, `.cshrc`, `.tcshrc`,
+`.bash_aliases`, `.zsh_aliases`, `aliases`, `functions`, `.shrc`, `.mkshrc`,
+`.xprofile`, `.xsession`, and `.xinitrc`; Git config paths such as
+`*.gitconfig` and `git/config`; and suffixless basenames not on the metadata
+allowlist are also treated as executable. When no sticky path class applies and
+`CMakeLists.txt`, `constraints*.txt`, and `requirements*.txt` are executable
+despite the `.txt` allowlist. When no sticky path class applies and any changed
+path is executable, guardrails require a nonempty diff fetched with
+`gh api -H "Accept: application/vnd.github.diff"
+repos/{repo}/compare/{base_sha}...{head_sha}` using the ledger item's SHAs, and
+only after confirming the live `headRefOid` still equals the item's `head_sha`.
+A routine patch stamps `guardrail_evidence` with that head and
+`basis: head_bound_diff` plus the UTF-8 diff's SHA-256, or with
+`basis: non_executable_paths` and a null digest when no diff was needed.
+Security review patches clear the stamp. `PASS_ROUTINE` items with no stamp or
+a stamp for another head are re-evaluated; a matching-head stamp is left alone.
+The Stage 1 and Stage 3 Cursor prompts currently enforce routine merge
+eligibility by requiring both `guardrail_outcome: PASS_ROUTINE` and
+`guardrail_evidence.head_sha` equal to the PR's live `headRefOid`; the
+planner/executor code does not enforce this stamp check. A missing or stale
+stamp is not merge-eligible under those prompts.
+An owner-held or protected-source `PASS_ROUTINE` item with a missing or stale
+stamp may receive only a stamp-only patch when normal evaluation remains
+routine; its outcome, source, risk, and sensitive paths are not changed. An
+executable-path item still needs a head-bound diff, and a security decision or
+missing diff leaves it unstamped. The run summary lists remaining nonterminal
+routine items without a current stamp in sorted `unstamped_routine`.
+
+Reconcile stale-close actions are held for `risk_class: HUMAN_REVIEW`,
+`guardrail_source` manual/review/human/octopus, `REVIEW_SECURITY` or `HOLD_*`
+outcomes, `classification: SECURITY`, a `HUMAN_HOLD` or `PR Desk forced hold`
+note in `next_action`, and configured `lifecycle.unblock.exclusions`. Before
+any close comment, label, or close call, reconcile re-reads the live PR and
+skips mutation if the PR is missing, not OPEN, or its `headRefOid` differs
+from the action's `head_sha`. `current_owner` is deliberately not a stale-close
+hold marker; WAITING_HUMAN BOT items ordinarily have a human owner.
 
 A `REVIEW_SECURITY` outcome only downgrades to `PASS_ROUTINE` when
-`--clear-stand-in` is passed — a recorded hold may come from non-path
-evidence (content review, Octopus or human review), so clearing it is an
-explicit opt-in. The flag is a **one-shot manual drain** for the earlier
-stand-in over-marking and must not appear in the recurring Stage 1 prompt:
-run `python3 scripts/pr_lifecycle_guardrails.py --apply --json
---clear-stand-in` once, by hand, to drain the over-marked set. Every
-evaluated item is stamped `guardrail_source: path_eval`, and an item whose
-`guardrail_source` is `manual`/`review`/`human`/`octopus` is never touched —
-not even by `--clear-stand-in` — so a hold recorded by a real review cannot
-be silently cleared by a later run.
+`--clear-stand-in` is passed — a recorded hold may come from non-path evidence
+(content review, Octopus or human review), so clearing it is an explicit opt-in.
+The flag is a **one-shot manual drain** for the earlier stand-in over-marking
+and must not appear in the recurring Stage 1 prompt: run
+`python3 scripts/pr_lifecycle_guardrails.py --apply --json
+--clear-stand-in`
+once, by hand, to drain the over-marked set. Every evaluated item is stamped
+`guardrail_source: path_eval`, and an item whose `guardrail_source` is
+`manual`/`review`/`human`/`octopus` is never touched — not even by
+`--clear-stand-in` — so a hold recorded by a real review cannot be silently
+cleared by a later run.
 
 ### Code-enforced holds in the unblock executor
 
@@ -612,32 +701,32 @@ Holds live in code, not only in the Stage 1 prompt:
 
 - **Ledger-owner hold.** A nonterminal item whose `current_owner` is `human`,
   `stage2`, or `stage3` is immune to every mutating action under a plain
-  `unblock --apply` (no close, trigger, or push); `ESCALATE` rows still emit
-  so the repo decision issue keeps visibility. Covers the
-  Stage 3-reconciliation lineage PRs and the Stage 2-queued item without any
-  prompt-side wrapper.
+  `unblock --apply` (no close, trigger, or push); `ESCALATE` rows still emit so
+  the repo decision issue keeps visibility. Covers the Stage 3-reconciliation
+  lineage PRs and the Stage 2-queued item without any prompt-side wrapper.
 - **Human-review hold.** A nonterminal item with `risk_class:
-  HUMAN_REVIEW` is a recorded human hold even while `current_owner` is
-  still `stage1` — the router treats it as human-held (`ledger_owned_by_human`
-  escalation, all mutations suppressed). Covers bot-authored human holds like
-  pc#2276, ctrld#1303, and Hydro#722, which previously depended on the
-  prompt's exclusion list alone.
-- **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/`
-  slugs, Snyk, reviewer/automation bots) never counts as human participation
-  for the stale-lineage close — and neither does a machine-generated body
-  posted under a human login (Snyk PR-check summaries comment as the repo
-  owner). A genuinely human-authored comment does hold it, and an unreadable
-  author or incomplete comment history holds too (fail toward not closing).
+  HUMAN_REVIEW` is
+  a recorded human hold even while `current_owner` is still `stage1` — the
+  router treats it as human-held (`ledger_owned_by_human` escalation, all
+  mutations suppressed). Covers bot-authored human holds like pc#2276,
+  ctrld#1303, and Hydro#722, which previously depended on the prompt's exclusion
+  list alone.
+- **Human-comment hold.** A bot-authored comment (`[bot]` logins, `app/` slugs,
+  Snyk, reviewer/automation bots) never counts as human participation for the
+  stale-lineage close — and neither does a machine-generated body posted under a
+  human login (Snyk PR-check summaries comment as the repo owner). A genuinely
+  human-authored comment does hold it, and an unreadable author or incomplete
+  comment history holds too (fail toward not closing).
 - **Exclusions.** `--exclude owner/repo#N` (repeatable; `repo#N`, `#N`, or a
   bare `N` also accepted — repo-less forms match every repo) and the
   `lifecycle.unblock.exclusions` config list make a PR never-touch: skipped
   before any routing.
-- **Bounded side effects.** `--apply` alone performs only per-PR mutations.
-  Repo decision-issue create/update requires `--decision-issues`; the
-  overdue @-mention comments additionally require `--overdue-notifications`.
-  Without the flags the run reports `ISSUE_UPDATE_SKIPPED` and leaves overdue
-  state unrecorded so a later flagged run still catches up. Stage 1 passes
-  both flags explicitly (the issues and mentions are its planned outputs).
+- **Bounded side effects.** `--apply` alone performs only per-PR mutations. Repo
+  decision-issue create/update requires `--decision-issues`; the overdue
+  @-mention comments additionally require `--overdue-notifications`. Without the
+  flags the run reports `ISSUE_UPDATE_SKIPPED` and leaves overdue state
+  unrecorded so a later flagged run still catches up. Stage 1 passes both flags
+  explicitly (the issues and mentions are its planned outputs).
 
 Weekly human digest: pinned GitHub issue / issue comment — Notion packets
 retired for this path. Pause/resume: leave Dashboard paused; operators run stage

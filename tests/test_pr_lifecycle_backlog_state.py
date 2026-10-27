@@ -69,7 +69,7 @@ class BacklogStateTests(unittest.TestCase):
     def test_removed_rows_prune_overdue_notifications_before_readding(self) -> None:
         """Allow a fresh overdue notification after a row is removed and re-added."""
         repo = "owner/repo"
-        key = f"{repo}#42:required_check_failure"
+        key = f"{repo}#42"
         state = {
             "first_seen": {key: "2026-08-01T12:00:00Z"},
             "overdue_notified": [key],
@@ -97,7 +97,7 @@ class BacklogStateTests(unittest.TestCase):
     ) -> None:
         """Preserve first-seen dates and avoid repeating an overdue notification."""
         repo = "owner/repo"
-        key = f"{repo}#42:required_check_failure"
+        key = f"{repo}#42"
         row = self._backlog_row()
         old_state = {
             "first_seen": {key: "2026-08-01T12:00:00Z"},
@@ -211,7 +211,7 @@ class BacklogStateTests(unittest.TestCase):
         _, _, overdue = self.st._prepare_backlog_rows(
             self.st._BacklogSpec(repo, state, NOW), [row]
         )
-        self.assertEqual([item["id"] for item in overdue], [f"{repo}#42:conflict"])
+        self.assertEqual([item["id"] for item in overdue], [f"{repo}#42"])
 
     def test_new_overdue_issue_is_created_then_notified_and_persisted(self):
         repo = "owner/repo"
@@ -229,7 +229,7 @@ class BacklogStateTests(unittest.TestCase):
             [call.args[0][2] for call in self.command.call_args_list],
             ["list", "create", "comment", "edit"],
         )
-        self.assertEqual(result["overdue_notified"], [f"{repo}#42:conflict"])
+        self.assertEqual(result["overdue_notified"], [f"{repo}#42"])
         state = self.st._previous_state(result["body"])
         self.assertEqual(state["overdue_notified"], result["overdue_notified"])
 

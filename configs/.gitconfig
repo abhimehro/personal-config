@@ -9,7 +9,7 @@
 	excludesfile = /Users/speedybee/.gitignore_global
 	pager = delta
 	hooksPath = /Users/speedybee/.git-hooks
-	editor = /Users/speedybee/.git-hooks/lrc/lrc_editor.sh
+	editor = /opt/homebrew/bin/nvim
 [mergetool]
 	keepBackup = true
 [gpg]

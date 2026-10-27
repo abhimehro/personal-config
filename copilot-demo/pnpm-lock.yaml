@@ -589,8 +589,8 @@ packages:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -776,7 +776,7 @@ snapshots:
     dependencies:
       '@github/copilot': 1.0.61
       vscode-jsonrpc: 8.2.1
-      zod: 4.4.3
+      zod: 4.6.7
 
   '@github/copilot-win32-arm64@1.0.61':
     optional: true
@@ -1106,4 +1106,4 @@ snapshots:
     dependencies:
       is-wsl: 3.1.1
 
-  zod@4.4.3: {}
+  zod@4.6.7: {}

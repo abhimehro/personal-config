@@ -17,6 +17,44 @@
         "command": ".cursor/hooks/dependency-health-reminder.sh",
         "matcher": "pip|npm|yarn|pnpm|uv |cargo|composer|poetry|gem |go get|bun "
       }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-prompt"
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-tool-after",
+        "matcher": "^Shell$"
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-tool-after",
+        "matcher": "^Shell$"
+      }
+    ],
+    "preCompact": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-precompact"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-tool",
+        "matcher": "^(Shell|Write|Task)$"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-session-end"
+      }
+    ],
+    "sessionStart": [
+      {
+        "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-context"
+      }
     ]
   }
 }
