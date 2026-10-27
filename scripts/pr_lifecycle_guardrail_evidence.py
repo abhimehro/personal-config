@@ -8,7 +8,7 @@ import os
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeGuard
 
 __all__ = [
     "GuardrailEvidence",
@@ -412,7 +412,7 @@ def _fetch_live_view_payload(
     return _live_view_payload(response, head_sha)
 
 
-def _valid_pr_number(value: Any) -> bool:
+def _valid_pr_number(value: Any) -> TypeGuard[int]:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
@@ -421,7 +421,7 @@ def _evidence_identity(item: dict[str, Any]) -> tuple[str, int, str, str] | None
     pull_number = item.get("pr")
     head_sha = item.get("head_sha")
     base_sha = item.get("base_sha")
-    if not (repo and isinstance(pull_number, int) and _valid_pr_number(pull_number)):
+    if not (repo and _valid_pr_number(pull_number)):
         return None
     if not (isinstance(head_sha, str) and isinstance(base_sha, str)):
         return None
