@@ -108,12 +108,18 @@ class EvaluateItemTests(unittest.TestCase):
                         risk_class="UNKNOWN",
                     )
                     before = copy.deepcopy(item)
+                    expected_stamp = {
+                        "head_sha": item["head_sha"],
+                        "basis": "non_executable_paths",
+                        "diff_sha256": None,
+                    }
                     self.assertEqual(
                         {
                             "sensitive_paths": classes,
                             "guardrail_outcome": "PASS_ROUTINE",
                             "guardrail_source": "path_eval",
                             "risk_class": "ROUTINE",
+                            "guardrail_evidence": expected_stamp,
                         },
                         guardrails.evaluate_item(item, clear_standin),
                     )
@@ -140,13 +146,25 @@ class EvaluateItemTests(unittest.TestCase):
                     "HOLD_CANONICAL",
                     "CLOSE_NONSECURITY_NOOP",
                     "ANALYSIS_ERROR",
-                    "PASS_ROUTINE",
                 )
             ),
+            {
+                "guardrail_outcome": "PASS_ROUTINE",
+                "guardrail_evidence": {
+                    "head_sha": "a" * 40,
+                    "basis": "non_executable_paths",
+                    "diff_sha256": None,
+                },
+            },
         ]
         for overrides, clear_standin in product(exclusions, (False, True)):
             with self.subTest(overrides=overrides, clear_standin=clear_standin):
-                item = _item(classification="SECURITY", **overrides)
+                values = (
+                    overrides
+                    if isinstance(overrides, dict)
+                    else {"guardrail_outcome": overrides}
+                )
+                item = _item(classification="SECURITY", **values)
                 before = copy.deepcopy(item)
                 self.assertIsNone(guardrails.evaluate_item(item, clear_standin))
                 self.assertEqual(before, item)
@@ -162,6 +180,7 @@ class EvaluateItemTests(unittest.TestCase):
                 "guardrail_outcome": "REVIEW_SECURITY",
                 "guardrail_source": "path_eval",
                 "risk_class": "SENSITIVE",
+                "guardrail_evidence": None,
             },
             guardrails.evaluate_item(item, clear_standin=True),
         )
@@ -279,7 +298,14 @@ class EvaluateItemTests(unittest.TestCase):
 
     def test_terminal_and_manual_outcomes_untouched(self) -> None:
         for outcome in (
-            "PASS_ROUTINE",
+            {
+                "guardrail_outcome": "PASS_ROUTINE",
+                "guardrail_evidence": {
+                    "head_sha": "a" * 40,
+                    "basis": "head_bound_diff",
+                    "diff_sha256": "d" * 64,
+                },
+            },
             "HOLD_CONTRACT",
             "HOLD_EVIDENCE",
             "HOLD_PLATFORM",
@@ -287,14 +313,17 @@ class EvaluateItemTests(unittest.TestCase):
             "CLOSE_NONSECURITY_NOOP",
             "ANALYSIS_ERROR",
         ):
+            values = (
+                outcome if isinstance(outcome, dict) else {"guardrail_outcome": outcome}
+            )
             self.assertIsNone(
                 guardrails.evaluate_item(
                     _item(
-                        guardrail_outcome=outcome,
                         changed_paths=["scripts/x.sh"],
+                        **values,
                     )
                 ),
-                outcome,
+                values["guardrail_outcome"],
             )
         self.assertIsNone(
             guardrails.evaluate_item(
@@ -343,11 +372,17 @@ class EvaluateItemTests(unittest.TestCase):
 
     def test_security_classification_alone_is_not_a_hold(self) -> None:
         """classification=SECURITY does not hold a path-clean item."""
+        diff_text = "+++ b/src/main.py\n+print('ready')\n"
         patch = guardrails.evaluate_item(
             _item(
                 classification="SECURITY",
                 changed_paths=["docs/a.md", "src/main.py"],
-            )
+            ),
+            evidence=guardrails.GuardrailEvidence(
+                diff_text=diff_text,
+                head_sha="a" * 40,
+                diff_sha256=guardrails.diff_sha256(diff_text),
+            ),
         )
         self.assertIsNotNone(patch)
         assert patch is not None
@@ -428,7 +463,15 @@ class EvaluateItemTests(unittest.TestCase):
                     "+++ b/scripts/export_comparison_sheets.py\n"
                     "@@\n"
                     "+log.exception('Unexpected error loading raw file %s', raw_file)\n"
-                )
+                ),
+                head_sha=routine_item["head_sha"],
+                diff_sha256=guardrails.diff_sha256(
+                    "diff --git a/scripts/export_comparison_sheets.py "
+                    "b/scripts/export_comparison_sheets.py\n"
+                    "+++ b/scripts/export_comparison_sheets.py\n"
+                    "@@\n"
+                    "+log.exception('Unexpected error loading raw file %s', raw_file)\n"
+                ),
             ),
         )
         self.assertIsNotNone(patch)
@@ -624,6 +667,10 @@ class DependabotAndDiffTests(unittest.TestCase):
             "title": "Bump actions/checkout from 4.1.1 to 4.1.2",
         }
         payload.update(evidence)
+        diff_text = payload["diff_text"]
+        if isinstance(diff_text, str) and diff_text:
+            payload["head_sha"] = item["head_sha"]
+            payload["diff_sha256"] = guardrails.diff_sha256(diff_text)
         patch = guardrails.evaluate_item(
             item, evidence=guardrails.GuardrailEvidence(**payload)
         )
@@ -783,7 +830,15 @@ class DependabotAndDiffTests(unittest.TestCase):
             changed_paths=[".jules/sentinel.md", "src/clean.py"],
             classification="SECURITY",
         )
-        patch = guardrails.evaluate_item(journal)
+        diff_text = "+++ b/src/clean.py\n+print('clean')\n"
+        patch = guardrails.evaluate_item(
+            journal,
+            evidence=guardrails.GuardrailEvidence(
+                diff_text=diff_text,
+                head_sha=journal["head_sha"],
+                diff_sha256=guardrails.diff_sha256(diff_text),
+            ),
+        )
         self.assertEqual("jules_journal", guardrails.clearance_rule(journal, patch))
         labeled = _item(
             guardrail_outcome="REVIEW_SECURITY",
