@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 770
+ledger_revision: 799
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -26116,9 +26116,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/339
   attempts:
@@ -26163,9 +26164,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/344
   attempts:
@@ -26209,9 +26212,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/349
   attempts:
@@ -26297,9 +26302,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/354
   attempts:
@@ -26430,9 +26437,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/358
   attempts:
@@ -26519,9 +26527,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/362
   attempts:
@@ -26777,9 +26786,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/373
   attempts:
@@ -26907,9 +26918,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/378
   attempts:
@@ -27039,9 +27052,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/383
   attempts:
@@ -27126,9 +27141,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/388
   attempts:
@@ -27295,9 +27311,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/395
   attempts:
@@ -27380,9 +27397,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/399
   attempts:
@@ -27507,9 +27525,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    network_and_browser_origins). Escalate on the repo decision issue; no automated
-    trigger, branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: network_and_browser_origins).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/405
   attempts:
@@ -27684,9 +27704,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    security_configuration). Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: security_configuration).
+    Escalate on the repo decision issue; no automated trigger, branch update, close,
+    or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/414
   attempts:
@@ -28120,9 +28142,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/435
   attempts:
@@ -28295,9 +28318,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (sticky sensitive paths:
-    network_and_browser_origins, security_configuration). Escalate on the repo decision
-    issue; no automated trigger, branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (sticky sensitive paths: network_and_browser_origins,
+    security_configuration). Escalate on the repo decision issue; no automated trigger,
+    branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/440
   attempts:
@@ -28470,9 +28495,10 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 guardrail 2026-10-09: REVIEW_SECURITY (security-themed title/branch).
-    Escalate on the repo decision issue; no automated trigger, branch update, close,
-    or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 guardrail
+    2026-10-09: REVIEW_SECURITY (security-themed title/branch). Escalate on the repo
+    decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/444
   attempts:
@@ -29052,10 +29078,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
-    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
-    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 2026-10-17
+    AM: REVIEW_SECURITY (security-themed Sentinel title; Desk standing order: security
+    PRs never PASS_ROUTINE). Path-only guardrail had stamped PASS_ROUTINE. Escalate
+    on the repo decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2495
   attempts:
@@ -30569,8 +30596,9 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-10-16 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1018
   attempts:
@@ -31896,10 +31924,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
-    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
-    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 2026-10-17
+    AM: REVIEW_SECURITY (security-themed Sentinel title; Desk standing order: security
+    PRs never PASS_ROUTINE). Path-only guardrail had stamped PASS_ROUTINE. Escalate
+    on the repo decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/569
   attempts:
@@ -33831,8 +33860,9 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-10-16 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/500
   attempts:
@@ -33998,8 +34028,9 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-17
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-10-17 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2563
   attempts:
@@ -34433,10 +34464,11 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close without a human security decision.
-  next_action: 'Stage 1 2026-10-17 AM: REVIEW_SECURITY (security-themed Sentinel title;
-    Desk standing order: security PRs never PASS_ROUTINE). Path-only guardrail had
-    stamped PASS_ROUTINE. Escalate on the repo decision issue; no automated trigger,
-    branch update, close, or merge.'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1 2026-10-17
+    AM: REVIEW_SECURITY (security-themed Sentinel title; Desk standing order: security
+    PRs never PASS_ROUTINE). Path-only guardrail had stamped PASS_ROUTINE. Escalate
+    on the repo decision issue; no automated trigger, branch update, close, or merge.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/846
   attempts:
@@ -35366,7 +35398,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Series_27/Analysis/requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -35402,7 +35435,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/repository-automation-daily.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -35438,7 +35472,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/release-drafter.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -35474,7 +35509,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/repository-automation-daily.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -35547,7 +35584,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - poetry.lock
+  - pyproject.toml
+  - requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -35602,6 +35642,766 @@ items:
   - evt-reconcile-20261027133702-88eca94c
   revision: 1
   updated_at_utc: '2026-10-27T13:37:02Z'
+- key: abhimehro/personal-config#2592@1d5ceb9011057acb76b95b0a83df1aaa7ca4f2cc
+  repository: abhimehro/personal-config
+  pr: 2592
+  url: https://github.com/abhimehro/personal-config/pull/2592
+  base_sha: b7a65c618f31cedf5fa138edefe0103090c3cae8
+  head_sha: 1d5ceb9011057acb76b95b0a83df1aaa7ca4f2cc
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2592
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2593@eaf5cbb088953861f1b6c3ac61e16b94d60e4284
+  repository: abhimehro/personal-config
+  pr: 2593
+  url: https://github.com/abhimehro/personal-config/pull/2593
+  base_sha: b7a65c618f31cedf5fa138edefe0103090c3cae8
+  head_sha: eaf5cbb088953861f1b6c3ac61e16b94d60e4284
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2593
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2594@c94cfe500cd526a0003a932101954123368b338c
+  repository: abhimehro/personal-config
+  pr: 2594
+  url: https://github.com/abhimehro/personal-config/pull/2594
+  base_sha: b7a65c618f31cedf5fa138edefe0103090c3cae8
+  head_sha: c94cfe500cd526a0003a932101954123368b338c
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2594
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2595@e76965dbe1a0c9ab99643a777cdbb5f660816d3b
+  repository: abhimehro/personal-config
+  pr: 2595
+  url: https://github.com/abhimehro/personal-config/pull/2595
+  base_sha: b7a65c618f31cedf5fa138edefe0103090c3cae8
+  head_sha: e76965dbe1a0c9ab99643a777cdbb5f660816d3b
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2595
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2596@94edbd6ffe6f34afed2dea9e019f1576e59c712f
+  repository: abhimehro/personal-config
+  pr: 2596
+  url: https://github.com/abhimehro/personal-config/pull/2596
+  base_sha: b7a65c618f31cedf5fa138edefe0103090c3cae8
+  head_sha: 94edbd6ffe6f34afed2dea9e019f1576e59c712f
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2596
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2620@cef61f23e491e2a3dc607faa2149bd604bf708bb
+  repository: abhimehro/personal-config
+  pr: 2620
+  url: https://github.com/abhimehro/personal-config/pull/2620
+  base_sha: dd99cf16d00d1cec5f4df09bfb90d2338858b26c
+  head_sha: cef61f23e491e2a3dc607faa2149bd604bf708bb
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2620
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/personal-config#2622@cbbf0d0adc132edfafab49661bc8128657262f84
+  repository: abhimehro/personal-config
+  pr: 2622
+  url: https://github.com/abhimehro/personal-config/pull/2622
+  base_sha: 5e66cd332d46b210e62bf96b2fbd8500bac29c7a
+  head_sha: cbbf0d0adc132edfafab49661bc8128657262f84
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2622
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/ctrld-sync#1349@2943c2197e21555d502a94445c2d9c18097dafb3
+  repository: abhimehro/ctrld-sync
+  pr: 1349
+  url: https://github.com/abhimehro/ctrld-sync/pull/1349
+  base_sha: d155ba2a10e1721c6be4584bde87ce0ef9a0a8a5
+  head_sha: 2943c2197e21555d502a94445c2d9c18097dafb3
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1349
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/ctrld-sync#1356@4f0a2c1b450aaeb0b287a9ec211ec6afcb605a4d
+  repository: abhimehro/ctrld-sync
+  pr: 1356
+  url: https://github.com/abhimehro/ctrld-sync/pull/1356
+  base_sha: a680ffc95cdf0eccd0533a0da8c3507f13d7fd5c
+  head_sha: 4f0a2c1b450aaeb0b287a9ec211ec6afcb605a4d
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1356
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/ctrld-sync#1357@3b0d559cd28f3ba3ce74731834a551655d7b0444
+  repository: abhimehro/ctrld-sync
+  pr: 1357
+  url: https://github.com/abhimehro/ctrld-sync/pull/1357
+  base_sha: a680ffc95cdf0eccd0533a0da8c3507f13d7fd5c
+  head_sha: 3b0d559cd28f3ba3ce74731834a551655d7b0444
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1357
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/ctrld-sync#1358@566fef37e5a23fca338e1ec0bf43e158d1058d25
+  repository: abhimehro/ctrld-sync
+  pr: 1358
+  url: https://github.com/abhimehro/ctrld-sync/pull/1358
+  base_sha: a680ffc95cdf0eccd0533a0da8c3507f13d7fd5c
+  head_sha: 566fef37e5a23fca338e1ec0bf43e158d1058d25
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1358
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/ctrld-sync#1359@8507d9e4dd311c4d4c6edd4ea1ca9c4f24efd7ce
+  repository: abhimehro/ctrld-sync
+  pr: 1359
+  url: https://github.com/abhimehro/ctrld-sync/pull/1359
+  base_sha: a680ffc95cdf0eccd0533a0da8c3507f13d7fd5c
+  head_sha: 8507d9e4dd311c4d4c6edd4ea1ca9c4f24efd7ce
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1359
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/email-security-pipeline#1788@01a7cdcc78bac7ea4c9b4cdcb1157f49c11aaf02
+  repository: abhimehro/email-security-pipeline
+  pr: 1788
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1788
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 01a7cdcc78bac7ea4c9b4cdcb1157f49c11aaf02
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1788
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/email-security-pipeline#1789@713af97541061cfc6c1f9078a190aa3265fa6851
+  repository: abhimehro/email-security-pipeline
+  pr: 1789
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1789
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 713af97541061cfc6c1f9078a190aa3265fa6851
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1789
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/email-security-pipeline#1790@206f4d5498833077fd6704273eb497b4ac675e59
+  repository: abhimehro/email-security-pipeline
+  pr: 1790
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1790
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 206f4d5498833077fd6704273eb497b4ac675e59
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1790
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/email-security-pipeline#1791@1c69a74c968043adcd94ca6387f41e40ebccce37
+  repository: abhimehro/email-security-pipeline
+  pr: 1791
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1791
+  base_sha: 0b7f2f68c58d18089036d4589d272dcfb6df9c21
+  head_sha: 1c69a74c968043adcd94ca6387f41e40ebccce37
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1791
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/email-security-pipeline#1795@8a4dde9d8c9357953bdd9c28fa03783e33f82f16
+  repository: abhimehro/email-security-pipeline
+  pr: 1795
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1795
+  base_sha: 2d46099adfb9aa1a867088d2f38d76eb3303eb18
+  head_sha: 8a4dde9d8c9357953bdd9c28fa03783e33f82f16
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1795
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/Seatek_Analysis#1056@943f2be1718cc9a38cfa3dfa778c17a8c56e88cb
+  repository: abhimehro/Seatek_Analysis
+  pr: 1056
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1056
+  base_sha: e9cf7c6b999ba0bc591f98fd3b4212bd08aa480d
+  head_sha: 943f2be1718cc9a38cfa3dfa778c17a8c56e88cb
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1056
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/Seatek_Analysis#1058@d558daba3751e21feae4326dea6c477461512a63
+  repository: abhimehro/Seatek_Analysis
+  pr: 1058
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1058
+  base_sha: e9cf7c6b999ba0bc591f98fd3b4212bd08aa480d
+  head_sha: d558daba3751e21feae4326dea6c477461512a63
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1058
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/Seatek_Analysis#1068@589ab97a24fda8052324d8c590f7791ad4452d32
+  repository: abhimehro/Seatek_Analysis
+  pr: 1068
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1068
+  base_sha: bf4f7381b42b91d805e8a664a3ac8e3cfc431502
+  head_sha: 589ab97a24fda8052324d8c590f7791ad4452d32
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1068
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
+- key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#862@ab10280ca7e8504c0ca736117384934f0ff7a34e
+  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  pr: 862
+  url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/862
+  base_sha: 824d634a35a2838028402b6f6ad8ccbf8f0f860a
+  head_sha: ab10280ca7e8504c0ca736117384934f0ff7a34e
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/862
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-10-27T13:40:01Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
