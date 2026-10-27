@@ -352,7 +352,7 @@ validate_yaml_files() {
 		fi
 
 		# Validate YAML (basic check)
-		if ! python3 -c "import yaml; yaml.safe_load(open('$yaml_file'))" 2>/dev/null; then
+		if ! python3 -c "import sys, yaml; open_file = open(sys.argv[1], 'r', encoding='utf-8'); yaml.safe_load(open_file); open_file.close()" "$yaml_file" 2>/dev/null; then
 			log_warn "Invalid YAML: $yaml_file"
 			invalid_yaml_files=$((invalid_yaml_files + 1))
 			ISSUES_FOUND=$((ISSUES_FOUND + 1))
