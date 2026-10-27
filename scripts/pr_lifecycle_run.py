@@ -135,16 +135,23 @@ def write_status_doc(plan: dict[str, Any], run_id: str) -> dict[str, Any]:
 
 
 def _live_signals_result(
-    ledger: dict[str, Any], enabled: bool
+    ledger: dict[str, Any],
+    enabled: bool,
+    *,
+    include_stage2_owned: bool = False,
 ) -> tuple[SignalsResult, str | None]:
     """Fetch live signals fail-open; return (result, error_type_or_None).
 
     A producer exception degrades to empty signals with the exception type
     logged (never the message, which can echo gh output or tokens).
+    Stage 2 passes include_stage2_owned so booking can see closed PRs the
+    reselect prefilter would otherwise skip.
     """
     if not enabled:
         return SignalsResult(signals=health.ReselectSignals(), status="SKIPPED"), None
     try:
+        if include_stage2_owned:
+            return produce_reselect_signals(ledger, include_stage2_owned=True), None
         return produce_reselect_signals(ledger), None
     except Exception as exc:  # pylint: disable=broad-exception-caught
         name = type(exc).__name__
@@ -181,8 +188,9 @@ def run_stage(
 ) -> int:
     """Fetch the ledger, emit and log a plan, and optionally write local status.
 
-    Query live signals for Stages 1/3 unless no_live_signals is set. Producer
-    exceptions degrade to ledger fallbacks. dry_run only labels the plan:
+    Query live signals for Stages 1, 2, and 3 unless no_live_signals is set.
+    Stage 2 also queries records it already owns. Producer exceptions degrade
+    to ledger fallbacks. dry_run only labels the plan:
     reads and local writes still occur, and proposed actions are never applied.
     Append run records under LOG_DIR and, with write_status, replace its
     status.json mirror.
@@ -204,7 +212,9 @@ def run_stage(
             ledger = load_yaml(Path(fetch["ledger_path"]))
 
             signals_result, signals_error = _live_signals_result(
-                ledger, enabled=stage in (1, 3) and not no_live_signals
+                ledger,
+                enabled=stage in (1, 2, 3) and not no_live_signals,
+                include_stage2_owned=stage == 2,
             )
             plan = build_stage_plan(
                 stage, ledger, config, signals_result=signals_result
