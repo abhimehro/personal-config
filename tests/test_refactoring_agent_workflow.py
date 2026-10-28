@@ -82,7 +82,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
         steps_by_name = {step["name"]: step for step in steps if "name" in step}
         approved_refactor_action = {
-            "uses": "codescene-oss/pr-refactoring-agent@abd82295d700c9e3b51f2692ac73710e00cdb601",
+            "uses": "codescene-oss/pr-refactoring-agent@7127fd93283ac5883d945e91dd2a6bafec32de01",
             "version": "v1.1.1",
         }
 
