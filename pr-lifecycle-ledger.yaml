@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 860
+ledger_revision: 861
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -29095,12 +29095,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-27T14:14:40Z'
+  updated_at_utc: '2026-10-28T13:37:06Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: b244be391f88c701982c48380f626f9ce7808a07
+    head_sha: e5217ba74eddb52b6445c246eb061b8bf0a7f899
     basis: head_bound_diff
-    diff_sha256: fa87267879d8da83d9406266e6a5bbdba718311cb477b5eade6ec71a74c378b2
+    diff_sha256: 3a9db6ff241065127ac2240cca9d2eb6e3f5d804fd47143e56ff125021a57c0d
 - key: abhimehro/personal-config#2494@e5fbc5fffc97dc7093d05427e3ab391eab2ebb37
   repository: abhimehro/personal-config
   pr: 2494
@@ -29509,12 +29509,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-27T14:14:40Z'
+  updated_at_utc: '2026-10-28T13:37:06Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: 32ecb31eb8dc4ae008ab31e5da15055428d0a9c2
+    head_sha: 824ba2a9ee27a9ed7617de0a81f2f43edbb093a4
     basis: head_bound_diff
-    diff_sha256: d2aa40d02b0e2f85911a2c8726719489d3859cae63cc6964a61fb9084c1ddce8
+    diff_sha256: 9596456066e6c7e8b494392287ac3a3fa346ce319ecbf17a2c7e526844bb64b3
 - key: abhimehro/personal-config#2524@2e3137560cce708b71ea5686d959e7f8b215c76a
   repository: abhimehro/personal-config
   pr: 2524
@@ -35257,12 +35257,12 @@ items:
   - evt-s2-20261020-email-1785-a
   - evt-s2-20261020-email-1785-h
   revision: 3
-  updated_at_utc: '2026-10-28T13:35:34Z'
+  updated_at_utc: '2026-10-28T13:37:06Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: b767d7c709cb856da6c26ef48f7cf320ca9cc4ac
+    head_sha: 0be1aed6c4b34ba823abac257e6daf6718f4ca75
     basis: head_bound_diff
-    diff_sha256: 3b8c8ea12b2a06bee1439ed39e700685fafc7b27776f0f7c25a3e5f9a25d9eb2
+    diff_sha256: 9e523ccf1235fb424b359a1cdafd951bdf9f9e663bf277c82ff94cb2868b0cad
 - key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
   repository: abhimehro/email-security-pipeline
   pr: 1786
@@ -36829,12 +36829,13 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - poetry.lock
   - pyproject.toml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -36850,7 +36851,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-27T13:43:22Z'
+  updated_at_utc: '2026-10-28T13:37:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#614@48e02c13261dc8cc589fc0bd148770cb78591127
   repository: abhimehro/series_correction_project_updated
   pr: 614
