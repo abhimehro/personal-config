@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 911
+ledger_revision: 912
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -37962,8 +37962,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -37975,7 +37976,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -37991,7 +37992,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1367@391c6fcdef720566b0bc48afd8b7d18d8c475759
   repository: abhimehro/ctrld-sync
   pr: 1367
@@ -38008,11 +38011,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38028,7 +38032,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1368@b4a60ebc9e4d37d32c3c8fdfa4a86855a77d7bc5
   repository: abhimehro/ctrld-sync
   pr: 1368
@@ -38045,11 +38051,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38065,7 +38072,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1370@77cc9bc6ee1f15d7a4da3747ba9e2423777dac97
   repository: abhimehro/ctrld-sync
   pr: 1370
@@ -38126,11 +38135,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38146,7 +38156,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1804@c66712b3ffc3ea66be3748784b96cc4d785c51fd
   repository: abhimehro/email-security-pipeline
   pr: 1804
@@ -38163,11 +38175,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38183,7 +38196,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1805@1758bdc1e8f9890fde21e1fefc1b6ff4424b0c55
   repository: abhimehro/email-security-pipeline
   pr: 1805
@@ -38200,14 +38215,15 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/bandit.yml
   - .github/workflows/pr-visual-recap.yml
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38223,7 +38239,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1807@e0040da2b4716291e187b7db42b22fb444e23811
   repository: abhimehro/email-security-pipeline
   pr: 1807
@@ -38240,11 +38258,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - DOCKER_SETUP.md
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38260,7 +38278,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  updated_at_utc: '2026-10-29T13:37:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: e0040da2b4716291e187b7db42b22fb444e23811
+    basis: non_executable_paths
+    diff_sha256: null
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
