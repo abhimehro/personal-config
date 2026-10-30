@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 928
+ledger_revision: 929
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -38543,10 +38543,10 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-30
     by reconcile).'
@@ -38556,9 +38556,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-30T13:34:04Z'
+  handoffs:
+  - evt-reconcile-20261030134142-3eff80a3
+  revision: 1
+  updated_at_utc: '2026-10-30T13:41:42Z'
   guardrail_source: path_eval
   guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#625@8b696e3088112f5328483aea26aa8e7bdbe473c7
@@ -73264,6 +73265,25 @@ events:
   acknowledged_at_utc: null
   reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
     label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261030134142-3eff80a3
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1809@257d327ac242789ff5887fa8d3a0d507aa261911
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1809@257d327ac242789ff5887fa8d3a0d507aa261911:evt-reconcile-20261030134142-3eff80a3
+  status: PROJECTED
+  created_at_utc: '2026-10-30T13:41:42Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=abhimehro
   successful: null
   policy_revision: null
 stage2_work_items: []
