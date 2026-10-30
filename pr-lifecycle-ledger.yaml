@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 927
+ledger_revision: 928
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -38307,11 +38307,11 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_refactoring_agent_workflow.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38327,7 +38327,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: ff78cb43327e1a11d7f76ed7655b041e150ef641
+    basis: head_bound_diff
+    diff_sha256: 7db64bad789e6e046ec8b1a90329e044323b34b6ddfbbb6bec4c81368818906e
 - key: abhimehro/personal-config#2640@8cc84a1e1940c0638da6199d4a3d2edc5a334d17
   repository: abhimehro/personal-config
   pr: 2640
@@ -38346,8 +38351,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -38359,7 +38365,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38375,7 +38381,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1372@0dfba458893c79cd034aae2ecd61680766c144c9
   repository: abhimehro/ctrld-sync
   pr: 1372
@@ -38392,11 +38400,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38412,7 +38421,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1373@cf04e017925ec42e2a39ec4d49c1795fcebdc6f0
   repository: abhimehro/ctrld-sync
   pr: 1373
@@ -38429,11 +38440,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38449,7 +38461,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1375@9754a6d804324b33542e3d74a3ad040935115db9
   repository: abhimehro/ctrld-sync
   pr: 1375
@@ -38520,14 +38534,15 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/copilot-setup-steps.yml
   - .github/workflows/pytest.yml
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38543,7 +38558,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#625@8b696e3088112f5328483aea26aa8e7bdbe473c7
   repository: abhimehro/series_correction_project_updated
   pr: 625
@@ -38560,11 +38577,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - scripts/requirements.txt
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38580,7 +38598,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  updated_at_utc: '2026-10-30T13:34:04Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
