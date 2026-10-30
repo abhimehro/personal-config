@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 920
+ledger_revision: 927
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -38309,7 +38309,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_refactoring_agent_workflow.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38347,7 +38348,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/code-quality.yml
+  - .github/workflows/copilot-setup-steps.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/pr-recap.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
+  - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38383,7 +38394,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38419,7 +38431,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38451,7 +38464,29 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/aw/actions-lock.json
+  - .github/aw/archive/daily-backlog-burner.lock.yml
+  - .github/aw/archive/daily-backlog-burner.md
+  - .github/aw/archive/daily-perf-improver.lock.yml
+  - .github/aw/archive/daily-perf-improver.md
+  - .github/aw/archive/daily-qa.lock.yml
+  - .github/aw/archive/daily-qa.md
+  - .github/aw/archive/daily-repo-status.lock.yml
+  - .github/aw/archive/daily-repo-status.md
+  - .github/aw/archive/daily-workflow-updater.lock.yml
+  - .github/aw/archive/daily-workflow-updater.md
+  - .github/aw/archive/discussion-task-miner.lock.yml
+  - .github/aw/archive/discussion-task-miner.md
+  - .github/aw/archive/plan.lock.yml
+  - .github/aw/archive/plan.md
+  - .github/aw/archive/pr-fix.lock.yml
+  - .github/aw/archive/pr-fix.md
+  - .github/aw/imports/.gitattributes
+  - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_docs-server-lifecycle.md
+  - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_jqschema.md
+  - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_reporting.md
+  - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_trending-charts-simple.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38487,7 +38522,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/copilot-setup-steps.yml
+  - .github/workflows/pytest.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38523,7 +38562,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/requirements.txt
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
