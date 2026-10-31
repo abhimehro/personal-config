@@ -36,7 +36,9 @@ log_info() {
 	echo "$ts [INFO] [health_check] $*" | tee -a "$LOG_DIR/health_check.log"
 }
 
+MAINT_WARNING_COUNT=0
 log_warn() {
+	MAINT_WARNING_COUNT=$((MAINT_WARNING_COUNT + 1))
 	local ts
 	ts="$(date '+%Y-%m-%d %H:%M:%S')"
 	echo "$ts [WARNING] [health_check] $*" | tee -a "$LOG_DIR/health_check.log"
@@ -251,14 +253,25 @@ fi
 
 log_info "Panic detection completed"
 
-# 5) Check for failed launch agents
-FAILED_JOBS=$(launchctl list 2>/dev/null | awk '$3 ~ /^[1-9][0-9]*$/ {print $3":"$1}' || true)
-if [[ -n ${FAILED_JOBS} ]]; then
-	append "Launch agents with non-zero exit codes: ${FAILED_JOBS}"
-	log_warn "Found failed launch agents: ${FAILED_JOBS}"
+# 5) Check job exit status, keeping an unavailable query distinct from healthy.
+# BEGIN reviewable launchctl query
+FAILED_JOBS=""
+LAUNCHCTL_QUERY_UNKNOWN=0
+if LAUNCHCTL_OUTPUT=$(launchctl list 2>&1) &&
+	printf '%s\n' "$LAUNCHCTL_OUTPUT" | awk 'NR==1 {ok=($1=="PID" && $2=="Status" && $3=="Label")} END {exit !ok}'; then
+	FAILED_JOBS=$(printf '%s\n' "$LAUNCHCTL_OUTPUT" | awk 'NR>1 && $2 ~ /^-?[0-9]+$/ && $2 != 0 {print $3 ":" $2}')
+	if [[ -n $FAILED_JOBS ]]; then
+		append "Launch agents with non-zero exit codes: ${FAILED_JOBS}"
+		log_warn "Found failed launch agents: ${FAILED_JOBS}"
+	else
+		append "Launch agents: No non-zero exit statuses reported"
+	fi
 else
-	append "Launch agents: All running normally"
+	LAUNCHCTL_QUERY_UNKNOWN=1
+	append "Launch agents: UNKNOWN (status query failed or returned an unrecognized header)"
+	log_warn "Launch agent status unavailable; do not treat this check as healthy"
 fi
+# END reviewable launchctl query
 
 # 6) Homebrew check
 if command -v brew >/dev/null 2>&1; then
@@ -403,6 +416,17 @@ if [[ ${WIDGET_COUNT:-0} -gt 60 ]]; then
 	ISSUE_REASONS+=("Widgets ${WIDGET_COUNT}")
 fi
 
+# Include previously logged warnings (e.g. Homebrew, network or memory)
+# instead of claiming healthy when the report itself contains warnings.
+if [[ ${LAUNCHCTL_QUERY_UNKNOWN:-0} == "1" ]]; then
+	HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
+	ISSUE_REASONS+=("Launch-agent status UNKNOWN")
+fi
+if ((MAINT_WARNING_COUNT > 0 && HEALTH_ISSUES == 0)); then
+	HEALTH_ISSUES=1
+	ISSUE_REASONS+=("Warnings recorded; review health report")
+fi
+
 if ((HEALTH_ISSUES > 0)); then
 	HEALTH_STATUS="⚠️ Issues detected (${HEALTH_ISSUES})"
 	log_warn "Health check found ${HEALTH_ISSUES} potential issues"
@@ -419,50 +443,55 @@ if [[ ${#ISSUE_REASONS[@]} -gt 0 ]]; then
 	)
 fi
 
-# Enhanced notification with panic details
-if command -v terminal-notifier >/dev/null 2>&1; then
-	if ((HEALTH_ISSUES > 0)); then
-		# Build detailed notification message
-		NOTIFICATION_MSG="Disk: ${ROOT_USE:-?}% | ${REASONS_STR}"
+# BEGIN reviewable notification policy
+# Quiet healthy automation only; preserve all existing issue/panic actions.
+if [[ ${AUTOMATED_RUN:-0} != "1" ]] || ((HEALTH_ISSUES > 0)); then
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		if ((HEALTH_ISSUES > 0)); then
+			# Build detailed notification message
+			NOTIFICATION_MSG="Disk: ${ROOT_USE:-?}% | ${REASONS_STR}"
 
-		if ((PANIC_COUNT > 0)); then
-			# Add best available detail line (panic file or timestamp)
-			if [[ -n $PANIC_DETAILS ]]; then
-				NOTIFICATION_MSG+="\n${PANIC_DETAILS}"
+			if ((PANIC_COUNT > 0)); then
+				# Add best available detail line (panic file or timestamp)
+				if [[ -n $PANIC_DETAILS ]]; then
+					NOTIFICATION_MSG+="\n${PANIC_DETAILS}"
+				fi
+
+				# Provide actionable report (panic analyzer writes a report + opens when interactive)
+				terminal-notifier -title "Health Check" \
+					-subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
+					-message "$NOTIFICATION_MSG" \
+					-group "maintenance" \
+					-execute "$SCRIPT_DIR/panic_analyzer.sh" 2>/dev/null || true
+			else
+				terminal-notifier -title "Health Check" \
+					-subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
+					-message "$NOTIFICATION_MSG" \
+					-group "maintenance" \
+					-execute "$HOME/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
 			fi
-
-			# Provide actionable report (panic analyzer writes a report + opens when interactive)
-			terminal-notifier -title "Health Check" \
-				-subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
-				-message "$NOTIFICATION_MSG" \
-				-group "maintenance" \
-				-execute "$SCRIPT_DIR/panic_analyzer.sh" 2>/dev/null || true
 		else
 			terminal-notifier -title "Health Check" \
-				-subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
-				-message "$NOTIFICATION_MSG" \
-				-group "maintenance" \
-				-execute "$HOME/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
+				-subtitle "System healthy" \
+				-message "Disk: ${ROOT_USE:-?}% | No issues detected" \
+				-group "maintenance" 2>/dev/null || true
 		fi
-	else
-		terminal-notifier -title "Health Check" \
-			-subtitle "System healthy" \
-			-message "Disk: ${ROOT_USE:-?}% | No issues detected" \
-			-group "maintenance" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		NOTIFICATION_TEXT="${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}%"
+		if [[ -n $REASONS_STR ]]; then
+			NOTIFICATION_TEXT+=$'\n'"${REASONS_STR}"
+		fi
+		if ((PANIC_COUNT > 0)) && [[ -n $PANIC_DETAILS ]]; then
+			NOTIFICATION_TEXT+=$'\n'"${PANIC_DETAILS}"
+		fi
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${NOTIFICATION_TEXT}" "Health Check" 2>/dev/null || true
 	fi
-elif command -v osascript >/dev/null 2>&1; then
-	NOTIFICATION_TEXT="${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}%"
-	if [[ -n $REASONS_STR ]]; then
-		NOTIFICATION_TEXT+=$'\n'"${REASONS_STR}"
-	fi
-	if ((PANIC_COUNT > 0)) && [[ -n $PANIC_DETAILS ]]; then
-		NOTIFICATION_TEXT+=$'\n'"${PANIC_DETAILS}"
-	fi
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${NOTIFICATION_TEXT}" "Health Check" 2>/dev/null || true
+
 fi
+# END reviewable notification policy
 
 log_info "Health check complete: ${HEALTH_STATUS}"
-echo "Health check completed successfully!"
+echo "Health check completed: ${HEALTH_STATUS}"
 
 # Interactive Dashboard
 if [ -t 1 ]; then

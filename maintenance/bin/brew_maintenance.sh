@@ -16,7 +16,9 @@ log_info() {
 	echo "$ts [INFO] [brew_maintenance] $*" | tee -a "$LOG_DIR/brew_maintenance.log"
 }
 
+MAINT_WARNING_COUNT=0
 log_warn() {
+	MAINT_WARNING_COUNT=$((MAINT_WARNING_COUNT + 1))
 	local ts
 	ts="$(date '+%Y-%m-%d %H:%M:%S')"
 	echo "$ts [WARNING] [brew_maintenance] $*" | tee -a "$LOG_DIR/brew_maintenance.log"
@@ -34,6 +36,12 @@ log_info "Homebrew maintenance started"
 # Check if Homebrew is installed
 if ! command -v brew >/dev/null 2>&1; then
 	log_warn "Homebrew not found, skipping maintenance"
+	# This early skip must remain visible even though routine success is quiet.
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "Homebrew Maintenance" -message "Homebrew unavailable; maintenance skipped. Check logs." -group "maintenance-brew" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Homebrew unavailable; maintenance skipped. Check logs." "Homebrew Maintenance" 2>/dev/null || true
+	fi
 	exit 0
 fi
 
@@ -283,14 +291,22 @@ else
 	STATUS_MSG="All packages and casks up to date"
 fi
 
-# Notification
-if command -v terminal-notifier >/dev/null 2>&1; then
-	terminal-notifier -title "Homebrew Maintenance" \
-		-message "${STATUS_MSG}" \
-		-group "maintenance" 2>/dev/null || true
-elif command -v osascript >/dev/null 2>&1; then
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${STATUS_MSG}" "Homebrew Maintenance" 2>/dev/null || true
+# BEGIN reviewable notification policy
+# Quiet automated successes; retain manual completion and warning notices.
+if ((MAINT_WARNING_COUNT > 0)); then
+	STATUS_MSG="Completed with warnings; update status is not confirmed. See brew_maintenance.log."
 fi
+if [[ ${AUTOMATED_RUN:-0} != "1" ]] || ((MAINT_WARNING_COUNT > 0)); then
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "Homebrew Maintenance" \
+			-message "${STATUS_MSG}" \
+			-group "maintenance" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${STATUS_MSG}" "Homebrew Maintenance" 2>/dev/null || true
+	fi
+
+fi
+# END reviewable notification policy
 
 log_info "Homebrew maintenance complete: ${STATUS_MSG}"
-echo "Homebrew maintenance completed successfully!"
+echo "Homebrew maintenance: ${STATUS_MSG}"

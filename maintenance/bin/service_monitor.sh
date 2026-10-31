@@ -350,8 +350,9 @@ log_info "Service monitor report saved to $REPORT_FILE"
 # Display summary to stdout
 echo "$REPORT"
 
-# Send notification if not in automated mode
-if [[ ${AUTOMATED_RUN:-0} != "1" ]] && command -v osascript >/dev/null 2>&1; then
+# Send meaningful issues/warnings in both automated and manual mode.
+# Existing success behavior stays silent.
+if ((ISSUES > 0 || WARNINGS > 0)) && command -v osascript >/dev/null 2>&1; then
 	if ((ISSUES > 0)); then
 		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Issues: $ISSUES | Actions: $ACTIONS_TAKEN | Widgets: $WIDGET_COUNT" "⚠️ Service Monitor" 2>/dev/null || true
 	elif ((WARNINGS > 0)); then

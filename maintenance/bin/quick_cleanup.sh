@@ -18,7 +18,9 @@ log_info() {
 	echo "$ts [INFO] [quick_cleanup] $*" | tee -a "$LOG_DIR/quick_cleanup.log"
 }
 
+MAINT_WARNING_COUNT=0
 log_warn() {
+	MAINT_WARNING_COUNT=$((MAINT_WARNING_COUNT + 1))
 	local ts
 	ts="$(date '+%Y-%m-%d %H:%M:%S')"
 	echo "$ts [WARNING] [quick_cleanup] $*" | tee -a "$LOG_DIR/quick_cleanup.log"
@@ -78,28 +80,9 @@ if [[ -d "$HOME/Library/Caches" ]]; then
 	done
 fi
 
-# 2) Clean Downloads folder (old files)
-log_info "Cleaning old downloads..."
-if [[ -d "$HOME/Downloads" ]]; then
-	# Count files before cleanup (handle permission errors)
-	BEFORE_COUNT=$(find "$HOME/Downloads" -type f 2>/dev/null | wc -l | tr -d ' \n' || echo 0)
-	# shellcheck disable=SC2086  # intentional word splitting or dynamic args
-
-	# Attempt cleanup with explicit error tracking
-	if ! find "$HOME/Downloads" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
-		log_warn "Some Downloads files could not be cleaned (permission denied)"
-	fi
-
-	AFTER_COUNT=$(find "$HOME/Downloads" -type f 2>/dev/null | wc -l | tr -d ' \n' || echo 0)
-	CLEANED_FILES=$((BEFORE_COUNT - AFTER_COUNT))
-
-	if ((CLEANED_FILES > 0)); then
-		log_info "Cleaned $CLEANED_FILES old files from Downloads"
-		((CLEANED++))
-	elif ((BEFORE_COUNT > 0)); then
-		log_info "No old files to clean in Downloads (or all protected)"
-	fi
-fi
+# 2) Downloads: no unattended age-based deletion.
+# Personal files are not cache; retention changes require separate review.
+log_info "Downloads deletion disabled by containment policy; files left untouched"
 
 # 3) Clean temporary directories
 log_info "Cleaning temporary directories..."
@@ -263,63 +246,9 @@ if [[ -d $TRUNK_CACHE_DIR/tools ]]; then
 	fi
 fi
 
-# 10) Fish shell: orphaned Tide prompt cache entries
-# Tide caches a fully rendered ANSI prompt string per shell PID as the universal
-# variable _tide_prompt_<PID>, and drops it on fish_exit. Terminals that are
-# killed rather than closed never fire fish_exit, so the entries leak. Observed
-# 151 orphans holding 130 KB, about 86% of fish_variables, which every new shell
-# then parses before its prompt appears.
-#
-# The filter is deliberately exact: only lines whose variable name matches
-# _tide_prompt_<digits> are candidates, and an entry is dropped only when that
-# PID is not a live process. All tide_* settings, _fisher_* records, and every
-# other variable are preserved byte for byte. This mirrors the interactive
-# reaper in configs/.config/fish/conf.d/zzz_tide_prompt_reap.fish so the file
-# stays clean even if a shell never starts up to run it.
-FISH_VARS="$HOME/.config/fish/fish_variables"
-if [[ -f $FISH_VARS ]]; then
-	TIDE_ORPHANS=0
-	TIDE_TOTAL=0
-	while IFS= read -r name; do
-		pid="${name#_tide_prompt_}"
-		TIDE_TOTAL=$((TIDE_TOTAL + 1))
-		if ! ps -p "$pid" -o comm= >/dev/null 2>&1; then
-			TIDE_ORPHANS=$((TIDE_ORPHANS + 1))
-		fi
-	done < <(grep -o '^SETUVAR _tide_prompt_[0-9]*' "$FISH_VARS" 2>/dev/null | sed 's/^SETUVAR //' | sort -u)
-
-	if [[ $TIDE_ORPHANS -gt 0 ]]; then
-		FISH_BEFORE=$(wc -c <"$FISH_VARS" | tr -d ' ')
-		cp -p "$FISH_VARS" "$FISH_VARS.maintenance.bak"
-
-		# Keep only entries whose PID is still alive. A PID that has been reused
-		# by an unrelated live process is kept, which is the safe failure mode:
-		# a stale entry costs bytes, a deleted live entry costs a repaint.
-		TMP_VARS=$(mktemp)
-		while IFS= read -r line; do
-			if [[ $line =~ ^SETUVAR[[:space:]]_tide_prompt_([0-9]+): ]]; then
-				pid="${BASH_REMATCH[1]}"
-				if ps -p "$pid" -o comm= >/dev/null 2>&1; then
-					printf '%s
-' "$line" >>"$TMP_VARS"
-				fi
-			else
-				printf '%s
-' "$line" >>"$TMP_VARS"
-			fi
-		done <"$FISH_VARS"
-
-		cat "$TMP_VARS" >"$FISH_VARS"
-		rm -f "$TMP_VARS"
-		chmod 600 "$FISH_VARS" 2>/dev/null || true
-
-		FISH_AFTER=$(wc -c <"$FISH_VARS" | tr -d ' ')
-		log_info "Reaped ${TIDE_ORPHANS} of ${TIDE_TOTAL} stale Tide prompt entries (fish_variables: ${FISH_BEFORE} -> ${FISH_AFTER} bytes)"
-		((CLEANED++))
-	else
-		log_info "Tide prompt cache clean (${TIDE_TOTAL} entries, all live)"
-	fi
-fi
+# 10) Fish universal variables: no unattended file rewrite.
+# Do not edit fish_variables or replace its recovery copy behind a live shell.
+log_info "Fish variable cleanup disabled by containment policy; configuration left untouched"
 
 # =============================================================================
 # RECURRING BLOAT CLEANUP
@@ -384,34 +313,9 @@ if [[ ${RAYCAST_STRIP_SOURCEMAPS:-1} -eq 1 ]]; then
 	fi
 fi
 
-# 3) Orphaned agent/server data directories
-# Removal is gated on the owning app being absent. Devin - Next and Nimbus are
-# installed and their directories are deliberately left in place -- a shared
-# dataFolderName between forks makes name-based inference unsafe.
-if [[ -n ${ORPHAN_AGENT_APPS:-} ]]; then
-	ORPHAN_TARGETS=(
-		"$HOME/.windsurf-server-next:Windsurf"
-		"$HOME/.windsurf-next:Windsurf"
-	)
-	for entry in "${ORPHAN_TARGETS[@]}"; do
-		dir="${entry%%:*}"
-		app="${entry##*:}"
-
-		[[ -d $dir ]] || continue
-
-		# Skip unless the app is confirmed absent from /Applications and ~/Applications.
-		if [[ -d "/Applications/$app.app" ]] || [[ -d "$HOME/Applications/$app.app" ]]; then
-			log_info "Keeping $(basename "$dir"): $app is still installed"
-			continue
-		fi
-
-		ORPHAN_SIZE=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo "0")
-		log_info "Removing orphaned agent data: $(basename "$dir") (${ORPHAN_SIZE} KB)"
-		if rm -rf "$dir" 2>/dev/null; then
-			((CLEANED++))
-		fi
-	done
-fi
+# 3) Orphaned agent/server data: never infer disposability from app absence.
+# Leave Windsurf-next data/config folders intact, regardless of config switches.
+log_info "Orphan agent-data removal disabled by containment policy; directories left untouched"
 
 # 4) Click browser: orphaned WebKit ContentRuleLists
 # Click compiles its ad-block filter lists into WebKit ContentRuleList files.
@@ -506,18 +410,24 @@ if [[ -d $SIRI_TTS_DIR ]] && ! pgrep -x sirittsd >/dev/null 2>&1; then
 	fi
 fi
 
-# Notification
-if command -v terminal-notifier >/dev/null 2>&1; then
-	# Always provide actionable notification to view cleanup logs
-	terminal-notifier -title "Quick Cleanup" \
-		-subtitle "${CLEANED_COUNT} items cleaned" \
-		-message "Click for details" \
-		-group "maintenance" \
-		-execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
-elif command -v osascript >/dev/null 2>&1; then
-	# Fallback to osascript
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Cleaned ${CLEANED} items | Disk: ${DISK_USE}%" "Quick Cleanup" 2>/dev/null || true
+# BEGIN reviewable notification policy
+# Routine automated completion stays in logs, not pop-ups.
+QUICK_NOTICE="Run completed; ${CLEANED} items counted"
+if ((MAINT_WARNING_COUNT > 0)); then
+	QUICK_NOTICE="Completed with warnings; review quick_cleanup.log"
 fi
+if [[ ${AUTOMATED_RUN:-0} != "1" ]] || ((MAINT_WARNING_COUNT > 0)); then
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "Quick Cleanup" \
+			-subtitle "$QUICK_NOTICE" \
+			-message "Click for details" \
+			-group "maintenance-quick-cleanup" \
+			-execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$QUICK_NOTICE" "Quick Cleanup" 2>/dev/null || true
+	fi
+fi
+# END reviewable notification policy
 
 log_info "Quick cleanup completed: ${CLEANED} items cleaned"
-echo "Quick cleanup completed successfully!"
+echo "Quick cleanup: ${QUICK_NOTICE}"
