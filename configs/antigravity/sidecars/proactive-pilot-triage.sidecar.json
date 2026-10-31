@@ -1,0 +1,26 @@
+{
+  "builtin": "schedule",
+  "args": [
+    "CRON_TZ=America/Chicago 35 8 * * 1-5",
+    "agentapi",
+    "new-conversation",
+    "--",
+    "[PROACTIVE-TRIAGE] Weekday 08:35 local (America/Chicago) post-sweep review for the ctrld-sync pilot (2B, human-in-the-loop). Do NOT push, open PRs, or re-run the sweep. Steps: (1) Read __HOME__/.gemini/antigravity/proactive-reports/$(date -u +%Y-%m-%d)-<repo>.md for the pilot repo (ctrld-sync in Week 1; the repo named in the sidecar prompt in Week 2). (2) If no digest exists, run `__HOME__/dev/personal-config/scripts/antigravity-proactive-ctl.sh audit-missed --date $(date -u +%Y-%m-%d) --repo <repo>` once, record Status MISSED in the summary, and do NOT retry or start a run. (3) Otherwise inspect the referenced worktree (git diff --shortstat vs base_sha) and re-check verify exit status from the digest. (4) Post a TIGHT summary to the user with exactly these fields: repo, Status, Substatus (NONE|FLOAT_REORDER_DRIFT|GATE_FAILURE), verify exit code, diff size (files/+/-), and a one-line call: 'worth a look' or 'skip'. Never print secrets or sentinel details beyond the Status and a pointer to the local digest path. Sentinel stays local-only (SECURITY_REPORT_ONLY), never staged for a public PR."
+  ],
+  "restart_policy": "always",
+  "display_name": "Proactive Triage Review (ctrld-sync Pilot)",
+  "description": "Every weekday (Mon-Fri) at 08:35 local (America/Chicago, 20 minutes post-sweep), reviews the proactive digest and outputs a tight triage summary.",
+  "agent_permissions": {
+    "allows_user_interactions": true,
+    "workspace_uris": [
+      "file://__HOME__/.gemini/antigravity/proactive-reports"
+    ],
+    "access_grants": [
+      "read_file(__HOME__/.gemini/antigravity/proactive-reports)",
+      "write_file(__HOME__/.gemini/antigravity/proactive-reports)",
+      "command(__HOME__/bin/agent-zsh -c)",
+      "command(__HOME__/dev/personal-config/scripts/antigravity-proactive-ctl.sh audit-missed)",
+      "command(git -C)"
+    ]
+  }
+}
