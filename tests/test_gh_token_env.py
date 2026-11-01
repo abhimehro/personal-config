@@ -201,14 +201,11 @@ class TestGhTokenEnv(unittest.TestCase):
                 os.environ.pop("GH_TOKEN", None)
                 self.assertEqual(load_gh_token_env()["GH_TOKEN"], "second")
 
-    def _execute_mocked_run_gh(
-        self,
-        cmd,
-        returncode=0,
-        stdout="",
-        side_effect=None,
-        parse_json=True,
-    ):
+    def _execute_mocked_run_gh(self, cmd, **kwargs):
+        returncode = kwargs.get("returncode", 0)
+        stdout = kwargs.get("stdout", "")
+        side_effect = kwargs.get("side_effect")
+        parse_json = kwargs.get("parse_json", True)
         with (
             patch("gh_token_env.load_gh_token_env", return_value={}),
             patch("subprocess.run") as mock_run,
