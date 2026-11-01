@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 944
+ledger_revision: 951
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -38908,7 +38908,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_refactoring_agent_workflow.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38946,7 +38947,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/code-quality.yml
+  - .github/workflows/copilot-setup-steps.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/pr-recap.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
+  - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -38978,7 +38989,43 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .cursor/skills/aside-browser/SKILL.md
+  - .cursor/skills/context7-mcp/SKILL.md
+  - .cursor/skills/find-docs/SKILL.md
+  - .entire/agent-guide.md
+  - .github/workflows/jules-daily-qa.yml
+  - .github/workflows/jules.yml
+  - .trunk/trunk.yaml
+  - AGENTS.md
+  - CLAUDE.md
+  - configs/.gitconfig
+  - configs/antigravity/hooks.json
+  - configs/antigravity/hooks/proactive-guard.py
+  - configs/antigravity/sidecars/proactive-pilot-ctrld-sync.sidecar.json
+  - configs/antigravity/sidecars/proactive-pilot-triage.sidecar.json
+  - configs/antigravity/skills/proactive-bolt/SKILL.md
+  - configs/antigravity/skills/proactive-code-health/SKILL.md
+  - configs/antigravity/skills/proactive-code-health/references/jules-review-rules.md
+  - configs/antigravity/skills/proactive-palette/SKILL.md
+  - configs/antigravity/skills/proactive-repo-sweep/SKILL.md
+  - configs/antigravity/skills/proactive-sentinel/SKILL.md
+  - docs/antigravity-proactive-migration.md
+  - maintenance/bin/brew_maintenance.sh
+  - maintenance/bin/deep_cleaner.sh
+  - maintenance/bin/health_check.sh
+  - maintenance/bin/quick_cleanup.sh
+  - maintenance/bin/run_all_maintenance.sh
+  - maintenance/bin/service_monitor.sh
+  - maintenance/bin/service_optimizer.sh
+  - maintenance/bin/system_cleanup.sh
+  - scripts/antigravity-proactive-ctl.sh
+  - scripts/proactive-worktree.sh
+  - scripts/sync_all_configs.sh
+  - tests/test_antigravity_proactive_ctl.sh
+  - tests/test_proactive_guard_hook.sh
+  - tests/test_proactive_worktree.sh
+  - tests/test_refactoring_agent_workflow.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -39014,7 +39061,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - uv.lock
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -39050,7 +39098,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - uv.lock
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -39086,7 +39135,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - uv.lock
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -39118,7 +39168,13 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .trunk/configs/.hadolint.yaml
+  - .trunk/configs/.isort.cfg
+  - .trunk/configs/.markdownlint.yaml
+  - .trunk/configs/.shellcheckrc
+  - .trunk/configs/ruff.toml
+  - .trunk/trunk.yaml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
