@@ -201,6 +201,30 @@ check_grep "verify strips SSH_AUTH_SOCK and GH_TOKEN" "^ENV_SSH= ENV_GH=$" "${WT
 rm -f "${WT_CH}/.verify-env.log"
 git -C "${WT_CH}" checkout -q -- src/module.py
 
+# Verification must propagate failures and keep the two edit permissions independent.
+check_exit "verify propagates failing test command" 7 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --test-cmd "exit 7"
+check_exit "verify propagates failing numeric check" 8 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --test-cmd "true" --numeric-check-cmd "exit 8"
+echo "tamper" >"${WT_CH}/package.json"
+echo "test change" >>"${WT_CH}/tests/run_tests.sh"
+check_exit "allow-test-edits does not permit harness changes" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --allow-test-edits --test-cmd "true"
+rm -f "${WT_CH}/package.json"
+check_exit "allow-harness-changes does not permit test edits" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --allow-harness-changes --test-cmd "true"
+check_exit "explicit test-edit permission permits the test change" 0 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --allow-test-edits --test-cmd "true"
+git -C "${WT_CH}" checkout -q -- tests/run_tests.sh
+
+# A rename still changes the protected source path, even if the destination is safe.
+git -C "${WT_CH}" mv tests/run_tests.sh src/moved.sh
+check_exit "verify detects a renamed protected test" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --test-cmd "true"
+git -C "${WT_CH}" reset -q HEAD -- tests/run_tests.sh src/moved.sh
+rm -f "${WT_CH}/src/moved.sh"
+git -C "${WT_CH}" checkout -q -- tests/run_tests.sh
+
 # 4. Research repo Bolt pass requires explicit numeric-equivalence check
 check_exit "verify blocks research-repo bolt pass without numeric gate" 3 \
 	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens bolt --test-cmd "make test"
