@@ -5,7 +5,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import subprocess
+from unittest.mock import MagicMock
 from gh_token_env import (
+    run_gh,
     _read_env_file,
     clear_gh_token_cache,
     load_gh_token_env,
@@ -199,6 +202,48 @@ class TestGhTokenEnv(unittest.TestCase):
                 os.environ.pop("GH_TOKEN", None)
                 self.assertEqual(load_gh_token_env()["GH_TOKEN"], "second")
 
+
+
+class TestRunGh(unittest.TestCase):
+    @patch('subprocess.run')
+    def test_run_gh_valid_json(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = '{"status": "ok"}'
+        mock_run.return_value = mock_result
+
+        result = run_gh(["gh", "api", "user"])
+        self.assertEqual(result, {"status": "ok"})
+
+    @patch('subprocess.run')
+    def test_run_gh_invalid_json(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = 'not json'
+        mock_run.return_value = mock_result
+
+        result = run_gh(["gh", "api", "user"])
+        self.assertIsNone(result)
+
+    @patch('subprocess.run')
+    def test_run_gh_nonzero_exit(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stdout = '{"status": "error"}'
+        mock_run.return_value = mock_result
+
+        result = run_gh(["gh", "api", "user"])
+        self.assertIsNone(result)
+
+    @patch('subprocess.run', side_effect=subprocess.TimeoutExpired(cmd=["gh"], timeout=120))
+    def test_run_gh_timeout(self, mock_run):
+        result = run_gh(["gh", "api", "user"])
+        self.assertIsNone(result)
+
+    @patch('subprocess.run', side_effect=OSError("Command not found"))
+    def test_run_gh_oserror(self, mock_run):
+        result = run_gh(["gh", "api", "user"])
+        self.assertIsNone(result)
 
 if __name__ == "__main__":
     unittest.main()
