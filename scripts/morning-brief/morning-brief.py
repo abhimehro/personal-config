@@ -302,12 +302,15 @@ class AppConfig:
             print("Error: READWISE_TOKEN is not set or invalid.", file=sys.stderr)
             sys.exit(1)
 
-        raw_linear_key = os.getenv("LINEAR_API_KEY", "") or os.getenv("LINEAR_TOKEN", "")
+        linear_api_key = (
+            validate_api_key(os.getenv("LINEAR_API_KEY", ""))
+            or validate_api_key(os.getenv("LINEAR_TOKEN", ""))
+        )
 
         config = cls(
             readwise_token=readwise_token,
             perplexity_api_key=validate_api_key(os.getenv("PERPLEXITY_API_KEY", "")),
-            linear_api_key=validate_api_key(raw_linear_key),
+            linear_api_key=linear_api_key,
             timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
             focus_max_items=_safe_int(
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
@@ -401,18 +404,17 @@ class DailyContext:
 # Pattern for validating API keys and tokens:
 # Disallows control characters, spaces, and CRLF (preventing HTTP header injection).
 _API_KEY_PATTERN = re.compile(r"^[\x21-\x7E]+$")
-_PLACEHOLDER_PREFIXES = ("replace_with_", "your_", "enter_", "dummy", "test_key", "xxx")
 
 
 def validate_api_key(
     key_val: Any,
-    min_length: int = 8,
-    max_length: int = 512,
+    min_length: int = 1,
+    max_length: int = 4096,
 ) -> str:
     """Validate sensitive API key or token before injecting into HTTP clients.
 
-    # SECURITY: Prevent CRLF/header injection, reject placeholders,
-    # and fail secure on empty, malformed, or out-of-bounds keys.
+    # SECURITY: Prevent CRLF and control characters (header injection),
+    # enforce length bounds, and fail secure on non-string or whitespace-only inputs.
     """
     if not key_val or not isinstance(key_val, str):
         return ""
@@ -420,9 +422,6 @@ def validate_api_key(
     if not (min_length <= len(cleaned) <= max_length):
         return ""
     if not _API_KEY_PATTERN.match(cleaned):
-        return ""
-    lower = cleaned.lower()
-    if any(lower.startswith(prefix) for prefix in _PLACEHOLDER_PREFIXES):
         return ""
     return cleaned
 
@@ -510,7 +509,7 @@ def build_retry_session(
 class PerplexityClient:
     """Thin wrapper around Perplexity chat completions."""
 
-    def __init__(self, api_key: str | Any) -> None:
+    def __init__(self, api_key: Any) -> None:
         # SECURITY: Validate API key structure before storing or using in request headers
         self.api_key = validate_api_key(api_key)
 
