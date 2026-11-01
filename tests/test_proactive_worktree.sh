@@ -115,6 +115,18 @@ check "prepare creates first worktree directory" test -d "${WT1}"
 check "prepare creates distinct second worktree on same-day rerun" test "${WT1}" != "${WT2}"
 check "prepare disables push remote in local-only mode" test "$(git -C "${WT1}" remote get-url --push origin)" = "DISABLED"
 
+# 1b. Input allowlists and repo-path canonicalization (nothing below creates a worktree)
+check_exit "prepare rejects unknown lens (case-sensitive allowlist)" 1 \
+	"${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens Palette --worktree-root "${WT_ROOT}"
+check_grep "prepare names the rejected lens" "Unknown lens: Palette" "${TEST_DIR}/check.log"
+check_exit "prepare rejects unknown mode instead of leaving push URL enabled" 1 \
+	"${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens bolt --mode locall --worktree-root "${WT_ROOT}"
+check_grep "prepare names the rejected mode" "Unknown mode: locall" "${TEST_DIR}/check.log"
+check_exit "prepare blocks palette lens on research repo given an absolute path" 3 \
+	"${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens palette --worktree-root "${WT_ROOT}"
+check_exit "prepare blocks palette lens on research repo given --repo-path ." 3 \
+	bash -c 'cd "$1" && "$2" prepare --repo-path . --lens palette --worktree-root "$3"' _ "${LOCAL_CLONE}" "${TARGET_SCRIPT}" "${WT_ROOT}"
+
 # 2. Tamper-evident verify blocks modified build/lock/scripts and nested test files
 echo "	@echo PWNED" >>"${WT1}/Makefile"
 check_exit "verify blocks modified Makefile with exit 2" 2 \
@@ -148,16 +160,33 @@ check_exit "verify blocks modified test file by default with exit 2" 2 \
 	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health
 git -C "${WT1}" checkout -q -- tests/run_tests.sh
 
+# A new .gitignore could hide later files from the untracked scan, so it is protected
+printf 'tests/new_*\n' >"${WT1}/.gitignore"
+check_exit "verify blocks new .gitignore with exit 2" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health
+check_grep "verify reports .gitignore as the protected file" "\.gitignore" "${TEST_DIR}/check.log"
+rm -f "${WT1}/.gitignore"
+
 # 3. Verify strips ambient credentials and passes on clean production edit
 cat >"${WT1}/src/module.py" <<'EOF'
 def compute(x):
     return x + x
 EOF
+# WT1 was prepared with the bolt lens on a research repo, so a --lens override must
+# not be able to skip the numeric-equivalence gate that bolt requires.
+check_exit "verify rejects --lens override that would skip the research-repo Bolt gate" 3 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health --test-cmd "make test"
+check_grep "verify explains the Bolt numeric gate" "requires --numeric-check-cmd" "${TEST_DIR}/check.log"
+
+# The clean-edit and credential-stripping checks use a worktree prepared for code-health
+WT_CH="$("${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens code-health --worktree-root "${WT_ROOT}")"
+cp "${WT1}/src/module.py" "${WT_CH}/src/module.py"
 SSH_AUTH_SOCK="/tmp/fake.sock" GH_TOKEN="secret_tok" check_exit \
 	"verify runs cleanly on production source edit" 0 \
-	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health --test-cmd "make test"
-check_grep "verify strips SSH_AUTH_SOCK and GH_TOKEN" "^ENV_SSH= ENV_GH=$" "${WT1}/.verify-env.log"
-rm -f "${WT1}/.verify-env.log"
+	"${TARGET_SCRIPT}" verify --worktree "${WT_CH}" --lens code-health --test-cmd "make test"
+check_grep "verify strips SSH_AUTH_SOCK and GH_TOKEN" "^ENV_SSH= ENV_GH=$" "${WT_CH}/.verify-env.log"
+rm -f "${WT_CH}/.verify-env.log"
+git -C "${WT_CH}" checkout -q -- src/module.py
 
 # 4. Research repo Bolt pass requires explicit numeric-equivalence check
 check_exit "verify blocks research-repo bolt pass without numeric gate" 3 \
@@ -206,6 +235,34 @@ PATH="${MOCK_BIN}:${PATH}" check_exit "check-collisions allows non-overlapping f
 	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/other.py"
 PATH="${MOCK_BIN}:${PATH}" check_exit "check-collisions allows non-overlapping hidden path" 0 \
 	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "./.jules/bolt.md"
+
+# 5a. A PR whose files list is truncated (changedFiles > files) must fail closed
+MOCK_BIN_TRUNC="${TEST_DIR}/mock_bin_trunc"
+mkdir -p "${MOCK_BIN_TRUNC}"
+cat >"${MOCK_BIN_TRUNC}/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"pr list"* ]] && [[ "$*" == *"changedFiles"* ]]; then
+	cat <<'JSON'
+[
+  {
+    "number": 43,
+    "title": "large refactor",
+    "isDraft": false,
+    "createdAt": "2026-10-30T10:00:00Z",
+    "changedFiles": 150,
+    "files": [{"path": "src/unrelated.py"}]
+  }
+]
+JSON
+	exit 0
+fi
+echo "[]"
+exit 0
+MOCK
+chmod +x "${MOCK_BIN_TRUNC}/gh"
+PATH="${MOCK_BIN_TRUNC}:${PATH}" check_exit "check-collisions fails closed when a PR files list is truncated" 5 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/other.py"
+check_grep "check-collisions reports the truncated PR" "lists 1 of 150 changed files" "${TEST_DIR}/check.log"
 
 # 5b. Local 2B candidate worktree throttle (>= 2 local unmerged candidates blocks even with 0 GitHub PRs)
 WT_CAND1="$("${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens code-health --worktree-root "${WT_ROOT}")"

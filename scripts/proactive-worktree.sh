@@ -119,8 +119,37 @@ cmd_prepare() {
 		exit 1
 	fi
 
+	# Allowlists, not denylists: the research-repo gates compare lens by exact
+	# string and only mode "local" disables the push URL, so a typo such as
+	# "Palette" or "perf" would otherwise silently skip a safety boundary.
+	case "${lens}" in
+	sentinel | bolt | palette | code-health) ;;
+	*)
+		echo "[ERROR] Unknown lens: ${lens} (expected sentinel|bolt|palette|code-health)" >&2
+		exit 1
+		;;
+	esac
+	case "${mode}" in
+	local | draft-pr) ;;
+	*)
+		echo "[ERROR] Unknown mode: ${mode} (expected local|draft-pr)" >&2
+		exit 1
+		;;
+	esac
+
 	mkdir -p "${wt_root}"
 	wt_root="$(cd "${wt_root}" 2>/dev/null && pwd)"
+
+	# Canonicalize so basename never yields "." or "..", and so the path stored in
+	# proactive-meta.json stays valid when cleanup runs from another directory.
+	# Logical pwd (not -P) keeps a symlinked repo's own name for is_research_repo.
+	local canonical_repo_path=""
+	canonical_repo_path="$(cd "${repo_path}" 2>/dev/null && pwd)" || canonical_repo_path=""
+	if [[ -z ${canonical_repo_path} ]]; then
+		echo "[ERROR] Not a git repository: ${repo_path}" >&2
+		exit 1
+	fi
+	repo_path="${canonical_repo_path}"
 	if [[ ! -d "${repo_path}/.git" ]] && ! git -C "${repo_path}" rev-parse --git-dir >/dev/null 2>&1; then
 		echo "[ERROR] Not a git repository: ${repo_path}" >&2
 		exit 1
@@ -186,7 +215,7 @@ PY
 is_protected_harness_path() {
 	local path="$1"
 	case "${path}" in
-	Makefile | GNUmakefile | Justfile | pyproject.toml | uv.lock | setup.py | setup.cfg | tox.ini | noxfile.py | pytest.ini | .ruff.toml | ruff.toml | .python-version | conftest.py | package.json | package-lock.json | .pre-commit-config.yaml | renv.lock | .Rprofile | .Renviron | DESCRIPTION | NAMESPACE | AGENTS.md | GEMINI.md | CLAUDE.md | .jules/sentinel.md)
+	Makefile | GNUmakefile | Justfile | pyproject.toml | uv.lock | setup.py | setup.cfg | tox.ini | noxfile.py | pytest.ini | .ruff.toml | ruff.toml | .python-version | conftest.py | package.json | package-lock.json | .pre-commit-config.yaml | renv.lock | .Rprofile | .Renviron | DESCRIPTION | NAMESPACE | AGENTS.md | GEMINI.md | CLAUDE.md | .jules/sentinel.md | .gitignore | .gitattributes)
 		return 0
 		;;
 	requirements*.txt | */requirements*.txt)
@@ -195,7 +224,7 @@ is_protected_harness_path() {
 	.trunk/* | .github/* | .agents/* | scripts/* | Scripts/*)
 		return 0
 		;;
-	*/Makefile | */pyproject.toml | */uv.lock | */conftest.py | */pytest.ini | */AGENTS.md | */GEMINI.md | */CLAUDE.md)
+	*/Makefile | */pyproject.toml | */uv.lock | */conftest.py | */pytest.ini | */AGENTS.md | */GEMINI.md | */CLAUDE.md | */.gitignore | */.gitattributes)
 		return 0
 		;;
 	*)
@@ -299,11 +328,13 @@ cmd_verify() {
 	fi
 
 	if is_research_repo "${repo_name}"; then
-		if [[ ${lens} == "palette" ]]; then
+		# A --lens override must never relax a gate the worktree was prepared
+		# under, so research-repo gates fire if EITHER lens requires them.
+		if [[ ${lens} == "palette" ]] || [[ ${meta_lens} == "palette" ]]; then
 			echo "BLOCKED: Palette lens is disabled on research repository ${repo_name}" >&2
 			exit 3
 		fi
-		if [[ ${lens} == "bolt" ]] && [[ -z ${numeric_cmd} ]]; then
+		if [[ ${lens} == "bolt" || ${meta_lens} == "bolt" ]] && [[ -z ${numeric_cmd} ]]; then
 			echo "BLOCKED: Bolt lens on research repository ${repo_name} requires --numeric-check-cmd tolerance check" >&2
 			exit 3
 		fi
@@ -349,7 +380,9 @@ cmd_check_collisions() {
 	fi
 
 	local prs_json
-	prs_json="$(gh pr list --repo "${repo}" --state open --limit 100 --json number,title,isDraft,createdAt,files)"
+	# changedFiles lets us detect truncation: gh caps the per-PR files list, so a
+	# large PR could otherwise hide a colliding path and let the gate pass.
+	prs_json="$(gh pr list --repo "${repo}" --state open --limit 100 --json number,title,isDraft,createdAt,files,changedFiles)"
 
 	python3 - "${prs_json}" "${target_files[@]}" <<'PY'
 import json
@@ -359,6 +392,20 @@ import sys
 prs = json.loads(sys.argv[1])
 targets = {os.path.normpath(t.strip()) for t in sys.argv[2:] if t.strip()}
 collisions = []
+
+# Fail closed when the listing may be incomplete: hitting the --limit cap or a
+# truncated per-PR files list means a collision could be invisible.
+if len(prs) >= 100:
+    sys.stderr.write("UNVERIFIABLE: open PR list reached the 100 PR limit; refusing to pass the collision gate\n")
+    sys.exit(5)
+for pr in prs:
+    files = pr.get("files", [])
+    if len(files) < pr.get("changedFiles", len(files)):
+        sys.stderr.write(
+            f"UNVERIFIABLE: Open PR #{pr.get('number')} lists {len(files)} of "
+            f"{pr.get('changedFiles')} changed files; refusing to pass the collision gate\n"
+        )
+        sys.exit(5)
 
 for pr in prs:
     for fobj in pr.get("files", []):
