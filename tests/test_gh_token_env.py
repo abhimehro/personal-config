@@ -3,7 +3,7 @@ import stat
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from gh_token_env import (
     _read_env_file,
@@ -12,6 +12,7 @@ from gh_token_env import (
     missing_gh_token_message,
     parse_env_line,
     resolve_gh_token_env_file,
+    run_gh,
 )
 
 
@@ -198,6 +199,86 @@ class TestGhTokenEnv(unittest.TestCase):
             with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(second)}, clear=True):
                 os.environ.pop("GH_TOKEN", None)
                 self.assertEqual(load_gh_token_env()["GH_TOKEN"], "second")
+
+
+class TestRunGh(unittest.TestCase):
+    def test_run_gh_success_json(self):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_result = MagicMock()
+            mock_result.returncode = 0
+            mock_result.stdout = '{"key": "value"}'
+            mock_run.return_value = mock_result
+
+            result = run_gh(["gh", "test"])
+            self.assertEqual(result, {"key": "value"})
+            args, kwargs = mock_run.call_args
+            self.assertIsInstance(args[0], list)
+            self.assertEqual(args[0][0], "gh")
+            self.assertFalse(kwargs.get("shell", False))
+            self.assertEqual(kwargs.get("timeout"), 120)
+
+    def test_run_gh_plain_text_allowed(self):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_result = MagicMock()
+            mock_result.returncode = 0
+            mock_result.stdout = "plain text output"
+            mock_run.return_value = mock_result
+
+            result = run_gh(["gh", "test"], allow_raw_str=True)
+            self.assertEqual(result, "plain text output")
+
+    def test_run_gh_plain_text_disallowed_by_default(self):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_result = MagicMock()
+            mock_result.returncode = 0
+            mock_result.stdout = "plain text output"
+            mock_run.return_value = mock_result
+
+            result = run_gh(["gh", "test"])
+            self.assertIsNone(result)
+
+    def test_run_gh_nonzero_returncode(self):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_result = MagicMock()
+            mock_result.returncode = 1
+            mock_result.stdout = '{"key": "value"}'
+            mock_run.return_value = mock_result
+
+            result = run_gh(["gh", "test"])
+            self.assertIsNone(result)
+
+    def test_run_gh_timeout(self):
+        import subprocess
+
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch(
+                "subprocess.run",
+                side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120),
+            ),
+        ):
+            result = run_gh(["gh", "test"])
+            self.assertIsNone(result)
+
+    def test_run_gh_oserror(self):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run", side_effect=OSError("gh not found")),
+        ):
+            result = run_gh(["gh", "test"])
+            self.assertIsNone(result)
 
 
 if __name__ == "__main__":
