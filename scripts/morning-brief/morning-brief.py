@@ -295,20 +295,19 @@ class AppConfig:
         """Build config from env files, env vars, and CLI flags."""
         env_source = cls._load_env_source()
 
-        readwise_token = os.getenv("READWISE_TOKEN", "").strip()
+        readwise_token = validate_api_key(os.getenv("READWISE_TOKEN", ""))
         dry_run = "--dry-run" in (argv or sys.argv[1:])
 
         if not readwise_token and not dry_run:
-            print("Error: READWISE_TOKEN is not set.", file=sys.stderr)
+            print("Error: READWISE_TOKEN is not set or invalid.", file=sys.stderr)
             sys.exit(1)
+
+        raw_linear_key = os.getenv("LINEAR_API_KEY", "") or os.getenv("LINEAR_TOKEN", "")
 
         config = cls(
             readwise_token=readwise_token,
-            perplexity_api_key=os.getenv("PERPLEXITY_API_KEY", "").strip(),
-            linear_api_key=(
-                os.getenv("LINEAR_API_KEY", "").strip()
-                or os.getenv("LINEAR_TOKEN", "").strip()
-            ),
+            perplexity_api_key=validate_api_key(os.getenv("PERPLEXITY_API_KEY", "")),
+            linear_api_key=validate_api_key(raw_linear_key),
             timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
             focus_max_items=_safe_int(
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
@@ -399,6 +398,35 @@ class DailyContext:
 # ============================================================
 
 
+# Pattern for validating API keys and tokens:
+# Disallows control characters, spaces, and CRLF (preventing HTTP header injection).
+_API_KEY_PATTERN = re.compile(r"^[\x21-\x7E]+$")
+_PLACEHOLDER_PREFIXES = ("replace_with_", "your_", "enter_", "dummy", "test_key", "xxx")
+
+
+def validate_api_key(
+    key_val: Any,
+    min_length: int = 8,
+    max_length: int = 512,
+) -> str:
+    """Validate sensitive API key or token before injecting into HTTP clients.
+
+    # SECURITY: Prevent CRLF/header injection, reject placeholders,
+    # and fail secure on empty, malformed, or out-of-bounds keys.
+    """
+    if not key_val or not isinstance(key_val, str):
+        return ""
+    cleaned = key_val.strip()
+    if not (min_length <= len(cleaned) <= max_length):
+        return ""
+    if not _API_KEY_PATTERN.match(cleaned):
+        return ""
+    lower = cleaned.lower()
+    if any(lower.startswith(prefix) for prefix in _PLACEHOLDER_PREFIXES):
+        return ""
+    return cleaned
+
+
 def _env_bool(key: str, default: bool) -> bool:
     """Read an env var as a boolean toggle."""
     raw = os.getenv(key, "").strip().lower()
@@ -482,8 +510,9 @@ def build_retry_session(
 class PerplexityClient:
     """Thin wrapper around Perplexity chat completions."""
 
-    def __init__(self, api_key: str) -> None:
-        self.api_key = api_key.strip()
+    def __init__(self, api_key: str | Any) -> None:
+        # SECURITY: Validate API key structure before storing or using in request headers
+        self.api_key = validate_api_key(api_key)
 
     @property
     def enabled(self) -> bool:

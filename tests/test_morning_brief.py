@@ -505,6 +505,79 @@ class TestGithubContextNote(unittest.TestCase):
 # ============================================================
 
 
+class TestValidateApiKey(unittest.TestCase):
+    def test_valid_api_key(self):
+        self.assertEqual(
+            mb.validate_api_key("pplx-1234567890abcdef"),
+            "pplx-1234567890abcdef",
+        )
+        self.assertEqual(
+            mb.validate_api_key("lin_api_abcdef1234567890"),
+            "lin_api_abcdef1234567890",
+        )
+
+    def test_strips_surrounding_whitespace(self):
+        self.assertEqual(
+            mb.validate_api_key("  valid_key_12345  "),
+            "valid_key_12345",
+        )
+
+    def test_none_or_non_string(self):
+        self.assertEqual(mb.validate_api_key(None), "")
+        self.assertEqual(mb.validate_api_key(12345), "")
+        self.assertEqual(mb.validate_api_key([]), "")
+
+    def test_empty_or_whitespace_only(self):
+        self.assertEqual(mb.validate_api_key(""), "")
+        self.assertEqual(mb.validate_api_key("   "), "")
+
+    def test_length_boundaries(self):
+        # min_length default is 8
+        self.assertEqual(mb.validate_api_key("short"), "")
+        self.assertEqual(mb.validate_api_key("eightchr"), "eightchr")
+        # max_length default is 512
+        too_long = "a" * 513
+        self.assertEqual(mb.validate_api_key(too_long), "")
+        valid_long = "a" * 512
+        self.assertEqual(mb.validate_api_key(valid_long), valid_long)
+
+    def test_rejects_crlf_and_control_chars(self):
+        self.assertEqual(mb.validate_api_key("key\r\ninjected: header"), "")
+        self.assertEqual(mb.validate_api_key("key\ninjected"), "")
+        self.assertEqual(mb.validate_api_key("key\0zero"), "")
+        self.assertEqual(mb.validate_api_key("key with spaces"), "")
+
+    def test_rejects_placeholders(self):
+        self.assertEqual(
+            mb.validate_api_key("REPLACE_WITH_YOUR_PERPLEXITY_API_KEY"), ""
+        )
+        self.assertEqual(mb.validate_api_key("YOUR_API_KEY_HERE"), "")
+        self.assertEqual(mb.validate_api_key("enter_token_here"), "")
+        self.assertEqual(mb.validate_api_key("dummy_key_123"), "")
+
+
+class TestPerplexityClientInit(unittest.TestCase):
+    def test_valid_key(self):
+        client = mb.PerplexityClient("pplx-1234567890")
+        self.assertTrue(client.enabled)
+        self.assertEqual(client.api_key, "pplx-1234567890")
+
+    def test_invalid_key_fails_secure(self):
+        client = mb.PerplexityClient("short")
+        self.assertFalse(client.enabled)
+        self.assertEqual(client.api_key, "")
+
+    def test_crlf_key_fails_secure(self):
+        client = mb.PerplexityClient("validkey\r\nAuthorization: evil")
+        self.assertFalse(client.enabled)
+        self.assertEqual(client.api_key, "")
+
+    def test_placeholder_fails_secure(self):
+        client = mb.PerplexityClient("REPLACE_WITH_YOUR_KEY")
+        self.assertFalse(client.enabled)
+        self.assertEqual(client.api_key, "")
+
+
 class TestEnvBool(unittest.TestCase):
     def test_defaults_true(self):
         assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", True) is True
