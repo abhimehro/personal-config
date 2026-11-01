@@ -4,39 +4,13 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from gh_token_env import load_gh_token_env
+from gh_token_env import load_gh_token_env, run_gh
 from pr_reference import PRReference
-
-
-def run_gh(cmd_list):
-    """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
-    env = load_gh_token_env()
-    try:
-        result = subprocess.run(
-            cmd_list,
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=120,
-            check=False,
-        )
-    except (subprocess.TimeoutExpired, OSError) as e:
-        print(
-            f"gh command failed or timed out ({type(e).__name__}): {cmd_list[0] if cmd_list else cmd_list}",
-            file=sys.stderr,
-        )
-        return None
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return result.stdout
 
 
 def get_diff(repo, pr):
     """Fetch the textual diff for a PR."""
-    res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)])
+    res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)], parse_json=False)
     return res if isinstance(res, str) else ""
 
 
