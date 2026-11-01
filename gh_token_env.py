@@ -198,7 +198,7 @@ def missing_gh_token_message() -> str:
 
 
 def run_gh(cmd_list: list[str], *, parse_json: bool = True) -> Any:
-    """Call ``gh`` and return parsed JSON, raw stdout string, or None on failure/timeout."""
+    """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
     env = load_gh_token_env()
     try:
         result = subprocess.run(

@@ -1,5 +1,4 @@
 import json
-import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
