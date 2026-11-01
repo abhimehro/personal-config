@@ -202,83 +202,53 @@ class TestGhTokenEnv(unittest.TestCase):
 
 
 class TestRunGh(unittest.TestCase):
+    def _execute_run_gh(
+        self,
+        mock_returncode: int = 0,
+        mock_stdout: str = "",
+        side_effect: Exception | None = None,
+        **kwargs,
+    ):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            if side_effect:
+                mock_run.side_effect = side_effect
+            else:
+                mock_run.return_value = MagicMock(
+                    returncode=mock_returncode, stdout=mock_stdout
+                )
+            result = run_gh(["gh", "test"], **kwargs)
+            return result, mock_run
+
     def test_run_gh_success_json(self):
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 0
-            mock_result.stdout = '{"key": "value"}'
-            mock_run.return_value = mock_result
+        result, mock_run = self._execute_run_gh(mock_stdout='{"key": "value"}')
+        self.assertEqual(result, {"key": "value"})
+        args, kwargs = mock_run.call_args
+        self.assertEqual(args[0], ["gh", "test"])
+        self.assertFalse(kwargs.get("shell", False))
+        self.assertEqual(kwargs.get("timeout"), 120)
 
-            result = run_gh(["gh", "test"])
-            self.assertEqual(result, {"key": "value"})
-            args, kwargs = mock_run.call_args
-            self.assertIsInstance(args[0], list)
-            self.assertEqual(args[0][0], "gh")
-            self.assertFalse(kwargs.get("shell", False))
-            self.assertEqual(kwargs.get("timeout"), 120)
+    def test_run_gh_plain_text(self):
+        res_allowed, _ = self._execute_run_gh(mock_stdout="raw", allow_raw_str=True)
+        self.assertEqual(res_allowed, "raw")
+        res_default, _ = self._execute_run_gh(mock_stdout="raw")
+        self.assertIsNone(res_default)
 
-    def test_run_gh_plain_text_allowed(self):
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 0
-            mock_result.stdout = "plain text output"
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"], allow_raw_str=True)
-            self.assertEqual(result, "plain text output")
-
-    def test_run_gh_plain_text_disallowed_by_default(self):
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 0
-            mock_result.stdout = "plain text output"
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
-
-    def test_run_gh_nonzero_returncode(self):
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 1
-            mock_result.stdout = '{"key": "value"}'
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
-
-    def test_run_gh_timeout(self):
+    def test_run_gh_error_cases(self):
         import subprocess
 
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch(
-                "subprocess.run",
-                side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120),
-            ),
-        ):
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
+        res_nonzero, _ = self._execute_run_gh(mock_returncode=1)
+        self.assertIsNone(res_nonzero)
 
-    def test_run_gh_oserror(self):
-        with (
-            patch("gh_token_env.load_gh_token_env", return_value={}),
-            patch("subprocess.run", side_effect=OSError("gh not found")),
-        ):
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
+        res_timeout, _ = self._execute_run_gh(
+            side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120)
+        )
+        self.assertIsNone(res_timeout)
+
+        res_oserror, _ = self._execute_run_gh(side_effect=OSError("not found"))
+        self.assertIsNone(res_oserror)
 
 
 if __name__ == "__main__":
