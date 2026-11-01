@@ -56,6 +56,10 @@ def _emit(decision: str, reason: str = "") -> int:
 
 
 def _load_json_dict(path: Path) -> dict[str, Any]:
+    """Read a JSON object, returning {} for a missing file, I/O error, or invalid JSON.
+
+    Non-object JSON also returns {}. Invalid UTF-8 raises UnicodeDecodeError.
+    """
     if not path.is_file():
         return {}
     try:
@@ -66,6 +70,10 @@ def _load_json_dict(path: Path) -> dict[str, Any]:
 
 
 def _save_private_json(path: Path, data: dict[str, Any]) -> None:
+    """Replace a JSON file with a private copy, ignoring filesystem errors.
+
+    Serialization errors propagate to the caller.
+    """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         os.chmod(path.parent, 0o700)
@@ -84,7 +92,11 @@ def _save_private_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def _is_proactive_session(payload: dict[str, Any]) -> bool:
-    """Detect proactive sweep sessions via workspace URI, conversationId registry, or prompt prefix."""
+    """Detect a sweep using the environment, workspace, prompt, or conversation registry.
+
+    A matching workspace or prompt records the conversation ID when present;
+    registry entries remain active for 24 hours after their recorded timestamp.
+    """
     if os.environ.get("AGY_PROACTIVE_SESSION") == "1":
         return True
 
@@ -129,7 +141,12 @@ def _is_proactive_session(payload: dict[str, Any]) -> bool:
 def _has_valid_sentinel_lease(
     target_hint: str, target_path: Path | None = None
 ) -> bool:
-    """Allow post-merge .jules/sentinel.md updates only with a fresh ctl.sh lease file."""
+    """Check that an unexpired lease names the target repository.
+
+    Match the sentinel file path when provided, otherwise match the repository
+    in the command hint. Invalid lease expiry values can raise TypeError or
+    ValueError; invalid UTF-8 in the lease file raises UnicodeDecodeError.
+    """
     lease_path = _reports_dir() / ".sentinel-post-merge-lease.json"
     lease = _load_json_dict(lease_path)
     expires_at = float(lease.get("expires_at") or 0.0)
@@ -235,7 +252,11 @@ def _is_any_git_push(cmd: str) -> bool:
 
 
 def _is_force_push_to_protected(cmd: str) -> bool:
-    """Detect force-push flags or +refspec pushes targeting main/master/trunk."""
+    """Detect force pushes to protected branches and pushes with +refspecs.
+
+    Force flags also match when there are at most two push arguments or a push
+    alias is detected; +refspecs match regardless of the target branch.
+    """
     for git_args in _iter_git_invocations(cmd):
         sub, rest, has_push_alias = _git_subcommand_and_args(git_args)
         if sub != "push" and not has_push_alias:
@@ -279,6 +300,11 @@ def _mutates_sentinel_in_shell(cmd: str) -> bool:
 
 
 def _check_file_target(path_str: str, is_proactive: bool) -> tuple[str, str] | None:
+    """Return a denial and reason for restricted file targets, or None.
+
+    Sentinel files require a matching lease; proactive sessions also block
+    targets resolving under ~/dev. Lease parsing errors propagate.
+    """
     if not path_str:
         return None
     if path_str.startswith("file://"):
