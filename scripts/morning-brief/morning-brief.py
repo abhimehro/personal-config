@@ -295,22 +295,23 @@ class AppConfig:
         """Build config from env files, env vars, and CLI flags."""
         env_source = cls._load_env_source()
 
-        readwise_token = validate_api_key(os.getenv("READWISE_TOKEN", ""))
+        readwise_token = sanitize_secret(os.getenv("READWISE_TOKEN", ""))
         dry_run = "--dry-run" in (argv or sys.argv[1:])
 
         if not readwise_token and not dry_run:
             print("Error: READWISE_TOKEN is not set or invalid.", file=sys.stderr)
             sys.exit(1)
 
-        linear_api_key = (
-            validate_api_key(os.getenv("LINEAR_API_KEY", ""))
-            or validate_api_key(os.getenv("LINEAR_TOKEN", ""))
+        linear_key = (
+            sanitize_secret(os.getenv("LINEAR_API_KEY", ""))
+            or sanitize_secret(os.getenv("LINEAR_TOKEN", ""))
         )
+        pplx_key = sanitize_secret(os.getenv("PERPLEXITY_API_KEY", ""))
 
         config = cls(
             readwise_token=readwise_token,
-            perplexity_api_key=validate_api_key(os.getenv("PERPLEXITY_API_KEY", "")),
-            linear_api_key=linear_api_key,
+            perplexity_api_key=pplx_key,
+            linear_api_key=linear_key,
             timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
             focus_max_items=_safe_int(
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
@@ -401,29 +402,33 @@ class DailyContext:
 # ============================================================
 
 
-# Pattern for validating API keys and tokens:
+# Pattern for validating secrets and tokens:
 # Disallows control characters, spaces, and CRLF (preventing HTTP header injection).
-_API_KEY_PATTERN = re.compile(r"^[\x21-\x7E]+$")
+_SECRET_PATTERN = re.compile(r"^[\x21-\x7E]+$")
 
 
-def validate_api_key(
-    key_val: Any,
+def sanitize_secret(
+    val: Any,
     min_length: int = 1,
     max_length: int = 4096,
 ) -> str:
-    """Validate sensitive API key or token before injecting into HTTP clients.
+    """Validate sensitive secret or token before injecting into HTTP clients.
 
     # SECURITY: Prevent CRLF and control characters (header injection),
     # enforce length bounds, and fail secure on non-string or whitespace-only inputs.
     """
-    if not key_val or not isinstance(key_val, str):
+    if not val or not isinstance(val, str):
         return ""
-    cleaned = key_val.strip()
+    cleaned = val.strip()
     if not (min_length <= len(cleaned) <= max_length):
         return ""
-    if not _API_KEY_PATTERN.match(cleaned):
+    if not _SECRET_PATTERN.match(cleaned):
         return ""
     return cleaned
+
+
+# Backwards compatibility alias
+validate_api_key = sanitize_secret
 
 
 def _env_bool(key: str, default: bool) -> bool:
@@ -511,7 +516,7 @@ class PerplexityClient:
 
     def __init__(self, api_key: Any) -> None:
         # SECURITY: Validate API key structure before storing or using in request headers
-        self.api_key = validate_api_key(api_key)
+        self.api_key = sanitize_secret(api_key)
 
     @property
     def enabled(self) -> bool:

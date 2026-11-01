@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for morning-brief security validations and API key safeguards.
+Unit tests for morning-brief security validations and secret safeguards.
 
 Run with:
     python3 -m unittest tests.test_morning_brief_security -v
@@ -8,7 +8,7 @@ Run with:
 
 import importlib.util
 import os
-import sys as _sys
+import sys
 import unittest
 from pathlib import Path
 
@@ -18,53 +18,58 @@ _script = (
 )
 _spec = importlib.util.spec_from_file_location("morning_brief", _script)
 mb = importlib.util.module_from_spec(_spec)
-_sys.modules["morning_brief"] = mb
+sys.modules["morning_brief"] = mb
 _spec.loader.exec_module(mb)
 
 
 # ============================================================
-# API Key and Client Validation Tests
+# Secret and Client Validation Tests
 # ============================================================
 
 
-class TestValidateApiKey(unittest.TestCase):
-    def test_valid_api_key(self):
+class TestSanitizeSecret(unittest.TestCase):
+    def test_valid_token(self):
+        self.assertEqual(
+            mb.sanitize_secret("pplx-1234567890abcdef"),
+            "pplx-1234567890abcdef",
+        )
+        self.assertEqual(
+            mb.sanitize_secret("lin_api_abcdef1234567890"),
+            "lin_api_abcdef1234567890",
+        )
+        # Test backwards compatibility alias
         self.assertEqual(
             mb.validate_api_key("pplx-1234567890abcdef"),
             "pplx-1234567890abcdef",
         )
-        self.assertEqual(
-            mb.validate_api_key("lin_api_abcdef1234567890"),
-            "lin_api_abcdef1234567890",
-        )
 
     def test_strips_surrounding_whitespace(self):
         self.assertEqual(
-            mb.validate_api_key("  valid_key_12345  "),
+            mb.sanitize_secret("  valid_key_12345  "),
             "valid_key_12345",
         )
 
     def test_none_or_non_string(self):
-        self.assertEqual(mb.validate_api_key(None), "")
-        self.assertEqual(mb.validate_api_key(12345), "")
-        self.assertEqual(mb.validate_api_key([]), "")
+        self.assertEqual(mb.sanitize_secret(None), "")
+        self.assertEqual(mb.sanitize_secret(12345), "")
+        self.assertEqual(mb.sanitize_secret([]), "")
 
     def test_empty_or_whitespace_only(self):
-        self.assertEqual(mb.validate_api_key(""), "")
-        self.assertEqual(mb.validate_api_key("   "), "")
+        self.assertEqual(mb.sanitize_secret(""), "")
+        self.assertEqual(mb.sanitize_secret("   "), "")
 
     def test_length_boundaries(self):
-        self.assertEqual(mb.validate_api_key("k"), "k")
+        self.assertEqual(mb.sanitize_secret("k"), "k")
         too_long = "a" * 4097
-        self.assertEqual(mb.validate_api_key(too_long), "")
+        self.assertEqual(mb.sanitize_secret(too_long), "")
         valid_long = "a" * 4096
-        self.assertEqual(mb.validate_api_key(valid_long), valid_long)
+        self.assertEqual(mb.sanitize_secret(valid_long), valid_long)
 
     def test_rejects_crlf_and_control_chars(self):
-        self.assertEqual(mb.validate_api_key("key\r\ninjected: header"), "")
-        self.assertEqual(mb.validate_api_key("key\ninjected"), "")
-        self.assertEqual(mb.validate_api_key("key\0zero"), "")
-        self.assertEqual(mb.validate_api_key("key with spaces"), "")
+        self.assertEqual(mb.sanitize_secret("key\r\ninjected: header"), "")
+        self.assertEqual(mb.sanitize_secret("key\ninjected"), "")
+        self.assertEqual(mb.sanitize_secret("key\0zero"), "")
+        self.assertEqual(mb.sanitize_secret("key with spaces"), "")
 
 
 class TestPerplexityClientInit(unittest.TestCase):
