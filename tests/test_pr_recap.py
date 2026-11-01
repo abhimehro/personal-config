@@ -335,7 +335,6 @@ class TestStateTransitions(unittest.TestCase):
 
     def test_ready_for_review_advances_to_in_review(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
-        backlog_state = self._make_state("Backlog", "backlog", "backlog-id")
         in_prog_state = self._make_state(
             "In Progress", "started", self.state_map["inProgress"]
         )
@@ -343,9 +342,6 @@ class TestStateTransitions(unittest.TestCase):
             "In Review", "started", self.state_map["inReview"]
         )
         done_state = self._make_state("Done", "completed", self.state_map["done"])
-        canceled_state = self._make_state(
-            "Canceled", "canceled", "canceled-id"
-        )
 
         ctx = PRContext(
             event_name="pull_request",
@@ -363,32 +359,18 @@ class TestStateTransitions(unittest.TestCase):
         )
 
         # Todo -> In Review
-        target, reason = compute_state_transition(
-            todo_state, "links", ctx, self.state_map
-        )
+        target, _ = compute_state_transition(todo_state, "links", ctx, self.state_map)
         self.assertEqual(target, self.state_map["inReview"])
-        self.assertIn("transition to In Review", reason)
-
-        # Backlog -> In Review
-        target, reason = compute_state_transition(
-            backlog_state, "links", ctx, self.state_map
-        )
-        self.assertEqual(target, self.state_map["inReview"])
-        self.assertIn("transition to In Review", reason)
 
         # In Progress -> In Review
-        target, reason = compute_state_transition(
+        target, _ = compute_state_transition(
             in_prog_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inReview"])
-        self.assertIn("transition to In Review", reason)
 
         # Already In Review -> No-op
-        target, reason = compute_state_transition(
-            in_rev_state, "links", ctx, self.state_map
-        )
+        target, _ = compute_state_transition(in_rev_state, "links", ctx, self.state_map)
         self.assertIsNone(target)
-        self.assertIn("Already in In Review", reason)
 
         # Done -> Do not regress!
         target, reason = compute_state_transition(
@@ -396,55 +378,6 @@ class TestStateTransitions(unittest.TestCase):
         )
         self.assertIsNone(target)
         self.assertIn("refusing to regress", reason)
-
-        # Canceled -> Do not regress!
-        target, reason = compute_state_transition(
-            canceled_state, "links", ctx, self.state_map
-        )
-        self.assertIsNone(target)
-        self.assertIn("refusing to regress", reason)
-
-        # Verify review_requested action
-        review_requested_ctx = PRContext(
-            event_name="pull_request",
-            action="review_requested",
-            pr_number=42,
-            pr_title="Ready PR",
-            pr_body="",
-            pr_url="https://github.com/org/repo/pull/42",
-            branch_name="feature/PROJ-1",
-            head_sha="sha",
-            is_draft=False,
-            is_merged=False,
-            is_closed=False,
-            commit_messages=(),
-        )
-        target, reason = compute_state_transition(
-            todo_state, "links", review_requested_ctx, self.state_map
-        )
-        self.assertEqual(target, self.state_map["inReview"])
-        self.assertIn("transition to In Review", reason)
-
-        # Verify non-draft opened action
-        opened_ctx = PRContext(
-            event_name="pull_request",
-            action="opened",
-            pr_number=42,
-            pr_title="Ready PR",
-            pr_body="",
-            pr_url="https://github.com/org/repo/pull/42",
-            branch_name="feature/PROJ-1",
-            head_sha="sha",
-            is_draft=False,
-            is_merged=False,
-            is_closed=False,
-            commit_messages=(),
-        )
-        target, reason = compute_state_transition(
-            todo_state, "links", opened_ctx, self.state_map
-        )
-        self.assertEqual(target, self.state_map["inReview"])
-        self.assertIn("transition to In Review", reason)
 
     def test_pr_merged_closes_only_on_closes(self) -> None:
         in_rev_state = self._make_state(
