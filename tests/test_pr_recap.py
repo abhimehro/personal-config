@@ -262,13 +262,13 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Progress
+        # State transition: Todo -> In Progress
         target, reason = compute_state_transition(
             todo_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inProgress"])
 
-        # Backlog -> In Progress
+        # State transition: Backlog -> In Progress
         target, reason = compute_state_transition(
             backlog_state, "links", ctx, self.state_map
         )
@@ -294,6 +294,10 @@ class TestStateTransitions(unittest.TestCase):
 
     def test_draft_pr_opened(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
+        backlog_state = self._make_state("Backlog", "backlog", "backlog-id")
+        in_prog_state = self._make_state(
+            "In Progress", "started", self.state_map["inProgress"]
+        )
         in_rev_state = self._make_state(
             "In Review", "started", self.state_map["inReview"]
         )
@@ -314,11 +318,23 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Progress
+        # State transition: Todo -> In Progress
         target, reason = compute_state_transition(
             todo_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inProgress"])
+
+        # State transition: Backlog -> In Progress
+        target, reason = compute_state_transition(
+            backlog_state, "links", ctx, self.state_map
+        )
+        self.assertEqual(target, self.state_map["inProgress"])
+
+        # Already In Progress -> No-op
+        target, reason = compute_state_transition(
+            in_prog_state, "links", ctx, self.state_map
+        )
+        self.assertIsNone(target)
 
         # In Review -> Do not regress!
         target, reason = compute_state_transition(
@@ -358,7 +374,7 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Review
+        # State transition: Todo -> In Review
         target, _ = compute_state_transition(todo_state, "links", ctx, self.state_map)
         self.assertEqual(target, self.state_map["inReview"])
 
