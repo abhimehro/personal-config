@@ -124,8 +124,10 @@ check_exit "prepare rejects unknown mode instead of leaving push URL enabled" 1 
 check_grep "prepare names the rejected mode" "Unknown mode: locall" "${TEST_DIR}/check.log"
 check_exit "prepare blocks palette lens on research repo given an absolute path" 3 \
 	"${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens palette --worktree-root "${WT_ROOT}"
+cd "${LOCAL_CLONE}"
 check_exit "prepare blocks palette lens on research repo given --repo-path ." 3 \
-	bash -c 'cd "$1" && "$2" prepare --repo-path . --lens palette --worktree-root "$3"' _ "${LOCAL_CLONE}" "${TARGET_SCRIPT}" "${WT_ROOT}"
+	"${TARGET_SCRIPT}" prepare --repo-path . --lens palette --worktree-root "${WT_ROOT}"
+cd "${REPO_ROOT}"
 
 # 2. Tamper-evident verify blocks modified build/lock/scripts and nested test files
 echo "	@echo PWNED" >>"${WT1}/Makefile"
@@ -149,6 +151,17 @@ echo "echo tamper" >"${WT1}/scripts/helper.sh"
 check_exit "verify blocks lowercase scripts/* path with exit 2" 2 \
 	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health
 rm -rf "${WT1}/scripts"
+
+mkdir -p "${WT1}/src/subpkg/scripts"
+echo "echo tamper" >"${WT1}/src/subpkg/scripts/run.sh"
+check_exit "verify blocks nested */scripts/* path with exit 2" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health
+rm -rf "${WT1}/src/subpkg/scripts"
+
+echo "import setuptools" >"${WT1}/src/subpkg/setup.py"
+check_exit "verify blocks nested */setup.py path with exit 2" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT1}" --lens code-health
+rm -rf "${WT1}/src/subpkg"
 
 echo "def test_x(): pass" >"${WT1}/src/pkg/tests/test_nested.py"
 check_exit "verify blocks nested */tests/* path with exit 2" 2 \

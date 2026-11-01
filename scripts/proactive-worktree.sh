@@ -221,10 +221,10 @@ is_protected_harness_path() {
 	requirements*.txt | */requirements*.txt)
 		return 0
 		;;
-	.trunk/* | .github/* | .agents/* | scripts/* | Scripts/*)
+	.trunk/* | .github/* | .agents/* | scripts/* | Scripts/* | */scripts/* | */Scripts/*)
 		return 0
 		;;
-	*/Makefile | */pyproject.toml | */uv.lock | */conftest.py | */pytest.ini | */AGENTS.md | */GEMINI.md | */CLAUDE.md | */.gitignore | */.gitattributes)
+	*/Makefile | */pyproject.toml | */uv.lock | */conftest.py | */pytest.ini | */AGENTS.md | */GEMINI.md | */CLAUDE.md | */.gitignore | */.gitattributes | */setup.py | */setup.cfg | */tox.ini | */noxfile.py | */package.json)
 		return 0
 		;;
 	*)
