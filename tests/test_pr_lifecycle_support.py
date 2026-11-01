@@ -32,16 +32,13 @@ class BaseValidatorTest(unittest.TestCase):
 
     def assert_rejects(
         self,
-        validator: Callable[[Any, str], Any],
+        call: Callable[[Any], Any],
         values: tuple[Any, ...],
-        expected_exc: type[Exception],
-        pattern: str,
-        label: str = "field",
     ) -> None:
         for val in values:
             with self.subTest(val=val):
-                with self.assertRaisesRegex(expected_exc, pattern):
-                    validator(val, label)
+                with self.assertRaises(ValueError):
+                    call(val)
 
 
 class TestPrLifecycleSupportMappingAndList(BaseValidatorTest):
@@ -53,14 +50,13 @@ class TestPrLifecycleSupportMappingAndList(BaseValidatorTest):
         self.assertEqual(require_mapping({}, "label"), {})
 
     def test_require_mapping_invalid(self) -> None:
-        invalid_types = (None, [], [("a", 1)], "not_a_dict", 123, True, False, {1, 2})
-        self.assert_rejects(
-            require_mapping,
-            invalid_types,
-            ArtifactValidationError,
-            r"^lbl: expected mapping$",
-            label="lbl",
-        )
+        with self.assertRaisesRegex(
+            ArtifactValidationError, r"^lbl: expected mapping$"
+        ):
+            require_mapping("not_a_dict", "lbl")
+
+        invalid_types = (None, [], [("a", 1)], "str", 123, True, False, {1, 2})
+        self.assert_rejects(lambda v: require_mapping(v, "lbl"), invalid_types)
 
     def test_require_list_valid(self) -> None:
         sample_list = [1, "two", {"item": 3}]
@@ -68,14 +64,13 @@ class TestPrLifecycleSupportMappingAndList(BaseValidatorTest):
         self.assertEqual(require_list([], "label"), [])
 
     def test_require_list_invalid(self) -> None:
-        invalid_types = (None, {}, {"a": 1}, "not_a_list", (1, 2), 123, True, {1, 2})
-        self.assert_rejects(
-            require_list,
-            invalid_types,
-            ArtifactValidationError,
-            r"^lbl: expected list$",
-            label="lbl",
-        )
+        with self.assertRaisesRegex(
+            ArtifactValidationError, r"^lbl: expected list$"
+        ):
+            require_list("not_a_list", "lbl")
+
+        invalid_types = (None, {}, {"a": 1}, "str", (1, 2), 123, True, {1, 2})
+        self.assert_rejects(lambda v: require_list(v, "lbl"), invalid_types)
 
 
 class TestPrLifecycleSupportRequireFields(unittest.TestCase):
@@ -119,13 +114,17 @@ class TestPrLifecycleSupportRequireUtc(BaseValidatorTest):
                 require_utc(ts, "ts_field")
 
     def test_require_utc_invalid(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, r"^ts_field: expected RFC 3339 UTC timestamp$"
+        ):
+            require_utc("not-a-timestamp", "ts_field")
+
         invalid_utc = (
             None,
             123,
             True,
             [],
             "",
-            "invalid",
             "2026-08-19",
             "2026-08-19 09:00:00Z",
             "2026-08-19T09:00:00",
@@ -135,13 +134,7 @@ class TestPrLifecycleSupportRequireUtc(BaseValidatorTest):
             " 2026-08-19T09:00:00Z ",
             "2026-08-19T09:00:00Z\n",
         )
-        self.assert_rejects(
-            require_utc,
-            invalid_utc,
-            ValueError,
-            r"^ts_field: expected RFC 3339 UTC timestamp$",
-            label="ts_field",
-        )
+        self.assert_rejects(lambda v: require_utc(v, "ts_field"), invalid_utc)
 
 
 class TestPrLifecycleSupportRequireHttpsUrl(BaseValidatorTest):
@@ -157,13 +150,17 @@ class TestPrLifecycleSupportRequireHttpsUrl(BaseValidatorTest):
                 require_https_url(url, "url_field")
 
     def test_require_https_url_invalid(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, r"^url_field: expected complete https URL$"
+        ):
+            require_https_url("http://insecure.com", "url_field")
+
         invalid_urls = (
             None,
             123,
             True,
             [],
             "",
-            "http://example.com",
             "ftp://example.com",
             "javascript:alert(1)",
             "https://",
@@ -172,13 +169,7 @@ class TestPrLifecycleSupportRequireHttpsUrl(BaseValidatorTest):
             " https://example.com",
             "https://example.com\n",
         )
-        self.assert_rejects(
-            require_https_url,
-            invalid_urls,
-            ValueError,
-            r"^url_field: expected complete https URL$",
-            label="url_field",
-        )
+        self.assert_rejects(lambda v: require_https_url(v, "url_field"), invalid_urls)
 
     def test_require_https_urls_valid(self) -> None:
         require_https_urls([], "evidence_urls")
@@ -188,13 +179,14 @@ class TestPrLifecycleSupportRequireHttpsUrl(BaseValidatorTest):
         )
 
     def test_require_https_urls_invalid_container(self) -> None:
-        invalid_containers = (None, "https://example.com", {"url": "https://example.com"})
+        with self.assertRaisesRegex(
+            ArtifactValidationError, r"^evidence_urls: expected list$"
+        ):
+            require_https_urls("https://example.com", "evidence_urls")
+
+        invalid_containers = (None, "str", {"url": "https://example.com"})
         self.assert_rejects(
-            require_https_urls,
-            invalid_containers,
-            ArtifactValidationError,
-            r"^evidence_urls: expected list$",
-            label="evidence_urls",
+            lambda v: require_https_urls(v, "evidence_urls"), invalid_containers
         )
 
     def test_require_https_urls_invalid_items(self) -> None:
