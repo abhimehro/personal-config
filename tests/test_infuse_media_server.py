@@ -249,7 +249,7 @@ class TestMediaServerHandler(unittest.TestCase):
 
     def test_check_auth_rate_limiting(self):
         """
-        Test that check_auth returns 429 when an IP exceeds 5 failed attempts within 60s.
+        Test that check_auth returns 429 when an IP reaches AUTH_FAILURE_LIMIT failed attempts within the window.
         """
         import time
 
@@ -262,7 +262,7 @@ class TestMediaServerHandler(unittest.TestCase):
         with infuse_media_server.AUTH_LOCK:
             infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
             infuse_media_server.FAILED_AUTH_ATTEMPTS[client_ip] = {
-                "count": 5,
+                "count": infuse_media_server.AUTH_FAILURE_LIMIT,
                 "last_attempt": now - 5,
             }
 
@@ -272,8 +272,105 @@ class TestMediaServerHandler(unittest.TestCase):
         result = self.handler.check_auth()
         self.assertFalse(result)
         self.handler.send_response.assert_called_with(429)
-        self.handler.send_header.assert_called_with("Retry-After", "60")
+        self.handler.send_header.assert_called_with(
+            "Retry-After", str(infuse_media_server.AUTH_LOCKOUT_WINDOW)
+        )
         self.handler.wfile.write.assert_called_with(b"Too Many Requests")
+
+    def test_check_auth_successful_resets_failure_counter(self):
+        """
+        Test that a successful authentication clears any prior failed attempts for that IP.
+        """
+        import time
+
+        infuse_media_server.AUTH_USER = "test_user"
+        infuse_media_server.AUTH_PASS = "test_pass"
+        infuse_media_server.EXPECTED_AUTH_TOKEN = "mock_token"
+
+        now = time.time()
+        client_ip = "192.168.1.99"
+        with infuse_media_server.AUTH_LOCK:
+            infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
+            infuse_media_server.FAILED_AUTH_ATTEMPTS[client_ip] = {
+                "count": infuse_media_server.AUTH_FAILURE_LIMIT - 1,
+                "last_attempt": now - 5,
+            }
+
+        self.handler.client_address = (client_ip, 12345)
+        self.handler.headers = {"Authorization": "Basic mock_token"}
+
+        result = self.handler.check_auth()
+        self.assertTrue(result)
+        with infuse_media_server.AUTH_LOCK:
+            self.assertNotIn(client_ip, infuse_media_server.FAILED_AUTH_ATTEMPTS)
+
+    def test_check_auth_concurrency_race_condition(self):
+        """
+        Test that concurrent failed check_auth requests from the same IP are atomically
+        gated: exactly AUTH_FAILURE_LIMIT requests receive 401, all excess requests receive 429,
+        and the failure count does not exceed AUTH_FAILURE_LIMIT.
+        """
+        import threading
+        from unittest.mock import MagicMock
+
+        infuse_media_server.AUTH_USER = "test_user"
+        infuse_media_server.AUTH_PASS = "test_pass"
+        infuse_media_server.EXPECTED_AUTH_TOKEN = "mock_token"
+
+        client_ip = "192.168.1.200"
+        with infuse_media_server.AUTH_LOCK:
+            infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
+
+        # Fire 2x the failure limit of concurrent invalid requests
+        num_threads = infuse_media_server.AUTH_FAILURE_LIMIT * 2
+        barrier = threading.Barrier(num_threads)
+        results = [None] * num_threads
+        status_codes = [None] * num_threads
+
+        def worker(index):
+            handler = infuse_media_server.MediaServerHandler.__new__(
+                infuse_media_server.MediaServerHandler
+            )
+            handler.client_address = (client_ip, 12345)
+            handler.headers = {"Authorization": "Basic wrong_token"}
+            handler.send_response = MagicMock()
+            handler.send_header = MagicMock()
+            handler.end_headers = MagicMock()
+            handler.wfile = MagicMock()
+
+            # Synchronize all threads at the barrier so they strike simultaneously
+            barrier.wait()
+            res = handler.check_auth()
+            results[index] = res
+
+            # Determine which status code was dispatched
+            if handler.send_response.call_args:
+                status_codes[index] = handler.send_response.call_args[0][0]
+
+        threads = [
+            threading.Thread(target=worker, args=(i,)) for i in range(num_threads)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # All requests must fail
+        self.assertTrue(all(r is False for r in results))
+
+        # Exactly AUTH_FAILURE_LIMIT requests must receive 401 (auth failure recorded)
+        failure_limit = infuse_media_server.AUTH_FAILURE_LIMIT
+        self.assertEqual(status_codes.count(401), failure_limit)
+
+        # All remaining requests must receive 429 (rate limited)
+        self.assertEqual(status_codes.count(429), num_threads - failure_limit)
+
+        # Final state in shared dict must be exactly failure_limit, not num_threads
+        with infuse_media_server.AUTH_LOCK:
+            self.assertEqual(
+                infuse_media_server.FAILED_AUTH_ATTEMPTS[client_ip]["count"],
+                failure_limit,
+            )
 
     def test_check_auth_thread_safety(self):
         """

@@ -21,6 +21,8 @@ AUTH_PASS = None
 EXPECTED_AUTH_TOKEN = None
 
 # Rate limiting for auth failures
+AUTH_FAILURE_LIMIT = 5
+AUTH_LOCKOUT_WINDOW = 60
 # ⚡ Performance: Use OrderedDict for O(1) FIFO TTL expiration cleanup and threading.Lock for thread safety
 FAILED_AUTH_ATTEMPTS = collections.OrderedDict()
 AUTH_LOCK = threading.Lock()
@@ -74,17 +76,27 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def check_auth(self):
-
         if not AUTH_USER or not AUTH_PASS:
             return True
 
-        # Extract client IP
+        # Extract client IP and current time
         client_ip = self.client_address[0]
         now = time.time()
 
+        # Parse authorization header before acquiring lock to minimize lock duration
+        auth_header = self.headers.get("Authorization") if self.headers else None
+        auth_token_candidate = None
+        if auth_header:
+            try:
+                auth_type, auth_data = auth_header.split(" ", 1)
+                if auth_type.lower() == "basic":
+                    auth_token_candidate = auth_data
+            except Exception:
+                auth_token_candidate = None
+
         with AUTH_LOCK:
             # ⚡ Performance: O(1) TTL expiration cleanup on FIFO ordered dict instead of O(N) scan
-            cutoff = now - 60
+            cutoff = now - AUTH_LOCKOUT_WINDOW
             while FAILED_AUTH_ATTEMPTS:
                 oldest_ip, oldest_attempt = next(iter(FAILED_AUTH_ATTEMPTS.items()))
                 if oldest_attempt["last_attempt"] < cutoff:
@@ -92,38 +104,59 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
                 else:
                     break
 
-            # Check rate limit (e.g., max 5 failures per minute)
+            # Check rate limit (max AUTH_FAILURE_LIMIT failures per AUTH_LOCKOUT_WINDOW seconds)
             attempts = FAILED_AUTH_ATTEMPTS.get(client_ip)
-            if attempts and attempts["count"] >= 5 and now - attempts["last_attempt"] < 60:
-                self.send_response(429)
-                self.send_header("Retry-After", "60")
-                self.end_headers()
-                self.wfile.write(b"Too Many Requests")
-                return False
+            if (
+                attempts
+                and attempts["count"] >= AUTH_FAILURE_LIMIT
+                and now - attempts["last_attempt"] < AUTH_LOCKOUT_WINDOW
+            ):
+                is_rate_limited = True
+            else:
+                is_rate_limited = False
+                # ⚡ Performance: Compare base64 token directly under lock to ensure atomic check-and-record
+                try:
+                    if (
+                        auth_token_candidate is not None
+                        and EXPECTED_AUTH_TOKEN is not None
+                        and secrets.compare_digest(
+                            auth_token_candidate, EXPECTED_AUTH_TOKEN
+                        )
+                    ):
+                        auth_ok = True
+                        FAILED_AUTH_ATTEMPTS.pop(client_ip, None)
+                    else:
+                        auth_ok = False
+                        if client_ip not in FAILED_AUTH_ATTEMPTS:
+                            FAILED_AUTH_ATTEMPTS[client_ip] = {
+                                "count": 0,
+                                "last_attempt": now,
+                            }
+                        FAILED_AUTH_ATTEMPTS[client_ip]["count"] += 1
+                        FAILED_AUTH_ATTEMPTS[client_ip]["last_attempt"] = now
+                        FAILED_AUTH_ATTEMPTS.move_to_end(client_ip)
+                except Exception:
+                    auth_ok = False
+                    if client_ip not in FAILED_AUTH_ATTEMPTS:
+                        FAILED_AUTH_ATTEMPTS[client_ip] = {
+                            "count": 0,
+                            "last_attempt": now,
+                        }
+                    FAILED_AUTH_ATTEMPTS[client_ip]["count"] += 1
+                    FAILED_AUTH_ATTEMPTS[client_ip]["last_attempt"] = now
+                    FAILED_AUTH_ATTEMPTS.move_to_end(client_ip)
 
-        auth_header = self.headers.get("Authorization")
-        if not auth_header:
-            self._record_auth_failure(client_ip, now)
-            self.send_auth_request()
+        # Handle responses outside of the lock to prevent blocking server threads on network I/O
+        if is_rate_limited:
+            self.send_response(429)
+            self.send_header("Retry-After", str(AUTH_LOCKOUT_WINDOW))
+            self.end_headers()
+            self.wfile.write(b"Too Many Requests")
             return False
 
-        try:
-            auth_type, auth_data = auth_header.split(" ", 1)
-            if auth_type.lower() != "basic":
-                self._record_auth_failure(client_ip, now)
-                self.send_auth_request()
-                return False
+        if auth_ok:
+            return True
 
-            # ⚡ Performance: Compare base64 token directly to avoid decoding and splitting overhead
-            if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
-                # Successful auth resets the counter safely
-                with AUTH_LOCK:
-                    FAILED_AUTH_ATTEMPTS.pop(client_ip, None)
-                return True
-        except Exception:
-            pass
-
-        self._record_auth_failure(client_ip, now)
         self.send_auth_request()
         return False
 

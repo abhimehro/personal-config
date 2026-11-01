@@ -930,6 +930,6 @@ auth attempts), scanning and pruning an entire dictionary on every request using
 `list(dict.keys())` creates an O(N) iteration overhead and allocates unnecessary
 lists. When records are ordered chronologically by timestamp, using an
 `OrderedDict` with `move_to_end()` on updates allows O(1) early-exit eviction of
-expired records via `popitem(last=False)`.
-**Action:** Replace full dictionary scans for sliding-window TTL cleanups with an
-`OrderedDict` FIFO eviction loop and protect concurrent mutations with a thread lock.
+expired records via `popitem(last=False)`. **Action:** Replace full dictionary
+scans for sliding-window TTL cleanups with an `OrderedDict` FIFO eviction loop
+and protect concurrent mutations with a thread lock.
