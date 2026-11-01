@@ -73,7 +73,7 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 - Google Drive Backup (Light): 3:15 AM Tue–Sun — home backup light mode
 - Google Drive Backup (Full): Monday 4:00 AM — fuller Google Drive backup
 - GitNexus Auto Sync: daily at 12:30 PM, one cycle only; low-priority background
-  job with a 12:30-12:34 PM wake-time window
+  job with a 12:30-12:34 PM normal start window and authenticated wake catch-up
 - ProtonDrive Backup: **archived** (`bin/archive/protondrive_backup.sh`); not
   installed by `install.sh` (use
   `macos/com.abhimehrotra.protondrive-backup.plist` only if you intentionally
@@ -81,19 +81,28 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 
 ### GitNexus Auto Sync (Daily at 12:30 PM)
 
+* The afternoon schedule makes it more likely the operator is available to
+  authorize 1Password SSH access. Times are local (America/Chicago); the former
+  overnight schedule is retired. The daily Raycast review runs at 1:30 PM and reviews that
+  afternoon, not the previous night.
 - Runs one clone/pull/analyze cycle with `max_concurrency: 1`, then requests a
   graceful watcher stop only after GitNexus publishes its cycle-finished signal.
 - Launchd classifies it as `Background` and applies `Nice=10`; the wrapper also
   starts GitNexus at reduced priority.
 - Launchd can coalesce a scheduled event while the Mac sleeps. The wrapper
-  starts between 12:30 and 12:34 PM; a wake-triggered launch verifies active SSH
-  authentication before running a catch-up cycle.
+  normally starts between 12:30 and 12:34 PM; a wake-triggered launch outside
+  that window verifies active SSH authentication before running a catch-up
+  cycle. An explicit outside-window or unavailable-SSH skip is expected, not
+  an analysis failure; report its reason and frequency separately.
 - A six-hour timeout logs an alert and exits without stopping or killing an
   active watcher/analyzer. A later run recovers a completed prior cycle before
   starting new work.
 - Each run writes `gitnexus-auto-sync-<timestamp>.log` under
   `~/Library/Logs/maintenance/`, including start/end times and analyzed/skipped
-  outcomes. Review timeout or recovery logs manually.
+  outcomes. Review timeout or recovery logs manually. Cycle counters count
+  repositories, not separate runs. A clean watcher stop or wrapper exit 0 does
+  not override failed analysis; distinguish unchanged-commit skips from
+  failure-threshold skips.
 - Embeddings are enabled in the auto-sync clones only for `personal-config`,
   `ctrld-sync`, and `Seatek_Analysis` via each `.gitnexusrc`. RepoPrompt stays
   out of `watch_config.yml`.
