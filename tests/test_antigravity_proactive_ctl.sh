@@ -100,26 +100,58 @@ check_grep "canary sidecar uses CRON_TZ=UTC" "CRON_TZ=UTC " "${CANARY_FILE}"
 "${CTL_SCRIPT}" canary-clean >/dev/null 2>&1
 check "canary-clean removes canary sidecar" test ! -f "${CANARY_FILE}"
 
-# 3. Post-merge Sentinel lease verification (rejects unmerged PR, allows MERGED PR)
+# 3. Post-merge Sentinel lease verification (rejects unmerged, stale, future, and malformed input)
+# Merge timestamps are generated at run time because the lease requires a fresh merge.
+iso_offset() {
+	python3 -c 'import datetime,sys; print((datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=int(sys.argv[1]))).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1"
+}
+export MOCK_NOW_ISO MOCK_STALE_ISO MOCK_FUTURE_ISO
+MOCK_NOW_ISO="$(iso_offset -30)"
+MOCK_STALE_ISO="$(iso_offset -7200)"
+MOCK_FUTURE_ISO="$(iso_offset 3600)"
 cat >"${MOCK_BIN}/gh" <<'MOCK'
 #!/usr/bin/env bash
-if [[ "$*" == *"99"* ]]; then
-	echo '{"state":"MERGED","mergedAt":"2026-10-31T17:00:00Z"}'
-else
-	echo '{"state":"OPEN","mergedAt":null}'
-fi
+case " $* " in
+*" 99 "*) echo "{\"state\":\"MERGED\",\"mergedAt\":\"${MOCK_NOW_ISO}\"}" ;;
+*" 98 "*) echo "{\"state\":\"MERGED\",\"mergedAt\":\"${MOCK_STALE_ISO}\"}" ;;
+*" 97 "*) echo "{\"state\":\"MERGED\",\"mergedAt\":\"${MOCK_FUTURE_ISO}\"}" ;;
+*) echo '{"state":"OPEN","mergedAt":null}' ;;
+esac
 MOCK
 chmod +x "${MOCK_BIN}/gh"
+LEASE_FILE="${HOME}/.gemini/antigravity/proactive-reports/.sentinel-post-merge-lease.json"
 
 PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge rejects unmerged PR" 1 \
 	"${CTL_SCRIPT}" sentinel-post-merge --repo ctrld-sync --pr 12
-PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge issues lease for merged PR" 0 \
+PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge rejects stale merge outside window" 1 \
+	"${CTL_SCRIPT}" sentinel-post-merge --repo ctrld-sync --pr 98
+check_grep "sentinel-post-merge explains the post-merge window" "post-merge window" "${TEST_DIR}/check.log"
+PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge rejects future merge timestamp" 1 \
+	"${CTL_SCRIPT}" sentinel-post-merge --repo ctrld-sync --pr 97
+PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge rejects non-numeric --pr" 1 \
+	"${CTL_SCRIPT}" sentinel-post-merge --repo ctrld-sync --pr "99 --json"
+PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge rejects dot-dot --repo" 1 \
+	"${CTL_SCRIPT}" sentinel-post-merge --repo .. --pr 99
+check "no lease written by any rejected request" test ! -f "${LEASE_FILE}"
+PATH="${MOCK_BIN}:${PATH}" check_exit "sentinel-post-merge issues lease for freshly merged PR" 0 \
 	"${CTL_SCRIPT}" sentinel-post-merge --repo ctrld-sync --pr 99
-check "sentinel lease file written" test -f "${HOME}/.gemini/antigravity/proactive-reports/.sentinel-post-merge-lease.json"
+check "sentinel lease file written" test -f "${LEASE_FILE}"
 
 # 4. MISSED status audit records missed run when expected weekday digest is absent
+REPORTS="${HOME}/.gemini/antigravity/proactive-reports"
 "${CTL_SCRIPT}" audit-missed --date 2026-11-02 --repo ctrld-sync >"${TEST_DIR}/missed.log" 2>&1
-check_grep "audit-missed writes Status: MISSED digest" "Status: MISSED" "${HOME}/.gemini/antigravity/proactive-reports/2026-11-02-ctrld-sync.md"
+check_grep "audit-missed writes Status: MISSED digest" "Status: MISSED" "${REPORTS}/2026-11-02-ctrld-sync.md"
+# 08:15 America/Chicago is 14:15 UTC under standard time (CST) and 13:15 UTC under daylight time (CDT)
+check_grep "audit-missed slot is 14:15 UTC under standard time" "08:15 America/Chicago \(14:15 UTC\)" "${REPORTS}/2026-11-02-ctrld-sync.md"
+"${CTL_SCRIPT}" audit-missed --date 2026-06-01 --repo ctrld-sync >"${TEST_DIR}/missed-dst.log" 2>&1
+check_grep "audit-missed slot is 13:15 UTC under daylight time" "08:15 America/Chicago \(13:15 UTC\)" "${REPORTS}/2026-06-01-ctrld-sync.md"
+check_exit "audit-missed rejects impossible calendar date" 1 \
+	"${CTL_SCRIPT}" audit-missed --date 2026-02-30 --repo ctrld-sync
+check_exit "audit-missed rejects malformed date" 1 \
+	"${CTL_SCRIPT}" audit-missed --date 2026-1-2 --repo ctrld-sync
+check_exit "audit-missed rejects dot-dot repo name" 1 \
+	"${CTL_SCRIPT}" audit-missed --date 2026-11-03 --repo ..
+check "audit-missed wrote nothing for rejected input" test -z "$(find "${REPORTS}" -name '2026-11-03*' -o -name '2026-02-30*' -o -name '2026-1-2*' 2>/dev/null)"
 
 # 5. Status reports installed state cleanly
 "${CTL_SCRIPT}" status >"${TEST_DIR}/status.log" 2>&1
@@ -139,9 +171,18 @@ check_grep "status reports next pilot run time" "pilot_next_run=2026-11-02 13:15
 # 6. Ordered rollback (disable) removes sidecars BEFORE hooks.json and restores previous hooks.json backup
 echo '{"custom_user_hook": true}' > "${HOME}/.gemini/config/hooks.json.backup.20261031_120000"
 
+# A user-managed symlink at a proactive skill path must survive rollback untouched
+FOREIGN_SKILL="${TEST_DIR}/user-managed-skill"
+mkdir -p "${FOREIGN_SKILL}"
+rm -f "${HOME}/.gemini/config/skills/proactive-bolt"
+ln -s "${FOREIGN_SKILL}" "${HOME}/.gemini/config/skills/proactive-bolt"
+
 "${CTL_SCRIPT}" disable >"${TEST_DIR}/disable.log" 2>&1
 check "disable removes pilot sidecar.json" test ! -f "${SIDECAR_FILE}"
 check "disable removes skill symlink" test ! -L "${HOME}/.gemini/config/skills/proactive-repo-sweep"
+check "disable leaves a user-managed skill symlink in place" test "$(readlink "${HOME}/.gemini/config/skills/proactive-bolt")" = "${FOREIGN_SKILL}"
+check_grep "disable reports the skipped user-managed symlink" "skipped .*proactive-bolt" "${TEST_DIR}/disable.log"
+check_grep "disable counts only the symlinks it removed" "unlinked 4 proactive skill symlinks" "${TEST_DIR}/disable.log"
 check "disable restores previous hooks.json backup" test -f "${HOME}/.gemini/config/hooks.json"
 check_grep "disable logs restored hooks backup" "restored previous hooks.json" "${TEST_DIR}/disable.log"
 check_grep "disable logs ordered sidecar-first teardown" "Step 1/3: removed sidecar" "${TEST_DIR}/disable.log"

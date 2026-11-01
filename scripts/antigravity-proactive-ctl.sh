@@ -36,6 +36,17 @@ Usage:
 EOF
 }
 
+validate_repo_name() {
+	local name="$1"
+	local subcmd="$2"
+	# repo_name is interpolated into report and lease paths, so reject separators,
+	# ".", ".." and anything else outside a conservative GitHub-name allowlist.
+	if [[ ! ${name} =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+		echo "[ERROR] ${subcmd}: invalid --repo name: ${name}" >&2
+		exit 1
+	fi
+}
+
 link_item() {
 	local link_path="$1"
 	local target_path="$2"
@@ -284,6 +295,11 @@ cmd_sentinel_post_merge() {
 		echo "[ERROR] sentinel-post-merge requires --repo <name> and --pr <number>" >&2
 		exit 1
 	fi
+	validate_repo_name "${repo_name}" "sentinel-post-merge"
+	if [[ ! ${pr_num} =~ ^[0-9]+$ ]]; then
+		echo "[ERROR] sentinel-post-merge requires a numeric --pr value" >&2
+		exit 1
+	fi
 
 	local pr_json
 	pr_json="$(gh pr view "${pr_num}" --repo "abhimehro/${repo_name}" --json state,mergedAt)"
@@ -293,11 +309,18 @@ cmd_sentinel_post_merge() {
 	chmod 700 "${reports_dir}"
 
 	python3 - "${pr_json}" "${repo_name}" "${pr_num}" "${reports_dir}/.sentinel-post-merge-lease.json" <<'PY'
+import datetime
 import json
 import os
 import pathlib
 import sys
 import time
+
+# A lease unlocks .jules/sentinel.md writes, so it must follow a merge that just
+# happened, not any historical merged PR. The small negative bound only absorbs
+# clock skew between GitHub and this host.
+MAX_MERGE_AGE_S = 15 * 60
+MAX_CLOCK_SKEW_S = 60
 
 info = json.loads(sys.argv[1])
 repo_name = sys.argv[2]
@@ -306,6 +329,16 @@ lease_path = pathlib.Path(sys.argv[4])
 
 if info.get("state") != "MERGED" or not info.get("mergedAt"):
     sys.stderr.write(f"[ERROR] PR #{pr_num} in abhimehro/{repo_name} is not MERGED; refusing to unlock .jules/sentinel.md\n")
+    sys.exit(1)
+
+merged_at = datetime.datetime.fromisoformat(info["mergedAt"].replace("Z", "+00:00"))
+age_s = (datetime.datetime.now(datetime.timezone.utc) - merged_at).total_seconds()
+if age_s > MAX_MERGE_AGE_S or age_s < -MAX_CLOCK_SKEW_S:
+    sys.stderr.write(
+        f"[ERROR] PR #{pr_num} in abhimehro/{repo_name} merged at {info['mergedAt']} "
+        f"({int(age_s)}s ago), outside the {MAX_MERGE_AGE_S // 60}-minute post-merge window; "
+        "refusing to unlock .jules/sentinel.md\n"
+    )
     sys.exit(1)
 
 lease = {
@@ -344,6 +377,33 @@ cmd_audit_missed() {
 		echo "[ERROR] audit-missed requires --date <YYYY-MM-DD> and --repo <name>" >&2
 		exit 1
 	fi
+	if [[ ! ${date_str} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+		echo "[ERROR] audit-missed --date must be YYYY-MM-DD, got: ${date_str}" >&2
+		exit 1
+	fi
+	validate_repo_name "${repo_name}" "audit-missed"
+
+	# The pilot sidecar fires at 08:15 America/Chicago, which is 13:15 UTC only under
+	# daylight time and 14:15 UTC under standard time. Resolve the real UTC instant
+	# for this date (this also rejects impossible dates such as 2026-02-30).
+	local slot_utc
+	if ! slot_utc="$(
+		python3 - "${date_str}" <<'PY'
+import datetime
+import sys
+import zoneinfo
+
+day = datetime.date.fromisoformat(sys.argv[1])
+local = datetime.datetime.combine(
+    day, datetime.time(8, 15), tzinfo=zoneinfo.ZoneInfo("America/Chicago")
+)
+print(local.astimezone(datetime.timezone.utc).strftime("%H:%M"))
+PY
+	)"; then
+		echo "[ERROR] audit-missed --date is not a valid calendar date: ${date_str}" >&2
+		exit 1
+	fi
+	local slot_desc="${date_str} 08:15 America/Chicago (${slot_utc} UTC)"
 
 	local reports_dir="${HOME}/.gemini/antigravity/proactive-reports"
 	mkdir -p "${reports_dir}"
@@ -362,7 +422,7 @@ cmd_audit_missed() {
 
 - Status: MISSED
 - Repository: abhimehro/${repo_name}
-- Scheduled Slot: ${date_str} 13:15 UTC
+- Scheduled Slot: ${slot_desc}
 - Reason: No digest recorded for this scheduled slot (host asleep, Antigravity.app closed, or sidecar disabled). Excluded from mergeable-rate denominator.
 EOF
 		chmod 600 "${report_file}"
@@ -382,17 +442,26 @@ cmd_disable() {
 	done
 	echo "Step 1/3: removed sidecar definitions before unlinking safety hooks"
 
-	# Step 2/3: Remove global proactive skill symlinks.
+	# Step 2/3: Remove only the global proactive skill symlinks that install created.
+	# A user-managed symlink at the same path must survive rollback untouched.
 	local skill=""
+	local removed_skills=0
 	for skill in "${SKILLS[@]}"; do
-		if [[ -L "${config_dir}/skills/${skill}" ]]; then
-			rm -f "${config_dir}/skills/${skill}"
+		local skill_link="${config_dir}/skills/${skill}"
+		if [[ -L ${skill_link} ]] && [[ "$(readlink "${skill_link}")" == "${REPO_ROOT}/configs/antigravity/skills/${skill}" ]]; then
+			rm -f "${skill_link}"
+			removed_skills=$((removed_skills + 1))
+		elif [[ -L ${skill_link} ]]; then
+			echo "Step 2/3: skipped ${skill_link} (symlink not created by install; leaving in place)"
 		fi
 	done
-	echo "Step 2/3: unlinked 5 proactive skill symlinks"
+	echo "Step 2/3: unlinked ${removed_skills} proactive skill symlinks"
 
-	# Step 3/3: Unlink global hooks.json LAST.
-	if [[ -L "${config_dir}/hooks.json" ]]; then
+	# Step 3/3: Unlink global hooks.json LAST, and only if install created the link.
+	local hooks_link="${config_dir}/hooks.json"
+	if [[ -L ${hooks_link} ]] && [[ "$(readlink "${hooks_link}")" != "${REPO_ROOT}/configs/antigravity/hooks.json" ]]; then
+		echo "Step 3/3: skipped ${hooks_link} (symlink not created by install; leaving in place)"
+	elif [[ -L ${hooks_link} ]]; then
 		rm -f "${config_dir}/hooks.json"
 		local latest_backup
 		latest_backup="$(find "${config_dir}" -maxdepth 1 -name "hooks.json.backup.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]" -type f 2>/dev/null | sort -r | head -n 1 || true)"
