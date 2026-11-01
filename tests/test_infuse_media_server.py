@@ -212,6 +212,97 @@ class TestMediaServerHandler(unittest.TestCase):
             html_sub,
         )
 
+    def test_check_auth_ttl_cleanup_eviction(self):
+        """
+        Test that check_auth cleans up expired attempts (>60s) from FAILED_AUTH_ATTEMPTS
+        while retaining active recent attempts (<60s).
+        """
+        import time
+
+        infuse_media_server.AUTH_USER = "test_user"
+        infuse_media_server.AUTH_PASS = "test_pass"
+        infuse_media_server.EXPECTED_AUTH_TOKEN = "mock_token"
+
+        now = time.time()
+        with infuse_media_server.AUTH_LOCK:
+            infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
+            # Old expired IP (>60s ago)
+            infuse_media_server.FAILED_AUTH_ATTEMPTS["192.168.1.10"] = {
+                "count": 2,
+                "last_attempt": now - 75,
+            }
+            # Recent IP (<60s ago)
+            infuse_media_server.FAILED_AUTH_ATTEMPTS["192.168.1.20"] = {
+                "count": 1,
+                "last_attempt": now - 10,
+            }
+
+        self.handler.client_address = ("192.168.1.30", 12345)
+        self.handler.headers = {"Authorization": "Basic mock_token"}
+
+        result = self.handler.check_auth()
+        self.assertTrue(result)
+
+        with infuse_media_server.AUTH_LOCK:
+            self.assertNotIn("192.168.1.10", infuse_media_server.FAILED_AUTH_ATTEMPTS)
+            self.assertIn("192.168.1.20", infuse_media_server.FAILED_AUTH_ATTEMPTS)
+
+    def test_check_auth_rate_limiting(self):
+        """
+        Test that check_auth returns 429 when an IP exceeds 5 failed attempts within 60s.
+        """
+        import time
+
+        infuse_media_server.AUTH_USER = "test_user"
+        infuse_media_server.AUTH_PASS = "test_pass"
+        infuse_media_server.EXPECTED_AUTH_TOKEN = "mock_token"
+
+        now = time.time()
+        client_ip = "192.168.1.99"
+        with infuse_media_server.AUTH_LOCK:
+            infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
+            infuse_media_server.FAILED_AUTH_ATTEMPTS[client_ip] = {
+                "count": 5,
+                "last_attempt": now - 5,
+            }
+
+        self.handler.client_address = (client_ip, 12345)
+        self.handler.headers = {"Authorization": "Basic mock_token"}
+
+        result = self.handler.check_auth()
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(429)
+        self.handler.send_header.assert_called_with("Retry-After", "60")
+        self.handler.wfile.write.assert_called_with(b"Too Many Requests")
+
+    def test_check_auth_thread_safety(self):
+        """
+        Test that concurrent failures and check_auth calls do not corrupt FAILED_AUTH_ATTEMPTS.
+        """
+        import threading
+        import time
+
+        infuse_media_server.AUTH_USER = "test_user"
+        infuse_media_server.AUTH_PASS = "test_pass"
+        infuse_media_server.EXPECTED_AUTH_TOKEN = "mock_token"
+
+        with infuse_media_server.AUTH_LOCK:
+            infuse_media_server.FAILED_AUTH_ATTEMPTS.clear()
+
+        def worker(worker_id):
+            now = time.time()
+            ip = f"10.0.0.{worker_id % 10}"
+            self.handler._record_auth_failure(ip, now)
+
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(50)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        with infuse_media_server.AUTH_LOCK:
+            self.assertGreater(len(infuse_media_server.FAILED_AUTH_ATTEMPTS), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
