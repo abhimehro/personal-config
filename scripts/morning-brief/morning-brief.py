@@ -724,12 +724,12 @@ def _calculate_base_score(
 
 
 def _calculate_label_bonuses(label_names: list[str]) -> int:
-    bonus = 0
-    for label in label_names:
-        for keyword, points in LINEAR_LABEL_BONUSES_ITEMS:
-            if keyword in label:
-                bonus += points
-    return bonus
+    return sum(
+        points
+        for label in label_names
+        for keyword, points in LINEAR_LABEL_BONUSES_ITEMS
+        if keyword in label
+    )
 
 
 def _calculate_staleness_penalty(updated_at: str, today_date: dt.date) -> int:
