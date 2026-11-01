@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 951
+ledger_revision: 952
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -38285,10 +38285,10 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-01T14:30:49Z'
+  updated_at_utc: '2026-11-01T14:34:42Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: e0040da2b4716291e187b7db42b22fb444e23811
+    head_sha: e27537e2259ed96e642a76897d1fcb4e4f87b3f4
     basis: non_executable_paths
     diff_sha256: null
 - key: abhimehro/personal-config#2638@ff78cb43327e1a11d7f76ed7655b041e150ef641
@@ -38945,8 +38945,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -38958,7 +38959,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -38974,7 +38975,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-01T14:30:49Z'
+  updated_at_utc: '2026-11-01T14:34:42Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/personal-config#2650@c6db131e44f8606dfb63aa92ccc0760e03f18db0
   repository: abhimehro/personal-config
   pr: 2650
@@ -39059,11 +39062,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - uv.lock
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -39079,7 +39083,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-01T14:30:49Z'
+  updated_at_utc: '2026-11-01T14:34:42Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1381@fd34759cfcffea086d80b69ffb8e248307ed74a5
   repository: abhimehro/ctrld-sync
   pr: 1381
@@ -39096,11 +39102,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - uv.lock
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -39116,7 +39123,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-01T14:30:49Z'
+  updated_at_utc: '2026-11-01T14:34:42Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1382@3a43d1999caa14ff8a3c24e73b541133b33ce269
   repository: abhimehro/ctrld-sync
   pr: 1382
@@ -39133,11 +39142,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - uv.lock
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -39153,7 +39163,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-01T14:30:49Z'
+  updated_at_utc: '2026-11-01T14:34:42Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1385@59498e173fd8dcca2826fc951a39323d7faeb82b
   repository: abhimehro/ctrld-sync
   pr: 1385
