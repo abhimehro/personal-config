@@ -4,7 +4,8 @@
 # Manages global skill symlinks, PreToolUse safety hook link, chmod 700 report
 # and transcript permissions, staged sidecars (without ever self-enabling
 # user_config.json), disposable UTC cron canaries, verified post-merge Sentinel
-# leases, and MISSED slot auditing.
+# leases, MISSED slot auditing, and base-relative classification of verify
+# failures so pre-existing breakage is never charged to the candidate.
 
 set -Eeuo pipefail
 
@@ -23,6 +24,33 @@ PILOT_SIDECAR_ID="proactive-pilot-ctrld-sync"
 TRIAGE_SIDECAR_ID="proactive-pilot-triage"
 CANARY_SIDECAR_ID="proactive-cron-canary"
 
+# base-check's EXIT trap outlives the function that sets it, so its cleanup state
+# has to be global: a `local` would be unbound by then and, under `set -u`, the
+# trap itself would fail and mask the real exit status.
+BASE_CHECK_WT=""
+BASE_CHECK_DIR=""
+BASE_CHECK_REPO=""
+
+base_check_cleanup() {
+	if [[ -n ${BASE_CHECK_WT} ]] && [[ -d ${BASE_CHECK_WT} ]]; then
+		git -C "${BASE_CHECK_REPO}" worktree remove --force "${BASE_CHECK_WT}" >/dev/null 2>&1 || true
+		git -C "${BASE_CHECK_REPO}" worktree prune >/dev/null 2>&1 || true
+	fi
+	if [[ -n ${BASE_CHECK_DIR} ]] && [[ -d ${BASE_CHECK_DIR} ]]; then
+		rm -rf "${BASE_CHECK_DIR}"
+	fi
+}
+
+# Trims a stage split out of an '&&'-joined test command. Uses a character-at-a-time
+# loop instead of the ${var#"${var%%[![:space:]]*}"} idiom, which nests quotes badly
+# on the bash 3.2 that ships with macOS.
+trim_test_segment() {
+	local out="$1"
+	while [[ ${out} == [[:space:]]* ]]; do out="${out#?}"; done
+	while [[ ${out} == *[[:space:]] ]]; do out="${out%?}"; done
+	printf '%s' "${out}"
+}
+
 usage() {
 	cat <<'EOF'
 Usage:
@@ -32,7 +60,13 @@ Usage:
   antigravity-proactive-ctl.sh canary-clean
   antigravity-proactive-ctl.sh sentinel-post-merge --repo <name> --pr <number>
   antigravity-proactive-ctl.sh audit-missed --date <YYYY-MM-DD> --repo <name>
+  antigravity-proactive-ctl.sh base-check --repo <name> --worktree <dir> [--digest <path>] [--test-cmd <cmd>]
   antigravity-proactive-ctl.sh disable
+
+base-check exit codes:
+  0 NO_FAILURE / FLAKE_ON_RETRY / PRE_EXISTING_ON_BASE (candidate promotable),
+  1 usage, 2 CAUSED_BY_CHANGE (real regression, discard the candidate),
+  6 could not create a pristine base worktree
 EOF
 }
 
@@ -430,6 +464,212 @@ EOF
 	echo "MISSED_RECORDED: ${report_file}"
 }
 
+# G-4: a verify failure is not automatically the candidate's fault. Jules stranded
+# four good PRs on breakage the change did not cause — deleting a
+# cyclomatic-complexity-1 helper *lowered* CodeScene health and failed the gate,
+# two unrelated shards flaked, and a morning-brief PR was blocked by a
+# refactoring-agent test failure. Re-run the failing stage on a pristine base
+# worktree so the verdict is relative to base rather than absolute. This lives in
+# the 08:35 triage slot, not inside the sweep, because a base re-run can double
+# test time and the sweep is boxed at 15 minutes.
+cmd_base_check() {
+	local repo_name=""
+	local wt_path=""
+	local digest=""
+	local test_cmd=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--repo)
+			repo_name="${2##*/}"
+			shift 2
+			;;
+		--worktree)
+			wt_path="$2"
+			shift 2
+			;;
+		--digest)
+			digest="$2"
+			shift 2
+			;;
+		--test-cmd)
+			test_cmd="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for base-check: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${repo_name} ]] || [[ -z ${wt_path} ]]; then
+		echo "[ERROR] base-check requires --repo <name> and --worktree <dir>" >&2
+		exit 1
+	fi
+	validate_repo_name "${repo_name}" "base-check"
+	if [[ ! -d ${wt_path} ]]; then
+		echo "[ERROR] base-check --worktree is not a directory: ${wt_path}" >&2
+		exit 1
+	fi
+	if [[ -n ${digest} ]] && [[ ! -f ${digest} ]]; then
+		echo "[ERROR] base-check --digest does not exist: ${digest}" >&2
+		exit 1
+	fi
+
+	local wt_git_dir=""
+	wt_git_dir="$(git -C "${wt_path}" rev-parse --git-dir 2>/dev/null || true)"
+	if [[ -z ${wt_git_dir} ]]; then
+		echo "[ERROR] base-check --worktree is not inside a git worktree: ${wt_path}" >&2
+		exit 1
+	fi
+	local meta_file="${wt_git_dir}/proactive-meta.json"
+	if [[ ! -f ${meta_file} ]]; then
+		echo "[ERROR] base-check needs a prepared proactive worktree; missing proactive-meta.json in ${wt_git_dir}" >&2
+		exit 1
+	fi
+
+	local meta_repo="" base_sha=""
+	meta_repo="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_name",""))' "${meta_file}" 2>/dev/null || true)"
+	base_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("base_sha",""))' "${meta_file}" 2>/dev/null || true)"
+	if [[ ${meta_repo} != "${repo_name}" ]]; then
+		echo "[ERROR] base-check --repo ${repo_name} does not match the worktree's repo_name '${meta_repo}'" >&2
+		exit 1
+	fi
+	if [[ -z ${base_sha} ]]; then
+		echo "[ERROR] base-check cannot classify without a recorded base_sha in ${meta_file}" >&2
+		exit 1
+	fi
+
+	# Share one repo->test-command mapping with verify instead of duplicating it.
+	if [[ -z ${test_cmd} ]]; then
+		test_cmd="$("${SCRIPT_DIR}/proactive-worktree.sh" print-test-cmd --repo-name "${repo_name}")"
+	fi
+	if [[ -z ${test_cmd} ]]; then
+		echo "[ERROR] base-check resolved an empty test command for ${repo_name}" >&2
+		exit 1
+	fi
+
+	# Split the compound command on '&&' so one failing stage can be re-run on base
+	# instead of paying for the whole suite twice. A literal '&&' inside a quoted
+	# argument would split wrongly; none of the current repo mappings contain one.
+	local segments=()
+	local rest="${test_cmd}"
+	while [[ ${rest} == *"&&"* ]]; do
+		segments+=("$(trim_test_segment "${rest%%&&*}")")
+		rest="${rest#*&&}"
+	done
+	segments+=("$(trim_test_segment "${rest}")")
+
+	BASE_CHECK_REPO="${wt_path}"
+	BASE_CHECK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/proactive-basecheck.XXXXXX")"
+	trap base_check_cleanup EXIT
+
+	# No origin ref is consulted: the comparison is candidate vs a local base_sha,
+	# so this classification stays valid offline and needs no fetch precondition.
+	BASE_CHECK_WT="${BASE_CHECK_DIR}/base"
+	if ! git -C "${wt_path}" worktree add --detach "${BASE_CHECK_WT}" "${base_sha}" >/dev/null 2>&1; then
+		echo "[ERROR] could not create a pristine base worktree at ${base_sha}; the object may have been gc'd" >&2
+		exit 6
+	fi
+
+	# Credentials are stripped for the same reason verify strips them: a gate must
+	# not pass because the ambient environment can reach a remote.
+	run_segment_in() {
+		local dir="$1"
+		local seg="$2"
+		local log="$3"
+		(
+			cd "${dir}" || exit 1
+			env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN bash -c "${seg}"
+		) >"${log}" 2>&1
+	}
+
+	local seg=""
+	local idx=0
+	local cand_fail_idx=-1
+	local cand_fail_seg=""
+	for seg in "${segments[@]}"; do
+		if ! run_segment_in "${wt_path}" "${seg}" "${BASE_CHECK_DIR}/cand-${idx}.log"; then
+			cand_fail_idx="${idx}"
+			cand_fail_seg="${seg}"
+			break
+		fi
+		idx=$((idx + 1))
+	done
+
+	local verdict="" substatus="" detail=""
+
+	if [[ ${cand_fail_idx} -lt 0 ]]; then
+		verdict="NO_FAILURE"
+		substatus="NONE"
+		detail="all ${#segments[@]} stage(s) pass in the candidate worktree; nothing to classify"
+	else
+		# One flake-retry before classifying: two of the five Jules CI_GATE failures
+		# were unrelated flaky shards, which a retry catches without a base run.
+		echo "[INFO] candidate failed stage ${cand_fail_idx}: ${cand_fail_seg}" >&2
+		tail -n 15 "${BASE_CHECK_DIR}/cand-${cand_fail_idx}.log" >&2 || true
+		if run_segment_in "${wt_path}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/cand-retry.log"; then
+			verdict="FLAKE_ON_RETRY"
+			substatus="NONE"
+			detail="stage ${cand_fail_idx} (${cand_fail_seg}) failed once then passed on retry; treated as a flake, not a regression"
+		else
+			local base_fail_idx=-1
+			local base_fail_seg=""
+			local bidx=0
+			for seg in "${segments[@]}"; do
+				if ! run_segment_in "${BASE_CHECK_WT}" "${seg}" "${BASE_CHECK_DIR}/base-${bidx}.log"; then
+					base_fail_idx="${bidx}"
+					base_fail_seg="${seg}"
+					break
+				fi
+				bidx=$((bidx + 1))
+			done
+
+			if [[ ${base_fail_idx} -ge 0 ]]; then
+				verdict="PRE_EXISTING_ON_BASE"
+				substatus="PRE_EXISTING_FAILURE"
+				detail="base_sha ${base_sha} also fails stage ${base_fail_idx} (${base_fail_seg}); candidate fails stage ${cand_fail_idx} (${cand_fail_seg}). Promote the candidate and file the base breakage separately."
+				tail -n 15 "${BASE_CHECK_DIR}/base-${base_fail_idx}.log" >&2 || true
+			else
+				verdict="CAUSED_BY_CHANGE"
+				substatus="GATE_FAILURE"
+				detail="all ${#segments[@]} stage(s) pass at base_sha ${base_sha} but stage ${cand_fail_idx} (${cand_fail_seg}) fails in the candidate; this is a real regression, discard the candidate"
+			fi
+		fi
+	fi
+
+	echo "VERDICT: ${verdict}"
+	echo "SUBSTATUS: ${substatus}"
+	echo "REPO: abhimehro/${repo_name}"
+	echo "BASE_SHA: ${base_sha}"
+	echo "WORKTREE: ${wt_path}"
+	echo "DETAIL: ${detail}"
+
+	if [[ -n ${digest} ]]; then
+		(
+			umask 077
+			{
+				echo ""
+				echo "## Base-Check Classification"
+				echo ""
+				echo "- Verdict: ${verdict}"
+				echo "- Substatus: ${substatus}"
+				echo "- Base SHA: ${base_sha}"
+				echo "- Worktree: ${wt_path}"
+				echo "- Detail: ${detail}"
+			} >>"${digest}"
+			chmod 600 "${digest}"
+		)
+		echo "DIGEST_UPDATED: ${digest}"
+	fi
+
+	if [[ ${verdict} == "CAUSED_BY_CHANGE" ]]; then
+		exit 2
+	fi
+	return 0
+}
+
 cmd_disable() {
 	local config_dir="${HOME}/.gemini/config"
 
@@ -514,6 +754,9 @@ main() {
 		;;
 	audit-missed)
 		cmd_audit_missed "$@"
+		;;
+	base-check)
+		cmd_base_check "$@"
 		;;
 	disable)
 		cmd_disable "$@"

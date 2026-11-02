@@ -5,10 +5,11 @@
 # tamper-evident checks on build/lock/script/test harnesses before running gates,
 # enforces a base-relative semantic test-coverage gate (AST diff + test count +
 # static checks) so silently dropped coverage cannot ride a green suite,
-# enforces numeric-equivalence checks on research repositories, checks open-PR
-# file collisions plus local/remote candidate throttles across every registered
-# worktree, and prunes stale empty worktrees past their 21-day TTL while
-# preserving unmerged candidates.
+# enforces numeric-equivalence checks on research repositories, checks file
+# collisions against both open PRs and live candidate worktrees, enforces
+# local/remote candidate throttles across every registered worktree, and prunes
+# stale empty worktrees past their 21-day TTL while preserving unmerged
+# candidates.
 
 set -Eeuo pipefail
 
@@ -19,13 +20,19 @@ usage() {
 Usage:
   proactive-worktree.sh prepare --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
   proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
-  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...]
+  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees]
   proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees]
   proactive-worktree.sh cleanup [--worktree-root <dir>] [--ttl-days <days>]
+  proactive-worktree.sh print-test-cmd --repo-name <name>
 
 verify exit codes:
   0 clean, 1 usage, 2 BLOCKED (path policy or semantic test-coverage gate),
   3 BLOCKED (lens policy), 6 could not establish a fresh origin ref
+
+check-collisions exit codes:
+  0 clean, 1 usage, 4 COLLISION (open PR or live candidate worktree),
+  5 UNVERIFIABLE (truncated PR listing), 6 could not enumerate worktrees or
+  establish a fresh origin ref
 
 check-throttle exit codes:
   0 clean, 1 usage, 5 THROTTLED/UNVERIFIABLE, 6 could not establish a fresh
@@ -620,6 +627,8 @@ cmd_verify() {
 
 cmd_check_collisions() {
 	local repo=""
+	local repo_path=""
+	local include_worktrees=0
 	local target_files=()
 
 	while [[ $# -gt 0 ]]; do
@@ -631,6 +640,14 @@ cmd_check_collisions() {
 		--file)
 			target_files+=("$2")
 			shift 2
+			;;
+		--repo-path)
+			repo_path="$2"
+			shift 2
+			;;
+		--include-worktrees)
+			include_worktrees=1
+			shift
 			;;
 		*)
 			echo "[ERROR] Unknown flag for check-collisions: $1" >&2
@@ -644,18 +661,98 @@ cmd_check_collisions() {
 		exit 1
 	fi
 
+	if [[ ${include_worktrees} -eq 1 ]] && [[ -z ${repo_path} ]]; then
+		echo "[ERROR] --include-worktrees requires --repo-path so git worktree list can be resolved" >&2
+		exit 1
+	fi
+
 	local prs_json
 	# changedFiles lets us detect truncation: gh caps the per-PR files list, so a
 	# large PR could otherwise hide a colliding path and let the gate pass.
 	prs_json="$(gh pr list --repo "${repo}" --state open --limit 100 --json number,title,isDraft,createdAt,files,changedFiles)"
 
-	python3 - "${prs_json}" "${target_files[@]}" <<'PY'
+	# Open PRs are only half the collision surface. In 2B local-first mode there
+	# are no bot PRs at all, so a PR-only gate is a no-op for exactly the class
+	# that stranded real work: two sessions editing the same file in the same
+	# burst. Union in the changed paths of every live local candidate worktree.
+	local wt_records=""
+	if [[ ${include_worktrees} -eq 1 ]]; then
+		local main_top="" wt_list="" wt_line="" candidate_dir="" wt_git_dir="" wt_branch=""
+		local is_candidate=0
+		local candidate_dirs=()
+
+		main_top="$(git -C "${repo_path}" rev-parse --show-toplevel 2>/dev/null || true)"
+		# Enumerate first and check the status: a silently empty list would
+		# under-report collisions, which is the unsafe direction.
+		if ! wt_list="$(git -C "${repo_path}" worktree list --porcelain)"; then
+			echo "[ERROR] --include-worktrees could not enumerate worktrees for ${repo_path}; refusing to under-report collisions" >&2
+			exit 6
+		fi
+
+		while IFS= read -r wt_line; do
+			[[ ${wt_line} == worktree\ * ]] || continue
+			candidate_dir="${wt_line#worktree }"
+			[[ -n ${candidate_dir} ]] || continue
+			[[ ${candidate_dir} == "${main_top}" ]] && continue
+			is_candidate=0
+			wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
+			if [[ -n ${wt_git_dir} ]] && [[ -f ${wt_git_dir}/proactive-meta.json ]]; then
+				is_candidate=1
+			fi
+			wt_branch="$(git -C "${candidate_dir}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+			if [[ ${wt_branch} == proactive/* ]]; then
+				is_candidate=1
+			fi
+			[[ ${is_candidate} -eq 1 ]] || continue
+			candidate_dirs+=("${candidate_dir}")
+		done <<<"${wt_list}"
+
+		# Liveness is judged against origin/<default_branch>, so refresh first and
+		# fail closed. This subcommand already needs the network for gh pr list, so
+		# the fetch adds no new dependency.
+		if [[ ${#candidate_dirs[@]} -gt 0 ]]; then
+			require_fresh_origin_ref "${repo_path}"
+		fi
+
+		local cand="" cand_base="" cand_paths="" cand_rel="" cand_dirty="" cand_branch=""
+		for cand in ${candidate_dirs[@]+"${candidate_dirs[@]}"}; do
+			cand_dirty="$(git -C "${cand}" status --porcelain 2>/dev/null | head -1)"
+			# A candidate whose work already merged is not a collision: its paths
+			# are on the base branch now, and counting it would block that file for
+			# up to the 21-day TTL. Uncommitted edits do count, so check dirtiness
+			# before the commit-ancestry test.
+			if [[ -z ${cand_dirty} ]] && ! has_unreviewed_worktree_commits "${cand}"; then
+				continue
+			fi
+			cand_base=""
+			cand_branch="$(git -C "${cand}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+			wt_git_dir="$(git -C "${cand}" rev-parse --git-dir 2>/dev/null || true)"
+			if [[ -n ${wt_git_dir} ]] && [[ -f ${wt_git_dir}/proactive-meta.json ]]; then
+				cand_base="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("base_sha",""))' "${wt_git_dir}/proactive-meta.json" 2>/dev/null || true)"
+			fi
+			if [[ -z ${cand_base} ]]; then
+				echo "[ERROR] candidate worktree ${cand} has no recorded base_sha; refusing to under-report collisions" >&2
+				exit 6
+			fi
+			cand_paths="$({
+				git -C "${cand}" diff --no-renames --name-only "${cand_base}" 2>/dev/null
+				git -C "${cand}" ls-files --others --exclude-standard 2>/dev/null
+			} | sort -u)"
+			while IFS= read -r cand_rel; do
+				[[ -n ${cand_rel} ]] || continue
+				wt_records+="${cand_rel}"$'\t'"${cand}"$'\t'"${cand_branch}"$'\n'
+			done <<<"${cand_paths}"
+		done
+	fi
+
+	python3 - "${prs_json}" "${wt_records}" "${target_files[@]}" <<'PY'
 import json
 import os
 import sys
 
 prs = json.loads(sys.argv[1])
-targets = {os.path.normpath(t.strip()) for t in sys.argv[2:] if t.strip()}
+wt_blob = sys.argv[2]
+targets = {os.path.normpath(t.strip()) for t in sys.argv[3:] if t.strip()}
 collisions = []
 
 # Fail closed when the listing may be incomplete: hitting the --limit cap or a
@@ -676,11 +773,22 @@ for pr in prs:
     for fobj in pr.get("files", []):
         path = os.path.normpath(fobj.get("path", "").strip())
         if path in targets:
-            collisions.append((pr.get("number"), pr.get("title", ""), path))
+            collisions.append(f"COLLISION: Open PR #{pr.get('number')} ({pr.get('title', '')}) already touches {path}")
+
+for line in wt_blob.splitlines():
+    if not line.strip():
+        continue
+    parts = line.split("\t")
+    if len(parts) != 3:
+        continue
+    rel, wt_dir, branch = parts[0].strip(), parts[1].strip(), parts[2].strip()
+    if os.path.normpath(rel) in targets:
+        label = f"branch {branch}" if branch else "detached HEAD"
+        collisions.append(f"COLLISION: live candidate worktree {wt_dir} ({label}) already touches {os.path.normpath(rel)}")
 
 if collisions:
-    for num, title, path in collisions:
-        sys.stderr.write(f"COLLISION: Open PR #{num} ({title}) already touches {path}\n")
+    for message in collisions:
+        sys.stderr.write(f"{message}\n")
     sys.exit(4)
 PY
 }
@@ -990,6 +1098,31 @@ cmd_cleanup() {
 	done <<<"${stale_dirs}"
 }
 
+# Prints the default test command for a repository so callers outside this script
+# (the ctl CLI's base-check) share one mapping instead of duplicating it and
+# drifting out of sync with verify.
+cmd_print_test_cmd() {
+	local repo_name=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--repo-name)
+			repo_name="${2##*/}"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for print-test-cmd: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+	if [[ -z ${repo_name} ]]; then
+		echo "[ERROR] print-test-cmd requires --repo-name <name>" >&2
+		exit 1
+	fi
+	default_test_cmd_for_repo "${repo_name}"
+	echo
+}
+
 main() {
 	if [[ $# -lt 1 ]]; then
 		usage >&2
@@ -1012,6 +1145,9 @@ main() {
 		;;
 	cleanup)
 		cmd_cleanup "$@"
+		;;
+	print-test-cmd)
+		cmd_print_test_cmd "$@"
 		;;
 	-h | --help | help)
 		usage

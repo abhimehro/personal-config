@@ -3,7 +3,10 @@
 # Unit tests for scripts/antigravity-proactive-ctl.sh
 # Verifies idempotent install, chmod 700 transcript/report dirs, weekday UTC cron,
 # allows_user_interactions=false, disposable cron canary staging/cleanup,
-# post-merge Sentinel lease verification, MISSED digest audit, and ordered rollback.
+# post-merge Sentinel lease verification, MISSED digest audit, base-relative
+# classification of verify failures (NO_FAILURE / FLAKE_ON_RETRY /
+# PRE_EXISTING_ON_BASE / CAUSED_BY_CHANGE) including test-command resolution
+# through proactive-worktree.sh print-test-cmd, and ordered rollback.
 
 set -Eeuo pipefail
 
@@ -168,8 +171,155 @@ LOG
 check_grep "status detects running pilot from scheduler log" "pilot_runtime=running" "${TEST_DIR}/status-running.log"
 check_grep "status reports next pilot run time" "pilot_next_run=2026-11-02 13:15:00 UTC" "${TEST_DIR}/status-running.log"
 
-# 6. Ordered rollback (disable) removes sidecars BEFORE hooks.json and restores previous hooks.json backup
-echo '{"custom_user_hook": true}' > "${HOME}/.gemini/config/hooks.json.backup.20261031_120000"
+# 6. base-check classifies a verify failure relative to a pristine base worktree.
+#    A verify failure is not automatically the candidate's fault: Jules stranded
+#    four good PRs on breakage the change did not cause.
+WT_SCRIPT="${REPO_ROOT}/scripts/proactive-worktree.sh"
+BC_REMOTE="${TEST_DIR}/bc-remote.git"
+BC_SEED="${TEST_DIR}/bc-seed"
+BC_CLONE="${TEST_DIR}/bc-repo"
+BC_WT_ROOT="${TEST_DIR}/bc-worktrees"
+mkdir -p "${BC_WT_ROOT}"
+
+git init --bare -q "${BC_REMOTE}"
+git init -q "${BC_SEED}"
+git -C "${BC_SEED}" config user.email "test@example.com"
+git -C "${BC_SEED}" config user.name "Test User"
+git -C "${BC_SEED}" checkout -q -b main
+cat >"${BC_SEED}/stage1.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"${BC_SEED}/stage2.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "${BC_SEED}/stage1.sh" "${BC_SEED}/stage2.sh"
+git -C "${BC_SEED}" add .
+git -C "${BC_SEED}" commit -q -m "green base"
+git -C "${BC_SEED}" remote add origin "${BC_REMOTE}"
+git -C "${BC_SEED}" push -q -u origin main
+git --git-dir="${BC_REMOTE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${BC_REMOTE}" "${BC_CLONE}"
+git -C "${BC_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+BC_TEST_CMD="bash stage1.sh && bash stage2.sh"
+
+# (a) Nothing fails: there is no failure to classify.
+WT_OK="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+check_exit "base-check reports NO_FAILURE when every stage passes" 0 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_OK}" --test-cmd "${BC_TEST_CMD}"
+check_grep "base-check prints the NO_FAILURE verdict" "^VERDICT: NO_FAILURE$" "${TEST_DIR}/check.log"
+check_grep "base-check maps NO_FAILURE to Substatus NONE" "^SUBSTATUS: NONE$" "${TEST_DIR}/check.log"
+
+# (b) Base is green but the candidate breaks a stage: a real regression.
+WT_BAD="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+printf '#!/usr/bin/env bash\nexit 1\n' >"${WT_BAD}/stage2.sh"
+git -C "${WT_BAD}" config user.email "test@example.com"
+git -C "${WT_BAD}" config user.name "Test User"
+git -C "${WT_BAD}" commit -qam "chore(qa): break stage two"
+BC_DIGEST="${TEST_DIR}/bc-digest.md"
+printf '# Proactive Sweep Digest\n\n- Status: CANDIDATE_READY\n' >"${BC_DIGEST}"
+chmod 600 "${BC_DIGEST}"
+check_exit "base-check exits 2 when the candidate causes the failure" 2 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_BAD}" --test-cmd "${BC_TEST_CMD}" \
+	--digest "${BC_DIGEST}"
+check_grep "base-check names the regression verdict" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
+check_grep "base-check maps the regression to GATE_FAILURE" "^SUBSTATUS: GATE_FAILURE$" "${TEST_DIR}/check.log"
+check_grep "base-check identifies the failing stage" "stage 1 \(bash stage2.sh\)" "${TEST_DIR}/check.log"
+check_grep "base-check appends a classification section to the digest" "^## Base-Check Classification$" "${BC_DIGEST}"
+check_grep "base-check records the verdict in the digest" "^- Verdict: CAUSED_BY_CHANGE$" "${BC_DIGEST}"
+BC_DIGEST_PERMS="$(stat -c '%a' "${BC_DIGEST}" 2>/dev/null || stat -f '%OLp' "${BC_DIGEST}")"
+check "base-check keeps the digest at mode 600" test "${BC_DIGEST_PERMS}" = "600"
+check "base-check removes its temporary base worktree" bash -c "! git -C '${WT_BAD}' worktree list | grep -q '/base'"
+
+# (c) Base is already broken: the candidate inherits the failure and stays promotable.
+printf '#!/usr/bin/env bash\nexit 1\n' >"${BC_CLONE}/stage2.sh"
+git -C "${BC_CLONE}" config user.email "test@example.com"
+git -C "${BC_CLONE}" config user.name "Test User"
+git -C "${BC_CLONE}" commit -qam "break stage two on main"
+git -C "${BC_CLONE}" push -q origin main
+WT_PRE="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+check_exit "base-check exits 0 when the failure pre-exists on base" 0 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_PRE}" --test-cmd "${BC_TEST_CMD}"
+check_grep "base-check names the pre-existing verdict" "^VERDICT: PRE_EXISTING_ON_BASE$" "${TEST_DIR}/check.log"
+check_grep "base-check maps pre-existing breakage to PRE_EXISTING_FAILURE" "^SUBSTATUS: PRE_EXISTING_FAILURE$" "${TEST_DIR}/check.log"
+check_grep "base-check records the base sha it compared against" "^BASE_SHA: [0-9a-f]{7,40}$" "${TEST_DIR}/check.log"
+
+# (d) One flake-retry before classifying, so an unrelated flaky shard is not
+#     charged to the candidate and no base run is needed.
+FLAKE_STATE="${TEST_DIR}/flake-state"
+cat >"${TEST_DIR}/flake.sh" <<EOF
+#!/usr/bin/env bash
+if [[ -f "${FLAKE_STATE}" ]]; then exit 0; fi
+touch "${FLAKE_STATE}"
+exit 1
+EOF
+chmod +x "${TEST_DIR}/flake.sh"
+rm -f "${FLAKE_STATE}"
+WT_FLAKE="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+check_exit "base-check exits 0 when the failing stage passes on retry" 0 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_FLAKE}" --test-cmd "bash ${TEST_DIR}/flake.sh"
+check_grep "base-check names the flake verdict" "^VERDICT: FLAKE_ON_RETRY$" "${TEST_DIR}/check.log"
+check_grep "base-check maps a flake to Substatus NONE" "^SUBSTATUS: NONE$" "${TEST_DIR}/check.log"
+
+# (e) Fail closed rather than classify against a base that cannot be materialised.
+WT_BOGUS="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+BOGUS_META="$(git -C "${WT_BOGUS}" rev-parse --git-dir)/proactive-meta.json"
+python3 - "${BOGUS_META}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    meta = json.load(handle)
+meta["base_sha"] = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(meta, handle)
+PY
+check_exit "base-check exits 6 when the base worktree cannot be created" 6 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_BOGUS}" --test-cmd "${BC_TEST_CMD}"
+check_grep "base-check explains the unusable base sha" "pristine base worktree" "${TEST_DIR}/check.log"
+
+# (f) Usage and identity guards.
+check_exit "base-check requires --repo and --worktree" 1 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo
+check_exit "base-check rejects a --repo that does not match the worktree" 1 \
+	"${CTL_SCRIPT}" base-check --repo other-repo --worktree "${WT_OK}" --test-cmd "${BC_TEST_CMD}"
+check_grep "base-check explains the repo mismatch" "does not match the worktree's repo_name" "${TEST_DIR}/check.log"
+check_exit "base-check rejects a directory that is not a proactive worktree" 1 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${BC_CLONE}" --test-cmd "${BC_TEST_CMD}"
+check_grep "base-check explains the missing metadata" "proactive-meta.json" "${TEST_DIR}/check.log"
+check_exit "base-check rejects a missing --digest path" 1 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_OK}" --test-cmd "${BC_TEST_CMD}" \
+	--digest "${TEST_DIR}/no-such-digest.md"
+check_exit "base-check rejects an unknown flag" 1 \
+	"${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_OK}" --nonsense
+
+# (g) Production path: the triage sidecar never passes --test-cmd, so base-check must
+#     resolve it through proactive-worktree.sh print-test-cmd and then run it. An
+#     unmapped repo name resolves to the pytest default, which the stub below passes.
+MOCK_BIN_PY="${TEST_DIR}/mock_bin_py"
+mkdir -p "${MOCK_BIN_PY}"
+REAL_PYTHON3="$(command -v python3)"
+cat >"${MOCK_BIN_PY}/python3" <<MOCK
+#!/usr/bin/env bash
+# base-check reads proactive-meta.json via 'python3 -c'; only the resolved test
+# command ('python3 -m pytest -q') should reach the stub.
+if [[ "\$1" == "-c" ]]; then
+	exec "${REAL_PYTHON3}" "\$@"
+fi
+exit 0
+MOCK
+chmod +x "${MOCK_BIN_PY}/python3"
+WT_DEFAULT="$("${WT_SCRIPT}" prepare --repo-path "${BC_CLONE}" --lens code-health --worktree-root "${BC_WT_ROOT}")"
+# env, not a PATH= prefix on check_exit: bash keeps a function-call assignment in
+# effect for the rest of the file, which would leak the stub into later sections.
+check_exit "base-check resolves its test command from print-test-cmd" 0 \
+	env PATH="${MOCK_BIN_PY}:${PATH}" "${CTL_SCRIPT}" base-check --repo bc-repo --worktree "${WT_DEFAULT}"
+check_grep "base-check classifies the resolved default command" "^VERDICT: NO_FAILURE$" "${TEST_DIR}/check.log"
+
+# 7. Ordered rollback (disable) removes sidecars BEFORE hooks.json and restores previous hooks.json backup
+echo '{"custom_user_hook": true}' >"${HOME}/.gemini/config/hooks.json.backup.20261031_120000"
 
 # A user-managed symlink at a proactive skill path must survive rollback untouched
 FOREIGN_SKILL="${TEST_DIR}/user-managed-skill"

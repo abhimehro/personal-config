@@ -7,8 +7,12 @@
 # and nested test files, the base-relative semantic test-coverage gate (lost
 # methods, removed containers, count drops, pinned expectations, static floor),
 # fail-closed origin refresh before ref-based throttle verdicts, cross-root
-# candidate counting via --include-worktrees, numeric-equivalence enforcement for
-# research repos, and 21-day TTL cleanup preserving unmerged candidate commits.
+# candidate counting via check-throttle --include-worktrees, file-path collisions
+# against live candidate worktrees via check-collisions --include-worktrees
+# (including human-worktree and already-merged-candidate exclusion), the
+# print-test-cmd mapping the ctl CLI's base-check resolves instead of duplicating,
+# numeric-equivalence enforcement for research repos, and 21-day TTL cleanup
+# preserving unmerged candidate commits.
 
 set -Eeuo pipefail
 
@@ -504,6 +508,97 @@ PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "--include-worktrees fails closed wh
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}" \
 	--include-worktrees --repo-path "${TEST_DIR}/not-a-repo"
 check_grep "--include-worktrees explains the enumeration failure" "could not enumerate worktrees" "${TEST_DIR}/check.log"
+
+# 5e. G-5: check-collisions must see live candidate worktrees, not only open PRs.
+#     In 2B local-first mode there are no bot PRs, so a PR-only gate is a no-op
+#     for exactly the collision class that stranded real work (two sessions
+#     editing parse_inventory.py in the same burst).
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions is a no-op for a local candidate without --include-worktrees" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/module.py"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions detects a live candidate worktree path" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/module.py" \
+	--include-worktrees --repo-path "${INC_CLONE}"
+check_grep "check-collisions names the colliding candidate worktree" "live candidate worktree" "${TEST_DIR}/check.log"
+check_grep "check-collisions names the colliding path" "already touches src/module.py" "${TEST_DIR}/check.log"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions allows a path no candidate touches" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/unrelated.py" \
+	--include-worktrees --repo-path "${INC_CLONE}"
+
+# A human worktree is not a proactive candidate, so its edits must not block a sweep.
+echo "human edit" >"${TEST_DIR}/human-wt/human_only.py"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions ignores a human worktree path" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "human_only.py" \
+	--include-worktrees --repo-path "${INC_CLONE}"
+
+# A candidate whose work already merged is not a collision: its paths are on the
+# base branch now, and counting it would block that file for the whole 21-day TTL.
+MERGED_BARE="${TEST_DIR}/merged-remote.git"
+git init -q --bare "${MERGED_BARE}"
+MERGED_SEED="${TEST_DIR}/merged-seed"
+git clone -q "${BARE_REMOTE}" "${MERGED_SEED}"
+git -C "${MERGED_SEED}" remote set-url origin "${MERGED_BARE}"
+git -C "${MERGED_SEED}" push -q origin HEAD:refs/heads/main
+# A freshly init'd bare repo points HEAD at a branch that does not exist yet, so
+# set it before any clone tries to resolve origin/HEAD.
+git -C "${MERGED_BARE}" symbolic-ref HEAD refs/heads/main
+MERGED_CLONE="${TEST_DIR}/merged-clone"
+git clone -q "${MERGED_BARE}" "${MERGED_CLONE}"
+git -C "${MERGED_CLONE}" remote set-head origin -a >/dev/null 2>&1
+WT_MERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${MERGED_CLONE}" --lens code-health --worktree-root "${WT_ROOT}")"
+git -C "${WT_MERGED}" config user.email "test@example.com"
+git -C "${WT_MERGED}" config user.name "Test User"
+echo "merged marker" >"${WT_MERGED}/src/merged_marker.py"
+git -C "${WT_MERGED}" add -A
+git -C "${WT_MERGED}" commit -q -m "chore(qa): candidate that later merges"
+# Push from the clone, not the worktree: prepare sets a worktree-scoped
+# pushurl=DISABLED in local mode, which is exactly what should block this.
+git -C "${MERGED_CLONE}" push -q origin "$(git -C "${WT_MERGED}" rev-parse HEAD)":refs/heads/main
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions ignores a candidate whose work already merged" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/merged_marker.py" \
+	--include-worktrees --repo-path "${MERGED_CLONE}"
+check_exit "check-collisions --include-worktrees requires --repo-path" 1 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/module.py" --include-worktrees
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions fails closed when worktrees cannot be enumerated" 6 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/module.py" \
+	--include-worktrees --repo-path "${TEST_DIR}/not-a-repo"
+check_grep "check-collisions explains the enumeration failure" "could not enumerate worktrees" "${TEST_DIR}/check.log"
+
+# The open-PR half of the gate must still fire now that worktree paths are unioned
+# in. MOCK_BIN/gh was rewritten by the throttle cases above, so use a dedicated
+# mock that returns a PR whose files overlap the target.
+MOCK_BIN_PR="${TEST_DIR}/mock_bin_pr"
+mkdir -p "${MOCK_BIN_PR}"
+cat >"${MOCK_BIN_PR}/gh" <<'MOCK'
+#!/usr/bin/env bash
+cat <<'JSON'
+[
+  {
+    "number": 42,
+    "title": "⚡bolt: speed up sync",
+    "isDraft": true,
+    "createdAt": "2026-10-30T10:00:00Z",
+    "files": [{"path": "src/module.py"}]
+  }
+]
+JSON
+MOCK
+chmod +x "${MOCK_BIN_PR}/gh"
+
+PATH="${MOCK_BIN_PR}:${PATH}" check_exit "check-collisions still detects an open PR path with --include-worktrees" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/module.py" \
+	--include-worktrees --repo-path "${INC_CLONE}"
+check_grep "check-collisions still names the open PR" "Open PR #42" "${TEST_DIR}/check.log"
+check_grep "check-collisions reports both the PR and the candidate worktree" "live candidate worktree" "${TEST_DIR}/check.log"
+
+# 5f. print-test-cmd is the single source of truth the ctl CLI's base-check reads,
+#     so the repo -> test-command mapping cannot drift from the one verify uses.
+PTC_MAPPED="$("${TARGET_SCRIPT}" print-test-cmd --repo-name abhimehro/ctrld-sync)"
+check "print-test-cmd strips the owner and prints the mapped compound command" test "${PTC_MAPPED}" = "uv run --all-extras pytest tests/ test_main.py -q && uv run --all-extras ruff check ."
+PTC_DEFAULT="$("${TARGET_SCRIPT}" print-test-cmd --repo-name some-unmapped-repo)"
+check "print-test-cmd falls back to the pytest default for an unmapped repo" test "${PTC_DEFAULT}" = "python3 -m pytest -q"
+check_exit "print-test-cmd requires --repo-name" 1 "${TARGET_SCRIPT}" print-test-cmd
+check_exit "print-test-cmd rejects an unknown flag" 1 \
+	"${TARGET_SCRIPT}" print-test-cmd --repo-name ctrld-sync --nonsense
 
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"

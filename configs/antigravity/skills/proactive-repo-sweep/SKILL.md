@@ -75,19 +75,34 @@ listed pilot subset) using isolated worktrees and strict approval gates.
    corresponding skill (`proactive-sentinel`, `proactive-bolt`,
    `proactive-palette`, or `proactive-code-health`).
 
-### Step 3: File-Path Collision Check Against Open PRs
+### Step 3: File-Path Collision Check Against Open PRs and Live Candidates
 
-Before editing any candidate file `<relpath>`, verify no open PR in
-`abhimehro/<repo>` touches that exact path:
+Before editing any candidate file `<relpath>`, verify nothing else already owns
+that exact path — neither an open PR in `abhimehro/<repo>` nor a live local
+candidate worktree:
 
 ```bash
 "$HOME/dev/personal-config/scripts/proactive-worktree.sh" check-collisions \
   --repo "abhimehro/<repo>" \
-  --file "<relpath>"
+  --file "<relpath>" \
+  --include-worktrees \
+  --repo-path "$HOME/dev/<repo>"
 ```
 
-If exit code `4` is returned, pick a non-overlapping candidate or conclude as a
-clean no-op.
+`--include-worktrees` is required, not optional. Under `2B` local-first mode
+there are no bot PRs at all, so a PR-only check is a **no-op for exactly the
+collision class that stranded real work**: two sessions editing the same file in
+the same burst. The flag unions in the changed paths of every live candidate
+worktree (dirty, or holding commits not yet on the default branch). A candidate
+whose work already merged is excluded, so it cannot block that path for the
+whole 21-day TTL.
+
+Exit codes: `4` = collision — pick a non-overlapping candidate or conclude as a
+clean no-op. `5` = `UNVERIFIABLE`, the open-PR listing was truncated, so a
+collision could be invisible; treat as a no-op for that path, never as a pass.
+`6` = worktrees could not be enumerated or a candidate had no recorded
+`base_sha`; the check refuses to under-report, so conclude as a no-op and say
+why in the digest.
 
 ### Step 4: Isolated Worktree Edit and Hardened Verification
 
@@ -135,8 +150,27 @@ clean no-op.
    conventional prefix (`⚡bolt:`, `🎨palette:`, or `chore(qa):`). Do not commit
    unmerged `sentinel` fixes onto branches destined for public Draft PRs; keep
    `sentinel` reports local (`SECURITY_REPORT_ONLY`) or prepare a private GitHub
-   Security Advisory patch. If verification fails and cannot be fixed cleanly
-   within budget, discard changes in `"$WT_PATH"` and report why.
+   Security Advisory patch.
+
+   If verification fails, the right response depends on **which** gate failed:
+
+   - A gate the sweep itself controls — a tamper-evident build/test path, the
+     semantic test-coverage gate, or the `--numeric-check-cmd` assertion — is
+     caused by the change by construction. Discard `"$WT_PATH"` and report why.
+   - A failure in the repository's own test or build command is **not**
+     automatically the candidate's fault. Jules stranded four good PRs on base
+     breakage: deleting a cyclomatic-complexity-1 helper _lowered_ CodeScene
+     health and failed the gate, two unrelated shards flaked, and a
+     morning-brief change was blocked by a refactoring-agent test failure. Keep
+     the worktree in place, record the exact verify command, its exit code, and
+     a provisional `Substatus: GATE_FAILURE` in the digest, and stop. The
+     `08:35` triage slot runs `antigravity-proactive-ctl.sh base-check`, which
+     re-runs the failing stage on a pristine `base_sha` worktree and appends a
+     `## Base-Check
+     Classification` verdict to the same digest. Never run
+     `base-check` inside the sweep: a base re-run can double test time and the
+     sweep is boxed at 15 minutes. Never delete a worktree whose failure has not
+     been classified — that destroys the evidence the classification needs.
 
 ### Step 5: Write Local Digest (`2B` Strict Local-First Gate)
 
@@ -147,11 +181,18 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
   `THROTTLED`, or `MISSED` (written by
   `antigravity-proactive-ctl.sh audit-missed --date YYYY-MM-DD --repo <repo>` if
   a scheduled wake did not run)
-- **Substatus:** `NONE` | `FLOAT_REORDER_DRIFT` | `GATE_FAILURE` (flag pure
-  reordered `pandas`/`numpy` summation drift `1e-10 < max_rel_diff <= 1e-7`
-  under `Status: CLEAN_NO_OP` + `Substatus: FLOAT_REORDER_DRIFT` after
-  discarding the candidate so float-reorder noise is tracked separately from
-  real `GATE_FAILURE` regressions)
+- **Substatus:** `NONE` | `FLOAT_REORDER_DRIFT` | `GATE_FAILURE` |
+  `PRE_EXISTING_FAILURE` (flag pure reordered `pandas`/`numpy` summation drift
+  `1e-10 < max_rel_diff <= 1e-7` under `Status: CLEAN_NO_OP` +
+  `Substatus:
+  FLOAT_REORDER_DRIFT` after discarding the candidate so
+  float-reorder noise is tracked separately from real `GATE_FAILURE`
+  regressions). The sweep only ever writes the first three;
+  `PRE_EXISTING_FAILURE` is appended by the `08:35` triage slot's `base-check`
+  in a `## Base-Check Classification` section, along with its `Verdict`
+  (`NO_FAILURE` | `FLAKE_ON_RETRY` | `PRE_EXISTING_ON_BASE` |
+  `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` means discard the candidate; the
+  other three leave it promotable and any base breakage gets filed separately.
 - **Repository & Base Commit:** `abhimehro/<repo>` @ `<base_sha>`
 - **Lens:** `sentinel` | `bolt` | `palette` | `code-health`
 - **Summary & Failure/Perf Mechanism:** 2-4 concise sentences with file/line
