@@ -57,10 +57,12 @@ why the capture path is field-masked and incremental rather than a copy.
 
 ## 2. Integrity manifest
 
-**Confirmed.** These values are transcribed here because their originals live in
-`/tmp` and in the derived workspace, neither of which is durable. This is the
-only ground truth for the archive's integrity, and the per-part hashes are the
-**only pre-reassembly** ground truth in existence.
+**Confirmed.** These values are transcribed here so the integrity reference
+survives the archival of the export and of the scratch workspace that produced
+it. The originals also live on all three clouds (§3 records exactly which
+artifact is where). The per-part hashes below are the **only pre-reassembly**
+ground truth in existence; the whole-archive hash is not, and §3 explains why it
+cannot be trusted on its own.
 
 Whole-archive SHA-256 (`jules-export-20261031.tar.zst`) — see the warning in §3
 before trusting it:
@@ -104,11 +106,14 @@ directories**.
 truth.** The premise that "three-cloud backup verification is complete" was
 **wrong for two of the three clouds**.
 
-| Cloud            | Holds                                                  | Bytes                     | Status                  |
-| ---------------- | ------------------------------------------------------ | ------------------------- | ----------------------- |
-| **Proton Drive** | original 5 split parts + `.sizes` + per-part `.sha256` | sums to **9,225,417,877** | ✅ **Only intact copy** |
-| OneDrive         | reassembled `jules-export-20261031.tar.zst`            | **9,225,417,876**         | 🔴 **1 byte short**     |
-| Google Drive     | reassembled `jules-export-20261031.tar.zst`            | **9,225,417,876**         | 🔴 **1 byte short**     |
+| Cloud            | Holds                                                                                                                                                 | Bytes                     | Status                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ----------------------- |
+| **Proton Drive** | original 5 split parts + `.sizes` + per-part `.sha256` — **no reassembled archive**                                                                   | sums to **9,225,417,877** | ✅ **Only intact copy** |
+| OneDrive         | truncated `.tar.zst` + `.tar.zst.sha256` + per-part `.sha256` + `.sizes`, plus loose `sessions.json`, `errors.json`, `sources.json`, partial `repos/` | **9,225,417,876**         | 🔴 **1 byte short**     |
+| Google Drive     | same layout as OneDrive                                                                                                                               | **9,225,417,876**         | 🔴 **1 byte short**     |
+
+Verified directly against `onedrive:HomeBackup/jules-export/` on 2026-11-02: the
+truncated archive is **9,225,417,876** bytes, exactly one short.
 
 `cat part-* > tar.zst` cannot lose a byte unless interrupted, so **the
 reassembly was truncated**, and both cloud copies descend from that same faulty
@@ -129,15 +134,40 @@ from cloud mtimes:
 So `71c643c2…` faithfully hashes the **truncated** archive. Verifying against it
 passes while confirming a corrupt file. This is the general lesson: **a checksum
 computed after a transformation certifies the transformation's output, not its
-input.** The per-part hashes at 01:17 are the only pre-reassembly ground truth,
-and they live **only on Proton**.
+input.** The per-part hashes at 01:17 are the only pre-reassembly ground truth.
+
+**Where that ground truth lives — verified 2026-11-02.** The per-part manifest
+is redundantly held and every copy is byte-identical (`sha256` of the 520-byte
+file is `78fb8b639421472437800c1eecf4a53bfd028b5a638bd6d68cd6feab6e29460c` in
+all four places): local scratch, `onedrive:HomeBackup/jules-export/`,
+`gdrive:HomeBackup/jules-export/`, and Proton's File Provider mount. OneDrive
+and Google Drive also carry `.sizes`. So knowing the correct hashes does **not**
+depend on Proton being reachable.
+
+The **part bytes**, however, exist **only on Proton** — OneDrive and Google
+Drive hold the reassembled `.tar.zst` and its `.tar.zst.sha256`, never the five
+parts. Proton is therefore a single point of failure for _reassembly source
+material_ but not for _verification reference_, which is a better position than
+the earlier "only on Proton" reading of this section assumed.
 
 **Consequences — all still in force:**
 
 - ⛔ **Do not remove the local 19 GiB tree** on the strength of the OneDrive or
   Google Drive copies.
-- The local tree is currently the **only complete, uncompressed** copy of the
-  data.
+- **What is local-only, precisely.** The local tree is 19 GiB, and essentially
+  all of it is `sessions/` — the 7,672 per-session directories holding activity
+  logs, patches and prompts. That subtree exists uncompressed **only locally**;
+  on the clouds it lives solely inside the truncated tarball, reassemblable only
+  from Proton's parts. Two qualifications found while verifying, both of which
+  _reduce_ the risk of step 5 rather than increase it:
+  - `sessions.json`, the 264 MiB master index of all 7,691 sessions, **is** on
+    both clouds uncompressed at a byte-exact size match with local
+    (276,431,176). **Size match is not content match** — hashing it costs a 264
+    MiB download and has not been done. **Open.**
+  - `repos/` is **incomplete and inconsistent** on the clouds (OneDrive 2.2 KiB
+    / 18 objects, Google Drive 12.2 KiB / 19 objects, local 84 KiB / 10
+    entries). It is metadata only, not repository content, but it is not safely
+    mirrored.
 - Repair must target the two truncated archives, not trust them.
 - Backup re-verification was originally scoped _out_ of the analysis mission;
   this finding forces a narrow slice of it back **in**, ahead of any deletion.
@@ -149,10 +179,12 @@ has not been run. **Open.**
 
 ## 4. Repair plan and its gate
 
-**Not yet executed** — deliberately. It needs ~9.2 GiB of local staging and the
-disk governor reported 6.0 GiB of headroom above its hard floor at the time of
-writing. The order below is the corrected one; the original ordering was
-circular.
+**Not yet executed** — deliberately, and it is gated on explicit approval. It
+needs ~9.2 GiB of local staging for a whole-file reassembly and the disk
+governor reported 6.0 GiB of headroom above its hard floor at the time of
+writing. Steps 1 and 2 **are** feasible at that headroom because both are
+streaming or one-part-at-a -time; only step 3 needs the streamed variant. The
+order below is the corrected one; the original ordering was circular.
 
 iCloud's File Provider **stages writes on local disk before uploading**, so
 "streaming" 8.59 GiB into iCloud with a few GiB free is not possible, and
@@ -160,10 +192,12 @@ re-hashing off a File Provider path forces a full local download. Verify →
 reclaim → _then_ iCloud.
 
 1. **Verify Proton's parts.** `shasum -a 256 -c` against the per-part hashes
-   above. ⚠️ Reading dataless File Provider files **hydrates them locally** —
-   hash **one 2 GiB part at a time** with `df -k` monitoring, aborting below the
-   1.5 GiB floor. Proton metadata reports real sizes without hydration, so only
-   content hashing costs I/O.
+   above. The reference manifest does **not** need downloading — byte-identical
+   copies are already local and on both other clouds (§3), so only the part
+   bytes cost network. ⚠️ Reading dataless File Provider files **hydrates them
+   locally** — hash **one 2 GiB part at a time** with `df -k` monitoring,
+   aborting below the 1.5 GiB floor. Proton metadata reports real sizes without
+   hydration, so only content hashing costs I/O.
 2. **Structural checks — a hash match is not enough**, and the truncation proves
    why. Both stream with no local staging:
    - `rclone cat … | zstd -t` — catches truncated frames.
@@ -1250,15 +1284,17 @@ advisory, and this document was scanned with gitleaks, trufflehog and
 
 ### Open
 
-| # | Question                                                                                       | Note                                                                       |
-| - | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 1 | Does the Jules REST API survive read-only mode after 2026-11-11?                               | Plan a list-only re-check near Nov 11; capture only new IDs                |
-| 2 | Which session's origin/status drifted between the list-only and full fetch?                    | Immaterial — 1 of 144                                                      |
-| 3 | Are the 110 open Jules PRs mergeable at current HEAD?                                          | `mergeable_state` is not returned by the list endpoint; needs per-PR fetch |
-| 4 | **Testing lens** — separate rotation slot, or folded into `code-health` with a `--focus` flag? | The only design question still unanswered                                  |
-| 5 | Is the Proton part _content_ intact (not just its sizes)?                                      | §3 caveat; first step of the repair plan                                   |
-| 6 | Is `$(date -u +%Y-%m-%d)` shell-expanded inside a sidecar `args` array?                        | §17; one canary run settles it                                             |
-| 7 | Does the `palette` lens produce anything worth promoting?                                      | New lens, no Jules history, 0 of 9 recovered patches                       |
+| # | Question                                                                                       | Note                                                                                                                                                           |
+| - | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | Does the Jules REST API survive read-only mode after 2026-11-11?                               | Plan a list-only re-check near Nov 11; capture only new IDs                                                                                                    |
+| 2 | Which session's origin/status drifted between the list-only and full fetch?                    | Immaterial — 1 of 144                                                                                                                                          |
+| 3 | Are the 110 open Jules PRs mergeable at current HEAD?                                          | `mergeable_state` is not returned by the list endpoint; needs per-PR fetch                                                                                     |
+| 4 | **Testing lens** — separate rotation slot, or folded into `code-health` with a `--focus` flag? | The only _design_ question still unanswered                                                                                                                    |
+| 5 | Is the Proton part _content_ intact (not just its sizes)?                                      | §3 caveat; first step of the repair plan                                                                                                                       |
+| 6 | Is `$(date -u +%Y-%m-%d)` shell-expanded inside a sidecar `args` array?                        | §17; one canary run settles it                                                                                                                                 |
+| 7 | Does the `palette` lens produce anything worth promoting?                                      | New lens, no Jules history, 0 of 9 recovered patches                                                                                                           |
+| 8 | Does the cloud `sessions.json` match local byte-for-byte, not just in size?                    | §3. Stream-hash without local staging: `rclone cat onedrive:HomeBackup/jules-export/sessions.json \| shasum -a 256` — costs a 264 MiB download, so it is gated |
+| 9 | Should the incomplete cloud `repos/` metadata be re-mirrored?                                  | §3. 2.2 KiB vs 12.2 KiB vs 84 KiB local, and the two clouds disagree with each other                                                                           |
 
 ### Next steps, in order
 
