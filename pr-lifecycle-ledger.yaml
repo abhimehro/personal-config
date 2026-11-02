@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1053
+ledger_revision: 1088
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -42922,17 +42922,20 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - .jules/sentinel.md
+  - tests/testthat/test-execute_tasks_parallel.R
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-02 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1117
   attempts:
@@ -42964,7 +42967,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - Updated_Seatek_Analysis.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -42996,7 +43001,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Series_27/Analysis/test_outlier_analysis_series27.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43028,7 +43034,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - implementation/scripts/01_environment_setup.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43064,7 +43071,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - README.md
+  - renv/.renvignore
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43181,7 +43190,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_data_loader.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43259,7 +43269,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_data_loader.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43295,7 +43306,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - docs/technical/technical_documentation.md
+  - docs/visualization/data_format.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43333,7 +43346,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/tests/test_discontinuity_utils_coverage.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43371,7 +43385,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/tests/test_batch_correction.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43409,7 +43424,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/tests/test_optional_import.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43441,7 +43457,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - notebooks/visualization_qa_notebook.ipynb
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43478,7 +43495,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/apply_refined_corrections.py
+  - scripts/tests/test_apply_refined_corrections.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43510,7 +43529,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/apply_refined_corrections.py
+  - scripts/tests/test_apply_refined_corrections.py
+  - scripts/tests/test_apply_refined_corrections_security.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43542,7 +43564,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - README.md
+  - scripts/batch_correction.py
+  - scripts/series_correction_cli.py
+  - scripts/tests/test_batch_correction.py
+  - scripts/tests/test_series_correction_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43574,7 +43601,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - README.md
+  - scripts/batch_correction.py
+  - scripts/config.json
+  - scripts/tests/test_batch_correction.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43606,7 +43637,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - generate_summary.py
+  - scripts/tests/test_export_sink_guard.py
+  - scripts/tests/test_generate_summary.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43642,7 +43676,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/changelog.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43678,7 +43713,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - CONTRIBUTING.md
+  - README.md
+  - docs/correction_methodology.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43717,7 +43755,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptFileSystemTests/WorkspaceRootNamespaceManifestStoreTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43756,7 +43795,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptFileSystemTests/WorkspaceRootNamespaceManifestStoreTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43795,7 +43835,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+IgnoreRules.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43833,7 +43874,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Tests/RepoPromptFileSystemTests/WorkspaceRootNamespaceManifestStoreTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43872,7 +43914,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+IgnoreRules.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43911,7 +43954,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/VCS/GitService.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43949,7 +43993,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Features/Chat/ViewModels/Presets/ChatPresetManager.swift
+  - Tests/RepoPromptTests/PresetJSONOnlyPersistenceTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -43988,7 +44034,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+DirectoryListing.swift
+  - Sources/RepoPromptFileSystem/FileSystemService.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44027,7 +44075,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptProcess/CLIProcessConfiguration+AdditionalPaths.swift
+  - Tests/RepoPromptProcessTests/CLIProcessConfigurationAdditionalPathsTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44066,7 +44116,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+IgnoreRules.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44105,7 +44156,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+IgnoreRules.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44143,7 +44195,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/FileSystemService+IgnoreRules.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44182,7 +44235,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPrompt/Infrastructure/AI/Providers/Antigravity/AntigravityRuntimeManager.swift
+  - Tests/RepoPromptTests/AgentMode/AntigravityRuntimeManagerTests.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44222,7 +44277,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptFileSystem/IgnoreRulesManager.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44262,7 +44318,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Sources/RepoPromptDomainRuntime/SessionLinks/AgentOversightUICopy.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
