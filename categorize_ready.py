@@ -2,7 +2,7 @@ import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
-from gh_token_env import run_gh
+from gh_token_env import load_gh_token_env, run_gh
 from pr_reference import PRReference
 
 
