@@ -4,8 +4,11 @@
 # Verifies dynamic default branch resolution, collision-proof worktrees,
 # disabled push remotes in local mode, PR file-path collision & local/remote
 # throttle checks, tamper-evident verify gates against edited build/lock/scripts
-# and nested test files, numeric-equivalence enforcement for research repos,
-# and 21-day TTL cleanup preserving unmerged candidate commits.
+# and nested test files, the base-relative semantic test-coverage gate (lost
+# methods, removed containers, count drops, pinned expectations, static floor),
+# fail-closed origin refresh before ref-based throttle verdicts, cross-root
+# candidate counting via --include-worktrees, numeric-equivalence enforcement for
+# research repos, and 21-day TTL cleanup preserving unmerged candidate commits.
 
 set -Eeuo pipefail
 
@@ -97,6 +100,25 @@ cat >"${SEED_REPO}/tests/run_tests.sh" <<'EOF'
 exit 0
 EOF
 chmod +x "${SEED_REPO}/tests/run_tests.sh"
+
+# Base Python test file: 3 tests across 2 containers, so the semantic gate has a
+# known before-count to compare against.
+cat >"${SEED_REPO}/tests/test_module.py" <<'EOF'
+import unittest
+
+
+class TestCompute(unittest.TestCase):
+    def test_doubles(self):
+        self.assertEqual(2 * 2, 4)
+
+    def test_zero(self):
+        self.assertEqual(0 * 2, 0)
+
+
+class TestHelpers(unittest.TestCase):
+    def test_identity(self):
+        self.assertTrue(True)
+EOF
 
 git -C "${SEED_REPO}" add .
 git -C "${SEED_REPO}" commit -q -m "initial commit on trunk"
@@ -234,6 +256,85 @@ check_exit "verify allows research-repo bolt pass when numeric gate passes" 0 \
 rm -f "${WT1}/.verify-env.log"
 git -C "${WT1}" checkout -q -- src/module.py
 
+# 4b. Semantic test-coverage gate: base-relative AST diff + test count + static checks.
+# A hunk that applies cleanly can still delete coverage as collateral, and losing a
+# test does not fail a suite, so the count is compared rather than trusted.
+WT_SEM="$("${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens code-health --worktree-root "${WT_ROOT}")"
+
+# (a) Drop one method; the fixture suite stays green, so only this gate can catch it.
+python3 - "${WT_SEM}/tests/test_module.py" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+path.write_text(
+    text.replace("    def test_zero(self):\n        self.assertEqual(0 * 2, 0)\n\n", ""),
+    encoding="utf-8",
+)
+PY
+check_exit "semantic gate blocks a dropped test method even though the suite passes" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" --allow-test-edits
+check_grep "semantic gate names the lost test" "LOST tests/test_module.py: lost test TestCompute.test_zero" "${TEST_DIR}/check.log"
+check_grep "semantic gate reports before/after counts" "tests_before=3 tests_after=2" "${TEST_DIR}/check.log"
+
+# (b) An intentional reduction is declarable, and a wrong declaration still fails.
+check_exit "semantic gate accepts a pinned intentional reduction" 0 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" \
+	--allow-test-edits --expected-test-count 2
+check_exit "semantic gate rejects a wrong pinned count" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" \
+	--allow-test-edits --expected-test-count 3
+check_grep "semantic gate explains the count mismatch" "expected-test-count 3 but the worktree has 2 tests" "${TEST_DIR}/check.log"
+check_exit "semantic gate rejects a non-integer --expected-test-count" 1 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --expected-test-count many
+
+# (c) Removing a whole container is reported by name.
+git -C "${WT_SEM}" checkout -q -- tests/test_module.py
+python3 - "${WT_SEM}/tests/test_module.py" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+path.write_text(text[: text.index("class TestHelpers")].rstrip() + "\n", encoding="utf-8")
+PY
+check_exit "semantic gate blocks a removed test container" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" --allow-test-edits
+check_grep "semantic gate names the removed container" "removed test container TestHelpers" "${TEST_DIR}/check.log"
+
+# (d) Purely additive test changes pass and are reported for review.
+git -C "${WT_SEM}" checkout -q -- tests/test_module.py
+cat >>"${WT_SEM}/tests/test_module.py" <<'EOF'
+
+
+class TestAdded(unittest.TestCase):
+    def test_new_coverage(self):
+        self.assertTrue(True)
+EOF
+check_exit "semantic gate passes an additive test change" 0 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" --allow-test-edits
+check_grep "semantic gate reports the added container" "ADDED tests/test_module.py: added test container TestAdded" "${TEST_DIR}/check.log"
+
+# (e) Deleting a test file drops every test it held.
+git -C "${WT_SEM}" checkout -q -- tests/test_module.py
+rm -f "${WT_SEM}/tests/test_module.py"
+check_exit "semantic gate blocks deleting a whole test file" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test" --allow-test-edits
+check_grep "semantic gate reports the full count drop" "tests_before=3 tests_after=0" "${TEST_DIR}/check.log"
+git -C "${WT_SEM}" checkout -q -- tests/test_module.py
+
+# (f) Dependency-free static floor: a touched file that does not parse is blocked
+#     even when no test file changed.
+cat >"${WT_SEM}/src/broken.py" <<'EOF'
+def compute(x)
+    return x
+EOF
+check_exit "static floor blocks a touched file that does not parse" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test"
+check_grep "static floor names the unparseable file" "SYNTAX: src/broken.py:1: expected ':'" "${TEST_DIR}/check.log"
+rm -f "${WT_SEM}/src/broken.py" "${WT_SEM}/.verify-env.log"
+
 # 5. Mock gh CLI to test file-path PR collision & remote/local throttle
 cat >"${MOCK_BIN}/gh" <<'MOCK'
 #!/usr/bin/env bash
@@ -345,6 +446,64 @@ chmod +x "${MOCK_BIN}/gh"
 
 PATH="${MOCK_BIN}:${PATH}" check_exit "check-throttle blocks when unreviewed draft is >7 days old" 5 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${WT_ROOT}" --now-epoch 1793448000
+
+# 5c. A ref-based throttle verdict must not be rendered from a stale origin ref.
+BROKEN_REMOTE_CLONE="${TEST_DIR}/broken-remote"
+git clone -q "${BARE_REMOTE}" "${BROKEN_REMOTE_CLONE}"
+git -C "${BROKEN_REMOTE_CLONE}" remote set-url origin "${TEST_DIR}/does-not-exist.git"
+WT_BROKEN="$("${TARGET_SCRIPT}" prepare --repo-path "${BROKEN_REMOTE_CLONE}" --lens bolt --worktree-root "${WT_ROOT}")"
+PATH="${MOCK_BIN}:${PATH}" check_exit "check-throttle fails closed when origin cannot be fetched" 6 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/broken-remote --worktree-root "${WT_ROOT}" \
+	--repo-path "${BROKEN_REMOTE_CLONE}"
+check_grep "check-throttle explains the fetch precondition" "git fetch failed" "${TEST_DIR}/check.log"
+git -C "${BROKEN_REMOTE_CLONE}" worktree remove --force "${WT_BROKEN}"
+
+# 5d. --include-worktrees closes the gap where a candidate prepared under a
+#     different worktree root is invisible to the cap.
+MOCK_BIN_EMPTY="${TEST_DIR}/mock_bin_empty"
+mkdir -p "${MOCK_BIN_EMPTY}"
+cat >"${MOCK_BIN_EMPTY}/gh" <<'MOCK'
+#!/usr/bin/env bash
+echo "[]"
+MOCK
+chmod +x "${MOCK_BIN_EMPTY}/gh"
+
+INC_CLONE="${TEST_DIR}/ctrld-sync"
+git clone -q "${BARE_REMOTE}" "${INC_CLONE}"
+git -C "${INC_CLONE}" remote set-head origin -a >/dev/null 2>&1
+ALT_WT_ROOT="${TEST_DIR}/worktrees-alt"
+EMPTY_WT_ROOT="${TEST_DIR}/worktrees-empty"
+mkdir -p "${ALT_WT_ROOT}" "${EMPTY_WT_ROOT}"
+
+WT_ALT1="$("${TARGET_SCRIPT}" prepare --repo-path "${INC_CLONE}" --lens bolt --worktree-root "${ALT_WT_ROOT}")"
+WT_ALT2="$("${TARGET_SCRIPT}" prepare --repo-path "${INC_CLONE}" --lens code-health --worktree-root "${ALT_WT_ROOT}")"
+for alt in "${WT_ALT1}" "${WT_ALT2}"; do
+	git -C "${alt}" config user.email "test@example.com"
+	git -C "${alt}" config user.name "Test User"
+	echo "# alt candidate" >>"${alt}/src/module.py"
+	git -C "${alt}" commit -am "chore(qa): alt root candidate" -q
+done
+
+# A human worktree matches neither proactive metadata nor a proactive/* branch,
+# so it must stay out of the candidate count.
+git -C "${INC_CLONE}" worktree add -q -b human/scratch "${TEST_DIR}/human-wt" HEAD
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle misses cross-root candidates without --include-worktrees" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle counts cross-root candidates with --include-worktrees" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}" \
+	--include-worktrees --repo-path "${INC_CLONE}"
+check_grep "check-throttle reports the cross-root candidate count" "THROTTLED: 2 unreviewed local candidate worktrees for ctrld-sync" "${TEST_DIR}/check.log"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle does not count a human worktree" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}" \
+	--include-worktrees --repo-path "${INC_CLONE}" --max-open 3
+check_exit "--include-worktrees requires --repo-path" 1 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}" \
+	--include-worktrees
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "--include-worktrees fails closed when worktrees cannot be enumerated" 6 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}" \
+	--include-worktrees --repo-path "${TEST_DIR}/not-a-repo"
+check_grep "--include-worktrees explains the enumeration failure" "could not enumerate worktrees" "${TEST_DIR}/check.log"
 
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"

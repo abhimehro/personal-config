@@ -46,9 +46,17 @@ listed pilot subset) using isolated worktrees and strict approval gates.
    unmerged-commit candidate worktrees for `<repo>`, or any `> 7` days old) and
    the remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
    `> 7` days old):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo>`
-   If exit code `5` is returned, stop early and write a short `THROTTLED` note
-   to `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`.
+   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
+   `--include-worktrees` counts candidates registered in git under **any**
+   worktree root, not only the default one, so a candidate prepared elsewhere
+   cannot slip past the cap. Human worktrees (no `proactive-meta.json`, branch
+   not `proactive/*`) are never counted. If exit code `5` is returned, stop
+   early and write a short `THROTTLED` note to
+   `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`. Exit code
+   `6` means the `origin` refs could not be refreshed or the worktrees could not
+   be enumerated; treat it as `THROTTLED` as well. A verdict rendered from a
+   stale `origin/<default_branch>` is how a false "already merged" pass happens,
+   so `check-throttle` fails closed rather than guessing.
 
 ### Step 2: Load Institutional Context and Select Lens
 
@@ -109,6 +117,20 @@ clean no-op.
    ```
    (Include `--numeric-check-cmd "<tolerance_assertion>"` whenever `<lens>` is
    `bolt` on a research repository.)
+
+   `verify` runs a **mandatory semantic test-coverage gate** before the suite. A
+   hunk that applies cleanly can still delete coverage as collateral, and
+   **losing a test does not fail a suite**, so the gate compares the AST of
+   every touched Python test file against the pinned `base_sha` and blocks
+   (`exit 2`) on any removed test class, any lost test method, and any drop in
+   total test count — even when the suite is green. It also blocks touched
+   Python files that do not parse, and runs an undefined-name check
+   (`ruff --select=F82`, falling back to `pyflakes`) when either is installed.
+
+   Test edits are blocked by default. When a change legitimately requires them,
+   pass `--allow-test-edits`; when it _intentionally_ reduces test count, pin
+   the new total with `--expected-test-count <n>`. An unpinned drop always
+   fails, and a pinned count that does not match also fails.
 4. If verification passes, commit the change locally inside `"$WT_PATH"` with a
    conventional prefix (`⚡bolt:`, `🎨palette:`, or `chore(qa):`). Do not commit
    unmerged `sentinel` fixes onto branches destined for public Draft PRs; keep
@@ -135,6 +157,9 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
 - **Summary & Failure/Perf Mechanism:** 2-4 concise sentences with file/line
   references
 - **Verification Receipt:** Exact command run and exit status / timing delta
+- **Semantic Gate Receipt:** `tests_before` / `tests_after` plus every `ADDED`
+  and `LOST` test name `verify` reported, and the `--expected-test-count` value
+  if one was needed
 - **Isolated Worktree & Branch:** `<worktree_path>` (`<branch_name>`)
 - **Promotion Commands (for human review after pilot graduation):** Exact `git`
   / `gh pr create --draft` commands for `bolt`, `palette`, or `code-health` (or

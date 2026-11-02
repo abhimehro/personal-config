@@ -48,6 +48,15 @@ Before removing any function, helper, script, or export:
   `NAMESPACE`, `.Renviron`, `scripts/*`, `Scripts/*`, `conftest.py`,
   `*/conftest.py`) by default (`exit 2`) so an unattended run cannot pass by
   weakening assertions or linter config.
+- Dead-code removal is the lens most likely to delete coverage by accident, so
+  `verify` additionally enforces a base-relative **semantic test-coverage
+  gate**: the AST of every touched Python test file is diffed against the pinned
+  `base_sha`, and any removed test class, lost test method, or drop in total
+  test count blocks (`exit 2`) **even when the suite still passes** — losing a
+  test does not fail a suite. If a reduction is genuinely intended (for example
+  two tests collapsed into one parameterised test), declare the new total with
+  `--expected-test-count <n>`; never restore the count by deleting the gate.
+  Record `tests_before` / `tests_after` and every `LOST` name in the report.
 - Follow `<repo>/docs/TESTING.md` where present (`$MOCK_BIN` PATH injection,
   isolated `$TEST_DIR/home`, BSD/GNU `sed` portability).
 

@@ -91,6 +91,14 @@ must never silently shift scientific outputs:
    worktree, and measure after-change timing.
 5. Run hardened verification:
    `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens bolt [--numeric-check-cmd "<cmd>"]`
+   Independently of the numeric gate, `verify` runs a base-relative **semantic
+   test-coverage gate**: touched Python files get an AST parse + undefined-name
+   (F82) check, and every touched Python test file is AST-diffed against
+   `base_sha`. Any lost test class, lost test method, or drop in total test
+   count blocks with `exit 2` **even when the suite passes** — an optimization
+   that refactors two tests into one must declare the new total with
+   `--expected-test-count <n>`. Record `tests_before` / `tests_after` in the
+   report.
 6. Commit locally on the worktree branch using title prefix
    `⚡bolt: <concise summary>` (do not push during `2B` local-first mode) and
    record before/after metrics in

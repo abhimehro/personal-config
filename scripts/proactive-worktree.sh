@@ -3,9 +3,12 @@
 # Isolated Git Worktree & Verification Runner for Antigravity Proactive Sweeps.
 # Protects primary checkouts, disables push remotes in local-only mode, enforces
 # tamper-evident checks on build/lock/script/test harnesses before running gates,
+# enforces a base-relative semantic test-coverage gate (AST diff + test count +
+# static checks) so silently dropped coverage cannot ride a green suite,
 # enforces numeric-equivalence checks on research repositories, checks open-PR
-# file collisions plus local/remote candidate throttles, and prunes stale
-# empty worktrees past their 21-day TTL while preserving unmerged candidates.
+# file collisions plus local/remote candidate throttles across every registered
+# worktree, and prunes stale empty worktrees past their 21-day TTL while
+# preserving unmerged candidates.
 
 set -Eeuo pipefail
 
@@ -15,10 +18,18 @@ usage() {
 	cat <<'EOF'
 Usage:
   proactive-worktree.sh prepare --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
-  proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits]
+  proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
   proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...]
-  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>]
+  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees]
   proactive-worktree.sh cleanup [--worktree-root <dir>] [--ttl-days <days>]
+
+verify exit codes:
+  0 clean, 1 usage, 2 BLOCKED (path policy or semantic test-coverage gate),
+  3 BLOCKED (lens policy), 6 could not establish a fresh origin ref
+
+check-throttle exit codes:
+  0 clean, 1 usage, 5 THROTTLED/UNVERIFIABLE, 6 could not establish a fresh
+  origin ref
 EOF
 }
 
@@ -245,6 +256,223 @@ is_protected_test_path() {
 	esac
 }
 
+is_python_test_path() {
+	local path="$1"
+	# Mirrors pytest's own discovery convention (test_*.py or *_test.py). In a
+	# case pattern '*' also matches '/', so *_test.py already covers nested
+	# paths while test_*.py needs the explicit */ variant.
+	case "${path}" in
+	test_*.py | */test_*.py | *_test.py)
+		return 0
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
+
+# A verdict that compares HEAD against origin/<branch> is only as true as the
+# remote-tracking ref it reads. A stale ref turns "already merged" into a false
+# pass, so refresh first and fail closed when we cannot. Deliberately NOT called
+# from has_unreviewed_worktree_commits: that helper also serves cleanup, where a
+# network outage must not block pruning (its safe default is to preserve).
+require_fresh_origin_ref() {
+	local repo_path="$1"
+	if [[ -z ${repo_path} ]] || [[ ! -d ${repo_path} ]]; then
+		echo "[ERROR] Cannot refresh origin refs: no resolvable repository path for a ref-based verdict" >&2
+		exit 6
+	fi
+	if ! git -C "${repo_path}" fetch --prune --quiet origin; then
+		echo "[ERROR] git fetch failed for ${repo_path}; refusing to emit a ref-based verdict from a possibly stale origin/* (offline or no 'origin'?)" >&2
+		exit 6
+	fi
+}
+
+# Static checks on touched Python files. Two tiers:
+#   1. AST parse - dependency-free floor, catches files that do not even parse.
+#      Uses ast rather than py_compile so no __pycache__ is written into the
+#      worktree under verification.
+#   2. Undefined-name (F82) - ruff when present, pyflakes otherwise. ruff's F82
+#      is the same check Seatek_Analysis CI already runs
+#      (pr-validation.yml: ruff --select=E9,F63,F7,F82).
+run_python_static_checks() {
+	local wt_path="$1"
+	shift
+
+	if ! (
+		cd "${wt_path}" && python3 - "$@" <<'PY'
+import ast
+import sys
+
+failed = False
+for rel in sys.argv[1:]:
+    try:
+        with open(rel, encoding="utf-8", errors="replace") as handle:
+            ast.parse(handle.read(), filename=rel)
+    except SyntaxError as exc:
+        sys.stderr.write(f"SYNTAX: {rel}:{exc.lineno}: {exc.msg}\n")
+        failed = True
+sys.exit(1 if failed else 0)
+PY
+	); then
+		return 1
+	fi
+
+	if command -v ruff >/dev/null 2>&1; then
+		(cd "${wt_path}" && ruff check --select=F82 --no-cache --quiet "$@")
+	elif python3 -c 'import pyflakes' >/dev/null 2>&1; then
+		(cd "${wt_path}" && python3 -m pyflakes "$@")
+	else
+		echo "[WARN] Neither ruff nor pyflakes is available; ran the AST parse floor only, so undefined names in untested code paths are not covered" >&2
+		return 0
+	fi
+}
+
+# Semantic test-coverage gate: a hunk that applies cleanly can still delete
+# coverage as collateral, and losing a test does not fail a suite. Compare the
+# AST of every touched Python test file against the pinned base and fail on any
+# lost class/method or any drop in test count, even when the suite is green.
+run_semantic_test_gate() {
+	local wt_path="$1"
+	local base_sha="$2"
+	local expected_count="$3"
+	shift 3
+
+	if [[ $# -eq 0 ]]; then
+		return 0
+	fi
+
+	local rc=0
+	python3 - "${wt_path}" "${base_sha}" "${expected_count}" "$@" <<'PY' || rc=$?
+import ast
+import subprocess
+import sys
+
+wt_path, base_sha, expected_raw = sys.argv[1], sys.argv[2], sys.argv[3].strip()
+rels = sys.argv[4:]
+expected = int(expected_raw) if expected_raw else None
+
+
+def base_source(rel):
+    probe = subprocess.run(
+        ["git", "-C", wt_path, "cat-file", "-e", f"{base_sha}:{rel}"],
+        capture_output=True,
+    )
+    if probe.returncode != 0:
+        return ""
+    shown = subprocess.run(
+        ["git", "-C", wt_path, "show", f"{base_sha}:{rel}"],
+        capture_output=True,
+        text=True,
+    )
+    return shown.stdout
+
+
+def current_source(rel):
+    try:
+        with open(f"{wt_path}/{rel}", encoding="utf-8", errors="replace") as handle:
+            return handle.read()
+    except FileNotFoundError:
+        # Deleted test file: every test it held is lost coverage.
+        return ""
+
+
+def test_index(source):
+    """Map container -> sorted test names, plus a total count.
+
+    Covers unittest (TestCase subclasses and Test* classes) and pytest
+    (module-level test_* functions), so the count is framework-independent and
+    needs no suite run against the base revision.
+    """
+    tree = ast.parse(source)
+    index = {}
+    module_fns = [
+        n.name for n in tree.body if isinstance(n, ast.FunctionDef) and n.name.startswith("test")
+    ]
+    if module_fns:
+        index["<module>"] = sorted(module_fns)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        bases = [b.id for b in node.bases if isinstance(b, ast.Name)]
+        if not (node.name.startswith("Test") or "TestCase" in bases):
+            continue
+        index[node.name] = sorted(
+            n.name for n in node.body if isinstance(n, ast.FunctionDef) and n.name.startswith("test")
+        )
+    return index, sum(len(v) for v in index.values())
+
+
+total_before = 0
+total_after = 0
+lost_report = []
+added_report = []
+parse_errors = []
+
+for rel in rels:
+    try:
+        base_index, base_count = test_index(base_source(rel))
+    except SyntaxError as exc:
+        parse_errors.append(f"{rel}: base revision does not parse ({exc})")
+        continue
+    try:
+        cur_index, cur_count = test_index(current_source(rel))
+    except SyntaxError as exc:
+        parse_errors.append(f"{rel}: worktree revision does not parse ({exc})")
+        continue
+
+    total_before += base_count
+    total_after += cur_count
+
+    for cls in sorted(set(base_index) - set(cur_index)):
+        lost_report.append(f"{rel}: removed test container {cls} ({len(base_index[cls])} tests)")
+    for cls in sorted(set(base_index) & set(cur_index)):
+        for name in sorted(set(base_index[cls]) - set(cur_index[cls])):
+            lost_report.append(f"{rel}: lost test {cls}.{name}")
+        for name in sorted(set(cur_index[cls]) - set(base_index[cls])):
+            added_report.append(f"{rel}: added test {cls}.{name}")
+    for cls in sorted(set(cur_index) - set(base_index)):
+        added_report.append(f"{rel}: added test container {cls} ({len(cur_index[cls])} tests)")
+
+for err in parse_errors:
+    sys.stderr.write(f"BLOCKED: semantic test gate could not parse {err}\n")
+if parse_errors:
+    sys.exit(2)
+
+sys.stderr.write(
+    f"semantic-gate: touched Python test files={len(rels)} "
+    f"tests_before={total_before} tests_after={total_after}\n"
+)
+for item in added_report:
+    sys.stderr.write(f"semantic-gate: ADDED {item}\n")
+for item in lost_report:
+    sys.stderr.write(f"semantic-gate: LOST {item}\n")
+
+if expected is not None:
+    if total_after != expected:
+        sys.stderr.write(
+            f"BLOCKED: --expected-test-count {expected} but the worktree has {total_after} tests\n"
+        )
+        sys.exit(2)
+    sys.exit(0)
+
+if total_after < total_before:
+    sys.stderr.write(
+        f"BLOCKED: test count dropped {total_before} -> {total_after}. A drop fails the gate "
+        "even when the suite passes; if the reduction is intentional, re-run with "
+        f"--expected-test-count {total_after}\n"
+    )
+    sys.exit(2)
+if lost_report:
+    sys.stderr.write(
+        "BLOCKED: test coverage was lost. If that is the intended diff, re-run with "
+        f"--expected-test-count {total_after}\n"
+    )
+    sys.exit(2)
+PY
+	return "${rc}"
+}
+
 cmd_verify() {
 	local wt_path=""
 	local lens_override=""
@@ -252,6 +480,7 @@ cmd_verify() {
 	local numeric_cmd=""
 	local allow_harness=0
 	local allow_tests=0
+	local expected_test_count=""
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -279,12 +508,21 @@ cmd_verify() {
 			allow_tests=1
 			shift
 			;;
+		--expected-test-count)
+			expected_test_count="$2"
+			shift 2
+			;;
 		*)
 			echo "[ERROR] Unknown flag for verify: $1" >&2
 			exit 1
 			;;
 		esac
 	done
+
+	if [[ -n ${expected_test_count} ]] && ! [[ ${expected_test_count} =~ ^[0-9]+$ ]]; then
+		echo "[ERROR] --expected-test-count requires a non-negative integer, got: ${expected_test_count}" >&2
+		exit 1
+	fi
 
 	if [[ -z ${wt_path} ]] || [[ ! -d ${wt_path} ]]; then
 		echo "[ERROR] verify requires an existing --worktree directory" >&2
@@ -312,6 +550,9 @@ cmd_verify() {
 		git -C "${wt_path}" ls-files --others --exclude-standard
 	} | sort -u)"
 
+	local touched_py_present=()
+	local touched_test_py=()
+
 	if [[ -n ${changed_files} ]]; then
 		local rel=""
 		while IFS= read -r rel; do
@@ -323,6 +564,16 @@ cmd_verify() {
 			if [[ ${allow_tests} -eq 0 ]] && is_protected_test_path "${rel}"; then
 				echo "BLOCKED: protected test file modified without --allow-test-edits: ${rel}" >&2
 				exit 2
+			fi
+			if [[ ${rel} == *.py ]]; then
+				# A deleted path still needs coverage accounting but has no file
+				# to lint, so the static checks get only present paths.
+				if [[ -f ${wt_path}/${rel} ]]; then
+					touched_py_present+=("${rel}")
+				fi
+				if is_python_test_path "${rel}"; then
+					touched_test_py+=("${rel}")
+				fi
 			fi
 		done <<<"${changed_files}"
 	fi
@@ -338,6 +589,20 @@ cmd_verify() {
 			echo "BLOCKED: Bolt lens on research repository ${repo_name} requires --numeric-check-cmd tolerance check" >&2
 			exit 3
 		fi
+	fi
+
+	# Semantic gates run before the suite: they are cheap, deterministic, and
+	# catch the defect class a green suite cannot (silently dropped coverage).
+	if [[ ${#touched_py_present[@]} -gt 0 ]]; then
+		if ! run_python_static_checks "${wt_path}" "${touched_py_present[@]}"; then
+			echo "BLOCKED: static check failed on touched Python files" >&2
+			exit 2
+		fi
+	fi
+	if [[ ${#touched_test_py[@]} -gt 0 ]]; then
+		run_semantic_test_gate "${wt_path}" "${base_sha}" "${expected_test_count}" "${touched_test_py[@]}"
+	elif [[ -n ${expected_test_count} ]]; then
+		echo "[WARN] --expected-test-count given but no Python test file changed; the semantic gate had nothing to enforce" >&2
 	fi
 
 	if [[ -z ${test_cmd} ]]; then
@@ -455,6 +720,8 @@ cmd_check_throttle() {
 	local max_open=2
 	local max_age_days=7
 	local now_epoch=""
+	local repo_path=""
+	local include_worktrees=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -478,6 +745,14 @@ cmd_check_throttle() {
 			now_epoch="$2"
 			shift 2
 			;;
+		--repo-path)
+			repo_path="$2"
+			shift 2
+			;;
+		--include-worktrees)
+			include_worktrees=1
+			shift
+			;;
 		*)
 			echo "[ERROR] Unknown flag for check-throttle: $1" >&2
 			exit 1
@@ -490,12 +765,96 @@ cmd_check_throttle() {
 		exit 1
 	fi
 
+	if [[ ${include_worktrees} -eq 1 ]] && [[ -z ${repo_path} ]]; then
+		echo "[ERROR] --include-worktrees requires --repo-path so git worktree list can be resolved" >&2
+		exit 1
+	fi
+
 	local repo_short="${repo##*/}"
+	local candidates=()
+	local seen_keys=()
+	local candidate_dir=""
+
+	add_candidate() {
+		local dir="$1"
+		[[ -d ${dir} ]] || return 0
+		# Dedupe on git identity, not on the path string: the worktree root may
+		# be reached through a symlink (macOS /var -> /private/var) and the same
+		# directory must not be counted twice against the cap.
+		local key=""
+		key="$(git -C "${dir}" rev-parse --absolute-git-dir 2>/dev/null || true)"
+		[[ -n ${key} ]] || return 0
+		local seen=""
+		for seen in ${seen_keys[@]+"${seen_keys[@]}"}; do
+			[[ ${seen} == "${key}" ]] && return 0
+		done
+		seen_keys+=("${key}")
+		candidates+=("${dir}")
+	}
+
 	if [[ -d ${wt_root} ]]; then
-		local local_candidates=0
-		local candidate_dir=""
 		for candidate_dir in "${wt_root}/proactive-${repo_short}-"*; do
 			[[ -d ${candidate_dir} ]] || continue
+			add_candidate "${candidate_dir}"
+		done
+	fi
+
+	if [[ ${include_worktrees} -eq 1 ]]; then
+		# The glob above only sees the worktree root this invocation was told
+		# about, so a candidate prepared under a different root is invisible to
+		# the cap. Union in every git-registered worktree this tool created,
+		# identified by proactive metadata or a proactive/* branch. Human
+		# worktrees match neither and stay out of the count.
+		local main_top=""
+		main_top="$(git -C "${repo_path}" rev-parse --show-toplevel 2>/dev/null || true)"
+		# Enumerate first and check the status: a silently empty list would
+		# under-count the cap and let extra candidates through.
+		local wt_list=""
+		if ! wt_list="$(git -C "${repo_path}" worktree list --porcelain)"; then
+			echo "[ERROR] --include-worktrees could not enumerate worktrees for ${repo_path}; refusing to under-count the cap" >&2
+			exit 6
+		fi
+		local wt_branch="" wt_git_dir="" is_candidate=0 wt_line=""
+		while IFS= read -r wt_line; do
+			[[ ${wt_line} == worktree\ * ]] || continue
+			candidate_dir="${wt_line#worktree }"
+			[[ -n ${candidate_dir} ]] || continue
+			[[ ${candidate_dir} == "${main_top}" ]] && continue
+			is_candidate=0
+			wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
+			if [[ -n ${wt_git_dir} ]] && [[ -f ${wt_git_dir}/proactive-meta.json ]]; then
+				is_candidate=1
+			fi
+			wt_branch="$(git -C "${candidate_dir}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+			if [[ ${wt_branch} == proactive/* ]]; then
+				is_candidate=1
+			fi
+			[[ ${is_candidate} -eq 1 ]] || continue
+			add_candidate "${candidate_dir}"
+		done <<<"${wt_list}"
+	fi
+
+	# The ancestry comparison below reads origin/<default_branch>, so a stale
+	# remote-tracking ref would render a false verdict. Refresh first and fail
+	# closed; with zero candidates there is no ref-based verdict to render.
+	# Eager rather than lazy is deliberate: this subcommand already requires the
+	# network for gh pr list, so a per-candidate fetch would add latency without
+	# buying offline capability.
+	if [[ ${#candidates[@]} -gt 0 ]]; then
+		local fetch_source="${repo_path}"
+		if [[ -z ${fetch_source} ]]; then
+			local first_git_dir=""
+			first_git_dir="$(git -C "${candidates[0]}" rev-parse --git-dir 2>/dev/null || true)"
+			if [[ -n ${first_git_dir} ]] && [[ -f ${first_git_dir}/proactive-meta.json ]]; then
+				fetch_source="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_path",""))' "${first_git_dir}/proactive-meta.json" 2>/dev/null || true)"
+			fi
+		fi
+		require_fresh_origin_ref "${fetch_source}"
+	fi
+
+	if [[ ${#candidates[@]} -gt 0 ]]; then
+		local local_candidates=0
+		for candidate_dir in "${candidates[@]}"; do
 			local dirty=""
 			dirty="$(git -C "${candidate_dir}" status --porcelain 2>/dev/null || true)"
 			if [[ -n ${dirty} ]] || has_unreviewed_worktree_commits "${candidate_dir}"; then

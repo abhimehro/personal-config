@@ -82,6 +82,11 @@ Prioritize changes and reachable code paths across these categories:
      harnesses unless explicitly authorized.
    - Run verification:
      `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens sentinel`
+     Verification enforces an AST parse + undefined-name (F82) floor on touched
+     Python files and a base-relative test-coverage gate, so a security fix that
+     drops test coverage blocks (`exit 2`) even when the suite stays green. A
+     hardening change that legitimately removes a now-invalid test must declare
+     the new total with `--expected-test-count <n>` and say so in the report.
 5. Write the local report (`Status: SECURITY_REPORT_ONLY`) to
    `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
    (`chmod 600`) with file/line references, CWE ID, failure mechanism,

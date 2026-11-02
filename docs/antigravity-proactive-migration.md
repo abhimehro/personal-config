@@ -40,7 +40,18 @@ to Google Antigravity.
   candidate commits), sets worktree-scoped `pushurl = DISABLED`, strips
   `SSH_AUTH_SOCK`/`GH_TOKEN`/`GITHUB_TOKEN` in verification subprocesses, and
   fails closed (`exit 2`) on tamper-evident build, lockfile, script, or
-  test-harness edits.
+  test-harness edits. Verification also runs a mandatory **base-relative
+  semantic test-coverage gate**: the AST of every touched Python test file is
+  diffed against the pinned `base_sha`, and any removed test class, lost test
+  method, or drop in total test count blocks (`exit 2`) even when the suite is
+  green, because losing a test does not fail a suite. Touched Python files that
+  do not parse are blocked too, with an undefined-name check
+  (`ruff --select=F82`, else `pyflakes`) when one is installed. Intentional
+  reductions must be declared with `--expected-test-count <n>`. `check-throttle`
+  refreshes `origin` before any ref-based verdict and fails closed (`exit 6`)
+  rather than judging against a stale ref, and `--include-worktrees` extends the
+  local cap across every git-registered proactive worktree rather than only the
+  default root.
 - **Control & Ordered Rollback CLI (`scripts/antigravity-proactive-ctl.sh`):**
   Manages installation (`install [--pilot]`), status (`status`), disposable UTC
   cron verification (`canary-stage` / `canary-clean`), merged-PR-verified

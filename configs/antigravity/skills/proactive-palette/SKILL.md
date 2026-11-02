@@ -53,6 +53,11 @@ as `maintenance/bin/*`, `media-streaming/scripts/*`,
 4. Implement the change with zero impact on machine-parsed stdout contracts, and
    verify with:
    `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens palette`
+   `verify` also enforces an AST parse + undefined-name (F82) floor on every
+   touched Python file and a base-relative test-coverage gate that blocks
+   (`exit 2`) on silently lost tests even when the suite passes, so a palette
+   change must not alter test structure. Declare a genuinely intended reduction
+   with `--expected-test-count <n>`.
 5. Commit locally in the worktree using title prefix
    `🎨palette: <concise summary>` and summarize before/after UX output in
    `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`.
