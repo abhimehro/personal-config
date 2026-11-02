@@ -4,15 +4,20 @@ Operational runbook and security architecture for migrating Google Jules
 proactive repository sweeps (`Sentinel`, `Bolt`, `Palette`, and `Code Health`)
 to Google Antigravity.
 
+The evidence base for every gate and threshold below — the Jules export
+analysis, the failure taxonomy, the archive integrity manifest, and the
+decisions record — is in
+[jules-proactive-analysis-2026-11.md](jules-proactive-analysis-2026-11.md).
+
 ## Decision and Scope Codes
 
-| Code                       | Meaning                                                                                                                                                                                                                  |
-| :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                 |
-| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                               |
-| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests. |
-| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                            |
-| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`) pinned to `CRON_TZ=UTC`.                                                                                                                    |
+| Code                       | Meaning                                                                                                                                                                                                                                                                                                                                                               |
+| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                                                                                                                                                              |
+| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                                                                                                                                                                            |
+| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests.                                                                                                                                              |
+| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                                                                                                                                                                         |
+| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`). `CRON_TZ` is **per-sidecar**, not globally pinned: the pilot sidecars use `CRON_TZ=America/Chicago` (08:15 sweep, 08:35 triage) so the digest lands when a human reads it. `canary-stage` still stages a disposable **UTC** cron, so a canary does not yet exercise the pilot timezone. |
 
 ## Installed Components
 
