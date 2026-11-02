@@ -772,3 +772,146 @@ class TestFetchWeather(unittest.TestCase):
         assert result.high_temp == "N/A"
         assert result.rain_probability == "N/A"
         assert result.narrative == "Weather data unavailable."
+
+
+# ============================================================
+# API Key Validation & Fallback Tests
+# ============================================================
+
+
+class TestApiKeyValidation(unittest.TestCase):
+    def test_valid_api_keys(self):
+        valid_keys = [
+            "lin_api_abcdef1234567890",
+            "pplx_TEST_NOT_A_REAL_KEY1234567890",
+            "Token1234567890",
+            "readwise_live_token_12345678",
+            "secret:key.123+456/789=foo_bar-baz",
+        ]
+        for key in valid_keys:
+            with self.subTest(key=key):
+                self.assertEqual(mb._validate_api_key(key), key)
+
+    def test_whitespace_stripped(self):
+        self.assertEqual(
+            mb._validate_api_key("   pplx_TEST_NOT_A_REAL_KEY   "),
+            "pplx_TEST_NOT_A_REAL_KEY",
+        )
+
+    def test_empty_and_non_string(self):
+        self.assertEqual(mb._validate_api_key(""), "")
+        self.assertEqual(mb._validate_api_key("    "), "")
+        self.assertEqual(mb._validate_api_key(None), "")
+        self.assertEqual(mb._validate_api_key(123456789), "")
+        self.assertEqual(mb._validate_api_key(["token"]), "")
+
+    def test_crlf_injection_rejected(self):
+        injections = [
+            "valid_token_12345\r\nInjected-Header: evil",
+            "valid_token_12345\nInjected-Header: evil",
+            "valid_token_12345\rInjected-Header: evil",
+        ]
+        for key in injections:
+            with self.subTest(key=key):
+                self.assertEqual(mb._validate_api_key(key), "")
+
+    def test_placeholder_rejected(self):
+        placeholders = [
+            "REPLACE_WITH_YOUR_PERPLEXITY_API_KEY",
+            "replace_with_linear_token",
+            "your_api_key_here",
+            "none",
+            "null",
+            "dummy_api_key",
+            "example_token",
+            "<YOUR_API_KEY>",
+            "*****************",
+        ]
+        for ph in placeholders:
+            with self.subTest(ph=ph):
+                self.assertEqual(mb._validate_api_key(ph), "")
+
+    def test_invalid_chars_or_length_rejected(self):
+        invalid_keys = [
+            "short",  # under 8 chars
+            "token with spaces inside 123",
+            "key_with_quotes'123456",
+            'key_with_double_quotes"123456',
+            "key_with_semicolon;123456",
+            "key_with_backtick`123456",
+            "a" * 513,  # exceeds 512 chars
+        ]
+        for key in invalid_keys:
+            with self.subTest(key=key):
+                self.assertEqual(mb._validate_api_key(key), "")
+
+
+class TestClientValidationAndFallbacks(unittest.TestCase):
+    def test_perplexity_client_validates_key(self):
+        # Valid key
+        client = mb.PerplexityClient("pplx_TEST_NOT_A_REAL_KEY")
+        self.assertTrue(client.enabled)
+        self.assertEqual(client.api_key, "pplx_TEST_NOT_A_REAL_KEY")
+
+        # CRLF injection rejected
+        bad_client = mb.PerplexityClient("pplx-12345\r\nEvil: true")
+        self.assertFalse(bad_client.enabled)
+        self.assertEqual(bad_client.api_key, "")
+
+        # Empty / whitespace key
+        empty_client = mb.PerplexityClient("   ")
+        self.assertFalse(empty_client.enabled)
+        self.assertEqual(empty_client.api_key, "")
+
+    def test_app_config_load_fallbacks(self):
+        # Test fallback for Perplexity (PPLX_API_KEY) and Linear (LINEAR_TOKEN)
+        env = {
+            "READWISE_TOKEN": "readwise_valid_token_12345",
+            "PPLX_API_KEY": "pplx-valid-token-from-fallback",
+            "LINEAR_TOKEN": "lin_api_valid_token_fallback",
+        }
+        # Ensure primary keys are unset
+        for k in ("PERPLEXITY_API_KEY", "LINEAR_API_KEY", "READWISE_API_KEY"):
+            os.environ.pop(k, None)
+
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, env, clear=False):
+            config = mb.AppConfig.load(argv=["--dry-run"])
+            self.assertEqual(config.readwise_token, "readwise_valid_token_12345")
+            self.assertEqual(
+                config.perplexity_api_key, "pplx-valid-token-from-fallback"
+            )
+            self.assertEqual(config.linear_api_key, "lin_api_valid_token_fallback")
+
+    def test_app_config_load_primary_precedence(self):
+        # Primary takes precedence over fallback
+        env = {
+            "READWISE_TOKEN": "readwise_primary_12345",
+            "READWISE_API_KEY": "readwise_fallback_12345",
+            "PERPLEXITY_API_KEY": "pplx_TEST_NOT_A_REAL_KEY_2",
+            "PPLX_API_KEY": "pplx-fallback-12345678",
+            "LINEAR_API_KEY": "lin_TEST_NOT_A_REAL_KEY",
+            "LINEAR_TOKEN": "lin_api_fallback_12345",
+        }
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, env, clear=False):
+            config = mb.AppConfig.load(argv=["--dry-run"])
+            self.assertEqual(config.readwise_token, "readwise_primary_12345")
+            self.assertEqual(config.perplexity_api_key, "pplx_TEST_NOT_A_REAL_KEY_2")
+            self.assertEqual(config.linear_api_key, "lin_TEST_NOT_A_REAL_KEY")
+
+    def test_app_config_load_filters_malformed_keys(self):
+        env = {
+            "READWISE_TOKEN": "valid_readwise_token_12345",
+            "PERPLEXITY_API_KEY": "pplx-invalid\r\nHeader: inject",
+            "LINEAR_API_KEY": "REPLACE_WITH_YOUR_KEY",
+        }
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, env, clear=False):
+            config = mb.AppConfig.load(argv=["--dry-run"])
+            self.assertEqual(config.readwise_token, "valid_readwise_token_12345")
+            self.assertEqual(config.perplexity_api_key, "")
+            self.assertEqual(config.linear_api_key, "")

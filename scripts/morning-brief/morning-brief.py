@@ -295,20 +295,27 @@ class AppConfig:
         """Build config from env files, env vars, and CLI flags."""
         env_source = cls._load_env_source()
 
-        readwise_token = os.getenv("READWISE_TOKEN", "").strip()
         dry_run = "--dry-run" in (argv or sys.argv[1:])
+
+        raw_readwise = os.getenv("READWISE_TOKEN") or os.getenv("READWISE_API_KEY", "")
+        readwise_token = _validate_api_key(raw_readwise, "READWISE_TOKEN")
 
         if not readwise_token and not dry_run:
             print("Error: READWISE_TOKEN is not set.", file=sys.stderr)
             sys.exit(1)
 
+        raw_perplexity = os.getenv("PERPLEXITY_API_KEY") or os.getenv(
+            "PPLX_API_KEY", ""
+        )
+        perplexity_api_key = _validate_api_key(raw_perplexity, "PERPLEXITY_API_KEY")
+
+        raw_linear = os.getenv("LINEAR_API_KEY") or os.getenv("LINEAR_TOKEN", "")
+        linear_api_key = _validate_api_key(raw_linear, "LINEAR_API_KEY")
+
         config = cls(
             readwise_token=readwise_token,
-            perplexity_api_key=os.getenv("PERPLEXITY_API_KEY", "").strip(),
-            linear_api_key=(
-                os.getenv("LINEAR_API_KEY", "").strip()
-                or os.getenv("LINEAR_TOKEN", "").strip()
-            ),
+            perplexity_api_key=perplexity_api_key,
+            linear_api_key=linear_api_key,
             timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
             focus_max_items=_safe_int(
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
@@ -419,6 +426,37 @@ def _safe_int(key: str, default: int) -> int:
         return default
 
 
+_API_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_\-\.=:+/]{8,512}$")
+_PLACEHOLDER_KEY_PATTERN = re.compile(
+    r"(?i)^(replace_with_|your_|none$|null$|dummy|example|<.*>|\*+)"
+)
+
+
+def _validate_api_key(value: Any, key_name: str = "API key") -> str:
+    """Validate and sanitize an API key or token string.
+
+    # SECURITY: Ensure API keys are non-empty, stripped, free from CRLF injection,
+    # match safe token character sets, and are not unreplaced placeholders.
+    """
+    if not value or not isinstance(value, str):
+        return ""
+    cleaned = value.strip()
+    if not cleaned:
+        return ""
+    if "\r" in cleaned or "\n" in cleaned:
+        logger.warning("Potential header injection rejected in %s.", key_name)
+        return ""
+    if _PLACEHOLDER_KEY_PATTERN.search(cleaned):
+        logger.warning("Placeholder detected in %s; treating as unset.", key_name)
+        return ""
+    if not _API_KEY_PATTERN.match(cleaned):
+        logger.warning(
+            "%s failed format validation (invalid characters or length).", key_name
+        )
+        return ""
+    return cleaned
+
+
 # ============================================================
 # Cache
 # ============================================================
@@ -483,7 +521,8 @@ class PerplexityClient:
     """Thin wrapper around Perplexity chat completions."""
 
     def __init__(self, api_key: str) -> None:
-        self.api_key = api_key.strip()
+        # SECURITY: Validate API key before saving and injecting into HTTP Authorization headers
+        self.api_key = _validate_api_key(api_key, "PerplexityClient API key")
 
     @property
     def enabled(self) -> bool:
