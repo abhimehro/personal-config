@@ -291,47 +291,56 @@ class AppConfig:
         )
 
     @classmethod
+    def _load_api_key(cls, primary_key: str, fallback_key: str, key_name: str) -> str:
+        """Load and validate an API key from environment variables, with fallback."""
+        raw_value = os.getenv(primary_key) or os.getenv(fallback_key, "")
+        return _validate_api_key(raw_value, key_name)
+
+    @classmethod
+    def _load_env_vars(cls) -> dict[str, Any]:
+        """Load and parse environment variables into a config dict."""
+        return {
+            "timezone_offset": os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
+            "focus_max_items": _safe_int(
+                "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
+            ),
+            "cache_dir": os.getenv(
+                "MORNING_BRIEF_CACHE_DIR",
+                str(Path.home() / ".cache" / "morning-brief"),
+            ),
+            "weather_cache_ttl": _safe_int(
+                "MORNING_BRIEF_WEATHER_CACHE_TTL", DEFAULT_WEATHER_CACHE_TTL
+            ),
+            "feed_cache_ttl": _safe_int(
+                "MORNING_BRIEF_FEED_CACHE_TTL", DEFAULT_FEED_CACHE_TTL
+            ),
+        }
+
+    @classmethod
     def load(cls, argv: list[str] | None = None) -> "AppConfig":
         """Build config from env files, env vars, and CLI flags."""
         env_source = cls._load_env_source()
-
         dry_run = "--dry-run" in (argv or sys.argv[1:])
 
-        raw_readwise = os.getenv("READWISE_TOKEN") or os.getenv("READWISE_API_KEY", "")
-        readwise_token = _validate_api_key(raw_readwise, "READWISE_TOKEN")
-
+        readwise_token = cls._load_api_key("READWISE_TOKEN", "READWISE_API_KEY", "READWISE_TOKEN")
         if not readwise_token and not dry_run:
             print("Error: READWISE_TOKEN is not set.", file=sys.stderr)
             sys.exit(1)
 
-        raw_perplexity = os.getenv("PERPLEXITY_API_KEY") or os.getenv(
-            "PPLX_API_KEY", ""
-        )
-        perplexity_api_key = _validate_api_key(raw_perplexity, "PERPLEXITY_API_KEY")
-
-        raw_linear = os.getenv("LINEAR_API_KEY") or os.getenv("LINEAR_TOKEN", "")
-        linear_api_key = _validate_api_key(raw_linear, "LINEAR_API_KEY")
-
+        env_vars = cls._load_env_vars()
         config = cls(
             readwise_token=readwise_token,
-            perplexity_api_key=perplexity_api_key,
-            linear_api_key=linear_api_key,
-            timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
-            focus_max_items=_safe_int(
-                "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
+            perplexity_api_key=cls._load_api_key(
+                "PERPLEXITY_API_KEY", "PPLX_API_KEY", "PERPLEXITY_API_KEY"
             ),
+            linear_api_key=cls._load_api_key("LINEAR_API_KEY", "LINEAR_TOKEN", "LINEAR_API_KEY"),
+            timezone_offset=env_vars["timezone_offset"],
+            focus_max_items=env_vars["focus_max_items"],
             env_source=str(env_source),
             toggles=cls._build_toggles(),
-            cache_dir=os.getenv(
-                "MORNING_BRIEF_CACHE_DIR",
-                str(Path.home() / ".cache" / "morning-brief"),
-            ),
-            weather_cache_ttl=_safe_int(
-                "MORNING_BRIEF_WEATHER_CACHE_TTL", DEFAULT_WEATHER_CACHE_TTL
-            ),
-            feed_cache_ttl=_safe_int(
-                "MORNING_BRIEF_FEED_CACHE_TTL", DEFAULT_FEED_CACHE_TTL
-            ),
+            cache_dir=env_vars["cache_dir"],
+            weather_cache_ttl=env_vars["weather_cache_ttl"],
+            feed_cache_ttl=env_vars["feed_cache_ttl"],
             dry_run=dry_run,
         )
 
