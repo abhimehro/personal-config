@@ -1,7 +1,5 @@
 """Shared, strict PR reference parser/validator for PR automation scripts."""
 
-from __future__ import annotations
-
 import re
 import sys
 from dataclasses import dataclass
