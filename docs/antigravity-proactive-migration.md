@@ -31,7 +31,13 @@ decisions record — is in
   - `proactive-palette`: CLI/UI ergonomics, `NO_COLOR`, and TTY safety (disabled
     on scientific repositories).
   - `proactive-code-health`: Safe dead-code removal and maintainability checks
-    using `references/jules-review-rules.md`.
+    using `references/jules-review-rules.md`. **Also carries the testing lens**
+    via `--focus` (decided 2026-11-03): no separate rotation slot until there is
+    data to justify one. Promote testing to its own slot only if, at the R1
+    readout, testing findings exceed **~⅓ of `code-health` output**, or if
+    `--focus` runs keep **pushing other findings out**. Rationale: a new slot
+    costs a sweep cycle and a review queue entry regardless of yield, and R1 has
+    not produced any testing-lens yield data yet.
   - `proactive-repo-sweep`: 15-minute coordinator enforcing single-improvement
     runs, open-PR file collision checks, and dual `2B` + `2A` throttling.
 - **Safety Hook (`configs/antigravity/hooks.json` ->
@@ -50,23 +56,31 @@ decisions record — is in
   diffed against the pinned `base_sha`, and any removed test class, lost test
   method, or drop in total test count blocks (`exit 2`) even when the suite is
   green, because losing a test does not fail a suite. Touched Python files that
-  do not parse are blocked too, with an undefined-name check
-  (`ruff --select=F82`, else `pyflakes`) when one is installed. Intentional
-  reductions must be declared with `--expected-test-count <n>`. `check-throttle`
-  refreshes `origin` before any ref-based verdict and fails closed (`exit 6`)
-  rather than judging against a stale ref, and `--include-worktrees` extends the
-  local cap across every git-registered proactive worktree rather than only the
-  default root. `check-collisions --include-worktrees --repo-path <clone>`
-  closes the same gap for file ownership: under `2B` local-first mode there are
-  no bot PRs, so a PR-only collision check is a no-op for exactly the class that
-  stranded real work — two sessions editing the same file in one burst. It
-  unions in every live candidate worktree's changed paths (excluding one whose
-  work already merged, so it cannot block that path for the whole TTL), fails
-  closed on a truncated PR listing (`exit 5`) or an unenumerable worktree set
-  (`exit 6`), and reports a collision as `exit 4`.
-  `print-test-cmd --repo-name <name>` exposes the repo-to-test-command mapping
-  so the control CLI resolves the same command `verify` runs instead of
-  duplicating it.
+  do not parse are blocked too, followed by a **mandatory** undefined-name check
+  resolved in order `ruff --select=F82` -> `uv run --all-extras ruff`
+  (uv-managed repos such as `ctrld-sync` ship ruff through their lockfile rather
+  than onto `PATH`) -> `python3 -m pyflakes`. When **none** is available the
+  gate **fails closed (`exit 2`)** instead of degrading to the parse floor: an
+  AST parse proves a file is syntactically valid, not that its names resolve, so
+  a missing linter must block rather than quietly turn a required check into a
+  decorative one. `ruff==0.17.3` is pinned in `requirements.txt` (matching
+  `ruff@0.17.3` in `.trunk/trunk.yaml`) so a provisioned environment never
+  reaches that branch — though it was reachable on the host where R1 was built,
+  meaning the tier had been a silent no-op there. Intentional reductions must be
+  declared with `--expected-test-count <n>`. `check-throttle` refreshes `origin`
+  before any ref-based verdict and fails closed (`exit 6`) rather than judging
+  against a stale ref, and `--include-worktrees` extends the local cap across
+  every git-registered proactive worktree rather than only the default root.
+  `check-collisions --include-worktrees --repo-path <clone>` closes the same gap
+  for file ownership: under `2B` local-first mode there are no bot PRs, so a
+  PR-only collision check is a no-op for exactly the class that stranded real
+  work — two sessions editing the same file in one burst. It unions in every
+  live candidate worktree's changed paths (excluding one whose work already
+  merged, so it cannot block that path for the whole TTL), fails closed on a
+  truncated PR listing (`exit 5`) or an unenumerable worktree set (`exit 6`),
+  and reports a collision as `exit 4`. `print-test-cmd --repo-name <name>`
+  exposes the repo-to-test-command mapping so the control CLI resolves the same
+  command `verify` runs instead of duplicating it.
 - **Control & Ordered Rollback CLI (`scripts/antigravity-proactive-ctl.sh`):**
   Manages installation (`install [--pilot]`), status (`status`), disposable UTC
   cron verification (`canary-stage` / `canary-clean`), merged-PR-verified

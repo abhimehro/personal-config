@@ -6,6 +6,8 @@
 # throttle checks, tamper-evident verify gates against edited build/lock/scripts
 # and nested test files, the base-relative semantic test-coverage gate (lost
 # methods, removed containers, count drops, pinned expectations, static floor),
+# the fail-closed undefined-name tier (blocks with no checker installed,
+# propagates a real F821 finding),
 # fail-closed origin refresh before ref-based throttle verdicts, cross-root
 # candidate counting via check-throttle --include-worktrees, file-path collisions
 # against live candidate worktrees via check-collisions --include-worktrees
@@ -27,6 +29,27 @@ export HOME="${TEST_DIR}/home"
 MOCK_BIN="${TEST_DIR}/mock_bin"
 WT_ROOT="${TEST_DIR}/worktrees"
 mkdir -p "${HOME}" "${MOCK_BIN}" "${WT_ROOT}"
+
+# Undefined-name checker stand-in. The gate resolves ruff -> `uv run ruff` ->
+# pyflakes and FAILS CLOSED when none exist, so every verify path needs a
+# deterministic provider regardless of what the host happens to have installed.
+# Kept in its own dir rather than MOCK_BIN so it cannot interact with the mock gh
+# that later tests add there. Behaviour is driven by an env-pointed flag file so
+# one test can make it report a finding.
+LINT_BIN="${TEST_DIR}/lint_bin"
+mkdir -p "${LINT_BIN}"
+cat >"${LINT_BIN}/ruff" <<'MOCK'
+#!/usr/bin/env bash
+if [[ -n "${RUFF_MOCK_FAIL_FILE:-}" && -f "${RUFF_MOCK_FAIL_FILE}" ]]; then
+	echo "src/names.py:2:20: F821 Undefined name \`undefined_helper\`"
+	exit 1
+fi
+exit 0
+MOCK
+chmod +x "${LINT_BIN}/ruff"
+RUFF_FAIL_FLAG="${TEST_DIR}/ruff_reports_finding"
+export RUFF_MOCK_FAIL_FILE="${RUFF_FAIL_FLAG}"
+export PATH="${LINT_BIN}:${PATH}"
 
 PASS=0
 FAIL=0
@@ -338,6 +361,43 @@ check_exit "static floor blocks a touched file that does not parse" 2 \
 	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test"
 check_grep "static floor names the unparseable file" "SYNTAX: src/broken.py:1: expected ':'" "${TEST_DIR}/check.log"
 rm -f "${WT_SEM}/src/broken.py" "${WT_SEM}/.verify-env.log"
+
+# (g) Fail closed when no undefined-name checker is installed. Tier 1 (AST parse)
+#     proves a file is syntactically valid, not that its names resolve, so a
+#     missing linter must block rather than silently degrade a required gate to
+#     the parse floor. ruff is pinned in requirements.txt so a provisioned
+#     environment always has one; this asserts the unprovisioned path.
+#     uv is deliberately kept off PATH too - it is a valid ruff provider for
+#     uv-managed repos, so its presence would take a different branch.
+cat >"${WT_SEM}/src/names.py" <<'EOF'
+def compute(x):
+    return undefined_helper(x)
+EOF
+NOLINT_BIN="${TEST_DIR}/nolint_bin"
+mkdir -p "${NOLINT_BIN}"
+for b in bash git python3 make cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test; do
+	if p="$(command -v "${b}" 2>/dev/null)"; then
+		ln -sf "${p}" "${NOLINT_BIN}/${b}"
+	fi
+done
+check_exit "static checks fail closed when no undefined-name checker is installed" 2 \
+	env PATH="${NOLINT_BIN}" HOME="${HOME}" "${TARGET_SCRIPT}" verify \
+	--worktree "${WT_SEM}" --lens code-health --test-cmd "make test"
+check_grep "static checks report the missing checker instead of passing" "No undefined-name checker available" "${TEST_DIR}/check.log"
+rm -f "${WT_SEM}/src/names.py" "${WT_SEM}/.verify-env.log"
+
+# (h) A real undefined-name finding propagates as a block. Presence of a checker
+#     is not the same as consulting its verdict, so assert the exit code is wired
+#     through and the finding text reaches the operator.
+cat >"${WT_SEM}/src/names.py" <<'EOF'
+def compute(x):
+    return undefined_helper(x)
+EOF
+touch "${RUFF_FAIL_FLAG}"
+check_exit "static checks block on an undefined-name finding" 2 \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test"
+check_grep "static checks surface the F821 finding" "F821 Undefined name" "${TEST_DIR}/check.log"
+rm -f "${RUFF_FAIL_FLAG}" "${WT_SEM}/src/names.py" "${WT_SEM}/.verify-env.log"
 
 # 5. Mock gh CLI to test file-path PR collision & remote/local throttle
 cat >"${MOCK_BIN}/gh" <<'MOCK'

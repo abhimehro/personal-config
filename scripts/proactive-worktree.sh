@@ -299,8 +299,9 @@ require_fresh_origin_ref() {
 #   1. AST parse - dependency-free floor, catches files that do not even parse.
 #      Uses ast rather than py_compile so no __pycache__ is written into the
 #      worktree under verification.
-#   2. Undefined-name (F82) - ruff when present, pyflakes otherwise. ruff's F82
-#      is the same check Seatek_Analysis CI already runs
+#   2. Undefined-name (F82) - ruff when present, pyflakes otherwise, and a
+#      FAIL-CLOSED exit when neither is. ruff's F82 is the same check
+#      Seatek_Analysis CI already runs
 #      (pr-validation.yml: ruff --select=E9,F63,F7,F82).
 run_python_static_checks() {
 	local wt_path="$1"
@@ -325,14 +326,28 @@ PY
 		return 1
 	fi
 
+	# Resolve the undefined-name checker. uv-managed repos (ctrld-sync) ship ruff
+	# through their own lockfile rather than onto PATH, so `uv run ruff` counts as
+	# present - without it this gate would falsely block the best-provisioned repos.
+	local -a f82_cmd=()
 	if command -v ruff >/dev/null 2>&1; then
-		(cd "${wt_path}" && ruff check --select=F82 --no-cache --quiet "$@")
+		f82_cmd=(ruff check --select=F82 --no-cache --quiet)
+	elif command -v uv >/dev/null 2>&1 && [[ -f ${wt_path}/pyproject.toml ]]; then
+		f82_cmd=(uv run --all-extras ruff check --select=F82 --no-cache --quiet)
 	elif python3 -c 'import pyflakes' >/dev/null 2>&1; then
-		(cd "${wt_path}" && python3 -m pyflakes "$@")
+		f82_cmd=(python3 -m pyflakes)
 	else
-		echo "[WARN] Neither ruff nor pyflakes is available; ran the AST parse floor only, so undefined names in untested code paths are not covered" >&2
-		return 0
+		# Fail closed. This tier is a required gate, not an advisory: an AST parse
+		# proves a file is syntactically valid, not that its names resolve, so
+		# passing on the floor alone would let an undefined name through in any
+		# path the tests do not reach. A missing linter is an environment defect,
+		# and silently degrading a required check to cover it is how the gate
+		# becomes decorative. ruff is pinned in requirements.txt precisely so this
+		# branch is unreachable in a provisioned environment.
+		echo "[ERROR] No undefined-name checker available (tried ruff, uv run ruff, pyflakes); refusing to emit a pass from the AST parse floor alone. Install the pinned linter (python3 -m pip install -r requirements.txt, which carries ruff) and re-run." >&2
+		return 2
 	fi
+	(cd "${wt_path}" && "${f82_cmd[@]}" "$@")
 }
 
 # Semantic test-coverage gate: a hunk that applies cleanly can still delete
