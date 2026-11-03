@@ -36,6 +36,9 @@ import pr_lifecycle_guardrail_evidence as evidence_module
 import pr_lifecycle_ledger_cas as cas
 from pr_lifecycle_guardrail_evidence import (
     GuardrailEvidence,
+)
+from pr_lifecycle_guardrail_evidence import fetch_guardrail_evidence as _fetch_evidence
+from pr_lifecycle_guardrail_evidence import (
     has_current_evidence_stamp,
     has_executable_path,
     owner_held_stamp_candidate,
@@ -44,7 +47,6 @@ from pr_lifecycle_guardrail_evidence import (
     routine_stamp_only_patch,
     unstamped_routine_keys,
 )
-from pr_lifecycle_guardrail_evidence import fetch_guardrail_evidence as _fetch_evidence
 from pr_lifecycle_persist import dump_ledger
 from pr_lifecycle_reconcile_guards import SENTINEL_HOLD_MARKER
 from pr_lifecycle_yaml import load_yaml

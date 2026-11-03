@@ -100,6 +100,24 @@ notify() {
 	fi
 }
 
+# Ensure the maintenance log directory exists and is writable.
+# launchd jobs run without a login shell; a missing directory silently
+# discards all output, which makes scheduled runs unauditable.
+ensure_log_dir() {
+	local dir="${1:-${LOG_DIR:-$HOME/Library/Logs/maintenance}}"
+	if [[ ! -d $dir ]]; then
+		mkdir -p "$dir" 2>/dev/null || {
+			printf 'ERROR: cannot create log directory: %s\n' "$dir" >&2
+			return 1
+		}
+	fi
+	if [[ ! -w $dir ]]; then
+		printf 'ERROR: log directory is not writable: %s\n' "$dir" >&2
+		return 1
+	fi
+	return 0
+}
+
 # Prune old log files
 prune_logs() {
 	local days="${LOG_RETENTION_DAYS:-60}"
