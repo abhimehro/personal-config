@@ -282,6 +282,20 @@ trunk fmt
 > Run `--enable=all` yourself if you want the optional/style checks — no CI job
 > enables them.
 >
+> **Same findings, different verdict.** Trunk runs the same engine at the same
+> version against this one config, so it never adds checks — but by default it
+> reports only _new_ issues and hides pre-existing ones. On
+> `maintenance/bin/deep_cleaner.sh`, which carries one pre-existing SC2126 at
+> line 216:
+>
+> - `shellcheck` → 1 finding, rc=1
+> - `trunk check --no-fix` → "1 existing issue (use --show-existing to see it)",
+>   "✔ No new issues", **rc=0**
+> - `trunk check --no-fix --show-existing` → the same single `SC2126`, listed
+>
+> Add `--show-existing` whenever you compare Trunk against direct `shellcheck`.
+> Without it, a clean `trunk check` means "no _new_ issues", not "no issues".
+>
 > What CI actually enforces (`.github/workflows/code-quality.yml`): a hard
 > **SC2155/SC2145 correctness gate** (`make lint-errors`), which fails the
 > build; plus a broad "ShellCheck analysis" step that runs

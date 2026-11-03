@@ -15,6 +15,13 @@
 # reports 166 SC2250, 18 SC2310, 12 SC2154 and 2 SC2249. Run `--enable=all`
 # yourself if you want the optional/style checks — no CI job enables them.
 #
+# Trunk reports only *new* issues by default, so a clean `trunk check` means
+# "no new issues", not "no issues". On maintenance/bin/deep_cleaner.sh (one
+# pre-existing SC2126 at line 216) direct `shellcheck` gives rc=1 with 1
+# finding, `trunk check --no-fix` gives rc=0 and hides it, and only
+# `trunk check --no-fix --show-existing` lists the same single finding. Pass
+# --show-existing when comparing the two.
+#
 # What CI actually enforces (.github/workflows/code-quality.yml): a hard
 # SC2155/SC2145 correctness gate (`make lint-errors`) that fails the build, plus
 # a broad "ShellCheck analysis" step running `shellcheck "$script" || true`,
