@@ -17,18 +17,18 @@ once Jules stops.
 
 **Key numbers.**
 
-| Metric               | Value                                                                                                                                                                    | §        |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| Export analysed      | 19.5 GiB, **7,691 sessions**, 26 repos, captured 2026-10-31, verified untouched                                                                                          | §1       |
-| The burst            | **144 sessions in 15m17s** on 2026-11-01, after ~3 months dormant                                                                                                        | §6       |
-| Proactive PR outcome | **113 opened → 110 still open, 3 merged = 2.7%**, 0 comments, 0 review comments; #2661 and #2666 are the same work landed twice                                          | §6       |
-| Failure mechanism    | 22 FAILED; **91% ended blocked on a human**, not on the code; **59% still held a finished patch**                                                                        | §7       |
-| Duplication          | **35.0% exact / 75.2% fuzzy** in the burst, against a **7.0%** 8-month baseline                                                                                          | §9       |
-| Recovered work       | 9 orphaned patches that never reached GitHub; **7 promoted as 7 scoped draft PRs**                                                                                       | §7.1/§21 |
-| Archive integrity    | **2 of 3 cloud backups are truncated by exactly 1 byte**; only Proton's 5 split parts are intact                                                                         | §3       |
-| Secrets              | **Nothing to rotate.** 199 of 204 prefix hits were unanchored-regex noise; all 9 gitleaks findings are fixtures or negative assertions                                   | §23      |
-| Shipped              | **R1** (base-relative verify + worktree-collision gate) at `ea292c9a`; semantic test-coverage gate and `git fetch` precondition at `724505e6`; #2686 gitleaks pre-commit | §20      |
-| Remaining build      | R2–R4 = **24 h**, 20 h of it on the R2→R3 critical path; filed as #2695 / #2696 / #2697                                                                                  | §18      |
+| Metric               | Value                                                                                                                                                                                                                                                                        | §        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Export analysed      | 19.5 GiB, **7,691 sessions**, 26 repos, captured 2026-10-31, verified untouched                                                                                                                                                                                              | §1       |
+| The burst            | **144 sessions in 15m17s** on 2026-11-01, after ~3 months dormant                                                                                                                                                                                                            | §6       |
+| Proactive PR outcome | **113 opened → 110 still open, 3 merged = 2.7%**, 0 comments, 0 review comments; #2661 and #2666 are the same work landed twice                                                                                                                                              | §6       |
+| Failure mechanism    | 22 FAILED; **91% ended blocked on a human**, not on the code; **59% still held a finished patch**                                                                                                                                                                            | §7       |
+| Duplication          | **35.0% exact / 75.2% fuzzy** in the burst, against a **7.0%** 8-month baseline                                                                                                                                                                                              | §9       |
+| Recovered work       | 9 orphaned patches that never reached GitHub; **7 promoted as 7 scoped draft PRs**                                                                                                                                                                                           | §7.1/§21 |
+| Archive integrity    | **No cloud copy is corrupt.** OneDrive + Google Drive both hash to `71c643c2…`, decompress clean, and their 34,243 entries reconcile with the local tree at **zero omissions**. Proton holds a _different_ compression, 1 byte longer (§3 corrects an earlier wrong verdict) | §3       |
+| Secrets              | **Nothing to rotate.** 199 of 204 prefix hits were unanchored-regex noise; all 9 gitleaks findings are fixtures or negative assertions                                                                                                                                       | §23      |
+| Shipped              | **R1** (base-relative verify + worktree-collision gate) at `ea292c9a`; semantic test-coverage gate and `git fetch` precondition at `724505e6`; #2686 gitleaks pre-commit                                                                                                     | §20      |
+| Remaining build      | R2–R4 = **24 h**, 20 h of it on the R2→R3 critical path; filed as #2695 / #2696 / #2697                                                                                                                                                                                      | §18      |
 
 **Decisions taken.** Seven gaps (G-1…G-7) drive every gate; G-4 and G-5 are
 shipped, the rest are filed as independently assignable issues. Review SLA is
@@ -47,17 +47,24 @@ than being discarded for somebody else's breakage.
 
 1. **Testing lens** — separate rotation slot, or folded into `code-health` with
    a `--focus` flag? The only unanswered _design_ question (§24 row 4).
-2. **`sessions.json` content match** — the cloud copies match local
-   byte-for-byte in _size_; size match is not content match, and the streaming
-   hash that would settle it is gated (§3, §24 row 8).
-3. **Archive repair steps 3 and 5** — reassembly and deleting the local 19 GiB
-   tree — remain gated on explicit approval (§4).
+2. **Extraction spot-check before deleting the local tree.** §3 proves the cloud
+   archive is complete and checksum-valid; what it does not prove is that
+   extracted file _contents_ byte-match local. 3–5 files, streamed, closes it.
+   Deleting the 19 GiB tree stays gated on that plus explicit approval (§4 step
+   5).
+3. **Proton verification is blocked, not pending.** All 5 parts are `dataless`,
+   `brctl` has no eviction subcommand on this host, and rclone's `protondrive`
+   backend is unconfigured — so hashing them would hydrate 9.2 GiB permanently
+   against a 4 GiB floor. It is also **unnecessary**: the parts are a different
+   compression, not the backup of record (§4).
 4. **`canary-stage` timezone** — the disposable cron canary hardcodes UTC while
    the pilot sidecars run `America/Chicago`, so it does not yet test the pilot
    schedule (#2700, §17).
 
-Nine live questions in total are tabulated in §24; §25 lists the artifacts
-behind every number above.
+**Closed since the last revision:** `sessions.json` is confirmed byte-identical
+on both clouds (`13422e16…`), and archive _repair_ is struck as unnecessary.
+Remaining live questions are tabulated in §24; §25 lists the artifacts behind
+every number above.
 
 ### Evidence labels
 
@@ -106,19 +113,24 @@ why the capture path is field-masked and incremental rather than a copy.
 **Confirmed.** These values are transcribed here so the integrity reference
 survives the archival of the export and of the scratch workspace that produced
 it. The originals also live on all three clouds (§3 records exactly which
-artifact is where). The per-part hashes below are the **only pre-reassembly**
-ground truth in existence; the whole-archive hash is not, and §3 explains why it
-cannot be trusted on its own.
+artifact is where).
 
-Whole-archive SHA-256 (`jules-export-20261031.tar.zst`) — see the warning in §3
-before trusting it:
+**These two manifests certify two different files, and mixing them up is what
+produced the false corruption verdict corrected in §3.** The whole-archive hash
+certifies the `.tar.zst` on OneDrive and Google Drive (compression run B,
+9,225,417,876 bytes). The per-part hashes and sizes certify the five parts on
+Proton (compression run A, 9,225,417,877 bytes). Neither validates the other.
+
+Whole-archive SHA-256 (`jules-export-20261031.tar.zst`, run B) — **verified
+2026-11-02 against both cloud copies, exact match**:
 
 ```
 71c643c21298373ab66b011331f384014037c60e68a8575b9a2e52ddbfcfd58e
 ```
 
 Per-part SHA-256 (`jules-export-20261031.sha256`, 520 bytes, written 2026-11-01
-**01:17**, i.e. from the true original _before_ reassembly):
+**01:17**, certifying run A on Proton — **not yet verified against the part
+bytes**; see the blocker in §4):
 
 ```
 4a1cb93f792b1a71480e7f1aa987ef62305ea2ae670a21da1a8056e98a0fb569  jules-export-20261031.tar.zst.part-aa
@@ -139,152 +151,236 @@ Per-part sizes (`jules-export-20261031.sizes`):
 9225417877  TOTAL    (8.59 GiB)
 ```
 
-The arithmetic checks: `2147483648 × 4 + 635483285 = 9225417877`. Any correct
-reassembly is **exactly 9,225,417,877 bytes**. That single number is the fastest
-integrity test available and requires no hashing.
+The arithmetic checks: `2147483648 × 4 + 635483285 = 9225417877`.
 
-Expected archive contents: **~30,000 entries**, including **7,672 session
-directories**.
+**This number is _not_ a fast integrity test, and treating it as one caused the
+false alarm in §3.** It is the expected size of a reassembly of _run A's parts_.
+It says nothing about run B's `.tar.zst`, which is legitimately 9,225,417,876
+bytes and independently verified. A size expectation derived from one artifact
+must never be applied to another. The fast integrity test for the cloud archive
+is its SHA-256 above, and the fast _structural_ test is
+`rclone cat … | zstd -dc | tar -t | wc -l` → 34,244 with all stages exiting 0.
 
-## 3. Two of the three cloud copies are corrupt
+Archive contents, **confirmed by direct listing on 2026-11-02**: **34,243
+entries** excluding the root, including all **7,672 session directories**. This
+reconciles exactly with the local tree — see §3.
 
-**Confirmed by arithmetic on observed sizes, with the original parts as ground
-truth.** The premise that "three-cloud backup verification is complete" was
-**wrong for two of the three clouds**.
+## 3. The three clouds hold two _different_ archives — and neither is corrupt
 
-| Cloud            | Holds                                                                                                                                                 | Bytes                     | Status                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ----------------------- |
-| **Proton Drive** | original 5 split parts + `.sizes` + per-part `.sha256` — **no reassembled archive**                                                                   | sums to **9,225,417,877** | ✅ **Only intact copy** |
-| OneDrive         | truncated `.tar.zst` + `.tar.zst.sha256` + per-part `.sha256` + `.sizes`, plus loose `sessions.json`, `errors.json`, `sources.json`, partial `repos/` | **9,225,417,876**         | 🔴 **1 byte short**     |
-| Google Drive     | same layout as OneDrive                                                                                                                               | **9,225,417,876**         | 🔴 **1 byte short**     |
+> **Correction, 2026-11-02.** This section previously concluded that the
+> OneDrive and Google Drive copies were each truncated by one byte and that
+> Proton's five parts were the only intact copy. **That conclusion was wrong.**
+> It was drawn from size arithmetic alone, before a single byte of the cloud
+> archives had been read. Direct verification is recorded below and supersedes
+> it; §4's repair plan is revised to match.
 
-Verified directly against `onedrive:HomeBackup/jules-export/` on 2026-11-02: the
-truncated archive is **9,225,417,876** bytes, exactly one short.
+**Confirmed by streaming verification on 2026-11-02.** Every check below ran
+with zero local staging — `rclone cat` piped straight into the hasher or
+decompressor, so nothing ever landed on disk.
 
-`cat part-* > tar.zst` cannot lose a byte unless interrupted, so **the
-reassembly was truncated**, and both cloud copies descend from that same faulty
-reassembly — which is why they agree with each other. **Agreement between them
-is not evidence of integrity.** That is the trap: two "verified" copies that
-verify each other's corruption.
+| Cloud        | Artifact                                      | Bytes                 | sha256                              | Verdict                                                  |
+| ------------ | --------------------------------------------- | --------------------- | ----------------------------------- | -------------------------------------------------------- |
+| OneDrive     | `jules-export-20261031.tar.zst`               | 9,225,417,876         | `71c643c2…`                         | ✅ matches the recorded manifest exactly                 |
+| Google Drive | same                                          | 9,225,417,876         | `71c643c2…`                         | ✅ matches the recorded manifest exactly                 |
+| Proton Drive | 5 split parts + `.sizes` + per-part `.sha256` | sums to 9,225,417,877 | per-part, `4a1cb93f…` for `part-aa` | ⚠️ a **different compression**, not a split of the above |
 
-**Why the existing checksum passes and proves nothing.** Timeline reconstructed
-from cloud mtimes:
+Three independent results:
 
-| When (2026-11-01) | Artifact                                                               |
-| ----------------- | ---------------------------------------------------------------------- |
-| **01:17**         | `.sizes` + per-part `.sha256` — from the true original                 |
-| **01:19–01:25**   | parts uploaded to Proton                                               |
-| **19:23:40**      | parts **reassembled** → `tar.zst` mtime                                |
-| **20:00:50**      | `.tar.zst.sha256` = `71c643c2…` computed **from the reassembled file** |
+1. **Hash identity.** Both cloud archives hash to
+   `71c643c21298373ab66b011331f384014037c60e68a8575b9a2e52ddbfcfd58e` —
+   byte-for-byte the value recorded in `jules-export-20261031.tar.zst.sha256`.
+2. **The compressed stream is complete and self-verifying.**
+   `rclone cat … | zstd -dc | tar -t | wc -l` returned **34,244** entries with
+   **every stage exiting 0**. The frame header (`28 b5 2f fd 04 58 …`) carries
+   **Content_Checksum_flag = 1**, so zstd verified an xxhash64 over all ~19.5
+   GiB of decompressed output before exiting 0. **A truncated stream cannot pass
+   its own content checksum.**
+3. **The entry list reconciles exactly with the local tree.** Diffing the
+   archive's full listing against `find ~/jules-export -mindepth 1`:
 
-So `71c643c2…` faithfully hashes the **truncated** archive. Verifying against it
-passes while confirming a corrupt file. This is the general lesson: **a checksum
-computed after a transformation certifies the transformation's output, not its
-input.** The per-part hashes at 01:17 are the only pre-reassembly ground truth.
+   |                                  | count  |
+   | -------------------------------- | ------ |
+   | Archive entries (excluding root) | 34,243 |
+   | Local tree entries               | 34,248 |
+   | In local but not in archive      | **5**  |
+   | In archive but not in local      | **0**  |
 
-**Where that ground truth lives — verified 2026-11-02.** The per-part manifest
-is redundantly held and every copy is byte-identical (`sha256` of the 520-byte
-file is `78fb8b639421472437800c1eecf4a53bfd028b5a638bd6d68cd6feab6e29460c` in
-all four places): local scratch, `onedrive:HomeBackup/jules-export/`,
-`gdrive:HomeBackup/jules-export/`, and Proton's File Provider mount. OneDrive
-and Google Drive also carry `.sizes`. So knowing the correct hashes does **not**
-depend on Proton being reachable.
+   The 5 are exactly `.DS_Store` (×3: root, `repos/`, `sessions/`),
+   `__pycache__`, and `__pycache__/export_jules.cpython-315.pyc` — Finder
+   metadata and Python bytecode, precisely what an archive command should
+   exclude. **Nothing substantive is missing**, all 7,672 session directories
+   are present, and no local entry has an mtime later than the archive's
+   creation.
 
-The **part bytes**, however, exist **only on Proton** — OneDrive and Google
-Drive hold the reassembled `.tar.zst` and its `.tar.zst.sha256`, never the five
-parts. Proton is therefore a single point of failure for _reassembly source
-material_ but not for _verification reference_, which is a better position than
-the earlier "only on Proton" reading of this section assumed.
+### What the 1-byte difference actually is
 
-**Consequences — all still in force:**
+**Not a truncation.** The first 2,147,483,648 bytes of the cloud archive hash to
+`b2681d8661ab8b7f90fc54f5bac2be91c6e623ba8fcf7fc39b89590c0b6c5c2c` (byte count
+verified via `tee | wc -c`; hash reproduced across two independent runs). The
+recorded hash of Proton's `part-aa` is
+`4a1cb93f792b1a71480e7f1aa987ef62305ea2ae670a21da1a8056e98a0fb569`. They differ,
+so **the parts are not a split of the cloud archive**. They are a separate
+compression of the same tree, one byte longer, produced under different zstd
+settings, thread count, or version.
 
-- ⛔ **Do not remove the local 19 GiB tree** on the strength of the OneDrive or
-  Google Drive copies.
-- **What is local-only, precisely.** The local tree is 19 GiB, and essentially
-  all of it is `sessions/` — the 7,672 per-session directories holding activity
-  logs, patches and prompts. That subtree exists uncompressed **only locally**;
-  on the clouds it lives solely inside the truncated tarball, reassemblable only
-  from Proton's parts. Two qualifications found while verifying, both of which
-  _reduce_ the risk of step 5 rather than increase it:
-  - `sessions.json`, the 264 MiB master index of all 7,691 sessions, **is** on
-    both clouds uncompressed at a byte-exact size match with local
-    (276,431,176). **Size match is not content match** — hashing it costs a 264
-    MiB download and has not been done. **Open.**
-  - `repos/` is **incomplete and inconsistent** on the clouds (OneDrive 2.2 KiB
-    / 18 objects, Google Drive 12.2 KiB / 19 objects, local 84 KiB / 10
-    entries). It is metadata only, not repository content, but it is not safely
-    mirrored.
-- Repair must target the two truncated archives, not trust them.
-- Backup re-verification was originally scoped _out_ of the analysis mission;
-  this finding forces a narrow slice of it back **in**, ahead of any deletion.
+The mtime timeline — originally read as proof of a faulty reassembly — proves
+the opposite. The two artifacts are **18 hours apart**, so no reassembly ever
+happened:
 
-**One caveat, stated honestly.** Sizes are confirmed; part _content_ is not yet
-hashed. The parts match their manifest sizes exactly, so they are almost
-certainly intact — but content hashing is the first step of the repair plan and
-has not been run. **Open.**
+| When (2026-11-01) | Artifact                                                         |
+| ----------------- | ---------------------------------------------------------------- |
+| **01:17**         | `.sizes` + per-part `.sha256` written                            |
+| **01:19–01:25**   | 5 parts uploaded to Proton — compression run **A**               |
+| **19:23:40**      | `jules-export-20261031.tar.zst` created — compression run **B**  |
+| **20:00:50**      | `.tar.zst.sha256` = `71c643c2…` computed from run **B**'s output |
 
-## 4. Repair plan and its gate
+`71c643c2…` therefore certifies run B's archive correctly and completely. The
+general lesson the earlier draft drew survives, but it applies to a different
+situation than the one alleged: **a checksum computed after a transformation
+certifies the transformation's output, not its input.** Here that is exactly
+what is wanted, because run B's output _is_ the artifact being backed up.
 
-**Not yet executed** — deliberately, and it is gated on explicit approval. It
-needs ~9.2 GiB of local staging for a whole-file reassembly and the disk
-governor reported 6.0 GiB of headroom above its hard floor at the time of
-writing. Steps 1 and 2 **are** feasible at that headroom because both are
-streaming or one-part-at-a -time; only step 3 needs the streamed variant. The
-order below is the corrected one; the original ordering was circular.
+**Where the earlier reasoning went wrong.** It treated `.sizes` TOTAL as ground
+truth for the cloud file's expected length. `.sizes` describes run A. Comparing
+run B's length against run A's manifest and finding a 1-byte deficit
+manufactured a confident corruption verdict out of two numbers that were never
+measuring the same object. **Size arithmetic across artifacts that are not the
+same artifact is not evidence of anything.** The verdict felt airtight because
+the arithmetic _was_ airtight — the premise underneath it was not.
 
-iCloud's File Provider **stages writes on local disk before uploading**, so
-"streaming" 8.59 GiB into iCloud with a few GiB free is not possible, and
-re-hashing off a File Provider path forces a full local download. Verify →
-reclaim → _then_ iCloud.
+### Consequences — revised
 
-1. **Verify Proton's parts.** `shasum -a 256 -c` against the per-part hashes
-   above. The reference manifest does **not** need downloading — byte-identical
-   copies are already local and on both other clouds (§3), so only the part
-   bytes cost network. ⚠️ Reading dataless File Provider files **hydrates them
-   locally** — hash **one 2 GiB part at a time** with `df -k` monitoring,
-   aborting below the 1.5 GiB floor. Proton metadata reports real sizes without
-   hydration, so only content hashing costs I/O.
-2. **Structural checks — a hash match is not enough**, and the truncation proves
-   why. Both stream with no local staging:
-   - `rclone cat … | zstd -t` — catches truncated frames.
-   - `rclone cat … | zstd -dc | tar -t | wc -l` — compare against ~30,000
-     entries including 7,672 session dirs.
-   - Run these against **both** the truncated cloud copies (expect failure)
-     **and** a correct reassembly from Proton's parts (expect success). The
-     contrast is what actually proves the diagnosis; a single passing run does
-     not.
-3. **Repair OneDrive + Google Drive.** Reassemble correctly
-   (`cat part-* > tar.zst` → **9,225,417,877** bytes), re-hash the whole file,
-   replace the two truncated copies. Stream part-by-part through rclone rather
-   than staging the whole file locally.
-4. **Re-verify all three clouds** agree on corrected size **and** hash.
-5. **Then** remove the local 19 GiB tree — gated on steps 1, 2 and 4 all green,
-   `tmutil listlocalsnapshots /` re-checked, and **explicit human approval**.
+- ✅ **Repair is unnecessary.** Old step 3 ("reassemble correctly, replace the
+  two truncated copies") is struck. There is nothing truncated. Both cloud
+  copies are complete, hash-verified, and checksum-verified.
+- ✅ **The Proton single-point-of-failure concern is void.** Proton holds a
+  _third_ copy in a different compression, not the sole intact one.
+- ⚠️ **The two archives are not interchangeable.** Restoring from Proton's parts
+  yields a byte-different file that will **not** hash to `71c643c2…`. Any
+  verification or restore procedure must state which artifact it means. The
+  per-part `.sha256` manifest validates run A only; `71c643c2…` validates run B
+  only.
+- ✅ **`sessions.json` is confirmed byte-identical on both clouds** —
+  `13422e1691db14f7412b74e2a904048e82c275056aff7a45c6157e37fb3e4bf6`, matching
+  local, at 276,431,176 bytes. This closes the "size match is not content match"
+  open item (§24 row 8).
+- ✅ **`repos/` being partially mirrored as loose cloud files costs nothing.**
+  OneDrive holds 2.2 KiB / 18 objects and Google Drive 12.2 KiB / 19 objects
+  against local's 84 KiB / 10 entries — but the full `repos/` subtree is
+  _inside_ the verified tarball, and the entry diff above shows zero omissions.
+- 🟡 **Deleting the local 19 GiB tree (old step 5) is now supported by evidence,
+  though still gated on explicit approval.** What is _proven_: the compressed
+  stream is complete and its content checksum valid, and the tar listing
+  reconciles entry-for-entry against the local tree with zero omissions. What is
+  _not_ proven: an extract-and-byte-compare against the local files. The zstd
+  content checksum covers every decompressed byte, so contents match **if** the
+  archive was made from this tree — and the exact entry reconciliation plus the
+  absence of any newer local file is strong evidence that it was. A single-file
+  extraction spot-check is the cheap way to close the remaining gap before
+  deleting anything, and is now the recommended precondition for step 5.
+
+**Throughput measured, not assumed.** 276 MiB in 12.5 s; 9.2 GiB in ~4 min
+(`00:41:36Z → 00:45:37Z`), i.e. **~37 MiB/s**. The earlier "bandwidth-bound,
+budget hours" caution was over-conservative by roughly an order of magnitude:
+all of the verification above — two 9.2 GiB whole-file hashes, a full
+decompress-and-list, a 2 GiB prefix hash, and two 264 MiB hashes — completed in
+about 20 minutes of wall time.
+
+## 4. Archive plan and its gate
+
+Revised 2026-11-02 after §3's verification. **The repair this section originally
+described is unnecessary** — nothing is truncated. What remains is verification
+of the third copy, an extraction spot-check, and then the space decisions.
+
+Steps 1 and 2 are **done**; their results are in §3. Every step below streams
+through `rclone cat` and lands nothing on local disk.
+
+1. ~~**Verify Proton's parts.**~~ → **Done in the only sense that matters.** §3
+   established the parts are a _different compression_, not a split of the cloud
+   archive, so hashing them cannot validate the backup that is actually relied
+   upon. Verifying them remains **optional** and is currently **not feasible
+   under a streaming-only constraint** — see the blocker below.
+2. ✅ **Structural checks — done, and they passed.**
+   `rclone cat … | zstd -dc | tar -t | wc -l` returned 34,244 entries with every
+   stage exiting 0; `Content_Checksum_flag = 1` means zstd verified an xxhash64
+   over all ~19.5 GiB of decompressed output. Both cloud archives hash to
+   `71c643c2…`, matching the recorded manifest. The listing diffs clean against
+   the local tree with **zero omissions**.
+3. ⛔ **~~Repair OneDrive + Google Drive~~ — struck.** There is no faulty
+   reassembly to repair. Executing this step as originally written would have
+   _replaced two verified-good archives with a byte-different file_ built from a
+   different compression run — actively destroying a known-good state while
+   believing it was a fix.
+4. **Re-verify all three clouds — reduced in scope.** OneDrive and Google Drive
+   already agree on both size **and** hash (§3). What is left is optional:
+   confirm Proton's parts against their own per-part manifest, which validates
+   run A only.
+5. **Then** remove the local 19 GiB tree — gated on an **extraction
+   spot-check**, `tmutil listlocalsnapshots /`, and **explicit human approval**.
    Frees 19 GiB (Data volume 99% → ~91%). Not reversible without extracting the
-   archive, which becomes trivial once the space is freed.
+   archive, which becomes trivial once the space is freed. The spot-check is the
+   one remaining gap in §3's evidence: extract 3–5 known files (including one
+   large `session.json` and one small `settings.json`) from the cloud archive
+   and byte-compare against local. Streaming, so it costs no disk.
 6. **Then** copy the verified archive to iCloud as copy #3, into
    `HomeBackup/jules-export/` — **not** Desktop or Documents, whose sync is
    active. iCloud cost 8.59 GiB of 111.6 GiB (7.7%) versus 19 GiB (17%) for the
    tree. **Two independently verified cloud copies already constitute a valid
    backup; iCloud is copy #3, not the safety net.**
-7. **Archive the tarball, not the tree.** ~30,000 small files through File
+7. **Archive the tarball, not the tree.** ~34,000 small files through File
    Provider is slow and stall-prone versus one resumable 8.59 GiB object that
    already ships SHA-256 and `.sizes`.
 
-**Timing.** SHA-256 CPU cost is ~10–20 s, but wall time is bound by **download
-bandwidth** — budget 8.59 GiB ÷ actual throughput, not the CPU figure.
+### Blocker: Proton cannot be streamed as currently configured
+
+Verified 2026-11-02, and it invalidates the mitigation this section originally
+proposed:
+
+- All 5 Proton parts are **`dataless`** (`ls -lO` reports
+  `compressed,dataless`). Reading one **hydrates it to local disk** in full.
+- **`brctl` on this host (darwin 27.2) has no eviction subcommand** — only
+  `diagnose`, `log`, `dump`, `status`, `accounts`, `quota`, `monitor`. So "hash
+  one 2 GiB part at a time, evict between" is **not achievable from the CLI**.
+  Eviction would need the Proton app UI, Finder's _Remove Download_, or
+  non-deterministic OS space pressure.
+- Hashing all 5 parts would therefore hydrate **9.2 GiB permanently** against
+  11.2 GiB free and a 4 GiB hard floor — landing at ~2 GiB free, i.e. **ABORT**
+  territory, with no CLI way back out.
+- **The clean path exists but needs setup:** rclone v1.74.2 **does** ship a
+  `protondrive` backend (and an `iclouddrive` one). Neither is configured;
+  configured remotes are `gdrive:`, `onedrive:`, `alldebrid:`, `media:`. Adding
+  `proton:` is a config write plus interactive Proton auth (credentials + 2FA),
+  which is a human action. With it, Proton's parts stream at ~37 MiB/s with zero
+  hydration and step 4 becomes trivial.
+
+**Practical upshot:** Proton verification is _nice to have, not required_. The
+backup of record is the run-B archive on OneDrive + Google Drive, and it is
+verified.
+
+**Timing.** SHA-256 CPU cost is negligible; wall time is bandwidth-bound at a
+measured **~37 MiB/s**, so a full 8.59 GiB pass is ~4 minutes, not hours.
 
 **Cloud constraints worth keeping.** Google Drive is mounted **read-only**
 (rclone only). `rclone media:` is a **union of `gdrive:Media` +
 `onedrive:Media`** and _is_ the Jellyfin library — never use it as scratch.
-Neither an `iclouddrive` nor a `protondrive` remote is configured in rclone
-v1.74.2, and adding either is a config write plus interactive auth
+Neither `iclouddrive:` nor `protondrive:` is configured, though both backends
+exist in rclone v1.74.2; adding either is a config write plus interactive auth
 (`iclouddrive` additionally needs Advanced Data Protection off and a trusted
 device).
 
-**The root cause is process, not tooling:** the three-cloud backup was ad-hoc
-and is not reproducible — which is how a truncated reassembly went unnoticed.
-Filed as [#2693](https://github.com/abhimehro/personal-config/issues/2693).
+**Two distinct root causes, worth keeping separate.**
+
+1. **The backup was ad-hoc and is not reproducible** — two compression runs 18
+   hours apart, one split into parts, one uploaded whole, and no record of which
+   manifest certifies which artifact. Filed as
+   [#2693](https://github.com/abhimehro/personal-config/issues/2693).
+2. **The false corruption alarm was an analysis error, not a backup error.** A
+   size comparison across two unrelated artifacts, with no byte ever read,
+   produced a confident and completely wrong verdict that survived into a
+   committed document. The generalisable rule: **a size mismatch is a
+   hypothesis, never a finding — hash the bytes before writing the conclusion.**
+   Cost of the correction: ~20 minutes of streaming. Cost of acting on the
+   original verdict: overwriting two good archives with a different file.
 
 ---
 
@@ -1345,17 +1441,27 @@ advisory, and this document was scanned with gitleaks, trufflehog and
 
 ### Open
 
-| # | Question                                                                                       | Note                                                                                                                                                           |
-| - | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 | Does the Jules REST API survive read-only mode after 2026-11-11?                               | Plan a list-only re-check near Nov 11; capture only new IDs                                                                                                    |
-| 2 | Which session's origin/status drifted between the list-only and full fetch?                    | Immaterial — 1 of 144                                                                                                                                          |
-| 3 | Are the 110 open Jules PRs mergeable at current HEAD?                                          | `mergeable_state` is not returned by the list endpoint; needs per-PR fetch                                                                                     |
-| 4 | **Testing lens** — separate rotation slot, or folded into `code-health` with a `--focus` flag? | The only _design_ question still unanswered                                                                                                                    |
-| 5 | Is the Proton part _content_ intact (not just its sizes)?                                      | §3 caveat; first step of the repair plan                                                                                                                       |
-| 6 | Is `$(date -u +%Y-%m-%d)` shell-expanded inside a sidecar `args` array?                        | §17; one canary run settles it                                                                                                                                 |
-| 7 | Does the `palette` lens produce anything worth promoting?                                      | New lens, no Jules history, 0 of 9 recovered patches                                                                                                           |
-| 8 | Does the cloud `sessions.json` match local byte-for-byte, not just in size?                    | §3. Stream-hash without local staging: `rclone cat onedrive:HomeBackup/jules-export/sessions.json \| shasum -a 256` — costs a 264 MiB download, so it is gated |
-| 9 | Should the incomplete cloud `repos/` metadata be re-mirrored?                                  | §3. 2.2 KiB vs 12.2 KiB vs 84 KiB local, and the two clouds disagree with each other                                                                           |
+| # | Question                                                                                       | Note                                                                                                                                                                                                                                                                                                                                                |
+| - | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | Does the Jules REST API survive read-only mode after 2026-11-11?                               | Plan a list-only re-check near Nov 11; capture only new IDs                                                                                                                                                                                                                                                                                         |
+| 2 | Which session's origin/status drifted between the list-only and full fetch?                    | Immaterial — 1 of 144                                                                                                                                                                                                                                                                                                                               |
+| 3 | Are the 110 open Jules PRs mergeable at current HEAD?                                          | `mergeable_state` is not returned by the list endpoint; needs per-PR fetch                                                                                                                                                                                                                                                                          |
+| 4 | **Testing lens** — separate rotation slot, or folded into `code-health` with a `--focus` flag? | The only _design_ question still unanswered                                                                                                                                                                                                                                                                                                         |
+| 5 | Is the Proton part _content_ intact (not just its sizes)?                                      | **Blocked and no longer load-bearing.** All 5 parts are `dataless`, `brctl` has no eviction subcommand on darwin 27.2, and rclone's `protondrive` backend is unconfigured — hashing them would hydrate 9.2 GiB permanently against a 4 GiB floor. §3 also showed the parts are a _different compression_, so they are not the backup of record (§4) |
+| 6 | Is `$(date -u +%Y-%m-%d)` shell-expanded inside a sidecar `args` array?                        | §17; one canary run settles it. Note #2700 must land first, or the canary runs in the wrong timezone                                                                                                                                                                                                                                                |
+| 7 | Does the `palette` lens produce anything worth promoting?                                      | New lens, no Jules history, 0 of 9 recovered patches                                                                                                                                                                                                                                                                                                |
+| 8 | Do extracted file _contents_ from the cloud archive byte-match local?                          | **The last real gap before deleting the local tree.** Structure, stream checksum, hash identity and the full entry diff are all green (§3); an extract-and-compare of 3–5 files is not yet done. Streamed, so it costs no disk (§4 step 5)                                                                                                          |
+
+### Resolved on 2026-11-02
+
+| Question                                                        | Answer                                                                                                                                                                                                            |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Are the OneDrive/Google Drive archives truncated?               | **No.** Both hash to `71c643c2…`, exactly the recorded manifest value; `zstd -dc` exits 0 with `Content_Checksum_flag = 1`, so all ~19.5 GiB of decompressed output was checksum-verified (§3)                    |
+| What is the 1-byte size difference against Proton's parts?      | **Two different compressions 18 h apart**, not a truncation. The cloud archive's first 2 GiB hashes to `b2681d86…`, not `part-aa`'s recorded `4a1cb93f…` (§3)                                                     |
+| Is the archive's _content_ complete relative to the local tree? | **Yes.** Full listing diffed against `find`: 34,243 archive entries vs 34,248 local, with **0 entries missing from the archive** and exactly 5 local-only entries (3 `.DS_Store`, `__pycache__`, one `.pyc`) (§3) |
+| Does the cloud `sessions.json` match local byte-for-byte?       | **Confirmed yes.** `13422e1691db14f7412b74e2a904048e82c275056aff7a45c6157e37fb3e4bf6` on both clouds, matching local, at 276,431,176 bytes                                                                        |
+| Should the incomplete loose cloud `repos/` be re-mirrored?      | **No.** The full `repos/` subtree is inside the verified tarball; the partial loose copies are redundant stubs                                                                                                    |
+| Is archive repair needed (§4 step 3)?                           | **No — struck.** Executing it would have replaced two verified-good archives with a byte-different file from another compression run                                                                              |
 
 ### Next steps, in order
 
@@ -1366,7 +1472,10 @@ advisory, and this document was scanned with gitleaks, trufflehog and
    ([#2697](https://github.com/abhimehro/personal-config/issues/2697), 4 h).
    Never R3 ∥ R4; both edit `check-throttle`.
 3. **R5 pilot** — `ctrld-sync` week 1, only after R2. Then `1B` → `1A`.
-4. **Archive repair** (§4) — gated on disk headroom and explicit approval.
+4. **Extraction spot-check, then reclaim** (§4 step 5) — verify 3–5 extracted
+   files byte-match local, then, with explicit approval, delete the 19 GiB tree
+   and copy the tarball to iCloud as copy #3. Repair is no longer on the list;
+   nothing needs repairing.
 5. **Batch the 23 high-severity Dependabot alerts** across repos into a single
    tracking issue, after R1. Major bumps stay held for human review (#2694,
    #1124).
@@ -1378,19 +1487,46 @@ advisory, and this document was scanned with gitleaks, trufflehog and
 The analysis is reproducible from the export plus these derived artifacts, all
 in the scratch workspace (which is **not** in this repo and never will be):
 
-| Artifact                                         | Purpose                                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `classify_failures.py` → `failure-taxonomy.json` | Rule-ordered failure classifier; rule order is stated in the script docstring                              |
-| `index-origins.ndjson`, `census_origins.py`      | Origin/status census over the 264 MiB index without loading it                                             |
-| `burst-fuzzy-clusters.json`                      | Duplicate clustering, exact and fuzzy                                                                      |
-| `gh-pr-outcomes.json`, `pr-outcomes-joined.json` | Live GitHub outcome pass (113 PRs)                                                                         |
-| `proactive-corpus.json`                          | The 1,158-session local proactive corpus                                                                   |
-| `unrecovered/*.patch` + `manifest.json`          | The 9 recovered patches with per-patch sha256, file lists, hunk/add/del counts, and applicability verdicts |
-| `prompts/personas/*.md`                          | The four recovered persona templates, verbatim                                                             |
-| `secret_prefix_scan.py`                          | Masked-fingerprint prefix sweep — **see the anchoring caveat in §23**                                      |
-| `disk-guard.sh`, `DISK-GUARD.md`                 | Disk-safety governor                                                                                       |
-| `NONMOD-MARKER`                                  | Proves the source export was never modified                                                                |
-| `manifests/`                                     | The three integrity manifests transcribed into §2                                                          |
+| Artifact                                         | Purpose                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `classify_failures.py` → `failure-taxonomy.json` | Rule-ordered failure classifier; rule order is stated in the script docstring                               |
+| `index-origins.ndjson`, `census_origins.py`      | Origin/status census over the 264 MiB index without loading it                                              |
+| `burst-fuzzy-clusters.json`                      | Duplicate clustering, exact and fuzzy                                                                       |
+| `gh-pr-outcomes.json`, `pr-outcomes-joined.json` | Live GitHub outcome pass (113 PRs)                                                                          |
+| `proactive-corpus.json`                          | The 1,158-session local proactive corpus                                                                    |
+| `unrecovered/*.patch` + `manifest.json`          | The 9 recovered patches with per-patch sha256, file lists, hunk/add/del counts, and applicability verdicts  |
+| `prompts/personas/*.md`                          | The four recovered persona templates, verbatim                                                              |
+| `secret_prefix_scan.py`                          | Masked-fingerprint prefix sweep — **see the anchoring caveat in §23**                                       |
+| `disk-guard.sh`, `DISK-GUARD.md`                 | Disk-safety governor                                                                                        |
+| `NONMOD-MARKER`                                  | Proves the source export was never modified                                                                 |
+| `manifests/`                                     | The three integrity manifests transcribed into §2                                                           |
+| `phase6-archive-hashes.out`                      | Whole-file sha256 of both cloud archives, with sizes and UTC timestamps — the evidence for §3               |
+| `phase6-tar-listing.txt`                         | All 34,244 archive entry names, streamed; diffed against `find ~/jules-export` for the zero-omission result |
+| `phase6-onedrive.out`                            | The `zstd -dc \| tar -t \| wc -l` structural pass with per-stage exit codes                                 |
+
+**Commands that reproduce §3 from a clean shell** (all zero-local-disk):
+
+```bash
+# Hash identity against the manifest (71c643c2…)
+for R in onedrive gdrive; do
+  rclone cat "$R:HomeBackup/jules-export/jules-export-20261031.tar.zst" | shasum -a 256
+done
+
+# Structure + completeness: expect 34244 and pipestatus 0 0 0 0
+rclone cat onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst \
+  | zstd -dc | tar -t | wc -l; echo "${PIPESTATUS[*]}"
+
+# Frame header: expect magic 28b52ffd then FHD 0x04 => Content_Checksum_flag=1
+rclone cat --count 16 onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst | xxd
+
+# Proton parts are a different compression: b2681d86… != part-aa's 4a1cb93f…
+rclone cat --count 2147483648 onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst \
+  | shasum -a 256
+
+# sessions.json byte-identity: expect 13422e16… on both clouds and locally
+rclone cat onedrive:HomeBackup/jules-export/sessions.json | shasum -a 256
+shasum -a 256 ~/jules-export/sessions.json
+```
 
 **Disk governor thresholds**, kept because they are the reason the analysis
 completed at all after two host-level disk exhaustion incidents rendered the
@@ -1400,9 +1536,16 @@ machine unusable: `HARD=4096 MiB`, `PAUSE=6144`, `WARN=8192`, `RESERVE=1024`,
 gate <label>`. Headroom is computed as **free
 − floor**, not free.
 
-**Resource discipline actually observed:** ~250–400 MiB read locally out of 19
-GiB (≈1–2%), < 20 MiB written locally, peak RAM < 300 MiB, all intensive jobs
-sequential, network limited to gated probes.
+**Resource discipline actually observed.** Analysis phases: ~250–400 MiB read
+locally out of 19 GiB (≈1–2%), < 20 MiB written locally, peak RAM < 300 MiB, all
+intensive jobs sequential, network limited to gated probes. Phase 6 verification
+added **~30 GiB of streaming network traffic and ~2 MiB of local writes** — five
+full or partial archive passes, all through `rclone cat` into a pipe, so **no
+archive byte ever landed on local disk**. Free space moved 11.5 GiB → 11.2 GiB
+across the whole exercise; every step was gated through `disk-guard.sh gate` and
+none tripped PAUSE or ABORT. The one path that _would_ have violated the
+constraint — hashing Proton's dataless parts — was identified and refused rather
+than attempted (§4).
 
 ---
 
