@@ -437,23 +437,30 @@ append "sudo atsutil databases -remove"
 append ""
 append "# Clear DNS cache"
 
-# Clean up Trunk cache (aggressive caching can accumulate 2+ GB)
+# Trunk cache age-only sweeps are disabled; do not replace them without dry-run
+# gating. Prefer `trunk cache prune` over a hand-rolled find if this returns.
+#
+# Measured 2026-11-03: APFS does not advance a file's or directory's atime on
+# reads -- `ls`, `find` and `cat` all leave it unchanged -- so `-atime +N`
+# selects "not created or modified in N days", not "unused for N days". A
+# heavily used cache entry would have been deleted anyway.
+#
+# The repos sweep was also root-inclusive: `find <dir> -type d` matches <dir>
+# itself, so once the directory's own atime aged past 7 days the command
+# reduced to `rm -rf ~/.cache/trunk/repos`, wiping every project's Trunk state.
+# This repo's `core.hooksPath` resolves to
+# `~/.cache/trunk/repos/<hash>/git-hooks`, so a wipe silently unhooks the
+# repository. Both sweeps swallowed stderr and rc (`2>/dev/null || true`), so a
+# partial deletion still reported success.
+#
+# The du accounting below went with them: it existed only to report space the
+# sweeps freed, and it read an uninitialised TOTAL_FREED, which aborts under
+# `set -u`. Re-armed, the run would have crashed the first time it freed more
+# than 1 MiB. Regression coverage: tests/test_deep_cleaner_trunk_cache.sh
 TRUNK_CACHE_DIR="$HOME/.cache/trunk"
 if [[ -d $TRUNK_CACHE_DIR ]]; then
-	log_info "Cleaning Trunk cache..."
-	TRUNK_BEFORE=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
-
-	# Keep only recent tool binaries; clean out old/unused repos cache
-	find "$TRUNK_CACHE_DIR/tools" -type f -atime +30 -delete 2>/dev/null || true
-	find "$TRUNK_CACHE_DIR/repos" -type d -atime +7 -exec rm -rf {} \; 2>/dev/null || true
-
-	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
-	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))
-
-	if [[ $TRUNK_FREED -gt 1024 ]]; then
-		log_info "Trunk cache cleaned: freed $((TRUNK_FREED / 1024)) MB"
-		TOTAL_FREED=$((TOTAL_FREED + TRUNK_FREED))
-	fi
+	log_info "Trunk tool-binary sweep disabled by containment policy; tools left untouched"
+	log_info "Trunk repo pruning disabled by containment policy; repos left untouched"
 fi
 append "sudo dscacheutil -flushcache"
 
