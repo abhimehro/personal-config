@@ -166,6 +166,19 @@ capture script must call `disk-guard.sh budget` rather than reimplementing this.
    constant or an empty string is worse than one that reports it cannot tell** —
    so pair this with rule 8: make the unparseable case fail closed and say so.
    Cross-reference: `docs/jules-proactive-analysis-2026-11.md` §23 Rule 4.
+   **Rule 9 applies to our own harnesses too, and to exit codes as well as
+   patterns.** `gitleaks` 8.x exits **1** both when leaks are found _and_ when
+   the config fails to parse, so `rc=1 findings=0` is not a verdict — it was
+   read as "the allowlist suppressed it" when the run had actually died on
+   `FTL Failed to load config`. Classify each run from stderr (`FTL` /
+   `unable to load` / `Failed to load config`) plus whether the report file
+   exists, is non-empty, and parses; only then count findings. Two related
+   traps: findings require `--report-format json --report-path` at all, because
+   8.30.1 prints only a three-line summary to stdout; and an unknown flag exits
+   **126** with usage text (`gitleaks git` takes a positional `[repo]`, not
+   `--source`), which is also not a scan result. Encoded permanently in
+   `tests/test_gitleaks_allowlist.sh`, which fails closed on a parse failure or
+   a missing report rather than reporting a clean scan.
 10. **Absence plus a positive signal, never absence alone.** "The item is no
     longer in the dirty set" is weak evidence that a job succeeded; it is
     equally consistent with the sensor not looking at the item. Pair every
