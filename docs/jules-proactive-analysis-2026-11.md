@@ -17,18 +17,18 @@ once Jules stops.
 
 **Key numbers.**
 
-| Metric               | Value                                                                                                                                                                                                                                                                        | §        |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Export analysed      | 19.5 GiB, **7,691 sessions**, 26 repos, captured 2026-10-31, verified untouched                                                                                                                                                                                              | §1       |
-| The burst            | **144 sessions in 15m17s** on 2026-11-01, after ~3 months dormant                                                                                                                                                                                                            | §6       |
-| Proactive PR outcome | **113 opened → 110 still open, 3 merged = 2.7%**, 0 comments, 0 review comments; #2661 and #2666 are the same work landed twice                                                                                                                                              | §6       |
-| Failure mechanism    | 22 FAILED; **91% ended blocked on a human**, not on the code; **59% still held a finished patch**                                                                                                                                                                            | §7       |
-| Duplication          | **35.0% exact / 75.2% fuzzy** in the burst, against a **7.0%** 8-month baseline                                                                                                                                                                                              | §9       |
-| Recovered work       | 9 orphaned patches that never reached GitHub; **7 promoted as 7 scoped draft PRs**                                                                                                                                                                                           | §7.1/§21 |
-| Archive integrity    | **No cloud copy is corrupt.** OneDrive + Google Drive both hash to `71c643c2…`, decompress clean, and their 34,243 entries reconcile with the local tree at **zero omissions**. Proton holds a _different_ compression, 1 byte longer (§3 corrects an earlier wrong verdict) | §3       |
-| Secrets              | **Nothing to rotate.** 199 of 204 prefix hits were unanchored-regex noise; all 9 gitleaks findings are fixtures or negative assertions                                                                                                                                       | §23      |
-| Shipped              | **R1** (base-relative verify + worktree-collision gate) at `ea292c9a`; semantic test-coverage gate and `git fetch` precondition at `724505e6`; #2686 gitleaks pre-commit                                                                                                     | §20      |
-| Remaining build      | R2–R4 = **24 h**, 20 h of it on the R2→R3 critical path; filed as #2695 / #2696 / #2697                                                                                                                                                                                      | §18      |
+| Metric               | Value                                                                                                                                                                                                                                                                                                                    | §        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| Export analysed      | 19.5 GiB, **7,691 sessions**, 26 repos, captured 2026-10-31, verified untouched                                                                                                                                                                                                                                          | §1       |
+| The burst            | **144 sessions in 15m17s** on 2026-11-01, after ~3 months dormant                                                                                                                                                                                                                                                        | §6       |
+| Proactive PR outcome | **113 opened → 110 still open, 3 merged = 2.7%**, 0 comments, 0 review comments; #2661 and #2666 are the same work landed twice                                                                                                                                                                                          | §6       |
+| Failure mechanism    | 22 FAILED; **91% ended blocked on a human**, not on the code; **59% still held a finished patch**                                                                                                                                                                                                                        | §7       |
+| Duplication          | **35.0% exact / 75.2% fuzzy** in the burst, against a **7.0%** 8-month baseline                                                                                                                                                                                                                                          | §9       |
+| Recovered work       | 9 orphaned patches that never reached GitHub; **7 promoted as 7 scoped draft PRs**                                                                                                                                                                                                                                       | §7.1/§21 |
+| Archive integrity    | **No cloud copy is corrupt.** OneDrive + Google Drive both hash to `71c643c2…`, decompress clean, their 34,243 entries reconcile with the local tree at **zero omissions**, and four streamed members **byte-match local**. Proton holds a _different_ compression, 1 byte longer (§3 corrects an earlier wrong verdict) | §3       |
+| Secrets              | **Nothing to rotate.** 199 of 204 prefix hits were unanchored-regex noise; all 9 gitleaks findings are fixtures or negative assertions                                                                                                                                                                                   | §23      |
+| Shipped              | **R1** (base-relative verify + worktree-collision gate) at `ea292c9a`; semantic test-coverage gate and `git fetch` precondition at `724505e6`; #2686 gitleaks pre-commit                                                                                                                                                 | §20      |
+| Remaining build      | R2–R4 = **24 h**, 20 h of it on the R2→R3 critical path; filed as #2695 / #2696 / #2697                                                                                                                                                                                                                                  | §18      |
 
 **Decisions taken.** Seven gaps (G-1…G-7) drive every gate; G-4 and G-5 are
 shipped, the rest are filed as independently assignable issues. Review SLA is
@@ -47,10 +47,10 @@ than being discarded for somebody else's breakage.
 
 1. **Testing lens** — separate rotation slot, or folded into `code-health` with
    a `--focus` flag? The only unanswered _design_ question (§24 row 4).
-2. **Extraction spot-check before deleting the local tree.** §3 proves the cloud
-   archive is complete and checksum-valid; what it does not prove is that
-   extracted file _contents_ byte-match local. 3–5 files, streamed, closes it.
-   Deleting the 19 GiB tree stays gated on that plus explicit approval (§4 step
+2. **Deleting the local 19 GiB tree — approval-gated, evidence-complete.** Every
+   technical precondition is now closed: the extraction spot-check passed and
+   `tmutil listlocalsnapshots /` is empty, so deletion really does reclaim the
+   space (§3). Only explicit approval stands between this and 19 GiB (§4 step
    5).
 3. **Proton verification is blocked, not pending.** All 5 parts are `dataless`,
    `brctl` has no eviction subcommand on this host, and rclone's `protondrive`
@@ -62,9 +62,11 @@ than being discarded for somebody else's breakage.
    schedule (#2700, §17).
 
 **Closed since the last revision:** `sessions.json` is confirmed byte-identical
-on both clouds (`13422e16…`), and archive _repair_ is struck as unnecessary.
-Remaining live questions are tabulated in §24; §25 lists the artifacts behind
-every number above.
+on both clouds (`13422e16…`), archive _repair_ is struck as unnecessary, and the
+**extraction spot-check passed** — four streamed members (`sources.json`,
+`errors.json`, `export_jules.py`, `sessions.json`) byte-match local. Remaining
+live questions are tabulated in §24; §25 lists the artifacts behind every number
+above.
 
 ### Evidence labels
 
@@ -263,37 +265,53 @@ the arithmetic _was_ airtight — the premise underneath it was not.
 - ✅ **`sessions.json` is confirmed byte-identical on both clouds** —
   `13422e1691db14f7412b74e2a904048e82c275056aff7a45c6157e37fb3e4bf6`, matching
   local, at 276,431,176 bytes. This closes the "size match is not content match"
-  open item (§24 row 8).
+  open item (see the Resolved table in §24).
 - ✅ **`repos/` being partially mirrored as loose cloud files costs nothing.**
   OneDrive holds 2.2 KiB / 18 objects and Google Drive 12.2 KiB / 19 objects
   against local's 84 KiB / 10 entries — but the full `repos/` subtree is
   _inside_ the verified tarball, and the entry diff above shows zero omissions.
-- 🟡 **Deleting the local 19 GiB tree (old step 5) is now supported by evidence,
-  though still gated on explicit approval.** What is _proven_: the compressed
-  stream is complete and its content checksum valid, and the tar listing
-  reconciles entry-for-entry against the local tree with zero omissions. What is
-  _not_ proven: an extract-and-byte-compare against the local files. The zstd
-  content checksum covers every decompressed byte, so contents match **if** the
-  archive was made from this tree — and the exact entry reconciliation plus the
-  absence of any newer local file is strong evidence that it was. A single-file
-  extraction spot-check is the cheap way to close the remaining gap before
-  deleting anything, and is now the recommended precondition for step 5.
+- ✅ **Deleting the local 19 GiB tree (old step 5) is fully supported by
+  evidence, and now gated only on explicit approval.** The remaining gap — an
+  extract-and-byte-compare — is closed. Four members were pulled straight out of
+  the compressed cloud stream
+  (`rclone cat | zstd -dc | tar -xO <member> |
+  shasum -a 256`, no disk write)
+  and hashed against the local tree:
+
+  | Member            | sha256[:12] archive | local          | Verdict |
+  | ----------------- | ------------------- | -------------- | ------- |
+  | `sources.json`    | `42b35538058e`      | `42b35538058e` | MATCH   |
+  | `errors.json`     | `87267bba344e`      | `87267bba344e` | MATCH   |
+  | `export_jules.py` | `5fc87fb3fb1c`      | `5fc87fb3fb1c` | MATCH   |
+  | `sessions.json`   | `13422e1691db`      | `13422e1691db` | MATCH   |
+
+  The sample is deliberately spread: two tiny metadata files (943 B, 9,892 B),
+  one source file (94,739 B), and the 276,431,176 B payload. `sessions.json` is
+  the strongest single data point in the whole record — the archive member, the
+  local file, and both loose cloud copies all agree on `13422e1691db…`. What
+  remains before step 5 is **not** verification but approval:
+  `tmutil
+  listlocalsnapshots /` returns empty (so deletion genuinely reclaims
+  the space rather than leaving it held by a snapshot), and the export still
+  shows 0 files newer than `NONMOD-MARKER`.
 
 **Throughput measured, not assumed.** 276 MiB in 12.5 s; 9.2 GiB in ~4 min
 (`00:41:36Z → 00:45:37Z`), i.e. **~37 MiB/s**. The earlier "bandwidth-bound,
 budget hours" caution was over-conservative by roughly an order of magnitude:
 all of the verification above — two 9.2 GiB whole-file hashes, a full
-decompress-and-list, a 2 GiB prefix hash, and two 264 MiB hashes — completed in
-about 20 minutes of wall time.
+decompress-and-list, a 2 GiB prefix hash, two 264 MiB hashes, and four more 9.2
+GiB passes for the extraction spot-check — completed in about 36 minutes of wall
+time.
 
 ## 4. Archive plan and its gate
 
 Revised 2026-11-02 after §3's verification. **The repair this section originally
-described is unnecessary** — nothing is truncated. What remains is verification
-of the third copy, an extraction spot-check, and then the space decisions.
+described is unnecessary** — nothing is truncated. What remains is an optional
+check of the third copy and then the space decisions.
 
-Steps 1 and 2 are **done**; their results are in §3. Every step below streams
-through `rclone cat` and lands nothing on local disk.
+Steps 1, 2 **and the extraction spot-check** are **done**; their results are in
+§3. Every step below streams through `rclone cat` and lands nothing on local
+disk.
 
 1. ~~**Verify Proton's parts.**~~ → **Done in the only sense that matters.** §3
    established the parts are a _different compression_, not a split of the cloud
@@ -315,13 +333,14 @@ through `rclone cat` and lands nothing on local disk.
    already agree on both size **and** hash (§3). What is left is optional:
    confirm Proton's parts against their own per-part manifest, which validates
    run A only.
-5. **Then** remove the local 19 GiB tree — gated on an **extraction
-   spot-check**, `tmutil listlocalsnapshots /`, and **explicit human approval**.
-   Frees 19 GiB (Data volume 99% → ~91%). Not reversible without extracting the
-   archive, which becomes trivial once the space is freed. The spot-check is the
-   one remaining gap in §3's evidence: extract 3–5 known files (including one
-   large `session.json` and one small `settings.json`) from the cloud archive
-   and byte-compare against local. Streaming, so it costs no disk.
+5. **Then** remove the local 19 GiB tree — gated on ~~an **extraction
+   spot-check**~~ (**done 2026-11-02**, all four sampled members MATCH — see
+   §3), ~~`tmutil listlocalsnapshots /`~~ (**done**: the list is empty, so
+   deletion really does reclaim the space rather than leaving it held by a
+   snapshot), and **explicit human approval**. Both technical gates are closed;
+   only approval remains. Frees 19 GiB (Data volume 99% → ~91%). Not reversible
+   without extracting the archive, which becomes trivial once the space is
+   freed.
 6. **Then** copy the verified archive to iCloud as copy #3, into
    `HomeBackup/jules-export/` — **not** Desktop or Documents, whose sync is
    active. iCloud cost 8.59 GiB of 111.6 GiB (7.7%) versus 19 GiB (17%) for the
@@ -1450,18 +1469,18 @@ advisory, and this document was scanned with gitleaks, trufflehog and
 | 5 | Is the Proton part _content_ intact (not just its sizes)?                                      | **Blocked and no longer load-bearing.** All 5 parts are `dataless`, `brctl` has no eviction subcommand on darwin 27.2, and rclone's `protondrive` backend is unconfigured — hashing them would hydrate 9.2 GiB permanently against a 4 GiB floor. §3 also showed the parts are a _different compression_, so they are not the backup of record (§4) |
 | 6 | Is `$(date -u +%Y-%m-%d)` shell-expanded inside a sidecar `args` array?                        | §17; one canary run settles it. Note #2700 must land first, or the canary runs in the wrong timezone                                                                                                                                                                                                                                                |
 | 7 | Does the `palette` lens produce anything worth promoting?                                      | New lens, no Jules history, 0 of 9 recovered patches                                                                                                                                                                                                                                                                                                |
-| 8 | Do extracted file _contents_ from the cloud archive byte-match local?                          | **The last real gap before deleting the local tree.** Structure, stream checksum, hash identity and the full entry diff are all green (§3); an extract-and-compare of 3–5 files is not yet done. Streamed, so it costs no disk (§4 step 5)                                                                                                          |
 
 ### Resolved on 2026-11-02
 
-| Question                                                        | Answer                                                                                                                                                                                                            |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Are the OneDrive/Google Drive archives truncated?               | **No.** Both hash to `71c643c2…`, exactly the recorded manifest value; `zstd -dc` exits 0 with `Content_Checksum_flag = 1`, so all ~19.5 GiB of decompressed output was checksum-verified (§3)                    |
-| What is the 1-byte size difference against Proton's parts?      | **Two different compressions 18 h apart**, not a truncation. The cloud archive's first 2 GiB hashes to `b2681d86…`, not `part-aa`'s recorded `4a1cb93f…` (§3)                                                     |
-| Is the archive's _content_ complete relative to the local tree? | **Yes.** Full listing diffed against `find`: 34,243 archive entries vs 34,248 local, with **0 entries missing from the archive** and exactly 5 local-only entries (3 `.DS_Store`, `__pycache__`, one `.pyc`) (§3) |
-| Does the cloud `sessions.json` match local byte-for-byte?       | **Confirmed yes.** `13422e1691db14f7412b74e2a904048e82c275056aff7a45c6157e37fb3e4bf6` on both clouds, matching local, at 276,431,176 bytes                                                                        |
-| Should the incomplete loose cloud `repos/` be re-mirrored?      | **No.** The full `repos/` subtree is inside the verified tarball; the partial loose copies are redundant stubs                                                                                                    |
-| Is archive repair needed (§4 step 3)?                           | **No — struck.** Executing it would have replaced two verified-good archives with a byte-different file from another compression run                                                                              |
+| Question                                                              | Answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Are the OneDrive/Google Drive archives truncated?                     | **No.** Both hash to `71c643c2…`, exactly the recorded manifest value; `zstd -dc` exits 0 with `Content_Checksum_flag = 1`, so all ~19.5 GiB of decompressed output was checksum-verified (§3)                                                                                                                                                                                                                                                                                                                 |
+| What is the 1-byte size difference against Proton's parts?            | **Two different compressions 18 h apart**, not a truncation. The cloud archive's first 2 GiB hashes to `b2681d86…`, not `part-aa`'s recorded `4a1cb93f…` (§3)                                                                                                                                                                                                                                                                                                                                                  |
+| Is the archive's _content_ complete relative to the local tree?       | **Yes.** Full listing diffed against `find`: 34,243 archive entries vs 34,248 local, with **0 entries missing from the archive** and exactly 5 local-only entries (3 `.DS_Store`, `__pycache__`, one `.pyc`) (§3)                                                                                                                                                                                                                                                                                              |
+| Does the cloud `sessions.json` match local byte-for-byte?             | **Confirmed yes.** `13422e1691db14f7412b74e2a904048e82c275056aff7a45c6157e37fb3e4bf6` on both clouds, matching local, at 276,431,176 bytes                                                                                                                                                                                                                                                                                                                                                                     |
+| Should the incomplete loose cloud `repos/` be re-mirrored?            | **No.** The full `repos/` subtree is inside the verified tarball; the partial loose copies are redundant stubs                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Is archive repair needed (§4 step 3)?                                 | **No — struck.** Executing it would have replaced two verified-good archives with a byte-different file from another compression run                                                                                                                                                                                                                                                                                                                                                                           |
+| Do extracted file _contents_ from the cloud archive byte-match local? | **Yes — the last real gap is closed.** Four members streamed out of the compressed cloud archive (`rclone cat \| zstd -dc \| tar -xO <member> \| shasum -a 256`, no disk write) and hashed against local: `sources.json` `42b35538058e`, `errors.json` `87267bba344e`, `export_jules.py` `5fc87fb3fb1c`, `sessions.json` `13422e1691db` — **all four MATCH** (§3). Deleting the local tree now waits only on explicit approval — `tmutil listlocalsnapshots /` is empty, so the space is genuinely reclaimable |
 
 ### Next steps, in order
 
@@ -1472,10 +1491,10 @@ advisory, and this document was scanned with gitleaks, trufflehog and
    ([#2697](https://github.com/abhimehro/personal-config/issues/2697), 4 h).
    Never R3 ∥ R4; both edit `check-throttle`.
 3. **R5 pilot** — `ctrld-sync` week 1, only after R2. Then `1B` → `1A`.
-4. **Extraction spot-check, then reclaim** (§4 step 5) — verify 3–5 extracted
-   files byte-match local, then, with explicit approval, delete the 19 GiB tree
-   and copy the tarball to iCloud as copy #3. Repair is no longer on the list;
-   nothing needs repairing.
+4. **Reclaim** (§4 step 5) — the extraction spot-check is **done and passed**
+   (four streamed members byte-match local, §3), so with explicit approval:
+   delete the 19 GiB tree and copy the tarball to iCloud as copy #3. Repair is
+   no longer on the list; nothing needs repairing.
 5. **Batch the 23 high-severity Dependabot alerts** across repos into a single
    tracking issue, after R1. Major bumps stay held for human review (#2694,
    #1124).
@@ -1503,6 +1522,7 @@ in the scratch workspace (which is **not** in this repo and never will be):
 | `phase6-archive-hashes.out`                      | Whole-file sha256 of both cloud archives, with sizes and UTC timestamps — the evidence for §3               |
 | `phase6-tar-listing.txt`                         | All 34,244 archive entry names, streamed; diffed against `find ~/jules-export` for the zero-omission result |
 | `phase6-onedrive.out`                            | The `zstd -dc \| tar -t \| wc -l` structural pass with per-stage exit codes                                 |
+| `phase6-extraction-spotcheck.out`                | The four streamed `tar -xO` member hashes against local — the evidence that closes §4 step 5's last gate    |
 
 **Commands that reproduce §3 from a clean shell** (all zero-local-disk):
 
@@ -1526,7 +1546,21 @@ rclone cat --count 2147483648 onedrive:HomeBackup/jules-export/jules-export-2026
 # sessions.json byte-identity: expect 13422e16… on both clouds and locally
 rclone cat onedrive:HomeBackup/jules-export/sessions.json | shasum -a 256
 shasum -a 256 ~/jules-export/sessions.json
+
+# Extraction spot-check: pull one member out of the compressed stream, no disk
+for m in sources.json errors.json export_jules.py sessions.json; do
+  rclone cat onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst \
+    | zstd -dc | tar -xO "$m" | shasum -a 256
+done
 ```
+
+**Operational caveat on that last loop.** `tar` reading from a pipe does **not**
+exit after it has emitted the requested member — it keeps draining stdin — so
+each of the four passes streamed the entire 9.2 GiB. Four members cost ~16 min
+of wall time, not seconds. The loop is still zero-disk, but it must run in the
+background; it exceeded a 900 s foreground timeout on the first attempt. A
+single pass that extracts several members at once is four times cheaper than
+four passes.
 
 **Disk governor thresholds**, kept because they are the reason the analysis
 completed at all after two host-level disk exhaustion incidents rendered the
@@ -1539,13 +1573,14 @@ gate <label>`. Headroom is computed as **free
 **Resource discipline actually observed.** Analysis phases: ~250–400 MiB read
 locally out of 19 GiB (≈1–2%), < 20 MiB written locally, peak RAM < 300 MiB, all
 intensive jobs sequential, network limited to gated probes. Phase 6 verification
-added **~30 GiB of streaming network traffic and ~2 MiB of local writes** — five
-full or partial archive passes, all through `rclone cat` into a pipe, so **no
-archive byte ever landed on local disk**. Free space moved 11.5 GiB → 11.2 GiB
-across the whole exercise; every step was gated through `disk-guard.sh gate` and
-none tripped PAUSE or ABORT. The one path that _would_ have violated the
-constraint — hashing Proton's dataless parts — was identified and refused rather
-than attempted (§4).
+added **~67 GiB of streaming network traffic and ~2 MiB of local writes** — nine
+full or partial archive passes (five for structure/hash/checksum, four for the
+extraction spot-check), all through `rclone cat` into a pipe, so **no archive
+byte ever landed on local disk**. Free space moved 11.5 GiB → 11.0 GiB across
+the whole exercise; every step was gated through `disk-guard.sh gate` and none
+tripped PAUSE or ABORT. The one path that _would_ have violated the constraint —
+hashing Proton's dataless parts — was identified and refused rather than
+attempted (§4).
 
 ---
 
