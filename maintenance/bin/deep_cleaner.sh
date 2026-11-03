@@ -440,10 +440,12 @@ append "# Clear DNS cache"
 # Trunk cache age-only sweeps are disabled; do not replace them without dry-run
 # gating. Prefer `trunk cache prune` over a hand-rolled find if this returns.
 #
-# Measured 2026-11-03: APFS does not advance a file's or directory's atime on
-# reads -- `ls`, `find` and `cat` all leave it unchanged -- so `-atime +N`
-# selects "not created or modified in N days", not "unused for N days". A
-# heavily used cache entry would have been deleted anyway.
+# Measured 2026-11-03: APFS advances an atime on read only when the stored atime
+# is already older than mtime. A naturally stale cache entry has atime == mtime,
+# so `ls`, `find` and `cat` leave it stamped old -- `cat` and `head` on a file
+# backdated that way kept atime at 2020. `-atime +N` therefore selected "not
+# created or modified in N days", not "unused for N days", and a heavily used
+# cache entry would have been deleted anyway.
 #
 # The repos sweep was also root-inclusive: `find <dir> -type d` matches <dir>
 # itself, so once the directory's own atime aged past 7 days the command
@@ -453,10 +455,10 @@ append "# Clear DNS cache"
 # repository. Both sweeps swallowed stderr and rc (`2>/dev/null || true`), so a
 # partial deletion still reported success.
 #
-# The du accounting below went with them: it existed only to report space the
-# sweeps freed, and it read an uninitialised TOTAL_FREED, which aborts under
-# `set -u`. Re-armed, the run would have crashed the first time it freed more
-# than 1 MiB. Regression coverage: tests/test_deep_cleaner_trunk_cache.sh
+# The du accounting that went with them existed only to report space the sweeps
+# freed, and it read an uninitialised TOTAL_FREED, which aborts under `set -u`.
+# Re-armed, the run would have crashed the first time it freed more than 1 MiB.
+# Regression coverage: tests/test_deep_cleaner_trunk_cache.sh
 TRUNK_CACHE_DIR="$HOME/.cache/trunk"
 if [[ -d $TRUNK_CACHE_DIR ]]; then
 	log_info "Trunk tool-binary sweep disabled by containment policy; tools left untouched"

@@ -39,6 +39,31 @@ fail() {
 BACKDATE=202001010000
 REPO_HASHES="aaaabbbbccccddddeeeeffff00001111 bbbbccccddddeeeeffff000011112222"
 
+# Age a tree past both retired predicates, after every write. Split by object
+# kind, because the two sweeps match different things and each platform has its
+# own idea of when a read counts as an access:
+#
+# - Files: age the ATIME only. The tool sweep is `-type f -atime +30`, so atime
+#   is the honest signal. Keeping mtime at today also takes the fixture out of
+#   scope of maintenance/bin/system_cleanup.sh, which runs
+#   `find /tmp -type f -mtime +7 -print -delete`: run_all_tests.sh starts every
+#   test at once, that reap is recursive, and it removed this test's files from a
+#   sibling's temp tree on Linux CI -- 6 files gone, all 10 directories intact,
+#   because it only matches `-type f`.
+# - Directories: age BOTH atime and mtime, so atime is never the odd one out.
+#   Measured 2026-11-03: APFS advances an atime on read only when it is already
+#   older than mtime, so a file whose atime was stamped alone (2020, mtime today)
+#   had its atime refreshed to today by the very walk that counted it -- which
+#   silently disarmed the repos half. Linux is stricter still: its default
+#   relatime refreshes on any read older than 24h, so no stamp survives a
+#   sibling's recursive /tmp walk. That is why backdate_tree is also called
+#   immediately before the control arm, below.
+backdate_tree() {
+	local root="$1"
+	find "$root" -depth -type f -exec touch -a -t "$BACKDATE" {} +
+	find "$root" -depth -type d -exec touch -t "$BACKDATE" {} +
+}
+
 # ---- build an isolated ~/.cache/trunk tree, backdated past both predicates ----
 build_trunk_tree() {
 	local root="$1"
@@ -51,13 +76,7 @@ build_trunk_tree() {
 		printf '#!/bin/sh\necho fake-pre-push\n' >"$root/repos/$hash/git-hooks/pre-push"
 		printf 'trunk-managed\n' >"$root/repos/$hash/plumbing.txt"
 	done
-	# Backdate last, after every write, so nothing bumps the timestamps again.
-	# Both files and directories must be stamped: the tool sweep matches
-	# `-type f` while the repo sweep matches `-type d`, and a fixture that only
-	# backdated files would leave the repo control arm unable to delete anything.
-	# APFS does not advance atime on reads (measured 2026-11-03), and find only
-	# lstats regular files, so the file predicates stay satisfied across the run.
-	find "$root" -depth -exec touch -t "$BACKDATE" {} +
+	backdate_tree "$root"
 }
 
 # ---- mock bin ----
@@ -194,10 +213,13 @@ else
 	fail "a Trunk cache root was removed"
 fi
 
+# A missing file has two possible causes, and the run log separates them: the
+# containment marker above is emitted from inside the same block, so a marker
+# plus lost files means something outside this script removed them.
 if [[ $(count_files "$TRUNK") == "$EXPECTED_FILES" ]]; then
 	pass "file count under the Trunk cache unchanged ($EXPECTED_FILES)"
 else
-	fail "file count under the Trunk cache changed: was $EXPECTED_FILES, now $(count_files "$TRUNK")"
+	fail "file count under the Trunk cache changed: was $EXPECTED_FILES, now $(count_files "$TRUNK") (re-armed sweep, or an external cleaner -- see backdate_tree above)"
 fi
 
 if [[ $(count_dirs "$TRUNK") == "$EXPECTED_DIRS" ]]; then
@@ -221,6 +243,15 @@ done
 # ---------------------------------------------------------------------------
 CONTROL="$TEST_DIR/control"
 build_trunk_tree "$CONTROL"
+
+# Re-stamp immediately before the predicates run. A backdated tree is only stale
+# until something reads it: on Linux the default relatime refreshes an atime on
+# the first readdir once it is past 24h, so a sibling test's recursive /tmp walk
+# (system_cleanup.sh's reap) can refresh these directories between building and
+# sweeping, and the control then reports "toothless" for a fixture problem
+# rather than a real one. Stamping last makes the control's precondition true by
+# construction on every platform.
+backdate_tree "$CONTROL"
 
 # Retired exactly as they were, including the swallowed stderr and exit status.
 find "$CONTROL/tools" -type f -atime +30 -delete 2>/dev/null || true
