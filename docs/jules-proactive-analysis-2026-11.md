@@ -363,17 +363,38 @@ disk.
    exist yet. iCloud has ample room — `brctl quota` reports **121,130,689,460
    bytes (~112.8 GiB) remaining** — and the cost is 8.59 GiB (7.7%) versus 19
    GiB (17%) for the tree. **But the write stages locally first**:
-   `disk-guard.sh budget 9225417876` returns **REFUSED**, leaving 4,333 MiB
-   against a 5,120 MiB requirement (`HARD 4096 + RESERVE 1024`). File Provider
-   _does_ evict afterwards (only 31 MiB of the whole CloudDocs tree is resident;
-   10 of 40 top-level entries are `compressed,dataless`), but the transient peak
-   breaches the floor and `brctl` has no eviction subcommand to force it down if
-   the upload stalls. **Two independently verified cloud copies already
-   constitute a valid backup; iCloud is copy #3, not the safety net** — so this
-   is added redundancy, not a gap. Clean fix: rclone's `iclouddrive` backend
-   streams in chunks and never stages the whole object. It ships in v1.74.2 but
-   is **unconfigured**, and configuring it needs interactive Apple ID + 2FA — a
-   human action.
+   `disk-guard.sh budget 9225417876` returns **REFUSED**. The margin got worse
+   while it was being measured — first 4,333 MiB against a 5,120 MiB requirement
+   (`HARD 4096 + RESERVE 1024`), then **282 MiB** as volume avail fell 11,587 →
+   9,083 MiB (Data volume 96% used). File Provider _does_ evict afterwards (only
+   31 MiB of the whole CloudDocs tree is resident; 10 of 40 top-level entries
+   are `compressed,dataless`), but the transient peak breaches the floor and
+   `brctl` has no eviction subcommand to force it down if the upload stalls.
+   **Two independently verified cloud copies already constitute a valid backup;
+   iCloud is copy #3, not the safety net** — so this is added redundancy, not a
+   gap.
+
+   **Two candidate unblocks, neither yet taken:**
+
+   - **Reclaim Tier A (15.9 GiB of purely rebuildable caches)** — Trunk 6.4 GiB,
+     six Raycast `ai.db` backups 7.1 GiB, uv 1.5 GiB, one stray `node_modules`
+     889 MiB. That takes avail to ~26.7 GiB, after which the same write leaves
+     **18,274 MiB and passes the gate** through the plain filesystem path, with
+     no rclone and no 2FA. Ranked menu in `disk-survey-2026-11-03.md`.
+   - **rclone's `iclouddrive` backend**, which talks to the iCloud web API
+     rather than File Provider. It ships in v1.74.2 but is **unconfigured**, and
+     configuring it needs interactive Apple ID + 2FA — a human action. **Whether
+     it actually streams is UNVERIFIED**: rclone's docs state no maximum object
+     size, no chunk size and no streaming guarantee, and the backend exposes no
+     chunking option (confirmed by enumerating its config options in v1.74.2 —
+     `service`, `apple_id`, `password`, `trust_token`, `cookies`, `client_id`,
+     `encoding`, `description` and nothing else). An earlier revision of this
+     step asserted it "streams in chunks and never stages the whole object";
+     that was an unverified claim presented as fact and is retracted here.
+     `ICLOUD-RUNBOOK.md` therefore leads with a 500 MiB canary that samples `df`
+     every 2 s during an `rclone rcat` from `/dev/zero` — zero local disk for
+     the payload — and prints STREAMS / PARTIAL STAGING / STAGES LOCALLY from
+     the peak dip, then verifies the canary by content hash rather than size.
 6. **Verify copy #3 with a streaming sha256 against `71c643c2…`.** A matching
    _size_ does not count: §23 Rule 3 requires byte evidence — a hash, a
    checksum, or a listing — before any `MATCHED` verdict.
