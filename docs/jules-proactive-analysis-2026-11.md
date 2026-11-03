@@ -43,46 +43,39 @@ highest-value class. Verification is **base-relative**: a check that also fails
 on base is `PRE_EXISTING_FAILURE` and the candidate is still promoted, rather
 than being discarded for somebody else's breakage.
 
-**Open items.**
+**Open items.** Items 1–3 **closed 2026-11-03**; only item 4 is still open. The
+original text of each is retained below its resolution because the reasoning
+that changed is the useful part.
 
-1. **iCloud copy #3 is blocked on local staging — but the unblock is a cache
-   reclaim, not a cloud workaround.** The order is copy #3 → hash → delete →
-   archive, because three verified copies must exist before anything is removed.
-   But writing the 8.59 GiB tarball into
-   `~/Library/Mobile Documents/com~apple~CloudDocs/` stages it **locally
-   first**, and `disk-guard.sh budget 9225417876` returns **REFUSED** — measured
-   three times as avail swung, leaving 4,333 → 282 → **829 MiB** against a 5,120
-   MiB requirement (`HARD 4096 + RESERVE 1024`). iCloud itself has room —
-   121,130,689,460 bytes (~112.8 GiB) of quota remaining — and File Provider
-   _does_ evict afterwards (only 31 MiB of the whole tree is resident; 10 of 40
-   top-level entries are `compressed,dataless`). The problem is the transient
-   peak, and `brctl` offers no way to force eviction if the upload stalls.
-   **Cheapest unblock: reclaim Tier A, 15.9 GiB of purely rebuildable caches**
-   (Trunk 6.2, five Raycast backup sets 7.1, uv 1.5, a stray `node_modules`
-   0.9). The shortfall is only 4,291 MiB, so that is a 3.7× margin and the same
-   write then passes through the **plain filesystem path — no rclone, no Apple
-   2FA**. Ranked read-only menu in `disk-survey-2026-11-03.md`. rclone's
-   `iclouddrive` backend is the _fallback_, and **its streaming behaviour is
-   UNVERIFIED** — an earlier revision of this item asserted it "streams in
-   chunks and never stages the whole object"; that claim is retracted, because
-   enumerating the backend's config options in v1.74.2 shows no chunking option
-   and rclone's docs state no maximum object size, no chunk size and no
-   streaming guarantee. `ICLOUD-RUNBOOK.md` therefore leads with a 500 MiB
-   canary that settles it by measurement. Target dir confirmed: `HomeBackup/` at
-   the CloudDocs root (it does not exist yet), **not** Desktop or Documents —
-   `brctl status` reports `Desktop & Documents: current=YES`, so their sync is
-   live.
-2. **Deleting the local 19 GiB tree — approval-gated, evidence-complete, but now
-   sequenced _after_ copy #3.** Every technical precondition is closed: the
-   extraction spot-check passed and `tmutil listlocalsnapshots /` is empty, so
-   deletion really does reclaim the space (§3). It waits on copy #3 hashing
-   clean, then a re-check of `NONMOD-MARKER` and `tmutil` **immediately before**
-   the delete, then explicit approval (§4 step 7).
-3. **Proton verification is blocked, not pending.** All 5 parts are `dataless`,
-   `brctl` has no eviction subcommand on this host, and rclone's `protondrive`
-   backend is unconfigured — so hashing them would hydrate 9.2 GiB permanently
-   against a 4 GiB floor. It is also **unnecessary**: the parts are a different
-   compression, not the backup of record (§4).
+1. ✅ **iCloud copy #3 — done, by a route this item argued against.** The plan
+   was: reclaim Tier A, then write the 8.59 GiB tarball into CloudDocs through
+   the **plain filesystem path**. What actually ran was **Variant B —
+   `rclone
+   copy gdrive:HomeBackup/jules-export/… → CloudDocs`**, chosen after
+   the filesystem path was costed properly and found to be worse on every axis:
+   half the transient, **14.2 GiB of aftermath instead of 5.4**, and no 17.2 GiB
+   resident blob that could not be evicted on command. Variant B reads the
+   source **through the remote**, so the local `dataless` Google Drive
+   placeholder never hydrates — proved, not assumed: `resident_blocks=0` on the
+   source after the copy. Result: 281 s, `rclone_rc=0`, and copy #3 verified by
+   four content checks (§4). Upload to iCloud then confirmed by
+   `fileproviderctl` (`isUploaded=1`) plus a server etag advance, and the local
+   resident copy evicted by hand. **Two corrections this item got wrong:** the
+   budget for such a copy is **2×** the file size, not 1×, because a `dataless`
+   source costs hydrate(source) + stage(dest); and **`~/.local/share/uv` is not
+   a cache** — real Tier A was **~13.3 GiB, not the 15.9 GiB** quoted here (see
+   §4).
+2. ✅ **The local tree — deleted 2026-11-03, +19,941 MiB.** `~/jules-export`
+   (19,924 MiB, 34,249 entries) removed through a fail-closed gate that was
+   dry-run first with `rm` suppressed and four injected aborts. Data volume
+   **96% → 84%**. Archive completeness re-verified from the existing listing
+   with no new 8.6 GiB read: the tree held **exactly 5 entries** the archive
+   lacks — three `.DS_Store`, `__pycache__/`, and one `.pyc` whose source is in
+   the archive — and **0** the other way.
+3. ⏸ **Proton verification — parked at low priority (#2702), user decision.**
+   The blocker below is real but the work is not wanted: the parts are a
+   _different compression_, not the backup of record, so they are left alone
+   rather than repaired or hashed.
 4. **`canary-stage` timezone** — the disposable cron canary hardcodes UTC while
    the pilot sidecars run `America/Chicago`, so it does not yet test the pilot
    schedule (#2700, §17).
@@ -341,9 +334,11 @@ Revised 2026-11-02 after §3's verification. **The repair this section originall
 described is unnecessary** — nothing is truncated. What remains is an optional
 check of the third copy and then the space decisions.
 
-Steps 1, 2 **and the extraction spot-check** are **done**; their results are in
-§3. Every step below streams through `rclone cat` and lands nothing on local
-disk.
+**CLOSED 2026-11-03.** Every step below is now resolved: 1 optional-and-parked,
+2 done, 3 struck, 4 done, 5–8 done. Steps 1–2 and the extraction spot-check
+stream through `rclone cat` and land nothing on local disk; steps 5–8 did not —
+they moved 8.59 GiB into CloudDocs and then deleted the 19.9 GiB tree, which is
+why they carry the `disk-guard.sh` gates described in §25.
 
 1. ~~**Verify Proton's parts.**~~ → **Done in the only sense that matters.** §3
    established the parts are a _different compression_, not a split of the cloud
@@ -361,13 +356,39 @@ disk.
    _replaced two verified-good archives with a byte-different file_ built from a
    different compression run — actively destroying a known-good state while
    believing it was a fix.
-4. **Re-verify all three clouds — reduced in scope.** OneDrive and Google Drive
-   already agree on both size **and** hash (§3). What is left is optional:
-   confirm Proton's parts against their own per-part manifest, which validates
-   run A only.
-5. ⛔ **Copy the verified archive to iCloud as copy #3 — BLOCKED on local
-   staging.** (Was step 6; **moved first** so that three verified copies exist
-   before anything is deleted.) Target `HomeBackup/jules-export/` at the
+4. ✅ **Re-verify all three clouds — DONE for the two that count.** OneDrive and
+   Google Drive were re-verified end-to-end rather than trusted from §3: a fresh
+   streamed structural pass over OneDrive
+   (`rclone cat … | zstd -dc | tar -t | wc -l` → **34,244**, every stage rc=0)
+   and a full whole-file `sha256` of **both** archives, each returning
+   `71c643c2…` at exactly 9,225,417,876 bytes (`phase6-archive-hashes.out`).
+   iCloud then became the verified third copy at step 5–6. What is left is
+   optional and **parked**: confirming Proton's parts against their own per-part
+   manifest, which validates run A only (#2702, low priority).
+5. ✅ **Copy the verified archive to iCloud as copy #3 — DONE 2026-11-03, via
+   Variant B rather than the path this item was blocked on.**
+
+   **Resolution.** The block below was dissolved, not forced. Tier A was
+   reclaimed (+19.5 GiB) _and_ the copy ran as
+   `rclone copy
+   gdrive:HomeBackup/jules-export/jules-export-20261031.tar.zst → CloudDocs`
+   instead of the plain filesystem path. **Variant B reads the source _through
+   the remote_, so the local `dataless` Google Drive placeholder never
+   hydrates** — half the transient, **14.2 GiB of aftermath instead of 5.4**,
+   and no 17.2 GiB resident blob that could not be evicted on command. Executed
+   in 281 s, `rclone_rc=0`, 14 monitor samples with min headroom 15,192 MiB
+   against an 8,192 MiB trigger; the source still read `resident_blocks=0`
+   afterwards, which **proves** the central claim rather than assuming it.
+   iCloud upload then confirmed by two sensors (§23 Rule 5):
+   `fileproviderctl evaluate` `isUploaded=1` with a 45-byte `versionIdentifier`
+   whose server etag had advanced `2onkl → 2onkq`, plus absence from
+   `brctl status`'s unclean set (stable across three reads 20 s apart). The
+   `iclouddrive` backend and its 500 MiB canary were never needed and stay
+   banked in `ICLOUD-RUNBOOK.md`.
+
+   **Original blocked-state analysis, retained because the reasoning is what
+   generalises.** (Was step 6; **moved first** so that three verified copies
+   exist before anything is deleted.) Target `HomeBackup/jules-export/` at the
    CloudDocs root — **not** Desktop or Documents, whose sync `brctl status`
    confirms is live (`Desktop & Documents: current=YES`); `HomeBackup/` does not
    exist yet. iCloud has ample room — `brctl quota` reports **121,130,689,460
@@ -392,19 +413,19 @@ disk.
      inferred from the total — an earlier draft said six sets of 1,269 MiB,
      which was the total divided by a guessed count; they are 1,423 MiB each,
      one every ~12 h, so this is a **rolling window that refills** and buys the
-     write rather than permanent headroom), uv 1.5 GiB, one stray `node_modules`
-     889 MiB, `~/Library/Caches` 290 MiB, Homebrew cache 44 MiB. Re-measured at
-     01:30 with avail 9,629 MiB, the write is still REFUSED leaving **829 MiB**
-     (third measurement of the same refused write: 4,333 → 282 → 829 MiB,
-     swinging 4 GiB in both directions — so the gate belongs immediately before
-     the write, not at the start of the run). The shortfall is **4,291 MiB** and
-     Tier A offers 15.9 GiB, a 3.7× margin that survives the whole observed
-     churn range; projected post-reclaim the same write leaves **~17,112 MiB and
-     passes the gate** through the plain filesystem path, with no rclone and no
-     2FA. **Ordering constraint:** the next `trunk check` re-downloads up to 6.2
-     GiB into `~/.cache/trunk`, so Tier A is a loan against the next lint run —
-     clear it and do the write before running Trunk again. Ranked menu in
-     `disk-survey-2026-11-03.md`.
+     write rather than permanent headroom), ~~uv 1.5 GiB~~, one stray
+     `node_modules` 889 MiB, `~/Library/Caches` 290 MiB, Homebrew cache 44 MiB.
+     Re-measured at 01:30 with avail 9,629 MiB, the write is still REFUSED
+     leaving **829 MiB** (third measurement of the same refused write: 4,333 →
+     282 → 829 MiB, swinging 4 GiB in both directions — so the gate belongs
+     immediately before the write, not at the start of the run). The shortfall
+     is **4,291 MiB** and Tier A offers 15.9 GiB, a 3.7× margin that survives
+     the whole observed churn range; projected post-reclaim the same write
+     leaves **~17,112 MiB and passes the gate** through the plain filesystem
+     path, with no rclone and no 2FA. **Ordering constraint:** the next
+     `trunk check` re-downloads up to 6.2 GiB into `~/.cache/trunk`, so Tier A
+     is a loan against the next lint run — clear it and do the write before
+     running Trunk again. Ranked menu in `disk-survey-2026-11-03.md`.
    - **rclone's `iclouddrive` backend**, which talks to the iCloud web API
      rather than File Provider. It ships in v1.74.2 but is **unconfigured**, and
      configuring it needs interactive Apple ID + 2FA — a human action. **Whether
@@ -419,21 +440,69 @@ disk.
      every 2 s during an `rclone rcat` from `/dev/zero` — zero local disk for
      the payload — and prints STREAMS / PARTIAL STAGING / STAGES LOCALLY from
      the peak dip, then verifies the canary by content hash rather than size.
-6. **Verify copy #3 with a streaming sha256 against `71c643c2…`.** A matching
-   _size_ does not count: §23 Rule 3 requires byte evidence — a hash, a
-   checksum, or a listing — before any `MATCHED` verdict.
-7. **Only then** remove the local 19 GiB tree — gated on copy #3 hashing clean,
-   a re-check of `NONMOD-MARKER` and `tmutil listlocalsnapshots /` **immediately
-   before** the delete rather than at the start of the run, and **explicit human
-   approval**. The earlier technical gates are already closed: the extraction
-   spot-check passed with all four sampled members MATCH (§3), and the snapshot
-   list is empty, so deletion really does reclaim the space instead of leaving
-   it held by a snapshot. Frees 19 GiB; the Data volume measured **95% used / 11
-   GiB free** immediately before this step was written. Not reversible without
-   extracting the archive, which becomes trivial once the space is freed.
-8. **Archive the tarball, not the tree.** ~34,000 small files through File
-   Provider is slow and stall-prone versus one resumable 8.59 GiB object that
-   already ships SHA-256 and `.sizes`.
+6. ✅ **Verify copy #3 by content — DONE 2026-11-03, `VERDICT=VERIFIED`.** Four
+   independent content checks against the 8.59 GiB CloudDocs copy
+   (`phase6-step4-verify.sh`): `shasum -a 256` = `71c643c2…` **MATCH**; `md5 -q`
+   = `37fda7d5e07ffd405798d920b4ce51e3` **MATCH** against Google Drive's own
+   server-side metadata — an oracle this workflow does not control, which is why
+   it is the strongest of the four;
+   `rclone check --checksum --one-way
+   gdrive:HomeBackup/jules-export → CloudDocs`
+   **rc=0**; size **MATCH**. Plus two proofs: the Google Drive source
+   placeholder still read `resident_blocks=0` afterwards (**Variant B's central
+   claim, measured not assumed**), and
+   `find ~/jules-export -newer NONMOD-MARKER` returned **0** with
+   `tmutil listlocalsnapshots /` empty. A matching _size_ alone would not have
+   counted: §23 Rule 3 requires byte evidence — a hash, a checksum, or a listing
+   — before any `MATCHED` verdict.
+
+   **The cost of this step is the reason step 7 did not re-hash.** Checks 1, 2
+   and 4 each read the whole 8.59 GiB object: three full reads in sequence drove
+   swap used 2,866 → 3,740 MiB and swap free to 355–387 MiB against the 512 MiB
+   floor, tripping **PAUSE** and holding step 7 for ~40 minutes. See §25 for the
+   correction this forced (the earlier claim that no step tripped PAUSE was
+   false) and the **one read, many digests** rule that replaces it: `tee` a
+   single stream into `shasum -a 256` and `md5` together instead of reading
+   twice.
+7. ✅ **Remove the local 19 GiB tree — DONE 2026-11-03, `RESULT=DELETED`,
+   rc=0.** Executed through `phase6-step5-delete.sh`, a fail-closed gate that
+   was **dry-run first** with `rm` textually suppressed (reaching
+   `RESULT=DRYRUN_OK` with the tree intact) and then against **four injected
+   aborts** — bad mtime, bad size, symlinked tree, missing tree — each of which
+   exited non-zero _before_ the listing write and _before_ `rm`. 6/6 harness
+   PASS. All six preconditions ran in the approved order: PAUSE cleared
+   (`disk-guard.sh check` rc=0, then a second clean read minutes later to prove
+   it was stable and not bouncing); copy #3 confirmed **off this machine** by
+   two sensors — `fileproviderctl evaluate` `isUploaded=1` / `isUploading=0`
+   with a 45-byte `versionIdentifier` whose server etag had advanced
+   `2onkl → 2onkq`, plus absence from `brctl status`'s unclean set (§23 Rule 5:
+   absence _plus_ a positive signal, never absence alone); **no re-hash**,
+   `stat` size + mtime unchanged since step 6 being enough to answer "did
+   anything touch it"; a zstd-compressed listing of the tree written to scratch
+   first as the record of exactly what went (258,166 bytes, 34,249 entries);
+   then `NONMOD-MARKER` re-checked at **0** newer files and snapshots re-checked
+   **empty** _immediately before_ `rm`, not at the start of the run.
+
+   **Outcome:** `avail` 14,752 → **34,693 MiB** (+19,941), Data volume **96% →
+   84%**, headroom 30,597 MiB. Archive completeness was re-verified against the
+   pre-existing `phase6-tar-listing.txt` with **no new 8.6 GiB read** (§25
+   Wiring rule 0 — read before you measure): the tree held exactly **5** entries
+   the archive lacks (three `.DS_Store`, `__pycache__/`, one derivable `.pyc`)
+   and **0** the other way. All three clouds re-listed afterwards at exactly
+   9,225,417,876 bytes. `~/jules-export` no longer exists; recovery now means
+   extracting an archive, which the freed space makes trivial.
+8. ✅ **Archive the tarball, not the tree — DONE; there was nothing left to
+   do.** The reasoning held and the work was already finished: ~34,000 small
+   files through File Provider is slow and stall-prone versus one resumable 8.59
+   GiB object that already ships SHA-256 and `.sizes`. The tarball was built
+   2026-10-31, verified by streaming extraction spot-check (four members
+   byte-match, §3), and now sits in **three** clouds at `sha256=71c643c2…` —
+   OneDrive and Google Drive (both re-hashed end-to-end,
+   `phase6-archive-hashes.out`) plus iCloud as copy #3. Step 7 therefore
+   archived nothing new; it removed the redundant local tree and left the
+   tarball as the single archival unit. Proton's 5 parts are a _different
+   compression_ of the same source, not a fourth copy of this object, and stay
+   parked (#2702).
 
 ### Blocker: Proton cannot be streamed as currently configured
 
@@ -1535,6 +1604,39 @@ about _structure_, and structure requires enumeration. Same rule, new domain:
 the failure mode survived being written down because the rule was filed under
 "integrity verdicts" and the survey did not look like one.
 
+**Rule 4 — validate a parser against a raw byte dump before trusting it.** Any
+new pattern that extracts a value out of a tool's output gets checked against
+`xxd` or `od -c` on the **actual bytes a pipe carries**, not against what the
+value looked like in a terminal. Three separate errors in this record came from
+reading rendered output and typing a pattern from it:
+
+| Pattern typed from rendered output              | What the bytes actually were                                                             | Cost                                                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Raycast `last_backup` equals a set dir name     | `1793676621` (seconds) vs `1793676621455` (milliseconds)                                 | deleted all 5 backup sets instead of 4 — 1,424 MiB beyond intent, unrecoverable               |
+| `~/.local/share/uv` matches "uv cache"          | `uv cache dir` is `~/.cache/uv`; that path holds 9 managed CPythons + 4 installed CLIs   | would have silently gutted the AST gate's fail-closed tier                                    |
+| `grep -q 'sig:<file-pending>'`                  | `sig:\033[0;1;30m<file-pending>\033[0m` — `brctl status` colourises **even into a pipe** | a `sig_pending` column that read a constant `no` on every row, feeding a delete authorisation |
+| `sed 's/.*free = \([0-9]*\)\.\?[0-9]*M.*/\1/p'` | BSD sed BRE has **no `\?`**                                                              | the swap guard was dead for an entire 8.6 GiB copy                                            |
+
+The third and fourth are the dangerous shape: `NO_COLOR=1`, `TERM=dumb`,
+`CLICOLOR=0` and `CLICOLOR_FORCE=0` all fail to suppress `brctl`'s escapes, and
+the sed failure returned **empty**, which a `[ -n "$S" ] && …` test then read as
+"no problem". **A parser that silently returns a constant or an empty string is
+worse than one that reports it cannot tell** — so pair this rule with the
+fail-closed requirement in `DISK-GUARD.md` Wiring rule 8: an unreadable sensor
+must abort, and every guard on a long-running job gets an abort-path test with a
+mocked worker before the job is trusted.
+
+**Rule 5 — absence plus a positive signal, never absence alone.** "It is no
+longer listed" is weak evidence: it is also what a changed output shape, an
+unreported container, or a dead sensor looks like. The iCloud upload verdict
+that authorised deleting the 19.9 GiB tree was confirmed only because a second,
+positive sensor agreed — `fileproviderctl evaluate` returned `isUploaded=1` and
+a 45-byte `versionIdentifier` whose embedded server etag had **advanced** from
+the `2onkl` seen while the upload was in flight to `2onkq`. Absence said "not
+dirty"; the etag said "the server issued a new version". Only the second one is
+about the thing being asked. This is Rule 3 one level up — the cheap indirect
+signal may _open_ a conclusion, never _close_ one.
+
 ### The prefix sweep
 
 375 files scanned, 373 hits. The scanner's own verdicts: **LOOKS-REAL = 204**,
@@ -1635,24 +1737,35 @@ advisory, and this document was scanned with gitleaks, trufflehog and
 The analysis is reproducible from the export plus these derived artifacts, all
 in the scratch workspace (which is **not** in this repo and never will be):
 
-| Artifact                                         | Purpose                                                                                                     |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `classify_failures.py` → `failure-taxonomy.json` | Rule-ordered failure classifier; rule order is stated in the script docstring                               |
-| `index-origins.ndjson`, `census_origins.py`      | Origin/status census over the 264 MiB index without loading it                                              |
-| `burst-fuzzy-clusters.json`                      | Duplicate clustering, exact and fuzzy                                                                       |
-| `gh-pr-outcomes.json`, `pr-outcomes-joined.json` | Live GitHub outcome pass (113 PRs)                                                                          |
-| `proactive-corpus.json`                          | The 1,158-session local proactive corpus                                                                    |
-| `unrecovered/*.patch` + `manifest.json`          | The 9 recovered patches with per-patch sha256, file lists, hunk/add/del counts, and applicability verdicts  |
-| `prompts/personas/*.md`                          | The four recovered persona templates, verbatim                                                              |
-| `secret_prefix_scan.py`                          | Masked-fingerprint prefix sweep — **see the anchoring caveat in §23**                                       |
-| `disk-guard.sh`, `DISK-GUARD.md`                 | Disk-safety governor                                                                                        |
-| `NONMOD-MARKER`                                  | Proves the source export was never modified                                                                 |
-| `manifests/`                                     | The three integrity manifests transcribed into §2                                                           |
-| `phase6-archive-hashes.out`                      | Whole-file sha256 of both cloud archives, with sizes and UTC timestamps — the evidence for §3               |
-| `phase6-tar-listing.txt`                         | All 34,244 archive entry names, streamed; diffed against `find ~/jules-export` for the zero-omission result |
-| `phase6-onedrive.out`                            | The `zstd -dc \| tar -t \| wc -l` structural pass with per-stage exit codes                                 |
-| `phase6-extraction-spotcheck.out`                | The four streamed `tar -xO` member hashes against local — the evidence that closes §4 step 7's last gate    |
-| `capture-2-prune-manifest.ndjson`                | The 133 `capture-2/` session captures removed on 2026-11-03 (10.4 MiB), one line per entry with size        |
+| Artifact                                              | Purpose                                                                                                                                                                                    |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `classify_failures.py` → `failure-taxonomy.json`      | Rule-ordered failure classifier; rule order is stated in the script docstring                                                                                                              |
+| `index-origins.ndjson`, `census_origins.py`           | Origin/status census over the 264 MiB index without loading it                                                                                                                             |
+| `burst-fuzzy-clusters.json`                           | Duplicate clustering, exact and fuzzy                                                                                                                                                      |
+| `gh-pr-outcomes.json`, `pr-outcomes-joined.json`      | Live GitHub outcome pass (113 PRs)                                                                                                                                                         |
+| `proactive-corpus.json`                               | The 1,158-session local proactive corpus                                                                                                                                                   |
+| `unrecovered/*.patch` + `manifest.json`               | The 9 recovered patches with per-patch sha256, file lists, hunk/add/del counts, and applicability verdicts                                                                                 |
+| `prompts/personas/*.md`                               | The four recovered persona templates, verbatim                                                                                                                                             |
+| `secret_prefix_scan.py`                               | Masked-fingerprint prefix sweep — **see the anchoring caveat in §23**                                                                                                                      |
+| `disk-guard.sh`, `DISK-GUARD.md`                      | Disk-safety governor — **promoted into the repo 2026-11-03** as `scripts/disk-guard.sh`, `docs/DISK-GUARD.md` and `tests/test_disk_guard.sh`; the scratch copy is now the older of the two |
+| `NONMOD-MARKER`                                       | Proves the source export was never modified                                                                                                                                                |
+| `manifests/`                                          | The three integrity manifests transcribed into §2                                                                                                                                          |
+| `phase6-archive-hashes.out`                           | Whole-file sha256 of both cloud archives, with sizes and UTC timestamps — the evidence for §3                                                                                              |
+| `phase6-tar-listing.txt`                              | All 34,244 archive entry names, streamed; diffed against `find ~/jules-export` for the zero-omission result                                                                                |
+| `phase6-onedrive.out`                                 | The `zstd -dc \| tar -t \| wc -l` structural pass with per-stage exit codes                                                                                                                |
+| `phase6-extraction-spotcheck.out`                     | The four streamed `tar -xO` member hashes against local — the evidence that closes §4 step 7's last gate                                                                                   |
+| `capture-2-prune-manifest.ndjson`                     | The 133 `capture-2/` session captures removed on 2026-11-03 (10.4 MiB), one line per entry with size                                                                                       |
+| `disk-survey-2026-11-03.md` / `.tsv`                  | The read-only top-consumer survey behind the Tier A/B/C menu — **read with the uv and Raycast corrections in §4**                                                                          |
+| `tier-a-reclaim-manifest.tsv`, `reclaim-tier-a.sh`    | The 19.5 GiB reclaim as executed, per item                                                                                                                                                 |
+| `ICLOUD-RUNBOOK.md`, `icloud-canary.sh`               | The banked `rclone iclouddrive` route: config steps, 500 MiB streaming canary, gotchas. Not taken — Variant B won                                                                          |
+| `phase6-step3-copy.sh`, `phase6-step3-monitor.tsv`    | Variant B copy under a live guard: 14 samples, min headroom 15,192 MiB against an 8,192 trigger. **The TSV's `swapfree_miib=NA` column is the evidence for the dead-sensor finding**       |
+| `phase6-step4-verify.sh`                              | The four content checks + two source-untouched proofs behind `VERDICT=VERIFIED`                                                                                                            |
+| `phase6-icloud-upload-watch.sh`                       | ANSI-stripping upload poller with three fail-closed self-tests                                                                                                                             |
+| `phase6-icloud-upload-watch.run1-BAD-sig-pending.tsv` | Run 1, kept deliberately: 12 rows of `sig_pending=no`, every one false (§23 Rule 4)                                                                                                        |
+| `phase6-step5-delete.sh`                              | The fail-closed delete gate — path safety, two upload sensors, `stat`-not-rehash, listing, marker + snapshots                                                                              |
+| `phase6-step5-tree-listing.tsv.zst`                   | **The record of exactly what was deleted**: 34,249 entries (path, type, size, mtime), 258 KiB at `zstd -19`                                                                                |
+| `phase6-step5-precopy-findings.md`                    | Findings 3–7, errors 1–3b, and the step-5 result ledger                                                                                                                                    |
+| `hydration-test.sh`                                   | Per-file hydration measurement — the reason Variant B was chosen over a `df` that swings 4 GiB                                                                                             |
 
 **What survived the `capture-2/` prune, and why.** `capture-2/` went from 13,964
 KiB to 3,344 KiB. The 20 retained entries are exactly the ones this document
@@ -1672,15 +1785,19 @@ activity-log sessions: they were in the prune set on the first pass, and
 deleting them would have removed the evidence for a finding the document states.
 **Zero** prunable IDs are cited after the correction.
 
-**The 25 MiB scratch cap is now 3 MiB short, and the shortfall is all
-load-bearing.** After the prune, scratch is 28 MiB. The only remaining
-candidates large enough to close the gap are `index-origins.ndjson` (2.1 MiB),
-`phase6-tar-listing.txt` (1.7 MiB) and `proactive-corpus.json` (448 KiB) — all
-three cited in this table, and the tar listing is the _listing_ half of the §23
-Rule 3 content evidence for the archive-integrity verdict, reproducible only by
-another ~16-minute streaming pass over 8.6 GiB. The cap should rise to ~32 MiB
-rather than the evidence fall. `disk-guard.sh gate` treats the overage as a
-warning (exit 0), so nothing is blocked in the meantime.
+**The 25 MiB scratch cap was 3 MiB short, and the shortfall was all load-bearing
+— resolved by raising the cap, not by dropping evidence.** After the prune,
+scratch is 28 MiB. The only remaining candidates large enough to close the gap
+are `index-origins.ndjson` (2.1 MiB), `phase6-tar-listing.txt` (1.7 MiB) and
+`proactive-corpus.json` (448 KiB) — all three cited in this table, and the tar
+listing is the _listing_ half of the §23 Rule 3 content evidence for the
+archive-integrity verdict, reproducible only by another ~16-minute streaming
+pass over 8.6 GiB. **Decision (user, 2026-11-03): cap raised 25 → 32 MiB**, with
+`SCRATCH_WARN=30` so creep is flagged before it becomes another ceiling raise,
+and a comment beside `SCRATCH_CAP` naming the three load-bearing files so a
+future cleanup does not delete the Rule 3 evidence. The tar listing paid for
+itself immediately: it is what let step 5 re-verify archive completeness against
+the tree **without** re-reading 8.6 GiB.
 
 **Commands that reproduce §3 from a clean shell** (all zero-local-disk):
 
@@ -1701,9 +1818,12 @@ rclone cat --count 16 onedrive:HomeBackup/jules-export/jules-export-20261031.tar
 rclone cat --count 2147483648 onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst \
   | shasum -a 256
 
-# sessions.json byte-identity: expect 13422e16… on both clouds and locally
+# sessions.json byte-identity: expect 13422e16… on both clouds.
+# The third leg used to be `shasum -a 256 ~/jules-export/sessions.json`; that
+# tree was deleted at step 5, so the local leg now comes out of the archive.
 rclone cat onedrive:HomeBackup/jules-export/sessions.json | shasum -a 256
-shasum -a 256 ~/jules-export/sessions.json
+rclone cat onedrive:HomeBackup/jules-export/jules-export-20261031.tar.zst \
+  | zstd -dc | tar -xO -q jules-export/sessions.json | shasum -a 256
 
 # Extraction spot-check: pull one member out of the compressed stream, no disk.
 # -q (bsdtar fast-read) stops after the first match instead of draining 9.2 GiB.
@@ -1743,25 +1863,128 @@ than four passes, with or without `-q`.
 **Disk governor thresholds**, kept because they are the reason the analysis
 completed at all after two host-level disk exhaustion incidents rendered the
 machine unusable: `HARD=4096 MiB`, `PAUSE=6144`, `WARN=8192`, `RESERVE=1024`,
-`SCRATCH_CAP=25 MiB`. Subcommands
-`report | check | budget <bytes> |
-gate <label>`. Headroom is computed as **free
-− floor**, not free.
+`SCRATCH_CAP=32 MiB`, `SCRATCH_WARN=30`. Subcommands are `report`, `check`,
+`budget <bytes> [dest]` and `gate <label>`. Headroom is computed as **avail −
+HARD**, not as raw avail — the number that matters is how far the floor is away,
+not how much is free.
 
-**Resource discipline actually observed.** Analysis phases: ~250–400 MiB read
-locally out of 19 GiB (≈1–2%), < 20 MiB written locally, peak RAM < 300 MiB, all
-intensive jobs sequential, network limited to gated probes. Phase 6 verification
-added **~67 GiB of streaming network traffic and ~2 MiB of local writes** — nine
-full or partial archive passes (five for structure/hash/checksum, four for the
-extraction spot-check), all through `rclone cat` into a pipe, so **no archive
-byte ever landed on local disk**. Free space moved 11.5 GiB → 11.0 GiB across
-the whole exercise; every step was gated through `disk-guard.sh gate` and none
-tripped PAUSE or ABORT. The one path that _would_ have violated the constraint —
-hashing Proton's dataless parts — was identified and refused rather than
-attempted (§4).
+`budget` takes an optional `dest` because the default assumption (a write costs
+its own size on the local Data volume) is wrong for two destinations that matter
+here: a CloudDocs target under File Provider, and any copy whose **source** is a
+`dataless` placeholder. **A copy whose source is dataless costs
+hydrate(source) + stage(dest) — double the size of the file.** Passing only the
+destination size understates the peak by 2× and can turn a passing gate into a
+floor breach. Check `ls -lO` for `dataless` and `stat -f %b` for resident blocks
+before budgeting. This is what made Variant B (`rclone copy` from `gdrive:`
+straight into CloudDocs) the right call: reading through the remote never
+hydrates the local placeholder, so the 2× never materialises — confirmed by
+`resident_blocks=0` on the source after the copy.
+
+**Resource discipline actually observed — with one breach, self-reported.**
+Analysis phases: ~250–400 MiB read locally out of 19 GiB (≈1–2%), < 20 MiB
+written locally, peak RAM < 300 MiB, all intensive jobs sequential, network
+limited to gated probes. Phase 6 verification added **~67 GiB of streaming
+network traffic** — nine full or partial archive passes (five for
+structure/hash/checksum, four for the extraction spot-check), all through
+`rclone cat` into a pipe, so **no archive byte from those passes landed on local
+disk**.
+
+**The "none tripped PAUSE or ABORT" claim this paragraph used to make is false
+and is corrected here.** Step 4's verification read the 8.59 GiB CloudDocs copy
+**three** times — once for `shasum -a 256`, once for `md5`, once for
+`rclone
+check --checksum`'s own md5 — and those reads pushed swap used 2,866 →
+3,740 MiB, dropping swap free to 355–387 MiB against the 512 MiB floor.
+`disk-guard.sh
+check` returned 1 and step 5 was **held**, correctly, until swap
+recovered (355 → 691 → 939 → 1,335 MiB across four reads). The guard worked; the
+plan that tripped it did not.
+
+**Lesson — one read, many digests.** Three passes over the same 8.6 GiB to
+produce two hashes is three times the I/O for one times the information. `tee` a
+single stream into both digest tools instead:
+
+```bash
+rclone cat "$SRC" | tee >(md5 >"$MD5") | shasum -a 256 >"$SHA"
+```
+
+The independent oracle stays independent either way — the md5 that mattered most
+in step 4 was **Google Drive's server-side metadata value** (`37fda7d5…`), an
+oracle this workflow does not control, which beats one more read of its own
+bytes. Note the process-substitution form has a completion race: `wait` for the
+`tee` child or read the files only after the pipeline is reaped.
+
+**Separately, Variant B _did_ land 8.59 GiB locally, on purpose.** The CloudDocs
+copy is a real resident file, not a streamed pass — that is the point of a third
+copy. What Variant B avoided was the **17.2 GiB** the filesystem path would have
+left behind (hydrate the source _and_ stage the destination), and it avoided
+hydrating the `dataless` source at all.
+
+**Final state.** Free space moved **9.3 GiB → 33.4 GiB** across Phase 6: the
+Tier A reclaim (+19.5 GiB, of which ~13.3 GiB was genuinely rebuildable cache —
+see the uv correction in §4) and the step-5 delete (+19,941 MiB). The Data
+volume went **96% → 84%**. The CloudDocs copy was then evicted by hand, taking
+whole-of- CloudDocs residency to 30.8 MiB. The one path that _would_ have
+violated the constraint — hashing Proton's `dataless` parts — was identified and
+refused rather than attempted, and is parked at #2702 (§4).
+
+**Every step was gated, and the gates were tested rather than assumed.** Wiring
+rule 8 in `DISK-GUARD.md` now requires that any guard on a long-running job get
+an abort-path test with a mocked worker before the job is trusted. That
+requirement exists because two of them failed it: the swap guard in
+`phase6-step3-copy.sh` was **dead for the whole 8.6 GiB copy** (a BSD-sed BRE
+used `\?`, which BSD sed does not support, so the parse returned empty and the
+`[ -n "$S" ] && …` test short-circuited — visible in plain sight as
+`swapfree_miB=NA` on all 14 monitor rows), and the abort path itself had an
+unbounded `wait` plus a `kill -0` liveness test that succeeds on an unreaped
+zombie, so a cleanly-exited rclone was SIGKILLed anyway — forfeiting its own
+`*.partial` cleanup. Both were found by testing, not by running. See §23 Rule 4.
 
 ---
 
-_Source export untouched: 0 files newer than `NONMOD-MARKER`, 19.5 GiB. This
-document is the durable record; the export itself is pending archival to iCloud
-per §4._
+**Eviction is a human action, not a workflow step.** File Provider eviction
+cannot be forced from the CLI on this host — re-verified two ways: `brctl`
+exposes exactly six commands (`diagnose`, `log`, `dump`, `status`, `accounts`,
+`monitor`) and none evict; `fileproviderctl evaluate` only _reports_ applicable
+Finder actions and does not perform them, and on a Google Drive item that set is
+`PIN`/`UNPIN`/`OPEN`/`SHARE`/`COPY_LINK`/`ADD_SHORTCUT`/`OPEN_REVISION_FOLDER`/
+`CREATE_*_FILE` — pin/unpin is a download _preference_, not an eviction. So a
+hydrated file leaves local disk only via **Finder ▸ Remove Download** or
+automatically under pressure. **Decision (user, 2026-11-03): eviction is dropped
+as a scripted step entirely** — manual, the user's call, with auto-eviction
+under pressure as the fallback. Budget for a hydrated file staying resident. It
+was performed and confirmed the same day: `flags=compressed,dataless`,
+`resident_blocks=0`, `isKeepDownloaded=0`, with `logical_bytes` and `mtime`
+unchanged.
+
+**A sweep of a container directory needs a per-entry manifest.** Deleting
+`~/Library/Caches` as a single 308 MiB unit took the rclone media VFS caches
+with it (`rclone-media-mount/`, `rclone-media-webdav/`), which `DISK-GUARD.md`
+Wiring rule 5 forbids touching. Both services verified healthy afterwards, but
+**what was in the webdav cache cannot be proven either way**, because the
+manifest recorded one aggregate line. That is Rule 3 again — structure inferred
+from an aggregate — in a destructive direction. Any sweep of a container dir
+gets a per-entry log and checks the protected list first.
+
+**Read before you measure.** Wiring rule 0, added after the 2× budget error:
+before any disk or cloud step, grep `DISK-GUARD.md` and the session record
+first, and measure second. Both facts behind that error were already written
+down. A measurement answers "how much"; the record answers "what will that
+measurement miss". It paid for itself at step 5 — `phase6-tar-listing.txt`
+already existed, so archive completeness was re-verified against the tree
+without another 8.6 GiB read.
+
+**Prove the keep target exists before any prune.** Wiring rule 7, from the
+Raycast error: a retention job must resolve its keep key against the real set
+and **fail closed if it matches zero items**. A shape check is not an existence
+check.
+
+---
+
+_The local export tree no longer exists: `~/jules-export` (19.5 GiB, 34,249
+entries) was deleted on 2026-11-03 at step 5, after three independently verified
+cloud copies of `jules-export-20261031.tar.zst` — OneDrive, Google Drive and
+iCloud, all `sha256=71c643c2…`, all 9,225,417,876 bytes — and a re-verified
+`NONMOD-MARKER` result of 0 modified files with no local APFS snapshots. This
+document plus `~/jules-analysis/` is the durable record; the export itself is
+archived per §4._
