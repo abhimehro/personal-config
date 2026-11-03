@@ -45,23 +45,33 @@ than being discarded for somebody else's breakage.
 
 **Open items.**
 
-1. **iCloud copy #3 is blocked on local staging — this is the new critical
-   path.** The order is copy #3 → hash → delete → archive, because three
-   verified copies must exist before anything is removed. But writing the 8.59
-   GiB tarball into `~/Library/Mobile Documents/com~apple~CloudDocs/` stages it
-   **locally first**, and `disk-guard.sh budget 9225417876` returns **REFUSED**:
-   it would leave 4,333 MiB against a 5,120 MiB requirement
-   (`HARD 4096 + RESERVE 1024`). iCloud itself has room — 121,130,689,460 bytes
-   (~112.8 GiB) of quota remaining — and File Provider _does_ evict afterwards
-   (only 31 MiB of the whole tree is resident; 10 of 40 top-level entries are
-   `compressed,dataless`). The problem is the transient peak, and `brctl` offers
-   no way to force eviction if the upload stalls. The clean fix is rclone's
-   `iclouddrive` backend, which streams in chunks and never stages the whole
-   object; it ships in v1.74.2 but is **unconfigured**, and configuring it needs
-   interactive Apple ID + 2FA — a human action. Target dir confirmed:
-   `HomeBackup/` at the CloudDocs root (it does not exist yet), **not** Desktop
-   or Documents — `brctl status` reports `Desktop & Documents: current=YES`, so
-   their sync is live.
+1. **iCloud copy #3 is blocked on local staging — but the unblock is a cache
+   reclaim, not a cloud workaround.** The order is copy #3 → hash → delete →
+   archive, because three verified copies must exist before anything is removed.
+   But writing the 8.59 GiB tarball into
+   `~/Library/Mobile Documents/com~apple~CloudDocs/` stages it **locally
+   first**, and `disk-guard.sh budget 9225417876` returns **REFUSED** — measured
+   three times as avail swung, leaving 4,333 → 282 → **829 MiB** against a 5,120
+   MiB requirement (`HARD 4096 + RESERVE 1024`). iCloud itself has room —
+   121,130,689,460 bytes (~112.8 GiB) of quota remaining — and File Provider
+   _does_ evict afterwards (only 31 MiB of the whole tree is resident; 10 of 40
+   top-level entries are `compressed,dataless`). The problem is the transient
+   peak, and `brctl` offers no way to force eviction if the upload stalls.
+   **Cheapest unblock: reclaim Tier A, 15.9 GiB of purely rebuildable caches**
+   (Trunk 6.2, five Raycast backup sets 7.1, uv 1.5, a stray `node_modules`
+   0.9). The shortfall is only 4,291 MiB, so that is a 3.7× margin and the same
+   write then passes through the **plain filesystem path — no rclone, no Apple
+   2FA**. Ranked read-only menu in `disk-survey-2026-11-03.md`. rclone's
+   `iclouddrive` backend is the _fallback_, and **its streaming behaviour is
+   UNVERIFIED** — an earlier revision of this item asserted it "streams in
+   chunks and never stages the whole object"; that claim is retracted, because
+   enumerating the backend's config options in v1.74.2 shows no chunking option
+   and rclone's docs state no maximum object size, no chunk size and no
+   streaming guarantee. `ICLOUD-RUNBOOK.md` therefore leads with a 500 MiB
+   canary that settles it by measurement. Target dir confirmed: `HomeBackup/` at
+   the CloudDocs root (it does not exist yet), **not** Desktop or Documents —
+   `brctl status` reports `Desktop & Documents: current=YES`, so their sync is
+   live.
 2. **Deleting the local 19 GiB tree — approval-gated, evidence-complete, but now
    sequenced _after_ copy #3.** Every technical precondition is closed: the
    extraction spot-check passed and `tmutil listlocalsnapshots /` is empty, so
@@ -376,11 +386,25 @@ disk.
 
    **Two candidate unblocks, neither yet taken:**
 
-   - **Reclaim Tier A (15.9 GiB of purely rebuildable caches)** — Trunk 6.4 GiB,
-     six Raycast `ai.db` backups 7.1 GiB, uv 1.5 GiB, one stray `node_modules`
-     889 MiB. That takes avail to ~26.7 GiB, after which the same write leaves
-     **18,274 MiB and passes the gate** through the plain filesystem path, with
-     no rclone and no 2FA. Ranked menu in `disk-survey-2026-11-03.md`.
+   - **Reclaim Tier A (15.9 GiB of purely rebuildable caches)** — Trunk 6.2 GiB
+     (`repos` 3.2 + `tools` 3.0, including one 3.1 GiB grype
+     `vulnerability.db`), **five** Raycast backup sets 7.1 GiB (enumerated, not
+     inferred from the total — an earlier draft said six sets of 1,269 MiB,
+     which was the total divided by a guessed count; they are 1,423 MiB each,
+     one every ~12 h, so this is a **rolling window that refills** and buys the
+     write rather than permanent headroom), uv 1.5 GiB, one stray `node_modules`
+     889 MiB, `~/Library/Caches` 290 MiB, Homebrew cache 44 MiB. Re-measured at
+     01:30 with avail 9,629 MiB, the write is still REFUSED leaving **829 MiB**
+     (third measurement of the same refused write: 4,333 → 282 → 829 MiB,
+     swinging 4 GiB in both directions — so the gate belongs immediately before
+     the write, not at the start of the run). The shortfall is **4,291 MiB** and
+     Tier A offers 15.9 GiB, a 3.7× margin that survives the whole observed
+     churn range; projected post-reclaim the same write leaves **~17,112 MiB and
+     passes the gate** through the plain filesystem path, with no rclone and no
+     2FA. **Ordering constraint:** the next `trunk check` re-downloads up to 6.2
+     GiB into `~/.cache/trunk`, so Tier A is a loan against the next lint run —
+     clear it and do the write before running Trunk again. Ranked menu in
+     `disk-survey-2026-11-03.md`.
    - **rclone's `iclouddrive` backend**, which talks to the iCloud web API
      rather than File Provider. It ships in v1.74.2 but is **unconfigured**, and
      configuring it needs interactive Apple ID + 2FA — a human action. **Whether
@@ -1497,6 +1521,19 @@ from another run. **The arithmetic _was_ airtight; the premise underneath it was
 not.** A size expectation derived from one artifact says nothing about a second
 artifact — which is exactly why the rule is about the _kind_ of evidence, not
 about how carefully the arithmetic is done.
+
+**Rule 3 also covers structure inferred from an aggregate — and it was violated
+again after the rule was written.** The 2026-11-03 disk survey reported
+Raycast's backup directory as "6 backup sets of `ai.db`, 1,269 MiB each". Both
+numbers were derived: 7,112 MiB from `du` divided by an assumed count of 6.
+Enumerating the directory shows **5** sets of **1,423 MiB** plus a 10-byte
+marker. The total was right and the shape was wrong, and the shape was the part
+that mattered — 5 sets appearing every ~12 h is a **rolling window that
+refills**, so the reclaim it promised is a 2.5-day loan, not permanent headroom.
+A `du` total is metadata about bytes; a count and a per-item size are claims
+about _structure_, and structure requires enumeration. Same rule, new domain:
+the failure mode survived being written down because the rule was filed under
+"integrity verdicts" and the survey did not look like one.
 
 ### The prefix sweep
 
