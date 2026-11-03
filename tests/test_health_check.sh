@@ -258,14 +258,22 @@ fi
 
 # ---- helper: copy and patch health_check.sh for TTL tests ----
 # The script hardcodes /Library/Logs/DiagnosticReports; we replace it with the
-# isolated mock-home directory so Linux CI can exercise the panic log branch.
+# isolated mock-home directory so both Linux CI and macOS can exercise the panic
+# log branch. Rewrite via a temp file rather than `sed -i`: BSD sed (macOS) treats
+# the next argument as a backup suffix and then parses the filename as a command,
+# so `sed -i "s#…#…#g" file` fails with "invalid command code f". A temp file plus
+# mv is portable without branching on `uname`. The copy is always run as
+# `bash <path>`, never executed directly, so mv dropping the exec bit is harmless.
 copy_patched_script() {
 	local dest="$1"
 	local panic_dir="$2"
 	mkdir -p "$dest/bin" "$dest/lib" "$dest/conf"
 	cp "$SCRIPT" "$dest/bin/health_check.sh"
 	cp "$REPO_ROOT/maintenance/lib/state.sh" "$dest/lib/state.sh"
-	sed -i "s#/Library/Logs/DiagnosticReports#$panic_dir#g" "$dest/bin/health_check.sh"
+	local patched="$dest/bin/health_check.sh.patched"
+	sed "s#/Library/Logs/DiagnosticReports#$panic_dir#g" \
+		"$dest/bin/health_check.sh" >"$patched"
+	mv "$patched" "$dest/bin/health_check.sh"
 }
 
 # ---- helper: seed state files for TTL tests ----

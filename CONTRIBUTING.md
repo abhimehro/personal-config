@@ -118,10 +118,14 @@ make lint          # equivalent to: trunk check --all
 make lint-fix      # equivalent to: trunk fmt
 ```
 
-> **ShellCheck dual-config note:** `shellcheck` called directly uses
-> `.shellcheckrc` (root), while Trunk CI uses `.trunk/configs/.shellcheckrc`
-> (`enable=all`). To reproduce CI behaviour locally, run `trunk check <file>`
-> instead of calling `shellcheck` directly.
+> **ShellCheck config note (corrected 2026-11-03 — the previous "dual-config"
+> note described a file that does not exist):** there is exactly **one** tracked
+> ShellCheck config, the root `.shellcheckrc`. `.trunk/configs/.shellcheckrc` is
+> not in the repo, so nothing sets `enable=all` and `trunk check` reproduces
+> direct `shellcheck` rather than a stricter CI mode. All three invocations pin
+> the same version (0.11.0). CI enforces a hard SC2155/SC2145 correctness gate
+> (`make lint-errors`); its broad ShellCheck step is `|| true` and advisory
+> only. See the root `.shellcheckrc` header for the measurements.
 
 Trunk downloads its own tool versions on first run — subsequent runs are fast.
 
