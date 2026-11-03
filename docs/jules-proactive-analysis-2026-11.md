@@ -13,6 +13,52 @@ highest-yield class of work in the entire export (69–79% completion against
 34–43% for user- and schedule-originated sessions) and it has no replacement
 once Jules stops.
 
+### TL;DR — one screen
+
+**Key numbers.**
+
+| Metric               | Value                                                                                                                                                                    | §        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| Export analysed      | 19.5 GiB, **7,691 sessions**, 26 repos, captured 2026-10-31, verified untouched                                                                                          | §1       |
+| The burst            | **144 sessions in 15m17s** on 2026-11-01, after ~3 months dormant                                                                                                        | §6       |
+| Proactive PR outcome | **113 opened → 110 still open, 3 merged = 2.7%**, 0 comments, 0 review comments; #2661 and #2666 are the same work landed twice                                          | §6       |
+| Failure mechanism    | 22 FAILED; **91% ended blocked on a human**, not on the code; **59% still held a finished patch**                                                                        | §7       |
+| Duplication          | **35.0% exact / 75.2% fuzzy** in the burst, against a **7.0%** 8-month baseline                                                                                          | §9       |
+| Recovered work       | 9 orphaned patches that never reached GitHub; **7 promoted as 7 scoped draft PRs**                                                                                       | §7.1/§21 |
+| Archive integrity    | **2 of 3 cloud backups are truncated by exactly 1 byte**; only Proton's 5 split parts are intact                                                                         | §3       |
+| Secrets              | **Nothing to rotate.** 199 of 204 prefix hits were unanchored-regex noise; all 9 gitleaks findings are fixtures or negative assertions                                   | §23      |
+| Shipped              | **R1** (base-relative verify + worktree-collision gate) at `ea292c9a`; semantic test-coverage gate and `git fetch` precondition at `724505e6`; #2686 gitleaks pre-commit | §20      |
+| Remaining build      | R2–R4 = **24 h**, 20 h of it on the R2→R3 critical path; filed as #2695 / #2696 / #2697                                                                                  | §18      |
+
+**Decisions taken.** Seven gaps (G-1…G-7) drive every gate; G-4 and G-5 are
+shipped, the rest are filed as independently assignable issues. Review SLA is
+**5 business days with decay** — auto-expiry labels and closes the PR, one-click
+reopen, `decision_rate ≥ 80%`, and the throttle _loosens_ as the backlog clears
+instead of stopping hard. Confidence is a **uniform ≥2 independent signals** for
+every lens, with one narrow exception: `sentinel` may _surface_ a finding on a
+single signal as an advisory draft, but anything that changes state still
+requires two. **No security veto** — security findings are 6.5× over-represented
+in failures but fail for generic process reasons, so a veto would suppress the
+highest-value class. Verification is **base-relative**: a check that also fails
+on base is `PRE_EXISTING_FAILURE` and the candidate is still promoted, rather
+than being discarded for somebody else's breakage.
+
+**Open items.**
+
+1. **Testing lens** — separate rotation slot, or folded into `code-health` with
+   a `--focus` flag? The only unanswered _design_ question (§24 row 4).
+2. **`sessions.json` content match** — the cloud copies match local
+   byte-for-byte in _size_; size match is not content match, and the streaming
+   hash that would settle it is gated (§3, §24 row 8).
+3. **Archive repair steps 3 and 5** — reassembly and deleting the local 19 GiB
+   tree — remain gated on explicit approval (§4).
+4. **`canary-stage` timezone** — the disposable cron canary hardcodes UTC while
+   the pilot sidecars run `America/Chicago`, so it does not yet test the pilot
+   schedule (#2700, §17).
+
+Nine live questions in total are tabulated in §24; §25 lists the artifacts
+behind every number above.
+
 ### Evidence labels
 
 Every claim below carries one of three labels.
@@ -1024,9 +1070,12 @@ cron".
 
 **Resolution: Chicago is correct for the pilot** — a human reviews the digest at
 ~08:35 local; UTC would land it at 02:15/03:15 local in winter. The doc's `3B`
-row should say `CRON_TZ` is per-sidecar and the pilot uses `America/Chicago`,
-and `canary-stage` should gain a `--tz` flag defaulting to the pilot TZ so the
-canary tests what will actually run.
+row should say `CRON_TZ` is per-sidecar and the pilot uses `America/Chicago`
+(**corrected in `b3a1d422`**), and `canary-stage` should gain a `--tz` flag
+defaulting to the pilot TZ so the canary tests what will actually run — **filed
+as [#2700](https://github.com/abhimehro/personal-config/issues/2700)**, which
+also records the trap that relabelling `CRON_TZ` without converting the fire
+datetime via `zoneinfo` yields a canary that silently never fires.
 
 **Two latent traps, both low priority:**
 
@@ -1193,19 +1242,20 @@ hid a lost test.
 
 ## 22. Filed issues
 
-| Issue                                                                     | Repo                    | Labels                                      | Content                                                                                   |
-| ------------------------------------------------------------------------- | ----------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [#2695](https://github.com/abhimehro/personal-config/issues/2695)         | personal-config         | `priority:high`                             | **R2** — G-1 freshness gate + G-2 target ledger, 9 h                                      |
-| [#2696](https://github.com/abhimehro/personal-config/issues/2696)         | personal-config         | `priority:medium`                           | **R3** — G-3 SLA/expiry/decay + G-7 KPIs, 11 h                                            |
-| [#2697](https://github.com/abhimehro/personal-config/issues/2697)         | personal-config         | `priority:low`                              | **R4** — G-6 label identity, 4 h                                                          |
-| [#2691](https://github.com/abhimehro/personal-config/issues/2691)         | personal-config         | `cleanup`, `low-priority`                   | Untrack `.trunk/{actions,logs,notifications,out,tools}` absolute symlinks                 |
-| [#2692](https://github.com/abhimehro/personal-config/issues/2692)         | personal-config         | `cleanup`, `low-priority`                   | Unreachable "Already in Todo; no-op" branch in `pr_recap.compute_state_transition`        |
-| [#2693](https://github.com/abhimehro/personal-config/issues/2693)         | personal-config         | `cleanup`, `low-priority`                   | No versioned, reproducible backup script — the root cause of §3                           |
-| [#2694](https://github.com/abhimehro/personal-config/issues/2694)         | personal-config         | —                                           | `@azure/msal-node` 5.1.5 → 7.1.0 major bump, **held for human review**                    |
-| [#1123](https://github.com/abhimehro/Seatek_Analysis/issues/1123)         | Seatek_Analysis         | `cleanup`, `priority:medium`, `bug`         | `test_structure.sh` overwrites tracked `implementation/package_manifest.rds` on every run |
-| [#1124](https://github.com/abhimehro/Seatek_Analysis/issues/1124)         | Seatek_Analysis         | `dependencies`, `security`, `priority:high` | All 41 Dependabot alerts are one Pillow major bump (12.3.0 → 13.0.0)                      |
-| [#1845](https://github.com/abhimehro/email-security-pipeline/issues/1845) | email-security-pipeline | `cleanup`, `priority:low`                   | trunk runs bandit without `--ini .bandit`, diverging from CI                              |
-| [#1846](https://github.com/abhimehro/email-security-pipeline/issues/1846) | email-security-pipeline | `cleanup`, `priority:low`                   | `HIDDEN_TEXT_PATTERN` becomes dead code once #1844 lands                                  |
+| Issue                                                                     | Repo                    | Labels                                                         | Content                                                                                                                              |
+| ------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [#2695](https://github.com/abhimehro/personal-config/issues/2695)         | personal-config         | `priority:high`                                                | **R2** — G-1 freshness gate + G-2 target ledger, 9 h                                                                                 |
+| [#2696](https://github.com/abhimehro/personal-config/issues/2696)         | personal-config         | `priority:medium`                                              | **R3** — G-3 SLA/expiry/decay + G-7 KPIs, 11 h                                                                                       |
+| [#2697](https://github.com/abhimehro/personal-config/issues/2697)         | personal-config         | `priority:low`                                                 | **R4** — G-6 label identity, 4 h                                                                                                     |
+| [#2691](https://github.com/abhimehro/personal-config/issues/2691)         | personal-config         | `cleanup`, `priority:low`                                      | Untrack `.trunk/{actions,logs,notifications,out,tools}` absolute symlinks                                                            |
+| [#2692](https://github.com/abhimehro/personal-config/issues/2692)         | personal-config         | `cleanup`, `priority:low`                                      | Unreachable "Already in Todo; no-op" branch in `pr_recap.compute_state_transition`                                                   |
+| [#2693](https://github.com/abhimehro/personal-config/issues/2693)         | personal-config         | `cleanup`, `priority:low`                                      | No versioned, reproducible backup script — the root cause of §3                                                                      |
+| [#2694](https://github.com/abhimehro/personal-config/issues/2694)         | personal-config         | `dependencies`, `security`, `priority:high`                    | `@azure/msal-node` 5.1.5 → 7.1.0 major bump, **held for human review**                                                               |
+| [#2700](https://github.com/abhimehro/personal-config/issues/2700)         | personal-config         | `bug`, `agentic-workflows`, `priority:medium`                  | `canary-stage` hardcodes `CRON_TZ=UTC` at `antigravity-proactive-ctl.sh:270`, so the canary never exercises the pilot timezone (§17) |
+| [#1123](https://github.com/abhimehro/Seatek_Analysis/issues/1123)         | Seatek_Analysis         | `cleanup`, `priority:medium`, `bug`                            | `test_structure.sh` overwrites tracked `implementation/package_manifest.rds` on every run                                            |
+| [#1124](https://github.com/abhimehro/Seatek_Analysis/issues/1124)         | Seatek_Analysis         | `dependencies`, `security`, `priority:high`, `ready-for-human` | All 41 Dependabot alerts are one Pillow major bump (12.3.0 → 13.0.0)                                                                 |
+| [#1845](https://github.com/abhimehro/email-security-pipeline/issues/1845) | email-security-pipeline | `cleanup`, `priority:low`                                      | trunk runs bandit without `--ini .bandit`, diverging from CI                                                                         |
+| [#1846](https://github.com/abhimehro/email-security-pipeline/issues/1846) | email-security-pipeline | `cleanup`, `priority:low`                                      | `HIDDEN_TEXT_PATTERN` becomes dead code once #1844 lands                                                                             |
 
 R2–R4 issues are deliberately **self-contained**: the design doc lives outside
 the repo and on an unmerged branch, so an agent working from `main` cannot read
@@ -1229,10 +1279,21 @@ bumps are flagged for human decision, not auto-applied.**
 Kept in full because the methodology is the reusable part, and because the naive
 reading of these numbers is badly wrong.
 
-**Rule:** never print a raw candidate value. Report
+**Rule 1 — never print a raw candidate value.** Report
 `prefix + length + sha256[:8] + charset classes + Shannon entropy + verdict` so
 a human can match against their own records without exposure. Session IDs are
 cited; raw `description` and `activities.json` excerpts are not reproduced.
+
+**Rule 2 — start with word boundaries, not with a prefix.** Anchor every
+secret-prefix regex (`\bsk-`, `\bnt-`, `\bnpm_`, …) before you run the sweep. An
+unanchored prefix matches the _inside_ of ordinary identifiers, and agent
+transcripts are full of them: `task-`, `agent-`, `content-`, fractions and
+paths. This is a starting instruction, not a post-hoc caveat — an unanchored
+first pass reports a hit count that is ~98% noise (§23 measured it), and the
+cost of believing that count is a pointless credential-rotation scramble. If a
+sweep arrives already unanchored, re-run it anchored before triaging a single
+hit. `scripts/secret_prefix_scan.py`'s `PREFIX_RE` is still unanchored; treat
+its raw output as a candidate pool requiring an anchored second pass.
 
 ### The prefix sweep
 
