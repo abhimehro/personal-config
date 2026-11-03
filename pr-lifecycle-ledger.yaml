@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1116
+ledger_revision: 1138
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -39968,10 +39968,10 @@ items:
   changed_paths:
   - tests/test_refactoring_agent_workflow.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
     by reconcile).'
@@ -39981,9 +39981,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-reconcile-20261103145308-0750be71
+  revision: 1
+  updated_at_utc: '2026-11-03T14:53:08Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 103dfe14b0fe940bed1b0123b82d91ee34f1e0e4
@@ -42343,10 +42344,10 @@ items:
   - .github/scripts/repository_automation_common.py
   - .jules/bolt.md
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
     by reconcile).'
@@ -42356,9 +42357,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-reconcile-20261103145308-5297d716
+  revision: 1
+  updated_at_utc: '2026-11-03T14:53:08Z'
   guardrail_source: path_eval
   guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1096@796b93be3352ddfadc51ba8fd0c5bb391fbc8c49
@@ -43207,10 +43209,10 @@ items:
   - .github/scripts/repository_automation_common.py
   - .jules/bolt.md
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
     by reconcile).'
@@ -43220,9 +43222,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-reconcile-20261103145308-c08b5456
+  revision: 1
+  updated_at_utc: '2026-11-03T14:53:08Z'
   guardrail_source: path_eval
   guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1115@dd3471301e80b5af71da5664f4c396d861671b98
@@ -43703,10 +43706,10 @@ items:
   changed_paths:
   - tests/test_data_loader.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
     by reconcile).'
@@ -43716,9 +43719,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-reconcile-20261103145308-5e779c05
+  revision: 1
+  updated_at_utc: '2026-11-03T14:53:08Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: a496146ae147c689c5c17bbe774e6237eeaffd1f
@@ -44899,7 +44903,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - maintenance/bin/performance_optimizer.sh
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44939,7 +44944,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - maintenance/bin/analytics_dashboard.sh
+  - maintenance/bin/performance_optimizer.sh
+  - scripts/morning-brief/morning-brief.py
+  - tests/test_morning_brief.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -44977,7 +44987,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/code-quality.yml
+  - .github/workflows/copilot-setup-steps.yml
+  - .github/workflows/jules-pr-review.yml
+  - .github/workflows/pr-recap.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/repository-automation-daily.yml
+  - .github/workflows/repository-automation-weekly.yml
+  - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45009,7 +45029,11 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .shellcheckrc
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - tests/test_health_check.sh
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45041,7 +45065,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - maintenance/bin/deep_cleaner.sh
+  - tests/test_deep_cleaner_trunk_cache.sh
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45077,7 +45103,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/changelog.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45113,7 +45140,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/changelog.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45149,7 +45177,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/changelog.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45185,7 +45214,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/changelog.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45221,7 +45251,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - poetry.lock
+  - pyproject.toml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45262,10 +45294,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-03
     by reconcile).'
@@ -45275,9 +45307,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-03T14:42:24Z'
+  handoffs:
+  - evt-reconcile-20261103145308-ff2db9f6
+  revision: 1
+  updated_at_utc: '2026-11-03T14:53:08Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#895@1a10d1ff6dc724133e7ce0337250ee8700442642
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 895
@@ -45300,7 +45333,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/hydrograph_seatek_analysis/data/validator.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45340,7 +45375,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/apply_refined_corrections.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45380,7 +45416,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowPill.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsPopoverView.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextFileBrowseView.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45416,7 +45457,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45452,7 +45494,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/refactoring-agent.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45488,7 +45531,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/security.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -45528,7 +45572,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/palette.md
+  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkspaceRootsSectionView.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerPromptTab.swift
+  - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextFileBrowseView.swift
+  - Sources/RepoPrompt/Infrastructure/UI/Components/MCPServerToggleView.swift
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -80883,6 +80932,106 @@ events:
   idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#886@781e8de34f1e7b2742a3b41d0d390a829980ad8d:evt-reconcile-20261103144224-cce9cb99
   status: PROJECTED
   created_at_utc: '2026-11-03T14:42:24Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261103145308-0750be71
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2672@103dfe14b0fe940bed1b0123b82d91ee34f1e0e4
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2672@103dfe14b0fe940bed1b0123b82d91ee34f1e0e4:evt-reconcile-20261103145308-0750be71
+  status: PROJECTED
+  created_at_utc: '2026-11-03T14:53:08Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261103145308-5297d716
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#1095@d4529316913524410cd60713da0f63be022313a4
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#1095@d4529316913524410cd60713da0f63be022313a4:evt-reconcile-20261103145308-5297d716
+  status: PROJECTED
+  created_at_utc: '2026-11-03T14:53:08Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261103145308-c08b5456
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#1114@e8eab21d976585485f063282e0293453dfe49149
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#1114@e8eab21d976585485f063282e0293453dfe49149:evt-reconcile-20261103145308-c08b5456
+  status: PROJECTED
+  created_at_utc: '2026-11-03T14:53:08Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261103145308-5e779c05
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#887@a496146ae147c689c5c17bbe774e6237eeaffd1f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#887@a496146ae147c689c5c17bbe774e6237eeaffd1f:evt-reconcile-20261103145308-5e779c05
+  status: PROJECTED
+  created_at_utc: '2026-11-03T14:53:08Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261103145308-ff2db9f6
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#894@37eecb164475ba57c0817b80834b33ffa2295fd2
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#894@37eecb164475ba57c0817b80834b33ffa2295fd2:evt-reconcile-20261103145308-ff2db9f6
+  status: PROJECTED
+  created_at_utc: '2026-11-03T14:53:08Z'
   acknowledged_at_utc: null
   reason: live PR state=CLOSED without disposition label; closed outside lifecycle
     → CLOSED_NOOP
