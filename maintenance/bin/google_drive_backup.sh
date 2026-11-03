@@ -3,6 +3,10 @@ set -euo pipefail
 # Ensure HOME is set in launchd environment (which lacks login shell context)
 export HOME=${HOME:-/Users/speedybee}
 
+# launchd runs without a login shell; create the log dir so output is not lost.
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
 # Google Drive Backup Script
 # Supports --light (daily) and --full (weekly) modes.
 # Light: Backs up critical configs and documents.

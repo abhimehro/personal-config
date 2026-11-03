@@ -8,6 +8,8 @@ export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
+# launchd runs without a login shell; create the log dir so output is not lost.
+mkdir -p "$LOG_DIR" 2>/dev/null || true
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

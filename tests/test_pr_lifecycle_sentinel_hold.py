@@ -14,6 +14,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_reconcile_guards as guards  # noqa: E402
+
 from tests.pr_lifecycle_helpers import (  # noqa: E402
     load_reconcile_with_stubs,
     reconcile_item,
