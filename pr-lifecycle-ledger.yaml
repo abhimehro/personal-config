@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1159
+ledger_revision: 1160
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -42543,12 +42543,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-04T14:42:34Z'
+  updated_at_utc: '2026-11-04T14:49:08Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: 0ba7bdd6e939446b644880a6c57bd9711264fe04
+    head_sha: 269a1dc5d35e1244984892dc71da49a05ec620e2
     basis: head_bound_diff
-    diff_sha256: 1cce0bd936638070fe3930269d44120b72a33298065044235af46232dba968a0
+    diff_sha256: 7dff90e5b37bcc71b9206b778abe81babc9cffb03871a7c4cd30d8830ff1cd56
 - key: abhimehro/Seatek_Analysis#1100@5a6dda163ca06631b9ca756eb451404295062b8f
   repository: abhimehro/Seatek_Analysis
   pr: 1100
@@ -45682,13 +45682,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - .jules/bolt.md
   - src/modules/spam_analyzer.py
   - tests/test_spam_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -45704,7 +45704,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-03T15:09:42Z'
+  updated_at_utc: '2026-11-04T14:49:08Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: ac7cfc5f3cdc0d51c565f7d5c07c4dce06b31dc7
+    basis: head_bound_diff
+    diff_sha256: e3580528e4fc08ad6235094837447c708489be001001db610d88ac680eb9f993
 - key: abhimehro/personal-config#2709@23b2b987cea50fe2caa959669c0ddefc215feb63
   repository: abhimehro/personal-config
   pr: 2709
