@@ -534,3 +534,4 @@ role. Ensure block-level elements like p are not wrapped in inline span elements
 to avoid generating invalid HTML. **Action:** Always verify the HTML tag context
 and apply role="status" to a semantically appropriate inner element for empty
 states instead of blindly adding it to the outermost container.
+## 2026-11-04 - Empty state role='status' placement\n**Learning:** When adding role="status" to an empty state container in a list, placing it directly on the `<li>` overrides the implicit `listitem` role and harms accessibility. The `role="status"` attribute should be placed on an inner element like a `<span>`.\n**Action:** Verify that `role="status"` is never placed on `<li>` tags representing empty states, but rather on semantically appropriate child elements.
