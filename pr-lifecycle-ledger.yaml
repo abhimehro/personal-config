@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1194
+ledger_revision: 1195
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -45713,12 +45713,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-04T15:08:48Z'
+  updated_at_utc: '2026-11-05T14:46:10Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: ac7cfc5f3cdc0d51c565f7d5c07c4dce06b31dc7
+    head_sha: 1fff7fc3458826ee3c5c2a30961c33752c83c426
     basis: head_bound_diff
-    diff_sha256: e3580528e4fc08ad6235094837447c708489be001001db610d88ac680eb9f993
+    diff_sha256: 4456f5969ac4fefd432d9c2893d48bcac9e485fc98662a6db89f4415e085c83a
 - key: abhimehro/personal-config#2709@23b2b987cea50fe2caa959669c0ddefc215feb63
   repository: abhimehro/personal-config
   pr: 2709
