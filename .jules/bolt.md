@@ -922,3 +922,8 @@ makes the code less readable compared to standard list initialization.
 **Action:** Replace multiple consecutive `.append()` calls with a single list
 initialization (e.g., `my_list = [item1, item2, ...]`) or `.extend([...])` to
 improve both performance and code clarity.
+
+## 2026-10-14 - String Partitioning vs Splitting for Delimited Extractions
+
+**Learning:** Using `str.split(delim, 1)` allocates a new list object on every call even when only a single substring is needed. `str.partition(delim)` returns a 3-tuple evaluated at the C-level without heap list allocations.
+**Action:** When extracting key or prefix substrings separated by a single delimiter, prefer `str.partition(delim)[0]` or tuple unpacking `k, _, v = str.partition(delim)` over `str.split(delim, 1)`.
