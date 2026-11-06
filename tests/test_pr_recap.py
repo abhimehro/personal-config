@@ -425,10 +425,15 @@ class TestStateTransitions(unittest.TestCase):
         self.assertIn("not 'closes'", reason)
 
     def test_pr_closed_without_merge(self) -> None:
+        todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
+        in_prog_state = self._make_state(
+            "In Progress", "started", self.state_map["inProgress"]
+        )
         in_rev_state = self._make_state(
             "In Review", "started", self.state_map["inReview"]
         )
         done_state = self._make_state("Done", "completed", self.state_map["done"])
+        canceled_state = self._make_state("Canceled", "canceled", "canceled-id")
 
         ctx = PRContext(
             event_name="pull_request",
@@ -445,15 +450,39 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # From In Review -> Todo
-        target, _ = compute_state_transition(
-            in_rev_state, "closes", ctx, self.state_map
+        # From In Review -> Todo (regardless of relationship: closes, contributes, links)
+        for rel in ("closes", "contributes", "links"):
+            with self.subTest(state="In Review", rel=rel):
+                target, reason = compute_state_transition(
+                    in_rev_state, rel, ctx, self.state_map
+                )
+                self.assertEqual(target, self.state_map["todo"])
+                self.assertIn("transition to Todo", reason)
+
+        # From In Progress -> Todo
+        target, reason = compute_state_transition(
+            in_prog_state, "closes", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["todo"])
+        self.assertIn("transition to Todo", reason)
+
+        # Already in Todo -> No-op
+        target, reason = compute_state_transition(
+            todo_state, "closes", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("retained", reason)
 
         # From Done -> Do NOT regress
         target, reason = compute_state_transition(
             done_state, "closes", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("preserving", reason)
+
+        # From Canceled -> Do NOT regress
+        target, reason = compute_state_transition(
+            canceled_state, "closes", ctx, self.state_map
         )
         self.assertIsNone(target)
         self.assertIn("preserving", reason)
