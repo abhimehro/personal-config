@@ -3,7 +3,7 @@ import stat
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from gh_token_env import (
     _read_env_file,
@@ -12,6 +12,7 @@ from gh_token_env import (
     missing_gh_token_message,
     parse_env_line,
     resolve_gh_token_env_file,
+    run_gh,
 )
 
 
@@ -198,6 +199,56 @@ class TestGhTokenEnv(unittest.TestCase):
             with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(second)}, clear=True):
                 os.environ.pop("GH_TOKEN", None)
                 self.assertEqual(load_gh_token_env()["GH_TOKEN"], "second")
+
+
+class TestRunGh(unittest.TestCase):
+    def _execute_run_gh(
+        self,
+        mock_returncode: int = 0,
+        mock_stdout: str = "",
+        side_effect: Exception | None = None,
+        **kwargs,
+    ):
+        with (
+            patch("gh_token_env.load_gh_token_env", return_value={}),
+            patch("subprocess.run") as mock_run,
+        ):
+            if side_effect:
+                mock_run.side_effect = side_effect
+            else:
+                mock_run.return_value = MagicMock(
+                    returncode=mock_returncode, stdout=mock_stdout
+                )
+            result = run_gh(["gh", "test"], **kwargs)
+            return result, mock_run
+
+    def test_run_gh_success_json(self):
+        result, mock_run = self._execute_run_gh(mock_stdout='{"key": "value"}')
+        self.assertEqual(result, {"key": "value"})
+        args, kwargs = mock_run.call_args
+        self.assertEqual(args[0], ["gh", "test"])
+        self.assertFalse(kwargs.get("shell", False))
+        self.assertEqual(kwargs.get("timeout"), 120)
+
+    def test_run_gh_plain_text(self):
+        res_allowed, _ = self._execute_run_gh(mock_stdout="raw", allow_raw_str=True)
+        self.assertEqual(res_allowed, "raw")
+        res_default, _ = self._execute_run_gh(mock_stdout="raw")
+        self.assertIsNone(res_default)
+
+    def test_run_gh_error_cases(self):
+        import subprocess
+
+        res_nonzero, _ = self._execute_run_gh(mock_returncode=1)
+        self.assertIsNone(res_nonzero)
+
+        res_timeout, _ = self._execute_run_gh(
+            side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120)
+        )
+        self.assertIsNone(res_timeout)
+
+        res_oserror, _ = self._execute_run_gh(side_effect=OSError("not found"))
+        self.assertIsNone(res_oserror)
 
 
 if __name__ == "__main__":

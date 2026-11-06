@@ -41,7 +41,7 @@ class TestRunMerges(unittest.TestCase):
             mock_result.stdout = "plain text output"
             mock_run.return_value = mock_result
 
-            result = run_gh(["gh", "test"])
+            result = run_gh(["gh", "test"], allow_raw_str=True)
             self.assertEqual(result, "plain text output")
 
     def test_run_gh_failure(self):
@@ -83,7 +83,8 @@ class TestRunMerges(unittest.TestCase):
         res = get_diff("owner/repo", "123")
         self.assertEqual(res, "diff output")
         mock_run_gh.assert_called_once_with(
-            ["gh", "pr", "diff", "123", "-R", "owner/repo"]
+            ["gh", "pr", "diff", "123", "-R", "owner/repo"],
+            allow_raw_str=True,
         )
 
     @patch("run_merges.run_gh")
