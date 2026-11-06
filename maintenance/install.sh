@@ -526,7 +526,7 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<E
 </plist>
 EOF
 
-# GitNexus Auto Sync (Daily at 12:30 PM; wrapper skips delayed wake launches)
+# GitNexus Auto Sync (Daily at 12:30 PM; authenticated wake catch-up allowed)
 cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.gitnexus-autosync.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

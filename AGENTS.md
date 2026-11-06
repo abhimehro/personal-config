@@ -896,3 +896,10 @@ relationships, 298 execution flows).
 | Work in the Cluster_0 area (3 symbols)       | `.claude/skills/gitnexus-area-cluster-0/SKILL.md`     |
 
 <!-- gitnexus:end -->
+
+<!-- deno-fmt-ignore-start -->
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
+<!-- deno-fmt-ignore-end -->

@@ -543,14 +543,17 @@ send_automated_notification() {
 		done
 	fi
 
+	# A successful automated run remains in the logs; alert only recorded issues.
+	if ((failed == 0 && missing == 0)); then
+		return 0
+	fi
+
 	local title="Maintenance"
 	local msg
 	if [[ $failed -gt 0 ]]; then
 		msg="Completed with ${failed} task error(s)"
-	elif [[ $missing -gt 0 ]]; then
-		msg="Completed with ${missing} missing task(s)"
 	else
-		msg="All tasks completed successfully"
+		msg="Completed with ${missing} missing task(s)"
 	fi
 
 	if command -v terminal-notifier >/dev/null 2>&1; then

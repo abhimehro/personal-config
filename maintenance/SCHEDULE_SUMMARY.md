@@ -16,7 +16,7 @@
 | **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                                         |
 | **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                                             |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                                      |
-| **12:30 PM** | 🧠 GitNexus Auto Sync   | Daily        | `gitnexus_auto_sync_once.sh`     | One low-priority clone/pull/analyze cycle; skips delayed wake launches |
+| **12:30 PM** | 🧠 GitNexus Auto Sync   | Daily        | `gitnexus_auto_sync_once.sh`     | One low-priority cycle; authenticated wake catch-up allowed |
 
 > ProtonDrive one-way backup is **archived**
 > (`maintenance/bin/archive/protondrive_backup.sh`) and is not installed by
@@ -31,7 +31,7 @@
 - `com.abhimehrotra.maint.systemcleanup.plist` → **9:00 AM daily**
 - `com.abhimehrotra.maint.brew.plist` → **10:00 AM daily**
 - `com.abhimehrotra.maint.gitnexus-autosync.plist` → **12:30 PM daily**
-  (Background, Nice 10; wrapper allows starts between 12:30 and 12:34 PM)
+  (Background, Nice 10; normal window 12:30-12:34 PM; authenticated wake catch-up allowed)
 
 ### Weekly Agent
 
@@ -73,8 +73,12 @@
   then stops the watcher gracefully after its completion signal.
 - Runs as a launchd Background job at Nice 10; the wrapper also uses reduced
   priority.
-- A 12:30-12:34 PM start window prevents launchd delayed post-wake firing from
-  starting GitNexus during unexpected hours.
+* The normal start window is 12:30-12:34 PM local time (America/Chicago),
+  chosen so the operator is more likely to be available to authorize 1Password
+  SSH access. An authenticated wake catch-up may run outside this window;
+  without active SSH authentication, the wrapper logs an expected skip.
+* The daily Raycast review runs at 1:30 PM and checks that afternoon. Do not
+  apply the retired overnight start window to current runs.
 - Timeout behavior is non-destructive: log the issue and exit without
   terminating active analysis. Logs and per-repository outcomes are under
   `~/Library/Logs/maintenance/`.

@@ -445,7 +445,8 @@ if [[ -d $TRUNK_CACHE_DIR ]]; then
 
 	# Keep only recent tool binaries; clean out old/unused repos cache
 	find "$TRUNK_CACHE_DIR/tools" -type f -atime +30 -delete 2>/dev/null || true
-	find "$TRUNK_CACHE_DIR/repos" -type d -atime +7 -exec rm -rf {} \; 2>/dev/null || true
+	# Root-inclusive repo deletion is disabled; do not replace with another age-only sweep.
+	log_info "Trunk repo pruning disabled by containment policy; repos left untouched"
 
 	TRUNK_AFTER=$(du -sk "$TRUNK_CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
 	TRUNK_FREED=$((TRUNK_BEFORE - TRUNK_AFTER))

@@ -43,7 +43,9 @@ log_info() {
 	echo "$ts [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
+MAINT_WARNING_COUNT=0
 log_warn() {
+	MAINT_WARNING_COUNT=$((MAINT_WARNING_COUNT + 1))
 	local ts
 	if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
 		get_timestamp ts
@@ -168,10 +170,14 @@ if command -v brew >/dev/null 2>&1; then
 	if brew cleanup --prune="${BREW_CLEAN_PRUNE_DAYS:-30}" 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
 		log_info "Homebrew cleanup completed successfully"
 		CLEANED_ITEMS=$((CLEANED_ITEMS + 1))
+	else
+		log_warn "Homebrew cleanup failed; see system_cleanup.log"
 	fi
 
 	if brew autoremove 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
 		log_info "Homebrew autoremove completed successfully"
+	else
+		log_warn "Homebrew autoremove failed; see system_cleanup.log"
 	fi
 fi
 
@@ -180,6 +186,8 @@ if command -v npm >/dev/null 2>&1; then
 	log_info "Verifying npm cache"
 	if npm cache verify 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
 		log_info "npm cache verified successfully"
+	else
+		log_warn "npm cache verification failed; see system_cleanup.log"
 	fi
 fi
 
@@ -188,6 +196,8 @@ if command -v pip3 >/dev/null 2>&1; then
 	if pip3 cache purge 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
 		log_info "pip cache purged successfully"
 		CLEANED_ITEMS=$((CLEANED_ITEMS + 1))
+	else
+		log_warn "pip cache purge reported a nonzero status; review system_cleanup.log"
 	fi
 fi
 
@@ -196,6 +206,8 @@ if command -v gem >/dev/null 2>&1; then
 	if gem cleanup 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
 		log_info "gem cleanup completed successfully"
 		CLEANED_ITEMS=$((CLEANED_ITEMS + 1))
+	else
+		log_warn "gem cleanup failed; see system_cleanup.log"
 	fi
 fi
 
@@ -212,16 +224,9 @@ if [[ -d ${USER_LOGS_DIR} ]]; then
 	fi
 fi
 
-# Clean downloads folder of files older than 90 days (be conservative)
-DOWNLOADS_DIR="${HOME}/Downloads"
-if [[ -d ${DOWNLOADS_DIR} ]]; then
-	log_info "Cleaning old downloads (90+ days)"
-	OLD_DOWNLOADS=$(find "${DOWNLOADS_DIR}" -type f -mtime +90 -print -delete 2>/dev/null | wc -l | tr -d ' ')
-	if [[ $OLD_DOWNLOADS -gt 0 ]]; then
-		log_info "Cleaned $OLD_DOWNLOADS old download files"
-		CLEANED_ITEMS=$((CLEANED_ITEMS + OLD_DOWNLOADS))
-	fi
-fi
+# Downloads: no unattended age-based deletion.
+# Keep this consistent with quick_cleanup; personal files are not cache.
+log_info "Downloads deletion disabled by containment policy; files left untouched"
 
 # 8) Browser cache cleanup (optional - only very old caches)
 for browser_cache in \
@@ -257,14 +262,22 @@ log_info "Disk usage after cleanup: ${DISK_AFTER}% (saved: ${DISK_SAVED}%)"
 # Final status
 STATUS_MSG="Cleaned ${CLEANED_ITEMS} items, saved ${DISK_SAVED}% disk space"
 
-# Notification
-if command -v terminal-notifier >/dev/null 2>&1; then
-	terminal-notifier -title "System Cleanup" \
-		-message "${STATUS_MSG}" \
-		-group "maintenance" 2>/dev/null || true
-elif command -v osascript >/dev/null 2>&1; then
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${STATUS_MSG}" "System Cleanup" 2>/dev/null || true
+# BEGIN reviewable notification policy
+# Quiet routine automation, but do not hide warnings logged by this run.
+if ((MAINT_WARNING_COUNT > 0)); then
+	STATUS_MSG="Completed with warnings; review system_cleanup.log. ${STATUS_MSG}"
 fi
+if [[ ${AUTOMATED_RUN:-0} != "1" ]] || ((MAINT_WARNING_COUNT > 0)); then
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "System Cleanup" \
+			-message "${STATUS_MSG}" \
+			-group "maintenance" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${STATUS_MSG}" "System Cleanup" 2>/dev/null || true
+	fi
+
+fi
+# END reviewable notification policy
 
 log_info "System cleanup complete: ${STATUS_MSG}"
-echo "System cleanup completed successfully!"
+echo "System cleanup: ${STATUS_MSG}"

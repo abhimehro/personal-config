@@ -388,6 +388,67 @@ fi
 
 check_grep "DRY_RUN logs intended state write" "\[DRY RUN\] Would write last_run" "$TEST_DIR/t12.log"
 
+# ---- Launch-agent health and automated notification policy ----
+cat >"$MOCK_BIN/launchctl" <<'MOCK'
+#!/bin/bash
+case "${MOCK_LAUNCH_STATUS:-healthy}" in
+healthy) printf 'PID\tStatus\tLabel\n123\t0\tcom.example.running\n-\t0\tcom.example.stopped\n' ;;
+failed) printf 'PID\tStatus\tLabel\n123\t0\tcom.example.healthy\n-\t-9\tcom.example.failed\n-\t2\tcom.example.other\n' ;;
+malformed) echo 'unexpected response' ;;
+unavailable) exit 1 ;;
+esac
+MOCK
+chmod +x "$MOCK_BIN/launchctl"
+cat >"$MOCK_BIN/terminal-notifier" <<'MOCK'
+#!/bin/bash
+printf '%s\n' "$*" >> "$MOCK_NOTICE_LOG"
+MOCK
+chmod +x "$MOCK_BIN/terminal-notifier"
+# Keep unrelated host health conditions from affecting notification assertions.
+cat >"$MOCK_BIN/vm_stat" <<'MOCK'
+#!/bin/bash
+printf 'Mach Virtual Memory Statistics: (page size of 4096 bytes)\nPages free: 65536.\n'
+MOCK
+chmod +x "$MOCK_BIN/vm_stat"
+cat >"$MOCK_BIN/pmset" <<'MOCK'
+#!/bin/bash
+printf 'Now drawing from AC Power\n -InternalBattery-0 100%%; charged\n'
+MOCK
+chmod +x "$MOCK_BIN/pmset"
+
+for launch_status in healthy failed malformed unavailable; do
+	case_home="$TEST_DIR/launch-$launch_status"
+	case_state="$TEST_DIR/state-$launch_status"
+	case_dir="$TEST_DIR/maint-$launch_status"
+	make_mock_home "$case_home"
+	seed_health_state "$case_state"
+	copy_patched_script "$case_dir" "$case_home/Library/Logs/DiagnosticReports"
+	case_notice="$TEST_DIR/notice-$launch_status"
+	if PATH="$MOCK_BIN:$PATH" HOME="$case_home" AUTOMATED_RUN=1 \
+		PERSONAL_CONFIG_STATE_DIR="$case_state" MOCK_LAUNCH_STATUS="$launch_status" \
+		MOCK_NOTICE_LOG="$case_notice" bash "$case_dir/bin/health_check.sh" >"$TEST_DIR/launch-$launch_status.log" 2>&1; then
+		check "launchctl $launch_status run succeeds" true
+	else
+		check "launchctl $launch_status run succeeds" false
+	fi
+	case_log="$case_home/Library/Logs/maintenance/health_check.log"
+	case "$launch_status" in
+	healthy)
+		check_grep "healthy launchctl status recognized" "Launch agents: No non-zero exit statuses reported" "$case_log"
+		check "healthy automated run stays silent" test ! -e "$case_notice"
+		;;
+	failed)
+		check_grep "negative launchctl exit reported" "com.example.failed:-9" "$case_log"
+		check_grep "positive launchctl exit reported" "com.example.other:2" "$case_log"
+		check_grep "failed launch agents trigger notification" "Launch agents failed" "$case_notice"
+		;;
+	*)
+		check_grep "$launch_status launchctl marked unknown" "Launch agents: UNKNOWN" "$case_log"
+		check_grep "$launch_status launchctl triggers notification" "Launch-agent status UNKNOWN" "$case_notice"
+		;;
+	esac
+done
+
 # ---- Summary ----
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="

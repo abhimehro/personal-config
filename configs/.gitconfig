@@ -29,3 +29,8 @@
 [credential "https://origin.cursor.com"]
 	helper = 
 	helper = !/Users/speedybee/.local/bin/origin credential-helper
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f

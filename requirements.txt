@@ -4,3 +4,5 @@ pyyaml==6.0.3
 jsonschema==4.26.0
 # DEPENDENCY: requests==2.34.2 — SSRF-safe HTTP client used by lib.safe_http — pinned 2026-09-06 (OSV-clean)
 requests==2.34.2
+# DEPENDENCY: ruff==0.17.3 — undefined-name (F82) tier of the proactive semantic gate in scripts/proactive-worktree.sh, which fails closed without it; version matches ruff@0.17.3 in .trunk/trunk.yaml — pinned 2026-11-02 (OSV-clean)
+ruff==0.17.3

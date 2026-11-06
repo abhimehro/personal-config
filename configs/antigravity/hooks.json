@@ -1,0 +1,17 @@
+{
+  "proactive-safety-guard": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|write_file|edit_file|multi_edit_file|replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/dev/personal-config/configs/antigravity/hooks/proactive-guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
