@@ -7,12 +7,15 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from gh_token_env import load_gh_token_env
+from gh_util import run_gh as _base_run_gh
 from pr_reference import parse_pr_reference, parse_repo_name
+
+# Retain module references for backwards compatibility with tests patching them
+_ = (json, subprocess, sys)
 
 
 def run_gh(repo, pr):
     """Call ``gh pr view`` and return JSON, or None on failure/timeout."""
-    env = load_gh_token_env()
     cmd = [
         "gh",
         "pr",
@@ -23,24 +26,7 @@ def run_gh(repo, pr):
         "--json",
         "files,updatedAt,mergeStateStatus",
     ]
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=120,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        print(f"gh pr view timed out for {repo}#{pr}", file=sys.stderr)
-        return None
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return None
+    return _base_run_gh(cmd)
 
 
 def _should_skip_table_row(line):

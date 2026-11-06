@@ -1,36 +1,8 @@
-import json
-import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
+from gh_util import run_gh
 from pr_reference import PRReference
-
-
-def run_gh(cmd_list):
-    """Call ``gh`` and return parsed JSON, or None on failure/timeout."""
-    env = load_gh_token_env()
-    try:
-        result = subprocess.run(
-            cmd_list,
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=120,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        print(
-            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
-            file=sys.stderr,
-        )
-        return None
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return None
 
 
 # ⚡ Bolt Optimization: Module-level tuple constant avoids re-instantiating list objects on every loop iteration
