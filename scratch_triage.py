@@ -4,6 +4,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_pr_reference, parse_repo_name
 
 repos = [
     "abhimehro/personal-config",
@@ -110,6 +111,10 @@ def group_prs(all_prs, triage_md):
 
 
 def _fetch_repo_prs(repo):
+    # SECURITY: Validate repository name to prevent option injection (CWE-88)
+    repo = parse_repo_name(repo, loc=("scratch_triage.py", None), strict=False)
+    if not repo:
+        return []
     repo_prs = []
     success, stdout, _ = run_cmd(
         [
@@ -138,46 +143,65 @@ def _fetch_repo_prs(repo):
     return repo_prs
 
 
+def _close_pr_action(repo, num):
+    print(f"Closing {repo}#{num} (duplicate)")
+    run_cmd(
+        [
+            "gh",
+            "pr",
+            "close",
+            str(num),
+            "--repo",
+            repo,
+            "--comment",
+            "Closing as superseded/duplicate of newer PR.",
+        ]
+    )
+    return "closed"
+
+
+def _merge_pr_action(repo, num):
+    print(f"Merging {repo}#{num}")
+    success, _, err = run_cmd(
+        [
+            "gh",
+            "pr",
+            "merge",
+            str(num),
+            "--repo",
+            repo,
+            "--squash",
+            "--admin",
+        ]
+    )
+    if success:
+        return "merged"
+    print(f"Failed to merge: {err}")
+    return "escalated"
+
+
 def _process_pr(pr):
-    repo = pr["full_repo"]
-    num = pr["number"]
-    if pr.get("status_action") == "CLOSE":
-        print(f"Closing {repo}#{num} (duplicate)")
-        run_cmd(
-            [
-                "gh",
-                "pr",
-                "close",
-                str(num),
-                "--repo",
-                repo,
-                "--comment",
-                "Closing as superseded/duplicate of newer PR.",
-            ]
-        )
-        return pr, "closed"
-    elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
-        print(f"Merging {repo}#{num}")
-        success, out, err = run_cmd(
-            [
-                "gh",
-                "pr",
-                "merge",
-                str(num),
-                "--repo",
-                repo,
-                "--squash",
-                "--admin",
-            ]
-        )
-        if success:
-            return pr, "merged"
-        else:
-            print(f"Failed to merge: {err}")
-            return pr, "escalated"
-    else:
-        print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
+    # SECURITY: Validate repo and PR reference before executing gh commands (CWE-88)
+    ref = parse_pr_reference(
+        pr.get("full_repo", ""),
+        str(pr.get("number", "")),
+        loc=("scratch_triage.py", None),
+        strict=False,
+    )
+    if not ref:
         return pr, "escalated"
+
+    status_action = pr.get("status_action")
+    merge_status = pr.get("mergeStateStatus")
+
+    if status_action == "CLOSE":
+        return pr, _close_pr_action(ref.repo, ref.number)
+
+    if merge_status in ("CLEAN", "HAS_HOOKS"):
+        return pr, _merge_pr_action(ref.repo, ref.number)
+
+    print(f"Holding {ref.repo}#{ref.number} ({merge_status})")
+    return pr, "escalated"
 
 
 if __name__ == "__main__":
