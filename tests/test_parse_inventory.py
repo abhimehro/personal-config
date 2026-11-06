@@ -223,6 +223,30 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
+    @patch("parse_inventory.load_gh_token_env", return_value={})
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_cmd_list_success(self, mock_run, _mock_env):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = '{"data": "ok"}'
+        mock_run.return_value = mock_result
+        result = run_gh(["gh", "pr", "view", "123"])
+        self.assertEqual(result, {"data": "ok"})
+        mock_run.assert_called_once()
+        args, kwargs = mock_run.call_args
+        self.assertEqual(args[0], ["gh", "pr", "view", "123"])
+
+    @patch("parse_inventory.load_gh_token_env", return_value={})
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_cmd_list_timeout(self, mock_run, _mock_env):
+        import subprocess
+
+        mock_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["gh", "pr", "view"], timeout=120
+        )
+        result = run_gh(["gh", "pr", "view", "123"])
+        self.assertIsNone(result)
+
     # --- _write_triage_report ---
 
     def test_write_triage_report_populated(self):
