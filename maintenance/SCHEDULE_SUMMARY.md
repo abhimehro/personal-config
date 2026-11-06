@@ -7,16 +7,18 @@
 
 ## 🕐 Complete Schedule Overview
 
-| Time         | Event                   | Frequency    | Script                           | Description                                                            |
-| ------------ | ----------------------- | ------------ | -------------------------------- | ---------------------------------------------------------------------- |
-| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`                | System monitoring, disk space, memory, crash logs                      |
-| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                                        |
-| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers                          |
-| **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner                                    |
-| **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                                         |
-| **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                                             |
-| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                                      |
-| **12:30 PM** | 🧠 GitNexus Auto Sync   | Daily        | `gitnexus_auto_sync_once.sh`     | One low-priority clone/pull/analyze cycle; skips delayed wake launches |
+| Time         | Event                         | Frequency    | Script                           | Description                                                            |
+| ------------ | ----------------------------- | ------------ | -------------------------------- | ---------------------------------------------------------------------- |
+| **8:30 AM**  | 🏥 System Health Check        | Daily        | `health_check.sh`                | System monitoring, disk space, memory, crash logs                      |
+| **8:35 AM**  | 🔍 Service Monitor            | Daily        | `service_monitor.sh`             | Background service and widget-extension monitoring                     |
+| **9:00 AM**  | 🧹 System Cleanup             | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                                        |
+| **9:00 AM**  | 📅 Weekly Maintenance         | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers                          |
+| **6:00 AM**  | 📆 Monthly Maintenance        | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner                                    |
+| **3:15 AM**  | ☁️ Google Drive (Light)       | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                                         |
+| **4:00 AM**  | ☁️ Google Drive (Full)        | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                                             |
+| **10:00 AM** | 🍺 Homebrew Maintenance       | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                                      |
+| **10:00 AM** | 🖼️ Screen Capture Nag Remover | Daily        | `screencapture_nag_remover.sh`   | Suppresses recurring macOS screen-recording approval prompts           |
+| **12:30 PM** | 🧠 GitNexus Auto Sync         | Daily        | `gitnexus_auto_sync_once.sh`     | One low-priority clone/pull/analyze cycle; skips delayed wake launches |
 
 > ProtonDrive one-way backup is **archived**
 > (`maintenance/bin/archive/protondrive_backup.sh`) and is not installed by
@@ -27,9 +29,13 @@
 ### Daily Agents
 
 - `com.abhimehrotra.maint.googledrivebackup.light.plist` → **3:15 AM Tue–Sun**
+  (the plist has no `Weekday` key and fires daily; `google_drive_backup.sh`
+  exits early on Mondays so the full backup owns that slot)
 - `com.abhimehrotra.maint.healthcheck.plist` → **8:30 AM daily**
+- `com.abhimehrotra.maint.servicemonitor.plist` → **8:35 AM daily**
 - `com.abhimehrotra.maint.systemcleanup.plist` → **9:00 AM daily**
 - `com.abhimehrotra.maint.brew.plist` → **10:00 AM daily**
+- `com.abhimehrotra.maint.screencapture-nag-remover.plist` → **10:00 AM daily**
 - `com.abhimehrotra.maint.gitnexus-autosync.plist` → **12:30 PM daily**
   (Background, Nice 10; wrapper allows starts between 12:30 and 12:34 PM)
 
@@ -127,6 +133,9 @@
 - Individual log files for each script in `~/Library/Logs/maintenance/`
 - Launch agent stdout/stderr logs
 - Timestamped entries with structured format
+- Every entry script creates the log directory at startup (`mkdir -p`), because
+  launchd runs without a login shell and a missing directory silently discards
+  all output. `lib/common.sh` exposes `ensure_log_dir` for the same check.
 
 ### ✅ Self-Healing System
 
