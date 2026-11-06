@@ -9,7 +9,10 @@ Precedence for ``GH_TOKEN``:
 2. Optional file from ``GH_TOKEN_ENV_FILE`` or well-known paths (legacy fallback)
 """
 
+import json
 import os
+import subprocess
+import sys
 import re
 import stat
 import warnings
@@ -192,3 +195,44 @@ def missing_gh_token_message() -> str:
         "GH_TOKEN is not set. Export GH_TOKEN, use `gh auth login`, or set "
         f"GH_TOKEN_ENV_FILE. See {_RUNBOOK}."
     )
+
+__all__ = [
+    "clear_gh_token_cache",
+    "load_gh_token_env",
+    "missing_gh_token_message",
+    "parse_env_line",
+    "resolve_gh_token_env_file",
+    "run_gh",
+]
+
+
+def run_gh(cmd_list: list[str]) -> dict | list | str | None:
+    """Call gh and return parsed JSON, or None on failure/timeout."""
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            cmd_list,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
+            file=sys.stderr,
+        )
+        return None
+    except OSError as exc:
+        print(
+            f"gh command execution failed: {exc}",
+            file=sys.stderr,
+        )
+        return None
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
