@@ -57,26 +57,26 @@ SSH_WAIT_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_WAIT_SECONDS:-1800}"
 SSH_RETRY_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_RETRY_SECONDS:-60}"
 
 notify_ssh_wait() {
-	/usr/bin/osascript -e "display notification \"Approve the 1Password prompt to let the GitNexus cycle run.\" with title \"GitNexus auto-sync waiting for SSH\"" >/dev/null 2>&1 || true
+	/usr/bin/osascript -e 'display notification "Approve the 1Password prompt to let the GitNexus cycle run." with title "GitNexus auto-sync waiting for SSH"' >/dev/null 2>&1 || true
 }
 
 wait_for_ssh_auth() {
 	local deadline attempt notified
-	deadline=$(( $(date "+%s") + SSH_WAIT_SECONDS ))
+	deadline=$(($(date "+%s") + SSH_WAIT_SECONDS))
 	attempt=0
 	notified=0
 	while :; do
 		attempt=$((attempt + 1))
 		if check_ssh_auth; then
-			if (( attempt > 1 )); then
+			if ((attempt > 1)); then
 				log "SSH authentication became available after ${attempt} attempt(s); proceeding."
 			fi
 			return 0
 		fi
-		if (( $(date "+%s") >= deadline )); then
+		if (($(date "+%s") >= deadline)); then
 			return 1
 		fi
-		if (( notified == 0 )); then
+		if ((notified == 0)); then
 			log "SSH authentication unavailable; waiting up to ${SSH_WAIT_SECONDS}s (retry every ${SSH_RETRY_SECONDS}s) for 1Password authorization."
 			notify_ssh_wait
 			notified=1
