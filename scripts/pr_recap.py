@@ -1501,20 +1501,6 @@ def resolve_linear_api_key(
 def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     """Log actionable error or warning when Linear API key cannot be resolved."""
     redacted_op_ref = "[REDACTED]"
-    proton_ref = config.secret_references.get("protonpass", {})
-    proton_vault = (
-        proton_ref.get("vault", "Personal")
-        if isinstance(proton_ref, dict)
-        else "Personal"
-    )
-    proton_item = (
-        proton_ref.get("item", "LINEAR_API_KEY")
-        if isinstance(proton_ref, dict)
-        else "LINEAR_API_KEY"
-    )
-    proton_field = (
-        proton_ref.get("field", "Secret") if isinstance(proton_ref, dict) else "Secret"
-    )
 
     if dry_run:
         logger.warning(
