@@ -1503,6 +1503,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     op_ref = config.secret_references.get(
         "onepassword", "op://Personal/LINEAR_API_KEY/credential"
     )
+    redacted_op_ref = "[REDACTED]"
     proton_ref = config.secret_references.get("protonpass", {})
     proton_vault = (
         proton_ref.get("vault", "Personal")
@@ -1522,7 +1523,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
         logger.warning(
             "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
             "Dry-run mode will plan without network mutations.",
-            op_ref,
+            redacted_op_ref,
         )
         return 0
 
@@ -1538,7 +1539,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
         "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
         "  - Shell/CI: Export LINEAR_API_KEY\n"
         "  - Dry-run: Run with --dry-run to preview actions without mutations.",
-        op_ref,
+        redacted_op_ref,
         proton_vault,
         proton_item,
         proton_field,
