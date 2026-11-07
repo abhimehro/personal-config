@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1265
+ledger_revision: 1266
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -47343,11 +47343,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - shell_execution
   changed_paths:
   - maintenance/bin/analytics_dashboard.sh
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47363,7 +47364,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/personal-config#2726@1c527b4c66379f27bb798fa62f326fbb807deddc
   repository: abhimehro/personal-config
   pr: 2726
@@ -47421,11 +47424,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47441,7 +47444,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: d5f1fa5ea5a9058e40f110cc1685a56b35a6c57a
+    basis: head_bound_diff
+    diff_sha256: fece21cc5c8bad9f3043bd3d4268de769cfbfab6835df0e4273bb1f660186b0f
 - key: abhimehro/personal-config#2728@6461547a20a6fe89ce3ad88a742a1efa3d9cb2a5
   repository: abhimehro/personal-config
   pr: 2728
@@ -47460,8 +47468,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -47473,7 +47482,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47489,7 +47498,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1393@ed838abef4933f89281afa2fdeaf53b6f62633a7
   repository: abhimehro/ctrld-sync
   pr: 1393
@@ -47506,11 +47517,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47526,7 +47538,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1394@d0b76d72f1ed204d4d3fdb506963c975a1447ec4
   repository: abhimehro/ctrld-sync
   pr: 1394
@@ -47543,11 +47557,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/bandit.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47563,7 +47578,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1857@8033495ec28657659c8b05aadc1f1ce596c08bd9
   repository: abhimehro/email-security-pipeline
   pr: 1857
@@ -47580,12 +47597,13 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - requirements-ci.txt
   - requirements-dev.txt
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47601,7 +47619,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1858@5bfe22d59e47a622f0c040a3cbaf7c4b8af551c7
   repository: abhimehro/email-security-pipeline
   pr: 1858
@@ -47618,11 +47638,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47638,7 +47659,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1136@95a75c5f43038155b8969c7e5f3578694542068b
   repository: abhimehro/Seatek_Analysis
   pr: 1136
@@ -47655,11 +47678,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47675,7 +47699,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1137@d8348521fb07d52a097aa8e1c58bc055c213e5f8
   repository: abhimehro/Seatek_Analysis
   pr: 1137
@@ -47695,12 +47721,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - Series_27/Analysis/test_outlier_analysis_series27.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47716,7 +47743,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#907@b73ba94d6a6fd45484427519982484eed98c7cb1
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 907
@@ -47733,11 +47762,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/pr-visual-recap.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47753,7 +47783,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#908@3f71e5234ace0514c63c9a695551e91874fbf1ac
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 908
@@ -47815,8 +47847,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - authentication_and_authorization
   changed_paths:
   - tests/test_app.py
   - tests/test_config.py
@@ -47827,7 +47860,7 @@ items:
   - tests/test_validate_data_cli.py
   - tests/test_validator.py
   - tests/visualization/test_chart_generator.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47843,7 +47876,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#653@8d70b34bcd71f601a5f66b3e4183e7fa233391f6
   repository: abhimehro/series_correction_project_updated
   pr: 653
@@ -47864,12 +47899,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - authentication_and_authorization
   changed_paths:
   - .jules/bolt.md
   - scripts/processor.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47885,7 +47921,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#654@e901aeecebe7a540881847efe0f9984e9ca74e7a
   repository: abhimehro/series_correction_project_updated
   pr: 654
@@ -47949,11 +47987,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -47969,7 +48007,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-07T14:35:52Z'
+  updated_at_utc: '2026-11-07T14:44:50Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 99e2c99b174414aa6e1fb60c82d415c78142fa4f
+    basis: head_bound_diff
+    diff_sha256: 49c6c9ce388f4e1ea38dba67a9db1a272792a52bf85c388c4c364de427543a91
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
