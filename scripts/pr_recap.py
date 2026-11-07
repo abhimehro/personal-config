@@ -1500,9 +1500,6 @@ def resolve_linear_api_key(
 
 def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     """Log actionable error or warning when Linear API key cannot be resolved."""
-    op_ref = config.secret_references.get(
-        "onepassword", "op://Personal/LINEAR_API_KEY/credential"
-    )
     redacted_op_ref = "[REDACTED]"
     proton_ref = config.secret_references.get("protonpass", {})
     proton_vault = (
