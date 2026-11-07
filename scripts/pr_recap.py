@@ -1500,10 +1500,13 @@ def resolve_linear_api_key(
 
 def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     """Log actionable error or warning when Linear API key cannot be resolved."""
+    redacted_op_ref = "[REDACTED]"
+
     if dry_run:
         logger.warning(
-            "No Linear API key resolved from environment, 1Password (<redacted>), or Proton Pass. "
-            "Dry-run mode will plan without network mutations."
+            "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
+            "Dry-run mode will plan without network mutations.",
+            redacted_op_ref,
         )
         return 0
 
