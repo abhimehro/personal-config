@@ -1530,8 +1530,8 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     logger.error(
         "Linear API key could not be resolved from any available provider:\n"
         "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
-        "  2. 1Password CLI: %s\n"
-        "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
+        "  2. 1Password CLI\n"
+        "  3. Proton Pass CLI\n\n"
         "Action items:\n"
         "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
         "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
@@ -1737,7 +1737,7 @@ def run_sync(args: argparse.Namespace) -> int:
     linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
 
     if linear_key:
-        logger.info("Resolved Linear API key via %s", key_source)
+        logger.info("Resolved Linear API key")
         linear_client = LinearClient(api_key=linear_key)
     else:
         linear_client = None
