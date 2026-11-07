@@ -1,4 +1,7 @@
-# Jules Daily QA via GitHub Actions — INTENTIONALLY DISABLED
+# Jules Daily QA via GitHub Actions, INTENTIONALLY DISABLED
+#
+# Retained in-repo (gated on vars.ENABLE_LEGACY_JULES == 'true') during the
+# Antigravity proactive workflow cutover until parity is confirmed.
 #
 # Jules only engages on pull requests that Jules itself initiated. Opening
 # "@google-labs-jules" Daily QA *issues* from Actions does not get replies, so
@@ -17,6 +20,7 @@ permissions:
 
 jobs:
   trigger-jules:
+    if: vars.ENABLE_LEGACY_JULES == 'true'
     name: Request Jules Agentic Review
     runs-on: ubuntu-latest
     strategy:

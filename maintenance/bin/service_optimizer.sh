@@ -4,10 +4,9 @@
 # service_optimizer.sh
 #
 # Purpose:
-#   Disables non-essential macOS background services and kills unwanted widget
-#   extensions to reduce system resource usage, memory consumption, and excessive
-#   crash reports. This script automates the manual steps outlined in the
-#   `macos-disabled-services.md` document.
+#   Disables selected macOS background services as outlined in
+#   `macos-disabled-services.md`. Broad widget/application force-killing is
+#   intentionally disabled by the containment policy below.
 #
 # Requirements:
 #   - Must be run with sudo privileges to manage system-level launchd services.
@@ -128,55 +127,10 @@ for service in "${USER_SERVICES_TO_DISABLE[@]}"; do
 done
 echo
 
-# --- Terminate Unwanted Widget Extensions ---
-
-# This list is based on `macos-disabled-services.md` and includes common
-# Apple, Microsoft, and third-party widgets that consume memory.
-WIDGETS_TO_KILL=(
-	# Apple Widgets
-	"CalendarWidgetExtension"
-	"StocksWidget"
-	"WeatherWidget"
-	"NewsToday"
-	"TipsWidget"
-	"Home"
-	"FindMy"
-	"Journal"
-	"Reminders"
-	"Shortcuts"
-	"Notes"
-	"Photos"
-	"World Clock"
-	"People"
-	"Safari"
-	"Screen Time"
-	"Batteries"
-	"PodcastsWidget"
-	# Microsoft Office Widgets
-	"Word"
-	"Excel"
-	"PowerPoint"
-	# Third-party Widgets
-	"Drafts"
-	"Dropover"
-	"Yoink"
-)
-
-echo "[3/3] Terminating unwanted widget extensions..."
-killed_count=0
-for widget in "${WIDGETS_TO_KILL[@]}"; do
-	# Use pkill to find and kill processes matching the widget name.
-	# The -f flag matches against the full command line for better accuracy.
-	# Errors are redirected to /dev/null if the process isn't running.
-	if pkill -9 -f -- "$widget" &>/dev/null; then
-		echo "  - Terminated processes matching: $widget"
-		killed_count=$((killed_count + 1))
-	fi
-done
-
-if [[ $killed_count -eq 0 ]]; then
-	echo "  - No running widget extensions from the kill list were found."
-fi
+# --- Broad process termination disabled ---
+# Name fragments such as Word, Excel, Notes and Safari are not widget identities.
+# Never send unattended SIGKILL to these broad full-command-line matches.
+echo "[3/3] Broad widget/application force-killing disabled by containment policy."
 echo
 
 echo "--- Optimization Complete ---"

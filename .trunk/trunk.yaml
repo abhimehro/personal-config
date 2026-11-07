@@ -35,31 +35,40 @@ lint:
     - linters: [deno]
       paths:
         - tasks/**/*.md
+    # Entire CLI generates .entire/agent-guide.md (2-space indented CLI tables
+    # that deno fmt collapses into # comment lines) and .pi/extensions/entire/.
+    - linters: [deno]
+      paths:
+        - .entire/**
+        - .pi/extensions/entire/**
   disabled:
     - markdownlint
     - prettier
   enabled:
     - grype@0.121.0
-    # pinact v5 rejects single-dash -format; trunk plugins v1.11.0 still pass
-    # -format via pinact_run.py. Stay on 4.1.1 until plugins emit --format.
+    # pinact v5+ rejects single-dash -format (`pinact/config-error: unknown flag:
+    # -format`); trunk-io/plugins v1.11.0 still passes -format via pinact_run.py.
+    # Note: `trunk upgrade -y` ignores YAML comments; decline pinact interactively
+    # or re-pin to 4.1.1 until trunk-io/plugins emits double-dash --format.
+    # KEEP ON 4.1.1 (pinact v5 breaks on -format under plugins v1.11.0)
     - pinact@4.1.1
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.10.1
-    - checkov@3.3.30
+    - checkov@3.4.0
     - deno@2.9.8
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.15.1
     - isort@9.0.2
     - osv-scanner@2.7.0
-    - ruff@0.17.1
+    - ruff@0.17.3
     - shellcheck@0.11.0
     - shfmt@3.14.1
     - taplo@0.10.0
     - terrascan@1.19.9
     - trivy@0.76.1
-    - trufflehog@3.99.3
+    - trufflehog@3.99.7
     - yamllint@1.38.0
 actions:
   definitions:
@@ -91,4 +100,4 @@ tools:
   enabled:
     - snyk@1.1295.0
     - trivy@0.76.1
-    - trufflehog@3.99.3
+    - trufflehog@3.99.7

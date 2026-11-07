@@ -101,3 +101,10 @@ Five canonical triage roles, label strings equal to role names; the pre-existing
 
 Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root, created
 lazily by `/domain-modeling`. See `docs/agents/domain.md`.
+
+<!-- deno-fmt-ignore-start -->
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
+<!-- deno-fmt-ignore-end -->

@@ -1,3 +1,5 @@
+# Disabled during the Google Jules to Antigravity migration cutover.
+# Retained in-repo (not deleted) until full parity is confirmed.
 name: Jules
 
 on:
@@ -14,6 +16,7 @@ on:
 
 jobs:
   invoke-jules:
+    if: vars.ENABLE_LEGACY_JULES == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
