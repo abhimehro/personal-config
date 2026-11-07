@@ -810,6 +810,8 @@ user's request matches a skill description below.
 - Codacy Analysis CLI: `npm install -g @codacy/analysis-cli`
 - `CODACY_API_TOKEN` environment variable, or run `codacy login`
 
+<!-- gitnexus:start -->
+
 # GitNexus — Code Intelligence
 
 This project is indexed by GitNexus as **personal-config** (8854 symbols, 11895
@@ -893,6 +895,8 @@ relationships, 298 execution flows).
 | Work in the Cluster_74 area (4 symbols)      | `.claude/skills/gitnexus-area-cluster-74/SKILL.md`    |
 | Work in the Cluster_0 area (3 symbols)       | `.claude/skills/gitnexus-area-cluster-0/SKILL.md`     |
 
+<!-- gitnexus:end -->
+
 ## Notion agent context (consult first)
 
 Use Notion as the durable shared memory and workspace across agents. Before
@@ -903,10 +907,10 @@ links: https://app.notion.com/p/4107419416de81eeb956c2e482cd093b
 - Search Notion before answering questions that depend on personal or project
   context.
 
-- Mem is Abhi's primary personal notebook; agents create personal notebook
-  notes there via the Mem MCP. Exception: Stage 3 packets and personal summaries
-  for Abhi's review continue to go to Notion; do not redirect these handoffs to
-  Mem. Notion also serves as the shared agent workspace.
+- Mem is Abhi's primary personal notebook; agents create notes he needs to
+  review there via the Mem MCP. Notion is dedicated exclusively to agent use.
+  Stage 3 packets and other workflow artifacts continue to land in their
+  Notion destinations; do not redirect those handoffs to Mem.
 
 - Keep code, READMEs, and repository plans in the repository. Save durable
   decisions, preferences, and project state to Notion.

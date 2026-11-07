@@ -113,10 +113,10 @@ links: https://app.notion.com/p/4107419416de81eeb956c2e482cd093b
 - Search Notion before answering questions that depend on personal or project
   context.
 
-- Mem is Abhi's primary personal notebook; agents create personal notebook
-  notes there via the Mem MCP. Exception: Stage 3 packets and personal summaries
-  for Abhi's review continue to go to Notion; do not redirect these handoffs to
-  Mem. Notion also serves as the shared agent workspace.
+- Mem is Abhi's primary personal notebook; agents create notes he needs to
+  review there via the Mem MCP. Notion is dedicated exclusively to agent use.
+  Stage 3 packets and other workflow artifacts continue to land in their
+  Notion destinations; do not redirect those handoffs to Mem.
 
 - Keep code, READMEs, and repository plans in the repository. Save durable
   decisions, preferences, and project state to Notion.
