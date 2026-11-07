@@ -1520,7 +1520,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
 
     if dry_run:
         logger.warning(
-            "No Linear API key resolved from environment, 1Password CLI, or Proton Pass CLI. "
+            "No Linear API key resolved from environment, configured 1Password reference, or configured Proton Pass reference. "
             "Dry-run mode will plan without network mutations."
         )
         return 0
@@ -1528,8 +1528,8 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     logger.error(
         "Linear API key could not be resolved from any available provider:\n"
         "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
-        "  2. 1Password CLI\n"
-        "  3. Proton Pass CLI\n\n"
+        "  2. 1Password CLI reference (configured)\n"
+        "  3. Proton Pass CLI reference (configured vault/item/field)\n\n"
         "Action items:\n"
         "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
         "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
