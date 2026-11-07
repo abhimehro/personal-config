@@ -1499,7 +1499,10 @@ def resolve_linear_api_key(
 
 
 def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
-    """Log actionable error or warning when Linear API key cannot be resolved."""
+    """Log actionable error or warning when Linear API key cannot be resolved.
+
+    Return 0 after a dry-run warning, or 1 after a live-mode error.
+    """
     redacted_op_ref = "[REDACTED]"
 
     if dry_run:
