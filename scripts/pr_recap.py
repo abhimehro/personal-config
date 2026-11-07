@@ -1500,48 +1500,28 @@ def resolve_linear_api_key(
 
 def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
     """Log actionable error or warning when Linear API key cannot be resolved."""
-    op_ref = config.secret_references.get(
-        "onepassword", "op://Personal/LINEAR_API_KEY/credential"
-    )
-    proton_ref = config.secret_references.get("protonpass", {})
-    proton_vault = (
-        proton_ref.get("vault", "Personal")
-        if isinstance(proton_ref, dict)
-        else "Personal"
-    )
-    proton_item = (
-        proton_ref.get("item", "LINEAR_API_KEY")
-        if isinstance(proton_ref, dict)
-        else "LINEAR_API_KEY"
-    )
-    proton_field = (
-        proton_ref.get("field", "Secret") if isinstance(proton_ref, dict) else "Secret"
-    )
+    redacted_op_ref = "[REDACTED]"
 
     if dry_run:
         logger.warning(
             "No Linear API key resolved from environment, 1Password (%s), or Proton Pass. "
             "Dry-run mode will plan without network mutations.",
-            op_ref,
+            redacted_op_ref,
         )
         return 0
 
     logger.error(
         "Linear API key could not be resolved from any available provider:\n"
         "  1. Environment variable: LINEAR_API_KEY (or LINEAR_TOKEN)\n"
-        "  2. 1Password CLI: %s\n"
-        "  3. Proton Pass CLI: vault='%s', item='%s', field='%s'\n\n"
+        "  2. 1Password CLI: <redacted>\n"
+        "  3. Proton Pass CLI: vault='<redacted>', item='<redacted>', field='<redacted>'\n\n"
         "Action items:\n"
         "  - 1Password: Ensure desktop app integration is enabled, or set OP_SERVICE_ACCOUNT_TOKEN, or run:\n"
         "      op run --env-file=.env.pr-recap.template -- pr-recap sync\n"
         "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
         "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
         "  - Shell/CI: Export LINEAR_API_KEY\n"
-        "  - Dry-run: Run with --dry-run to preview actions without mutations.",
-        op_ref,
-        proton_vault,
-        proton_item,
-        proton_field,
+        "  - Dry-run: Run with --dry-run to preview actions without mutations."
     )
     return 1
 
@@ -1736,7 +1716,7 @@ def run_sync(args: argparse.Namespace) -> int:
     linear_key, key_source = resolve_linear_api_key(config=config, timeout=key_timeout)
 
     if linear_key:
-        logger.info("Resolved Linear API key via %s", key_source)
+        logger.info("Resolved Linear API key")
         linear_client = LinearClient(api_key=linear_key)
     else:
         linear_client = None
