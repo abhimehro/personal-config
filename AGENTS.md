@@ -790,7 +790,7 @@ Mac). Profiles: `configs/.config/agent-shell/`. Prefer non-interactive-safe env:
   [`configs/.config/agent-shell/README.md`](configs/.config/agent-shell/README.md)
 - Raycast: [`docs/RAYCAST_AGENT_SHELL.md`](docs/RAYCAST_AGENT_SHELL.md)
 
-# Codacy Skills
+## Codacy Skills
 
 You have access to Codacy skills. Read the relevant `SKILL.md` whenever the
 user's request matches a skill description below.
@@ -812,7 +812,7 @@ user's request matches a skill description below.
 
 <!-- gitnexus:start -->
 
-# GitNexus — Code Intelligence
+## GitNexus — Code Intelligence
 
 This project is indexed by GitNexus as **personal-config** (8854 symbols, 11895
 relationships, 298 execution flows).

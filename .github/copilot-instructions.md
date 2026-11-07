@@ -266,7 +266,7 @@ limitation. Don't let me proceed until I can explain it myself.
 - Validate inputs; use allowlists over denylists
 - Log actions for auditability
 
-# [CORE] + [SECURITY] + [PLATFORM:IDE-AGENTS]
+## [CORE] + [SECURITY] + [PLATFORM:IDE-AGENTS]
 
 ## Agentic Workflow Protocols
 
@@ -287,7 +287,7 @@ limitation. Don't let me proceed until I can explain it myself.
   the chat.
 - ❌ Never commit secrets to the repository.
 
-# [CORE] + [SECURITY] + [PLATFORM:CLOUD-AGENT] + [CONTEXT:COPILOT]
+## [CORE] + [SECURITY] + [PLATFORM:CLOUD-AGENT] + [CONTEXT:COPILOT]
 
 ## Cloud Agent Behavior (Copilot Workspace / Warp OZ Agent)
 
