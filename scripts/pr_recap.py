@@ -1535,11 +1535,7 @@ def _handle_missing_linear_key(config: Config, dry_run: bool) -> int:
         "  - Proton Pass: Ensure active session ('pass-cli login'), or run:\n"
         "      pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync\n"
         "  - Shell/CI: Export LINEAR_API_KEY\n"
-        "  - Dry-run: Run with --dry-run to preview actions without mutations.",
-        redacted_op_ref,
-        proton_vault,
-        proton_item,
-        proton_field,
+        "  - Dry-run: Run with --dry-run to preview actions without mutations."
     )
     return 1
 
