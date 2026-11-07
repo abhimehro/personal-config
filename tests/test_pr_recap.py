@@ -1079,6 +1079,107 @@ class TestEndToEndSync(unittest.TestCase):
             self.assertNotEqual(ctx.pr_title, "rogue")
 
 
+class TestMissingLinearKey(unittest.TestCase):
+    """Regression coverage for the missing-credential diagnostic paths."""
+
+    def setUp(self) -> None:
+        self.references = {
+            "onepassword": "op://sentinel-vault/sentinel-item/sentinel-field",
+            "protonpass": {
+                "vault": "sentinel-proton-vault",
+                "item": "sentinel-proton-item",
+                "field": "sentinel-proton-field",
+            },
+        }
+        self.config = Config(
+            team_id="personal-config",
+            state_map=dict(CANONICAL_STATES),
+            secret_references=self.references,
+        )
+
+    def test_live_mode_returns_failure_and_formats_actionable_error(self) -> None:
+        # Use real logging: a mocked logger would miss formatting failures.
+        with self.assertLogs("pr_recap", level="WARNING") as captured:
+            result = pr_recap._handle_missing_linear_key(self.config, dry_run=False)
+
+        self.assertEqual(result, 1)
+        self.assertEqual(len(captured.records), 1)
+        self.assertEqual(captured.records[0].levelname, "ERROR")
+        message = captured.records[0].getMessage()
+        self.assertIn("Linear API key could not be resolved", message)
+        for guidance in (
+            "LINEAR_API_KEY (or LINEAR_TOKEN)",
+            "OP_SERVICE_ACCOUNT_TOKEN",
+            "op run --env-file=.env.pr-recap.template -- pr-recap sync",
+            "pass-cli login",
+            "pass-cli run --env-file=.env.pr-recap.template -- pr-recap sync",
+            "--dry-run",
+        ):
+            with self.subTest(guidance=guidance):
+                self.assertIn(guidance, message)
+        self.assertIn("1Password CLI: <redacted>", message)
+        self.assertIn(
+            "vault='<redacted>', item='<redacted>', field='<redacted>'", message
+        )
+
+    def test_dry_run_returns_success_with_warning(self) -> None:
+        with self.assertLogs("pr_recap", level="WARNING") as captured:
+            result = pr_recap._handle_missing_linear_key(self.config, dry_run=True)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(len(captured.records), 1)
+        self.assertEqual(captured.records[0].levelname, "WARNING")
+        self.assertIn("No Linear API key resolved", captured.records[0].getMessage())
+        self.assertIn("[REDACTED]", captured.records[0].getMessage())
+        self.assertIn(
+            "Dry-run mode will plan without network mutations.",
+            captured.records[0].getMessage(),
+        )
+
+    def test_neither_mode_logs_configured_secret_references(self) -> None:
+        sensitive_values = [
+            self.references["onepassword"],
+            "sentinel-vault",
+            "sentinel-item",
+            "sentinel-field",
+            *self.references["protonpass"].values(),
+        ]
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                with self.assertLogs("pr_recap", level="DEBUG") as captured:
+                    pr_recap._handle_missing_linear_key(self.config, dry_run=dry_run)
+                for value in sensitive_values:
+                    self.assertNotIn(value, "\n".join(captured.output))
+                    for record in captured.records:
+                        self.assertNotIn(value, repr(record.args))
+
+    def test_missing_secret_reference_config_is_supported_in_both_modes(self) -> None:
+        config = Config(
+            team_id="personal-config",
+            state_map=dict(CANONICAL_STATES),
+            secret_references={},
+        )
+        for dry_run, expected in ((False, 1), (True, 0)):
+            with self.subTest(dry_run=dry_run):
+                with self.assertLogs("pr_recap", level="WARNING") as captured:
+                    self.assertEqual(
+                        pr_recap._handle_missing_linear_key(config, dry_run=dry_run),
+                        expected,
+                    )
+                self.assertEqual(len(captured.records), 1)
+                self.assertIn("Linear API key", captured.records[0].getMessage())
+
+    def test_default_provider_references_support_both_modes(self) -> None:
+        config = Config.from_dict({"teamId": "ABHI"})
+        for dry_run, expected in ((False, 1), (True, 0)):
+            with self.subTest(dry_run=dry_run):
+                with self.assertLogs("pr_recap", level="WARNING") as captured:
+                    result = pr_recap._handle_missing_linear_key(config, dry_run)
+                self.assertEqual(result, expected)
+                self.assertEqual(len(captured.records), 1)
+                self.assertIn("Linear API key", captured.records[0].getMessage())
+
+
 class TestSecretResolution(unittest.TestCase):
     """Test provider-agnostic secret resolution (env -> 1Password -> Proton Pass)."""
 
