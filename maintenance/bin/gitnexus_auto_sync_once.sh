@@ -49,13 +49,57 @@ check_ssh_auth() {
 	(timeout 5 ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 || true) | grep -Fq "You've successfully authenticated"
 }
 
+# Bounded wait for SSH authentication.
+# The 1Password SSH agent may be locked or awaiting biometric approval when launchd
+# fires. Rather than skipping the whole day, wait for a grace window and post one
+# notification so authorization can happen without watching the clock.
+SSH_WAIT_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_WAIT_SECONDS:-1800}"
+SSH_RETRY_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_RETRY_SECONDS:-60}"
+
+notify_ssh_wait() {
+	/usr/bin/osascript -e 'display notification "Approve the 1Password prompt to let the GitNexus cycle run." with title "GitNexus auto-sync waiting for SSH"' >/dev/null 2>&1 || true
+}
+
+wait_for_ssh_auth() {
+	local deadline attempt notified
+	deadline=$(($(date "+%s") + SSH_WAIT_SECONDS))
+	attempt=0
+	notified=0
+	while :; do
+		attempt=$((attempt + 1))
+		if check_ssh_auth; then
+			if ((attempt > 1)); then
+				log "SSH authentication became available after ${attempt} attempt(s); proceeding."
+			fi
+			return 0
+		fi
+		if (($(date "+%s") >= deadline)); then
+			return 1
+		fi
+		if ((notified == 0)); then
+			log "SSH authentication unavailable; waiting up to ${SSH_WAIT_SECONDS}s (retry every ${SSH_RETRY_SECONDS}s) for 1Password authorization."
+			notify_ssh_wait
+			notified=1
+		fi
+		sleep "$SSH_RETRY_SECONDS"
+	done
+}
+
 if [[ $MANUAL -eq 0 ]]; then
 	scheduled_window="$(date "+%H%M")"
 	if ((10#$scheduled_window < 1230 || 10#$scheduled_window > 1234)); then
 		# Outside the 12:30-12:34 PM window (e.g. launchd fired after sleep/wake).
 		# If SSH authentication is active (1Password unlocked, network up), permit one catch-up run.
 		# If SSH is unavailable, skip cleanly to avoid any interactive prompts or delayed thrash.
-		if ! check_ssh_auth; then
+		# Only wait for authorization during a same-day grace period. A wake at an
+		# unreasonable hour should fail fast rather than notify or block.
+		ssh_ready=0
+		if ((10#$scheduled_window > 1234 && 10#$scheduled_window <= 1400)); then
+			if wait_for_ssh_auth; then ssh_ready=1; fi
+		else
+			if check_ssh_auth; then ssh_ready=1; fi
+		fi
+		if [[ $ssh_ready -eq 0 ]]; then
 			log "SKIPPED: outside the 12:30-12:34 PM start window and SSH authentication is not active."
 			FINISHED=1
 			log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
@@ -66,14 +110,16 @@ if [[ $MANUAL -eq 0 ]]; then
 fi
 
 # Pre-flight check: verify SSH authentication to GitHub is ready.
-# If 1Password SSH agent is locked, awaiting biometric approval, or network is down,
-# fail fast immediately rather than hanging for 9 minutes (60s x 9 repos) and corrupting sync state.
-if ! check_ssh_auth; then
+# If the 1Password SSH agent is locked or awaiting biometric approval, wait for a
+# bounded grace window (default 30 min) instead of skipping the whole day. This
+# still avoids hanging for 9 minutes (60s x 9 repos) on a genuinely dead network,
+# because the wait is capped and the cycle never starts without working auth.
+if ! wait_for_ssh_auth; then
 	if [[ $MANUAL -eq 1 ]]; then
-		log "ERROR: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
+		log "ERROR: SSH authentication to GitHub unavailable after ${SSH_WAIT_SECONDS}s (SSH agent locked, awaiting authorization, or network offline)."
 		exit 1
 	else
-		log "SKIPPED: SSH authentication to GitHub unavailable (SSH agent locked, awaiting authorization, or network offline)."
+		log "SKIPPED: SSH authentication to GitHub unavailable after ${SSH_WAIT_SECONDS}s (SSH agent locked, awaiting authorization, or network offline)."
 		FINISHED=1
 		log "End time: $(date "+%Y-%m-%dT%H:%M:%S%z"); wrapper_exit=0"
 		exit 0
