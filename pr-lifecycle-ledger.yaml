@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1266
+ledger_revision: 1275
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -28046,10 +28046,10 @@ items:
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerPromptTab.swift
   - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextSelectedFilesContent.swift
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge until routine predicates are verified.
   next_action: Re-anchored to live head ab5b5ef5bda469483116c91290ae55ad4f7741fa;
     prior evidence void.
@@ -28059,9 +28059,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-27T13:46:41Z'
+  handoffs:
+  - evt-reconcile-20261107151325-db3c97cd
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: ab5b5ef5bda469483116c91290ae55ad4f7741fa
@@ -30462,12 +30463,12 @@ items:
   revision: 1
   updated_at_utc: '2026-10-20T10:49:46Z'
   guardrail_source: path_eval
-- key: abhimehro/email-security-pipeline#1761@35f8b5477eadd22871bc1ef42285cf1e0dddcb48
+- key: abhimehro/email-security-pipeline#1761@aeddbd1d3d717245f6bfdc6420ee3847756485cd
   repository: abhimehro/email-security-pipeline
   pr: 1761
   url: https://github.com/abhimehro/email-security-pipeline/pull/1761
-  base_sha: d722506c9f169852c018832f8688cf384db78f7f
-  head_sha: 35f8b5477eadd22871bc1ef42285cf1e0dddcb48
+  base_sha: ca6f5f7cfc426a3da9e12e3ea4c7b50c0f4658e8
+  head_sha: aeddbd1d3d717245f6bfdc6420ee3847756485cd
   author:
     login: abhimehro
     identity_source: github_api
@@ -30494,8 +30495,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  next_action: Re-anchored to live head aeddbd1d3d717245f6bfdc6420ee3847756485cd;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1761
   attempts:
@@ -30504,7 +30505,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-27T13:46:41Z'
+  updated_at_utc: '2026-11-07T15:13:25Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 35f8b5477eadd22871bc1ef42285cf1e0dddcb48
@@ -37532,10 +37533,10 @@ items:
   - tests/test_ssrf_reserved.py
   - tests/test_ux.py
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-28
     by reconcile).'
@@ -37545,9 +37546,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-28T13:35:34Z'
+  handoffs:
+  - evt-reconcile-20261107151325-f26f5266
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
 - key: abhimehro/email-security-pipeline#1797@e30dfcddb22c5974a0ede526b9e1fbd841a3fd00
   repository: abhimehro/email-security-pipeline
   pr: 1797
@@ -38114,10 +38116,10 @@ items:
   - tasks/qa_notes.md
   - tasks/todo.md
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-29
     by reconcile).'
@@ -38127,9 +38129,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-29T13:32:33Z'
+  handoffs:
+  - evt-reconcile-20261107151325-0fb81d0e
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
 - key: abhimehro/email-security-pipeline#1803@9a030f15ad86b8cf899037ee5a75f00993f350f0
   repository: abhimehro/email-security-pipeline
   pr: 1803
@@ -38514,10 +38517,10 @@ items:
   - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_reporting.md
   - .github/aw/imports/github/gh-aw/94662b1dee8ce96c876ba9f33b3ab8be32de82a4/.github_workflows_shared_trending-charts-simple.md
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-30
     by reconcile).'
@@ -38527,9 +38530,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-30T13:29:59Z'
+  handoffs:
+  - evt-reconcile-20261107151325-0f8108ae
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
 - key: abhimehro/email-security-pipeline#1809@257d327ac242789ff5887fa8d3a0d507aa261911
   repository: abhimehro/email-security-pipeline
   pr: 1809
@@ -38808,10 +38812,10 @@ items:
   - pyproject.toml
   - pytest.ini
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-31
     by reconcile).'
@@ -38821,9 +38825,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-31T13:31:30Z'
+  handoffs:
+  - evt-reconcile-20261107151325-ba0bc864
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
 - key: abhimehro/email-security-pipeline#1812@be1d75609e096ad5d7155db85782e6054a5f1456
   repository: abhimehro/email-security-pipeline
   pr: 1812
@@ -45757,10 +45762,10 @@ items:
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-04
     by reconcile).'
@@ -45770,9 +45775,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-04T15:00:57Z'
+  handoffs:
+  - evt-reconcile-20261107151325-72a07055
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 23b2b987cea50fe2caa959669c0ddefc215feb63
@@ -46269,10 +46275,10 @@ items:
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-05
     by reconcile).'
@@ -46282,9 +46288,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-06T15:31:35Z'
+  handoffs:
+  - evt-reconcile-20261107151325-7afd42a1
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 0e4c7f10f2b2526906846fbdecbc89e7f2eaa35a
@@ -46858,10 +46865,10 @@ items:
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-06
     by reconcile).'
@@ -46871,9 +46878,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-06T15:31:35Z'
+  handoffs:
+  - evt-reconcile-20261107151325-304260e3
+  revision: 1
+  updated_at_utc: '2026-11-07T15:13:25Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: b7d353032f6c6c6cd232fa5370dee155e42acd1e
@@ -84297,6 +84305,162 @@ events:
   idempotency_key: abhimehro/personal-config#2678@650a0ae155b4b6cc49396c13d2157fa104372f19:evt-reconcile-20261107144429-3ca2de24
   status: PROJECTED
   created_at_utc: '2026-11-07T14:44:29Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-db3c97cd
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#431@ab5b5ef5bda469483116c91290ae55ad4f7741fa
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#431@ab5b5ef5bda469483116c91290ae55ad4f7741fa:evt-reconcile-20261107151325-db3c97cd
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-f26f5266
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1366@06f8f2b55851fbf8f2d89d1061234024efd44aba
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1366@06f8f2b55851fbf8f2d89d1061234024efd44aba:evt-reconcile-20261107151325-f26f5266
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-0fb81d0e
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1370@77cc9bc6ee1f15d7a4da3747ba9e2423777dac97
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1370@77cc9bc6ee1f15d7a4da3747ba9e2423777dac97:evt-reconcile-20261107151325-0fb81d0e
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-0f8108ae
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1375@9754a6d804324b33542e3d74a3ad040935115db9
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1375@9754a6d804324b33542e3d74a3ad040935115db9:evt-reconcile-20261107151325-0f8108ae
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-ba0bc864
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1379@02d7409be0ece8ec693c7acfbb9ee6e90607eb3f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1379@02d7409be0ece8ec693c7acfbb9ee6e90607eb3f:evt-reconcile-20261107151325-ba0bc864
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=MERGED mergedBy=app/trunk-io
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-72a07055
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2709@23b2b987cea50fe2caa959669c0ddefc215feb63
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2709@23b2b987cea50fe2caa959669c0ddefc215feb63:evt-reconcile-20261107151325-72a07055
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-7afd42a1
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2714@0e4c7f10f2b2526906846fbdecbc89e7f2eaa35a
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2714@0e4c7f10f2b2526906846fbdecbc89e7f2eaa35a:evt-reconcile-20261107151325-7afd42a1
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261107151325-304260e3
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2720@b7d353032f6c6c6cd232fa5370dee155e42acd1e
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2720@b7d353032f6c6c6cd232fa5370dee155e42acd1e:evt-reconcile-20261107151325-304260e3
+  status: PROJECTED
+  created_at_utc: '2026-11-07T15:13:25Z'
   acknowledged_at_utc: null
   reason: live PR state=CLOSED without disposition label; closed outside lifecycle
     → CLOSED_NOOP
