@@ -49,7 +49,9 @@ class TestNotionAgentContext(unittest.TestCase):
                     section,
                 )
                 # Check the whole URL token: an appended suffix must not pass.
-                self.assertEqual(re.findall(r"https?://\S+", section), [GUIDE_URL])
+                # A trailing ">" is allowed so the URL can be angle-bracketed
+                # to satisfy markdownlint MD034 (no bare URLs).
+                self.assertEqual(re.findall(r"https?://[^\s>]+", section), [GUIDE_URL])
 
     def test_search_precedes_context_dependent_answers(self) -> None:
         for path in ENTRY_POINTS:

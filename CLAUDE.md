@@ -108,7 +108,7 @@ lazily by `/domain-modeling`. See `docs/agents/domain.md`.
 Use Notion as the durable shared memory and workspace across agents. Before
 starting any task that depends on Abhi's personal or project context, read
 the Agent Operating Guide (version 0.0.6) and the Agent Workflow Registry it
-links: https://app.notion.com/p/4107419416de81eeb956c2e482cd093b
+links: <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
 
 - Search Notion before answering questions that depend on personal or project
   context.
