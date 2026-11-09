@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1277
+ledger_revision: 1278
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -23090,22 +23090,25 @@ items:
   - scripts/check_mail_connectivity.py
   - tests/test_mail_server_validation.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head 58f6b9a1384dcbb606b253f912320b91c1eec333;
-    prior evidence void.
+  safe_default: 'Leave #1656 open. Do not merge the conflicting original; do not update
+    its Jules branch.'
+  next_action: 'Stage 2: work item s2-20261109-email-security-pipeline-1656 — recover
+    the bounded unique remainder (scripts/check_mail_connectivity.py, tests/test_mail_server_validation.py)
+    on a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1656
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-s2-20261109-email-security-pipeline-1656-wi
+  revision: 1
+  updated_at_utc: '2026-11-09T20:55:00Z'
 - key: abhimehro/email-security-pipeline#1661@ed878583450444b5c7190c45bc6ccdd65d3a664c
   repository: abhimehro/email-security-pipeline
   pr: 1661
@@ -24465,22 +24468,25 @@ items:
   - .jules/palette.md
   - tests/test_repository_automation.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head efccb65f98a29cae788e1a7b147957c295239365;
-    prior evidence void.
+  safe_default: 'Leave #986 open. Do not merge the conflicting original; do not update
+    its Jules branch.'
+  next_action: 'Stage 2: work item s2-20261109-Seatek_Analysis-986 — recover the bounded
+    unique remainder (.github/scripts/repository_automation.py, tests/test_repository_automation.py)
+    on a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/986
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-s2-20261109-seatek-986-wi
+  revision: 1
+  updated_at_utc: '2026-11-09T20:55:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#722@8057ee486be41e2c3b7d95ab7dff299d6e0bdf36
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 722
@@ -25387,22 +25393,25 @@ items:
   - scripts/generate_overview_table.py
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head f9cc4be9c8641ea35526e8d98d16d93ffdc23850;
-    prior evidence void.
+  safe_default: 'Leave #484 open. Do not merge the conflicting original; do not update
+    its Jules branch.'
+  next_action: 'Stage 2: work item s2-20261109-series_correction_project_updated-484
+    — recover the bounded unique remainder (scripts/processor.py, scripts/discontinuity_utils.py)
+    on a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/484
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-s2-20261109-series-484-wi
+  revision: 1
+  updated_at_utc: '2026-11-09T20:55:00Z'
 - key: abhimehro/series_correction_project_updated#487@1114fd1e90480338812202749a783d755e2407b7
   repository: abhimehro/series_correction_project_updated
   pr: 487
@@ -35209,8 +35218,9 @@ items:
     Re-read isDraft (0gd). Do not close original #1624 from Stage 2.'
   next_action: 'Stage 3 2026-11-09 (Abhi-approved APPLY, ledger rev 1276->1277): CORRECTION
     to IMPORT evt-s2-20261020-email-1784-i: its reason ''0gd not needed'' is wrong;
-    the 0gd isDraft re-read/convert-back was needed 2x for #1784. Event text left
-    unchanged (append-only). | prior: Stage 1: re-ingest salvage draft #1784 (diagnose_docker_connectivity.py,
+    the 0gd isDraft re-read/convert-back was needed 2x for #1784. Stage 2''s rev-1277
+    in-event correction of the same IMPORT reason is consistent with this count. |
+    prior: Stage 1: re-ingest salvage draft #1784 (diagnose_docker_connectivity.py,
     tests/test_diagnose_docker_connectivity.py; python3 -m pytest tests/test_diagnose_docker_connectivity.py
     -q -> 5 passed; git diff --check exit 0). Route only when unmarked and every routine
     predicate passes. Original #1624 stays OPEN for Stage 3.'
@@ -35261,9 +35271,10 @@ items:
     Re-read isDraft (0gd). Do not close original #1720 from Stage 2.'
   next_action: 'Stage 3 2026-11-09 (Abhi-approved APPLY, ledger rev 1276->1277): CORRECTION
     to IMPORT evt-s2-20261020-email-1785-i: its reason ''0gd not needed'' is wrong;
-    the 0gd isDraft re-read/convert-back was needed 1x for #1785. Event text left
-    unchanged (append-only). | prior: Re-anchored to live head 0be1aed6c4b34ba823abac257e6daf6718f4ca75;
-    prior evidence void.'
+    the 0gd isDraft re-read/convert-back was needed 1x for #1785. Stage 2''s rev-1277
+    in-event correction of the same IMPORT reason is consistent with this count. |
+    prior: Re-anchored to live head 0be1aed6c4b34ba823abac257e6daf6718f4ca75; prior
+    evidence void.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1785
   - https://github.com/abhimehro/email-security-pipeline/pull/1720
@@ -35316,14 +35327,14 @@ items:
     Re-read isDraft (0gd). Do not close original #1694 from Stage 2.'
   next_action: 'Stage 3 2026-11-09 (Abhi-approved APPLY, ledger rev 1276->1277): CORRECTION
     to IMPORT evt-s2-20261020-email-1786-i: its reason ''0gd not needed'' is wrong;
-    the 0gd isDraft re-read/convert-back was needed 2x for #1786. Event text left
-    unchanged (append-only). SHA NOTE: ledger key head 9945c09b differs from GitHub
-    merged head 7560f5ff (merged 2026-11-06); MERGED_ROUTINE terminal disposition
-    stands; record re-anchor provenance on next reconcile. | prior: Stage 1: re-ingest
-    salvage draft #1786 (src/utils/setup_wizard.py, tests/test_ui_palette.py; python3
-    -m pytest tests/test_ui_palette.py -q -> 19 passed; git diff --check exit 0).
-    Route only when unmarked and every routine predicate passes. Original #1694 stays
-    OPEN for Stage 3.'
+    the 0gd isDraft re-read/convert-back was needed 2x for #1786. Stage 2''s rev-1277
+    in-event correction of the same IMPORT reason is consistent with this count. SHA
+    NOTE: ledger key head 9945c09b differs from GitHub merged head 7560f5ff (merged
+    2026-11-06); MERGED_ROUTINE terminal disposition stands; record re-anchor provenance
+    on next reconcile. | prior: Stage 1: re-ingest salvage draft #1786 (src/utils/setup_wizard.py,
+    tests/test_ui_palette.py; python3 -m pytest tests/test_ui_palette.py -q -> 19
+    passed; git diff --check exit 0). Route only when unmarked and every routine predicate
+    passes. Original #1694 stays OPEN for Stage 3.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1786
   - https://github.com/abhimehro/email-security-pipeline/pull/1694
@@ -35376,11 +35387,12 @@ items:
     Re-read isDraft (0gd). Do not close original #1665 from Stage 2.'
   next_action: 'Stage 3 2026-11-09 (Abhi-approved APPLY, ledger rev 1276->1277): CORRECTION
     to IMPORT evt-s2-20261020-email-1787-i: its reason ''0gd not needed'' is wrong;
-    the 0gd isDraft re-read/convert-back was needed 1x for #1787. Event text left
-    unchanged (append-only). | prior: Stage 1: re-ingest salvage draft #1787 (src/modules/alert_console.py,
-    tests/test_alert_system_console.py; python3 -m pytest tests/test_alert_system_console.py
-    -q -> 21 passed; git diff --check exit 0). Route only when unmarked and every
-    routine predicate passes. Original #1665 stays OPEN for Stage 3.'
+    the 0gd isDraft re-read/convert-back was needed 1x for #1787. Stage 2''s rev-1277
+    in-event correction of the same IMPORT reason is consistent with this count. |
+    prior: Stage 1: re-ingest salvage draft #1787 (src/modules/alert_console.py, tests/test_alert_system_console.py;
+    python3 -m pytest tests/test_alert_system_console.py -q -> 21 passed; git diff
+    --check exit 0). Route only when unmarked and every routine predicate passes.
+    Original #1665 stays OPEN for Stage 3.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1787
   - https://github.com/abhimehro/email-security-pipeline/pull/1665
@@ -80505,7 +80517,9 @@ events:
   policy_revision: null
   successful: null
   reason: 'Import salvage draft #1784 provenance to #1624 via WI s2-20261017-email-security-pipeline-1624.
-    Head 68d8c35486ab; isDraft=true re-read after create (0gd not needed).'
+    Head 68d8c35486ab; isDraft=true re-read after create (correction 2026-11-09: 0gd
+    WAS needed — linear-code[bot] flipped the draft to ready after CAS; reconverted
+    2× via convertPullRequestToDraft, see stage2-20261020-apply/0gd-log.txt).'
 - event_id: evt-s2-20261020-email-1784-a
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1784@68d8c35486ab6fd137a98cb5b5ae8ebd0afa15d5
@@ -80614,7 +80628,9 @@ events:
   policy_revision: null
   successful: null
   reason: 'Import salvage draft #1785 provenance to #1720 via WI s2-20261017-email-security-pipeline-1720.
-    Head b767d7c709cb; isDraft=true re-read after create (0gd not needed).'
+    Head b767d7c709cb; isDraft=true re-read after create (correction 2026-11-09: 0gd
+    WAS needed — linear-code[bot] flipped the draft to ready after CAS; reconverted
+    1× via convertPullRequestToDraft, see stage2-20261020-apply/0gd-log.txt).'
 - event_id: evt-s2-20261020-email-1785-a
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1785@0be1aed6c4b34ba823abac257e6daf6718f4ca75
@@ -80722,7 +80738,9 @@ events:
   policy_revision: null
   successful: null
   reason: 'Import salvage draft #1786 provenance to #1694 via WI s2-20261017-email-security-pipeline-1694.
-    Head 9945c09b4ed3; isDraft=true re-read after create (0gd not needed).'
+    Head 9945c09b4ed3; isDraft=true re-read after create (correction 2026-11-09: 0gd
+    WAS needed — linear-code[bot] flipped the draft to ready after CAS; reconverted
+    2× via convertPullRequestToDraft, see stage2-20261020-apply/0gd-log.txt).'
 - event_id: evt-s2-20261020-email-1786-a
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1786@9945c09b4ed3ff4ec8cbbda4ec9fa41358c972bd
@@ -80829,7 +80847,9 @@ events:
   policy_revision: null
   successful: null
   reason: 'Import salvage draft #1787 provenance to #1665 via WI s2-20261017-email-security-pipeline-1665.
-    Head 1694200a8e8c; isDraft=true re-read after create (0gd not needed).'
+    Head 1694200a8e8c; isDraft=true re-read after create (correction 2026-11-09: 0gd
+    WAS needed — linear-code[bot] flipped the draft to ready after CAS; reconverted
+    1× via convertPullRequestToDraft, see stage2-20261020-apply/0gd-log.txt).'
 - event_id: evt-s2-20261020-email-1787-a
   kind: HANDOFF
   item_key: abhimehro/email-security-pipeline#1787@1694200a8e8c5970b26ddb73261009a210ba3221
@@ -84500,7 +84520,194 @@ events:
     → CLOSED_NOOP
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s2-20261109-email-security-pipeline-1656-wi
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333:evt-s2-20261109-email-security-pipeline-1656-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-09T20:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 2 under Abhi''s 2026-11-09 14:24 CT standing approval
+    relayed by PR Desk (b9b4d804); anchors = Stage 1 planner ENQUEUE_STAGE2_WI proposal
+    (CONFLICTING_UNIQUE_RESELECT, pr_lifecycle_run.py --stage 1 --dry-run 2026-11-09),
+    allowlist narrowed to the bounded unique remainder vs current main. Live gate
+    2026-11-09T20:55:00Z: OPEN, head 58f6b9a1384d == ledger head, author_type BOT,
+    guardrail HOLD_EVIDENCE, no sticky paths, not a hard hold or pair pick. Bounded
+    remainder: scripts/check_mail_connectivity.py, tests/test_mail_server_validation.py.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261109-seatek-986-wi
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365:evt-s2-20261109-seatek-986-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-09T20:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 2 under Abhi''s 2026-11-09 14:24 CT standing approval
+    relayed by PR Desk (b9b4d804); anchors = Stage 1 planner ENQUEUE_STAGE2_WI proposal
+    (CONFLICTING_UNIQUE_RESELECT, pr_lifecycle_run.py --stage 1 --dry-run 2026-11-09),
+    allowlist narrowed to the bounded unique remainder vs current main. Live gate
+    2026-11-09T20:55:00Z: OPEN, head efccb65f98a2 == ledger head, author_type BOT,
+    guardrail HOLD_EVIDENCE, no sticky paths, not a hard hold or pair pick. Bounded
+    remainder: .github/scripts/repository_automation.py, tests/test_repository_automation.py.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s2-20261109-series-484-wi
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850:evt-s2-20261109-series-484-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-09T20:55:00Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 2 under Abhi''s 2026-11-09 14:24 CT standing approval
+    relayed by PR Desk (b9b4d804); anchors = Stage 1 planner ENQUEUE_STAGE2_WI proposal
+    (CONFLICTING_UNIQUE_RESELECT, pr_lifecycle_run.py --stage 1 --dry-run 2026-11-09),
+    allowlist narrowed to the bounded unique remainder vs current main. Live gate
+    2026-11-09T20:55:00Z: OPEN, head f9cc4be9c864 == ledger head, author_type BOT,
+    guardrail HOLD_EVIDENCE, no sticky paths, not a hard hold or pair pick. Bounded
+    remainder: scripts/processor.py, scripts/discontinuity_utils.py.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261109-email-security-pipeline-1656
+  source_item_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
+  repository: abhimehro/email-security-pipeline
+  pr: 1656
+  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
+  head_sha: 58f6b9a1384dcbb606b253f912320b91c1eec333
+  allowed_paths:
+  - scripts/check_mail_connectivity.py
+  - tests/test_mail_server_validation.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - .gitignore
+  - requirements*.txt
+  - AGENTS.md
+  - src/**
+  repair_description: 'Recover any still-unique Palette ANSI-styling / --help remainder
+    of #1656 (scripts/check_mail_connectivity.py plus tests/test_mail_server_validation.py)
+    onto current main as a new focused PR. Exclude .jules/ journals and the stale-main
+    snapshot. If main already carries the change, record EMPTY_INTAKE. Original #1656
+    stays OPEN; do not update its Jules branch.'
+  required_test_command: python3 -m pytest tests/test_mail_server_validation.py -q
+  expected_test_result: python3 -m pytest tests/test_mail_server_validation.py -q
+    exits 0
+  acceptance_criteria:
+  - Diff is limited to scripts/check_mail_connectivity.py and tests/test_mail_server_validation.py.
+  - python3 -m pytest tests/test_mail_server_validation.py -q exits 0 (or matches
+    main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #1656; original #1656 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1656
+  expiry_utc: '2026-11-16T20:55:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s2-20261109-email-security-pipeline-1656-wi
+  history: []
+- work_item_id: s2-20261109-Seatek_Analysis-986
+  source_item_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
+  repository: abhimehro/Seatek_Analysis
+  pr: 986
+  base_sha: ee1e779066a06e5142b55c2c8f7d8d1b1420a0ff
+  head_sha: efccb65f98a29cae788e1a7b147957c295239365
+  allowed_paths:
+  - .github/scripts/repository_automation.py
+  - tests/test_repository_automation.py
+  prohibited_paths:
+  - .github/workflows/**
+  - .github/scripts/repository_automation_common.py
+  - .github/scripts/repository_automation_tasks.py
+  - .jules/**
+  - .trunk/**
+  - requirements*.txt
+  repair_description: 'Recover the unique Palette CLI-UX remainder of #986 (argparse
+    help defaults/examples, actionable ''Action:'' hints, did-you-mean for unknown
+    tasks in .github/scripts/repository_automation.py plus tests) onto current main
+    as a new focused PR. Do not touch repository_automation_common.py/_tasks.py (Seatek#662/#901/#1018
+    pair pick, security hold). Original #986 stays OPEN.'
+  required_test_command: python3 -m pytest tests/test_repository_automation.py -q
+  expected_test_result: python3 -m pytest tests/test_repository_automation.py -q exits
+    0
+  acceptance_criteria:
+  - Diff is limited to .github/scripts/repository_automation.py and tests/test_repository_automation.py.
+  - python3 -m pytest tests/test_repository_automation.py -q exits 0 (or matches main's
+    baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #986; original #986 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/986
+  expiry_utc: '2026-11-16T20:55:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s2-20261109-seatek-986-wi
+  history: []
+- work_item_id: s2-20261109-series_correction_project_updated-484
+  source_item_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
+  repository: abhimehro/series_correction_project_updated
+  pr: 484
+  base_sha: e480ad80987c817b5edbc20ef407f0330e57283b
+  head_sha: f9cc4be9c8641ea35526e8d98d16d93ffdc23850
+  allowed_paths:
+  - scripts/processor.py
+  - scripts/discontinuity_utils.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - .gitignore
+  - scripts/requirements-dev.txt
+  - AGENTS.md
+  repair_description: 'Recover the unique Bolt remainder of #484 (reuse one Rolling
+    object in detect_jumps; module-level sliding_window_view import) onto current
+    main as a new focused PR. Regex pre-compile, valid_mask removal and to_numpy(dtype=float)
+    already landed (#491/#526/#541). Original #484 stays OPEN.'
+  required_test_command: python3 -m pytest scripts/tests -q
+  expected_test_result: python3 -m pytest scripts/tests -q exits 0
+  acceptance_criteria:
+  - Diff is limited to scripts/processor.py and scripts/discontinuity_utils.py.
+  - python3 -m pytest scripts/tests -q exits 0 (or matches main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #484; original #484 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/484
+  expiry_utc: '2026-11-16T20:55:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s2-20261109-series-484-wi
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
