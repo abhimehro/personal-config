@@ -402,7 +402,8 @@ Agent-specific rules:
   `docs/automated-pr-lifecycle.md` (Merge authority for Stage 2 outputs) and
   `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md`. Cron session reports
   belong on the shared `pr-lifecycle-docs-YYYYMMDD` lineage (Stage 1 lands it);
-  do not open a third overlapping `tasks/*` docs PR. Notion stays human packets.
+  do not open a third overlapping `tasks/*` docs PR. Agent handoffs for Abhi use
+  Mem or PR Desk (see Agent-to-Abhi Handoff); Notion stays the bots' workspace.
 - Always run `gh stack rebase --no-trunk` immediately before
   `gh stack submit`/`merge`; `gh stack init` with multiple branch names creates
   them off trunk in parallel, not chained, until the first rebase.
@@ -676,19 +677,23 @@ symlink destinations are never followed. To target one hash directory:
 - Security, auth, secrets, and trust-boundary PRs stay escalated for human
   review even when CI is green.
 - Ordinary human-authored PRs stay untouched by the three-stage pipeline. Stage
-  3 files a one-question packet only when sticky security, HUMAN, or real
-  platform judgment is irreducible. Jules/Bolt/Palette file-overlap clusters are
-  Stage 1 canonical-pick, not packets.
+  3 escalates sticky security, HUMAN, or irreducible platform judgment through
+  PR Desk (status and approval requests) and, when Abhi must decide directly,
+  the Mem Agent-to-Abhi Handoff collection—not Notion packets. Jules/Bolt/Palette
+  file-overlap clusters are Stage 1 canonical-pick, not human handoffs.
 - Stage 3 calibration reached seven successful runs on 2026-08-26. Human
   `APPROVED` is recorded in the runtime ledger (`approved_by: abhimehro`).
   Bounded completion is on. Disable the calibration Dashboard automation and
   enable the completion variant after pasting the updated prompts. Resetting
   stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
-- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a fourth
-  lifecycle stage. It must not merge, approve, close, comment, create GitHub
-  issues, CAS-write the ledger, launch Cloud Agents, or write
-  `tasks/*-session-reports.md`. Digests cap at five human items. Health must
-  flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
+- Grok Bot **PR Desk** (`docs/grok-bot/`) is Abhi's single point of contact for
+  the PR lifecycle, not a fourth pipeline stage. PR Desk makes no repo or GitHub
+  writes itself but coordinates specialist bots: relays his authorizations,
+  assigns approved work, tracks results, and sends one consolidated summary.
+  It must not merge, approve, close, comment, create GitHub issues, CAS-write the
+  ledger, launch Cloud Agents, or write `tasks/*-session-reports.md`. Digests
+  cap at five human items. Health must flag Stage 2 EMPTY_INTAKE while
+  salvage-eligible work remains.
 - Stage 1/2/3 agents are **security-first / security-focused development
   partners** (same profile as GitHub Copilot `.github/copilot-instructions.md`,
   this file, `REVIEW.md`, and `.cursorrules`). They must **apply** those files,
@@ -897,6 +902,23 @@ relationships, 298 execution flows).
 
 <!-- gitnexus:end -->
 
+## Agent-to-Abhi Handoff
+
+Notion is for bots; Abhi's inbox is Mem and PR Desk.
+
+- **Notion** is the agents-only workspace: the bots' shared memory,
+  documentation hub, and bot-to-bot communication space. Keep Stage 3 workflow
+  artifacts and other agent coordination there; do not route Abhi-facing notes
+  or authorization requests through Notion.
+- **Mem — Agent-to-Abhi Handoff**
+  (<https://mem.ai/collections/708f3bfd-5513-466c-83dc1c6b91223ded>) is only for
+  essential notes and requests that must reach Abhi personally—genuinely
+  important updates and authorization requests.
+- **Grok Bot PR Desk** (`docs/grok-bot/`): specialist bots send status and
+  approval requests to PR Desk, which is Abhi's single point of contact. Only a
+  production outage or security incident that cannot wait may go to Abhi directly;
+  copy PR Desk on those.
+
 ## Notion agent context (consult first)
 
 Use Notion as the durable shared memory and workspace across agents. Before
@@ -909,8 +931,8 @@ links: <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
 
 - Mem is Abhi's primary personal notebook; agents create notes he needs to
   review there via the Mem MCP. Notion is dedicated exclusively to agent use.
-  Stage 3 packets and other workflow artifacts continue to land in their
-  Notion destinations; do not redirect those handoffs to Mem.
+  Human handoffs for Abhi use the Mem Agent-to-Abhi Handoff collection or PR
+  Desk (see Agent-to-Abhi Handoff), not Notion.
 
 - Keep code, READMEs, and repository plans in the repository. Save durable
   decisions, preferences, and project state to Notion.

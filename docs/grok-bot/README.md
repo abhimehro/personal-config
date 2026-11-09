@@ -22,8 +22,9 @@ Agent run and **not** a Dashboard Automation.
 | ----------------------- | ---------------------------------------------- | -------------------------------------------------- |
 | Stage 1/2/3 Automations | Merge/close/draft/CAS ledger                   | Human inbox, extra docs PRs                        |
 | Runtime ledger          | Current owner of every PR                      | Being rewritten from Grok Bot                      |
-| Notion packets          | Irreducible Stage 3 questions                  | Session-report dumps                               |
-| **Grok Bot PR Desk**    | Digest, stall flags, one recommended next step | GitHub mutations, Cloud Agent launches, new issues |
+| Mem Agent-to-Abhi       | Essential updates and authorization for Abhi   | Routine bot status (use PR Desk)                   |
+| Notion                  | Agent shared memory and bot-to-bot coordination| Abhi handoffs, session-report dumps                |
+| **Grok Bot PR Desk**    | Single POC: digest, relay auth, track specialists | Repo/GitHub writes, Cloud Agent launches, new issues |
 
 ```text
 15:00 Stage 1 (80 inventory / 40 product mutations)
@@ -31,13 +32,15 @@ Agent run and **not** a Dashboard Automation.
 17:00 Stage 2 (≤5 drafts or structured failed recovery)
 19:00 Stage 3 (≤5 overflow completions; mechanical remainder → Stage 2 WI)
         ↓
-01:00 UTC  PR Desk digest (8:00 PM CDT) — read-only
+01:00 UTC  PR Desk digest (8:00 PM CDT) — consolidated summary
         ↓
 Abhi: ≤5 decisions, or "nothing for you"
 ```
 
-PR Desk observes Health (starvation, unused Stage 1 slots, calibration still
-enabled). It does not route stages, CAS-write the ledger, or launch agents.
+PR Desk is Abhi's single point of contact: it observes Health (starvation,
+unused Stage 1 slots, calibration still enabled), relays authorizations, and
+coordinates specialist bots. It does not CAS-write the ledger, launch agents, or
+make repository or GitHub writes.
 
 ## Setup (about fifteen minutes)
 
