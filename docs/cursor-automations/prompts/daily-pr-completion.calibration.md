@@ -16,8 +16,9 @@ runtime ledger returns `encoding: none` above 1 MB; fetch bytes with
 `python3 scripts/pr_lifecycle_ledger_cas.py preflight --out "$RUNTIME_LEDGER_PATH"`
 before inventory. The validator strips in-memory-only item fields
 `latest_transition` and `latest_transition_kind` so a projection dump cannot
-halt the schedule; unknown extra fields still fail closed. CAS-write with
-`python3 scripts/pr_lifecycle_ledger_cas.py commit --file "$RUNTIME_LEDGER_PATH" --message "automated lifecycle ledger update"`
+halt the schedule; unknown extra fields still fail closed. Record `commit_sha`
+from preflight JSON as `$PREFLIGHT_COMMIT_SHA`. CAS-write with
+`python3 scripts/pr_lifecycle_ledger_cas.py commit --file "$RUNTIME_LEDGER_PATH" --expected-parent "$PREFLIGHT_COMMIT_SHA" --message "automated lifecycle ledger update"`
 (Git Data API fast-forward). Do not PUT the full file through Contents. If
 `refs/heads/automation/pr-lifecycle-ledger` is 404, recreate it at
 `runtime_ledger.last_known_data_commit` (lesson 0go); never invent ledger bytes.

@@ -238,7 +238,9 @@ class TestPrLifecyclePersist(unittest.TestCase):
     def test_commit_parser_defaults_message(self) -> None:
         import pr_lifecycle_ledger_cas as cas
 
-        args = cas.build_parser().parse_args(["commit", "--file", "ledger.yaml"])
+        args = cas.build_parser().parse_args(
+            ["commit", "--file", "ledger.yaml", "--expected-parent", "a" * 40]
+        )
         self.assertEqual(args.message, cas.DEFAULT_COMMIT_MESSAGE)
 
     def test_github_errors_omit_response_body(self) -> None:

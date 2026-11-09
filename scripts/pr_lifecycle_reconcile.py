@@ -1420,6 +1420,7 @@ def run_reconcile(
                     out,
                     "reconcile: live PR state → ledger transitions",
                     bump_revision=False,
+                    expected_parent_sha=plan.get("preflight_commit_sha"),
                 )
             except CasError as exc:
                 if exc.code != OPERATOR_CONFLICT:
@@ -1478,6 +1479,7 @@ def _build_plan(
     plan = {
         "dry_run": True,
         "ledger_revision": ledger.get("ledger_revision"),
+        "preflight_commit_sha": fetch["commit_sha"],
         "action_count": len(actions),
         "actions": actions,
         "ingest_count": sum(
