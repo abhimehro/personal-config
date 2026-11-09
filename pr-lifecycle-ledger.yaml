@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1278
+ledger_revision: 1279
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -23090,25 +23090,27 @@ items:
   - scripts/check_mail_connectivity.py
   - tests/test_mail_server_validation.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1656 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261109-email-security-pipeline-1656 — recover
-    the bounded unique remainder (scripts/check_mail_connectivity.py, tests/test_mail_server_validation.py)
-    on a new focused PR. Original stays OPEN.'
+  safe_default: 'Leave #1656 OPEN until Stage 3 decides. Do not merge the conflicting
+    original or update its Jules branch.'
+  next_action: 'STAGE3_RECONCILIATION: Stage 2 20261109 EMPTY_INTAKE — #1656 has no
+    unique content left vs main (superseded by #1698, #1711, #1758). CLOSED_SUPERSEDED
+    candidate under Stage 3 cooldown/evidence. Do not re-book for Stage 2.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1656
   attempts:
     evidence: 0
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261109-email-security-pipeline-1656-wi
-  revision: 1
-  updated_at_utc: '2026-11-09T20:55:00Z'
+  - evt-s2-20261109-email-security-pipeline-1656-a
+  - evt-s2-20261109-email-security-pipeline-1656-h
+  revision: 3
+  updated_at_utc: '2026-11-09T21:05:00Z'
 - key: abhimehro/email-security-pipeline#1661@ed878583450444b5c7190c45bc6ccdd65d3a664c
   repository: abhimehro/email-security-pipeline
   pr: 1661
@@ -24468,25 +24470,29 @@ items:
   - .jules/palette.md
   - tests/test_repository_automation.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #986 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261109-Seatek_Analysis-986 — recover the bounded
-    unique remainder (.github/scripts/repository_automation.py, tests/test_repository_automation.py)
-    on a new focused PR. Original stays OPEN.'
+  safe_default: 'Leave #986 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in recovery PR #1147.'
+  next_action: 'STAGE3_RECONCILIATION: track recovery PR #1147. After #1147 merges,
+    #986 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #1147 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/986
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1147
   attempts:
     evidence: 0
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261109-seatek-986-wi
-  revision: 1
-  updated_at_utc: '2026-11-09T20:55:00Z'
+  - evt-s2-20261109-seatek-986-a
+  - evt-s2-20261109-seatek-986-h
+  revision: 3
+  updated_at_utc: '2026-11-09T21:05:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#722@8057ee486be41e2c3b7d95ab7dff299d6e0bdf36
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 722
@@ -25393,25 +25399,29 @@ items:
   - scripts/generate_overview_table.py
   - scripts/processor.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #484 open. Do not merge the conflicting original; do not update
-    its Jules branch.'
-  next_action: 'Stage 2: work item s2-20261109-series_correction_project_updated-484
-    — recover the bounded unique remainder (scripts/processor.py, scripts/discontinuity_utils.py)
-    on a new focused PR. Original stays OPEN.'
+  safe_default: 'Leave #484 OPEN. Do not merge the conflicting original or update
+    its Jules branch. Unique remainder lives in recovery PR #661.'
+  next_action: 'STAGE3_RECONCILIATION: track recovery PR #661. After #661 merges,
+    #484 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
+    3 cooldown/evidence. If #661 is rejected, record the reason; do not re-salvage
+    the same approach.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/484
+  - https://github.com/abhimehro/series_correction_project_updated/pull/661
   attempts:
     evidence: 0
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s2-20261109-series-484-wi
-  revision: 1
-  updated_at_utc: '2026-11-09T20:55:00Z'
+  - evt-s2-20261109-series-484-a
+  - evt-s2-20261109-series-484-h
+  revision: 3
+  updated_at_utc: '2026-11-09T21:05:00Z'
 - key: abhimehro/series_correction_project_updated#487@1114fd1e90480338812202749a783d755e2407b7
   repository: abhimehro/series_correction_project_updated
   pr: 487
@@ -48067,6 +48077,103 @@ items:
     head_sha: 99e2c99b174414aa6e1fb60c82d415c78142fa4f
     basis: head_bound_diff
     diff_sha256: 49c6c9ce388f4e1ea38dba67a9db1a272792a52bf85c388c4c364de427543a91
+- key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256
+  repository: abhimehro/Seatek_Analysis
+  pr: 1147
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1147
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: f936f527e7671d3ab4dbc9509999b36fb9c12256
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: UI
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Stage 2 recovery of #986 (normal PR). Stage 2 never merges or approves.
+    Do not close original #986 from Stage 2.'
+  next_action: 'Stage 1: re-ingest recovery PR #1147 (.github/scripts/repository_automation.py,
+    tests/test_repository_automation.py; python3 -m pytest tests/test_repository_automation.py
+    -q -> 8 passed; pytest tests -q 76 passed (main 73 + 3 new); git diff --check
+    exit 0). Route only when every routine predicate passes. Original #986 stays OPEN
+    for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1147
+  - https://github.com/abhimehro/Seatek_Analysis/pull/986
+  changed_paths:
+  - .github/scripts/repository_automation.py
+  - tests/test_repository_automation.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261109-seatek-1147-i
+  - evt-s2-20261109-seatek-1147-a
+  - evt-s2-20261109-seatek-1147-h
+  revision: 3
+  updated_at_utc: '2026-11-09T21:05:00Z'
+- key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122
+  repository: abhimehro/series_correction_project_updated
+  pr: 661
+  url: https://github.com/abhimehro/series_correction_project_updated/pull/661
+  base_sha: 2a40801a5f528cedcd354782aa347200b729fa14
+  head_sha: f64247c5622d684b6861747edb22a79ec1b0a122
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - source_work_item
+  author_type: BOT
+  classification: PERFORMANCE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: STAGE1_INTAKE
+  terminal_disposition: null
+  current_owner: stage1
+  next_owner: stage1
+  safe_default: 'Stage 2 recovery of #484 (normal PR). Stage 2 never merges or approves.
+    Do not close original #484 from Stage 2.'
+  next_action: 'Stage 1: re-ingest recovery PR #661 (scripts/processor.py, scripts/discontinuity_utils.py;
+    python3 -m pytest scripts/tests -q -> 177 passed (same as main); git diff --check
+    exit 0). Route only when every routine predicate passes. Original #484 stays OPEN
+    for Stage 3.'
+  evidence_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/661
+  - https://github.com/abhimehro/series_correction_project_updated/pull/484
+  changed_paths:
+  - scripts/processor.py
+  - scripts/discontinuity_utils.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s2-20261109-series-661-i
+  - evt-s2-20261109-series-661-a
+  - evt-s2-20261109-series-661-h
+  revision: 3
+  updated_at_utc: '2026-11-09T21:05:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -84595,119 +84702,267 @@ events:
     remainder: scripts/processor.py, scripts/discontinuity_utils.py.'
   successful: null
   policy_revision: null
-stage2_work_items:
-- work_item_id: s2-20261109-email-security-pipeline-1656
-  source_item_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
-  repository: abhimehro/email-security-pipeline
-  pr: 1656
-  base_sha: 99b4da75a0692752aeb6eeadbe24232be479bedd
-  head_sha: 58f6b9a1384dcbb606b253f912320b91c1eec333
-  allowed_paths:
-  - scripts/check_mail_connectivity.py
-  - tests/test_mail_server_validation.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - requirements*.txt
-  - AGENTS.md
-  - src/**
-  repair_description: 'Recover any still-unique Palette ANSI-styling / --help remainder
-    of #1656 (scripts/check_mail_connectivity.py plus tests/test_mail_server_validation.py)
-    onto current main as a new focused PR. Exclude .jules/ journals and the stale-main
-    snapshot. If main already carries the change, record EMPTY_INTAKE. Original #1656
-    stays OPEN; do not update its Jules branch.'
-  required_test_command: python3 -m pytest tests/test_mail_server_validation.py -q
-  expected_test_result: python3 -m pytest tests/test_mail_server_validation.py -q
-    exits 0
-  acceptance_criteria:
-  - Diff is limited to scripts/check_mail_connectivity.py and tests/test_mail_server_validation.py.
-  - python3 -m pytest tests/test_mail_server_validation.py -q exits 0 (or matches
-    main's baseline).
-  - git diff --check exits 0.
-  - 'Replacement is a new normal (non-draft) PR linking #1656; original #1656 stays
-    OPEN and its branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1656
-  expiry_utc: '2026-11-16T20:55:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s2-20261109-email-security-pipeline-1656-wi
-  history: []
-- work_item_id: s2-20261109-Seatek_Analysis-986
-  source_item_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
-  repository: abhimehro/Seatek_Analysis
-  pr: 986
-  base_sha: ee1e779066a06e5142b55c2c8f7d8d1b1420a0ff
-  head_sha: efccb65f98a29cae788e1a7b147957c295239365
-  allowed_paths:
-  - .github/scripts/repository_automation.py
-  - tests/test_repository_automation.py
-  prohibited_paths:
-  - .github/workflows/**
-  - .github/scripts/repository_automation_common.py
-  - .github/scripts/repository_automation_tasks.py
-  - .jules/**
-  - .trunk/**
-  - requirements*.txt
-  repair_description: 'Recover the unique Palette CLI-UX remainder of #986 (argparse
-    help defaults/examples, actionable ''Action:'' hints, did-you-mean for unknown
-    tasks in .github/scripts/repository_automation.py plus tests) onto current main
-    as a new focused PR. Do not touch repository_automation_common.py/_tasks.py (Seatek#662/#901/#1018
-    pair pick, security hold). Original #986 stays OPEN.'
-  required_test_command: python3 -m pytest tests/test_repository_automation.py -q
-  expected_test_result: python3 -m pytest tests/test_repository_automation.py -q exits
-    0
-  acceptance_criteria:
-  - Diff is limited to .github/scripts/repository_automation.py and tests/test_repository_automation.py.
-  - python3 -m pytest tests/test_repository_automation.py -q exits 0 (or matches main's
-    baseline).
-  - git diff --check exits 0.
-  - 'Replacement is a new normal (non-draft) PR linking #986; original #986 stays
-    OPEN and its branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/Seatek_Analysis/pull/986
-  expiry_utc: '2026-11-16T20:55:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s2-20261109-seatek-986-wi
-  history: []
-- work_item_id: s2-20261109-series_correction_project_updated-484
-  source_item_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
-  repository: abhimehro/series_correction_project_updated
-  pr: 484
-  base_sha: e480ad80987c817b5edbc20ef407f0330e57283b
-  head_sha: f9cc4be9c8641ea35526e8d98d16d93ffdc23850
-  allowed_paths:
-  - scripts/processor.py
-  - scripts/discontinuity_utils.py
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - .gitignore
-  - scripts/requirements-dev.txt
-  - AGENTS.md
-  repair_description: 'Recover the unique Bolt remainder of #484 (reuse one Rolling
-    object in detect_jumps; module-level sliding_window_view import) onto current
-    main as a new focused PR. Regex pre-compile, valid_mask removal and to_numpy(dtype=float)
-    already landed (#491/#526/#541). Original #484 stays OPEN.'
-  required_test_command: python3 -m pytest scripts/tests -q
-  expected_test_result: python3 -m pytest scripts/tests -q exits 0
-  acceptance_criteria:
-  - Diff is limited to scripts/processor.py and scripts/discontinuity_utils.py.
-  - python3 -m pytest scripts/tests -q exits 0 (or matches main's baseline).
-  - git diff --check exits 0.
-  - 'Replacement is a new normal (non-draft) PR linking #484; original #484 stays
-    OPEN and its branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/series_correction_project_updated/pull/484
-  expiry_utc: '2026-11-16T20:55:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s2-20261109-series-484-wi
-  history: []
+- event_id: evt-s2-20261109-seatek-986-a
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365:evt-s2-20261109-seatek-986-a
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261109 (PR Desk-relayed standing approval): activate WI
+    s2-20261109-Seatek_Analysis-986 (attempt 1) for recovery PR #1147.'
+- event_id: evt-s2-20261109-seatek-986-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#986@efccb65f98a29cae788e1a7b147957c295239365:evt-s2-20261109-seatek-986-h
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261109-Seatek_Analysis-986 consumed. Recovery PR
+    #1147 (non-draft; head f936f527e767, base main 28155bbaaa73) carries Action: hints
+    (enforce w/o path, unknown task), difflib did-you-mean incl. enforce, copy-pasteable
+    --help examples, module-level sys import, tests for suggestion and --help. Left
+    out: ArgumentDefaultsHelpFormatter ((default: None) in help, Kilo), Updated_Seatek_Analysis.R
+    header colour (unrelated), .jules/palette.md, stale-main snapshot; stderr/logging
+    suggestion left for reviewer. Test: python3 -m pytest tests/test_repository_automation.py
+    -q -> 8 passed; pytest tests -q 76 passed (main 73 + 3 new); git diff --check
+    exit 0. Original #986 stays OPEN; Stage 3 reconciles. Do not close from Stage
+    2.'
+- event_id: evt-s2-20261109-seatek-1147-i
+  kind: IMPORT
+  item_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256:evt-s2-20261109-seatek-1147-i
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import recovery PR #1147 provenance to #986 via WI s2-20261109-Seatek_Analysis-986.
+    Head f936f527e767; opened as a normal (non-draft) PR per the 2026-10-20 rule;
+    isDraft=false re-read after create.'
+- event_id: evt-s2-20261109-seatek-1147-a
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256:evt-s2-20261109-seatek-1147-a
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate recovery PR #1147 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261109-seatek-1147-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#1147@f936f527e7671d3ab4dbc9509999b36fb9c12256:evt-s2-20261109-seatek-1147-h
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT UI salvage complete from #986. Stage 1 re-ingests #1147. Merge
+    authority is never Stage 2. PASS_ROUTINE.'
+- event_id: evt-s2-20261109-series-484-a
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850:evt-s2-20261109-series-484-a
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261109 (PR Desk-relayed standing approval): activate WI
+    s2-20261109-series_correction_project_updated-484 (attempt 1) for recovery PR
+    #661.'
+- event_id: evt-s2-20261109-series-484-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/series_correction_project_updated#484@f9cc4be9c8641ea35526e8d98d16d93ffdc23850:evt-s2-20261109-series-484-h
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261109-series_correction_project_updated-484 consumed.
+    Recovery PR #661 (non-draft; head f64247c5622d, base main 2a40801a5f52) carries
+    detect_jumps reuses one Rolling object for mean/std; module-level sliding_window_view
+    import in discontinuity_utils. Left out: regex pre-compile/logging (#491), valid_mask
+    removal (#526), to_numpy(dtype=float) (#541) already on main; Bolt comment noise;
+    stale-main snapshot (workflows, .trunk, hooks, requirements, unrelated scripts/tests).
+    Test: python3 -m pytest scripts/tests -q -> 177 passed (same as main); git diff
+    --check exit 0. Original #484 stays OPEN; Stage 3 reconciles. Do not close from
+    Stage 2.'
+- event_id: evt-s2-20261109-series-661-i
+  kind: IMPORT
+  item_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122:evt-s2-20261109-series-661-i
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Import recovery PR #661 provenance to #484 via WI s2-20261109-series_correction_project_updated-484.
+    Head f64247c5622d; opened as a normal (non-draft) PR per the 2026-10-20 rule;
+    isDraft=false re-read after create.'
+- event_id: evt-s2-20261109-series-661-a
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122:evt-s2-20261109-series-661-a
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Activate recovery PR #661 before Stage 1 re-ingest.'
+- event_id: evt-s2-20261109-series-661-h
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122
+  from_owner: stage2
+  to_owner: stage1
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE1_INTAKE
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/series_correction_project_updated#661@f64247c5622d684b6861747edb22a79ec1b0a122:evt-s2-20261109-series-661-h
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Routine BOT PERFORMANCE salvage complete from #484. Stage 1 re-ingests
+    #661. Merge authority is never Stage 2. PASS_ROUTINE.'
+- event_id: evt-s2-20261109-email-security-pipeline-1656-a
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333:evt-s2-20261109-email-security-pipeline-1656-a
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY 20261109: activate WI s2-20261109-email-security-pipeline-1656
+    (attempt 1).'
+- event_id: evt-s2-20261109-email-security-pipeline-1656-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/email-security-pipeline#1656@58f6b9a1384dcbb606b253f912320b91c1eec333:evt-s2-20261109-email-security-pipeline-1656-h
+  status: PROJECTED
+  created_at_utc: '2026-11-09T21:05:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261109-email-security-pipeline-1656 consumed. EMPTY_INTAKE:
+    every change in #1656''s bounded remainder is already on main — colorize() styling
+    via #1758, ✔/✖ symbols via #1698, argparse main(argv)/--help and its test via
+    #1711. The only leftover is test_check_mail_connectivity_no_raw_ansi_resets, which
+    asserts nothing (no-slop: not carried). No PR opened. Original #1656 stays OPEN;
+    Stage 3 decides. Do not re-salvage.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
