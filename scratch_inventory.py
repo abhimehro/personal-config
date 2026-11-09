@@ -52,16 +52,16 @@ def fetch_prs(repos):
 
 
 def generate_markdown(all_prs):
+    # ⚡ Bolt Optimization: Hoist ISO date string generation to avoid duplicate datetime evaluations
+    today_iso = datetime.date.today().isoformat()
     # ⚡ Bolt Optimization: Instantiate the list once with all elements instead of repeatedly calling .append()
     out_md = [
-        f"# Automated PR inventory — backlog cleanup test ({datetime.date.today().isoformat()})\n",
+        f"# Automated PR inventory — backlog cleanup test ({today_iso})\n",
         "**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).\n",
         "**Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`, `auto_fix_enabled: true`, `schedule: none`.\n",
         "| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |",
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-
-    today_iso = datetime.date.today().isoformat()
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         cat = get_category(pr["title"], pr["headRefName"])
 
