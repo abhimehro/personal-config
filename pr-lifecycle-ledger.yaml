@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1399
+ledger_revision: 1400
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -46561,27 +46561,25 @@ items:
   - .jules/bolt.md
   - src/utils/security_validators.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 3 2026-11-09 (Abhi-approved APPLY, ledger rev 1276->1277): BOUNCE_STAGE1_CANONICAL_PICK
-    for BOT HOLD_CANONICAL is_safe_email cluster #1774/#1850/#1852 (all CONFLICTING;
-    overlap on src/utils/security_validators.py + .jules/bolt.md). Recommended canonical
-    #1852 (superset). This PR: KEEPER: rebase onto main (CONFLICTING), then routine
-    review/merge. Diff note: #1850/#1852 change _is_safe_local('''') True->False (stricter).
-    | prior: Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-05
-    by reconcile).'
+  safe_default: 'Leave #1852 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-email-security-pipeline-1852 — recover
+    the still-unique change (src/utils/security_validators.py, .jules/bolt.md) onto
+    current main as a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1852
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-09T20:50:00Z'
+  handoffs:
+  - evt-s1-20261110-email-security-pipeline-1852-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:25:00Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 9d4285debd6b1993cc9b558977d58151eb8f4186
@@ -87483,6 +87481,34 @@ events:
     setup.py.'
   successful: null
   policy_revision: null
+- event_id: evt-s1-20261110-email-security-pipeline-1852-wi
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186:evt-s1-20261110-email-security-pipeline-1852-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:25:00Z: OPEN, CONFLICTING/DIRTY, head 9d4285debd6b ==
+    ledger head, author_type BOT, guardrail PASS_ROUTINE, no sticky paths, not held.
+    Salvage-loop check vs main: PR is CONFLICTING/DIRTY (17 behind main); guardrail
+    PASS_ROUTINE (not REVIEW_SECURITY); changes no workflow files (only .jules/bolt.md,
+    src/utils/security_validators.py); PR Desk approved this WI 2026-11-10 11:24 CT.
+    Bounded paths: src/utils/security_validators.py, .jules/bolt.md.'
+  successful: null
+  policy_revision: null
 stage2_work_items:
 - work_item_id: s2-20261110-Seatek_Analysis-936
   source_item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
@@ -87661,6 +87687,52 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20261110-series_correction_project_updated-499-wi
+  history: []
+- work_item_id: s2-20261110-email-security-pipeline-1852
+  source_item_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186
+  repository: abhimehro/email-security-pipeline
+  pr: 1852
+  base_sha: 60df8385262f62ca864d55f50bdd2417f12e9a6d
+  head_sha: 9d4285debd6b1993cc9b558977d58151eb8f4186
+  allowed_paths:
+  - src/utils/security_validators.py
+  - .jules/bolt.md
+  prohibited_paths:
+  - .github/**
+  - .trunk/**
+  - requirements*.txt
+  - tests/**
+  - src/modules/**
+  repair_description: 'REBASE/UPDATE ONLY: bring #1852 current with main by merging
+    main into its branch (merge commit; NO force-push; no Jules triggers), resolving
+    only the merge conflicts so the PR''s existing intent is preserved. Do NOT change
+    the empty-local-part validation behaviour (_is_safe_local now returns False for
+    an empty local part) or any other logic, and do NOT resolve or respond to its
+    review threads (CodeScene x2, Kilo). Stage 1 decides the keeper of the #1774/#1850/#1852
+    cluster afterwards. After the update, verify the new head is your merge commit
+    and the PR diff vs main is unchanged in shape (still +~38/-7 over .jules/bolt.md
+    and src/utils/security_validators.py). If the branch cannot be updated without
+    a force-push or without changing behaviour, or Stage 2''s rules do not permit
+    updating this branch, record EMPTY_INTAKE with the reason and report to PR Desk;
+    do not open a replacement PR.'
+  required_test_command: python3 -m pytest tests -q -k 'email or security_validators'
+  expected_test_result: python3 -m pytest tests -q -k 'email or security_validators'
+    exits 0
+  acceptance_criteria:
+  - Branch updated from main by merge commit only (no force-push); new head is that
+    merge commit.
+  - PR diff vs main still limited to .jules/bolt.md and src/utils/security_validators.py,
+    same shape as before (+~38/-7).
+  - Empty-local-part validation behaviour and all other logic unchanged; review threads
+    left untouched.
+  - 'PR becomes MERGEABLE against current main; #1774/#1850 untouched; Stage 1 picks
+    the keeper afterwards.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1852
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-email-security-pipeline-1852-wi
   history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
