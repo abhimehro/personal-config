@@ -534,3 +534,7 @@ role. Ensure block-level elements like p are not wrapped in inline span elements
 to avoid generating invalid HTML. **Action:** Always verify the HTML tag context
 and apply role="status" to a semantically appropriate inner element for empty
 states instead of blindly adding it to the outermost container.
+
+## $(date +%Y-%m-%d) - Scope role="status" to avoid over-announcing
+**Learning:** In HTML reports, applying `role="status"` to a wrapper element that includes both the status message and instructional commands (e.g., `<kbd>`) causes screen readers to over-announce.
+**Action:** Scope `role="status"` exclusively to the plain text status change.
