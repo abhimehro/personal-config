@@ -842,3 +842,9 @@ data, and calls `builtin trap -- "$handler" "$signal"` without evaluating the
 declaration; a declaration it cannot parse is skipped rather than executed, and
 callers fall back to the default disposition so no temporary handler survives a
 reject.
+
+## 2026-10-04 - Insecure Temporary File Creation (CWE-377) in SecOps Phase 3 QA
+
+**Vulnerability:** Predictable temporary files in world-writable /tmp (`/tmp/test_run_${repo}.log` and `/tmp/drift_audit.log`) in `secops/phase3-qa-health.sh` allowed local attackers to pre-create files or symlinks for denial-of-service or arbitrary file overwrite (CWE-377).
+**Learning:** Background health check and QA automation scripts running on schedules must isolate run logs in securely created temporary directories (via `mktemp -d`) with restrictive permissions (0700).
+**Prevention:** Always use `mktemp -d "${TMPDIR:-/tmp}/prefix.XXXXXX"` to create an isolated run directory and register a trap to ensure cleanup on exit.
