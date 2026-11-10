@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1398
+ledger_revision: 1399
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -24381,22 +24381,25 @@ items:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head 74db049aa25ea24a0addce04a6b266132296e9d9;
-    prior evidence void.
+  safe_default: 'Leave #936 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-Seatek_Analysis-936 — recover the still-unique
+    change (Updated_Seatek_Analysis.R) onto current main as a new focused PR. Original
+    stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/936
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-27T13:46:41Z'
+  handoffs:
+  - evt-s1-20261110-Seatek_Analysis-936-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 74db049aa25ea24a0addce04a6b266132296e9d9
@@ -25531,22 +25534,25 @@ items:
   - scripts/batch_correction.py
   - scripts/tests/test_batch_correction.py
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge until routine predicates are verified.
-  next_action: Re-anchored to live head 785783d3845e57e253972ca0533a0d0557b47a91;
-    prior evidence void.
+  safe_default: 'Leave #499 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-series_correction_project_updated-499
+    — recover the still-unique change (scripts/batch_correction.py, scripts/tests/test_batch_correction.py,
+    README.md, setup.py) onto current main as a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/499
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-09T12:27:07Z'
+  handoffs:
+  - evt-s1-20261110-series_correction_project_updated-499-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
 - key: abhimehro/series_correction_project_updated#501@00151e0e81f4f36c7ca792068766580ebea432e6
   repository: abhimehro/series_correction_project_updated
   pr: 501
@@ -30321,22 +30327,26 @@ items:
   - src/modules/alert_recommendations.py
   - tests/test_alert_system_console.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-10-16
-    by reconcile).'
+  safe_default: 'Leave #1754 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-email-security-pipeline-1754 — recover
+    the still-unique change (src/modules/alert_console.py, src/modules/alert_recommendations.py,
+    tests/test_alert_system_console.py) onto current main as a new focused PR. Original
+    stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1754
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-10-27T13:46:41Z'
+  handoffs:
+  - evt-s1-20261110-email-security-pipeline-1754-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 30c933efa59694ad09ac2ec8722cadd845a1bb72
@@ -40246,22 +40256,25 @@ items:
   changed_paths:
   - tests/test_pr_lifecycle_schema.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
-    by reconcile).'
+  safe_default: 'Leave #2677 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-personal-config-2677 — recover the
+    still-unique change (tests/test_pr_lifecycle_schema.py) onto current main as a
+    new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2677
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-s1-20261110-personal-config-2677-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 98fc5ff29de477b4cecd325b822c411060ac543f
@@ -43461,22 +43474,25 @@ items:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-02
-    by reconcile).'
+  safe_default: 'Leave #1118 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-Seatek_Analysis-1118 — recover the
+    still-unique change (Updated_Seatek_Analysis.R) onto current main as a new focused
+    PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1118
   attempts:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-02T15:05:32Z'
+  handoffs:
+  - evt-s1-20261110-Seatek_Analysis-1118-wi
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99
@@ -87334,7 +87350,318 @@ events:
     → CLOSED_NOOP
   successful: null
   policy_revision: null
-stage2_work_items: []
+- event_id: evt-s1-20261110-Seatek_Analysis-936-wi
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9:evt-s1-20261110-Seatek_Analysis-936-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:20:43Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:20:43Z: OPEN, CONFLICTING/DIRTY, head 74db049aa25e ==
+    ledger head, author_type BOT, guardrail PASS_ROUTINE, no sticky paths, not held.
+    Salvage-loop check vs main: write_task/calc_stats are still nested on main (removed
+    lines 30/34 still present); hoist not yet landed. Bounded paths: Updated_Seatek_Analysis.R.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261110-Seatek_Analysis-1118-wi
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#1118@3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#1118@3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99:evt-s1-20261110-Seatek_Analysis-1118-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:20:43Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:20:43Z: OPEN, CONFLICTING/DIRTY, head 3df85c82100b ==
+    ledger head, author_type BOT, guardrail PASS_ROUTINE, no sticky paths, not held.
+    Salvage-loop check vs main: compute_sensor_metrics loop on main unchanged (removed
+    lines 20/20 still present, added 4/21). Bounded paths: Updated_Seatek_Analysis.R.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261110-email-security-pipeline-1754-wi
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72:evt-s1-20261110-email-security-pipeline-1754-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:20:43Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:20:43Z: OPEN, CONFLICTING/DIRTY, head 30c933efa596 ==
+    ledger head, author_type BOT, guardrail PASS_ROUTINE, no sticky paths, not held.
+    Salvage-loop check vs main: contextual threat-icon handling absent on main (alert_console.py
+    removed lines 10/10 still present, added 4/22). Bounded paths: src/modules/alert_console.py,
+    src/modules/alert_recommendations.py, tests/test_alert_system_console.py.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261110-personal-config-2677-wi
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f:evt-s1-20261110-personal-config-2677-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:20:43Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:20:43Z: OPEN, CONFLICTING/DIRTY, head 98fc5ff29de4 ==
+    ledger head, author_type BOT, guardrail PASS_ROUTINE, no sticky paths, not held.
+    Salvage-loop check vs main: tests/test_pr_lifecycle_schema.py exists on main but
+    49/70 added test lines are not present. Bounded paths: tests/test_pr_lifecycle_schema.py.'
+  successful: null
+  policy_revision: null
+- event_id: evt-s1-20261110-series_correction_project_updated-499-wi
+  kind: HANDOFF
+  item_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
+  from_owner: stage1
+  to_owner: stage2
+  from_state: STAGE1_INTAKE
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91:evt-s1-20261110-series_correction_project_updated-499-wi
+  status: PROJECTED
+  created_at_utc: '2026-11-10T17:20:43Z'
+  acknowledged_at_utc: null
+  reason: 'BOOK_STAGE2_WI by Stage 1 (run 20261110) under PR Desk''s Nov 9 approval
+    of decision 7 for this run (Abhi''s 2026-11-09 14:24 CT standing approval: Desk
+    may approve Stage 2 booking); exclusions applied: REVIEW_SECURITY, standing holds,
+    pairs awaiting Abhi, Stage 3 stale pairs, rpce Swift/HOLD_PLATFORM, lockfile/workflow/auth/secrets.
+    Live gate 2026-11-10T17:20:43Z: OPEN, CONFLICTING/DIRTY, head 785783d3845e ==
+    ledger head, author_type BOT, guardrail HOLD_EVIDENCE, no sticky paths, not held.
+    Salvage-loop check vs main: batch_correction.py on main still lacks default JSON
+    river-mile map loading (removed 11/11 still present, added 12/74). Bounded paths:
+    scripts/batch_correction.py, scripts/tests/test_batch_correction.py, README.md,
+    setup.py.'
+  successful: null
+  policy_revision: null
+stage2_work_items:
+- work_item_id: s2-20261110-Seatek_Analysis-936
+  source_item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
+  repository: abhimehro/Seatek_Analysis
+  pr: 936
+  base_sha: f7908d6b1248d2e33e6b682b01e94f3451e2d66e
+  head_sha: 74db049aa25ea24a0addce04a6b266132296e9d9
+  allowed_paths:
+  - Updated_Seatek_Analysis.R
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - renv.lock
+  - requirements*.txt
+  repair_description: 'Recover the unique Bolt remainder of #936 (hoist nested helper
+    functions such as write_task and calc_stats to top level in Updated_Seatek_Analysis.R
+    so parallel workers can see them) onto current main as a new focused PR. Behaviour
+    must be unchanged. Exclude the .jules journal. Original #936 stays OPEN.'
+  required_test_command: Rscript -e 'testthat::test_dir("tests/testthat")'
+  expected_test_result: Rscript -e 'testthat::test_dir("tests/testthat")' exits 0
+  acceptance_criteria:
+  - Diff is limited to Updated_Seatek_Analysis.R.
+  - Rscript -e 'testthat::test_dir("tests/testthat")' exits 0 (or matches main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #936; original #936 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/936
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-Seatek_Analysis-936-wi
+  history: []
+- work_item_id: s2-20261110-Seatek_Analysis-1118
+  source_item_key: abhimehro/Seatek_Analysis#1118@3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99
+  repository: abhimehro/Seatek_Analysis
+  pr: 1118
+  base_sha: 58f9906b4aecbd1996922a3dbf10ad18f2299981
+  head_sha: 3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99
+  allowed_paths:
+  - Updated_Seatek_Analysis.R
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - renv.lock
+  - requirements*.txt
+  repair_description: 'Recover the unique Bolt remainder of #1118 (vectorize the per-sensor
+    first10/last5/full loop in compute_sensor_metrics in Updated_Seatek_Analysis.R)
+    onto current main as a new focused PR, only if it is equivalent to main''s output
+    and not a regression of the existing for-loop optimization; if not clearly better,
+    record EMPTY_INTAKE. Exclude the .jules journal. Coordinate with WI for #936 (same
+    file, different functions). Original #1118 stays OPEN.'
+  required_test_command: Rscript -e 'testthat::test_dir("tests/testthat")'
+  expected_test_result: Rscript -e 'testthat::test_dir("tests/testthat")' exits 0
+  acceptance_criteria:
+  - Diff is limited to Updated_Seatek_Analysis.R.
+  - Rscript -e 'testthat::test_dir("tests/testthat")' exits 0 (or matches main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #1118; original #1118 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1118
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-Seatek_Analysis-1118-wi
+  history: []
+- work_item_id: s2-20261110-email-security-pipeline-1754
+  source_item_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72
+  repository: abhimehro/email-security-pipeline
+  pr: 1754
+  base_sha: d722506c9f169852c018832f8688cf384db78f7f
+  head_sha: 30c933efa59694ad09ac2ec8722cadd845a1bb72
+  allowed_paths:
+  - src/modules/alert_console.py
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_system_console.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - requirements*.txt
+  - src/utils/**
+  repair_description: 'Recover the unique Palette remainder of #1754 (preserve contextual
+    threat icons in alert recommendations/console output, plus its tests) onto current
+    main as a new focused PR. Exclude the .jules journal. Original #1754 stays OPEN.'
+  required_test_command: python3 -m pytest tests/test_alert_system_console.py -q
+  expected_test_result: python3 -m pytest tests/test_alert_system_console.py -q exits
+    0
+  acceptance_criteria:
+  - Diff is limited to src/modules/alert_console.py and src/modules/alert_recommendations.py
+    and tests/test_alert_system_console.py.
+  - python3 -m pytest tests/test_alert_system_console.py -q exits 0 (or matches main's
+    baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #1754; original #1754 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1754
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-email-security-pipeline-1754-wi
+  history: []
+- work_item_id: s2-20261110-personal-config-2677
+  source_item_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f
+  repository: abhimehro/personal-config
+  pr: 2677
+  base_sha: b17eaeb183789dd97a6561285cc8a6c87c326956
+  head_sha: 98fc5ff29de477b4cecd325b822c411060ac543f
+  allowed_paths:
+  - tests/test_pr_lifecycle_schema.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - scripts/**
+  - schemas/**
+  - tasks/**
+  repair_description: 'Recover the still-unique schema-validation unit tests from
+    #2677 into tests/test_pr_lifecycle_schema.py on current main (merge with the existing
+    file; drop tests main already has). Tests only; no production code changes. Original
+    #2677 stays OPEN.'
+  required_test_command: python3 -m pytest tests/test_pr_lifecycle_schema.py -q
+  expected_test_result: python3 -m pytest tests/test_pr_lifecycle_schema.py -q exits
+    0
+  acceptance_criteria:
+  - Diff is limited to tests/test_pr_lifecycle_schema.py.
+  - python3 -m pytest tests/test_pr_lifecycle_schema.py -q exits 0 (or matches main's
+    baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #2677; original #2677 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2677
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-personal-config-2677-wi
+  history: []
+- work_item_id: s2-20261110-series_correction_project_updated-499
+  source_item_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
+  repository: abhimehro/series_correction_project_updated
+  pr: 499
+  base_sha: 42c1affad2ae8cf897e50607c1d8f23274da0563
+  head_sha: 785783d3845e57e253972ca0533a0d0557b47a91
+  allowed_paths:
+  - scripts/batch_correction.py
+  - scripts/tests/test_batch_correction.py
+  - README.md
+  - setup.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - .agents/**
+  - scripts/requirements*.txt
+  repair_description: 'Recover the unique cursor fix from #499 (load the committed
+    JSON river-mile map by default in scripts/batch_correction.py, with tests; README
+    note; setup.py package-data line only if the JSON is not already packaged) onto
+    current main as a new focused PR. Original #499 stays OPEN.'
+  required_test_command: python3 -m pytest scripts/tests -q
+  expected_test_result: python3 -m pytest scripts/tests -q exits 0
+  acceptance_criteria:
+  - Diff is limited to scripts/batch_correction.py and scripts/tests/test_batch_correction.py
+    and README.md and setup.py.
+  - python3 -m pytest scripts/tests -q exits 0 (or matches main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #499; original #499 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/series_correction_project_updated/pull/499
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-series_correction_project_updated-499-wi
+  history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
