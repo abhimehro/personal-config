@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1400
+ledger_revision: 1401
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -46565,8 +46565,8 @@ items:
   current_owner: stage2
   next_owner: stage2
   terminal_disposition: null
-  safe_default: 'Leave #1852 open. Do not merge the conflicting original; do not update
-    its branch.'
+  safe_default: 'Leave #1852 open. Do not merge it and do not push to or update its
+    branch (Desk ruling 2026-11-10).'
   next_action: 'Stage 2: work item s2-20261110-email-security-pipeline-1852 — recover
     the still-unique change (src/utils/security_validators.py, .jules/bolt.md) onto
     current main as a new focused PR. Original stays OPEN.'
@@ -87703,30 +87703,28 @@ stage2_work_items:
   - requirements*.txt
   - tests/**
   - src/modules/**
-  repair_description: 'REBASE/UPDATE ONLY: bring #1852 current with main by merging
-    main into its branch (merge commit; NO force-push; no Jules triggers), resolving
-    only the merge conflicts so the PR''s existing intent is preserved. Do NOT change
-    the empty-local-part validation behaviour (_is_safe_local now returns False for
-    an empty local part) or any other logic, and do NOT resolve or respond to its
-    review threads (CodeScene x2, Kilo). Stage 1 decides the keeper of the #1774/#1850/#1852
-    cluster afterwards. After the update, verify the new head is your merge commit
-    and the PR diff vs main is unchanged in shape (still +~38/-7 over .jules/bolt.md
-    and src/utils/security_validators.py). If the branch cannot be updated without
-    a force-push or without changing behaviour, or Stage 2''s rules do not permit
-    updating this branch, record EMPTY_INTAKE with the reason and report to PR Desk;
-    do not open a replacement PR.'
+  repair_description: 'RECOVERY PR (PR Desk ruling 2026-11-10 11:30 CT; Stage 1 wording
+    fix 2026-11-11): do NOT push to, update, or merge main into #1852''s branch. Open
+    a NEW focused recovery PR from current main that carries #1852''s change unchanged
+    onto main (src/utils/security_validators.py, .jules/bolt.md), preserving its intent
+    exactly, including the empty-local-part behaviour (_is_safe_local returns False
+    for an empty local part), with no other logic changes; link #1852. #1852 stays
+    OPEN and its review threads (CodeScene x2, Kilo) are left untouched; Stage 1 reads
+    them before any close. If the change cannot be carried onto main unchanged, record
+    EMPTY_INTAKE with the reason. Stage 1 then picks the keeper of the #1774/#1850/#1852
+    + recovery PR cluster.'
   required_test_command: python3 -m pytest tests -q -k 'email or security_validators'
   expected_test_result: python3 -m pytest tests -q -k 'email or security_validators'
     exits 0
   acceptance_criteria:
-  - Branch updated from main by merge commit only (no force-push); new head is that
-    merge commit.
-  - PR diff vs main still limited to .jules/bolt.md and src/utils/security_validators.py,
-    same shape as before (+~38/-7).
-  - Empty-local-part validation behaviour and all other logic unchanged; review threads
-    left untouched.
-  - 'PR becomes MERGEABLE against current main; #1774/#1850 untouched; Stage 1 picks
-    the keeper afterwards.'
+  - 'New recovery PR opened from current main and linking #1852; #1852''s branch is
+    not pushed to or updated.'
+  - 'Recovery PR diff is limited to .jules/bolt.md and src/utils/security_validators.py
+    and carries #1852''s change unchanged (+~38/-7 shape).'
+  - 'Empty-local-part validation behaviour and all other logic identical to #1852;
+    #1852''s review threads left untouched.'
+  - '#1852, #1774 and #1850 stay OPEN; Stage 1 picks the cluster keeper afterwards
+    (or EMPTY_INTAKE is recorded with the reason).'
   provenance_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1852
   expiry_utc: '2026-11-17T17:00:00Z'
