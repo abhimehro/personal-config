@@ -155,6 +155,8 @@ _PERMISSION_KEY_RE = re.compile(
     r"id-token|issues|models|packages|pages|pull-requests|repository-projects|"
     r"security-events|statuses)\s*:"
 )
+# Pre-compile permissions block header pattern to avoid inline re.match overhead in diff loops
+_PERMISSIONS_HEADER_RE = re.compile(r"(?i)^permissions\s*:")
 _SHA40_RE = re.compile(r"[0-9a-f]{40}")
 _DIFF_FILE_RE = re.compile(r"^\+\+\+ b/(.+)$")
 # Added or removed code lines, not titles. Each pattern names an existing
@@ -448,7 +450,8 @@ def permissions_block_changed(diff_text: str) -> bool:
             continue
         indent = len(body) - len(body.lstrip(" "))
         stripped = body.strip()
-        if re.match(r"(?i)permissions\s*:", stripped):
+        # Fast pre-compiled regex match for permissions header in diff lines
+        if _PERMISSIONS_HEADER_RE.match(stripped):
             if raw[0] in "+-":
                 return True
             in_block = True
