@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1418
+ledger_revision: 1434
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -24381,29 +24381,25 @@ items:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: 'Leave #936 OPEN. Do not merge the conflicting original or update
-    its Jules branch. Unique remainder lives in recovery PR #1164.'
-  next_action: 'STAGE3_RECONCILIATION: track recovery PR #1164. After #1164 merges,
-    #936 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
-    3 cooldown/evidence. If #1164 is rejected, record the reason; do not re-salvage
-    the same approach.'
+  safe_default: 'Leave #936 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-Seatek_Analysis-936 — recover the still-unique
+    change (Updated_Seatek_Analysis.R) onto current main as a new focused PR. Original
+    stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/936
-  - https://github.com/abhimehro/Seatek_Analysis/pull/1164
   attempts:
     evidence: 0
-    recovery: 1
+    recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20261110-Seatek_Analysis-936-wi
-  - evt-s2-20261111-seatek-936-a
-  - evt-s2-20261111-seatek-936-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 74db049aa25ea24a0addce04a6b266132296e9d9
@@ -30331,29 +30327,26 @@ items:
   - src/modules/alert_recommendations.py
   - tests/test_alert_system_console.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: 'Leave #1754 OPEN. Do not merge the conflicting original or update
-    its Jules branch. Unique remainder lives in recovery PR #1913.'
-  next_action: 'STAGE3_RECONCILIATION: track recovery PR #1913. After #1913 merges,
-    #1754 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
-    3 cooldown/evidence. If #1913 is rejected, record the reason; do not re-salvage
-    the same approach.'
+  safe_default: 'Leave #1754 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-email-security-pipeline-1754 — recover
+    the still-unique change (src/modules/alert_console.py, src/modules/alert_recommendations.py,
+    tests/test_alert_system_console.py) onto current main as a new focused PR. Original
+    stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1754
-  - https://github.com/abhimehro/email-security-pipeline/pull/1913
   attempts:
     evidence: 0
-    recovery: 1
+    recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20261110-email-security-pipeline-1754-wi
-  - evt-s2-20261111-email-security-pipeline-1754-a
-  - evt-s2-20261111-email-security-pipeline-1754-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 30c933efa59694ad09ac2ec8722cadd845a1bb72
@@ -40263,29 +40256,25 @@ items:
   changed_paths:
   - tests/test_pr_lifecycle_schema.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: 'Leave #2677 OPEN. Do not merge the conflicting original or update
-    its Jules branch. Unique remainder lives in recovery PR #2760.'
-  next_action: 'STAGE3_RECONCILIATION: track recovery PR #2760. After #2760 merges,
-    #2677 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
-    3 cooldown/evidence. If #2760 is rejected, record the reason; do not re-salvage
-    the same approach.'
+  safe_default: 'Leave #2677 open. Do not merge the conflicting original; do not update
+    its branch.'
+  next_action: 'Stage 2: work item s2-20261110-personal-config-2677 — recover the
+    still-unique change (tests/test_pr_lifecycle_schema.py) onto current main as a
+    new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2677
-  - https://github.com/abhimehro/personal-config/pull/2760
   attempts:
     evidence: 0
-    recovery: 1
+    recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20261110-personal-config-2677-wi
-  - evt-s2-20261111-personal-config-2677-a
-  - evt-s2-20261111-personal-config-2677-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
+  revision: 1
+  updated_at_utc: '2026-11-10T17:20:43Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 98fc5ff29de477b4cecd325b822c411060ac543f
@@ -46573,31 +46562,25 @@ items:
   - .jules/bolt.md
   - src/utils/security_validators.py
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
+  lifecycle_state: STAGE2_QUEUED
+  current_owner: stage2
+  next_owner: stage2
   terminal_disposition: null
-  safe_default: 'Leave #1852 OPEN. Do not merge the conflicting original or update
-    its Jules branch. Unique remainder lives in recovery PR #1912.'
-  next_action: 'STAGE3_RECONCILIATION: track recovery PR #1912. After #1912 merges,
-    #1852 has no unique content left and is a CLOSED_SUPERSEDED candidate under Stage
-    3 cooldown/evidence. If #1912 is rejected, record the reason; do not re-salvage
-    the same approach. Cluster note (PR Desk 2026-11-10): Stage 1 picks the keeper
-    of #1774/#1850/#1852 + recovery #1912 and reads #1852''s open review threads (CodeScene
-    x2, Kilo) before any close.'
+  safe_default: 'Leave #1852 open. Do not merge it and do not push to or update its
+    branch (Desk ruling 2026-11-10).'
+  next_action: 'Stage 2: work item s2-20261110-email-security-pipeline-1852 — recover
+    the still-unique change (src/utils/security_validators.py, .jules/bolt.md) onto
+    current main as a new focused PR. Original stays OPEN.'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1852
-  - https://github.com/abhimehro/email-security-pipeline/pull/1912
   attempts:
     evidence: 0
-    recovery: 1
+    recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20261110-email-security-pipeline-1852-wi
-  - evt-s2-20261111-email-security-pipeline-1852-a
-  - evt-s2-20261111-email-security-pipeline-1852-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
+  revision: 1
+  updated_at_utc: '2026-11-10T17:25:00Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: 9d4285debd6b1993cc9b558977d58151eb8f4186
@@ -50442,10 +50425,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50455,9 +50438,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  handoffs:
+  - evt-reconcile-20261111160133-3070045b
+  revision: 1
+  updated_at_utc: '2026-11-11T16:01:33Z'
 - key: abhimehro/ctrld-sync#1404@18af2adcdece1f54f2495ac5fec6d0f15cd7119e
   repository: abhimehro/ctrld-sync
   pr: 1404
@@ -50481,10 +50465,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50494,9 +50478,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  handoffs:
+  - evt-reconcile-20261111160133-735eed3c
+  revision: 1
+  updated_at_utc: '2026-11-11T16:01:33Z'
 - key: abhimehro/ctrld-sync#1405@e045046391e0b9946d42b594094d88e4f7860ae6
   repository: abhimehro/ctrld-sync
   pr: 1405
@@ -50520,10 +50505,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50533,9 +50518,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  handoffs:
+  - evt-reconcile-20261111160133-7015e09a
+  revision: 1
+  updated_at_utc: '2026-11-11T16:01:33Z'
 - key: abhimehro/ctrld-sync#1406@52d0db6db4ffb8b9fef42cd07aecd0c3a9686e87
   repository: abhimehro/ctrld-sync
   pr: 1406
@@ -50559,10 +50545,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50572,9 +50558,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  handoffs:
+  - evt-reconcile-20261111160133-3f498169
+  revision: 1
+  updated_at_utc: '2026-11-11T16:01:33Z'
 - key: abhimehro/ctrld-sync#1407@b2dbd9f03bdfe8c3c9d8a9b11805fb5bbdca60b5
   repository: abhimehro/ctrld-sync
   pr: 1407
@@ -50712,7 +50699,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/modules/spam_analyzer.py
+  - tests/test_spam_analyzer_optimization.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50752,7 +50742,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - test_config.py
+  - tests/test_ui_palette.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50790,7 +50782,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_gh_token_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50828,7 +50821,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_gh_token_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50866,7 +50860,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_alert_system_console.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50905,7 +50900,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_alert_system_console.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -50946,10 +50942,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50959,9 +50955,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  handoffs:
+  - evt-reconcile-20261111160133-c07b9723
+  revision: 1
+  updated_at_utc: '2026-11-11T16:01:33Z'
 - key: abhimehro/email-security-pipeline#1875@1f487364a2e13de749984dcb81ae66e026e1459b
   repository: abhimehro/email-security-pipeline
   pr: 1875
@@ -50982,7 +50979,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_gh_token_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51020,7 +51018,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/modules/nlp_analyzer.py
+  - tests/test_nlp_analyzer.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51058,7 +51058,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/modules/media_file_type.py
+  - tests/test_media_signature_validation.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51096,7 +51098,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/modules/alert_channels.py
+  - tests/test_alert_channels.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51134,7 +51138,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_gh_token_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51152,151 +51157,6 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-11-11T15:11:56Z'
-- key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5
-  repository: abhimehro/email-security-pipeline
-  pr: 1912
-  url: https://github.com/abhimehro/email-security-pipeline/pull/1912
-  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
-  head_sha: 52574827f245fc5e8b4415d4cf4bf2af990eb9d5
-  author:
-    login: abhimehro
-    identity_source: github_api
-    app_slug: null
-    identity_provenance:
-      method: token_authored_signals
-      signals:
-      - branch
-      - title
-      - body
-      - source_work_item
-  author_type: BOT
-  classification: PERFORMANCE
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: 'Stage 2 recovery of #1852 (normal PR). Stage 2 never merges or approves.
-    Do not close original #1852 from Stage 2.'
-  next_action: 'Stage 1: re-ingest recovery PR #1912 (.jules/bolt.md, src/utils/security_validators.py;
-    python3 -m pytest tests -q -k ''email or security_validators'' -> 194 passed;
-    git diff --check exit 0). Route only when every routine predicate passes. Original
-    #1852 stays OPEN for Stage 3.'
-  evidence_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1912
-  - https://github.com/abhimehro/email-security-pipeline/pull/1852
-  changed_paths:
-  - .jules/bolt.md
-  - src/utils/security_validators.py
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s2-20261111-email-security-pipeline-1912-i
-  - evt-s2-20261111-email-security-pipeline-1912-a
-  - evt-s2-20261111-email-security-pipeline-1912-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
-- key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8
-  repository: abhimehro/email-security-pipeline
-  pr: 1913
-  url: https://github.com/abhimehro/email-security-pipeline/pull/1913
-  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
-  head_sha: 11b947d7d5821b6393edc5280a154e3375c873c8
-  author:
-    login: abhimehro
-    identity_source: github_api
-    app_slug: null
-    identity_provenance:
-      method: token_authored_signals
-      signals:
-      - branch
-      - title
-      - body
-      - source_work_item
-  author_type: BOT
-  classification: UI
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: 'Stage 2 recovery of #1754 (normal PR). Stage 2 never merges or approves.
-    Do not close original #1754 from Stage 2.'
-  next_action: 'Stage 1: re-ingest recovery PR #1913 (src/modules/alert_console.py,
-    src/modules/alert_recommendations.py, tests/test_alert_system_console.py; python3
-    -m pytest tests/test_alert_system_console.py -q -> 23 passed; full suite 910 passed
-    / 10 failed (same 10 fail on main locally); git diff --check exit 0). Route only
-    when every routine predicate passes. Original #1754 stays OPEN for Stage 3.'
-  evidence_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1913
-  - https://github.com/abhimehro/email-security-pipeline/pull/1754
-  changed_paths:
-  - src/modules/alert_console.py
-  - src/modules/alert_recommendations.py
-  - tests/test_alert_system_console.py
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s2-20261111-email-security-pipeline-1913-i
-  - evt-s2-20261111-email-security-pipeline-1913-a
-  - evt-s2-20261111-email-security-pipeline-1913-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
-- key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890
-  repository: abhimehro/Seatek_Analysis
-  pr: 1164
-  url: https://github.com/abhimehro/Seatek_Analysis/pull/1164
-  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
-  head_sha: 7f46d9480d6d83fa44c1ec97aadb1361d9975890
-  author:
-    login: abhimehro
-    identity_source: github_api
-    app_slug: null
-    identity_provenance:
-      method: token_authored_signals
-      signals:
-      - branch
-      - title
-      - body
-      - source_work_item
-  author_type: BOT
-  classification: PERFORMANCE
-  risk_class: ROUTINE
-  sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: 'Stage 2 recovery of #936 (normal PR). Stage 2 never merges or approves.
-    Do not close original #936 from Stage 2.'
-  next_action: 'Stage 1: re-ingest recovery PR #1164 (Updated_Seatek_Analysis.R; Rscript
-    testthat not run locally (box apt mirror returned 500s, R not installable); relies
-    on the PR''s r-testthat workflow; git diff --check exit 0). Route only when every
-    routine predicate passes. Original #936 stays OPEN for Stage 3.'
-  evidence_urls:
-  - https://github.com/abhimehro/Seatek_Analysis/pull/1164
-  - https://github.com/abhimehro/Seatek_Analysis/pull/936
-  changed_paths:
-  - Updated_Seatek_Analysis.R
-  attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s2-20261111-seatek-1164-i
-  - evt-s2-20261111-seatek-1164-a
-  - evt-s2-20261111-seatek-1164-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
 - key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa
   repository: abhimehro/personal-config
   pr: 2760
@@ -51307,43 +51167,66 @@ items:
     login: abhimehro
     identity_source: github_api
     app_slug: null
+  author_type: HUMAN
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2760
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-11T16:01:33Z'
+- key: abhimehro/email-security-pipeline#1880@74ff25ecba529e278155407816173cffe99604b0
+  repository: abhimehro/email-security-pipeline
+  pr: 1880
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1880
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 74ff25ecba529e278155407816173cffe99604b0
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
     identity_provenance:
       method: token_authored_signals
       signals:
-      - branch
-      - title
       - body
-      - source_work_item
+      - timeline_comment
+      - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: ROUTINE
+  risk_class: UNKNOWN
   sensitive_paths: []
-  guardrail_outcome: PASS_ROUTINE
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
   current_owner: stage1
   next_owner: stage1
-  safe_default: 'Stage 2 recovery of #2677 (normal PR). Stage 2 never merges or approves.
-    Do not close original #2677 from Stage 2.'
-  next_action: 'Stage 1: re-ingest recovery PR #2760 (tests/test_pr_lifecycle_schema.py;
-    python3 -m pytest tests/test_pr_lifecycle_schema.py -q -> 13 passed (main 11 +
-    2 new); git diff --check exit 0). Route only when every routine predicate passes.
-    Original #2677 stays OPEN for Stage 3.'
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
+    by reconcile).'
   evidence_urls:
-  - https://github.com/abhimehro/personal-config/pull/2760
-  - https://github.com/abhimehro/personal-config/pull/2677
-  changed_paths:
-  - tests/test_pr_lifecycle_schema.py
+  - https://github.com/abhimehro/email-security-pipeline/pull/1880
   attempts:
-    evidence: 1
+    evidence: 0
     recovery: 0
-    mutations: 1
-  handoffs:
-  - evt-s2-20261111-personal-config-2760-i
-  - evt-s2-20261111-personal-config-2760-a
-  - evt-s2-20261111-personal-config-2760-h
-  revision: 3
-  updated_at_utc: '2026-11-11T16:00:42Z'
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-11T16:01:33Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -88726,434 +88609,140 @@ events:
     → CLOSED_NOOP
   successful: null
   policy_revision: null
-- event_id: evt-s2-20261111-email-security-pipeline-1852-a
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186:evt-s2-20261111-email-security-pipeline-1852-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 run 20261111 (Stage 1 booking rev 1399, PR Desk-approved): activate
-    WI s2-20261110-email-security-pipeline-1852 (attempt 1) for recovery PR #1912.'
-- event_id: evt-s2-20261111-email-security-pipeline-1852-h
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186
-  from_owner: stage2
-  to_owner: stage3
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE3_RECONCILIATION
-  next_owner: stage3
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186:evt-s2-20261111-email-security-pipeline-1852-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 APPLY: WI s2-20261110-email-security-pipeline-1852 consumed. Recovery
-    PR #1912 (non-draft; head 52574827f245, base main 116b1afaa004) carries #1852''s
-    validator change unchanged (_EMAIL_BOUNDARY_CHARS, direct-index boundary checks,
-    ''@''/''..'' fast-path guard; _is_safe_local returns False for an empty local
-    part) plus its bolt.md entry appended to main''s journal; #1852 review threads
-    (CodeScene x2, Kilo empty-local-part) linked in the PR body for Stage 1. Left
-    out: #1852''s reflow of older bolt.md entries (main already reformatted them);
-    nothing else. #1852''s branch not pushed to (PR Desk ruling 2026-11-10). Test:
-    python3 -m pytest tests -q -k ''email or security_validators'' -> 194 passed;
-    git diff --check exit 0. Original #1852 stays OPEN; Stage 3 reconciles. Do not
-    close from Stage 2.'
-- event_id: evt-s2-20261111-email-security-pipeline-1912-i
-  kind: IMPORT
-  item_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5
+- event_id: evt-reconcile-20261111160133-3070045b
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1403@3ce58d78525a02b6b5b980037dd539fa2f942761
   from_owner: stage1
-  to_owner: stage2
+  to_owner: none
   from_state: STAGE1_INTAKE
-  to_state: STAGE2_QUEUED
-  next_owner: stage2
-  terminal_disposition: null
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5:evt-s2-20261111-email-security-pipeline-1912-i
+  idempotency_key: abhimehro/ctrld-sync#1403@3ce58d78525a02b6b5b980037dd539fa2f942761:evt-reconcile-20261111160133-3070045b
   status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
+  created_at_utc: '2026-11-11T16:01:33Z'
   acknowledged_at_utc: null
-  policy_revision: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
-  reason: 'Import recovery PR #1912 provenance to #1852 via WI s2-20261110-email-security-pipeline-1852.
-    Head 52574827f245; opened as a normal (non-draft) PR per the 2026-10-20 rule;
-    isDraft=false re-read after create.'
-- event_id: evt-s2-20261111-email-security-pipeline-1912-a
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5:evt-s2-20261111-email-security-pipeline-1912-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
   policy_revision: null
-  successful: null
-  reason: 'Activate recovery PR #1912 before Stage 1 re-ingest.'
-- event_id: evt-s2-20261111-email-security-pipeline-1912-h
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5
-  from_owner: stage2
-  to_owner: stage1
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE1_INTAKE
-  next_owner: stage1
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5:evt-s2-20261111-email-security-pipeline-1912-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Routine BOT PERFORMANCE salvage complete from #1852. Stage 1 re-ingests
-    #1912. Merge authority is never Stage 2. PASS_ROUTINE.'
-- event_id: evt-s2-20261111-email-security-pipeline-1754-a
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72:evt-s2-20261111-email-security-pipeline-1754-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 run 20261111 (Stage 1 booking rev 1399, PR Desk-approved): activate
-    WI s2-20261110-email-security-pipeline-1754 (attempt 1) for recovery PR #1913.'
-- event_id: evt-s2-20261111-email-security-pipeline-1754-h
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72
-  from_owner: stage2
-  to_owner: stage3
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE3_RECONCILIATION
-  next_owner: stage3
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72:evt-s2-20261111-email-security-pipeline-1754-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 APPLY: WI s2-20261110-email-security-pipeline-1754 consumed. Recovery
-    PR #1913 (non-draft; head 11b947d7d582, base main 116b1afaa004) carries _extract_and_strip_recommendation_prefix
-    keeps each recommendation''s contextual icon (fallback ►), visual-width continuation
-    indent, ''⚠️ '' prefix, and #1754''s two tests alongside main''s newer meter tests.
-    Left out: .jules/palette.md; removed the now-unused RECOMMENDATION_PREFIXES_TUPLE
-    import in alert_console (ruff F401). Test: python3 -m pytest tests/test_alert_system_console.py
-    -q -> 23 passed; full suite 910 passed / 10 failed (same 10 fail on main locally);
-    git diff --check exit 0. Original #1754 stays OPEN; Stage 3 reconciles. Do not
-    close from Stage 2.'
-- event_id: evt-s2-20261111-email-security-pipeline-1913-i
-  kind: IMPORT
-  item_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8
+- event_id: evt-reconcile-20261111160133-735eed3c
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1404@18af2adcdece1f54f2495ac5fec6d0f15cd7119e
   from_owner: stage1
-  to_owner: stage2
+  to_owner: none
   from_state: STAGE1_INTAKE
-  to_state: STAGE2_QUEUED
-  next_owner: stage2
-  terminal_disposition: null
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8:evt-s2-20261111-email-security-pipeline-1913-i
+  idempotency_key: abhimehro/ctrld-sync#1404@18af2adcdece1f54f2495ac5fec6d0f15cd7119e:evt-reconcile-20261111160133-735eed3c
   status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
+  created_at_utc: '2026-11-11T16:01:33Z'
   acknowledged_at_utc: null
-  policy_revision: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
-  reason: 'Import recovery PR #1913 provenance to #1754 via WI s2-20261110-email-security-pipeline-1754.
-    Head 11b947d7d582; opened as a normal (non-draft) PR per the 2026-10-20 rule;
-    isDraft=false re-read after create.'
-- event_id: evt-s2-20261111-email-security-pipeline-1913-a
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8:evt-s2-20261111-email-security-pipeline-1913-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
   policy_revision: null
-  successful: null
-  reason: 'Activate recovery PR #1913 before Stage 1 re-ingest.'
-- event_id: evt-s2-20261111-email-security-pipeline-1913-h
-  kind: HANDOFF
-  item_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8
-  from_owner: stage2
-  to_owner: stage1
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE1_INTAKE
-  next_owner: stage1
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/email-security-pipeline#1913@11b947d7d5821b6393edc5280a154e3375c873c8:evt-s2-20261111-email-security-pipeline-1913-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Routine BOT UI salvage complete from #1754. Stage 1 re-ingests #1913. Merge
-    authority is never Stage 2. PASS_ROUTINE.'
-- event_id: evt-s2-20261111-seatek-936-a
-  kind: HANDOFF
-  item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9:evt-s2-20261111-seatek-936-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 run 20261111 (Stage 1 booking rev 1399, PR Desk-approved): activate
-    WI s2-20261110-Seatek_Analysis-936 (attempt 1) for recovery PR #1164.'
-- event_id: evt-s2-20261111-seatek-936-h
-  kind: HANDOFF
-  item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
-  from_owner: stage2
-  to_owner: stage3
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE3_RECONCILIATION
-  next_owner: stage3
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9:evt-s2-20261111-seatek-936-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 APPLY: WI s2-20261110-Seatek_Analysis-936 consumed. Recovery PR
-    #1164 (non-draft; head 7f46d9480d6d, base main 28155bbaaa73) carries write_task
-    hoisted out of export_raw_data_parallel to top level, body unchanged. Left out:
-    calc_stats hoist: already on main as compute_vector_summary_stats. Test: Rscript
-    testthat not run locally (box apt mirror returned 500s, R not installable); relies
-    on the PR''s r-testthat workflow; git diff --check exit 0. Original #936 stays
-    OPEN; Stage 3 reconciles. Do not close from Stage 2.'
-- event_id: evt-s2-20261111-seatek-1164-i
-  kind: IMPORT
-  item_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890
+- event_id: evt-reconcile-20261111160133-7015e09a
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1405@e045046391e0b9946d42b594094d88e4f7860ae6
   from_owner: stage1
-  to_owner: stage2
+  to_owner: none
   from_state: STAGE1_INTAKE
-  to_state: STAGE2_QUEUED
-  next_owner: stage2
-  terminal_disposition: null
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890:evt-s2-20261111-seatek-1164-i
+  idempotency_key: abhimehro/ctrld-sync#1405@e045046391e0b9946d42b594094d88e4f7860ae6:evt-reconcile-20261111160133-7015e09a
   status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
+  created_at_utc: '2026-11-11T16:01:33Z'
   acknowledged_at_utc: null
-  policy_revision: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
-  reason: 'Import recovery PR #1164 provenance to #936 via WI s2-20261110-Seatek_Analysis-936.
-    Head 7f46d9480d6d; opened as a normal (non-draft) PR per the 2026-10-20 rule;
-    isDraft=false re-read after create.'
-- event_id: evt-s2-20261111-seatek-1164-a
-  kind: HANDOFF
-  item_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890:evt-s2-20261111-seatek-1164-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
   policy_revision: null
-  successful: null
-  reason: 'Activate recovery PR #1164 before Stage 1 re-ingest.'
-- event_id: evt-s2-20261111-seatek-1164-h
-  kind: HANDOFF
-  item_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890
-  from_owner: stage2
-  to_owner: stage1
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE1_INTAKE
-  next_owner: stage1
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/Seatek_Analysis#1164@7f46d9480d6d83fa44c1ec97aadb1361d9975890:evt-s2-20261111-seatek-1164-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Routine BOT PERFORMANCE salvage complete from #936. Stage 1 re-ingests
-    #1164. Merge authority is never Stage 2. PASS_ROUTINE.'
-- event_id: evt-s2-20261111-personal-config-2677-a
-  kind: HANDOFF
-  item_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f:evt-s2-20261111-personal-config-2677-a
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 run 20261111 (Stage 1 booking rev 1399, PR Desk-approved): activate
-    WI s2-20261110-personal-config-2677 (attempt 1) for recovery PR #2760.'
-- event_id: evt-s2-20261111-personal-config-2677-h
-  kind: HANDOFF
-  item_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f
-  from_owner: stage2
-  to_owner: stage3
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE3_RECONCILIATION
-  next_owner: stage3
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f:evt-s2-20261111-personal-config-2677-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
-  policy_revision: null
-  successful: null
-  reason: 'Stage 2 APPLY: WI s2-20261110-personal-config-2677 consumed. Recovery PR
-    #2760 (non-draft; head 3c89b3bf6c32, base main d50afe5ab4e0) carries deep nested
-    path test (items.0.attempts.evidence) and a deterministic multi-error ordering
-    test (tightened: repeat-call equality and location regex instead of a bare startswith).
-    Left out: six tests duplicating main''s existing coverage. Test: python3 -m pytest
-    tests/test_pr_lifecycle_schema.py -q -> 13 passed (main 11 + 2 new); git diff
-    --check exit 0. Original #2677 stays OPEN; Stage 3 reconciles. Do not close from
-    Stage 2.'
-- event_id: evt-s2-20261111-personal-config-2760-i
-  kind: IMPORT
-  item_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa
+- event_id: evt-reconcile-20261111160133-3f498169
+  kind: TERMINAL
+  item_key: abhimehro/ctrld-sync#1406@52d0db6db4ffb8b9fef42cd07aecd0c3a9686e87
   from_owner: stage1
-  to_owner: stage2
+  to_owner: none
   from_state: STAGE1_INTAKE
-  to_state: STAGE2_QUEUED
-  next_owner: stage2
-  terminal_disposition: null
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   parent_event_id: null
   expected_item_revision: 0
   resulting_item_revision: 1
-  idempotency_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa:evt-s2-20261111-personal-config-2760-i
+  idempotency_key: abhimehro/ctrld-sync#1406@52d0db6db4ffb8b9fef42cd07aecd0c3a9686e87:evt-reconcile-20261111160133-3f498169
   status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
+  created_at_utc: '2026-11-11T16:01:33Z'
   acknowledged_at_utc: null
-  policy_revision: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
-  reason: 'Import recovery PR #2760 provenance to #2677 via WI s2-20261110-personal-config-2677.
-    Head 3c89b3bf6c32; opened as a normal (non-draft) PR per the 2026-10-20 rule;
-    isDraft=false re-read after create.'
-- event_id: evt-s2-20261111-personal-config-2760-a
-  kind: HANDOFF
-  item_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa
-  from_owner: stage2
-  to_owner: stage2
-  from_state: STAGE2_QUEUED
-  to_state: STAGE2_ACTIVE
-  next_owner: stage2
-  terminal_disposition: null
+  policy_revision: null
+- event_id: evt-reconcile-20261111160133-c07b9723
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1874@6b54f07d08fa92158bf583f98f62a3a922e5eafb
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   parent_event_id: null
-  expected_item_revision: 1
-  resulting_item_revision: 2
-  idempotency_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa:evt-s2-20261111-personal-config-2760-a
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1874@6b54f07d08fa92158bf583f98f62a3a922e5eafb:evt-reconcile-20261111160133-c07b9723
   status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
+  created_at_utc: '2026-11-11T16:01:33Z'
   acknowledged_at_utc: null
-  policy_revision: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
   successful: null
-  reason: 'Activate recovery PR #2760 before Stage 1 re-ingest.'
-- event_id: evt-s2-20261111-personal-config-2760-h
-  kind: HANDOFF
-  item_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa
-  from_owner: stage2
-  to_owner: stage1
-  from_state: STAGE2_ACTIVE
-  to_state: STAGE1_INTAKE
-  next_owner: stage1
-  terminal_disposition: null
-  parent_event_id: null
-  expected_item_revision: 2
-  resulting_item_revision: 3
-  idempotency_key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa:evt-s2-20261111-personal-config-2760-h
-  status: PROJECTED
-  created_at_utc: '2026-11-11T16:00:42Z'
-  acknowledged_at_utc: null
   policy_revision: null
-  successful: null
-  reason: 'Routine BOT UNKNOWN salvage complete from #2677. Stage 1 re-ingests #2760.
-    Merge authority is never Stage 2. PASS_ROUTINE.'
 stage2_work_items:
+- work_item_id: s2-20261110-Seatek_Analysis-936
+  source_item_key: abhimehro/Seatek_Analysis#936@74db049aa25ea24a0addce04a6b266132296e9d9
+  repository: abhimehro/Seatek_Analysis
+  pr: 936
+  base_sha: f7908d6b1248d2e33e6b682b01e94f3451e2d66e
+  head_sha: 74db049aa25ea24a0addce04a6b266132296e9d9
+  allowed_paths:
+  - Updated_Seatek_Analysis.R
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - renv.lock
+  - requirements*.txt
+  repair_description: 'Recover the unique Bolt remainder of #936 (hoist nested helper
+    functions such as write_task and calc_stats to top level in Updated_Seatek_Analysis.R
+    so parallel workers can see them) onto current main as a new focused PR. Behaviour
+    must be unchanged. Exclude the .jules journal. Original #936 stays OPEN.'
+  required_test_command: Rscript -e 'testthat::test_dir("tests/testthat")'
+  expected_test_result: Rscript -e 'testthat::test_dir("tests/testthat")' exits 0
+  acceptance_criteria:
+  - Diff is limited to Updated_Seatek_Analysis.R.
+  - Rscript -e 'testthat::test_dir("tests/testthat")' exits 0 (or matches main's baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #936; original #936 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/936
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-Seatek_Analysis-936-wi
+  history: []
 - work_item_id: s2-20261110-Seatek_Analysis-1118
   source_item_key: abhimehro/Seatek_Analysis#1118@3df85c82100bfa1c4e7fc18fd3d2edc1138c2a99
   repository: abhimehro/Seatek_Analysis
@@ -89188,6 +88777,79 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20261110-Seatek_Analysis-1118-wi
+  history: []
+- work_item_id: s2-20261110-email-security-pipeline-1754
+  source_item_key: abhimehro/email-security-pipeline#1754@30c933efa59694ad09ac2ec8722cadd845a1bb72
+  repository: abhimehro/email-security-pipeline
+  pr: 1754
+  base_sha: d722506c9f169852c018832f8688cf384db78f7f
+  head_sha: 30c933efa59694ad09ac2ec8722cadd845a1bb72
+  allowed_paths:
+  - src/modules/alert_console.py
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_system_console.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - requirements*.txt
+  - src/utils/**
+  repair_description: 'Recover the unique Palette remainder of #1754 (preserve contextual
+    threat icons in alert recommendations/console output, plus its tests) onto current
+    main as a new focused PR. Exclude the .jules journal. Original #1754 stays OPEN.'
+  required_test_command: python3 -m pytest tests/test_alert_system_console.py -q
+  expected_test_result: python3 -m pytest tests/test_alert_system_console.py -q exits
+    0
+  acceptance_criteria:
+  - Diff is limited to src/modules/alert_console.py and src/modules/alert_recommendations.py
+    and tests/test_alert_system_console.py.
+  - python3 -m pytest tests/test_alert_system_console.py -q exits 0 (or matches main's
+    baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #1754; original #1754 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1754
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-email-security-pipeline-1754-wi
+  history: []
+- work_item_id: s2-20261110-personal-config-2677
+  source_item_key: abhimehro/personal-config#2677@98fc5ff29de477b4cecd325b822c411060ac543f
+  repository: abhimehro/personal-config
+  pr: 2677
+  base_sha: b17eaeb183789dd97a6561285cc8a6c87c326956
+  head_sha: 98fc5ff29de477b4cecd325b822c411060ac543f
+  allowed_paths:
+  - tests/test_pr_lifecycle_schema.py
+  prohibited_paths:
+  - .github/**
+  - .jules/**
+  - .trunk/**
+  - scripts/**
+  - schemas/**
+  - tasks/**
+  repair_description: 'Recover the still-unique schema-validation unit tests from
+    #2677 into tests/test_pr_lifecycle_schema.py on current main (merge with the existing
+    file; drop tests main already has). Tests only; no production code changes. Original
+    #2677 stays OPEN.'
+  required_test_command: python3 -m pytest tests/test_pr_lifecycle_schema.py -q
+  expected_test_result: python3 -m pytest tests/test_pr_lifecycle_schema.py -q exits
+    0
+  acceptance_criteria:
+  - Diff is limited to tests/test_pr_lifecycle_schema.py.
+  - python3 -m pytest tests/test_pr_lifecycle_schema.py -q exits 0 (or matches main's
+    baseline).
+  - git diff --check exits 0.
+  - 'Replacement is a new normal (non-draft) PR linking #2677; original #2677 stays
+    OPEN and its branch is untouched.'
+  provenance_urls:
+  - https://github.com/abhimehro/personal-config/pull/2677
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-personal-config-2677-wi
   history: []
 - work_item_id: s2-20261110-series_correction_project_updated-499
   source_item_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
@@ -89225,6 +88887,50 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20261110-series_correction_project_updated-499-wi
+  history: []
+- work_item_id: s2-20261110-email-security-pipeline-1852
+  source_item_key: abhimehro/email-security-pipeline#1852@9d4285debd6b1993cc9b558977d58151eb8f4186
+  repository: abhimehro/email-security-pipeline
+  pr: 1852
+  base_sha: 60df8385262f62ca864d55f50bdd2417f12e9a6d
+  head_sha: 9d4285debd6b1993cc9b558977d58151eb8f4186
+  allowed_paths:
+  - src/utils/security_validators.py
+  - .jules/bolt.md
+  prohibited_paths:
+  - .github/**
+  - .trunk/**
+  - requirements*.txt
+  - tests/**
+  - src/modules/**
+  repair_description: 'RECOVERY PR (PR Desk ruling 2026-11-10 11:30 CT; Stage 1 wording
+    fix 2026-11-11): do NOT push to, update, or merge main into #1852''s branch. Open
+    a NEW focused recovery PR from current main that carries #1852''s change unchanged
+    onto main (src/utils/security_validators.py, .jules/bolt.md), preserving its intent
+    exactly, including the empty-local-part behaviour (_is_safe_local returns False
+    for an empty local part), with no other logic changes; link #1852. #1852 stays
+    OPEN and its review threads (CodeScene x2, Kilo) are left untouched; Stage 1 reads
+    them before any close. If the change cannot be carried onto main unchanged, record
+    EMPTY_INTAKE with the reason. Stage 1 then picks the keeper of the #1774/#1850/#1852
+    + recovery PR cluster.'
+  required_test_command: python3 -m pytest tests -q -k 'email or security_validators'
+  expected_test_result: python3 -m pytest tests -q -k 'email or security_validators'
+    exits 0
+  acceptance_criteria:
+  - 'New recovery PR opened from current main and linking #1852; #1852''s branch is
+    not pushed to or updated.'
+  - 'Recovery PR diff is limited to .jules/bolt.md and src/utils/security_validators.py
+    and carries #1852''s change unchanged (+~38/-7 shape).'
+  - 'Empty-local-part validation behaviour and all other logic identical to #1852;
+    #1852''s review threads left untouched.'
+  - '#1852, #1774 and #1850 stay OPEN; Stage 1 picks the cluster keeper afterwards
+    (or EMPTY_INTAKE is recorded with the reason).'
+  provenance_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1852
+  expiry_utc: '2026-11-17T17:00:00Z'
+  attempt_count: 0
+  current_owner: stage2
+  creation_event_id: evt-s1-20261110-email-security-pipeline-1852-wi
   history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
