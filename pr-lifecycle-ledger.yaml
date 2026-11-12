@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1434
+ledger_revision: 1437
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -50387,10 +50387,10 @@ items:
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-11
     by reconcile).'
@@ -50400,9 +50400,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  handoffs:
+  - evt-reconcile-20261112145959-09bd957f
+  revision: 1
+  updated_at_utc: '2026-11-12T14:59:59Z'
 - key: abhimehro/ctrld-sync#1403@3ce58d78525a02b6b5b980037dd539fa2f942761
   repository: abhimehro/ctrld-sync
   pr: 1403
@@ -51209,7 +51210,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_media_analyzer.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -51227,6 +51229,873 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-11-11T16:01:33Z'
+- key: abhimehro/personal-config#2761@da6fb78996a57e5d0c2a3dfcb99b3866bb015619
+  repository: abhimehro/personal-config
+  pr: 2761
+  url: https://github.com/abhimehro/personal-config/pull/2761
+  base_sha: d50afe5ab4e0833162bffcbbdaab67fef98cef30
+  head_sha: da6fb78996a57e5d0c2a3dfcb99b3866bb015619
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2761
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/personal-config#2763@e79f575754d3fed710bfde2e99e583604a77a5fd
+  repository: abhimehro/personal-config
+  pr: 2763
+  url: https://github.com/abhimehro/personal-config/pull/2763
+  base_sha: d50afe5ab4e0833162bffcbbdaab67fef98cef30
+  head_sha: e79f575754d3fed710bfde2e99e583604a77a5fd
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2763
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/ctrld-sync#1411@b55efd04037f1b4512ed24cf8cf97b73355238fe
+  repository: abhimehro/ctrld-sync
+  pr: 1411
+  url: https://github.com/abhimehro/ctrld-sync/pull/1411
+  base_sha: d3f80393ace7a38ea4b9fea54bf356084b2bca00
+  head_sha: b55efd04037f1b4512ed24cf8cf97b73355238fe
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1411
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/ctrld-sync#1412@64d13f22d1d5bf60c0c8a9a243c365dcb560a44c
+  repository: abhimehro/ctrld-sync
+  pr: 1412
+  url: https://github.com/abhimehro/ctrld-sync/pull/1412
+  base_sha: d3f80393ace7a38ea4b9fea54bf356084b2bca00
+  head_sha: 64d13f22d1d5bf60c0c8a9a243c365dcb560a44c
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/ctrld-sync/pull/1412
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1881@ff105c334247efa0bb57f2d873ebcb739f800cb6
+  repository: abhimehro/email-security-pipeline
+  pr: 1881
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1881
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: ff105c334247efa0bb57f2d873ebcb739f800cb6
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1881
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1882@40b0e45b158e3c44acaa68935ee029a3a17a4250
+  repository: abhimehro/email-security-pipeline
+  pr: 1882
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1882
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 40b0e45b158e3c44acaa68935ee029a3a17a4250
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1882
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1883@81a78b76c85abd76c0156a7cb74edd68ce8b75a5
+  repository: abhimehro/email-security-pipeline
+  pr: 1883
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1883
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 81a78b76c85abd76c0156a7cb74edd68ce8b75a5
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1883
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1885@dc9f7aa0ef37b841e9e81af2850c2a34d86e5fea
+  repository: abhimehro/email-security-pipeline
+  pr: 1885
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1885
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: dc9f7aa0ef37b841e9e81af2850c2a34d86e5fea
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1885
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1886@b77d92c77835c24705f5b935694b1303e8cb7f27
+  repository: abhimehro/email-security-pipeline
+  pr: 1886
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1886
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: b77d92c77835c24705f5b935694b1303e8cb7f27
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1886
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1887@b90c014868a6b4664ac4c103d9932c5301e5b48f
+  repository: abhimehro/email-security-pipeline
+  pr: 1887
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1887
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: b90c014868a6b4664ac4c103d9932c5301e5b48f
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1887
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1889@cbe340f62dde0e8f7de9f8cc0005f3f020dff0ab
+  repository: abhimehro/email-security-pipeline
+  pr: 1889
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1889
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: cbe340f62dde0e8f7de9f8cc0005f3f020dff0ab
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1889
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1890@6f9ef09f9d97ed5c2296a0650576524ec3dafa5a
+  repository: abhimehro/email-security-pipeline
+  pr: 1890
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1890
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 6f9ef09f9d97ed5c2296a0650576524ec3dafa5a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1890
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1891@f783499b3d540e8db7af52973e9892ca65b982bc
+  repository: abhimehro/email-security-pipeline
+  pr: 1891
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1891
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: f783499b3d540e8db7af52973e9892ca65b982bc
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1891
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1892@700518a074ba55bbe8293f28c179e0636dacd58d
+  repository: abhimehro/email-security-pipeline
+  pr: 1892
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1892
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 700518a074ba55bbe8293f28c179e0636dacd58d
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1892
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1893@7ee2968ce95d8bca65099d7380eec5a6f7e1e5c5
+  repository: abhimehro/email-security-pipeline
+  pr: 1893
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1893
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 7ee2968ce95d8bca65099d7380eec5a6f7e1e5c5
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1893
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1894@d20965fb46c6e63d956a5eed019a402c867e647a
+  repository: abhimehro/email-security-pipeline
+  pr: 1894
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1894
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: d20965fb46c6e63d956a5eed019a402c867e647a
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1894
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1895@921db815e78e674a3482fe2a8d456743c7f12dc2
+  repository: abhimehro/email-security-pipeline
+  pr: 1895
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1895
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 921db815e78e674a3482fe2a8d456743c7f12dc2
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1895
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1898@581c16e46717acf126909faa5f376d7c2f021e4f
+  repository: abhimehro/email-security-pipeline
+  pr: 1898
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1898
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 581c16e46717acf126909faa5f376d7c2f021e4f
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1898
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1899@e22b3673dec2604b8c02d64815b8b8923efde5ad
+  repository: abhimehro/email-security-pipeline
+  pr: 1899
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1899
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: e22b3673dec2604b8c02d64815b8b8923efde5ad
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1899
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1900@65183540747c86da17f660a1612b854a643472e4
+  repository: abhimehro/email-security-pipeline
+  pr: 1900
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1900
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 65183540747c86da17f660a1612b854a643472e4
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1900
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1902@63932ae4a86e051d94b6b0c88b8425f4217dedcf
+  repository: abhimehro/email-security-pipeline
+  pr: 1902
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1902
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: 63932ae4a86e051d94b6b0c88b8425f4217dedcf
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1902
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1903@c0890a2f64e0897e8ea91c1f6d87fbc1b5d95cef
+  repository: abhimehro/email-security-pipeline
+  pr: 1903
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1903
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: c0890a2f64e0897e8ea91c1f6d87fbc1b5d95cef
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1903
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
+- key: abhimehro/email-security-pipeline#1904@ba4b593f4def29e95e02d4833db83e853d81e0df
+  repository: abhimehro/email-security-pipeline
+  pr: 1904
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1904
+  base_sha: 116b1afaa00478ac480110280a0cbe45c85b3d5d
+  head_sha: ba4b593f4def29e95e02d4833db83e853d81e0df
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1904
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T14:59:59Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -88704,6 +89573,26 @@ events:
   idempotency_key: abhimehro/email-security-pipeline#1874@6b54f07d08fa92158bf583f98f62a3a922e5eafb:evt-reconcile-20261111160133-c07b9723
   status: PROJECTED
   created_at_utc: '2026-11-11T16:01:33Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261112145959-09bd957f
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2758@c4ac62ac787998b6b0f22b62e6df3bc726ceca45
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2758@c4ac62ac787998b6b0f22b62e6df3bc726ceca45:evt-reconcile-20261112145959-09bd957f
+  status: PROJECTED
+  created_at_utc: '2026-11-12T14:59:59Z'
   acknowledged_at_utc: null
   reason: live PR state=CLOSED without disposition label; closed outside lifecycle
     → CLOSED_NOOP
