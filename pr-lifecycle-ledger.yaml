@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1475
+ledger_revision: 1476
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -44078,12 +44078,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: 07a2130ace1323bec794f09654be700eb0921457
+    head_sha: f1247d2663e84308a4350b67aeeda0e254c696c7
     basis: head_bound_diff
-    diff_sha256: 6a1dc0af60b6436936a58e999e51a7e21defe7a0c714830ae314c09e2d7a549e
+    diff_sha256: 82a78a6c60e059844920b61558e0556693b778c6cfcc9709a445fae376f4a9da
 - key: abhimehro/series_correction_project_updated#633@5937138fc8434c93c463bc8cfc47efd173d70038
   repository: abhimehro/series_correction_project_updated
   pr: 633
@@ -50310,11 +50310,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50330,7 +50330,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 39febbffd98ed5e8da63b635b8e8495d35fef758
+    basis: head_bound_diff
+    diff_sha256: c331ad3a156475cdee18d8ff50b22608cf4f75b8bf1881969b9a647a93a09b10
 - key: abhimehro/personal-config#2757@e56ffeb10622f4c883fb90afa58598ebfced9f42
   repository: abhimehro/personal-config
   pr: 2757
@@ -50351,12 +50356,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - media-streaming/archive/scripts/infuse-media-server.py
   - tests/test_infuse_media_server.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50372,7 +50377,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: e56ffeb10622f4c883fb90afa58598ebfced9f42
+    basis: head_bound_diff
+    diff_sha256: ee07cccddaa2a35a2a2987a8737cc13c4e0258390f58142b3b1fbcd85dafce34
 - key: abhimehro/personal-config#2758@c4ac62ac787998b6b0f22b62e6df3bc726ceca45
   repository: abhimehro/personal-config
   pr: 2758
@@ -50600,11 +50610,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - gh_client.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50620,7 +50630,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: b2dbd9f03bdfe8c3c9d8a9b11805fb5bbdca60b5
+    basis: head_bound_diff
+    diff_sha256: 85ccc144352c08fb8558d62c45eebee9834c39d3be2b8100a2f6ebec1c6563d3
 - key: abhimehro/ctrld-sync#1408@69817e8d204be8b9897de3fa91d7ec4d1a5392fa
   repository: abhimehro/ctrld-sync
   pr: 1408
@@ -50640,11 +50655,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - api_client.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50660,7 +50675,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T14:56:54Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 69817e8d204be8b9897de3fa91d7ec4d1a5392fa
+    basis: head_bound_diff
+    diff_sha256: 69bf9a721b6e4098fe2858e7f6e2f8adc483013a9cead5375b9fe6172f36dad3
 - key: abhimehro/ctrld-sync#1409@873b3312dbf161650267f511e91ceb808b91694c
   repository: abhimehro/ctrld-sync
   pr: 1409
@@ -50716,13 +50736,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - .jules/bolt.md
   - src/modules/spam_analyzer.py
   - tests/test_spam_analyzer_optimization.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50738,7 +50758,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: e2a3047b44f857221e374379ceb515b01ab7b1d5
+    basis: head_bound_diff
+    diff_sha256: 7e880becdcff7aadad0ab7a8b500a3e970ea909554d53bee6b3759f2536fb0e7
 - key: abhimehro/email-security-pipeline#1869@46bf9dce546737ae7bf530b8a38bc61897ded4c2
   repository: abhimehro/email-security-pipeline
   pr: 1869
@@ -50759,12 +50784,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - test_config.py
   - tests/test_ui_palette.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50780,7 +50805,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 46bf9dce546737ae7bf530b8a38bc61897ded4c2
+    basis: head_bound_diff
+    diff_sha256: 2ce2dc0f1099f7d39eb44ce7f7727fb6fb80026d3e119c7517681fc240cf13ff
 - key: abhimehro/email-security-pipeline#1870@9bb386f56d5b81a2fef074f0c49cb7c76bb8aa30
   repository: abhimehro/email-security-pipeline
   pr: 1870
@@ -50799,11 +50829,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_gh_token_cli.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50819,7 +50849,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 9bb386f56d5b81a2fef074f0c49cb7c76bb8aa30
+    basis: head_bound_diff
+    diff_sha256: a0b6187c043d4d726e88d2bee8753008b554904fb190da71805070a0f380352d
 - key: abhimehro/email-security-pipeline#1871@d76e26d550e8226259e5d35d0f2bcfda78f95aa1
   repository: abhimehro/email-security-pipeline
   pr: 1871
@@ -50838,11 +50873,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_gh_token_cli.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50858,7 +50893,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: d76e26d550e8226259e5d35d0f2bcfda78f95aa1
+    basis: head_bound_diff
+    diff_sha256: 1322679dec03ffae40cfb540debe3b722839d4294573cb28542fe6d90ebd6691
 - key: abhimehro/email-security-pipeline#1872@485641d4bf75bab07fadd64887b5b0273fc2bdd1
   repository: abhimehro/email-security-pipeline
   pr: 1872
@@ -50877,11 +50917,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50897,7 +50937,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 485641d4bf75bab07fadd64887b5b0273fc2bdd1
+    basis: head_bound_diff
+    diff_sha256: 32a9dc9c65f88a1087d4d7888bec6b93e0306611c3fa1fdf9a33ef7022cd7c9c
 - key: abhimehro/email-security-pipeline#1873@c8e9830f1dcdbabccf5bafd5ebe15aeb1ec08a36
   repository: abhimehro/email-security-pipeline
   pr: 1873
@@ -50917,11 +50962,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -50937,7 +50982,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: c8e9830f1dcdbabccf5bafd5ebe15aeb1ec08a36
+    basis: head_bound_diff
+    diff_sha256: 95188e9aa1e01f836ff2beeea704dfa9d0b6e4f17986317fbe3d2ebbbdd4d0d7
 - key: abhimehro/email-security-pipeline#1874@6b54f07d08fa92158bf583f98f62a3a922e5eafb
   repository: abhimehro/email-security-pipeline
   pr: 1874
@@ -50996,11 +51046,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_gh_token_cli.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51016,7 +51066,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 1f487364a2e13de749984dcb81ae66e026e1459b
+    basis: head_bound_diff
+    diff_sha256: a4b96c3e5a81d40831925214bea540da42c752db21a2a2e92c45690684203789
 - key: abhimehro/email-security-pipeline#1876@f8423eb172dbd49fd3046bfe62514433a37950b3
   repository: abhimehro/email-security-pipeline
   pr: 1876
@@ -51035,12 +51090,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/modules/nlp_analyzer.py
   - tests/test_nlp_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51056,7 +51111,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: f8423eb172dbd49fd3046bfe62514433a37950b3
+    basis: head_bound_diff
+    diff_sha256: 6e44f9b1e1e7def49b511c8eba0d700ec908ad319560916d10f1d0c7b535e44f
 - key: abhimehro/email-security-pipeline#1877@1bb300d9e08b407853e36976bc62f4c9a4145c2a
   repository: abhimehro/email-security-pipeline
   pr: 1877
@@ -51075,12 +51135,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/modules/media_file_type.py
   - tests/test_media_signature_validation.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51096,7 +51156,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 1bb300d9e08b407853e36976bc62f4c9a4145c2a
+    basis: head_bound_diff
+    diff_sha256: 4a4fe8115e276edbc1af444345b092d1e891e8b9a7cdfd89f738c3a11e395118
 - key: abhimehro/email-security-pipeline#1878@bbc1a257951b1c1efa5e4b18d7740a4453aebf45
   repository: abhimehro/email-security-pipeline
   pr: 1878
@@ -51115,12 +51180,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - security_configuration
   changed_paths:
   - src/modules/alert_channels.py
   - tests/test_alert_channels.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51136,7 +51202,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1879@c6144fb53a21cb8d4ef8be77c8b3b281aa9a1e9f
   repository: abhimehro/email-security-pipeline
   pr: 1879
@@ -51155,11 +51223,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_gh_token_cli.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51175,7 +51243,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T15:11:56Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: c6144fb53a21cb8d4ef8be77c8b3b281aa9a1e9f
+    basis: head_bound_diff
+    diff_sha256: 53f3dbf5e4dbd0cb70e2d8023bc851dfd7c770a21d658e0e612a08449182afde
 - key: abhimehro/personal-config#2760@3c89b3bf6c32730ccc11f21dd8cac570a6f72caa
   repository: abhimehro/personal-config
   pr: 2760
@@ -51228,11 +51301,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_media_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51248,7 +51321,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-11T16:01:33Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 74ff25ecba529e278155407816173cffe99604b0
+    basis: head_bound_diff
+    diff_sha256: b03148c8ee09ff655eea9d5042cd1bb3cbd1860c9df16f3d88b29402fd4057a6
 - key: abhimehro/personal-config#2761@da6fb78996a57e5d0c2a3dfcb99b3866bb015619
   repository: abhimehro/personal-config
   pr: 2761
@@ -51269,11 +51347,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - scripts/pr_lifecycle_guardrails.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51289,7 +51367,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: da6fb78996a57e5d0c2a3dfcb99b3866bb015619
+    basis: head_bound_diff
+    diff_sha256: f474daa5b48e8f23661110bfb6b586d4efe928b0048190bf5d1199bbb77b779e
 - key: abhimehro/personal-config#2763@e79f575754d3fed710bfde2e99e583604a77a5fd
   repository: abhimehro/personal-config
   pr: 2763
@@ -51308,8 +51391,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -51321,7 +51405,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51337,7 +51421,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1411@b55efd04037f1b4512ed24cf8cf97b73355238fe
   repository: abhimehro/ctrld-sync
   pr: 1411
@@ -51388,12 +51474,13 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - security_configuration
   changed_paths:
   - .pre-commit-config.yaml
   - .trunk/trunk.yaml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51409,7 +51496,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1881@ff105c334247efa0bb57f2d873ebcb739f800cb6
   repository: abhimehro/email-security-pipeline
   pr: 1881
@@ -51427,11 +51516,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51447,7 +51536,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: ff105c334247efa0bb57f2d873ebcb739f800cb6
+    basis: head_bound_diff
+    diff_sha256: e098966a424c21f8d47494aafc4b45a94d50b4e292426bc54ba0fc3ac91e3fd2
 - key: abhimehro/email-security-pipeline#1882@40b0e45b158e3c44acaa68935ee029a3a17a4250
   repository: abhimehro/email-security-pipeline
   pr: 1882
@@ -51466,11 +51560,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51486,7 +51580,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 40b0e45b158e3c44acaa68935ee029a3a17a4250
+    basis: head_bound_diff
+    diff_sha256: aa78f8ef41275b8c1394d198ff7ba8728532942ed00b95f0ce5292579c5be9ad
 - key: abhimehro/email-security-pipeline#1883@81a78b76c85abd76c0156a7cb74edd68ce8b75a5
   repository: abhimehro/email-security-pipeline
   pr: 1883
@@ -51504,11 +51603,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_media_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51524,7 +51623,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 81a78b76c85abd76c0156a7cb74edd68ce8b75a5
+    basis: head_bound_diff
+    diff_sha256: 7e78b05fc580d02130f3babae72d51027f3c7b13864498373961f305aa38693a
 - key: abhimehro/email-security-pipeline#1885@dc9f7aa0ef37b841e9e81af2850c2a34d86e5fea
   repository: abhimehro/email-security-pipeline
   pr: 1885
@@ -51544,11 +51648,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51564,7 +51668,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: dc9f7aa0ef37b841e9e81af2850c2a34d86e5fea
+    basis: head_bound_diff
+    diff_sha256: abf685b93e23bed709f1393e88deabab44aa6ef292bf85e1862997d576c004c7
 - key: abhimehro/email-security-pipeline#1886@b77d92c77835c24705f5b935694b1303e8cb7f27
   repository: abhimehro/email-security-pipeline
   pr: 1886
@@ -51583,11 +51692,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51603,7 +51712,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: b77d92c77835c24705f5b935694b1303e8cb7f27
+    basis: head_bound_diff
+    diff_sha256: 38228da35e7edfc402f8d040dc0bb2d4101f2759732d7f57a07c9fd59e1ad672
 - key: abhimehro/email-security-pipeline#1887@b90c014868a6b4664ac4c103d9932c5301e5b48f
   repository: abhimehro/email-security-pipeline
   pr: 1887
@@ -51622,11 +51736,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/modules/spam_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51642,7 +51756,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: b90c014868a6b4664ac4c103d9932c5301e5b48f
+    basis: head_bound_diff
+    diff_sha256: 816745b532f2e0853988b22802c5df390e522e1db59eb1b25c828d65a99f5de1
 - key: abhimehro/email-security-pipeline#1889@cbe340f62dde0e8f7de9f8cc0005f3f020dff0ab
   repository: abhimehro/email-security-pipeline
   pr: 1889
@@ -51661,11 +51780,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51681,7 +51800,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: cbe340f62dde0e8f7de9f8cc0005f3f020dff0ab
+    basis: head_bound_diff
+    diff_sha256: a266ad7f6df04a9017d9fde1045a5c04624fadfce82e2965906d1a3e978fc42f
 - key: abhimehro/email-security-pipeline#1890@6f9ef09f9d97ed5c2296a0650576524ec3dafa5a
   repository: abhimehro/email-security-pipeline
   pr: 1890
@@ -51700,11 +51824,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/modules/media_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51720,7 +51844,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 6f9ef09f9d97ed5c2296a0650576524ec3dafa5a
+    basis: head_bound_diff
+    diff_sha256: ab2aae7b472cca83b805e457bc6429f991d8ddcba9d008226013649b6518e556
 - key: abhimehro/email-security-pipeline#1891@f783499b3d540e8db7af52973e9892ca65b982bc
   repository: abhimehro/email-security-pipeline
   pr: 1891
@@ -51778,11 +51907,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_setup_wizard.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51798,7 +51927,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 700518a074ba55bbe8293f28c179e0636dacd58d
+    basis: head_bound_diff
+    diff_sha256: 140690115e5c497005e46514800cc83a8507d38b5a72493949a5829e0d0523fd
 - key: abhimehro/email-security-pipeline#1893@7ee2968ce95d8bca65099d7380eec5a6f7e1e5c5
   repository: abhimehro/email-security-pipeline
   pr: 1893
@@ -51817,11 +51951,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51837,7 +51971,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 7ee2968ce95d8bca65099d7380eec5a6f7e1e5c5
+    basis: head_bound_diff
+    diff_sha256: 2ecc2cc7622a6957ee9cdc8980e782073abb84f80dfd3d905616a3b8d43098fb
 - key: abhimehro/email-security-pipeline#1894@d20965fb46c6e63d956a5eed019a402c867e647a
   repository: abhimehro/email-security-pipeline
   pr: 1894
@@ -51856,11 +51995,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_alert_system_console.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51876,7 +52015,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: d20965fb46c6e63d956a5eed019a402c867e647a
+    basis: head_bound_diff
+    diff_sha256: 75e8d968a6ef288392b4e8c1ded5d2d880b7cf49b5dc523336976a1eb88a4989
 - key: abhimehro/email-security-pipeline#1895@921db815e78e674a3482fe2a8d456743c7f12dc2
   repository: abhimehro/email-security-pipeline
   pr: 1895
@@ -51895,12 +52039,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/utils/setup_wizard.py
   - tests/test_setup_wizard.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51916,7 +52060,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 921db815e78e674a3482fe2a8d456743c7f12dc2
+    basis: head_bound_diff
+    diff_sha256: 5ae78b226acbbd48ecda2b92ea38b35ccc95931faabf1aac3540e492224f3221
 - key: abhimehro/email-security-pipeline#1898@581c16e46717acf126909faa5f376d7c2f021e4f
   repository: abhimehro/email-security-pipeline
   pr: 1898
@@ -51935,12 +52084,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - security_configuration
   changed_paths:
   - src/modules/alert_channels.py
   - tests/test_alert_channels.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51956,7 +52106,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1899@e22b3673dec2604b8c02d64815b8b8923efde5ad
   repository: abhimehro/email-security-pipeline
   pr: 1899
@@ -51975,11 +52127,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_gh_token_cli.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -51995,7 +52147,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: e22b3673dec2604b8c02d64815b8b8923efde5ad
+    basis: head_bound_diff
+    diff_sha256: a17b4a1e1f37cb81ac76186bb6418a34ab1ee5fc6ae0c070b608ccba2c2cabb0
 - key: abhimehro/email-security-pipeline#1900@65183540747c86da17f660a1612b854a643472e4
   repository: abhimehro/email-security-pipeline
   pr: 1900
@@ -52014,12 +52171,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - security_configuration
   changed_paths:
   - src/modules/alert_channels.py
   - tests/test_alert_channels.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52035,7 +52193,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1902@63932ae4a86e051d94b6b0c88b8425f4217dedcf
   repository: abhimehro/email-security-pipeline
   pr: 1902
@@ -52054,11 +52214,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_setup_wizard.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52074,7 +52234,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 63932ae4a86e051d94b6b0c88b8425f4217dedcf
+    basis: head_bound_diff
+    diff_sha256: 73a4f1db47d1b48f812446860860da498507e261eba37ea46a4d0b47ff39d326
 - key: abhimehro/email-security-pipeline#1903@c0890a2f64e0897e8ea91c1f6d87fbc1b5d95cef
   repository: abhimehro/email-security-pipeline
   pr: 1903
@@ -52132,11 +52297,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_media_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52152,7 +52317,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: ba4b593f4def29e95e02d4833db83e853d81e0df
+    basis: head_bound_diff
+    diff_sha256: 2ff4717cc168950de422321f7f80a922a2c930ef22d65aa5ee01ab41d653f36d
 - key: abhimehro/email-security-pipeline#1905@6a61e9f4a319974df9c323129ae36c92790d8ffa
   repository: abhimehro/email-security-pipeline
   pr: 1905
@@ -52172,11 +52342,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_setup_wizard.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52192,7 +52362,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 6a61e9f4a319974df9c323129ae36c92790d8ffa
+    basis: head_bound_diff
+    diff_sha256: 140690115e5c497005e46514800cc83a8507d38b5a72493949a5829e0d0523fd
 - key: abhimehro/email-security-pipeline#1906@308f4d21730e8dd6b48ffd95f8d1ac51ed866218
   repository: abhimehro/email-security-pipeline
   pr: 1906
@@ -52250,12 +52425,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - src/utils/validators.py
   - tests/test_validators.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52271,7 +52446,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 0c630454598272972704ae52a05291e3b0f614da
+    basis: head_bound_diff
+    diff_sha256: b9b2ff567bb6d53a040878380e74e2df0262dca18b60f2ad3349d1c7a7c197fc
 - key: abhimehro/email-security-pipeline#1908@cfd29f7660076cadb15c9f20b3173245d394bd32
   repository: abhimehro/email-security-pipeline
   pr: 1908
@@ -52290,13 +52470,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - .jules/bolt.md
   - src/modules/spam_analyzer.py
   - tests/test_spam_analyzer_optimization.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52312,7 +52492,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: cfd29f7660076cadb15c9f20b3173245d394bd32
+    basis: head_bound_diff
+    diff_sha256: 9b7a01db7694ee3125155c7715c48445a22e7892353760087c90f16614288d8d
 - key: abhimehro/email-security-pipeline#1909@83f263ec4dd61560fdc37296a84841b0dd7ce08a
   repository: abhimehro/email-security-pipeline
   pr: 1909
@@ -52330,11 +52515,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_media_analyzer.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52350,7 +52535,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 83f263ec4dd61560fdc37296a84841b0dd7ce08a
+    basis: head_bound_diff
+    diff_sha256: b8f6385f173d7f347ec0284e0a28b38b81be423b3014c211b670fbfce1594d7f
 - key: abhimehro/email-security-pipeline#1910@7f5a4d9af3bee09a1f10c22b161515c059b29812
   repository: abhimehro/email-security-pipeline
   pr: 1910
@@ -52369,8 +52559,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/bandit.yml
@@ -52378,7 +52569,7 @@ items:
   - .github/workflows/pr-visual-recap.yml
   - .github/workflows/refactoring-agent.yml
   - .github/workflows/summary.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52394,7 +52585,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1912@52574827f245fc5e8b4415d4cf4bf2af990eb9d5
   repository: abhimehro/email-security-pipeline
   pr: 1912
@@ -52485,12 +52678,12 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - .jules/bolt.md
   - src/utils/security_validators.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52506,7 +52699,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 1b518b31ca468a0ac870353dfce25f72d4035203
+    basis: head_bound_diff
+    diff_sha256: 38a5e31b1153280631e971bbf849f24a72c374f420672060f8974d05044d7503
 - key: abhimehro/Seatek_Analysis#1150@1452c36651f406f218ccf1fec1453aed32aa1d49
   repository: abhimehro/Seatek_Analysis
   pr: 1150
@@ -52597,7 +52795,12 @@ items:
   - evt-s2-20261112r-seatek-1164-a
   - evt-s2-20261112r-seatek-1164-h
   revision: 3
-  updated_at_utc: '2026-11-12T16:00:00Z'
+  updated_at_utc: '2026-11-12T16:26:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 7f46d9480d6d83fa44c1ec97aadb1361d9975890
+    basis: head_bound_diff
+    diff_sha256: bb1fa38c93bb025d73ad9e0240c70dfdfc775e49a352e2961c49c82f3b086139
 - key: abhimehro/Seatek_Analysis#1152@8e5bd9223cfc486dc96dcde1af73909343b0da83
   repository: abhimehro/Seatek_Analysis
   pr: 1152
