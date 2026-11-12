@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1460
+ledger_revision: 1475
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -51743,10 +51743,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
     by reconcile).'
@@ -51756,9 +51756,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  handoffs:
+  - evt-reconcile-20261112162420-394bfb91
+  revision: 1
+  updated_at_utc: '2026-11-12T16:24:20Z'
 - key: abhimehro/email-security-pipeline#1892@700518a074ba55bbe8293f28c179e0636dacd58d
   repository: abhimehro/email-security-pipeline
   pr: 1892
@@ -51976,7 +51977,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_gh_token_cli.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52095,10 +52097,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
     by reconcile).'
@@ -52108,9 +52110,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-12T14:59:59Z'
+  handoffs:
+  - evt-reconcile-20261112162420-9a14e38b
+  revision: 1
+  updated_at_utc: '2026-11-12T16:24:20Z'
 - key: abhimehro/email-security-pipeline#1904@ba4b593f4def29e95e02d4833db83e853d81e0df
   repository: abhimehro/email-security-pipeline
   pr: 1904
@@ -52171,7 +52174,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_setup_wizard.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52211,10 +52215,10 @@ items:
   sensitive_paths: []
   changed_paths: []
   guardrail_outcome: NOT_RUN
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
     by reconcile).'
@@ -52224,9 +52228,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-12T15:15:38Z'
+  handoffs:
+  - evt-reconcile-20261112162420-3cb1f906
+  revision: 1
+  updated_at_utc: '2026-11-12T16:24:20Z'
 - key: abhimehro/email-security-pipeline#1907@0c630454598272972704ae52a05291e3b0f614da
   repository: abhimehro/email-security-pipeline
   pr: 1907
@@ -52247,7 +52252,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/utils/validators.py
+  - tests/test_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52285,7 +52292,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/modules/spam_analyzer.py
+  - tests/test_spam_analyzer_optimization.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52322,7 +52332,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_media_analyzer.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52360,7 +52371,13 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
+  - .github/workflows/bandit.yml
+  - .github/workflows/changelog.yml
+  - .github/workflows/pr-visual-recap.yml
+  - .github/workflows/refactoring-agent.yml
+  - .github/workflows/summary.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52392,7 +52409,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/utils/security_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52425,7 +52444,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - src/modules/alert_console.py
+  - src/modules/alert_recommendations.py
+  - tests/test_alert_system_console.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52465,7 +52487,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .jules/bolt.md
+  - src/utils/security_validators.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -52503,17 +52527,21 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - .jules/sentinel.md
+  - code_health_scanner.py
+  - tests/test_code_health_scanner.py
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-12 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1150
   attempts:
@@ -52570,6 +52598,202 @@ items:
   - evt-s2-20261112r-seatek-1164-h
   revision: 3
   updated_at_utc: '2026-11-12T16:00:00Z'
+- key: abhimehro/Seatek_Analysis#1152@8e5bd9223cfc486dc96dcde1af73909343b0da83
+  repository: abhimehro/Seatek_Analysis
+  pr: 1152
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1152
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: 8e5bd9223cfc486dc96dcde1af73909343b0da83
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1152
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T16:24:20Z'
+- key: abhimehro/Seatek_Analysis#1153@99d9cdda1b6cc82b527c5bcca347615dc3f90b52
+  repository: abhimehro/Seatek_Analysis
+  pr: 1153
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1153
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: 99d9cdda1b6cc82b527c5bcca347615dc3f90b52
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1153
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T16:24:20Z'
+- key: abhimehro/Seatek_Analysis#1154@3a1b5a379886e5bac44b799daa22005735e3b8c8
+  repository: abhimehro/Seatek_Analysis
+  pr: 1154
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1154
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: 3a1b5a379886e5bac44b799daa22005735e3b8c8
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1154
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T16:24:20Z'
+- key: abhimehro/Seatek_Analysis#1155@d6ba03b1e7809d127ef1aab97bccd6c1055f5a1e
+  repository: abhimehro/Seatek_Analysis
+  pr: 1155
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1155
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: d6ba03b1e7809d127ef1aab97bccd6c1055f5a1e
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1155
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T16:24:20Z'
+- key: abhimehro/Seatek_Analysis#1156@d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
+  repository: abhimehro/Seatek_Analysis
+  pr: 1156
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/1156
+  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
+  head_sha: d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - body
+      - timeline_comment
+      - commit_email
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/1156
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-12T16:24:20Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -90371,6 +90595,66 @@ events:
     copies (mat, pos, mat_pos). No benchmark evidence it beats main''s existing .subset2
     loop optimization; R not installable on the box to measure. No recovery PR opened.
     Original #1118 stays OPEN.'
+- event_id: evt-reconcile-20261112162420-394bfb91
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1891@f783499b3d540e8db7af52973e9892ca65b982bc
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1891@f783499b3d540e8db7af52973e9892ca65b982bc:evt-reconcile-20261112162420-394bfb91
+  status: PROJECTED
+  created_at_utc: '2026-11-12T16:24:20Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261112162420-9a14e38b
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1903@c0890a2f64e0897e8ea91c1f6d87fbc1b5d95cef
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1903@c0890a2f64e0897e8ea91c1f6d87fbc1b5d95cef:evt-reconcile-20261112162420-9a14e38b
+  status: PROJECTED
+  created_at_utc: '2026-11-12T16:24:20Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261112162420-3cb1f906
+  kind: TERMINAL
+  item_key: abhimehro/email-security-pipeline#1906@308f4d21730e8dd6b48ffd95f8d1ac51ed866218
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1906@308f4d21730e8dd6b48ffd95f8d1ac51ed866218:evt-reconcile-20261112162420-3cb1f906
+  status: PROJECTED
+  created_at_utc: '2026-11-12T16:24:20Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED without disposition label; closed outside lifecycle
+    → CLOSED_NOOP
+  successful: null
+  policy_revision: null
 stage2_work_items:
 - work_item_id: s2-20261110-series_correction_project_updated-499
   source_item_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
