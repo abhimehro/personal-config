@@ -288,13 +288,9 @@ def _mutates_sentinel_in_shell(cmd: str) -> bool:
     for line in cmd.splitlines():
         if not SENTINEL_CMD_RE.search(line):
             continue
-        if (
-            any(
-                op in line
-                for op in (">", "tee ", "sed -i", "cp ", "mv ", "install ")
-            )
-            or re.search(r"\bgit\b[^\n]*\b(?:add|commit|checkout)\b", line)
-        ):
+        if any(
+            op in line for op in (">", "tee ", "sed -i", "cp ", "mv ", "install ")
+        ) or re.search(r"\bgit\b[^\n]*\b(?:add|commit|checkout)\b", line):
             return True
     return False
 

@@ -202,7 +202,7 @@ assert_decision "blocks shell sentinel mutation for repoprompt-ce with repopromp
 
 # 10. Atomic permissions fix: pre-existing 0644 state file ends up at 0600 (H-2)
 CONV_REG="${HOME}/.gemini/antigravity/proactive-reports/.sweep-conversations.json"
-echo '{"stale": 1}' > "${CONV_REG}"
+echo '{"stale": 1}' >"${CONV_REG}"
 chmod 0644 "${CONV_REG}"
 
 assert_decision "updates sweep registry on proactive input" "deny" '{
@@ -212,7 +212,7 @@ assert_decision "updates sweep registry on proactive input" "deny" '{
 }'
 
 PERMS="$(stat -c "%a" "${CONV_REG}" 2>/dev/null || stat -f "%OLp" "${CONV_REG}" 2>/dev/null || python3 -c 'import os,sys; print(oct(os.stat(sys.argv[1]).st_mode)[-3:])' "${CONV_REG}")"
-if [[ "${PERMS}" == "600" ]]; then
+if [[ ${PERMS} == "600" ]]; then
 	echo "PASS: pre-existing 0644 registry file atomically updated to 0600 permissions"
 	PASS=$((PASS + 1))
 else
