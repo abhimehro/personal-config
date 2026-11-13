@@ -11,13 +11,13 @@ decisions record — is in
 
 ## Decision and Scope Codes
 
-| Code                       | Meaning                                                                                                                                                                                                                                                                                                                                                               |
-| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                                                                                                                                                              |
-| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                                                                                                                                                                            |
-| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests.                                                                                                                                              |
-| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                                                                                                                                                                         |
-| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`). `CRON_TZ` is **per-sidecar**, not globally pinned: the pilot sidecars use `CRON_TZ=America/Chicago` (08:15 sweep, 08:35 triage) so the digest lands when a human reads it. `canary-stage` still stages a disposable **UTC** cron, so a canary does not yet exercise the pilot timezone. |
+| Code                       | Meaning                                                                                                                                                                                                                                                                                                                                                        |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                                                                                                                                                       |
+| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                                                                                                                                                                     |
+| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests.                                                                                                                                       |
+| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                                                                                                                                                                  |
+| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`). `CRON_TZ` is **per-sidecar**, not globally pinned: the pilot sidecars use `CRON_TZ=America/Chicago` (08:15 sweep, 08:35 triage) so the digest lands when a human reads it, and `canary-stage` defaults to `--timezone America/Chicago` (with `UTC` still selectable explicitly). |
 
 ## Installed Components
 
@@ -82,11 +82,11 @@ decisions record — is in
   exposes the repo-to-test-command mapping so the control CLI resolves the same
   command `verify` runs instead of duplicating it.
 - **Control & Ordered Rollback CLI (`scripts/antigravity-proactive-ctl.sh`):**
-  Manages installation (`install [--pilot]`), status (`status`), disposable UTC
-  cron verification (`canary-stage` / `canary-clean`), merged-PR-verified
-  Sentinel journal leases (`sentinel-post-merge`), missed-wake logging
-  (`audit-missed`), base-relative failure classification (`base-check`), and
-  ordered teardown (`disable`).
+  Manages installation (`install [--pilot]`), status (`status`), disposable
+  timezone-aware cron verification (`canary-stage` / `canary-clean`),
+  merged-PR-verified Sentinel journal leases (`sentinel-post-merge`),
+  missed-wake logging (`audit-missed`), base-relative failure classification
+  (`base-check`), and ordered teardown (`disable`).
 
   `base-check --repo <name> --worktree <dir> [--digest <path>]` answers the
   question a bare verify exit code cannot: **was this failure caused by the
@@ -131,7 +131,7 @@ decisions record — is in
 # Install global skill/hook symlinks and stage disabled pilot sidecar
 ./scripts/antigravity-proactive-ctl.sh install --pilot
 
-# Stage and later clean up a disposable UTC cron canary
+# Stage and later clean up a disposable cron canary (defaults to America/Chicago; pass --timezone UTC for UTC isolation)
 ./scripts/antigravity-proactive-ctl.sh canary-stage --offset-minutes 5
 ./scripts/antigravity-proactive-ctl.sh canary-clean
 

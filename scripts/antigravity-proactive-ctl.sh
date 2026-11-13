@@ -3,9 +3,10 @@
 # Control and Ordered-Rollback Script for Antigravity Proactive Workflows.
 # Manages global skill symlinks, PreToolUse safety hook link, chmod 700 report
 # and transcript permissions, staged sidecars (without ever self-enabling
-# user_config.json), disposable UTC cron canaries, verified post-merge Sentinel
-# leases, MISSED slot auditing, and base-relative classification of verify
-# failures so pre-existing breakage is never charged to the candidate.
+# user_config.json), disposable timezone-aware cron canaries, verified
+# post-merge Sentinel leases, MISSED slot auditing, and base-relative
+# classification of verify failures so pre-existing breakage is never charged to
+# the candidate.
 
 set -Eeuo pipefail
 
@@ -56,7 +57,7 @@ usage() {
 Usage:
   antigravity-proactive-ctl.sh install [--pilot]
   antigravity-proactive-ctl.sh status
-  antigravity-proactive-ctl.sh canary-stage [--offset-minutes <n>]
+  antigravity-proactive-ctl.sh canary-stage [--offset-minutes <n>] [--timezone <iana_tz>]
   antigravity-proactive-ctl.sh canary-clean
   antigravity-proactive-ctl.sh sentinel-post-merge --repo <name> --pr <number>
   antigravity-proactive-ctl.sh audit-missed --date <YYYY-MM-DD> --repo <name>
@@ -68,6 +69,16 @@ base-check exit codes:
   1 usage, 2 CAUSED_BY_CHANGE (real regression, discard the candidate),
   6 could not create a pristine base worktree
 EOF
+}
+
+require_flag_value() {
+	local subcmd="$1"
+	local flag="$2"
+	local argc="$3"
+	if [[ ${argc} -lt 2 ]]; then
+		echo "[ERROR] ${subcmd}: ${flag} requires a value" >&2
+		exit 1
+	fi
 }
 
 validate_repo_name() {
@@ -174,6 +185,45 @@ PY
 	echo "Installed Antigravity proactive configuration (pilot_sidecar=${stage_pilot})"
 }
 
+report_sidecar_status() {
+	local prefix="$1"
+	local sidecar_id="$2"
+	local config_dir="$3"
+	local agy_dir="$4"
+
+	local sidecar_file="${config_dir}/sidecars/${sidecar_id}/sidecar.json"
+	local user_cfg="${config_dir}/sidecars/${sidecar_id}/user_config.json"
+	local sidecar_state="absent"
+	if [[ -f ${sidecar_file} ]]; then
+		sidecar_state="present"
+	fi
+
+	local enabled_state="unset"
+	if [[ -f ${user_cfg} ]]; then
+		enabled_state="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1])).get("enabled","unset")).lower())' "${user_cfg}" 2>/dev/null || echo "unknown")"
+	fi
+
+	# The dashboard toggle does not necessarily write user_config.json. The live
+	# scheduler log under sidecar_data/ is the authoritative runtime signal.
+	local runtime_log="${agy_dir}/sidecar_data/${sidecar_id}/logs/sidecar.log"
+	local runtime_state="stopped"
+	local next_run="n/a"
+	if [[ -f ${runtime_log} ]]; then
+		local last_state_line=""
+		last_state_line="$(grep -E 'Scheduler started|Shutting down' "${runtime_log}" | tail -n 1 || true)"
+		if [[ ${last_state_line} == *"Scheduler started"* ]]; then
+			runtime_state="running"
+			next_run="$(grep -E 'Next execution scheduled' "${runtime_log}" | tail -n 1 | sed -n 's/.*(at \([^)]*\)).*/\1/p' || true)"
+			[[ -n ${next_run} ]] || next_run="unknown"
+		fi
+	fi
+
+	echo "${prefix}_sidecar=${sidecar_state}"
+	echo "${prefix}_user_enabled=${enabled_state}"
+	echo "${prefix}_runtime=${runtime_state}"
+	echo "${prefix}_next_run=${next_run}"
+}
+
 cmd_status() {
 	local config_dir="${HOME}/.gemini/config"
 	local agy_dir="${HOME}/.gemini/antigravity"
@@ -192,33 +242,6 @@ cmd_status() {
 		hooks_linked="yes"
 	fi
 
-	local sidecar_file="${config_dir}/sidecars/${PILOT_SIDECAR_ID}/sidecar.json"
-	local user_cfg="${config_dir}/sidecars/${PILOT_SIDECAR_ID}/user_config.json"
-	local sidecar_state="absent"
-	if [[ -f ${sidecar_file} ]]; then
-		sidecar_state="present"
-	fi
-
-	local enabled_state="unset"
-	if [[ -f ${user_cfg} ]]; then
-		enabled_state="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1])).get("enabled","unset")).lower())' "${user_cfg}" 2>/dev/null || echo "unknown")"
-	fi
-
-	# The dashboard toggle does not necessarily write user_config.json. The live
-	# scheduler log under sidecar_data/ is the authoritative runtime signal.
-	local runtime_log="${agy_dir}/sidecar_data/${PILOT_SIDECAR_ID}/logs/sidecar.log"
-	local runtime_state="stopped"
-	local next_run="n/a"
-	if [[ -f ${runtime_log} ]]; then
-		local last_state_line=""
-		last_state_line="$(grep -E 'Scheduler started|Shutting down' "${runtime_log}" | tail -n 1 || true)"
-		if [[ ${last_state_line} == *"Scheduler started"* ]]; then
-			runtime_state="running"
-			next_run="$(grep -E 'Next execution scheduled' "${runtime_log}" | tail -n 1 | sed -n 's/.*(at \([^)]*\)).*/\1/p' || true)"
-			[[ -n ${next_run} ]] || next_run="unknown"
-		fi
-	fi
-
 	local canary_state="absent"
 	if [[ -f "${config_dir}/sidecars/${CANARY_SIDECAR_ID}/sidecar.json" ]]; then
 		canary_state="present"
@@ -226,20 +249,25 @@ cmd_status() {
 
 	echo "skills_linked=${linked}/${total}"
 	echo "hooks_linked=${hooks_linked}"
-	echo "pilot_sidecar=${sidecar_state}"
-	echo "pilot_user_enabled=${enabled_state}"
-	echo "pilot_runtime=${runtime_state}"
-	echo "pilot_next_run=${next_run}"
+	report_sidecar_status "pilot" "${PILOT_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
+	report_sidecar_status "triage" "${TRIAGE_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
 	echo "canary_sidecar=${canary_state}"
 	echo "reports_dir=${agy_dir}/proactive-reports"
 }
 
 cmd_canary_stage() {
 	local offset_min=4
+	local tz_name="America/Chicago"
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--offset-minutes)
+			require_flag_value "canary-stage" "$1" "$#"
 			offset_min="$2"
+			shift 2
+			;;
+		--timezone | --tz)
+			require_flag_value "canary-stage" "$1" "$#"
+			tz_name="$2"
 			shift 2
 			;;
 		*)
@@ -255,20 +283,73 @@ cmd_canary_stage() {
 	mkdir -p "${canary_dir}" "${reports_dir}"
 	chmod 700 "${reports_dir}"
 
-	python3 - "${canary_dir}/sidecar.json" "${reports_dir}" "${offset_min}" "${HOME}" <<'PY'
+	python3 - "${canary_dir}/sidecar.json" "${reports_dir}" "${offset_min}" "${HOME}" "${tz_name}" <<'PY'
 import datetime as dt
 import json
+import os
 import pathlib
+import re
 import sys
+import zoneinfo
 
 out_path = pathlib.Path(sys.argv[1])
 reports_dir = sys.argv[2]
-offset = int(sys.argv[3])
+raw_offset = sys.argv[3]
 home_dir = sys.argv[4]
+tz_name = sys.argv[5]
 
-fire_dt = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=offset)
-cron_expr = f"CRON_TZ=UTC {fire_dt.minute} {fire_dt.hour} {fire_dt.day} {fire_dt.month} *"
-receipt_path = f"{reports_dir}/canary-utc-receipt.md"
+try:
+    offset = int(raw_offset)
+except ValueError:
+    sys.stderr.write(f"[ERROR] canary-stage --offset-minutes must be an integer, got: {raw_offset}\n")
+    sys.exit(1)
+if offset < 1:
+    sys.stderr.write(f"[ERROR] canary-stage --offset-minutes must be >= 1, got: {offset}\n")
+    sys.exit(1)
+
+# tz_name is interpolated into cron_expr, receipt filename, and the shell command.
+if not re.fullmatch(r"[A-Za-z0-9_+.-]+(?:/[A-Za-z0-9_+.-]+)*", tz_name) or ".." in tz_name.split("/"):
+    sys.stderr.write(f"[ERROR] canary-stage invalid --timezone name: {tz_name}\n")
+    sys.exit(1)
+try:
+    zone = zoneinfo.ZoneInfo(tz_name)
+except zoneinfo.ZoneInfoNotFoundError:
+    sys.stderr.write(f"[ERROR] canary-stage unknown IANA timezone: {tz_name}\n")
+    sys.exit(1)
+
+now_override = os.environ.get("PROACTIVE_CANARY_NOW_UTC", "").strip()
+if now_override:
+    try:
+        now_utc = dt.datetime.fromisoformat(now_override.replace("Z", "+00:00"))
+    except ValueError:
+        sys.stderr.write(f"[ERROR] canary-stage invalid PROACTIVE_CANARY_NOW_UTC: {now_override}\n")
+        sys.exit(1)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=dt.timezone.utc)
+    else:
+        now_utc = now_utc.astimezone(dt.timezone.utc)
+else:
+    now_utc = dt.datetime.now(dt.timezone.utc)
+
+# Convert fire_utc into the target zone rather than merely relabelling CRON_TZ;
+# otherwise an America/Chicago canary stages a UTC wall-clock hour and silently misfires.
+fire_utc = now_utc + dt.timedelta(minutes=offset)
+fire_local = fire_utc.astimezone(zone)
+cron_expr = (
+    f"CRON_TZ={tz_name} "
+    f"{fire_local.minute} {fire_local.hour} {fire_local.day} {fire_local.month} *"
+)
+safe_tz = re.sub(r"[^A-Za-z0-9._-]+", "-", tz_name).strip("-").lower()
+receipt_path = f"{reports_dir}/canary-{safe_tz}-receipt.md"
+local_render = fire_local.strftime("%Y-%m-%d %H:%M %Z")
+utc_render = fire_utc.strftime("%Y-%m-%d %H:%M UTC")
+
+shell_cmd = (
+    "umask 077 && { "
+    f'TZ={tz_name} date +"CANARY_TIMEZONE={tz_name} CANARY_FIRED_LOCAL=%Y-%m-%dT%H:%M:%S%z"; '
+    'date -u +"CANARY_FIRED_UTC=%Y-%m-%dT%H:%M:%SZ"; '
+    f'}} > "{receipt_path}"'
+)
 
 doc = {
     "builtin": "schedule",
@@ -277,13 +358,16 @@ doc = {
         "agentapi",
         "new-conversation",
         "--",
-        "[PROACTIVE-SWEEP] Disposable UTC cron canary check. "
-        f"Run `{home_dir}/bin/agent-zsh -c 'umask 077 && date -u +\"CANARY_FIRED_UTC=%Y-%m-%dT%H:%M:%SZ\" > {receipt_path}'` "
-        "and reply ONLY with `CANARY_UTC_OK`.",
+        f"[PROACTIVE-SWEEP] Disposable cron canary check (timezone={tz_name}). "
+        f"Run `{home_dir}/bin/agent-zsh -c '{shell_cmd}'` "
+        "and reply ONLY with `CANARY_OK`.",
     ],
     "restart_policy": "always",
     "display_name": "Proactive Cron Canary (Disposable)",
-    "description": f"One-time disposable UTC cron test scheduled for {fire_dt.strftime('%Y-%m-%d %H:%M UTC')}. Remove afterward via antigravity-proactive-ctl.sh canary-clean.",
+    "description": (
+        f"One-time disposable cron test ({tz_name}) scheduled for {local_render} ({utc_render}). "
+        "Remove afterward via antigravity-proactive-ctl.sh canary-clean."
+    ),
     "agent_permissions": {
         "allows_user_interactions": False,
         "access_grants": [
@@ -294,7 +378,10 @@ doc = {
 }
 out_path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
 out_path.chmod(0o600)
-print(f"Staged disposable canary for {fire_dt.strftime('%Y-%m-%d %H:%M UTC')} ({cron_expr})")
+print(
+    f"Staged disposable canary [{tz_name}] for {local_render} ({utc_render}) ({cron_expr}); "
+    f"receipt={receipt_path}"
+)
 PY
 }
 
@@ -311,10 +398,12 @@ cmd_sentinel_post_merge() {
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--repo)
+			require_flag_value "sentinel-post-merge" "$1" "$#"
 			repo_name="${2##*/}"
 			shift 2
 			;;
 		--pr)
+			require_flag_value "sentinel-post-merge" "$1" "$#"
 			pr_num="$2"
 			shift 2
 			;;
@@ -393,10 +482,12 @@ cmd_audit_missed() {
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--date)
+			require_flag_value "audit-missed" "$1" "$#"
 			date_str="$2"
 			shift 2
 			;;
 		--repo)
+			require_flag_value "audit-missed" "$1" "$#"
 			repo_name="${2##*/}"
 			shift 2
 			;;
@@ -481,18 +572,22 @@ cmd_base_check() {
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--repo)
+			require_flag_value "base-check" "$1" "$#"
 			repo_name="${2##*/}"
 			shift 2
 			;;
 		--worktree)
+			require_flag_value "base-check" "$1" "$#"
 			wt_path="$2"
 			shift 2
 			;;
 		--digest)
+			require_flag_value "base-check" "$1" "$#"
 			digest="$2"
 			shift 2
 			;;
 		--test-cmd)
+			require_flag_value "base-check" "$1" "$#"
 			test_cmd="$2"
 			shift 2
 			;;

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Unit tests for scripts/antigravity-proactive-ctl.sh
-# Verifies idempotent install, chmod 700 transcript/report dirs, weekday UTC cron,
-# allows_user_interactions=false, disposable cron canary staging/cleanup,
+# Verifies idempotent install, chmod 700 transcript/report dirs, weekday Chicago cron,
+# allows_user_interactions=false, timezone-aware disposable cron canary staging/cleanup,
 # post-merge Sentinel lease verification, MISSED digest audit, base-relative
 # classification of verify failures (NO_FAILURE / FLAKE_ON_RETRY /
 # PRE_EXISTING_ON_BASE / CAUSED_BY_CHANGE) including test-command resolution
@@ -87,19 +87,45 @@ check "global hooks.json symlink created" test -L "${HOME}/.gemini/config/hooks.
 check "reports directory created" test -d "${HOME}/.gemini/antigravity/proactive-reports"
 
 SIDECAR_FILE="${HOME}/.gemini/config/sidecars/proactive-pilot-ctrld-sync/sidecar.json"
+TRIAGE_SIDECAR_FILE="${HOME}/.gemini/config/sidecars/proactive-pilot-triage/sidecar.json"
 check "disabled pilot sidecar.json created" test -f "${SIDECAR_FILE}"
+check "disabled triage sidecar.json created" test -f "${TRIAGE_SIDECAR_FILE}"
 check "user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-ctrld-sync/user_config.json"
+check "triage user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-triage/user_config.json"
 check_grep "sidecar uses weekday daily local Chicago cron" "CRON_TZ=America/Chicago 15 8 \* \* 1-5" "${SIDECAR_FILE}"
 check_grep "sidecar sets allows_user_interactions false" '"allows_user_interactions": false' "${SIDECAR_FILE}"
 check "sidecar JSON is valid" python3 -m json.tool "${SIDECAR_FILE}"
+check "triage sidecar JSON is valid" python3 -m json.tool "${TRIAGE_SIDECAR_FILE}"
 
-# 2. Disposable UTC cron canary staging and cleanup
+# 2. Disposable timezone-aware cron canary staging and cleanup
 "${CTL_SCRIPT}" canary-stage --offset-minutes 4 >"${TEST_DIR}/canary.log" 2>&1
 CANARY_FILE="${HOME}/.gemini/config/sidecars/proactive-cron-canary/sidecar.json"
 check "canary sidecar.json staged" test -f "${CANARY_FILE}"
 check "canary sidecar permissions 0600" python3 -c 'import os,sys; m=oct(os.stat(sys.argv[1]).st_mode & 0o777); sys.exit(0 if m=="0o600" else 1)' "${CANARY_FILE}"
 check "canary user_config.json NOT self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-cron-canary/user_config.json"
-check_grep "canary sidecar uses CRON_TZ=UTC" "CRON_TZ=UTC " "${CANARY_FILE}"
+check_grep "canary defaults to CRON_TZ=America/Chicago" "CRON_TZ=America/Chicago " "${CANARY_FILE}"
+check_grep "canary receipt renamed off UTC default" "canary-america-chicago-receipt\.md" "${CANARY_FILE}"
+check_grep "canary confirmation prints zone plus local and UTC times" "America/Chicago.*UTC" "${TEST_DIR}/canary.log"
+
+# Verify local vs UTC hour conversion and midnight date rollover (04:58 UTC + 4m = 05:02 UTC = 23:02 CST prev day)
+env PROACTIVE_CANARY_NOW_UTC="2026-11-13T04:58:00Z" "${CTL_SCRIPT}" canary-stage --offset-minutes 4 >"${TEST_DIR}/canary-rollover.log" 2>&1
+check_grep "canary converts UTC into America/Chicago local hour and date" '"CRON_TZ=America/Chicago 2 23 12 11 \*"' "${CANARY_FILE}"
+
+# Verify DST boundaries: spring forward (07:58 UTC + 4m = 08:02 UTC = 03:02 CDT) and fall back (06:58 UTC + 4m = 07:02 UTC = 01:02 CST)
+env PROACTIVE_CANARY_NOW_UTC="2026-03-08T07:58:00Z" "${CTL_SCRIPT}" canary-stage --offset-minutes 4 >"${TEST_DIR}/canary-spring.log" 2>&1
+check_grep "canary handles spring-forward DST transition" '"CRON_TZ=America/Chicago 2 3 8 3 \*"' "${CANARY_FILE}"
+env PROACTIVE_CANARY_NOW_UTC="2026-11-01T06:58:00Z" "${CTL_SCRIPT}" canary-stage --offset-minutes 4 >"${TEST_DIR}/canary-fallback.log" 2>&1
+check_grep "canary handles fall-back DST transition" '"CRON_TZ=America/Chicago 2 1 1 11 \*"' "${CANARY_FILE}"
+
+# Keep explicit UTC reachable for per-sidecar-isolation tests, and fail closed on invalid timezones
+env PROACTIVE_CANARY_NOW_UTC="2026-11-13T04:58:00Z" "${CTL_SCRIPT}" canary-stage --offset-minutes 4 --timezone UTC >"${TEST_DIR}/canary-utc.log" 2>&1
+check_grep "canary explicit --timezone UTC uses CRON_TZ=UTC" '"CRON_TZ=UTC 2 5 13 11 \*"' "${CANARY_FILE}"
+check_grep "canary explicit --timezone UTC uses utc receipt name" "canary-utc-receipt\.md" "${CANARY_FILE}"
+check_exit "canary-stage rejects unknown IANA timezone" 1 \
+	"${CTL_SCRIPT}" canary-stage --timezone "Mars/Olympus_Mons"
+check_exit "canary-stage rejects missing flag value cleanly" 1 \
+	"${CTL_SCRIPT}" canary-stage --timezone
+
 "${CTL_SCRIPT}" canary-clean >/dev/null 2>&1
 check "canary-clean removes canary sidecar" test ! -f "${CANARY_FILE}"
 
@@ -160,6 +186,8 @@ check "audit-missed wrote nothing for rejected input" test -z "$(find "${REPORTS
 "${CTL_SCRIPT}" status >"${TEST_DIR}/status.log" 2>&1
 check_grep "status reports active skill links" "skills_linked=5/5" "${TEST_DIR}/status.log"
 check_grep "status reports stopped runtime with no scheduler log" "pilot_runtime=stopped" "${TEST_DIR}/status.log"
+check_grep "status reports triage sidecar present" "triage_sidecar=present" "${TEST_DIR}/status.log"
+check_grep "status reports stopped triage runtime with no scheduler log" "triage_runtime=stopped" "${TEST_DIR}/status.log"
 
 # Dashboard toggles do not write user_config.json; runtime state comes from the scheduler log.
 mkdir -p "${HOME}/.gemini/antigravity/sidecar_data/proactive-pilot-ctrld-sync/logs"
