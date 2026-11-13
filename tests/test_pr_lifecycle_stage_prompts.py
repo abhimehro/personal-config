@@ -73,7 +73,8 @@ class TestStagePromptContracts(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("salvage-eligible", profile)
-        self.assertIn("Write Nothing", profile)
+        self.assertIn("Stage 2 EMPTY_INTAKE while salvage-eligible", profile)
+        self.assertIn("No repo or GitHub writes", profile)
         self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
         self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
