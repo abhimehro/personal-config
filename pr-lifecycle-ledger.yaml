@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1497
+ledger_revision: 1515
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -52988,12 +52988,12 @@ items:
   updated_at_utc: '2026-11-13T14:56:06Z'
   guardrail_source: path_eval
   guardrail_evidence: null
-- key: abhimehro/Seatek_Analysis#1156@d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
+- key: abhimehro/Seatek_Analysis#1156@724274c0ed7716f8740ae244da547747aa65290e
   repository: abhimehro/Seatek_Analysis
   pr: 1156
   url: https://github.com/abhimehro/Seatek_Analysis/pull/1156
-  base_sha: 28155bbaaa7395486a09a25e1a9d7c83c88336c1
-  head_sha: d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
+  base_sha: cba03168e1bdca0463e5db181e21e597132c8608
+  head_sha: 724274c0ed7716f8740ae244da547747aa65290e
   author:
     login: abhimehro
     identity_source: github_api
@@ -53017,8 +53017,8 @@ items:
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-12
-    by reconcile).'
+  next_action: Re-anchored to live head 724274c0ed7716f8740ae244da547747aa65290e;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1156
   attempts:
@@ -53027,7 +53027,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:56:06Z'
+  updated_at_utc: '2026-11-13T15:16:03Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
@@ -53244,7 +53244,10 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/scripts/repository_automation_tasks.py
+  - .jules/bolt.md
+  - tests/test_repository_automation_tasks.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53283,7 +53286,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - tests/test_repository_automation_common.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53322,7 +53326,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Updated_Seatek_Analysis.R
+  - tests/testthat/test-calculate_summary_stats.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53361,7 +53367,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - Updated_Seatek_Analysis.R
+  - tests/testthat/test-process_all_data.R
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53399,17 +53407,20 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - .jules/sentinel.md
+  - code_health_scanner.py
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-13
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-13 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1165
   attempts:
@@ -53439,7 +53450,12 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - poetry.lock
+  - pyproject.toml
+  - requirements-ci.txt
+  - tasks/handoff.md
+  - tests/test_app.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53476,17 +53492,21 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - .jules/sentinel.md
+  - src/hydrograph_seatek_analysis/utils/security.py
+  - tests/test_sanitize_filename.py
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-13
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-13 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/931
   attempts:
@@ -53516,17 +53536,19 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - src/hydrograph_seatek_analysis/utils/security.py
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-13
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-13 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/939
   attempts:
@@ -53556,7 +53578,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/tests/test_processor_gaps.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53594,7 +53617,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/tests/test_processor.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -53612,12 +53636,12 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-11-13T14:53:17Z'
-- key: abhimehro/series_correction_project_updated#666@b707b1d0f9b66b7739296137097df1992b688c97
+- key: abhimehro/series_correction_project_updated#666@2706cd7fe62d112cf226b3f1b371f67cd17f8043
   repository: abhimehro/series_correction_project_updated
   pr: 666
   url: https://github.com/abhimehro/series_correction_project_updated/pull/666
-  base_sha: 2a40801a5f528cedcd354782aa347200b729fa14
-  head_sha: b707b1d0f9b66b7739296137097df1992b688c97
+  base_sha: b964ea82bfd99b5b59735b3d0487e535e875a4b1
+  head_sha: 2706cd7fe62d112cf226b3f1b371f67cd17f8043
   author:
     login: abhimehro
     identity_source: github_api
@@ -53634,15 +53658,17 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - scripts/processor.py
+  - scripts/tests/test_processor_jumps.py
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-13
-    by reconcile).'
+  next_action: Re-anchored to live head 2706cd7fe62d112cf226b3f1b371f67cd17f8043;
+    prior evidence void.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/666
   attempts:
@@ -53651,7 +53677,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:53:17Z'
+  updated_at_utc: '2026-11-13T15:16:03Z'
 - key: abhimehro/series_correction_project_updated#668@b480c39d47bf4bc0697a7f567f49e549dedca063
   repository: abhimehro/series_correction_project_updated
   pr: 668
@@ -53671,17 +53697,20 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: SENSITIVE
   sensitive_paths: []
-  changed_paths: []
-  guardrail_outcome: NOT_RUN
+  changed_paths:
+  - scripts/spreadsheet_safety.py
+  - scripts/tests/test_spreadsheet_safety_security.py
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
   terminal_disposition: null
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
-  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-13
-    by reconcile).'
+  next_action: 'SENTINEL_SECURITY_HOLD: Jules Sentinel persona or sentinel/ branch
+    stays REVIEW_SECURITY; title-only reconcile cannot clear it. Prior: Stage 1: run
+    guardrails on newly ingested open PR (ingested 2026-11-13 by reconcile).'
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/668
   attempts:
