@@ -202,6 +202,44 @@ if [[ -d "$REPO_ROOT/.github" ]]; then
 	log "Skipping ~/.github (typically not needed in home directory)"
 fi
 
+# 8. Mole whitelist (file, copied rather than symlinked)
+# Mole rewrites this file from its interactive `mole clean --whitelist` editor,
+# and it writes atomically via a temp file plus rename. A symlink would be
+# replaced by a regular file on the first such write, silently breaking the
+# link, so the repo copy is deployed by copy instead.
+MOLE_WHITELIST_SRC="$REPO_ROOT/configs/.config/mole/whitelist"
+MOLE_WHITELIST_DST="$HOME/.config/mole/whitelist"
+if [[ -f $MOLE_WHITELIST_SRC ]]; then
+	log "Setting up Mole whitelist..."
+	mkdir -p "$(dirname "$MOLE_WHITELIST_DST")"
+	if [[ -f $MOLE_WHITELIST_DST ]] && cmp -s "$MOLE_WHITELIST_SRC" "$MOLE_WHITELIST_DST"; then
+		success "Mole whitelist is up to date"
+	else
+		if [[ -f $MOLE_WHITELIST_DST ]]; then
+			local_backup="${MOLE_WHITELIST_DST}.backup.$(date +%Y%m%d_%H%M%S)"
+			log "Backing up existing Mole whitelist to $local_backup"
+			cp "$MOLE_WHITELIST_DST" "$local_backup"
+		fi
+		cp "$MOLE_WHITELIST_SRC" "$MOLE_WHITELIST_DST"
+		success "Deployed Mole whitelist from repo"
+	fi
+else
+	warn "No Mole whitelist found in repo (skipping)"
+fi
+
+# 9. CleanMyMac ignore list (applied through the vendor CLI)
+# The ignore list lives in an encrypted binary store, so the repo tracks a
+# declarative path list and reconciles it with the CLI.
+CMM_APPLY="$REPO_ROOT/scripts/apply_cleanmymac_ignores.sh"
+if [[ -x $CMM_APPLY ]]; then
+	log "Reconciling CleanMyMac ignore list..."
+	if "$CMM_APPLY" >/dev/null 2>&1; then
+		success "CleanMyMac ignore list reconciled"
+	else
+		warn "CleanMyMac ignore list not reconciled (run $CMM_APPLY to see why)"
+	fi
+fi
+
 echo ""
 echo "=========================================="
 success "Configuration sync completed!"

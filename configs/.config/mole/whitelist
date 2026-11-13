@@ -38,3 +38,10 @@
 /Users/speedybee/Library/Caches/com.apple.spotlight*
 /Users/speedybee/Library/Caches/com.apple.Spotlight*
 /Users/speedybee/Library/Caches/CloudKit*
+
+# User Logs
+# Mole sweeps every child of ~/Library/Logs with no age filter, so partial
+# retention is not possible: either the whole tree survives or none of it does.
+# The tree is ~6.5 MB, which is negligible against the diagnostic value of
+# GitNexus auto-sync cycle logs, launchd stdout/stderr, and backup logs.
+/Users/speedybee/Library/Logs
