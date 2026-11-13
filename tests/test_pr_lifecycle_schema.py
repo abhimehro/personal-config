@@ -100,6 +100,29 @@ class TestPrLifecycleSchema(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"^schema events\.0\.status:"):
             validate_schema(ledger)
 
+    def test_nested_deep_field_error_reports_full_path(self) -> None:
+        """A deeply nested schema violation reports the complete dotted path."""
+        ledger = copy.deepcopy(self.example_ledger)
+        ledger["items"][0]["attempts"]["evidence"] = -1
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^schema items\.0\.attempts\.evidence: -1 is less than the minimum of 0",
+        ):
+            validate_schema(ledger)
+
+    def test_multiple_errors_are_sorted_deterministically(self) -> None:
+        """With several violations, the same first error is reported every time."""
+        ledger = copy.deepcopy(self.example_ledger)
+        ledger["items"][0]["url"] = "not-a-url"
+        ledger["items"][0]["head_sha"] = "short-sha"
+        messages = []
+        for _ in range(3):
+            with self.assertRaises(ValueError) as ctx:
+                validate_schema(copy.deepcopy(ledger))
+            messages.append(str(ctx.exception))
+        self.assertEqual(len(set(messages)), 1)
+        self.assertRegex(messages[0], r"^schema items\.0\.(url|head_sha):")
+
     def test_empty_ledger_reports_root_error(self) -> None:
         """Verify that completely empty ledger dict fails at root."""
         with self.assertRaisesRegex(ValueError, r"^schema root:"):
