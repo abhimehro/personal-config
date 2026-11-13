@@ -77,6 +77,7 @@ TMP_CLEAN_DAYS="$(_int_from_config "${TMP_CLEAN_DAYS-}" 7)"
 XCODE_DERIVEDDATA_KEEP_DAYS="$(_int_from_config "${XCODE_DERIVEDDATA_KEEP_DAYS-}" 30)"
 BREW_CLEAN_PRUNE_DAYS="$(_int_from_config "${BREW_CLEAN_PRUNE_DAYS-}" 30)"
 LOG_RETENTION_DAYS="$(_int_from_config "${LOG_RETENTION_DAYS-}" 60)"
+DIAGNOSTIC_RETENTION_DAYS="$(_int_from_config "${DIAGNOSTIC_RETENTION_DAYS-}" 30)"
 
 # Get disk usage percentage
 percent_used() {
@@ -211,6 +212,26 @@ if [[ -d ${USER_LOGS_DIR} ]]; then
 		CLEANED_ITEMS=$((CLEANED_ITEMS + LOG_FILES_CLEANED))
 	fi
 fi
+
+# Clean crash reports and diagnostic logs older than DIAGNOSTIC_RETENTION_DAYS.
+# These are .ips/.diag/.crash files, not *.log, so the sweep above never
+# matched them. ~/Library/Logs is whitelisted in mole and ignored by
+# CleanMyMac, so this is the only thing that bounds DiagnosticReports growth.
+# The directory itself is preserved; only stale files inside it are removed.
+DIAGNOSTIC_DIRS=(
+	"${USER_LOGS_DIR}/DiagnosticReports"
+	"${USER_LOGS_DIR}/CrashReporter"
+)
+for diag_dir in "${DIAGNOSTIC_DIRS[@]}"; do
+	[[ -d $diag_dir ]] || continue
+	DIAG_FILES_CLEANED=$(find "$diag_dir" -type f \
+		\( -name "*.ips" -o -name "*.diag" -o -name "*.crash" -o -name "*.spin" -o -name "*.hang" \) \
+		-mtime +"${DIAGNOSTIC_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+	if [[ $DIAG_FILES_CLEANED -gt 0 ]]; then
+		log_info "Cleaned $DIAG_FILES_CLEANED diagnostic report(s) older than ${DIAGNOSTIC_RETENTION_DAYS} days in ${diag_dir##*/}"
+		CLEANED_ITEMS=$((CLEANED_ITEMS + DIAG_FILES_CLEANED))
+	fi
+done
 
 # Clean downloads folder of files older than 90 days (be conservative)
 DOWNLOADS_DIR="${HOME}/Downloads"
