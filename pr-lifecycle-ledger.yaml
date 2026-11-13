@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1496
+ledger_revision: 1497
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -51585,10 +51585,10 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:39:03Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: 40b0e45b158e3c44acaa68935ee029a3a17a4250
+    head_sha: 54992ef916ad05ec043782340462872d65d240f3
     basis: head_bound_diff
     diff_sha256: aa78f8ef41275b8c1394d198ff7ba8728532942ed00b95f0ce5292579c5be9ad
 - key: abhimehro/email-security-pipeline#1883@81a78b76c85abd76c0156a7cb74edd68ce8b75a5
@@ -52828,11 +52828,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_repository_automation_common.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52848,7 +52848,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T16:24:20Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 8e5bd9223cfc486dc96dcde1af73909343b0da83
+    basis: head_bound_diff
+    diff_sha256: fdc0abdae956e72bfe70a9afa7d8b167c716134d49f61d77b4a5bc16277ead43
 - key: abhimehro/Seatek_Analysis#1153@99d9cdda1b6cc82b527c5bcca347615dc3f90b52
   repository: abhimehro/Seatek_Analysis
   pr: 1153
@@ -52868,11 +52873,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_repository_automation_common.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52888,7 +52893,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T16:24:20Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 99d9cdda1b6cc82b527c5bcca347615dc3f90b52
+    basis: head_bound_diff
+    diff_sha256: e1d13c849c04640219a5f412fee613bcb57cd265c6b61189da83f5fa2de83065
 - key: abhimehro/Seatek_Analysis#1154@3a1b5a379886e5bac44b799daa22005735e3b8c8
   repository: abhimehro/Seatek_Analysis
   pr: 1154
@@ -52908,12 +52918,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - shell_execution
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52929,7 +52940,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T16:24:20Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1155@d6ba03b1e7809d127ef1aab97bccd6c1055f5a1e
   repository: abhimehro/Seatek_Analysis
   pr: 1155
@@ -52950,12 +52963,13 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_common.py
   - .jules/bolt.md
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -52971,7 +52985,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T16:24:20Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1156@d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
   repository: abhimehro/Seatek_Analysis
   pr: 1156
@@ -52991,11 +53007,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - Series_27/Analysis/test_outlier_analysis_series27.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -53011,7 +53027,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-12T16:24:20Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: d68291aca738d22bcfbcb9918ee80a9ced9bd9ee
+    basis: head_bound_diff
+    diff_sha256: 09331b45f10a1f35b42bc905b706432aa54c9ad4e59ddbd8625f43230b22309a
 - key: abhimehro/personal-config#2766@b83eb4d3c2e35e0e88dc5b5d32e3063d3716783d
   repository: abhimehro/personal-config
   pr: 2766
@@ -53030,8 +53051,9 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   - .github/workflows/code-quality.yml
@@ -53043,7 +53065,7 @@ items:
   - .github/workflows/repository-automation-daily.yml
   - .github/workflows/repository-automation-weekly.yml
   - .github/workflows/security-scan.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -53059,7 +53081,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:39:03Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1414@17d3ecb22a591e9c59405a6f54e18a2389c8c2f7
   repository: abhimehro/ctrld-sync
   pr: 1414
@@ -53126,11 +53150,11 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
+  risk_class: ROUTINE
   sensitive_paths: []
   changed_paths:
   - tests/test_repository_automation_common.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: PASS_ROUTINE
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -53146,7 +53170,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:39:03Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence:
+    head_sha: 66239bdb8b18bbb6ed78a4033d7566cb1b320086
+    basis: head_bound_diff
+    diff_sha256: 80de22759e7f7d85b96b2d96821ce0b8244b5f3383972874b19ddff29adc0ff8
 - key: abhimehro/Seatek_Analysis#1158@67677f7d47bfc615b19376ac4992cc10a6574aa5
   repository: abhimehro/Seatek_Analysis
   pr: 1158
@@ -53167,13 +53196,14 @@ items:
       - commit_email
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/bolt.md
   - tests/test_repository_automation_tasks.py
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -53189,7 +53219,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-13T14:39:03Z'
+  updated_at_utc: '2026-11-13T14:56:06Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/Seatek_Analysis#1159@0514e37e2cdfd9ed0544ed12cc7671963c05da32
   repository: abhimehro/Seatek_Analysis
   pr: 1159
