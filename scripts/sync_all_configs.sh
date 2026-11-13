@@ -202,6 +202,27 @@ if [[ -d "$REPO_ROOT/.github" ]]; then
 	log "Skipping ~/.github (typically not needed in home directory)"
 fi
 
+# 8. Antigravity Proactive Skills and Safety Hook (if exists)
+if [[ -d "$REPO_ROOT/configs/antigravity/skills" ]]; then
+	log "Setting up Antigravity proactive skills and safety hook..."
+	mkdir -p "$HOME/.gemini/config/skills" "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees"
+	chmod 700 "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees" 2>/dev/null || true
+	for agy_skill_dir in "$REPO_ROOT"/configs/antigravity/skills/*; do
+		[[ -d $agy_skill_dir ]] || continue
+		agy_skill_name="${agy_skill_dir##*/}"
+		ensure_dir_link \
+			"$HOME/.gemini/config/skills/$agy_skill_name" \
+			"$agy_skill_dir" \
+			"$HOME/.gemini/config/skills/$agy_skill_name"
+	done
+	if [[ -f "$REPO_ROOT/configs/antigravity/hooks.json" ]]; then
+		ensure_file_link \
+			"$HOME/.gemini/config/hooks.json" \
+			"$REPO_ROOT/configs/antigravity/hooks.json" \
+			"$HOME/.gemini/config/hooks.json"
+	fi
+fi
+
 echo ""
 echo "=========================================="
 success "Configuration sync completed!"
