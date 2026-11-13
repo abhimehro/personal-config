@@ -111,11 +111,11 @@ Gemfile.lock
 
 # Machine-generated Trunk subdirectories (local cache, logs, downloaded tools)
 .trunk/plugins/
-.trunk/logs/
-.trunk/out/
-.trunk/tools/
-.trunk/notifications/
-.trunk/actions/
+.trunk/logs
+.trunk/out
+.trunk/tools
+.trunk/notifications
+.trunk/actions
 
 # Keep tracked: .trunk/trunk.yaml and .trunk/configs/* (linter configs)
 
