@@ -2,6 +2,7 @@
 
 import argparse
 import base64
+import collections
 import html
 import os
 import secrets
@@ -9,6 +10,7 @@ import socketserver
 import string
 import subprocess
 import sys
+import threading
 import time
 from http.server import SimpleHTTPRequestHandler
 from urllib.parse import unquote
@@ -19,7 +21,9 @@ AUTH_PASS = None
 EXPECTED_AUTH_TOKEN = None
 
 # Rate limiting for auth failures
-FAILED_AUTH_ATTEMPTS = {}
+# ⚡ Performance: Use OrderedDict for O(1) FIFO TTL expiration cleanup and threading.Lock for thread safety
+FAILED_AUTH_ATTEMPTS = collections.OrderedDict()
+AUTH_LOCK = threading.Lock()
 
 DIRECTORY_LISTING_HEADER_TEMPLATE = """
         <!DOCTYPE html>
@@ -74,20 +78,14 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         if not AUTH_USER or not AUTH_PASS:
             return True
 
-        # Extract client IP
         client_ip = self.client_address[0]
         now = time.time()
 
-        # Cleanup old failed attempts (older than 1 minute)
-        # Avoid concurrent modification issues by copying keys and safely getting values
-        for ip in list(FAILED_AUTH_ATTEMPTS.keys()):
-            attempt = FAILED_AUTH_ATTEMPTS.get(ip)
-            if attempt and now - attempt["last_attempt"] > 60:
-                FAILED_AUTH_ATTEMPTS.pop(ip, None)
+        with AUTH_LOCK:
+            self._cleanup_expired_failed_attempts(now)
+            is_limited = self._is_rate_limited(client_ip, now)
 
-        # Check rate limit (e.g., max 5 failures per minute)
-        attempts = FAILED_AUTH_ATTEMPTS.get(client_ip)
-        if attempts and attempts["count"] >= 5 and now - attempts["last_attempt"] < 60:
+        if is_limited:
             self.send_response(429)
             self.send_header("Retry-After", "60")
             self.end_headers()
@@ -110,7 +108,8 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             # ⚡ Performance: Compare base64 token directly to avoid decoding and splitting overhead
             if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
                 # Successful auth resets the counter safely
-                FAILED_AUTH_ATTEMPTS.pop(client_ip, None)
+                with AUTH_LOCK:
+                    FAILED_AUTH_ATTEMPTS.pop(client_ip, None)
                 return True
         except Exception:
             pass
@@ -119,12 +118,29 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         self.send_auth_request()
         return False
 
+    def _cleanup_expired_failed_attempts(self, now):
+        """⚡ Performance: O(1) TTL expiration cleanup on FIFO ordered dict."""
+        cutoff = now - 60
+        while FAILED_AUTH_ATTEMPTS:
+            oldest_ip, oldest_attempt = next(iter(FAILED_AUTH_ATTEMPTS.items()))
+            if oldest_attempt["last_attempt"] < cutoff:
+                FAILED_AUTH_ATTEMPTS.popitem(last=False)
+            else:
+                break
+
+    def _is_rate_limited(self, ip, now):
+        """Check if an IP has exceeded the failure limit within 60s."""
+        attempts = FAILED_AUTH_ATTEMPTS.get(ip)
+        return bool(attempts and attempts["count"] >= 5 and now - attempts["last_attempt"] < 60)
+
     def _record_auth_failure(self, ip, now):
         """Helper to record failed auth attempts for rate limiting."""
-        if ip not in FAILED_AUTH_ATTEMPTS:
-            FAILED_AUTH_ATTEMPTS[ip] = {"count": 0, "last_attempt": now}
-        FAILED_AUTH_ATTEMPTS[ip]["count"] += 1
-        FAILED_AUTH_ATTEMPTS[ip]["last_attempt"] = now
+        with AUTH_LOCK:
+            if ip not in FAILED_AUTH_ATTEMPTS:
+                FAILED_AUTH_ATTEMPTS[ip] = {"count": 0, "last_attempt": now}
+            FAILED_AUTH_ATTEMPTS[ip]["count"] += 1
+            FAILED_AUTH_ATTEMPTS[ip]["last_attempt"] = now
+            FAILED_AUTH_ATTEMPTS.move_to_end(ip)
 
     def send_auth_request(self):
         self.send_response(401)

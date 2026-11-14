@@ -922,3 +922,14 @@ makes the code less readable compared to standard list initialization.
 **Action:** Replace multiple consecutive `.append()` calls with a single list
 initialization (e.g., `my_list = [item1, item2, ...]`) or `.extend([...])` to
 improve both performance and code clarity.
+
+## 2026-11-01 - [O(1) TTL Expiration with OrderedDict vs O(N) Dict Scanning]
+
+**Learning:** In HTTP request handlers managing rate limiting state (like failed
+auth attempts), scanning and pruning an entire dictionary on every request using
+`list(dict.keys())` creates an O(N) iteration overhead and allocates unnecessary
+lists. When records are ordered chronologically by timestamp, using an
+`OrderedDict` with `move_to_end()` on updates allows O(1) early-exit eviction of
+expired records via `popitem(last=False)`.
+**Action:** Replace full dictionary scans for sliding-window TTL cleanups with an
+`OrderedDict` FIFO eviction loop and protect concurrent mutations with a thread lock.
