@@ -104,7 +104,7 @@ if any_modified "deep_cleaner_large_files" "$HOME"; then
 	append "Top 20 largest files over 100MB:"
 
 	while IFS= read -r file; do
-		size=$(du -h "$file" 2>/dev/null | cut -f1)
+		size=$(du -h "$file" 2>/dev/null | cut -f1 || true)
 		append "  $size - $file"
 	done < <(timeout 300 find "$HOME" -type f -size +100M 2>/dev/null | head -20) 2>/dev/null || log_warn "Large file scan timed out or had errors"
 
@@ -138,7 +138,7 @@ if any_modified "deep_cleaner_app_remnants" "$APP_SUPPORT_DIR" "$PREFS_DIR"; the
 			# Check if corresponding app exists in Applications or is a known system component
 			if [[ ! -d "/Applications/${app_name}.app" ]] && [[ ! -d "/System/Applications/${app_name}.app" ]] &&
 				[[ ! $app_name =~ ^(com\.|Adobe|Microsoft|Google|Apple|Dropbox|Slack|Zoom).*$ ]]; then
-				size=$(du -sh "$app_dir" 2>/dev/null | cut -f1)
+				size=$(du -sh "$app_dir" 2>/dev/null | cut -f1 || true)
 				ORPHANED_APP_SUPPORT+="  $size - $app_dir"$'\n'
 			fi
 		done < <(timeout 60 find "${APP_SUPPORT_DIR}" -maxdepth 1 -type d -not -name ".*" -print0 2>/dev/null || true)
@@ -164,7 +164,7 @@ if any_modified "deep_cleaner_app_remnants" "$APP_SUPPORT_DIR" "$PREFS_DIR"; the
 			if [[ ! $pref_name =~ ^(com\.apple\.|loginwindow|systemuiserver).*$ ]] &&
 				[[ ! -d "/Applications/${pref_name}.app" ]] &&
 				[[ ! -d "/System/Applications/${pref_name}.app" ]]; then
-				size=$(du -sh "$pref_file" 2>/dev/null | cut -f1)
+				size=$(du -sh "$pref_file" 2>/dev/null | cut -f1 || true)
 				ORPHANED_PREFS+="  $size - $pref_file"$'\n'
 			fi
 		done < <(timeout 30 find "${PREFS_DIR}" -name "*.plist" -print0 2>/dev/null || true)
@@ -196,7 +196,7 @@ if any_modified "deep_cleaner_system_caches" "${SYSTEM_CACHES[@]}"; then
 	append "=== SYSTEM-WIDE CACHE ANALYSIS ==="
 	for cache_dir in "${SYSTEM_CACHES[@]}"; do
 		if [[ -d $cache_dir ]] && [[ -r $cache_dir ]]; then
-			cache_size=$(du -sh "$cache_dir" 2>/dev/null | cut -f1)
+			cache_size=$(du -sh "$cache_dir" 2>/dev/null | cut -f1 || true)
 			append "$cache_dir: $cache_size"
 		fi
 	done
@@ -257,8 +257,8 @@ MOBILE_BACKUP_DIR="${HOME}/Library/Application Support/MobileSync/Backup"
 if any_modified "deep_cleaner_mobile_backups" "$MOBILE_BACKUP_DIR"; then
 	append "=== MOBILE DEVICE BACKUPS ==="
 	if [[ -d ${MOBILE_BACKUP_DIR} ]]; then
-		backup_size=$(du -sh "${MOBILE_BACKUP_DIR}" 2>/dev/null | cut -f1)
-		backup_count=$(find "${MOBILE_BACKUP_DIR}" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+		backup_size=$(du -sh "${MOBILE_BACKUP_DIR}" 2>/dev/null | cut -f1 || true)
+		backup_count=$(find "${MOBILE_BACKUP_DIR}" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ' || true)
 		append "iOS Backups: $backup_size in $backup_count backup sets"
 		append "Location: ${MOBILE_BACKUP_DIR}"
 	else
@@ -284,7 +284,7 @@ if any_modified "deep_cleaner_vms" "${VM_DIRS[@]}"; then
 	append "=== DOCKER AND VIRTUAL MACHINE FILES ==="
 	for vm_dir in "${VM_DIRS[@]}"; do
 		if [[ -d $vm_dir ]]; then
-			vm_size=$(du -sh "$vm_dir" 2>/dev/null | cut -f1)
+			vm_size=$(du -sh "$vm_dir" 2>/dev/null | cut -f1 || true)
 			append "VM/Container files in $vm_dir: $vm_size"
 		fi
 	done
@@ -308,7 +308,7 @@ if any_modified "deep_cleaner_browser_profiles" "${BROWSER_DIRS[@]}"; then
 	append "=== BROWSER PROFILE ANALYSIS ==="
 	for browser_dir in "${BROWSER_DIRS[@]}"; do
 		if [[ -d $browser_dir ]]; then
-			browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1)
+			browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1 || true)
 			# ⚡ Bolt Optimization: parameter expansion avoids 2 process spawns (dirname + basename)
 			tmp="${browser_dir%/}" # Remove potential trailing slash
 			parent_path="${tmp%/*}"
@@ -341,7 +341,7 @@ if any_modified "deep_cleaner_dev_caches" "${DEV_CACHES[@]}"; then
 	append "=== DEVELOPMENT ENVIRONMENT CLEANUP ==="
 	for dev_cache in "${DEV_CACHES[@]}"; do
 		if [[ -d $dev_cache ]]; then
-			cache_size=$(du -sh "$dev_cache" 2>/dev/null | cut -f1)
+			cache_size=$(du -sh "$dev_cache" 2>/dev/null | cut -f1 || true)
 			# ⚡ Bolt Optimization: parameter expansion avoids process spawning
 			cache_name="${dev_cache##*/}"
 			append "Development cache ($cache_name): $cache_size"
@@ -366,7 +366,7 @@ if any_modified "deep_cleaner_logs" "${LOG_DIRS[@]}"; then
 	append "=== LOG FILE ANALYSIS ==="
 	for log_dir in "${LOG_DIRS[@]}"; do
 		if [[ -d $log_dir ]] && [[ -r $log_dir ]]; then
-			log_size=$(du -sh "$log_dir" 2>/dev/null | cut -f1)
+			log_size=$(du -sh "$log_dir" 2>/dev/null | cut -f1 || true)
 			old_logs=$(timeout 30 find "$log_dir" -name "*.log" -mtime +30 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 			append "$log_dir: $log_size ($old_logs files older than 30 days)"
 		fi
@@ -386,12 +386,12 @@ MAIL_DIRS=()
 while IFS= read -r mail_dir; do
 	[[ -n $mail_dir ]] && MAIL_DIRS+=("$mail_dir")
 done < <(compgen -G "$MAIL_DOWNLOADS" 2>/dev/null || true)
-if any_modified "deep_cleaner_mail_attachments" "${MAIL_DIRS[@]}"; then
+if any_modified "deep_cleaner_mail_attachments" ${MAIL_DIRS[@]+"${MAIL_DIRS[@]}"}; then
 	append "=== MAIL ATTACHMENTS ==="
 	# shellcheck disable=SC2086  # Intentional glob expansion for Mail V* directories
 	if ls $MAIL_DOWNLOADS >/dev/null 2>&1; then
 		# shellcheck disable=SC2086  # Intentional glob expansion for Mail V* directories
-		mail_size=$(du -sh $MAIL_DOWNLOADS 2>/dev/null | cut -f1)
+		mail_size=$(du -sh $MAIL_DOWNLOADS 2>/dev/null | cut -f1 || true)
 		append "Mail attachments: $mail_size"
 	else
 		append "No mail attachments found"

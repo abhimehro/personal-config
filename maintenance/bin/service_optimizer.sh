@@ -17,6 +17,10 @@
 #   already disabled before attempting to disable them again.
 # ==============================================================================
 
+# launchd runs without a login shell; create the log dir so output is not lost.
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
 set -euo pipefail
 # Ensure HOME is set in launchd environment (which lacks login shell context)
 export HOME=${HOME:-/Users/speedybee}

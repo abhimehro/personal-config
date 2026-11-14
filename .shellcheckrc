@@ -1,10 +1,31 @@
-# Project-wide ShellCheck configuration (developer / local scope)
+# Project-wide ShellCheck configuration — the ONLY tracked ShellCheck config.
 # See: https://www.shellcheck.net/wiki/Directive
 #
-# CI / Trunk uses a separate config at .trunk/configs/.shellcheckrc which sets
-# enable=all (surfacing optional/style checks). Running `shellcheck` directly
-# will therefore produce fewer warnings than `trunk check`. Use
-# `trunk check <file>` to reproduce full CI output locally.
+# Corrected 2026-11-03. This file is not a "local scope" counterpart to a
+# stricter CI config: `.trunk/configs/.shellcheckrc` does not exist in this repo
+# (`.trunk/configs/` holds only .hadolint.yaml, .isort.cfg, .yamllint.yaml and
+# ruff.toml), so nothing anywhere sets `enable=all` and `trunk check` reproduces
+# direct `shellcheck` rather than a stricter mode. All three invocations pin the
+# same version too: local shellcheck 0.11.0, `shellcheck@0.11.0` in
+# .trunk/trunk.yaml, and the `v0.11.0` default in
+# .github/actions/setup-shellcheck.
+#
+# Measured on scripts/network-mode-manager.sh: direct `shellcheck` and
+# `trunk check --no-fix` both report 0 findings; `shellcheck --enable=all`
+# reports 166 SC2250, 18 SC2310, 12 SC2154 and 2 SC2249. Run `--enable=all`
+# yourself if you want the optional/style checks — no CI job enables them.
+#
+# Trunk reports only *new* issues by default, so a clean `trunk check` means
+# "no new issues", not "no issues". On maintenance/bin/deep_cleaner.sh (one
+# pre-existing SC2126 at line 216) direct `shellcheck` gives rc=1 with 1
+# finding, `trunk check --no-fix` gives rc=0 and hides it, and only
+# `trunk check --no-fix --show-existing` lists the same single finding. Pass
+# --show-existing when comparing the two.
+#
+# What CI actually enforces (.github/workflows/code-quality.yml): a hard
+# SC2155/SC2145 correctness gate (`make lint-errors`) that fails the build, plus
+# a broad "ShellCheck analysis" step running `shellcheck "$script" || true`,
+# which is advisory only and cannot fail.
 #
 # This file centralises intentional, policy-level exclusions so that inline
 # `# shellcheck disable=` annotations can be reserved for one-off, site-specific

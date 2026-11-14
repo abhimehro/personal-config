@@ -261,12 +261,46 @@ trunk check --all --no-fix
 trunk fmt
 ```
 
-> **ShellCheck dual-config note:** Local `shellcheck` uses `.shellcheckrc`
-> (defaults, disables SC1091/SC1090) while Trunk/CI uses
-> `.trunk/configs/.shellcheckrc` (`enable=all`, disables SC2154/SC1091/SC1090),
-> so CI will report more issues than direct `shellcheck`. To match CI behavior
-> locally, run `trunk check --no-fix <file>` instead of calling `shellcheck`
-> directly.
+> **ShellCheck config note (corrected 2026-11-03 — the previous "dual-config"
+> note described a file that does not exist):** there is exactly **one** tracked
+> ShellCheck config, the root `.shellcheckrc` (disables SC1091/SC1090; SC2034 is
+> deliberately left enabled). `.trunk/configs/.shellcheckrc` is **not** in the
+> repo — `.trunk/configs/` holds only `.hadolint.yaml`, `.isort.cfg`,
+> `.yamllint.yaml` and `ruff.toml` — so nothing sets `enable=all`, and Trunk
+> does **not** report more issues than direct `shellcheck`. All three
+> invocations use the same version: local `shellcheck` 0.11.0,
+> `.trunk/trunk.yaml` `shellcheck@0.11.0`, and
+> `.github/actions/setup-shellcheck` default `v0.11.0`.
+>
+> Measured on `scripts/network-mode-manager.sh`, so `trunk check` reproduces
+> direct `shellcheck` rather than a stricter CI mode:
+>
+> - `shellcheck` → rc=0, zero findings
+> - `trunk check --no-fix` → zero findings
+> - `shellcheck --enable=all` → 166 SC2250, 18 SC2310, 12 SC2154, 2 SC2249
+>
+> Run `--enable=all` yourself if you want the optional/style checks — no CI job
+> enables them.
+>
+> **Same findings, different verdict.** Trunk runs the same engine at the same
+> version against this one config, so it never adds checks — but by default it
+> reports only _new_ issues and hides pre-existing ones. On
+> `maintenance/bin/deep_cleaner.sh`, which carries one pre-existing SC2126 at
+> line 216:
+>
+> - `shellcheck` → 1 finding, rc=1
+> - `trunk check --no-fix` → "1 existing issue (use --show-existing to see it)",
+>   "✔ No new issues", **rc=0**
+> - `trunk check --no-fix --show-existing` → the same single `SC2126`, listed
+>
+> Add `--show-existing` whenever you compare Trunk against direct `shellcheck`.
+> Without it, a clean `trunk check` means "no _new_ issues", not "no issues".
+>
+> What CI actually enforces (`.github/workflows/code-quality.yml`): a hard
+> **SC2155/SC2145 correctness gate** (`make lint-errors`), which fails the
+> build; plus a broad "ShellCheck analysis" step that runs
+> `shellcheck "$script" || true` and is **advisory only** — it prints findings
+> but cannot fail.
 
 ### Tests
 
@@ -576,12 +610,21 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in
   line (it returns quoted values like `'infuse'` instead of `infuse`).
 
 **Tests that skip on Linux/CI** (not bugs — each file contains an early-exit
-skip guard that prints `SKIP:` and exits 77):
+skip guard that prints `SKIP:` and exits 77; both pass with rc=0 on macOS):
 
 | Test                  | Skip Reason                  | Guard                |
 | --------------------- | ---------------------------- | -------------------- |
 | `test_config_fish.sh` | Needs `fish` shell           | `command -v fish`    |
 | `test_ssh_config.sh`  | Needs 1Password agent socket | `uname -s == Darwin` |
+
+**Tests that fail on macOS but pass on Linux/CI** (measured 2026-11-03). These
+are defects in the code under test, not in the harness — a green Linux run is
+not evidence the maintenance scripts work on a Mac:
+
+| Test                   | macOS failure                                                          | Root cause                                                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `test_deep_cleaner.sh` | `line 389: MAIL_DIRS[@]: unbound variable`                             | macOS ships bash 3.2, which errors on `"${EMPTY_ARRAY[@]}"` under `set -u`; bash 5 (Linux CI) permits it                         |
+| `test_state.sh`        | `FAIL: is_modified_since_last_run missed newer file` (20 pass, 1 fail) | BSD `find` cannot parse `-newermt "@<epoch>"` and GNU `find` can, so `maintenance/lib/state.sh` returns a constant "no" on macOS |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a
 copy-paste test skeleton and a known-limitations table.
@@ -596,7 +639,7 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | What                       | Command                                          | Notes                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`, 2 expected macOS-only skips (fish and 1Password socket)                                                                                                                |
+| Shell tests only           | `make test`                                      | Fastest full suite; 48 `tests/test_*.sh`. On Linux/CI expect 2 skips (fish, 1Password socket); on macOS expect 2 failures (`test_deep_cleaner.sh`, `test_state.sh`) that pass on Linux — see the tables above    |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
 | Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`, `requests==2.34.2`)                                       |
@@ -624,9 +667,13 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a
   Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not
   run `npm install`.
-- **macOS-specific test skips on Linux**: `test_config_fish.sh` and
-  `test_ssh_config.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI.
-  The test runner treats this as a skip, not a failure.
+- **Platform-dependent test outcomes (measured 2026-11-03)**: on Linux/CI,
+  `test_config_fish.sh` and `test_ssh_config.sh` emit a `SKIP:` message and exit
+  with code 77; the test runner treats this as a skip, not a failure. On macOS
+  those two pass, but `test_deep_cleaner.sh` and `test_state.sh` fail for the
+  bash-3.2 empty-array and BSD-`find` reasons given in the tables under "Writing
+  Tests". Neither failure is a harness bug, so a green Linux suite does not
+  prove the maintenance scripts behave on a Mac.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
   `launchctl`, Homebrew, and macOS system utilities.
 - **GitNexus on Cloud**: The workspace snapshot historically had no GitNexus CLI
