@@ -519,8 +519,8 @@ EOF
 			cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
-                    <div role="status">
-                        <p>No insights available for this period.</p>
+                    <div>
+                        <p role="status">No insights available for this period.</p>
                         <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
                     </div>
                 </div>
@@ -534,8 +534,8 @@ EOF
 		cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
-                    <div role="status">
-                        <p>No insights available for this period.</p>
+                    <div>
+                        <p role="status">No insights available for this period.</p>
                         <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
                     </div>
                 </div>
