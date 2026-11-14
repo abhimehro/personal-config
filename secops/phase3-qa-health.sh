@@ -29,6 +29,16 @@ SSH_ROTATION_LABEL="com.speedybee.sshkeyrotation"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"; }
 
+# SECURITY: Use mktemp -d to prevent CWE-377 insecure predictable temporary file symlink attacks.
+MAIN_PID=$$
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/phase3_qa.XXXXXX")"
+cleanup() {
+	if [ "$$" -eq "$MAIN_PID" ]; then
+		rm -rf "$TMP_DIR"
+	fi
+}
+trap cleanup EXIT INT TERM
+
 notify() {
 	local msg="$1"
 	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$msg" "SecOps Autopilot" 2>/dev/null || true
@@ -124,7 +134,8 @@ for repo in "${REPOS[@]}"; do
 
 	echo "==> testing $repo"
 	set +e
-	run_project_tests "$dir" >"/tmp/test_run_${repo}.log" 2>&1
+	repo_log="$TMP_DIR/test_run_${repo}.log"
+	run_project_tests "$dir" >"$repo_log" 2>&1
 	rc=$?
 	set -e
 
@@ -146,7 +157,7 @@ for repo in "${REPOS[@]}"; do
 	*)
 		echo "  tests FAILED for $repo (rc=$rc), requesting diagnostics..."
 		ai_diagnose "Analyze this test failure log, identify the root cause, and provide a concise step-by-step fix following Security-First Development guidelines. Be brief." \
-			<"/tmp/test_run_${repo}.log" || true
+			<"$repo_log" || true
 		notify "QA failed in ${repo}. Diagnostics generated."
 		log "FAIL - $repo test regression (rc=$rc)."
 		overall=1
@@ -155,10 +166,11 @@ for repo in "${REPOS[@]}"; do
 done
 
 # --- System-level Drift Audit ---
-audit_system_drift >/tmp/drift_audit.log 2>&1
+drift_log="$TMP_DIR/drift_audit.log"
+audit_system_drift >"$drift_log" 2>&1
 echo "Drift audit summary:"
 ai_diagnose "Review this system configuration log. Are there signs of configuration drift, inactive launch daemons, or DNS leaks? Respond with 'No drift detected' or a short warning list. Do not suggest applying changes automatically. Be brief." \
-	</tmp/drift_audit.log || true
+	<"$drift_log" || true
 
 if [ "$overall" -eq 0 ]; then
 	echo "Phase 3 complete. System healthy and aligned."
