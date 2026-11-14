@@ -69,7 +69,18 @@ actions:
       run: scripts/git-hooks/pre-push-pr-recap.sh
       triggers:
         - git_hooks: [pre-push]
+    - id: credential-scan
+      display_name: Credential Scan
+      description: Block commits whose staged content contains a credential (gitleaks)
+      run: scripts/git-hooks/pre-commit-credential-scan.sh
+      triggers:
+        - git_hooks: [pre-commit]
   disabled:
+    # trufflehog-pre-commit stays disabled on purpose: credential-scan already
+    # owns the pre-commit trigger, and two scanners on one hook means two
+    # different allowlists to keep in sync and two chances to block a clean
+    # commit. trufflehog remains available via lint/tools and
+    # `make verify-credentials` for the whole-repo audit.
     - trufflehog-pre-commit
     - commitlint
     - trunk-check-pre-commit
@@ -78,6 +89,7 @@ actions:
     - git-lfs
     - trunk-check-pre-push
     - pr-recap-sync
+    - credential-scan
     - trunk-announce
     - trunk-upgrade-available
 plugins:
