@@ -262,13 +262,13 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Progress
+        # State transition: Todo -> In Progress
         target, reason = compute_state_transition(
             todo_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inProgress"])
 
-        # Backlog -> In Progress
+        # State transition: Backlog -> In Progress
         target, reason = compute_state_transition(
             backlog_state, "links", ctx, self.state_map
         )
@@ -293,12 +293,6 @@ class TestStateTransitions(unittest.TestCase):
         self.assertIsNone(target)
 
     def test_draft_pr_opened(self) -> None:
-        todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
-        in_rev_state = self._make_state(
-            "In Review", "started", self.state_map["inReview"]
-        )
-        done_state = self._make_state("Done", "completed", self.state_map["done"])
-
         ctx = PRContext(
             event_name="pull_request",
             action="opened",
@@ -314,24 +308,20 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Progress
-        target, reason = compute_state_transition(
-            todo_state, "links", ctx, self.state_map
-        )
-        self.assertEqual(target, self.state_map["inProgress"])
-
-        # In Review -> Do not regress!
-        target, reason = compute_state_transition(
-            in_rev_state, "links", ctx, self.state_map
-        )
-        self.assertIsNone(target)
-        self.assertIn("non-regression guard", reason)
-
-        # Done -> Do not regress!
-        target, reason = compute_state_transition(
-            done_state, "links", ctx, self.state_map
-        )
-        self.assertIsNone(target)
+        # Parameterized assertions to test state transitions for draft PR
+        for state_name, state_type, state_id, expected_target, expect_guard in [
+            ("Todo", "unstarted", self.state_map["todo"], self.state_map["inProgress"], False),
+            ("Backlog", "backlog", "backlog-id", self.state_map["inProgress"], False),
+            ("In Progress", "started", self.state_map["inProgress"], None, False),
+            ("In Review", "started", self.state_map["inReview"], None, True),
+            ("Done", "completed", self.state_map["done"], None, False),
+        ]:
+            with self.subTest(initial_state=state_name):
+                state = self._make_state(state_name, state_type, state_id)
+                target, reason = compute_state_transition(state, "links", ctx, self.state_map)
+                self.assertEqual(target, expected_target)
+                if expect_guard:
+                    self.assertIn("non-regression guard", reason)
 
     def test_ready_for_review_advances_to_in_review(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
@@ -358,7 +348,7 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Review
+        # State transition: Todo -> In Review
         target, _ = compute_state_transition(todo_state, "links", ctx, self.state_map)
         self.assertEqual(target, self.state_map["inReview"])
 
