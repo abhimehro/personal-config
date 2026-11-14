@@ -150,6 +150,7 @@ _BUMP_RE = re.compile(
     re.IGNORECASE,
 )
 _USES_RE = re.compile(r"(?i)uses:\s*(\S+)")
+_PERMISSIONS_HEADER_RE = re.compile(r"(?i)permissions\s*:")
 _PERMISSION_KEY_RE = re.compile(
     r"(?i)^\s+(?:actions|attestations|checks|contents|deployments|discussions|"
     r"id-token|issues|models|packages|pages|pull-requests|repository-projects|"
@@ -448,7 +449,8 @@ def permissions_block_changed(diff_text: str) -> bool:
             continue
         indent = len(body) - len(body.lstrip(" "))
         stripped = body.strip()
-        if re.match(r"(?i)permissions\s*:", stripped):
+        # Optimization: use pre-compiled regex to avoid cache lookups in tight diff parsing loop
+        if _PERMISSIONS_HEADER_RE.match(stripped):
             if raw[0] in "+-":
                 return True
             in_block = True
