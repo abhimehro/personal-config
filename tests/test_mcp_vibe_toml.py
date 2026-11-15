@@ -98,6 +98,19 @@ class TestInventoryFile(unittest.TestCase):
         self.assertNotIn("ghp_", raw)
         self.assertNotIn("Bearer ey", raw)
 
+    def test_antigravity_template_excludes_deprecated_notion_server(self):
+        ag_raw = (
+            REPO / "mcp-configs" / "antigravity-mcp-servers.template.json"
+        ).read_text()
+        ag_data = json.loads(ag_raw)
+        self.assertNotIn("notion-mcp-server", ag_data)
+        self.assertNotIn("@notionhq/notion-mcp-server", ag_raw)
+        inv_data = json.loads(
+            (REPO / "ai" / "inventory" / "mcp-capabilities.json").read_text()
+        )
+        self.assertNotIn("notion-mcp-server", inv_data["servers"])
+        self.assertIn("antigravity", inv_data["servers"]["Notion"]["clients"])
+
 
 class TestAdapterFiles(unittest.TestCase):
     def test_vibe_fragment_disables_bypass(self):

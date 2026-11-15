@@ -350,17 +350,6 @@
       "vibe_supported": false,
       "default_profile": "productivity"
     },
-    "notion-mcp-server": {
-      "capability": "docs",
-      "provider": "notion",
-      "cost": "saas",
-      "auth": "api-key",
-      "risk": "medium",
-      "startup": "npx",
-      "clients": ["antigravity"],
-      "vibe_supported": true,
-      "default_profile": "productivity"
-    },
     "perplexity-ask": {
       "capability": "web-search",
       "provider": "perplexity",
