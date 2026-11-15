@@ -31,9 +31,9 @@ Rules:
   context.
 - `ocr` findings inform gates; they never override sticky guards, security
   gates, or human holds.
-- Missing CLI:
-  `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`
-  (or `npm i -g @alibaba-group/open-code-review` where node works).
+- Missing CLI: prefer `npm i -g @alibaba-group/open-code-review`; where
+  npm is unavailable,
+  `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
 - Vendored skills: `.agents/skills/open-code-review/` and
   `.agents/skills/open-code-review-delegate/` (mirrored into `.claude/skills`,
   `.cursor/skills`, `.windsurf/skills`, `.devin/skills`).

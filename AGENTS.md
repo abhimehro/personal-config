@@ -362,9 +362,12 @@ the mechanical review pass for this workspace:
   `ocr review --audience agent -b "<context>"` when an LLM provider is
   configured).
 - **Before submitting code / opening a PR:** `ocr review --audience agent` on
-  the workspace (delegate mode when no provider is configured); disposition
+  the workspace when a provider is configured, `ocr delegate` commands
+  otherwise; disposition
   Critical/High findings before pushing.
-- **Install:** `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
+- **Install:** prefer `npm i -g @alibaba-group/open-code-review`; where npm
+  is unavailable,
+  `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
   Delegate mode needs no provider; never hardcode API keys.
 
 Rule: `.devin/rules/open-code-review.md`. Vendored skills:
