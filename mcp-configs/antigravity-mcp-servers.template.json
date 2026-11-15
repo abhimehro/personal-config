@@ -11,20 +11,6 @@
     "command": "npx",
     "args": ["-y", "firebase-tools@latest", "mcp"]
   },
-  "github-mcp-server": {
-    "command": "docker",
-    "args": [
-      "run",
-      "-i",
-      "--rm",
-      "-e",
-      "GITHUB_PERSONAL_ACCESS_TOKEN",
-      "ghcr.io/github/github-mcp-server"
-    ],
-    "env": {
-      "GITHUB_PERSONAL_ACCESS_TOKEN": "op://Personal/GITHUB_PERSONAL_ACCESS_TOKEN/credential"
-    }
-  },
   "linear-mcp-server": {
     "command": "npx",
     "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]

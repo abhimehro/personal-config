@@ -12,7 +12,10 @@ import json
 import sys
 
 wrapper, urlkey = sys.argv[1], sys.argv[2]
-data = json.load(sys.stdin)
+raw = sys.stdin.read()
+if not raw.strip():
+    raise SystemExit("mcp-transform.py: stdin was empty; expected MCP JSON object")
+data = json.loads(raw)
 
 # Normalize the remote-url key name per client.
 for _name, cfg in data.items():

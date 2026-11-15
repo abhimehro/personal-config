@@ -327,18 +327,6 @@
       "vibe_supported": true,
       "default_profile": "cloud"
     },
-    "github-mcp-server": {
-      "capability": "git-host",
-      "provider": "github-docker",
-      "cost": "api",
-      "auth": "pat",
-      "risk": "high",
-      "startup": "docker",
-      "clients": ["antigravity"],
-      "vibe_supported": false,
-      "default_profile": null,
-      "reason": "Docker plus PAT. Prefer gh CLI. Duplicate of GitHub remote MCP."
-    },
     "linear-mcp-server": {
       "capability": "issues",
       "provider": "linear",
