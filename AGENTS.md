@@ -349,6 +349,33 @@ Canonical policy references:
   present; do not re-trigger on every triage (quota). Refresh via label
   `visual-recap` only when needed.
 
+### Open-code-review (`ocr`) during agent work
+
+The `ocr` CLI
+([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) is
+the mechanical review pass for this workspace:
+
+- **Reviewing a PR:** `ocr delegate preview --format json --from <base-ref> --to
+  <head-ref>` + `ocr delegate rule --format json --from <base-ref> --to <head-ref> <paths>` on the
+  range, then review every
+  `reviewable_files` entry against its rule group (or
+  `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>`
+  when an LLM provider is
+  configured).
+- **Before submitting code / opening a PR:** `ocr review --audience agent` on
+  the workspace when a provider is configured, `ocr delegate` commands
+  otherwise; disposition
+  Critical/High findings before pushing.
+- **Install:** prefer `npm i -g @alibaba-group/open-code-review`; where npm
+  is unavailable,
+  `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
+  Delegate mode needs no provider; never hardcode API keys.
+
+Rule: `.devin/rules/open-code-review.md`. Vendored skills:
+`.agents/skills/open-code-review/` + `.agents/skills/open-code-review-delegate/`
+(mirrored into `.claude/skills`, `.cursor/skills`, `.windsurf/skills`,
+`.devin/skills`).
+
 ### Stacked PRs during review/salvage sessions (`gh-stack`)
 
 The `github/gh-stack` `gh` extension is installed via
@@ -909,8 +936,9 @@ links: <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
 
 - Mem is Abhi's primary personal notebook; agents create notes he needs to
   review there via the Mem MCP. Notion is dedicated exclusively to agent use.
-  Stage 3 packets and other workflow artifacts continue to land in their
-  Notion destinations; do not redirect those handoffs to Mem.
+  Stage 3 human-decision packets go to each repo's 'PR lifecycle: needs human
+  decision' GitHub issue; other workflow artifacts continue to land in their
+  Notion destinations. Do not redirect those handoffs to Mem.
 
 - Keep code, READMEs, and repository plans in the repository. Save durable
   decisions, preferences, and project state to Notion.
