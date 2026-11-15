@@ -166,8 +166,18 @@ write_config() {
 	fi
 	mkdir -p "$(dirname "$dest")"
 	assert_not_tracked "$label" "$dest" || return 0
+	# SECURITY: Resolve secrets and transform into a temp file before touching
+	# $dest so a failed `op inject` never truncates an existing live config.
+	local injected tmp
+	injected="$(inject "$tmpl")"
 	backup_file "$dest"
-	inject "$tmpl" | transform "$wrapper" "$urlkey" >"$dest"
+	tmp="$(mktemp "${dest}.tmp.XXXXXX")"
+	chmod 600 "$tmp"
+	if ! printf '%s\n' "$injected" | transform "$wrapper" "$urlkey" >"$tmp"; then
+		rm -f "$tmp"
+		return 1
+	fi
+	mv -f "$tmp" "$dest"
 	chmod 600 "$dest"
 	echo "  ✓ ${label}: ${dest}"
 }
@@ -199,8 +209,18 @@ write_windsurf_symlinked() {
 	fi
 
 	# Generate the live config (gitignored path inside repo) and a placeholder template.
+	# SECURITY: Resolve secrets into memory and stage via a temp file so a failed
+	# injection never truncates the existing live config.
+	local injected tmp
+	injected="$(inject "$TEMPLATE")"
 	backup_file "$app_path"
-	inject "$TEMPLATE" | transform mcpServers serverUrl >"$live"
+	tmp="$(mktemp "${live}.tmp.XXXXXX")"
+	chmod 600 "$tmp"
+	if ! printf '%s\n' "$injected" | transform mcpServers serverUrl >"$tmp"; then
+		rm -f "$tmp"
+		return 1
+	fi
+	mv -f "$tmp" "$live"
 	chmod 600 "$live"
 	# Placeholder: op:// refs intact (safe to commit) for documentation/restore.
 	transform mcpServers serverUrl <"$TEMPLATE" >"$template_file"

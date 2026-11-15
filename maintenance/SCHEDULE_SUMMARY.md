@@ -64,6 +64,7 @@
 - ✅ Browser cache cleanup (14+ days old)
 - ✅ Download folder cleanup (90+ days old)
 - ✅ Log file cleanup (30+ days old)
+- ✅ Crash report cleanup (30+ days old, `DiagnosticReports` and `CrashReporter`)
 - ✅ Homebrew cleanup and autoremove
 - ✅ Language cache verification (npm, pip, gem)
 

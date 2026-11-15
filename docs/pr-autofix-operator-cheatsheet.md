@@ -100,6 +100,8 @@ Use this as a quick mental checklist before committing/pushing:
 ```text
 - [ ] Have I coalesced all Critical/Should-fix review items into a single plan?
 - [ ] Is this clearly Cycle 1 or Cycle 2 for this PR?
+- [ ] Did I run an `ocr` (open-code-review) pass on the working copy and
+      disposition Critical/High findings?
 - [ ] Did I run the right repo-specific checks (e.g., nm-regress, tests, linters)?
 - [ ] Does the commit message match: "autofix(<category>): PR #N (cycle K) -- …"?
 - [ ] Did I fill in Autofix-PR / Autofix-Cycle / Review-Inputs / Mode trailers?

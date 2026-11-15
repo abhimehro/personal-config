@@ -140,8 +140,11 @@ outside sticky sensitive classes; tests and **required checks from the
 registered readable source** are green; merge state is clean; no unresolved
 discussion, alert, overlap, canonical conflict, or stale evidence exists; the
 draft carries Stage 2 provenance; and an audit record is written before action.
-It must re-read every predicate after approval and before the merge/queue
-submission.
+For substantive diffs the audit record should also show a fresh `ocr`
+(open-code-review) pass covering the head SHA — delegate mode is acceptable —
+run one when absent and attach findings to the audit record rather than acting
+on them silently. It must re-read every predicate after approval and before
+the merge/queue submission.
 
 For `abhimehro/personal-config`, use the registered `TRUNK_QUEUE` submission
 path, not a raw GitHub squash assumption. Approval and queue submission are

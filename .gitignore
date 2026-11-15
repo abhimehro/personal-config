@@ -154,6 +154,7 @@ mcp-configs/servers.local.json
 *.sh.bak-*
 *.py.bak
 *.py.bak-*
+*.orig
 
 # Session artifact files (scratch files from PR/agent sessions)
 commit_msg.txt
