@@ -173,7 +173,10 @@ class OpenPrIngestTests(unittest.TestCase):
     def test_inventory_oserror_is_emitted_as_inventory_failed(self):
         """Include inventory failures and their reasons in the reconciliation plan."""
         output = {}
-        fetch = {"ledger_path": ROOT / "tasks/pr-lifecycle-ledger.example.yaml"}
+        fetch = {
+            "ledger_path": ROOT / "tasks/pr-lifecycle-ledger.example.yaml",
+            "commit_sha": "a" * 40,
+        }
         with (
             mock.patch.object(reconcile.cas, "run_preflight", return_value=fetch),
             mock.patch.object(
@@ -338,7 +341,7 @@ class OpenPrIngestTests(unittest.TestCase):
             mock.patch.object(
                 reconcile.cas,
                 "run_preflight",
-                return_value={"ledger_path": "ledger.yaml"},
+                return_value={"ledger_path": "ledger.yaml", "commit_sha": "a" * 40},
             ),
             mock.patch.object(
                 reconcile, "load_yaml", side_effect=[CONFIG, self.ledger]

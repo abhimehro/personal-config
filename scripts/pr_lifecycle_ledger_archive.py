@@ -242,7 +242,7 @@ def run_archive(*, apply: bool, after_days: int, json_out: bool) -> int:
         if not apply:
             _emit_plan(plan, json_out)
             return 0
-        payload, result = _apply_payload(ledger, plan, tmp, after_days)
+        payload, result = _apply_payload(ledger, plan, tmp, after_days, fetch)
         _emit_apply(payload, result, json_out)
     return 0
 
@@ -273,37 +273,40 @@ def _emit_apply(
 
 
 def _cas_commit_path(
-    runtime: dict[str, Any], path: str, content: str, message: str
+    runtime: dict[str, Any],
+    path: str,
+    content: str,
+    message: str,
+    *,
+    expected_parent_sha: str | None,
 ) -> dict[str, Any]:
     """Fast-forward CAS commit of one file at an arbitrary branch path.
 
-    Mirrors ``cas.cas_commit`` but targets ``path`` instead of the pointer's
-    ``data_path`` — archive docs bypass the active-ledger schema validate.
+    Archive docs bypass the active-ledger schema validate.
     """
-    branch = str(runtime["data_branch"])
-    ensured = cas.ensure_data_ref(runtime)
-    parent_sha = cas.object_sha(ensured["ref"])
-    parent = cas.read_commit(parent_sha)
-    blob_sha = cas.create_blob(content)
-    new_tree = cas.create_tree(cas.tree_sha(parent), path, blob_sha)
-    commit_sha = cas.create_commit(message, new_tree, parent_sha)
-    try:
-        cas.update_ref(branch, commit_sha, parent_sha)
-    except cas.CasError as exc:
-        if cas.is_stale_tip_error(exc):
-            raise cas.CasError(cas.OPERATOR_CONFLICT, http_code=exc.http_code) from None
-        raise
-    return {"commit_sha": commit_sha, "path": path}
+    result = cas.cas_commit(
+        runtime,
+        content,
+        message,
+        expected_parent_sha=expected_parent_sha,
+        data_path=path,
+    )
+    return {"commit_sha": result["commit_sha"], "path": path}
 
 
 def _apply_payload(
-    ledger: dict[str, Any], plan: dict[str, Any], tmp: str, after_days: int
+    ledger: dict[str, Any],
+    plan: dict[str, Any],
+    tmp: str,
+    after_days: int,
+    preflight_fetch: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     result = apply_archive(ledger, after_days=after_days, out_dir=Path(tmp))
     runtime = cas.pointer_runtime()
     # Commit each archive/YYYY-MM.yaml before the active-ledger rewrite so a
     # later failure leaves duplication (re-archivable), never silent loss.
     archive_commits: list[dict[str, Any]] = []
+    parent_sha: str | None = preflight_fetch.get("commit_sha")
     for month, file_path in sorted(result["archives"].items()):
         rel = str(Path(file_path).relative_to(tmp))
         text = Path(file_path).read_text(encoding="utf-8")
@@ -313,13 +316,16 @@ def _apply_payload(
                 rel,
                 text,
                 f"archive: {month} TERMINAL items (>{after_days}d)",
+                expected_parent_sha=parent_sha,
             )
         )
+        parent_sha = archive_commits[-1]["commit_sha"]
     cas_result = cas.run_commit(
         Path(result["active_path"]),
         "archive: move TERMINAL items older than "
         f"{after_days}d into archive/YYYY-MM.yaml",
         bump_revision=False,
+        expected_parent_sha=parent_sha,
     )
     payload = {
         **plan,

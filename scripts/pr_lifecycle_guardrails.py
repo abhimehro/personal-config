@@ -799,7 +799,7 @@ def run_guardrails(args: argparse.Namespace) -> int:
 
     with tempfile.TemporaryDirectory(prefix="pr-lifecycle-guardrails-") as tmp:
         ledger_path = Path(tmp) / "ledger.yaml"
-        cas.run_preflight(ledger_path)
+        fetch = cas.run_preflight(ledger_path)
         ledger = load_yaml(ledger_path)
         ledger, summary = evaluate_ledger(
             ledger, repos_filter, args.clear_standin, _evidence_for
@@ -808,7 +808,12 @@ def run_guardrails(args: argparse.Namespace) -> int:
         summary["ledger_revision"] = ledger.get("ledger_revision")
         if args.apply and summary["evaluated"]:
             ledger_path.write_text(dump_ledger(ledger), encoding="utf-8")
-            committed = cas.run_commit(ledger_path, _COMMIT_MESSAGE, bump_revision=True)
+            committed = cas.run_commit(
+                ledger_path,
+                _COMMIT_MESSAGE,
+                bump_revision=True,
+                expected_parent_sha=fetch.get("commit_sha"),
+            )
             summary["commit_sha"] = committed.get("commit_sha")
         print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
