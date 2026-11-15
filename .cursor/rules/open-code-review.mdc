@@ -10,12 +10,12 @@ Use the `ocr` CLI
 the mechanical code-review pass in two workflows:
 
 1. **Reviewing a PR or diff** — run the delegate flow against the range:
-   `ocr delegate preview --format json --from <base> --to <head>` for the
+   `ocr delegate preview --format json --from <base-ref> --to <head-ref>` for the
    reviewable/excluded file list, then `ocr delegate rule --format json --from
-   <base> --to <head> <paths>` for the per-file review checklist. Review every `reviewable_files`
+   <base-ref> --to <head-ref> <paths>` for the per-file review checklist. Review every `reviewable_files`
    entry against its rule group; do not silently skip files. When an LLM
    provider is configured (`ocr llm test` passes),
-   `ocr review --audience agent -b "<context>" --from <base> --to <head>` may
+   `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>` may
    run the pass instead.
 2. **Before submitting code** — after changes are ready and before commit/PR,
    run `ocr review --audience agent -b "<context>"` on the workspace (delegate

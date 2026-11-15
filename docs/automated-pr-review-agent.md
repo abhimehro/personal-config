@@ -161,8 +161,8 @@ Apply in order:
 - **Gate 3 — Code quality:** Minimal scoped changes, no dead code/debug
   artifacts, consistent style, tests present or coverage maintained. Run the
   `ocr` (open-code-review) pass as the mechanical Gate 3 pass: fetch the PR
-  head, then `ocr delegate preview --format json --from origin/<base> --to
-  <head>` + `ocr delegate rule --format json --from origin/<base> --to <head>
+  head, then `ocr delegate preview --format json --from origin/<base-ref> --to
+  <head-ref>` + `ocr delegate rule --format json --from origin/<base-ref> --to <head-ref>
   <paths>`, and review every
   `reviewable_files` entry against its rule group
   (`ocr review --audience agent -b "<context>"` is acceptable when an LLM

@@ -355,8 +355,8 @@ The `ocr` CLI
 ([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) is
 the mechanical review pass for this workspace:
 
-- **Reviewing a PR:** `ocr delegate preview --format json --from <base> --to
-  <head>` + `ocr delegate rule --format json --from <base> --to <head>` on the
+- **Reviewing a PR:** `ocr delegate preview --format json --from <base-ref> --to
+  <head-ref>` + `ocr delegate rule --format json --from <base-ref> --to <head-ref>` on the
   range, then review every
   `reviewable_files` entry against its rule group (or
   `ocr review --audience agent -b "<context>"` when an LLM provider is
