@@ -15,6 +15,10 @@ ENTRY_POINTS = (
     ".cursorrules",
     ".github/copilot-instructions.md",
 )
+MIRROR_ENTRY_POINTS = tuple(p for p in ENTRY_POINTS if p != "AGENTS.md")
+MEM_HANDOFF_COLLECTION = (
+    "https://mem.ai/collections/708f3bfd-5513-466c-83dc1c6b91223ded"
+)
 HEADING = "## Notion agent context (consult first)"
 GUIDE_URL = "https://app.notion.com/p/4107419416de81eeb956c2e482cd093b"
 
@@ -31,12 +35,23 @@ class TestNotionAgentContext(unittest.TestCase):
         section = re.split(r"^#{1,2} ", remainder, maxsplit=1, flags=re.MULTILINE)[0]
         return " ".join(section.split())
 
-    def test_all_entry_points_publish_the_same_guidance(self) -> None:
-        canonical = self._context("AGENTS.md")
+    def test_mirror_entry_points_publish_the_same_guidance(self) -> None:
+        canonical = self._context(MIRROR_ENTRY_POINTS[0])
         self.assertTrue(canonical)
-        for path in ENTRY_POINTS:
+        for path in MIRROR_ENTRY_POINTS[1:]:
             with self.subTest(path=path):
                 self.assertEqual(self._context(path), canonical)
+
+    def test_agents_md_documents_agent_to_abhi_handoff_split(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("## Agent-to-Abhi Handoff", agents)
+        self.assertIn(MEM_HANDOFF_COLLECTION, agents)
+        section = self._context("AGENTS.md")
+        self.assertIn(
+            "Human handoffs for Abhi use the Mem Agent-to-Abhi Handoff collection "
+            "or PR Desk (see Agent-to-Abhi Handoff), not Notion.",
+            section,
+        )
 
     def test_context_dependent_tasks_consult_the_versioned_guide_and_registry(self) -> None:
         for path in ENTRY_POINTS:
