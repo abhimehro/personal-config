@@ -356,10 +356,11 @@ The `ocr` CLI
 the mechanical review pass for this workspace:
 
 - **Reviewing a PR:** `ocr delegate preview --format json --from <base-ref> --to
-  <head-ref>` + `ocr delegate rule --format json --from <base-ref> --to <head-ref>` on the
+  <head-ref>` + `ocr delegate rule --format json --from <base-ref> --to <head-ref> <paths>` on the
   range, then review every
   `reviewable_files` entry against its rule group (or
-  `ocr review --audience agent -b "<context>"` when an LLM provider is
+  `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>`
+  when an LLM provider is
   configured).
 - **Before submitting code / opening a PR:** `ocr review --audience agent` on
   the workspace when a provider is configured, `ocr delegate` commands

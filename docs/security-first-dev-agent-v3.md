@@ -105,8 +105,10 @@ and quoted text.
 - Never mark a task complete without proving it works.
 - Run tests, check logs, diff against the base branch, demonstrate correctness.
 - Run the `ocr` (open-code-review) mechanical pass before submission:
-  `ocr review --audience agent -b "<context>"` (delegate mode when no LLM
-  provider is configured). Disposition Critical/High findings before pushing.
+  `ocr review --audience agent -b "<context>" --from <base-ref>` for the
+  committed branch diff, and again without `--from` for uncommitted changes
+  (`ocr delegate preview`/`rule` + agent review when no LLM provider is
+  configured). Disposition Critical/High findings before pushing.
 - Gut check: "Would a staff engineer approve this?"
 - Use plan mode for verification steps, not just building.
 

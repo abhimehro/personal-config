@@ -18,8 +18,9 @@ the mechanical code-review pass in two workflows:
    `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>` may
    run the pass instead.
 2. **Before submitting code** — after changes are ready and before commit/PR,
-   run `ocr review --audience agent -b "<context>"` on the workspace (delegate
-   mode when no provider is configured). Fix or explicitly disposition
+   run `ocr review --audience agent -b "<context>"` on the workspace when an
+   LLM provider is configured, `ocr delegate preview`/`rule` + agent review
+   otherwise. Fix or explicitly disposition
    Critical/High findings before pushing.
 
 Rules:

@@ -69,7 +69,7 @@ Ignore the research/Seatek repos for this run.
 - Prefer draft PRs for mechanical fixes; file issues for judgment calls or
   multi-hour work.
 - Before opening any draft PR, run an `ocr` (open-code-review) pass on the
-  working copy — `ocr review --audience agent -b "<context>"`, or delegate mode
+  working copy — `ocr review --audience agent -b "<context>"`, or the `ocr delegate` commands
   (`ocr delegate preview`/`rule` + self-review) when no LLM provider is
   configured. Disposition Critical/High findings before pushing.
 - Orchestrate with subagents when useful (`/subagent-driven-development`,

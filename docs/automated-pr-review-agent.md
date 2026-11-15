@@ -165,7 +165,8 @@ Apply in order:
   <head-ref>` + `ocr delegate rule --format json --from origin/<base-ref> --to <head-ref>
   <paths>`, and review every
   `reviewable_files` entry against its rule group
-  (`ocr review --audience agent -b "<context>"` is acceptable when an LLM
+  (`ocr review --audience agent -b "<context>" --from origin/<base-ref> --to
+  <head-ref>` is acceptable when an LLM
   provider is configured). Record `ocr` coverage (files reviewed vs excluded)
   in the gate evidence; confident findings feed the disposition. A clean `ocr`
   pass never relaxes Gates 1, 2, or 4, and an `ocr` miss never overrides
