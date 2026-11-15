@@ -6,8 +6,8 @@ the mechanical code-review pass in two workflows:
 
 1. **Reviewing a PR or diff** — run the delegate flow against the range:
    `ocr delegate preview --format json --from <base> --to <head>` for the
-   reviewable/excluded file list, then `ocr delegate rule --format json
-   <paths>` for the per-file review checklist. Review every `reviewable_files`
+   reviewable/excluded file list, then `ocr delegate rule --format json --from
+   <base> --to <head> <paths>` for the per-file review checklist. Review every `reviewable_files`
    entry against its rule group; do not silently skip files. When an LLM
    provider is configured (`ocr llm test` passes),
    `ocr review --audience agent -b "<context>" --from <base> --to <head>` may

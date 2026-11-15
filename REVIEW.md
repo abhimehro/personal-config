@@ -63,8 +63,9 @@ interleaving.
 
 Before the manual sweep, run the open-code-review (`ocr`) pass as the
 deterministic first cut: `ocr delegate preview --format json` +
-`ocr delegate rule --format json` gives the reviewable file list and per-file
-rule checklist (LLM-free — the reviewer performs the analysis), or
+`ocr delegate rule --format json` with matching `--from`/`--to` range flags
+gives the reviewable file list and per-file rule checklist (LLM-free — the
+reviewer performs the analysis), or
 `ocr review --audience agent -b "<context>"` when an LLM provider is
 configured. Fold only confident findings into the tiers above; `ocr` output is
 an input to the verdict, never the verdict itself. See

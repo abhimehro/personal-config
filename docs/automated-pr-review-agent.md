@@ -162,7 +162,8 @@ Apply in order:
   artifacts, consistent style, tests present or coverage maintained. Run the
   `ocr` (open-code-review) pass as the mechanical Gate 3 pass: fetch the PR
   head, then `ocr delegate preview --format json --from origin/<base> --to
-  <head>` + `ocr delegate rule --format json <paths>`, and review every
+  <head>` + `ocr delegate rule --format json --from origin/<base> --to <head>
+  <paths>`, and review every
   `reviewable_files` entry against its rule group
   (`ocr review --audience agent -b "<context>"` is acceptable when an LLM
   provider is configured). Record `ocr` coverage (files reviewed vs excluded)
