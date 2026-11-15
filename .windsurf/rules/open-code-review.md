@@ -1,0 +1,34 @@
+# Open-code-review (`ocr`)
+
+Use the `ocr` CLI
+([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) as
+the mechanical code-review pass in two workflows:
+
+1. **Reviewing a PR or diff** — run the delegate flow against the range:
+   `ocr delegate preview --format json --from <base> --to <head>` for the
+   reviewable/excluded file list, then `ocr delegate rule --format json
+   <paths>` for the per-file review checklist. Review every `reviewable_files`
+   entry against its rule group; do not silently skip files. When an LLM
+   provider is configured (`ocr llm test` passes),
+   `ocr review --audience agent -b "<context>" --from <base> --to <head>` may
+   run the pass instead.
+2. **Before submitting code** — after changes are ready and before commit/PR,
+   run `ocr review --audience agent -b "<context>"` on the workspace (delegate
+   mode when no provider is configured). Fix or explicitly disposition
+   Critical/High findings before pushing.
+
+Rules:
+
+- Delegate mode is LLM-free: `ocr` does deterministic file/rule selection and
+  the agent performs the review. Prefer it when no provider is configured —
+  never invent or hardcode API keys.
+- Always `--audience agent` (never `human`) and pass `--background` business
+  context.
+- `ocr` findings inform gates; they never override sticky guards, security
+  gates, or human holds.
+- Missing CLI:
+  `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`
+  (or `npm i -g @alibaba-group/open-code-review` where node works).
+- Vendored skills: `.agents/skills/open-code-review/` and
+  `.agents/skills/open-code-review-delegate/` (mirrored into `.claude/skills`,
+  `.cursor/skills`, `.windsurf/skills`, `.devin/skills`).

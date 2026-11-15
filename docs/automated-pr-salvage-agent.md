@@ -107,7 +107,12 @@ For journal and append-only files, extract and append only the new entry. Do not
 check out a journal file wholesale from the PR branch. For tests, compare
 current signatures and call sites before adapting the test. Do not copy a test
 blindly when the API changed. Run the smallest meaningful test before opening
-the draft.
+the draft, then run an `ocr` (open-code-review) pass on the recovery working
+copy: `ocr review --audience agent -b "<context>"`, or delegate mode
+(`ocr delegate preview`/`rule` + agent review) when no LLM provider is
+configured. Fix Critical/High findings that fall inside `allowed_paths` or
+record them in the draft body; never expand scope to chase an `ocr` finding
+outside `allowed_paths`.
 
 The draft body must state the original PR, anchor SHA, recovery scope, changed
 paths, verification command and result, and the reason the original was not

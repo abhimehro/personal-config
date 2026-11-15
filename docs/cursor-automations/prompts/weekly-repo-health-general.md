@@ -68,6 +68,10 @@ Ignore the research/Seatek repos for this run.
   `cursor-agent/repo-health-<short>-a25e` if cloud branch prefix is required).
 - Prefer draft PRs for mechanical fixes; file issues for judgment calls or
   multi-hour work.
+- Before opening any draft PR, run an `ocr` (open-code-review) pass on the
+  working copy — `ocr review --audience agent -b "<context>"`, or delegate mode
+  (`ocr delegate preview`/`rule` + self-review) when no LLM provider is
+  configured. Disposition Critical/High findings before pushing.
 - Orchestrate with subagents when useful (`/subagent-driven-development`,
   `/orchestrate`). For contested High findings, use `/multi-model-review` before
   opening a PR.

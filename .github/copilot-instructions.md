@@ -282,6 +282,11 @@ limitation. Don't let me proceed until I can explain it myself.
 
 ## Hard Boundaries
 
+- ✅ **Pre-submission review**: Before committing/PR, run the `ocr`
+  (open-code-review) pass — `ocr review --audience agent -b "<context>"`, or
+  delegate mode (`ocr delegate preview`/`rule` + self-review) when no LLM
+  provider is configured. Disposition Critical/High findings first. See
+  `.devin/rules/open-code-review.md`.
 - ❌ No autonomous auth/authorization logic.
 - ❌ No destructive commands (`rm -rf`, `force-push`) without explicit "Yes" in
   the chat.

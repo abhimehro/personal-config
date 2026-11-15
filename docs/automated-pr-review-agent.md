@@ -159,7 +159,16 @@ Apply in order:
   permission escalation in CI; no dependency with known CVE; no weakened
   `.gitignore`/`.env.example`. Never merge if this gate fails.
 - **Gate 3 — Code quality:** Minimal scoped changes, no dead code/debug
-  artifacts, consistent style, tests present or coverage maintained.
+  artifacts, consistent style, tests present or coverage maintained. Run the
+  `ocr` (open-code-review) pass as the mechanical Gate 3 pass: fetch the PR
+  head, then `ocr delegate preview --format json --from origin/<base> --to
+  <head>` + `ocr delegate rule --format json <paths>`, and review every
+  `reviewable_files` entry against its rule group
+  (`ocr review --audience agent -b "<context>"` is acceptable when an LLM
+  provider is configured). Record `ocr` coverage (files reviewed vs excluded)
+  in the gate evidence; confident findings feed the disposition. A clean `ocr`
+  pass never relaxes Gates 1, 2, or 4, and an `ocr` miss never overrides
+  sticky guards. See `.devin/rules/open-code-review.md`.
 - **Gate 4 — Category-specific:** e.g. SECURITY → verify CVE and fix; DEPENDENCY
   → semver and changelog; CI/INFRA → least-privilege permissions, no
   `pull_request_target` with checkout of PR head.
