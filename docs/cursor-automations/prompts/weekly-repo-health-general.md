@@ -75,10 +75,14 @@ Ignore the research/Seatek repos for this run.
 - Orchestrate with subagents when useful (`/subagent-driven-development`,
   `/orchestrate`). For contested High findings, use `/multi-model-review` before
   opening a PR.
-- Use Notion MCP (`/create-task`, `/tasks-plan`) and Linear when filing
-  follow-ups helps the human track work.
-- Leave a short Memory note summarizing what you covered and what to prioritize
-  next week.
+- Consult the Notion agent workspace first (Agent Operating Guide v0.0.6 +
+  Agent Workflow Registry at
+  <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>) and use the
+  Notion MCP (`/create-task`, `/tasks-plan`) plus Linear when filing follow-ups
+  helps the human track work.
+- Leave a short Mem note via the Mem MCP (Abhi's personal notebook — used for
+  handoffs to him) summarizing what you covered and what to prioritize next
+  week.
 
 ## Deliverable (final message — required format)
 
