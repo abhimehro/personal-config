@@ -262,7 +262,7 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # Todo -> In Progress
+        # State: Todo -> In Progress
         target, reason = compute_state_transition(
             todo_state, "links", ctx, self.state_map
         )
