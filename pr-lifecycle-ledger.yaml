@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1645
+ledger_revision: 1646
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -36797,7 +36797,6 @@ items:
   risk_class: SENSITIVE
   sensitive_paths:
   - lockfiles_and_major_dependencies
-  - security_configuration
   changed_paths:
   - poetry.lock
   - pyproject.toml
@@ -36817,7 +36816,7 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-10-27T13:46:41Z'
+  updated_at_utc: '2026-11-16T14:45:35Z'
   guardrail_source: path_eval
   guardrail_evidence: null
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#868@5ee8db12d33ee8e5c339d50e7ba88e83fff13c5d
