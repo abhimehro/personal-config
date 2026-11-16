@@ -19,7 +19,12 @@ mkdir -p "$LOG_DIR" "$METRICS_DIR" "$(dirname "$SCHEDULE_CONFIG")"
 log_message() {
 	local level="$1"
 	shift
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $*" | tee -a "$SCHEDULE_LOG"
+	# Log lines MUST go to stderr, not stdout. calculate_optimal_delay() is called
+	# inside a $(...) command substitution, so anything written to stdout is
+	# captured as part of the delay value. That made the captured string fail the
+	# numeric validation in smart_delay() and silently collapse every computed
+	# delay to 0, so the adaptive-delay feature never actually fired.
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $*" | tee -a "$SCHEDULE_LOG" >&2
 }
 
 log_info() { log_message "INFO" "$@"; }

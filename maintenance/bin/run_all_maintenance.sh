@@ -272,6 +272,7 @@ run_script() {
 	local task_type="${2:-maintenance}"
 	local log_target="${3:-$MASTER_LOG}"
 	local is_parallel="${4:-false}"
+	local script_action="${5:-}"
 
 	local script_path="$SCRIPT_DIR/$script_name"
 	local log_file="$LOG_DIR/${script_name%.sh}_$TIMESTAMP.log"
@@ -296,7 +297,7 @@ run_script() {
 		# Execute script
 		if [[ $is_parallel == "true" ]]; then
 			# Run directly for parallel (background) tasks
-			if "$script_path" >"$log_file" 2>&1; then
+			if "$script_path" ${script_action:+"$script_action"} >"$log_file" 2>&1; then
 				end_time=$(date +%s)
 				duration_sec=$((end_time - start_time))
 				duration_fmt="${duration_sec}s"
@@ -315,7 +316,7 @@ run_script() {
 			fi
 		else
 			# Run with spinner for serial tasks
-			"$script_path" >"$log_file" 2>&1 &
+			"$script_path" ${script_action:+"$script_action"} >"$log_file" 2>&1 &
 			local pid=$!
 
 			spinner $pid "Running $clean_name..."
@@ -368,7 +369,9 @@ run_weekly_maintenance() {
 	(run_script "service_optimizer.sh" "optimization" "$service_status" "true") &
 	pids="$pids $!"
 
-	(run_script "performance_optimizer.sh" "optimization" "$perf_status" "true") &
+	# Pass the "optimize" action explicitly. Without it the script prints its usage
+	# text and exits 0, which the orchestrator reported as a 0-second "Success".
+	(run_script "performance_optimizer.sh" "optimization" "$perf_status" "true" "optimize") &
 	pids="$pids $!"
 
 	wait_for_pids "$pids" "Running optimization tasks..."
@@ -593,6 +596,29 @@ echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
 
 # Clean up old logs (Keep 10)
 find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
+
+# Prune aged logs, including launchd .err/.out. This orchestrator does not source
+# lib/common.sh, so prune_logs() was unreachable from any live script and .err
+# files grew without bound.
+#
+# Age-based pruning is deliberately the only mechanism here. Size-based trimming of
+# a log that launchd still holds open cannot be made safe from this script: a
+# rewrite can drop lines appended mid-trim, and unlinking the pathname would leave
+# the writer appending to an unlinked inode. Bounding a continuously-appended log
+# needs writer coordination (log rotation with reopen), which is out of scope here.
+# The 5 MB cap is therefore enforced by the writer's own rotation, not by us.
+LOG_RETENTION_DAYS="${LOG_RETENTION_DAYS:-60}"
+while IFS= read -r old_log; do
+	[[ -n $old_log ]] || continue
+	# Never unlink a log launchd still holds open: later writes would go to the
+	# unlinked inode, hiding errors from generate_error_summary.sh and not
+	# reclaiming space until the writer closes it.
+	if command -v lsof >/dev/null 2>&1 && lsof -- "$old_log" >/dev/null 2>&1; then
+		continue
+	fi
+	rm -f "$old_log" 2>/dev/null || true
+done < <(find "$LOG_DIR" -type f \( -name "*.log" -o -name "*.err" -o -name "*.out" \) \
+	-mtime +"$LOG_RETENTION_DAYS" 2>/dev/null)
 
 # Exit non-zero if any task failed or was missing
 if [[ ${#SUMMARY_RESULTS[@]} -gt 0 ]]; then

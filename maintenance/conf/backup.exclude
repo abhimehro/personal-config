@@ -46,3 +46,9 @@ __pycache__/
 .idea/
 .vscode/
 .git/
+
+# App bundles (reinstallable; not worth backing up)
+# Unite Pro Apps holds 9 Electron wrappers (~266M) whose AppleDouble ._* sidecars
+# are the sole source of the "Resource deadlock avoided" rsync storm. Verified
+# 2026-11-16: 33,605 of 33,605 Applications errors came from this one directory.
+Unite Pro Apps/

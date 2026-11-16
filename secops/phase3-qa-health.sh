@@ -87,10 +87,23 @@ run_project_tests() {
 
 audit_system_drift() {
 	echo "Auditing system configuration drift..."
+	local dns_failed=0
 
 	if command -v scutil &>/dev/null; then
 		echo "DNS configuration:"
 		scutil --dns | grep -A 5 "nameserver" || true
+
+		# scutil's "reach" field reports 0x0 (Not Reachable) for 127.0.0.1 resolvers
+		# even when resolution works, which is normal under Control D / VPN capture.
+		# Judge DNS by whether names actually resolve, not by the reachability flag.
+		if command -v dscacheutil &>/dev/null; then
+			if dscacheutil -q host -a name github.com 2>/dev/null | grep -q ip_address; then
+				echo "DNS resolution: OK (github.com resolved; ignoring scutil reach flags)."
+			else
+				echo "DNS resolution: FAILED (github.com did not resolve)."
+				dns_failed=1
+			fi
+		fi
 	fi
 
 	if [ -f "$DEV_ROOT/personal-config/scripts/verify_ssh_config.sh" ]; then
@@ -98,6 +111,9 @@ audit_system_drift() {
 		bash "$DEV_ROOT/personal-config/scripts/verify_ssh_config.sh" || true
 	fi
 
+	# SSH key rotation is not implemented. com.speedybee.vibe-rotate.plist rotates
+	# desktop borders themes, not SSH keys, so pointing this check at it would be a
+	# false positive. Only report when a real rotation agent is actually installed.
 	if [ -f "$SSH_ROTATION_PLIST" ]; then
 		if launchctl list | grep -q "$SSH_ROTATION_LABEL"; then
 			echo "SSH key rotation LaunchAgent: active."
@@ -105,8 +121,11 @@ audit_system_drift() {
 			echo "SSH key rotation LaunchAgent: present but inactive."
 		fi
 	else
-		echo "SSH key rotation LaunchAgent: plist missing."
+		echo "SSH key rotation LaunchAgent: not configured (no rotation agent installed; check skipped)."
 	fi
+
+	# Surface DNS failure to the caller so it can gate the phase exit status.
+	return "$dns_failed"
 }
 
 echo "Starting Phase 3: QA & Drift Audit..."
@@ -155,10 +174,21 @@ for repo in "${REPOS[@]}"; do
 done
 
 # --- System-level Drift Audit ---
-audit_system_drift >/tmp/drift_audit.log 2>&1
+# Capture the status without tripping `set -e`: a bare failing call would abort the
+# script here, before drift_rc is assigned, losing the audit output and the report.
+drift_rc=0
+audit_system_drift >/tmp/drift_audit.log 2>&1 || drift_rc=$?
 echo "Drift audit summary:"
 ai_diagnose "Review this system configuration log. Are there signs of configuration drift, inactive launch daemons, or DNS leaks? Respond with 'No drift detected' or a short warning list. Do not suggest applying changes automatically. Be brief." \
 	</tmp/drift_audit.log || true
+
+# A DNS resolution failure is a real health problem, so it must affect the exit
+# status rather than only appearing in the printed report.
+if [ "$drift_rc" -ne 0 ]; then
+	echo "Drift audit reported a DNS resolution failure."
+	log "FAIL - DNS resolution failed during drift audit."
+	overall=1
+fi
 
 if [ "$overall" -eq 0 ]; then
 	echo "Phase 3 complete. System healthy and aligned."

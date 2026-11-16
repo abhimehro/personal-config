@@ -56,7 +56,7 @@ if [[ ${#LOCK_CONTEXT_FILES[@]} -gt 0 ]]; then
 fi
 
 # Find recent log files
-mapfile -t LOG_FILES < <(find "$LOG_DIR" -type f -name "*.log" -newer "$MARKER_FILE" 2>/dev/null)
+mapfile -t LOG_FILES < <(find "$LOG_DIR" -type f \( -name "*.log" -o -name "*.err" -o -name "*.out" \) -newer "$MARKER_FILE" 2>/dev/null)
 
 if [[ ${#LOG_FILES[@]} -eq 0 ]]; then
 	echo "No recent log files found $TIME_DESC" >>"$SUMMARY_FILE"
