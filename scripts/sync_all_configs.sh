@@ -261,6 +261,26 @@ if [[ -x $CMM_APPLY ]]; then
 	fi
 fi
 
+# 11. Maintenance deploy drift check (advisory only)
+# ~/Library/Maintenance is a real directory populated by copy, so live scripts
+# no longer track the checked-out branch. That is deliberate: a symlink into the
+# repo let a `git checkout` silently rewrite production behaviour.
+#
+# This is a WARNING, never a deploy. Running a deploy from here would copy
+# whatever branch happens to be checked out into the live tree, which is exactly
+# the cross-branch contamination this decoupling removed. Deploys stay manual:
+#   ./scripts/deploy_maintenance.sh
+DEPLOY_SCRIPT="$REPO_ROOT/scripts/deploy_maintenance.sh"
+if [[ -x $DEPLOY_SCRIPT ]]; then
+	if "$DEPLOY_SCRIPT" --check >/dev/null 2>&1; then
+		success "Live maintenance tree matches the repo"
+	else
+		warn "Live maintenance tree has drifted from the repo"
+		warn "Review with: ./scripts/deploy_maintenance.sh --dry-run"
+		warn "Apply with:  ./scripts/deploy_maintenance.sh"
+	fi
+fi
+
 echo ""
 echo "=========================================="
 success "Configuration sync completed!"
