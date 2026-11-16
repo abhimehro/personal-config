@@ -294,10 +294,15 @@ class TestStateTransitions(unittest.TestCase):
 
     def test_draft_pr_opened(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
+        backlog_state = self._make_state("Backlog", "backlog", "backlog-id")
+        in_prog_state = self._make_state(
+            "In Progress", "started", self.state_map["inProgress"]
+        )
         in_rev_state = self._make_state(
             "In Review", "started", self.state_map["inReview"]
         )
         done_state = self._make_state("Done", "completed", self.state_map["done"])
+        canceled_state = self._make_state("Canceled", "canceled", "canceled-id")
 
         ctx = PRContext(
             event_name="pull_request",
@@ -319,6 +324,21 @@ class TestStateTransitions(unittest.TestCase):
             todo_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inProgress"])
+        self.assertIn("Draft PR #42 active -> transition to In Progress", reason)
+
+        # Backlog -> In Progress
+        target, reason = compute_state_transition(
+            backlog_state, "links", ctx, self.state_map
+        )
+        self.assertEqual(target, self.state_map["inProgress"])
+        self.assertIn("Draft PR #42 active -> transition to In Progress", reason)
+
+        # Already In Progress -> No-op
+        target, reason = compute_state_transition(
+            in_prog_state, "links", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertEqual(reason, "Already In Progress; no-op")
 
         # In Review -> Do not regress!
         target, reason = compute_state_transition(
@@ -332,6 +352,14 @@ class TestStateTransitions(unittest.TestCase):
             done_state, "links", ctx, self.state_map
         )
         self.assertIsNone(target)
+        self.assertIn("non-regression guard", reason)
+
+        # Canceled -> Do not regress!
+        target, reason = compute_state_transition(
+            canceled_state, "links", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("non-regression guard", reason)
 
     def test_ready_for_review_advances_to_in_review(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
