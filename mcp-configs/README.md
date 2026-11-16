@@ -92,7 +92,7 @@ Pass is a parallel path.
 References look like `op://Personal/<ITEM>/credential`. Resolved by `op inject`
 at generate time. Required refs: `BRAVE_API_KEY`, `EXA_API_KEY`,
 `FIRECRAWL_API_KEY`, `PERPLEXITY_RAYCAST_API_KEY`, `TAVILY_API_KEY`,
-`GITHUB_PERSONAL_ACCESS_TOKEN`, `DEVIN_API_KEY`.
+`DEVIN_API_KEY`.
 
 ### Proton Pass (parallel)
 

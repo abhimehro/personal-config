@@ -98,6 +98,23 @@ class TestInventoryFile(unittest.TestCase):
         self.assertNotIn("ghp_", raw)
         self.assertNotIn("Bearer ey", raw)
 
+    def test_antigravity_template_excludes_deprecated_servers(self):
+        ag_raw = (
+            REPO / "mcp-configs" / "antigravity-mcp-servers.template.json"
+        ).read_text()
+        ag_data = json.loads(ag_raw)
+        self.assertNotIn("notion-mcp-server", ag_data)
+        self.assertNotIn("@notionhq/notion-mcp-server", ag_raw)
+        self.assertNotIn("github-mcp-server", ag_data)
+        self.assertNotIn("GITHUB_PERSONAL_ACCESS_TOKEN", ag_raw)
+        inv_data = json.loads(
+            (REPO / "ai" / "inventory" / "mcp-capabilities.json").read_text()
+        )
+        self.assertNotIn("notion-mcp-server", inv_data["servers"])
+        self.assertNotIn("github-mcp-server", inv_data["servers"])
+        self.assertIn("antigravity", inv_data["servers"]["Notion"]["clients"])
+        self.assertIn("antigravity", inv_data["servers"]["GitHub"]["clients"])
+
 
 class TestAdapterFiles(unittest.TestCase):
     def test_vibe_fragment_disables_bypass(self):
@@ -128,7 +145,7 @@ class TestGeneratorScript(unittest.TestCase):
 
     SCRIPT = REPO / "scripts" / "generate-mcp-configs.sh"
 
-    def _run(self, *args):
+    def _run(self, *args, env=None):
         import subprocess  # nosec B404 - fixed argv, repo-owned script only
 
         proc = subprocess.run(  # nosec B603, B607 - trusted repo script, no shell
@@ -137,6 +154,7 @@ class TestGeneratorScript(unittest.TestCase):
             text=True,
             timeout=60,
             cwd=str(REPO),
+            env=env,
         )
         return proc
 
@@ -169,6 +187,33 @@ class TestGeneratorScript(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertNotIn("op inject", proc.stdout)
         self.assertNotIn("pass-cli", proc.stdout)
+
+    def test_failed_injection_preserves_existing_config(self):
+        import os
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            mock_bin = tmp_path / "bin"
+            mock_bin.mkdir()
+            fake_op = mock_bin / "op"
+            fake_op.write_text("#!/bin/sh\necho 'op inject failed' >&2\nexit 1\n")
+            fake_op.chmod(0o755)
+
+            fake_home = tmp_path / "home"
+            dest = fake_home / ".gemini" / "config" / "mcp_config.json"
+            dest.parent.mkdir(parents=True)
+            sentinel = '{"mcpServers": {"existing": {"url": "https://example.com"}}}\n'
+            dest.write_text(sentinel)
+
+            env = os.environ.copy()
+            env["HOME"] = str(fake_home)
+            env["PATH"] = f"{mock_bin}:{env.get('PATH', '')}"
+
+            proc = self._run("antigravity", env=env)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertNotIn("JSONDecodeError", proc.stderr)
+            self.assertEqual(dest.read_text(), sentinel)
 
     def test_unknown_target_fails_fast(self):
         proc = self._run("--dry-run", "bogus-target")

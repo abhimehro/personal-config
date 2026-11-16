@@ -53,7 +53,7 @@ check_ssh_auth() {
 # The 1Password SSH agent may be locked or awaiting biometric approval when launchd
 # fires. Rather than skipping the whole day, wait for a grace window and post one
 # notification so authorization can happen without watching the clock.
-SSH_WAIT_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_WAIT_SECONDS:-1800}"
+SSH_WAIT_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_WAIT_SECONDS:-3600}"
 SSH_RETRY_SECONDS="${GITNEXUS_AUTO_SYNC_SSH_RETRY_SECONDS:-60}"
 
 notify_ssh_wait() {
@@ -111,7 +111,7 @@ fi
 
 # Pre-flight check: verify SSH authentication to GitHub is ready.
 # If the 1Password SSH agent is locked or awaiting biometric approval, wait for a
-# bounded grace window (default 30 min) instead of skipping the whole day. This
+# bounded grace window (default 60 min) instead of skipping the whole day. This
 # still avoids hanging for 9 minutes (60s x 9 repos) on a genuinely dead network,
 # because the wait is capped and the cycle never starts without working auth.
 if ! wait_for_ssh_auth; then

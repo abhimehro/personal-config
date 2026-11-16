@@ -1,0 +1,30 @@
+# CleanMyMac ignore list
+#
+# Paths listed here are excluded from CleanMyMac clean and purge scans.
+# Everything inside a listed directory is excluded as well.
+#
+# CleanMyMac stores its ignore list in an encrypted binary store, so it cannot
+# be version controlled directly. This file is the source of truth; apply it
+# with scripts/apply_cleanmymac_ignores.sh.
+#
+# Note: the CLI and the GUI keep separate ignore stores. This list is applied
+# to the CLI. Add the same paths in the GUI under Settings, Privacy, Exclusions.
+
+# Development workspaces
+/Users/speedybee/dev
+/Users/speedybee/secops
+
+# Critical user configuration and credentials
+/Users/speedybee/.config
+/Users/speedybee/.ssh
+/Users/speedybee/.cursor
+/Users/speedybee/.vscode
+/Users/speedybee/.agents
+/Users/speedybee/.gemini
+
+# User logs
+# Mole sweeps every child of ~/Library/Logs with no age filter, so partial
+# retention is not possible. The tree is ~6.5 MB, which is negligible against
+# the diagnostic value of GitNexus auto-sync cycle logs, launchd stdout/stderr,
+# and backup logs.
+/Users/speedybee/Library/Logs
