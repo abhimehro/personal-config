@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1716
+ledger_revision: 1717
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -35075,25 +35075,29 @@ items:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE2_QUEUED
-  current_owner: stage2
-  next_owner: stage2
+  lifecycle_state: STAGE3_RECONCILIATION
+  current_owner: stage3
+  next_owner: stage3
   terminal_disposition: null
-  safe_default: 'Leave #1043 open. Do not merge the conflicting original; do not update
-    its branch.'
-  next_action: 'Stage 2: work item s2-20261117-Seatek_Analysis-1043 — recover the
-    still-unique change (Updated_Seatek_Analysis.R) onto current main as a new focused
-    PR. Original stays OPEN.'
+  safe_default: 'Leave #1043 OPEN until Stage 3 decides. Do not merge the conflicting
+    original or update its branch.'
+  next_action: 'STAGE3_RECONCILIATION: Stage 2 20261117 EMPTY_INTAKE. Replacing main''s
+    mean.default(v_val) with sum(v_val)/n in compute_vector_summary_stats shows no
+    clear gain: main already bypasses S3 dispatch, the per-sensor vectors are short,
+    and mean.default''s second-pass precision correction would be lost. Not-beneficial
+    close candidate under Stage 3 cooldown/evidence. Do not re-book for Stage 2.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/1043
   attempts:
     evidence: 0
-    recovery: 0
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20261117-Seatek_Analysis-1043-wi
-  revision: 1
-  updated_at_utc: '2026-11-17T15:04:25Z'
+  - evt-s2-20261117-seatek-1043-a
+  - evt-s2-20261117-seatek-1043-h
+  revision: 3
+  updated_at_utc: '2026-11-17T16:00:00Z'
   guardrail_source: path_eval
   guardrail_evidence:
     head_sha: ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
@@ -96403,6 +96407,52 @@ events:
     Bounded paths: Updated_Seatek_Analysis.R.'
   successful: null
   policy_revision: null
+- event_id: evt-s2-20261117-seatek-1043-a
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_ACTIVE
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719:evt-s2-20261117-seatek-1043-a
+  status: PROJECTED
+  created_at_utc: '2026-11-17T16:00:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 run 20261117: activate WI s2-20261117-Seatek_Analysis-1043 (attempt
+    1).'
+- event_id: evt-s2-20261117-seatek-1043-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_ACTIVE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719:evt-s2-20261117-seatek-1043-h
+  status: PROJECTED
+  created_at_utc: '2026-11-17T16:00:00Z'
+  acknowledged_at_utc: null
+  policy_revision: null
+  successful: null
+  reason: 'Stage 2 APPLY: WI s2-20261117-Seatek_Analysis-1043 consumed. EMPTY_INTAKE
+    per the WI''s own condition (not clearly better than main). #1043''s only code
+    change swaps mean.default(v_val) for sum(v_val)/n in compute_vector_summary_stats.
+    Main already calls mean.default directly (no S3 dispatch), so the saving is only
+    its argument handling on short per-sensor vectors; mean.default''s second-pass
+    precision correction would be lost, and Kilo''s integer-overflow fix (as.numeric)
+    adds a copy. No benchmark evidence of a gain; R is not on the box to measure.
+    No recovery PR opened. .jules journal excluded. Original #1043 stays OPEN.'
 stage2_work_items:
 - work_item_id: s2-20261110-series_correction_project_updated-499
   source_item_key: abhimehro/series_correction_project_updated#499@785783d3845e57e253972ca0533a0d0557b47a91
@@ -96440,44 +96490,6 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20261110-series_correction_project_updated-499-wi
-  history: []
-- work_item_id: s2-20261117-Seatek_Analysis-1043
-  source_item_key: abhimehro/Seatek_Analysis#1043@ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
-  repository: abhimehro/Seatek_Analysis
-  pr: 1043
-  base_sha: 681d2edcf520edbaf2fbc8e5501dca52e0aee2f5
-  head_sha: ebf5e46e85dbf3f7b7a1fe1011f838d31d5e4719
-  allowed_paths:
-  - Updated_Seatek_Analysis.R
-  prohibited_paths:
-  - .github/**
-  - .jules/**
-  - .trunk/**
-  - renv.lock
-  - requirements*.txt
-  repair_description: 'Recover the unique Bolt remainder of #1043 (replace mean.default(v_val)
-    with sum(v_val)/n, where n is the already-computed NA-stripped length) in compute_vector_summary_stats
-    in Updated_Seatek_Analysis.R (code moved there from calculate_summary_stats by
-    #1107) onto current main as a new focused PR. Address Kilo''s warning: integer
-    vectors can overflow in sum() and mean.default uses extended-precision accumulation,
-    so use sum(as.numeric(v_val))/n or equivalent and keep output numerically equivalent
-    to main within tolerance. Take it only if a fresh look shows a clear gain over
-    main; otherwise record EMPTY_INTAKE. Exclude the .jules journal. Original #1043
-    stays OPEN.'
-  required_test_command: Rscript -e 'testthat::test_dir("tests/testthat")'
-  expected_test_result: Rscript -e 'testthat::test_dir("tests/testthat")' exits 0
-  acceptance_criteria:
-  - Diff is limited to Updated_Seatek_Analysis.R.
-  - Rscript -e 'testthat::test_dir("tests/testthat")' exits 0 (or matches main's baseline).
-  - git diff --check exits 0.
-  - 'Replacement is a new normal (non-draft) PR linking #1043; original #1043 stays
-    OPEN and its branch is untouched.'
-  provenance_urls:
-  - https://github.com/abhimehro/Seatek_Analysis/pull/1043
-  expiry_utc: '2026-11-24T17:00:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20261117-Seatek_Analysis-1043-wi
   history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
