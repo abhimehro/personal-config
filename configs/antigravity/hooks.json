@@ -1,0 +1,17 @@
+{
+  "sonar-secrets": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "view_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/Users/speedybee/.gemini/config/sonar/hooks/pretool-secrets.sh\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

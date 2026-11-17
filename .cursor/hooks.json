@@ -21,6 +21,12 @@
     "beforeSubmitPrompt": [
       {
         "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-prompt"
+      },
+      {
+        "command": "'/Users/speedybee/.cursor/hooks/sonar-secrets/build-scripts/prompt-secrets.sh'",
+        "timeout": 60,
+        "failClosed": false,
+        "matcher": "UserPromptSubmit"
       }
     ],
     "postToolUse": [
@@ -44,6 +50,12 @@
       {
         "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-tool",
         "matcher": "^(Shell|Write|Task)$"
+      },
+      {
+        "command": "'/Users/speedybee/.cursor/hooks/sonar-secrets/build-scripts/pre-tool-use-secrets.sh'",
+        "timeout": 60,
+        "failClosed": false,
+        "matcher": "Read"
       }
     ],
     "sessionEnd": [
@@ -54,6 +66,14 @@
     "sessionStart": [
       {
         "command": "/Users/speedybee/.config/deja/bin/deja-hook hook-context"
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": "'/Users/speedybee/.cursor/hooks/sonar-secrets/build-scripts/before-read-file-secrets.sh'",
+        "timeout": 60,
+        "failClosed": false,
+        "matcher": "Read|TabRead"
       }
     ]
   }

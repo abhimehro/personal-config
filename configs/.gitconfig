@@ -8,7 +8,7 @@
 [core]
 	excludesfile = /Users/speedybee/.gitignore_global
 	pager = delta
-	hooksPath = /Users/speedybee/.git-hooks
+	hooksPath = /Users/speedybee/.sonar/sonarqube-cli/hooks
 	editor = /opt/homebrew/bin/nvim
 [mergetool]
 	keepBackup = true
