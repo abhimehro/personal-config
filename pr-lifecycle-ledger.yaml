@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1714
+ledger_revision: 1715
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -49713,12 +49713,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-17T14:48:27Z'
+  updated_at_utc: '2026-11-17T14:48:59Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: fce5bc146b4fa0e654a0f2e66d647117dc52b76b
+    head_sha: aef194d24c0a3dd9ab84f8e48b9d1ccf4ceb6a19
     basis: head_bound_diff
-    diff_sha256: cec0adcb485ebe26bb9b1c33c267130abdd9e1e0a32a9ec11d56b71534a5145a
+    diff_sha256: bba2a73b86019ecc69d9f28f94ef773a30021b10c300fd55618cd13b40966a62
 - key: abhimehro/email-security-pipeline#1862@e8d35b8d423fe34b96d4a1ab5aa8f9ffc2419c37
   repository: abhimehro/email-security-pipeline
   pr: 1862
@@ -50364,10 +50364,10 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-17T14:48:27Z'
+  updated_at_utc: '2026-11-17T14:48:59Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: c597585017300e896f121417d7a696394f59a1b7
+    head_sha: 0f853539ff1cfd265c25452a5abf8db9092da9e9
     basis: head_bound_diff
     diff_sha256: 6e49d8b83f77eb7d3ab90c7a9e87a840bd3acf7e2948ec8bbac7e1302cf77619
 - key: abhimehro/repoprompt-ce#558@1fa2585ff162a9e3a1d00e5804edeeda952b2808
@@ -52852,12 +52852,12 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-17T14:48:27Z'
+  updated_at_utc: '2026-11-17T14:48:59Z'
   guardrail_source: path_eval
   guardrail_evidence:
-    head_sha: 1b518b31ca468a0ac870353dfce25f72d4035203
+    head_sha: 5e65238d7dd26987555bf0e8528cfdc7cb1e651a
     basis: head_bound_diff
-    diff_sha256: 38a5e31b1153280631e971bbf849f24a72c374f420672060f8974d05044d7503
+    diff_sha256: 10a4fd088c0dcc85c56ea83d4db06779feb43dc82eeae8254c1400ea615968a0
 - key: abhimehro/Seatek_Analysis#1150@1452c36651f406f218ccf1fec1453aed32aa1d49
   repository: abhimehro/Seatek_Analysis
   pr: 1150
@@ -54625,11 +54625,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: ROUTINE
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - lockfiles_and_major_dependencies
   changed_paths:
   - uv.lock
-  guardrail_outcome: PASS_ROUTINE
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -54645,12 +54646,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-17T14:48:27Z'
+  updated_at_utc: '2026-11-17T14:48:59Z'
   guardrail_source: path_eval
-  guardrail_evidence:
-    head_sha: 5e30ca9ffa38ae15c5e8d2830b986abd1df4c128
-    basis: head_bound_diff
-    diff_sha256: 807c65d0fd14711e01bf706f101d8a22df8dead993a5abde151d110678edaf41
+  guardrail_evidence: null
 - key: abhimehro/ctrld-sync#1418@c1fbb1fdd4bafc4f0d5e944ef807297f19bd8daf
   repository: abhimehro/ctrld-sync
   pr: 1418
