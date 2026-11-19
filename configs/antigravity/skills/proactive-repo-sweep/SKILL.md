@@ -41,12 +41,12 @@ listed pilot subset) using isolated worktrees and strict approval gates.
 1. Prune clean, already-merged or no-op worktrees older than 21 days (longer
    than the 2-week pilot; both dirty worktrees and clean worktrees holding
    unmerged commits ahead of `base_sha` are preserved automatically):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh cleanup --ttl-days 21`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh cleanup --ttl-days 21`
 2. Check both the local `2B` candidate worktree throttle (`>= 2` local dirty or
    unmerged-commit candidate worktrees for `<repo>`, or any `> 7` days old) and
    the remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
    `> 7` days old):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
    `--include-worktrees` counts candidates registered in git under **any**
    worktree root, not only the default one, so a candidate prepared elsewhere
    cannot slip past the cap. Human worktrees (no `proactive-meta.json`, branch
@@ -82,7 +82,7 @@ that exact path — neither an open PR in `abhimehro/<repo>` nor a live local
 candidate worktree:
 
 ```bash
-"$HOME/dev/personal-config/scripts/proactive-worktree.sh" check-collisions \
+"$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" check-collisions \
   --repo "abhimehro/<repo>" \
   --file "<relpath>" \
   --include-worktrees \
@@ -112,7 +112,7 @@ why in the digest.
    `remote.origin.pushurl = DISABLED` in `local` mode):
 
    ```bash
-   WT_PATH="$("$HOME/dev/personal-config/scripts/proactive-worktree.sh" prepare \
+   WT_PATH="$("$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" prepare \
      --repo-path "$HOME/dev/<repo>" \
      --lens "<lens>" \
      --mode local)"
@@ -129,7 +129,7 @@ why in the digest.
    `GITHUB_TOKEN` inside verification subprocesses):
 
    ```bash
-   "$HOME/dev/personal-config/scripts/proactive-worktree.sh" verify \
+   "$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" verify \
      --worktree "$WT_PATH" \
      --lens "<lens>"
    ```
@@ -208,7 +208,10 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
 - **Isolated Worktree & Branch:** `<worktree_path>` (`<branch_name>`)
 - **Promotion Commands (for human review after pilot graduation):** Exact `git`
   / `gh pr create --draft` commands for `bolt`, `palette`, or `code-health` (or
-  private GitHub Security Advisory workflow for `sentinel`)
+  private GitHub Security Advisory workflow for `sentinel`), plus post-merge or
+  discard cleanup commands (`git worktree remove <worktree_path>` and
+  `git branch -D <branch_name>`) so finished worktrees do not linger in the
+  throttle count.
 
 Do **not** push branches or open pull requests during the `2B` local-first
 pilot.

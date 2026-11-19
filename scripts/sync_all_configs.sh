@@ -203,7 +203,10 @@ if [[ -d "$REPO_ROOT/.github" ]]; then
 fi
 
 # 8. Antigravity Proactive Skills and Safety Hook (if exists)
-if [[ -d "$REPO_ROOT/configs/antigravity/skills" ]]; then
+if [[ -x "$REPO_ROOT/scripts/antigravity-proactive-ctl.sh" ]]; then
+	log "Deploying Antigravity proactive runtime, skills, and safety hook (copy-on-deploy)..."
+	"$REPO_ROOT/scripts/antigravity-proactive-ctl.sh" install
+elif [[ -d "$REPO_ROOT/configs/antigravity/skills" ]]; then
 	log "Setting up Antigravity proactive skills and safety hook..."
 	mkdir -p "$HOME/.gemini/config/skills" "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees"
 	chmod 700 "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees" 2>/dev/null || true

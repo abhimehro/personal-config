@@ -21,7 +21,8 @@ decisions record — is in
 
 ## Installed Components
 
-- **Skills (`configs/antigravity/skills/` -> `$HOME/.gemini/config/skills/`):**
+- **Skills (`configs/antigravity/skills/` -> copied to
+  `$HOME/.gemini/config/skills/`):**
   - `proactive-sentinel`: Code-level security audit (`SECURITY_REPORT_ONLY`
     local digest or private GitHub Security Advisories; never public Draft PRs).
   - `proactive-bolt`: Measurable performance/idempotency optimization with
@@ -40,12 +41,14 @@ decisions record — is in
     not produced any testing-lens yield data yet.
   - `proactive-repo-sweep`: 15-minute coordinator enforcing single-improvement
     runs, open-PR file collision checks, and dual `2B` + `2A` throttling.
-- **Safety Hook (`configs/antigravity/hooks.json` ->
+- **Safety Hook (`configs/antigravity/hooks.json` -> copied to
   `$HOME/.gemini/config/hooks.json`):** Invokes
-  `configs/antigravity/hooks/proactive-guard.py` on `PreToolUse` to block force
-  pushes, protect primary checkouts under `$HOME/dev/` during sweep sessions,
-  block unmerged `.jules/sentinel.md` writes without a verified post-merge
-  lease, and block remote `git push` / `gh pr` mutations in `2B` mode.
+  `$HOME/.gemini/config/proactive/hooks/proactive-guard.py` (copied from
+  `configs/antigravity/hooks/proactive-guard.py`, decoupled from the repo
+  working tree) on `PreToolUse` to block force pushes, protect primary checkouts
+  under `$HOME/dev/` during sweep sessions, block unmerged `.jules/sentinel.md`
+  writes without a verified post-merge lease, and block remote `git push` /
+  `gh pr` mutations in `2B` mode.
 - **Worktree & Verification Runner (`scripts/proactive-worktree.sh`):** Creates
   collision-proof worktrees (`21`-day TTL preserving dirty and unmerged
   candidate commits), sets worktree-scoped `pushurl = DISABLED`, strips
@@ -57,7 +60,7 @@ decisions record — is in
   method, or drop in total test count blocks (`exit 2`) even when the suite is
   green, because losing a test does not fail a suite. Touched Python files that
   do not parse are blocked too, followed by a **mandatory** undefined-name check
-  resolved in order `ruff --select=F82` -> `uv run --all-extras ruff`
+  resolved in order `ruff --select=F82` -> `uv run [--frozen] --all-extras ruff`
   (uv-managed repos such as `ctrld-sync` ship ruff through their lockfile rather
   than onto `PATH`) -> `python3 -m pyflakes`. When **none** is available the
   gate **fails closed (`exit 2`)** instead of degrading to the parse floor: an
@@ -128,7 +131,7 @@ decisions record — is in
 ## Common Commands
 
 ```bash
-# Install global skill/hook symlinks and stage disabled pilot sidecar
+# Deploy copy-on-deploy skills, safety hook, runtime scripts, and disabled pilot sidecars
 ./scripts/antigravity-proactive-ctl.sh install --pilot
 
 # Stage and later clean up a disposable cron canary (defaults to America/Chicago; pass --timezone UTC for UTC isolation)
@@ -151,6 +154,6 @@ decisions record — is in
 # Issue a 5-minute verified post-merge lease before updating .jules/sentinel.md
 ./scripts/antigravity-proactive-ctl.sh sentinel-post-merge --repo ctrld-sync --pr <merged_pr>
 
-# Ordered rollback (removes sidecars -> unlinks skills -> unlinks hooks.json last)
+# Ordered rollback (removes sidecars -> removes managed skills -> removes hooks.json & runtime dir last)
 ./scripts/antigravity-proactive-ctl.sh disable
 ```

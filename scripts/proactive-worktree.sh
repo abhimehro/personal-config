@@ -59,7 +59,7 @@ default_test_cmd_for_repo() {
 		printf '%s' "make lint-errors && bash tests/test_lib_common.sh && bash tests/test_lib_dns_utils.sh && python3 -m unittest tests.test_path_validation"
 		;;
 	ctrld-sync)
-		printf '%s' "uv run --all-extras pytest tests/ test_main.py -q && uv run --all-extras ruff check ."
+		printf '%s' "uv run --frozen --all-extras pytest tests/ test_main.py -q && uv run --frozen --all-extras ruff check ."
 		;;
 	email-security-pipeline)
 		printf '%s' "python3 -m pytest -q"
@@ -333,7 +333,11 @@ PY
 	if command -v ruff >/dev/null 2>&1; then
 		f82_cmd=(ruff check --select=F82 --no-cache --quiet)
 	elif command -v uv >/dev/null 2>&1 && [[ -f ${wt_path}/pyproject.toml ]]; then
-		f82_cmd=(uv run --all-extras ruff check --select=F82 --no-cache --quiet)
+		if [[ -f ${wt_path}/uv.lock ]]; then
+			f82_cmd=(uv run --frozen --all-extras ruff check --select=F82 --no-cache --quiet)
+		else
+			f82_cmd=(uv run --all-extras ruff check --select=F82 --no-cache --quiet)
+		fi
 	elif python3 -c 'import pyflakes' >/dev/null 2>&1; then
 		f82_cmd=(python3 -m pyflakes)
 	else
@@ -808,6 +812,51 @@ if collisions:
 PY
 }
 
+is_worktree_merged_into_upstream() {
+	local wt_dir="$1"
+	local upstream_ref="$2"
+
+	if git -C "${wt_dir}" merge-base --is-ancestor HEAD "${upstream_ref}" 2>/dev/null; then
+		return 0
+	fi
+
+	local cherry_out=""
+	cherry_out="$(git -C "${wt_dir}" cherry "${upstream_ref}" HEAD 2>/dev/null || true)"
+	if [[ -n ${cherry_out} ]] && ! grep -q '^+ ' <<<"${cherry_out}"; then
+		return 0
+	fi
+
+	# Multi-commit squash merges produce one new commit on upstream whose patch-id
+	# matches the combined branch diff rather than any single commit in git cherry.
+	local merge_base=""
+	merge_base="$(git -C "${wt_dir}" merge-base "${upstream_ref}" HEAD 2>/dev/null || true)"
+	if [[ -z ${merge_base} ]]; then
+		return 1
+	fi
+
+	local branch_patch_id=""
+	branch_patch_id="$(
+		{
+			git -C "${wt_dir}" diff --no-renames "${merge_base}..HEAD" 2>/dev/null || true
+		} | git patch-id --stable 2>/dev/null | awk 'NR == 1 { print $1 }' || true
+	)"
+	if [[ -z ${branch_patch_id} ]]; then
+		return 1
+	fi
+
+	local upstream_patch_ids=""
+	upstream_patch_ids="$(
+		{
+			git -C "${wt_dir}" log -p --no-merges --no-renames --max-count=200 "${merge_base}..${upstream_ref}" 2>/dev/null || true
+		} | git patch-id --stable 2>/dev/null | awk '{ print $1 }' || true
+	)"
+	if [[ -n ${upstream_patch_ids} ]] && grep -qxF "${branch_patch_id}" <<<"${upstream_patch_ids}"; then
+		return 0
+	fi
+
+	return 1
+}
+
 has_unreviewed_worktree_commits() {
 	local wt_dir="$1"
 	local wt_git_dir=""
@@ -830,7 +879,7 @@ has_unreviewed_worktree_commits() {
 	fi
 
 	if git -C "${wt_dir}" rev-parse --verify --quiet "origin/${default_branch}" >/dev/null 2>&1; then
-		if git -C "${wt_dir}" merge-base --is-ancestor HEAD "origin/${default_branch}" 2>/dev/null; then
+		if is_worktree_merged_into_upstream "${wt_dir}" "origin/${default_branch}"; then
 			return 1
 		fi
 	fi

@@ -29,7 +29,7 @@ All target repositories in `$HOME/dev/` are public on GitHub.
    Advisory temporary private fork**.
 4. **Verified post-merge journal update only:** After the security fix has
    merged to the default branch, unlock a 5-minute repo-scoped lease via:
-   `$HOME/dev/personal-config/scripts/antigravity-proactive-ctl.sh sentinel-post-merge --repo <repo> --pr <merged_pr_number>`
+   `$HOME/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh sentinel-post-merge --repo <repo> --pr <merged_pr_number>`
    before appending the prevention lesson to `<repo>/.jules/sentinel.md`.
 
 ## Hard Boundaries
@@ -77,11 +77,11 @@ Prioritize changes and reachable code paths across these categories:
    issue exists, record a clean no-op pass.
 4. For code-fixable findings that do not cross hard boundaries:
    - Prepare an isolated local worktree:
-     `$HOME/dev/personal-config/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens sentinel --mode local`
+     `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens sentinel --mode local`
    - Apply the minimal fix inside the worktree without editing test or build
      harnesses unless explicitly authorized.
    - Run verification:
-     `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens sentinel`
+     `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens sentinel`
      Verification enforces an AST parse + undefined-name (F82) floor on touched
      Python files and a base-relative test-coverage gate, so a security fix that
      drops test coverage blocks (`exit 2`) even when the suite stays green. A

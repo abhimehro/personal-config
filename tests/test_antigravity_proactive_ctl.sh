@@ -76,20 +76,35 @@ if [[ ! -x ${CTL_SCRIPT} ]]; then
 	exit 1
 fi
 
-# 1. Install pilot setup into isolated HOME
+# 1. Install pilot setup into isolated HOME (including clean migration from legacy symlinks)
+ln -s "${REPO_ROOT}/configs/antigravity/skills/proactive-sentinel" "${HOME}/.gemini/config/skills/proactive-sentinel"
+ln -s "${REPO_ROOT}/configs/antigravity/hooks.json" "${HOME}/.gemini/config/hooks.json"
 "${CTL_SCRIPT}" install --pilot >"${TEST_DIR}/install.log" 2>&1
 
 for skill in proactive-sentinel proactive-bolt proactive-palette proactive-code-health proactive-repo-sweep; do
-	check "skill symlink created: ${skill}" test -L "${HOME}/.gemini/config/skills/${skill}"
+	check "skill copied as directory: ${skill}" test -d "${HOME}/.gemini/config/skills/${skill}"
+	check "skill is not a symlink: ${skill}" test ! -L "${HOME}/.gemini/config/skills/${skill}"
+	check "skill SKILL.md present: ${skill}" test -f "${HOME}/.gemini/config/skills/${skill}/SKILL.md"
 done
 
-check "global hooks.json symlink created" test -L "${HOME}/.gemini/config/hooks.json"
+check "global hooks.json copied as regular file" test -f "${HOME}/.gemini/config/hooks.json"
+check "global hooks.json is not a symlink" test ! -L "${HOME}/.gemini/config/hooks.json"
+check "deployed proactive-worktree.sh is executable" test -x "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+check "deployed antigravity-proactive-ctl.sh is executable" test -x "${HOME}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh"
+check "deployed proactive-guard.py present" test -f "${HOME}/.gemini/config/proactive/hooks/proactive-guard.py"
 check "reports directory created" test -d "${HOME}/.gemini/antigravity/proactive-reports"
+check "migrating legacy symlinks creates no spurious hooks backup" bash -c "! compgen -G '${HOME}/.gemini/config/hooks.json.backup.*' >/dev/null"
+
+# Second install must be idempotent without creating backup churn
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+check "idempotent reinstall creates no spurious hooks backup" bash -c "! compgen -G '${HOME}/.gemini/config/hooks.json.backup.*' >/dev/null"
 
 SIDECAR_FILE="${HOME}/.gemini/config/sidecars/proactive-pilot-ctrld-sync/sidecar.json"
 TRIAGE_SIDECAR_FILE="${HOME}/.gemini/config/sidecars/proactive-pilot-triage/sidecar.json"
 check "disabled pilot sidecar.json created" test -f "${SIDECAR_FILE}"
 check "disabled triage sidecar.json created" test -f "${TRIAGE_SIDECAR_FILE}"
+check_grep "pilot sidecar uses deployed proactive-worktree.sh" "\.gemini/config/proactive/scripts/proactive-worktree\.sh" "${SIDECAR_FILE}"
+check_grep "triage sidecar uses deployed antigravity-proactive-ctl.sh" "\.gemini/config/proactive/scripts/antigravity-proactive-ctl\.sh" "${TRIAGE_SIDECAR_FILE}"
 check "user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-ctrld-sync/user_config.json"
 check "triage user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-triage/user_config.json"
 check_grep "sidecar uses weekday daily local Chicago cron" "CRON_TZ=America/Chicago 15 8 \* \* 1-5" "${SIDECAR_FILE}"
@@ -182,12 +197,36 @@ check_exit "audit-missed rejects dot-dot repo name" 1 \
 	"${CTL_SCRIPT}" audit-missed --date 2026-11-03 --repo ..
 check "audit-missed wrote nothing for rejected input" test -z "$(find "${REPORTS}" -name '2026-11-03*' -o -name '2026-02-30*' -o -name '2026-1-2*' 2>/dev/null)"
 
-# 5. Status reports installed state cleanly
+# 5. Status reports installed state cleanly (and catches dangling symlinks / non-exec runtime)
 "${CTL_SCRIPT}" status >"${TEST_DIR}/status.log" 2>&1
-check_grep "status reports active skill links" "skills_linked=5/5" "${TEST_DIR}/status.log"
+check_grep "status reports active skills" "^skills_linked=5/5$" "${TEST_DIR}/status.log"
+check_grep "status reports copy hooks mode" "^hooks_mode=copy$" "${TEST_DIR}/status.log"
+check_grep "status reports zero dangling links" "^dangling_links=0$" "${TEST_DIR}/status.log"
+check_grep "status reports healthy deployed runtime scripts" "^runtime_worktree_sh=ok$" "${TEST_DIR}/status.log"
+check_grep "status reports healthy deployed ctl script" "^runtime_ctl_sh=ok$" "${TEST_DIR}/status.log"
+check_grep "status reports healthy deployed guard script" "^runtime_guard_py=ok$" "${TEST_DIR}/status.log"
 check_grep "status reports stopped runtime with no scheduler log" "pilot_runtime=stopped" "${TEST_DIR}/status.log"
 check_grep "status reports triage sidecar present" "triage_sidecar=present" "${TEST_DIR}/status.log"
 check_grep "status reports stopped triage runtime with no scheduler log" "triage_runtime=stopped" "${TEST_DIR}/status.log"
+
+# Introduce dangling skill + hooks symlinks and non-executable worktree script
+rm -rf "${HOME}/.gemini/config/skills/proactive-palette" "${HOME}/.gemini/config/hooks.json"
+ln -s "${TEST_DIR}/missing-skill-target" "${HOME}/.gemini/config/skills/proactive-palette"
+ln -s "${TEST_DIR}/missing-hooks-target" "${HOME}/.gemini/config/hooks.json"
+chmod -x "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+"${CTL_SCRIPT}" status >"${TEST_DIR}/status-broken.log" 2>&1
+check_grep "status excludes dangling skill symlink from healthy count" "^skills_linked=4/5$" "${TEST_DIR}/status-broken.log"
+check_grep "status excludes dangling hooks symlink" "^hooks_linked=no$" "${TEST_DIR}/status-broken.log"
+check_grep "status identifies broken hooks symlink mode" "^hooks_mode=broken-symlink$" "${TEST_DIR}/status-broken.log"
+check_grep "status counts both dangling symlinks" "^dangling_links=2$" "${TEST_DIR}/status-broken.log"
+check_grep "status flags non-executable worktree runner" "^runtime_worktree_sh=not-executable$" "${TEST_DIR}/status-broken.log"
+
+# Re-install repairs broken symlinks and permissions cleanly
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+"${CTL_SCRIPT}" status >"${TEST_DIR}/status-repaired.log" 2>&1
+check_grep "reinstall restores skills_linked=5/5 after dangling symlinks" "^skills_linked=5/5$" "${TEST_DIR}/status-repaired.log"
+check_grep "reinstall clears dangling links count" "^dangling_links=0$" "${TEST_DIR}/status-repaired.log"
+check_grep "reinstall restores executable worktree runner" "^runtime_worktree_sh=ok$" "${TEST_DIR}/status-repaired.log"
 
 # Dashboard toggles do not write user_config.json; runtime state comes from the scheduler log.
 mkdir -p "${HOME}/.gemini/antigravity/sidecar_data/proactive-pilot-ctrld-sync/logs"
@@ -352,15 +391,16 @@ echo '{"custom_user_hook": true}' >"${HOME}/.gemini/config/hooks.json.backup.202
 # A user-managed symlink at a proactive skill path must survive rollback untouched
 FOREIGN_SKILL="${TEST_DIR}/user-managed-skill"
 mkdir -p "${FOREIGN_SKILL}"
-rm -f "${HOME}/.gemini/config/skills/proactive-bolt"
+rm -rf "${HOME}/.gemini/config/skills/proactive-bolt"
 ln -s "${FOREIGN_SKILL}" "${HOME}/.gemini/config/skills/proactive-bolt"
 
 "${CTL_SCRIPT}" disable >"${TEST_DIR}/disable.log" 2>&1
 check "disable removes pilot sidecar.json" test ! -f "${SIDECAR_FILE}"
-check "disable removes skill symlink" test ! -L "${HOME}/.gemini/config/skills/proactive-repo-sweep"
+check "disable removes managed skill directory" test ! -e "${HOME}/.gemini/config/skills/proactive-repo-sweep"
+check "disable removes deployed runtime directory" test ! -d "${HOME}/.gemini/config/proactive"
 check "disable leaves a user-managed skill symlink in place" test "$(readlink "${HOME}/.gemini/config/skills/proactive-bolt")" = "${FOREIGN_SKILL}"
 check_grep "disable reports the skipped user-managed symlink" "skipped .*proactive-bolt" "${TEST_DIR}/disable.log"
-check_grep "disable counts only the symlinks it removed" "unlinked 4 proactive skill symlinks" "${TEST_DIR}/disable.log"
+check_grep "disable counts only the managed skills it removed" "removed 4 managed proactive skill" "${TEST_DIR}/disable.log"
 check "disable restores previous hooks.json backup" test -f "${HOME}/.gemini/config/hooks.json"
 check_grep "disable logs restored hooks backup" "restored previous hooks.json" "${TEST_DIR}/disable.log"
 check_grep "disable logs ordered sidecar-first teardown" "Step 1/3: removed sidecar" "${TEST_DIR}/disable.log"

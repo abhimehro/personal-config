@@ -243,6 +243,39 @@ class ProactiveCliRegressions(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.home / ".gemini/config/hooks.json").exists())
 
+    def test_sync_uses_copy_on_deploy_when_ctl_is_present(self) -> None:
+        repo = self.root / "repo"
+        skills = repo / "configs/antigravity/skills"
+        for name in (
+            "proactive-sentinel",
+            "proactive-bolt",
+            "proactive-palette",
+            "proactive-code-health",
+            "proactive-repo-sweep",
+        ):
+            (skills / name).mkdir(parents=True)
+            (skills / name / "SKILL.md").write_text(f"# {name}\n")
+        (repo / "configs/antigravity/hooks").mkdir(parents=True)
+        (repo / "configs/antigravity/hooks/proactive-guard.py").write_text(
+            "print('{}')\n"
+        )
+        (repo / "configs/antigravity/hooks.json").write_text("{}\n")
+        scripts_dir = repo / "scripts"
+        scripts_dir.mkdir(parents=True)
+        for src in (CTL, WORKTREE):
+            dst = scripts_dir / src.name
+            dst.write_text(src.read_text())
+            dst.chmod(0o755)
+        self.env["REPO_ROOT"] = str(repo)
+        result = self.run_script(SYNC)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        config = self.home / ".gemini/config"
+        self.assertFalse((config / "hooks.json").is_symlink())
+        self.assertEqual((config / "hooks.json").read_text(), "{}\n")
+        self.assertFalse((config / "skills/proactive-bolt").is_symlink())
+        self.assertTrue((config / "proactive/scripts/proactive-worktree.sh").is_file())
+        self.assertTrue((config / "proactive/hooks/proactive-guard.py").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

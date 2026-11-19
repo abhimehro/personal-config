@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$HOME/dev/personal-config/configs/antigravity/hooks/proactive-guard.py\"",
+            "command": "python3 \"$HOME/.gemini/config/proactive/hooks/proactive-guard.py\"",
             "timeout": 10
           }
         ]

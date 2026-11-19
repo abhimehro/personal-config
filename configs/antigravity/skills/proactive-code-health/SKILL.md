@@ -63,12 +63,12 @@ Before removing any function, helper, script, or export:
 ## Execution Workflow
 
 1. Check open PR file collisions before editing:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
 2. Prepare an isolated worktree:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens code-health --mode local`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens code-health --mode local`
 3. Apply a single minimal production fix and verify without relaxing any harness
    or test gate:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens code-health`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens code-health`
 4. Commit locally in the worktree using `chore(qa): <concise summary>` and write
    the verification receipt to
    `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`.
