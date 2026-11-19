@@ -570,6 +570,39 @@ check_exit "deployed CLI runs base-check via sibling runtime proactive-worktree.
 check_exit "deployed CLI runs disable cleanly" 0 "${DEPLOYED_CTL}" disable
 check "deployed CLI disable removed managed runtime" test ! -d "${HOME}/.gemini/config/proactive"
 
+# deploy_skill_dir rollback restores both managed and unmanaged skills when staging mv fails.
+MOCK_MV_BIN="${TEST_DIR}/mock_mv_bin"
+mkdir -p "${MOCK_MV_BIN}"
+REAL_MV="$(command -v mv)"
+cat >"${MOCK_MV_BIN}/mv" <<EOF
+#!/usr/bin/env bash
+for arg in "\$@"; do
+	case "\${arg}" in
+	*/proactive-bolt.tmp.*)
+		exit 1
+		;;
+	esac
+done
+exec "${REAL_MV}" "\$@"
+EOF
+chmod +x "${MOCK_MV_BIN}/mv"
+for kind in managed unmanaged; do
+	export HOME="${TEST_DIR}/rollback-${kind}-home"
+	mkdir -p "${HOME}/.gemini/config"
+	"${CTL_SCRIPT}" install >/dev/null 2>&1
+	BOLT_DIR="${HOME}/.gemini/config/skills/proactive-bolt"
+	if [[ ${kind} == "unmanaged" ]]; then
+		rm -rf "${BOLT_DIR}"
+		mkdir -p "${BOLT_DIR}"
+	fi
+	echo "preserve-${kind}" >"${BOLT_DIR}/sentinel-${kind}.txt"
+	check_exit "install fails when ${kind} skill staging mv fails" 1 \
+		env PATH="${MOCK_MV_BIN}:${PATH}" "${CTL_SCRIPT}" install
+	check "${kind} skill restored after failed mv" test -f "${BOLT_DIR}/sentinel-${kind}.txt"
+	check "no lingering ${kind} tmp or backup skill dir after failed mv" \
+		python3 -c 'import glob, sys; sys.exit(1 if glob.glob(sys.argv[1] + ".*") else 0)' "${BOLT_DIR}"
+done
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

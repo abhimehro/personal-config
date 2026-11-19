@@ -814,6 +814,30 @@ PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit \
 	env PROACTIVE_SQUASH_LOOKBACK=5 "${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
 	--include-worktrees --repo-path "${SQUASH_CLONE}"
 
+MOCK_BIN_NO_VERBATIM="${TEST_DIR}/mock_bin_no_verbatim"
+mkdir -p "${MOCK_BIN_NO_VERBATIM}"
+REAL_GIT="$(command -v git)"
+cat >"${MOCK_BIN_NO_VERBATIM}/git" <<EOF
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "patch-id" ]]; then
+	for arg in "\$@"; do
+		if [[ "\${arg}" == "--verbatim" ]]; then
+			echo "usage: git patch-id [--stable | --unstable]" >&2
+			exit 129
+		fi
+	done
+fi
+exec "${REAL_GIT}" "\$@"
+EOF
+chmod +x "${MOCK_BIN_NO_VERBATIM}/git"
+PATH="${MOCK_BIN_NO_VERBATIM}:${MOCK_BIN_EMPTY}:${PATH}" check_exit \
+	"check-collisions retains squash-merged candidate when git patch-id --verbatim is unavailable" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+check_grep "missing git patch-id --verbatim emits warning" "git patch-id --verbatim is unavailable" "${TEST_DIR}/check.log"
+check "missing git patch-id --verbatim warns only once per run" \
+	python3 -c 'import sys; sys.exit(0 if open(sys.argv[1], encoding="utf-8").read().count("git patch-id --verbatim is unavailable") == 1 else 1)' "${TEST_DIR}/check.log"
+
 touch -t 202001010000 "${WT_SQ1}" "${WT_SQ2}" "${WT_UNMERGED}"
 check_exit "cleanup runs on squash-merged worktrees" 0 \
 	"${TARGET_SCRIPT}" cleanup --worktree-root "${SQUASH_WT_ROOT}"
@@ -914,6 +938,9 @@ echo "c2" >>"${WT_CHERRY}/src/cherry_only.py"
 git -C "${WT_CHERRY}" add -A
 git -C "${WT_CHERRY}" commit -q -m "chore(qa): cherry part 2"
 CHERRY_C2="$(git -C "${WT_CHERRY}" rev-parse HEAD)"
+echo "diverge" >"${WS_CLONE}/src/cherry_diverge.py"
+git -C "${WS_CLONE}" add -A
+git -C "${WS_CLONE}" commit -q -m "docs: diverge main before cherry-pick"
 git -C "${WS_CLONE}" cherry-pick "${CHERRY_C1}" "${CHERRY_C2}" >/dev/null
 git -C "${WS_CLONE}" push -q origin main
 PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions excludes individually cherry-picked multi-commit branch" 0 \
@@ -940,28 +967,6 @@ git -C "${WT_MERGE}" commit -q --amend --no-edit
 PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains candidate with merge-commit resolution" 4 \
 	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
 	--include-worktrees --repo-path "${WS_CLONE}"
-
-MOCK_BIN_NO_VERBATIM="${TEST_DIR}/mock_bin_no_verbatim"
-mkdir -p "${MOCK_BIN_NO_VERBATIM}"
-REAL_GIT="$(command -v git)"
-cat >"${MOCK_BIN_NO_VERBATIM}/git" <<EOF
-#!/usr/bin/env bash
-if [[ "\${1:-}" == "patch-id" ]]; then
-	for arg in "\$@"; do
-		if [[ "\${arg}" == "--verbatim" ]]; then
-			echo "usage: git patch-id [--stable | --unstable]" >&2
-			exit 129
-		fi
-	done
-fi
-exec "${REAL_GIT}" "\$@"
-EOF
-chmod +x "${MOCK_BIN_NO_VERBATIM}/git"
-PATH="${MOCK_BIN_NO_VERBATIM}:${MOCK_BIN_EMPTY}:${PATH}" check_exit \
-	"check-collisions preserves candidate when git patch-id --verbatim is unavailable" 4 \
-	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
-	--include-worktrees --repo-path "${WS_CLONE}"
-check_grep "missing git patch-id --verbatim emits warning" "git patch-id --verbatim is unavailable" "${TEST_DIR}/check.log"
 
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"
