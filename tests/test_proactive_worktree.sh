@@ -770,6 +770,19 @@ PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions still detects unme
 	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/unmerged.py" \
 	--include-worktrees --repo-path "${SQUASH_CLONE}"
 
+# A candidate with a merged prefix and a new follow-up is still unreviewed.
+# This prevents cherry/patch-id matching from accepting a partial merge.
+echo "sq1 follow-up" >>"${WT_SQ1}/src/sq1.py"
+git -C "${WT_SQ1}" commit -qam "bolt: unmerged follow-up"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "collision retains candidate with only its prefix merged" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq1.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "throttle counts partially merged candidate" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/squash-repo --worktree-root "${SQUASH_WT_ROOT}" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}" --max-open 2
+# Restore the fully merged candidate for the cleanup assertions below.
+git -C "${WT_SQ1}" reset -q --hard "${SQ1_HEAD}"
+
 touch -t 202001010000 "${WT_SQ1}" "${WT_SQ2}" "${WT_UNMERGED}"
 check_exit "cleanup runs on squash-merged worktrees" 0 \
 	"${TARGET_SCRIPT}" cleanup --worktree-root "${SQUASH_WT_ROOT}"

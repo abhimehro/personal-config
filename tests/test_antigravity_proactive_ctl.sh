@@ -213,7 +213,7 @@ check_grep "status reports stopped triage runtime with no scheduler log" "triage
 rm -rf "${HOME}/.gemini/config/skills/proactive-palette" "${HOME}/.gemini/config/hooks.json"
 ln -s "${TEST_DIR}/missing-skill-target" "${HOME}/.gemini/config/skills/proactive-palette"
 ln -s "${TEST_DIR}/missing-hooks-target" "${HOME}/.gemini/config/hooks.json"
-chmod -x "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+chmod 644 "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
 "${CTL_SCRIPT}" status >"${TEST_DIR}/status-broken.log" 2>&1
 check_grep "status excludes dangling skill symlink from healthy count" "^skills_linked=4/5$" "${TEST_DIR}/status-broken.log"
 check_grep "status excludes dangling hooks symlink" "^hooks_linked=no$" "${TEST_DIR}/status-broken.log"
@@ -405,6 +405,81 @@ check "disable restores previous hooks.json backup" test -f "${HOME}/.gemini/con
 check_grep "disable logs restored hooks backup" "restored previous hooks.json" "${TEST_DIR}/disable.log"
 check_grep "disable logs ordered sidecar-first teardown" "Step 1/3: removed sidecar" "${TEST_DIR}/disable.log"
 check_grep "disable prints legacy Jules restore instructions" "ENABLE_LEGACY_JULES" "${TEST_DIR}/disable.log"
+
+# Copy deployment must preserve user content and refresh managed assets.
+# Use a separate home so these cases cannot inherit backups from earlier tests.
+export HOME="${TEST_DIR}/deployment-home"
+CONFIG="${HOME}/.gemini/config"
+RUNTIME="${CONFIG}/proactive"
+SKILL="${CONFIG}/skills/proactive-bolt"
+mkdir -p "${SKILL}"
+printf 'user skill\n' >"${SKILL}/SKILL.md"
+printf '{"user_hook": true}\n' >"${TEST_DIR}/original-hooks.json"
+cp "${TEST_DIR}/original-hooks.json" "${CONFIG}/hooks.json"
+"${CTL_SCRIPT}" install >"${TEST_DIR}/copy-install.log" 2>&1
+check "install backs up unmanaged skill content" bash -c 'cmp "$1"/skills/proactive-bolt.backup.*/SKILL.md <(printf "user skill\n")' _ "${CONFIG}"
+check "install backs up unmanaged hooks content" bash -c 'cmp "$1"/hooks.json.backup.* "$2"' _ "${CONFIG}" "${TEST_DIR}/original-hooks.json"
+check "deployed runtime and hook permissions are restricted" python3 - "${CONFIG}" <<'PYTEST'
+import pathlib
+import stat
+import sys
+
+root = pathlib.Path(sys.argv[1])
+expected = {
+    "hooks.json": 0o600,
+    "proactive": 0o700,
+    "proactive/scripts": 0o700,
+    "proactive/hooks": 0o700,
+    "proactive/.hooks-managed": 0o600,
+    "proactive/scripts/proactive-worktree.sh": 0o755,
+    "proactive/scripts/antigravity-proactive-ctl.sh": 0o755,
+    "proactive/hooks/proactive-guard.py": 0o644,
+}
+assert all(stat.S_IMODE((root / name).stat().st_mode) == mode
+           for name, mode in expected.items())
+PYTEST
+
+# Stop before mutation if a regression has linked either asset to the checkout.
+python3 - "${RUNTIME}/scripts/proactive-worktree.sh" "${REPO_ROOT}/scripts/proactive-worktree.sh" "${SKILL}" "${REPO_ROOT}/configs/antigravity/skills/proactive-bolt" <<'PYTEST'
+import pathlib
+import sys
+
+for deployed, source in zip(sys.argv[1::2], sys.argv[2::2]):
+    if pathlib.Path(deployed).samefile(source):
+        sys.exit(f"Refusing to mutate deployed asset linked to source: {deployed}")
+PYTEST
+
+# A changed deployed copy must never change the source repository.
+printf 'stale runtime\n' >"${RUNTIME}/scripts/proactive-worktree.sh"
+touch "${SKILL}/obsolete-file"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+check "reinstall refreshes runtime bytes from source" cmp "${RUNTIME}/scripts/proactive-worktree.sh" "${REPO_ROOT}/scripts/proactive-worktree.sh"
+check "reinstall drops obsolete managed skill files" test ! -e "${SKILL}/obsolete-file"
+check "reinstall refreshes skill bytes from source" cmp "${SKILL}/SKILL.md" "${REPO_ROOT}/configs/antigravity/skills/proactive-bolt/SKILL.md"
+
+# A matching stamp authorizes removal; user edits must revoke that authority.
+printf '{"edited_hook": true}\n' >"${CONFIG}/hooks.json"
+cp "${CONFIG}/hooks.json" "${TEST_DIR}/edited-hooks.json"
+rm "${SKILL}/.managed-by-proactive-ctl"
+"${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-edited.log" 2>&1
+check "disable preserves hooks changed since deployment" cmp "${CONFIG}/hooks.json" "${TEST_DIR}/edited-hooks.json"
+check "disable preserves unmarked skill directory" test -f "${SKILL}/SKILL.md"
+check "disable preserves runtime while custom hooks remain" test -d "${RUNTIME}"
+check "disable does not consume original hooks backup" bash -c 'cmp "$1"/hooks.json.backup.* "$2"' _ "${CONFIG}" "${TEST_DIR}/original-hooks.json"
+
+rm "${CONFIG}"/hooks.json.backup.*
+
+# Reinstall must back up the edit, and rollback must restore that latest edit.
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >/dev/null 2>&1
+check "rollback restores hooks edited before reinstall" cmp "${CONFIG}/hooks.json" "${TEST_DIR}/edited-hooks.json"
+
+# Status must distinguish missing assets from healthy copies.
+export HOME="${TEST_DIR}/empty-status-home"
+"${CTL_SCRIPT}" status >"${TEST_DIR}/status-empty.log" 2>&1
+for field in 'skills_linked=0/5' 'hooks_linked=no' 'hooks_mode=absent' 'dangling_links=0' 'runtime_worktree_sh=missing' 'runtime_ctl_sh=missing' 'runtime_guard_py=missing'; do
+	check "empty status reports ${field}" grep -qxF "${field}" "${TEST_DIR}/status-empty.log"
+done
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
