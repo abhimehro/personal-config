@@ -31,17 +31,17 @@ error() { printf '[ERROR] %s\n' "$*" >&2; }
 
 MODE=deploy
 case "${1:-}" in
-	--check) MODE=check ;;
-	--dry-run) MODE=dry-run ;;
-	-h | --help)
-		sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
-		exit 0
-		;;
-	"") ;;
-	*)
-		error "Unknown argument: $1"
-		exit 2
-		;;
+--check) MODE=check ;;
+--dry-run) MODE=dry-run ;;
+-h | --help)
+	sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+	exit 0
+	;;
+"") ;;
+*)
+	error "Unknown argument: $1"
+	exit 2
+	;;
 esac
 
 [[ -d $SRC ]] || {
@@ -59,8 +59,8 @@ done < <(
 	cd "$SRC" && find . -type f \
 		! -path "./tmp/*" ! -path "./reports/*" ! -path "./archive/*" \
 		! -name "*.bak" ! -name "*.bak.*" ! -name "*.orig" \
-		! -name ".DS_Store" \
-		| sed 's|^\./||' | sort
+		! -name ".DS_Store" |
+		sed 's|^\./||' | sort
 )
 
 if [[ ${#FILES[@]} -eq 0 ]]; then
