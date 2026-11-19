@@ -202,7 +202,28 @@ if [[ -d "$REPO_ROOT/.github" ]]; then
 	log "Skipping ~/.github (typically not needed in home directory)"
 fi
 
-# 8. Mole whitelist (file, copied rather than symlinked)
+# 8. Antigravity Proactive Skills and Safety Hook (if exists)
+if [[ -d "$REPO_ROOT/configs/antigravity/skills" ]]; then
+	log "Setting up Antigravity proactive skills and safety hook..."
+	mkdir -p "$HOME/.gemini/config/skills" "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees"
+	chmod 700 "$HOME/.gemini/antigravity/proactive-reports" "$HOME/.gemini/antigravity/worktrees" 2>/dev/null || true
+	for agy_skill_dir in "$REPO_ROOT"/configs/antigravity/skills/*; do
+		[[ -d $agy_skill_dir ]] || continue
+		agy_skill_name="${agy_skill_dir##*/}"
+		ensure_dir_link \
+			"$HOME/.gemini/config/skills/$agy_skill_name" \
+			"$agy_skill_dir" \
+			"$HOME/.gemini/config/skills/$agy_skill_name"
+	done
+	if [[ -f "$REPO_ROOT/configs/antigravity/hooks.json" ]]; then
+		ensure_file_link \
+			"$HOME/.gemini/config/hooks.json" \
+			"$REPO_ROOT/configs/antigravity/hooks.json" \
+			"$HOME/.gemini/config/hooks.json"
+	fi
+fi
+
+# 9. Mole whitelist (file, copied rather than symlinked)
 # Mole rewrites this file from its interactive `mole clean --whitelist` editor,
 # and it writes atomically via a temp file plus rename. A symlink would be
 # replaced by a regular file on the first such write, silently breaking the
@@ -227,7 +248,7 @@ else
 	warn "No Mole whitelist found in repo (skipping)"
 fi
 
-# 9. CleanMyMac ignore list (applied through the vendor CLI)
+# 10. CleanMyMac ignore list (applied through the vendor CLI)
 # The ignore list lives in an encrypted binary store, so the repo tracks a
 # declarative path list and reconciles it with the CLI.
 CMM_APPLY="$REPO_ROOT/scripts/apply_cleanmymac_ignores.sh"
@@ -237,6 +258,26 @@ if [[ -x $CMM_APPLY ]]; then
 		success "CleanMyMac ignore list reconciled"
 	else
 		warn "CleanMyMac ignore list not reconciled (run $CMM_APPLY to see why)"
+	fi
+fi
+
+# 11. Maintenance deploy drift check (advisory only)
+# ~/Library/Maintenance is a real directory populated by copy, so live scripts
+# no longer track the checked-out branch. That is deliberate: a symlink into the
+# repo let a `git checkout` silently rewrite production behaviour.
+#
+# This is a WARNING, never a deploy. Running a deploy from here would copy
+# whatever branch happens to be checked out into the live tree, which is exactly
+# the cross-branch contamination this decoupling removed. Deploys stay manual:
+#   ./scripts/deploy_maintenance.sh
+DEPLOY_SCRIPT="$REPO_ROOT/scripts/deploy_maintenance.sh"
+if [[ -x $DEPLOY_SCRIPT ]]; then
+	if "$DEPLOY_SCRIPT" --check >/dev/null 2>&1; then
+		success "Live maintenance tree matches the repo"
+	else
+		warn "Live maintenance tree has drifted from the repo"
+		warn "Review with: ./scripts/deploy_maintenance.sh --dry-run"
+		warn "Apply with:  ./scripts/deploy_maintenance.sh"
 	fi
 fi
 

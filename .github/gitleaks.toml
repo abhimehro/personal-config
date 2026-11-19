@@ -202,6 +202,17 @@ commits = [
 #     (job-name fragments inside ${{ needs.*.result }} expressions)
 # These regexes are matched against the captured "secret" value by gitleaks.
 regexes = [
+  # ABHI-1549 follow-up — the captured value is a *filename fragment*, not a
+  # credential: "secret_prefix_scan.py" in docs/jules-proactive-analysis-2026-11.md
+  # captures "prefix_scan.py". Anchored to the exact value so a real secret that
+  # merely contains this substring still fires.
+  # Deliberately NOT a path allowlist for docs/ — that would blind every document
+  # in the repo to protect five false positives.
+  # Verified on gitleaks 8.24.3 (what CI runs, see GITLEAKS_VERSION resolution in
+  # gitleaks-action src/index.js) and 8.30.1 (local): both suppress this value and
+  # both still fire on a sentinel secret placed under docs/. See
+  # tests/test_gitleaks_allowlist.sh.
+  '''^prefix_scan\.py$''',
   # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
   '''^secrets\.[A-Za-z0-9_]+$''',
   # GitHub Actions needs-context results: needs.<job>.result fragments
@@ -212,7 +223,7 @@ regexes = [
   # like "references" / "placeholders" / "committed" as stopwords (ABHI-1549).
   # Optional trailing "." — the secret charset includes "." so "references."
   # is a common capture when prose ends a sentence.
-  '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded|reference|references|placeholders|committed|backends)\.?$''',
+  '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded|reference|references|placeholders|committed|backends|material)\.?$''',
 ]
 paths = [
   '''(?i)test''',
