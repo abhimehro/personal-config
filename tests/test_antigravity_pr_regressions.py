@@ -276,6 +276,52 @@ class ProactiveCliRegressions(unittest.TestCase):
         self.assertTrue((config / "proactive/scripts/proactive-worktree.sh").is_file())
         self.assertTrue((config / "proactive/hooks/proactive-guard.py").is_file())
 
+    def test_sync_deploys_when_ctl_lacks_executable_bit(self) -> None:
+        repo = self.root / "repo"
+        skills = repo / "configs/antigravity/skills"
+        for name in (
+            "proactive-sentinel",
+            "proactive-bolt",
+            "proactive-palette",
+            "proactive-code-health",
+            "proactive-repo-sweep",
+        ):
+            (skills / name).mkdir(parents=True)
+            (skills / name / "SKILL.md").write_text(f"# {name}\n")
+        (repo / "configs/antigravity/hooks").mkdir(parents=True)
+        (repo / "configs/antigravity/hooks/proactive-guard.py").write_text(
+            "print('{}')\n"
+        )
+        (repo / "configs/antigravity/hooks.json").write_text("{}\n")
+        scripts_dir = repo / "scripts"
+        scripts_dir.mkdir(parents=True)
+        for src in (CTL, WORKTREE):
+            dst = scripts_dir / src.name
+            dst.write_text(src.read_text())
+            dst.chmod(0o644)
+        self.env["REPO_ROOT"] = str(repo)
+        result = self.run_script(SYNC)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        config = self.home / ".gemini/config"
+        self.assertFalse((config / "hooks.json").is_symlink())
+        self.assertTrue((config / "proactive/hooks/proactive-guard.py").is_file())
+
+    def test_sync_refuses_to_activate_deployed_configs_when_ctl_missing(self) -> None:
+        repo = self.root / "repo"
+        (repo / "configs/antigravity/skills/proactive-bolt").mkdir(parents=True)
+        (repo / "configs/antigravity/skills/proactive-bolt/SKILL.md").write_text(
+            "`$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh`\n"
+        )
+        (repo / "configs/antigravity/hooks.json").write_text(
+            '{"proactive-safety-guard":{"command":"python3 \\"$HOME/.gemini/config/proactive/hooks/proactive-guard.py\\""}}\n'
+        )
+        self.env["REPO_ROOT"] = str(repo)
+        result = self.run_script(SYNC)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Missing required controller", result.stderr)
+        self.assertFalse((self.home / ".gemini/config/hooks.json").exists())
+        self.assertFalse((self.home / ".gemini/config/skills/proactive-bolt").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

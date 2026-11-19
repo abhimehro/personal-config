@@ -414,11 +414,12 @@ RUNTIME="${CONFIG}/proactive"
 SKILL="${CONFIG}/skills/proactive-bolt"
 mkdir -p "${SKILL}"
 printf 'user skill\n' >"${SKILL}/SKILL.md"
+printf 'user skill\n' >"${TEST_DIR}/expected-user-skill.md"
 printf '{"user_hook": true}\n' >"${TEST_DIR}/original-hooks.json"
 cp "${TEST_DIR}/original-hooks.json" "${CONFIG}/hooks.json"
 "${CTL_SCRIPT}" install >"${TEST_DIR}/copy-install.log" 2>&1
-check "install backs up unmanaged skill content" bash -c 'cmp "$1"/skills/proactive-bolt.backup.*/SKILL.md <(printf "user skill\n")' _ "${CONFIG}"
-check "install backs up unmanaged hooks content" bash -c 'cmp "$1"/hooks.json.backup.* "$2"' _ "${CONFIG}" "${TEST_DIR}/original-hooks.json"
+check "install backs up unmanaged skill content" cmp "${CONFIG}"/skills/proactive-bolt.backup.*/SKILL.md "${TEST_DIR}/expected-user-skill.md"
+check "install backs up unmanaged hooks content" cmp "${CONFIG}"/hooks.json.backup.* "${TEST_DIR}/original-hooks.json"
 check "deployed runtime and hook permissions are restricted" python3 - "${CONFIG}" <<'PYTEST'
 import pathlib
 import stat
@@ -465,7 +466,7 @@ rm "${SKILL}/.managed-by-proactive-ctl"
 check "disable preserves hooks changed since deployment" cmp "${CONFIG}/hooks.json" "${TEST_DIR}/edited-hooks.json"
 check "disable preserves unmarked skill directory" test -f "${SKILL}/SKILL.md"
 check "disable preserves runtime while custom hooks remain" test -d "${RUNTIME}"
-check "disable does not consume original hooks backup" bash -c 'cmp "$1"/hooks.json.backup.* "$2"' _ "${CONFIG}" "${TEST_DIR}/original-hooks.json"
+check "disable does not consume original hooks backup" cmp "${CONFIG}"/hooks.json.backup.* "${TEST_DIR}/original-hooks.json"
 
 rm "${CONFIG}"/hooks.json.backup.*
 
@@ -480,6 +481,85 @@ export HOME="${TEST_DIR}/empty-status-home"
 for field in 'skills_linked=0/5' 'hooks_linked=no' 'hooks_mode=absent' 'dangling_links=0' 'runtime_worktree_sh=missing' 'runtime_ctl_sh=missing' 'runtime_guard_py=missing'; do
 	check "empty status reports ${field}" grep -qxF "${field}" "${TEST_DIR}/status-empty.log"
 done
+
+# Identical-bytes unmanaged hooks.json must still be backed up and restored on disable.
+export HOME="${TEST_DIR}/identical-hooks-home"
+mkdir -p "${HOME}/.gemini/config"
+cp "${REPO_ROOT}/configs/antigravity/hooks.json" "${HOME}/.gemini/config/hooks.json"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+check "install backs up unmanaged hooks.json even when contents match" compgen -G "${HOME}/.gemini/config/hooks.json.backup.*"
+"${CTL_SCRIPT}" disable >/dev/null 2>&1
+check "disable restores non-proactive entries and strips dangling guard from matching backup" python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if "sonar-secrets" in d and "proactive-safety-guard" not in d else 1)' "${HOME}/.gemini/config/hooks.json"
+
+# Restored hooks.json containing proactive-safety-guard is stripped safely while preserving custom hooks;
+# custom references elsewhere under ~/.gemini/config/proactive/ keep runtime_dir intact.
+export HOME="${TEST_DIR}/sanitize-hooks-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+python3 - "${HOME}/.gemini/config/hooks.json" <<'PYTEST'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text())
+doc["custom-hook"] = {"enabled": True, "PreToolUse": []}
+p.write_text(json.dumps(doc, indent=2) + "\n")
+PYTEST
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-sanitized.log" 2>&1
+check "restored custom hook remains active after disable" python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if "custom-hook" in d and "proactive-safety-guard" not in d else 1)' "${HOME}/.gemini/config/hooks.json"
+check "runtime dir removed when restored hooks no longer reference it" test ! -d "${HOME}/.gemini/config/proactive"
+
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+python3 - "${HOME}/.gemini/config/hooks.json" <<'PYTEST'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(json.dumps({"custom-uses-runtime": {"cmd": "$HOME/.gemini/config/proactive/hooks/proactive-guard.py"}}) + "\n")
+PYTEST
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-preserved.log" 2>&1
+check "runtime dir preserved when restored backup references it outside managed guard" test -d "${HOME}/.gemini/config/proactive"
+
+# Deployed CLI lifecycle (install --pilot, status, disable), --source-repo, and invalid-type/preflight guards.
+export HOME="${TEST_DIR}/deployed-cli-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+DEPLOYED_CTL="${HOME}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh"
+check_exit "deployed CLI reinstalls cleanly using recorded .source-repo" 0 \
+	"${DEPLOYED_CTL}" install --pilot
+rm -f "${HOME}/.gemini/config/proactive/.source-repo"
+check_exit "deployed CLI fails clearly without .source-repo or --source-repo" 1 \
+	"${DEPLOYED_CTL}" install --pilot
+check_grep "deployed CLI error guides operator to checkout or --source-repo" '[-]-source-repo' "${TEST_DIR}/check.log"
+check_exit "deployed CLI reinstalls cleanly with explicit --source-repo" 0 \
+	"${DEPLOYED_CTL}" install --pilot --source-repo "${REPO_ROOT}"
+
+# Missing source asset fails in preflight without mutating the healthy live installation.
+INCOMPLETE_SRC="${TEST_DIR}/incomplete-src"
+mkdir -p "${INCOMPLETE_SRC}/scripts" "${INCOMPLETE_SRC}/configs/antigravity/hooks" "${INCOMPLETE_SRC}/configs/antigravity/skills"
+cp "${REPO_ROOT}/scripts/proactive-worktree.sh" "${INCOMPLETE_SRC}/scripts/"
+cp "${REPO_ROOT}/scripts/antigravity-proactive-ctl.sh" "${INCOMPLETE_SRC}/scripts/"
+check_exit "install aborts in preflight when source asset is missing" 1 \
+	"${DEPLOYED_CTL}" install --source-repo "${INCOMPLETE_SRC}"
+check "live hooks.json preserved untouched after preflight failure" cmp "${HOME}/.gemini/config/hooks.json" "${REPO_ROOT}/configs/antigravity/hooks.json"
+check "live runtime guard preserved after preflight failure" test -f "${HOME}/.gemini/config/proactive/hooks/proactive-guard.py"
+
+# Type checks in status: directory & broken symlink at runtime paths.
+rm -rf "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh" "${HOME}/.gemini/config/proactive/hooks/proactive-guard.py"
+mkdir -p "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh" "${HOME}/.gemini/config/proactive/hooks/proactive-guard.py"
+rm -f "${DEPLOYED_CTL}"
+ln -s "${TEST_DIR}/missing-deployed-ctl" "${DEPLOYED_CTL}"
+"${CTL_SCRIPT}" status >"${TEST_DIR}/status-badtypes.log" 2>&1
+check_grep "status rejects directory at script path as invalid-type" "^runtime_worktree_sh=invalid-type$" "${TEST_DIR}/status-badtypes.log"
+check_grep "status rejects directory at guard path as invalid-type" "^runtime_guard_py=invalid-type$" "${TEST_DIR}/status-badtypes.log"
+check_grep "status catches dangling symlink at runtime ctl path" "^runtime_ctl_sh=broken-symlink$" "${TEST_DIR}/status-badtypes.log"
+check_grep "status increments dangling_links for broken runtime symlink" "^dangling_links=1$" "${TEST_DIR}/status-badtypes.log"
+
+rm -rf "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh" "${HOME}/.gemini/config/proactive/hooks/proactive-guard.py" "${DEPLOYED_CTL}"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+check_exit "deployed CLI runs status cleanly" 0 "${DEPLOYED_CTL}" status
+check_exit "deployed CLI runs base-check via sibling runtime proactive-worktree.sh" 0 \
+	env PATH="${MOCK_BIN_PY}:${PATH}" "${DEPLOYED_CTL}" base-check --repo bc-repo --worktree "${WT_DEFAULT}"
+check_exit "deployed CLI runs disable cleanly" 0 "${DEPLOYED_CTL}" disable
+check "deployed CLI disable removed managed runtime" test ! -d "${HOME}/.gemini/config/proactive"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

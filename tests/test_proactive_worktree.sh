@@ -780,8 +780,39 @@ PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "collision retains candidate with on
 PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "throttle counts partially merged candidate" 5 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/squash-repo --worktree-root "${SQUASH_WT_ROOT}" \
 	--include-worktrees --repo-path "${SQUASH_CLONE}" --max-open 2
-# Restore the fully merged candidate for the cleanup assertions below.
+# Restore the fully merged candidate for the lookback & cleanup assertions below.
 git -C "${WT_SQ1}" reset -q --hard "${SQ1_HEAD}"
+
+# Unbounded upstream scan stays intact beyond 200 commits, while explicit PROACTIVE_SQUASH_LOOKBACK is honored
+python3 - "${SQUASH_CLONE}" <<'PYFAST'
+import subprocess, sys
+repo = sys.argv[1]
+proc = subprocess.Popen(
+    ["git", "-C", repo, "fast-import", "--quiet"],
+    stdin=subprocess.PIPE,
+    text=True,
+)
+parent = subprocess.check_output(["git", "-C", repo, "rev-parse", "main"], text=True).strip()
+lines = []
+for i in range(205):
+    data = f"noise {i}\n"
+    msg = f"docs: noise {i}\n"
+    lines.append(f"commit refs/heads/main\nmark :{i+1}\ncommitter T <t@e.com> {1700000000+i} +0000\ndata {len(msg)}\n{msg}")
+    if i == 0:
+        lines.append(f"from {parent}\n")
+    lines.append(f"M 100644 inline src/noise.txt\ndata {len(data)}\n{data}\n")
+proc.communicate("".join(lines))
+assert proc.returncode == 0
+PYFAST
+git -C "${SQUASH_CLONE}" reset -q --hard main
+git -C "${SQUASH_CLONE}" push -q origin main
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "unbounded scan still detects squash-merged candidate past 200 upstream commits" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit \
+	"bounded PROACTIVE_SQUASH_LOOKBACK=5 conservatively retains candidate outside lookback window" 4 \
+	env PROACTIVE_SQUASH_LOOKBACK=5 "${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
 
 touch -t 202001010000 "${WT_SQ1}" "${WT_SQ2}" "${WT_UNMERGED}"
 check_exit "cleanup runs on squash-merged worktrees" 0 \
@@ -789,6 +820,126 @@ check_exit "cleanup runs on squash-merged worktrees" 0 \
 check "cleanup removed stale 1-commit squash-merged worktree WT_SQ1" test ! -d "${WT_SQ1}"
 check "cleanup removed stale multi-commit squash-merged worktree WT_SQ2" test ! -d "${WT_SQ2}"
 check "cleanup preserved stale unmerged multi-commit worktree WT_UNMERGED" test -d "${WT_UNMERGED}"
+
+# 5h. Patch equivalence must preserve semantically significant whitespace (e.g., Python indentation/strings).
+WS_BARE="${TEST_DIR}/ws-remote.git"
+WS_SEED="${TEST_DIR}/ws-seed"
+WS_CLONE="${TEST_DIR}/ws-repo"
+WS_WT_ROOT="${TEST_DIR}/ws-worktrees"
+mkdir -p "${WS_WT_ROOT}"
+git init -q --bare "${WS_BARE}"
+git init -q "${WS_SEED}"
+git -C "${WS_SEED}" config user.email "test@example.com"
+git -C "${WS_SEED}" config user.name "Test User"
+git -C "${WS_SEED}" checkout -q -b main
+mkdir -p "${WS_SEED}/src"
+cat >"${WS_SEED}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+EOF
+cat >"${WS_SEED}/src/str_case.py" <<'EOF'
+def label():
+    return "a b"
+EOF
+git -C "${WS_SEED}" add -A
+git -C "${WS_SEED}" commit -q -m "base"
+git -C "${WS_SEED}" remote add origin "${WS_BARE}"
+git -C "${WS_SEED}" push -q -u origin main
+git -C "${WS_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${WS_BARE}" "${WS_CLONE}"
+git -C "${WS_CLONE}" config user.email "test@example.com"
+git -C "${WS_CLONE}" config user.name "Test User"
+git -C "${WS_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+WT_WS_INDENT="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens bolt --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_WS_INDENT}" config user.email "test@example.com"
+git -C "${WT_WS_INDENT}" config user.name "Test User"
+cat >"${WT_WS_INDENT}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+        finish()
+EOF
+git -C "${WT_WS_INDENT}" commit -qam "⚡bolt: finish inside conditional"
+
+WT_WS_STR="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens palette --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_WS_STR}" config user.email "test@example.com"
+git -C "${WT_WS_STR}" config user.name "Test User"
+cat >"${WT_WS_STR}/src/str_case.py" <<'EOF'
+def label():
+    return "ab"
+EOF
+git -C "${WT_WS_STR}" commit -qam "🎨palette: compact label"
+
+# Upstream commits differ ONLY by indentation (4 spaces outside `if`) and internal string spaces ("a  b")
+cat >"${WS_CLONE}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+    finish()
+EOF
+git -C "${WS_CLONE}" commit -qam "upstream finish outside conditional"
+cat >"${WS_CLONE}/src/str_case.py" <<'EOF'
+def label():
+    return "a  b"
+EOF
+git -C "${WS_CLONE}" commit -qam "upstream two spaces"
+git -C "${WS_CLONE}" push -q origin main
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle retains whitespace-divergent Python candidates" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ws-repo --worktree-root "${WS_WT_ROOT}" \
+	--include-worktrees --repo-path "${WS_CLONE}" --max-open 2
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains indentation-different Python candidate" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/app.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains string-whitespace-different Python candidate" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/str_case.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+touch -t 202001010000 "${WT_WS_INDENT}" "${WT_WS_STR}"
+check_exit "cleanup runs cleanly on whitespace-divergent candidates" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${WS_WT_ROOT}"
+check "cleanup preserved indentation-different candidate WT_WS_INDENT" test -d "${WT_WS_INDENT}"
+check "cleanup preserved string-whitespace-different candidate WT_WS_STR" test -d "${WT_WS_STR}"
+
+# 5i. Linear individually cherry-picked multi-commit branch vs merge commit resolution
+WT_CHERRY="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens code-health --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_CHERRY}" config user.email "test@example.com"
+git -C "${WT_CHERRY}" config user.name "Test User"
+echo "c1" >"${WT_CHERRY}/src/cherry_only.py"
+git -C "${WT_CHERRY}" add -A
+git -C "${WT_CHERRY}" commit -q -m "chore(qa): cherry part 1"
+CHERRY_C1="$(git -C "${WT_CHERRY}" rev-parse HEAD)"
+echo "c2" >>"${WT_CHERRY}/src/cherry_only.py"
+git -C "${WT_CHERRY}" add -A
+git -C "${WT_CHERRY}" commit -q -m "chore(qa): cherry part 2"
+CHERRY_C2="$(git -C "${WT_CHERRY}" rev-parse HEAD)"
+git -C "${WS_CLONE}" cherry-pick "${CHERRY_C1}" "${CHERRY_C2}" >/dev/null
+git -C "${WS_CLONE}" push -q origin main
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions excludes individually cherry-picked multi-commit branch" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/cherry_only.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+
+WT_MERGE="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens code-health --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_MERGE}" config user.email "test@example.com"
+git -C "${WT_MERGE}" config user.name "Test User"
+echo "merge_c1" >"${WT_MERGE}/src/merge_case.py"
+git -C "${WT_MERGE}" add -A
+git -C "${WT_MERGE}" commit -q -m "chore(qa): candidate commit A"
+MERGE_C1="$(git -C "${WT_MERGE}" rev-parse HEAD)"
+git -C "${WS_CLONE}" cherry-pick "${MERGE_C1}" >/dev/null
+echo "upstream_override" >"${WS_CLONE}/src/merge_case.py"
+git -C "${WS_CLONE}" add -A
+git -C "${WS_CLONE}" commit -q -m "upstream override to 2"
+git -C "${WS_CLONE}" push -q origin main
+git -C "${WT_MERGE}" fetch -q origin
+git -C "${WT_MERGE}" merge -q --no-edit -s ours origin/main
+echo "candidate_conflict_resolution" >"${WT_MERGE}/src/merge_case.py"
+git -C "${WT_MERGE}" add -A
+git -C "${WT_MERGE}" commit -q --amend --no-edit
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains candidate with merge-commit resolution" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
 
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"

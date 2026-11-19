@@ -14,6 +14,15 @@
 set -Eeuo pipefail
 
 DEFAULT_WT_ROOT="${HOME}/.gemini/antigravity/worktrees"
+PATCH_ID_CACHE_DIR=""
+
+cleanup_patch_id_cache() {
+	if [[ -n ${PATCH_ID_CACHE_DIR} ]] && [[ -d ${PATCH_ID_CACHE_DIR} ]]; then
+		rm -rf "${PATCH_ID_CACHE_DIR}"
+	fi
+}
+
+trap cleanup_patch_id_cache EXIT
 
 usage() {
 	cat <<'EOF'
@@ -812,6 +821,97 @@ if collisions:
 PY
 }
 
+ensure_patch_id_cache_dir() {
+	if [[ -z ${PATCH_ID_CACHE_DIR} ]] || [[ ! -d ${PATCH_ID_CACHE_DIR} ]]; then
+		PATCH_ID_CACHE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/proactive-patch-id-cache.XXXXXX")"
+	fi
+}
+
+collect_upstream_patch_ids() {
+	local wt_dir="$1"
+	local merge_base="$2"
+	local upstream_ref="$3"
+
+	UPSTREAM_PATCH_IDS_FILE=""
+	local upstream_sha=""
+	upstream_sha="$(git -C "${wt_dir}" rev-parse --verify --quiet "${upstream_ref}" 2>/dev/null || true)"
+	if [[ -z ${upstream_sha} ]]; then
+		return 1
+	fi
+
+	local common_dir=""
+	local common_rel=""
+	common_rel="$(git -C "${wt_dir}" rev-parse --git-common-dir 2>/dev/null || true)"
+	if [[ -n ${common_rel} ]]; then
+		common_dir="$(cd "${wt_dir}" 2>/dev/null && cd "${common_rel}" 2>/dev/null && pwd || true)"
+	fi
+	if [[ -z ${common_dir} ]]; then
+		common_dir="${wt_dir}"
+	fi
+
+	local lookback="${PROACTIVE_SQUASH_LOOKBACK:-0}"
+	if [[ ! ${lookback} =~ ^[0-9]+$ ]]; then
+		echo "[WARN] Ignoring invalid PROACTIVE_SQUASH_LOOKBACK=${lookback}; scanning full range" >&2
+		lookback="0"
+	fi
+
+	ensure_patch_id_cache_dir
+	local cache_key=""
+	cache_key="$(python3 -c 'import hashlib, sys; print(hashlib.sha256("|".join(sys.argv[1:]).encode()).hexdigest())' "${common_dir}" "${merge_base}" "${upstream_sha}" "${lookback}")"
+	local cache_file="${PATCH_ID_CACHE_DIR}/${cache_key}"
+
+	if [[ ! -f ${cache_file} ]]; then
+		local -a log_args=(git -C "${wt_dir}" log -p --no-merges --no-renames)
+		if [[ ${lookback} -gt 0 ]]; then
+			log_args+=("--max-count=${lookback}")
+		fi
+		log_args+=("${merge_base}..${upstream_ref}")
+
+		local tmp_cache="${cache_file}.tmp.$$"
+		{
+			"${log_args[@]}" 2>/dev/null || true
+		} | git patch-id --verbatim 2>/dev/null | awk '{ print $1 }' >"${tmp_cache}" || true
+		mv -f "${tmp_cache}" "${cache_file}"
+	fi
+
+	if [[ ! -s ${cache_file} ]]; then
+		return 1
+	fi
+	UPSTREAM_PATCH_IDS_FILE="${cache_file}"
+	return 0
+}
+
+all_linear_commits_in_patch_ids() {
+	local wt_dir="$1"
+	local upstream_ref="$2"
+	local cache_file="$3"
+
+	local commit_count="0"
+	commit_count="$(git -C "${wt_dir}" rev-list --no-merges --count "${upstream_ref}..HEAD" 2>/dev/null || echo "0")"
+	if [[ ${commit_count} -le 0 ]]; then
+		return 1
+	fi
+
+	local cand_pids=""
+	cand_pids="$(
+		{
+			git -C "${wt_dir}" log -p --no-merges --no-renames "${upstream_ref}..HEAD" 2>/dev/null || true
+		} | git patch-id --verbatim 2>/dev/null | awk '{ print $1 }' || true
+	)"
+
+	local pid=""
+	local matched=0
+	while IFS= read -r pid; do
+		[[ -n ${pid} ]] || continue
+		if ! grep -qxF "${pid}" "${cache_file}"; then
+			return 1
+		fi
+		matched=$((matched + 1))
+	done <<<"${cand_pids}"
+
+	[[ ${matched} -eq ${commit_count} ]]
+}
+
 is_worktree_merged_into_upstream() {
 	local wt_dir="$1"
 	local upstream_ref="$2"
@@ -820,41 +920,38 @@ is_worktree_merged_into_upstream() {
 		return 0
 	fi
 
-	local cherry_out=""
-	cherry_out="$(git -C "${wt_dir}" cherry "${upstream_ref}" HEAD 2>/dev/null || true)"
-	if [[ -n ${cherry_out} ]] && ! grep -q '^+ ' <<<"${cherry_out}"; then
-		return 0
-	fi
-
-	# Multi-commit squash merges produce one new commit on upstream whose patch-id
-	# matches the combined branch diff rather than any single commit in git cherry.
 	local merge_base=""
 	merge_base="$(git -C "${wt_dir}" merge-base "${upstream_ref}" HEAD 2>/dev/null || true)"
 	if [[ -z ${merge_base} ]]; then
 		return 1
 	fi
 
+	if ! collect_upstream_patch_ids "${wt_dir}" "${merge_base}" "${upstream_ref}"; then
+		return 1
+	fi
+
+	# Multi-commit (and single-commit) squash merges produce one upstream commit whose
+	# verbatim patch-id matches the combined branch diff.
 	local branch_patch_id=""
 	branch_patch_id="$(
 		{
 			git -C "${wt_dir}" diff --no-renames "${merge_base}..HEAD" 2>/dev/null || true
-		} | git patch-id --stable 2>/dev/null | awk 'NR == 1 { print $1 }' || true
+		} | git patch-id --verbatim 2>/dev/null | awk 'NR == 1 { print $1 }' || true
 	)"
-	if [[ -z ${branch_patch_id} ]]; then
-		return 1
-	fi
-
-	local upstream_patch_ids=""
-	upstream_patch_ids="$(
-		{
-			git -C "${wt_dir}" log -p --no-merges --no-renames --max-count=200 "${merge_base}..${upstream_ref}" 2>/dev/null || true
-		} | git patch-id --stable 2>/dev/null | awk '{ print $1 }' || true
-	)"
-	if [[ -n ${upstream_patch_ids} ]] && grep -qxF "${branch_patch_id}" <<<"${upstream_patch_ids}"; then
+	if [[ -n ${branch_patch_id} ]] && grep -qxF "${branch_patch_id}" "${UPSTREAM_PATCH_IDS_FILE}"; then
 		return 0
 	fi
 
-	return 1
+	# For non-squashed rebased/cherry-picked commits, preserve linear-history safety:
+	# skip per-commit matching if upstream..HEAD contains merge commits whose conflict
+	# resolutions git log --no-merges / git cherry would not verify.
+	local merge_commits="1"
+	merge_commits="$(git -C "${wt_dir}" rev-list --merges --count "${upstream_ref}..HEAD" 2>/dev/null || echo "1")"
+	if [[ ${merge_commits} -ne 0 ]]; then
+		return 1
+	fi
+
+	all_linear_commits_in_patch_ids "${wt_dir}" "${upstream_ref}" "${UPSTREAM_PATCH_IDS_FILE}"
 }
 
 has_unreviewed_worktree_commits() {
