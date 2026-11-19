@@ -44,8 +44,8 @@ as `maintenance/bin/*`, `media-streaming/scripts/*`,
 
 ## Execution Workflow
 
-1. Read `<repo>/AGENTS.md` and `<repo>/.jules/palette.md` to avoid repeating
-   completed polish passes or violating house style.
+1. Read `<repo>/AGENTS.md` and `<repo>/.jules/palette.md` (if present) to avoid
+   repeating completed polish passes or violating house style.
 2. Verify no open PR touches the candidate file:
    `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
 3. Create an isolated worktree:

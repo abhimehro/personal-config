@@ -71,7 +71,7 @@ listed pilot subset) using isolated worktrees and strict approval gates.
      `code-health` -> `bolt` (with mandatory `--numeric-check-cmd` tolerance
      verification at `rtol=1e-10, atol=1e-12` in Python / `tolerance = 1e-10` in
      R) + read-only `sentinel`. **Never** run `palette` on research repos.
-3. Read the matching `.jules/<lens>.md` journal in `<repo>` and the
+3. Read the matching `.jules/<lens>.md` journal in `<repo>` (if present) and the
    corresponding skill (`proactive-sentinel`, `proactive-bolt`,
    `proactive-palette`, or `proactive-code-health`).
 
@@ -110,12 +110,14 @@ why in the digest.
    `refs/remotes/origin/HEAD`, creates a collision-proof
    `YYYYMMDDTHHMMSSZ-pid-nonce` worktree, and sets
    `remote.origin.pushurl = DISABLED` in `local` mode):
+
    ```bash
    WT_PATH="$("$HOME/dev/personal-config/scripts/proactive-worktree.sh" prepare \
      --repo-path "$HOME/dev/<repo>" \
      --lens "<lens>" \
      --mode local)"
    ```
+
 2. Apply the minimal production code fix inside `"$WT_PATH"`. Never edit files
    under `"$HOME/dev/<repo>"` directly, and never edit tamper-evident build,
    dependency, or test-harness paths (`Makefile`, `pyproject.toml`, `uv.lock`,
@@ -125,11 +127,13 @@ why in the digest.
    `*/tests/*`, `Tests/*`, `.jules/sentinel.md`).
 3. Run hardened verification (strips `SSH_AUTH_SOCK`, `GH_TOKEN`, and
    `GITHUB_TOKEN` inside verification subprocesses):
+
    ```bash
    "$HOME/dev/personal-config/scripts/proactive-worktree.sh" verify \
      --worktree "$WT_PATH" \
      --lens "<lens>"
    ```
+
    (Include `--numeric-check-cmd "<tolerance_assertion>"` whenever `<lens>` is
    `bolt` on a research repository.)
 

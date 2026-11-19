@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Antigravity PreToolUse defense-in-depth safety guard for proactive workflows.
+# pylint: disable=invalid-name
+"""
+Antigravity PreToolUse defense-in-depth safety guard for proactive workflows.
 
 Reads Antigravity camelCase protojson hook input from stdin and outputs a JSON
 decision (`allow` or `deny`). Server-side GitHub rulesets and non-bypass tokens
@@ -15,20 +17,40 @@ import json
 import os
 import re
 import shlex
+import stat
 import sys
 import time
 from pathlib import Path
 from typing import Any
 
 PROACTIVE_PREFIX = "[PROACTIVE-SWEEP]"
+ONE_DAY_SECONDS = 86400
 SENTINEL_PR_RE = re.compile(r"\b(?:sentinel|cwe-\d+|vulnerability)\b", re.IGNORECASE)
 GH_MUTATE_RE = re.compile(
-    r"(?:^|[;&|()\s`])gh\s+(?:pr\s+(?:create|merge|ready|close|review|edit)|issue\s+create|api\b[^\n]*\s(?:-X|--method)\s*(?:POST|PUT|PATCH|DELETE))",
+    r"(?:^|[;&|()\s`])gh\s+(?:"
+    r"pr\s+(?:create|merge|ready|close|review|edit)"
+    r"|issue\s+create"
+    r"|api\b[^;&|\n]*\s(?:"
+    r"(?:-X(?:\s*|=)|--method(?:\s+|=))(?:POST|PUT|PATCH|DELETE)\b"
+    r"|(?:-f|-F|--(?:raw-)?field|--input)(?:[\s=]|$)"
+    r")"
+    r")",
     re.IGNORECASE,
 )
 GH_PR_CREATE_RE = re.compile(r"(?:^|[;&|()\s`])gh\s+pr\s+create\b", re.IGNORECASE)
 GH_MERGE_RE = re.compile(r"(?:^|[;&|()\s`])gh\s+pr\s+merge\b", re.IGNORECASE)
 SENTINEL_CMD_RE = re.compile(r"\.jules/sentinel\.md\b")
+SENTINEL_GIT_CMD_RE = re.compile(r"\bgit\b[^\n]*\b(?:add|commit|checkout)\b")
+PROTECTED_BRANCH_RE = re.compile(r"(?:^|:)(?:refs/heads/)?(?:main|master|trunk)$")
+
+SHELL_WRAPPERS = frozenset({"agent-zsh", "agent-bash", "bash", "zsh", "sh"})
+SHELL_SENTINEL_OPS = (">", "tee ", "sed -i", "cp ", "mv ", "install ")
+GIT_OPTS_TAKING_VAL = frozenset(
+    {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"}
+)
+FILE_TOOLS = frozenset(
+    {"write_file", "edit_file", "multi_edit_file", "replace_file_content"}
+)
 
 
 def _home_dir() -> Path:
@@ -55,8 +77,15 @@ def _emit(decision: str, reason: str = "") -> int:
     return 0
 
 
+def _emit_verdict(verdict: tuple[str, str] | None) -> int:
+    if verdict is None:
+        return _emit("allow")
+    return _emit(verdict[0], verdict[1])
+
+
 def _load_json_dict(path: Path) -> dict[str, Any]:
-    """Read a JSON object, returning {} for a missing file, I/O error, or invalid JSON.
+    """
+    Read a JSON object, returning {} for a missing file, I/O error, or invalid JSON.
 
     Non-object JSON also returns {}. Invalid UTF-8 raises UnicodeDecodeError.
     """
@@ -70,29 +99,71 @@ def _load_json_dict(path: Path) -> dict[str, Any]:
 
 
 def _save_private_json(path: Path, data: dict[str, Any]) -> None:
-    """Replace a JSON file with a private copy, ignoring filesystem errors.
+    """
+    Replace a JSON file with a private copy, ignoring filesystem errors.
 
     Serialization errors propagate to the caller.
     """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        os.chmod(path.parent, 0o700)
+        path.parent.chmod(stat.S_IRWXU)
         tmp_path = path.parent / f".tmp.{path.name}.{os.getpid()}.{time.time_ns()}"
-        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        tmp_fd = os.open(
+            tmp_path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            stat.S_IRUSR | stat.S_IWUSR,
+        )
         try:
-            with open(fd, "w", encoding="utf-8", closefd=False) as f:
-                f.write(json.dumps(data, indent=2) + "\n")
-                f.flush()
-            os.fsync(fd)
+            with open(tmp_fd, "w", encoding="utf-8", closefd=False) as tmp_file:
+                tmp_file.write(json.dumps(data, indent=2) + "\n")
+                tmp_file.flush()
+            os.fsync(tmp_fd)
         finally:
-            os.close(fd)
+            os.close(tmp_fd)
         os.replace(tmp_path, path)
     except OSError:
         pass
 
 
+def _prune_active_conversations(reg: dict[str, Any], now: float) -> dict[str, Any]:
+    """Return conversation registry entries newer than 24 hours."""
+    return {
+        conv: ts
+        for conv, ts in reg.items()
+        if isinstance(ts, (int, float)) and now - float(ts) < ONE_DAY_SECONDS
+    }
+
+
+def _is_path_under_root(raw_ws: Any, root: Path) -> bool:
+    """Return True when a workspace entry resolves inside or equal to root."""
+    if not isinstance(raw_ws, str) or not raw_ws.strip():
+        return False
+    cleaned = raw_ws.removeprefix("file://")
+    try:
+        resolved_ws = Path(cleaned).expanduser().resolve(strict=False)
+    except OSError:
+        return False
+    return resolved_ws == root or root in resolved_ws.parents
+
+
+def _has_worktree_workspace(payload: dict[str, Any]) -> bool:
+    """Return True when any payload workspacePath lives under the worktrees root."""
+    ws_paths = payload.get("workspacePaths")
+    if not isinstance(ws_paths, list):
+        return False
+    wt_resolved = _worktrees_dir().resolve(strict=False)
+    return any(_is_path_under_root(raw_ws, wt_resolved) for raw_ws in ws_paths)
+
+
+def _starts_with_proactive_prefix(payload: dict[str, Any]) -> bool:
+    """Return True when lastUserInput begins with the proactive sweep marker."""
+    last_input = str(payload.get("lastUserInput") or "").lstrip()
+    return last_input.startswith(PROACTIVE_PREFIX)
+
+
 def _is_proactive_session(payload: dict[str, Any]) -> bool:
-    """Detect a sweep using the environment, workspace, prompt, or conversation registry.
+    """
+    Detect a sweep using the environment, workspace, prompt, or conversation registry.
 
     A matching workspace or prompt records the conversation ID when present;
     registry entries remain active for 24 hours after their recorded timestamp.
@@ -102,34 +173,10 @@ def _is_proactive_session(payload: dict[str, Any]) -> bool:
 
     conv_id = str(payload.get("conversationId") or "").strip()
     reg_path = _reports_dir() / ".sweep-conversations.json"
-    reg = _load_json_dict(reg_path)
     now = time.time()
-    active_convs = {
-        k: v
-        for k, v in reg.items()
-        if isinstance(v, (int, float)) and now - float(v) < 86400
-    }
+    active_convs = _prune_active_conversations(_load_json_dict(reg_path), now)
 
-    wt_resolved = _worktrees_dir().resolve(strict=False)
-    ws_paths = payload.get("workspacePaths")
-    in_wt_workspace = False
-    if isinstance(ws_paths, list):
-        for raw_ws in ws_paths:
-            if not isinstance(raw_ws, str) or not raw_ws.strip():
-                continue
-            cleaned = raw_ws.removeprefix("file://")
-            try:
-                resolved_ws = Path(cleaned).expanduser().resolve(strict=False)
-                if resolved_ws == wt_resolved or wt_resolved in resolved_ws.parents:
-                    in_wt_workspace = True
-                    break
-            except OSError:
-                continue
-
-    last_input = str(payload.get("lastUserInput") or "").lstrip()
-    starts_with_marker = last_input.startswith(PROACTIVE_PREFIX)
-
-    if in_wt_workspace or starts_with_marker:
+    if _has_worktree_workspace(payload) or _starts_with_proactive_prefix(payload):
         if conv_id:
             active_convs[conv_id] = now
             _save_private_json(reg_path, active_convs)
@@ -138,10 +185,22 @@ def _is_proactive_session(payload: dict[str, Any]) -> bool:
     return bool(conv_id and conv_id in active_convs)
 
 
+def _is_repo_sentinel_path(target_path: Path, repo_name: str) -> bool:
+    """Return True when target_path points to <repo_name>/.jules/sentinel.md."""
+    parts = target_path.expanduser().parts
+    return (
+        len(parts) >= 3
+        and parts[-3] == repo_name
+        and parts[-2] == ".jules"
+        and parts[-1] == "sentinel.md"
+    )
+
+
 def _has_valid_sentinel_lease(
     target_hint: str, target_path: Path | None = None
 ) -> bool:
-    """Check that an unexpired lease names the target repository.
+    """
+    Check that an unexpired lease names the target repository.
 
     Match the sentinel file path when provided, otherwise match the repository
     in the command hint. Invalid lease expiry values can raise TypeError or
@@ -154,91 +213,94 @@ def _has_valid_sentinel_lease(
     if not repo_name or time.time() >= expires_at:
         return False
     if target_path is not None:
-        parts = target_path.expanduser().parts
-        return (
-            len(parts) >= 3
-            and parts[-3] == repo_name
-            and parts[-2] == ".jules"
-            and parts[-1] == "sentinel.md"
-        )
+        return _is_repo_sentinel_path(target_path, repo_name)
     pattern = rf"(?:/dev/|(?:^|\s)-C\s+[^;\n]*/){re.escape(repo_name)}(?=/|\s|$|[\"'])"
     return bool(re.search(pattern, target_hint))
+
+
+def _tokenize_segment(segment: str) -> list[str]:
+    """Split a command segment using shlex, falling back to whitespace split."""
+    try:
+        return shlex.split(segment, comments=True)
+    except ValueError:
+        return segment.split()
+
+
+def _strip_leading_env_vars(tokens: list[str]) -> list[str]:
+    """Drop leading VAR=val assignments from a tokenized shell command."""
+    idx = 0
+    while idx < len(tokens) and "=" in tokens[idx] and not tokens[idx].startswith("-"):
+        idx += 1
+    return tokens[idx:]
+
+
+def _is_short_c_flag(token: str) -> bool:
+    """Return True for short option clusters containing -c (excluding --long)."""
+    return token.startswith("-") and not token.startswith("--") and "c" in token[1:]
+
+
+def _find_shell_command_arg(tokens: list[str]) -> str | None:
+    """Extract the inline script argument following a shell -c option cluster."""
+    for idx in range(1, len(tokens) - 1):
+        if _is_short_c_flag(tokens[idx]):
+            return tokens[idx + 1]
+    return None
 
 
 def _iter_git_invocations(cmd: str) -> list[list[str]]:
     """Extract tokenized git invocations across command segments and shell -c wrappers."""
     invocations: list[list[str]] = []
     for segment in re.split(r"[;&|\n]+", cmd):
-        try:
-            tokens = shlex.split(segment, comments=True)
-        except ValueError:
-            tokens = segment.split()
-        if not tokens:
+        cmd_tokens = _strip_leading_env_vars(_tokenize_segment(segment))
+        if not cmd_tokens:
             continue
-        idx = 0
-        while (
-            idx < len(tokens) and "=" in tokens[idx] and not tokens[idx].startswith("-")
-        ):
-            idx += 1
-        if idx >= len(tokens):
-            continue
-        base = os.path.basename(tokens[idx])
-        if base in ("agent-zsh", "agent-bash", "bash", "zsh", "sh"):
-            c_idx = next(
-                (
-                    i
-                    for i in range(idx + 1, len(tokens))
-                    if tokens[i].startswith("-")
-                    and not tokens[i].startswith("--")
-                    and "c" in tokens[i][1:]
-                ),
-                None,
-            )
-            if c_idx is not None and c_idx + 1 < len(tokens):
-                invocations.extend(_iter_git_invocations(tokens[c_idx + 1]))
-            continue
-        if base == "git":
-            invocations.append(tokens[idx + 1 :])
+        base = os.path.basename(cmd_tokens[0])
+        if base in SHELL_WRAPPERS:
+            nested = _find_shell_command_arg(cmd_tokens)
+            if nested is not None:
+                invocations.extend(_iter_git_invocations(nested))
+        elif base == "git":
+            invocations.append(cmd_tokens[1:])
     return invocations
+
+
+def _is_push_alias_assignment(cfg_value: str) -> bool:
+    """Return True when a -c config entry defines a git alias involving push."""
+    lowered = cfg_value.lower()
+    return lowered.startswith("alias.") and "push" in lowered
+
+
+def _consume_git_global_option(git_args: list[str], idx: int) -> tuple[int, bool]:
+    """Advance past one global git option at idx and report any push alias config."""
+    tok = git_args[idx]
+    if tok in GIT_OPTS_TAKING_VAL:
+        has_alias = (
+            tok == "-c"
+            and idx + 1 < len(git_args)
+            and _is_push_alias_assignment(git_args[idx + 1])
+        )
+        return idx + 2, has_alias
+    if any(tok.startswith(f"{opt}=") for opt in GIT_OPTS_TAKING_VAL):
+        lowered = tok.lower()
+        has_alias = (
+            lowered.startswith("-c") and "alias." in lowered and "push" in lowered
+        )
+        return idx + 1, has_alias
+    return idx + 1, False
 
 
 def _git_subcommand_and_args(git_args: list[str]) -> tuple[str, list[str], bool]:
     """Return (subcommand, remaining_args, has_push_alias) after global git flags."""
     has_push_alias = False
-    i = 0
-    opts_taking_val = {
-        "-C",
-        "-c",
-        "--git-dir",
-        "--work-tree",
-        "--namespace",
-        "--config-env",
-    }
-    while i < len(git_args):
-        tok = git_args[i]
+    idx = 0
+    while idx < len(git_args):
+        tok = git_args[idx]
         if tok == "--":
-            i += 1
-            break
-        if tok in opts_taking_val:
-            if tok == "-c" and i + 1 < len(git_args):
-                cfg = git_args[i + 1]
-                if cfg.lower().startswith("alias.") and "push" in cfg.lower():
-                    has_push_alias = True
-            i += 2
-            continue
-        if any(tok.startswith(f"{opt}=") for opt in opts_taking_val):
-            if (
-                tok.lower().startswith("-c")
-                and "alias." in tok.lower()
-                and "push" in tok.lower()
-            ):
-                has_push_alias = True
-            i += 1
-            continue
-        if tok.startswith("-"):
-            i += 1
-            continue
-        return tok, git_args[i + 1 :], has_push_alias
+            return "", [], has_push_alias
+        if not tok.startswith("-"):
+            return tok, git_args[idx + 1 :], has_push_alias
+        idx, saw_alias = _consume_git_global_option(git_args, idx)
+        has_push_alias = has_push_alias or saw_alias
     return "", [], has_push_alias
 
 
@@ -251,34 +313,48 @@ def _is_any_git_push(cmd: str) -> bool:
     return False
 
 
+def _is_force_flag(tok: str) -> bool:
+    """Return True for git push force flags."""
+    return tok in ("-f", "--force") or tok.startswith(
+        ("--force-with-lease", "--force-if-includes")
+    )
+
+
+def _is_plus_refspec(tok: str) -> bool:
+    """Return True for a forced +refspec token."""
+    return tok.startswith("+") and len(tok) > 1 and not tok.startswith("+-")
+
+
+def _targets_protected_branch(tok: str) -> bool:
+    """Return True when a refspec targets main, master, or trunk."""
+    return bool(PROTECTED_BRANCH_RE.search(tok.lstrip("+")))
+
+
+def _is_protected_force_push_args(rest: list[str], has_push_alias: bool) -> bool:
+    """Return True when push arguments represent a protected force push."""
+    if any(_is_plus_refspec(tok) for tok in rest):
+        return True
+    if not any(_is_force_flag(tok) for tok in rest):
+        return False
+    return (
+        has_push_alias
+        or len(rest) <= 2
+        or any(_targets_protected_branch(tok) for tok in rest)
+    )
+
+
 def _is_force_push_to_protected(cmd: str) -> bool:
-    """Detect force pushes to protected branches and pushes with +refspecs.
+    """
+    Detect force pushes to protected branches and pushes with +refspecs.
 
     Force flags also match when there are at most two push arguments or a push
     alias is detected; +refspecs match regardless of the target branch.
     """
     for git_args in _iter_git_invocations(cmd):
         sub, rest, has_push_alias = _git_subcommand_and_args(git_args)
-        if sub != "push" and not has_push_alias:
-            continue
-        has_force_flag = any(
-            t in ("-f", "--force")
-            or t.startswith("--force-with-lease")
-            or t.startswith("--force-if-includes")
-            for t in rest
-        )
-        has_plus_refspec = any(
-            t.startswith("+") and len(t) > 1 and not t.startswith("+-") for t in rest
-        )
-        targets_protected = any(
-            re.search(r"(?:^|:)(?:refs/heads/)?(?:main|master|trunk)$", t.lstrip("+"))
-            for t in rest
-        )
-        if has_plus_refspec or (
-            has_force_flag and (targets_protected or len(rest) <= 2)
+        if (sub == "push" or has_push_alias) and _is_protected_force_push_args(
+            rest, has_push_alias
         ):
-            return True
-        if has_push_alias and has_force_flag:
             return True
     return False
 
@@ -288,121 +364,143 @@ def _mutates_sentinel_in_shell(cmd: str) -> bool:
     for line in cmd.splitlines():
         if not SENTINEL_CMD_RE.search(line):
             continue
-        if any(
-            op in line for op in (">", "tee ", "sed -i", "cp ", "mv ", "install ")
-        ) or re.search(r"\bgit\b[^\n]*\b(?:add|commit|checkout)\b", line):
+        if any(op in line for op in SHELL_SENTINEL_OPS) or SENTINEL_GIT_CMD_RE.search(
+            line
+        ):
             return True
     return False
 
 
+def _is_sentinel_path(norm: Path) -> bool:
+    """Return True when norm ends with .jules/sentinel.md."""
+    parts = norm.parts
+    return len(parts) >= 2 and parts[-2] == ".jules" and parts[-1] == "sentinel.md"
+
+
+def _is_under_dev_root(norm: Path) -> bool:
+    """Return True when norm resolves inside or equal to ~/dev."""
+    try:
+        real_path = Path(os.path.realpath(str(norm)))
+        dev_real = Path(os.path.realpath(str(_dev_root())))
+    except OSError:
+        return False
+    return real_path == dev_real or dev_real in real_path.parents
+
+
 def _check_file_target(path_str: str, is_proactive: bool) -> tuple[str, str] | None:
-    """Return a denial and reason for restricted file targets, or None.
+    """
+    Return a denial and reason for restricted file targets, or None.
 
     Sentinel files require a matching lease; proactive sessions also block
     targets resolving under ~/dev. Lease parsing errors propagate.
     """
     if not path_str:
         return None
-    if path_str.startswith("file://"):
-        path_str = path_str[7:]
-    norm = Path(path_str).expanduser()
-    parts = norm.parts
-    if len(parts) >= 2 and parts[-2] == ".jules" and parts[-1] == "sentinel.md":
-        if not _has_valid_sentinel_lease(str(norm), target_path=norm):
-            return (
-                "deny",
-                "Blocked pre-merge write to .jules/sentinel.md in a public repo. "
-                "Write Sentinel findings to ~/.gemini/antigravity/proactive-reports/ "
-                "and unlock post-merge updates via antigravity-proactive-ctl.sh sentinel-post-merge.",
-            )
+    norm = Path(path_str.removeprefix("file://")).expanduser()
+    if _is_sentinel_path(norm) and not _has_valid_sentinel_lease(
+        str(norm), target_path=norm
+    ):
+        reason = (
+            "Blocked pre-merge write to .jules/sentinel.md in a public repo. "
+            "Write Sentinel findings to ~/.gemini/antigravity/proactive-reports/ "
+            "and unlock post-merge updates via antigravity-proactive-ctl.sh sentinel-post-merge."
+        )
+        return ("deny", reason)
+    if is_proactive and _is_under_dev_root(norm):
+        reason = (
+            "Blocked direct edit to primary checkout under ~/dev during "
+            "proactive sweep. Edit inside the isolated worktree created by "
+            "proactive-worktree.sh instead."
+        )
+        return ("deny", reason)
+    return None
+
+
+def _read_hook_payload() -> dict[str, Any] | None:
+    """Read and decode a JSON object hook payload from stdin."""
+    raw = sys.stdin.read()
+    if not raw.strip():
+        return None
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _extract_arg_str(args: dict[str, Any], keys: tuple[str, ...]) -> str:
+    """Return the first non-empty string value from args across candidate keys."""
+    for key in keys:
+        val = args.get(key)
+        if val:
+            return str(val)
+    return ""
+
+
+def _evaluate_proactive_command(
+    cmd: str, allow_draft_pr: bool
+) -> tuple[str, str] | None:
+    """Return a denial verdict for restricted commands inside proactive sessions."""
+    if GH_MERGE_RE.search(cmd):
+        return ("deny", "Blocked autonomous PR merge during proactive sweep.")
+    if not allow_draft_pr and (_is_any_git_push(cmd) or GH_MUTATE_RE.search(cmd)):
+        reason = (
+            "Blocked remote push/PR mutation during local-only (2B) proactive pilot."
+        )
+        return ("deny", reason)
+    return None
+
+
+def _evaluate_run_command(
+    cmd: str, is_proactive: bool, allow_draft_pr: bool
+) -> tuple[str, str] | None:
+    """Evaluate a run_command payload against universal and proactive guardrails."""
+    if _is_force_push_to_protected(cmd):
+        return ("deny", "Blocked force-push or +refspec push to protected branch.")
+    if _mutates_sentinel_in_shell(cmd) and not _has_valid_sentinel_lease(cmd):
+        return ("deny", "Blocked pre-merge modification/staging of .jules/sentinel.md.")
+    if GH_PR_CREATE_RE.search(cmd) and SENTINEL_PR_RE.search(cmd):
+        reason = (
+            "Blocked public PR creation for Sentinel security finding; "
+            "use GitHub Security Advisories or keep local-only."
+        )
+        return ("deny", reason)
     if is_proactive:
-        try:
-            real_path = Path(os.path.realpath(str(norm)))
-            dev_real = Path(os.path.realpath(str(_dev_root())))
-            if real_path == dev_real or dev_real in real_path.parents:
-                return (
-                    "deny",
-                    "Blocked direct edit to primary checkout under ~/dev during "
-                    "proactive sweep. Edit inside the isolated worktree created by "
-                    "proactive-worktree.sh instead.",
-                )
-        except OSError:
-            pass
+        return _evaluate_proactive_command(cmd, allow_draft_pr)
+    return None
+
+
+def _evaluate_tool_call(
+    tool_name: str, args: dict[str, Any], is_proactive: bool
+) -> tuple[str, str] | None:
+    """Evaluate a parsed toolCall entry and return a denial verdict or None."""
+    if tool_name in FILE_TOOLS:
+        target_path = _extract_arg_str(
+            args, ("Path", "path", "TargetFile", "targetFile", "filePath", "file_path")
+        )
+        return _check_file_target(target_path, is_proactive)
+    if tool_name == "run_command":
+        cmd = _extract_arg_str(args, ("CommandLine", "command"))
+        allow_draft_pr = os.environ.get("AGY_PROACTIVE_ALLOW_DRAFT_PR") == "1"
+        return _evaluate_run_command(cmd, is_proactive, allow_draft_pr)
     return None
 
 
 def main() -> int:
-    raw = sys.stdin.read()
-    if not raw.strip():
-        return _emit("allow")
-    try:
-        payload: dict[str, Any] = json.loads(raw)
-    except json.JSONDecodeError:
+    """Read a PreToolUse hook payload from stdin and emit an allow/deny verdict."""
+    payload = _read_hook_payload()
+    if payload is None:
         return _emit("allow")
 
     is_proactive = _is_proactive_session(payload)
-    allow_draft_pr = os.environ.get("AGY_PROACTIVE_ALLOW_DRAFT_PR") == "1"
-
     tool_call = payload.get("toolCall")
     if not isinstance(tool_call, dict):
         return _emit("allow")
 
     tool_name = str(tool_call.get("name") or "")
-    args = tool_call.get("args")
-    if not isinstance(args, dict):
-        args = {}
-
-    if tool_name in (
-        "write_file",
-        "edit_file",
-        "multi_edit_file",
-        "replace_file_content",
-    ):
-        target_path = str(
-            args.get("Path")
-            or args.get("path")
-            or args.get("TargetFile")
-            or args.get("targetFile")
-            or args.get("filePath")
-            or args.get("file_path")
-            or ""
-        )
-        verdict = _check_file_target(target_path, is_proactive)
-        if verdict is not None:
-            return _emit(verdict[0], verdict[1])
-        return _emit("allow")
-
-    if tool_name == "run_command":
-        cmd = str(args.get("CommandLine") or args.get("command") or "")
-        if _is_force_push_to_protected(cmd):
-            return _emit(
-                "deny",
-                "Blocked force-push or +refspec push to protected branch.",
-            )
-        if _mutates_sentinel_in_shell(cmd) and not _has_valid_sentinel_lease(cmd):
-            return _emit(
-                "deny",
-                "Blocked pre-merge modification/staging of .jules/sentinel.md.",
-            )
-        if GH_PR_CREATE_RE.search(cmd) and SENTINEL_PR_RE.search(cmd):
-            return _emit(
-                "deny",
-                "Blocked public PR creation for Sentinel security finding; use GitHub Security Advisories or keep local-only.",
-            )
-        if is_proactive:
-            if GH_MERGE_RE.search(cmd):
-                return _emit(
-                    "deny",
-                    "Blocked autonomous PR merge during proactive sweep.",
-                )
-            if not allow_draft_pr and (
-                _is_any_git_push(cmd) or GH_MUTATE_RE.search(cmd)
-            ):
-                return _emit(
-                    "deny",
-                    "Blocked remote push/PR mutation during local-only (2B) proactive pilot.",
-                )
-    return _emit("allow")
+    raw_args = tool_call.get("args")
+    args = raw_args if isinstance(raw_args, dict) else {}
+    return _emit_verdict(_evaluate_tool_call(tool_name, args, is_proactive))
 
 
 if __name__ == "__main__":

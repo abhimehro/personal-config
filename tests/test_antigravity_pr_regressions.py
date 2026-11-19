@@ -93,6 +93,30 @@ class GuardBoundaries(unittest.TestCase):
                 self.assertTrue(guard._mutates_sentinel_in_shell(command))
                 self.assertFalse(guard._has_valid_sentinel_lease(command))
 
+    def test_gh_api_mutations_blocked_while_get_allowed(self) -> None:
+        for cmd, expected in [
+            (
+                "gh api repos/o/r/issues -f title=x",
+                (
+                    "deny",
+                    "Blocked remote push/PR mutation during local-only (2B) proactive pilot.",
+                ),
+            ),
+            (
+                "gh api repos/o/r/issues --field title=x",
+                (
+                    "deny",
+                    "Blocked remote push/PR mutation during local-only (2B) proactive pilot.",
+                ),
+            ),
+            ("gh api repos/o/r", None),
+        ]:
+            with self.subTest(cmd=cmd):
+                self.assertEqual(
+                    guard._evaluate_run_command(cmd, True, False),
+                    expected,
+                )
+
 
 class ProactiveCliRegressions(unittest.TestCase):
     def setUp(self) -> None:

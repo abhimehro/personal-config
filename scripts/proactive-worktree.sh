@@ -633,9 +633,9 @@ cmd_verify() {
 
 	(
 		cd "${wt_path}"
-		SSH_AUTH_SOCK="" GH_TOKEN="" GITHUB_TOKEN="" bash -c "${test_cmd}"
+		env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN bash -c "${test_cmd}"
 		if [[ -n ${numeric_cmd} ]]; then
-			SSH_AUTH_SOCK="" GH_TOKEN="" GITHUB_TOKEN="" bash -c "${numeric_cmd}"
+			env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN bash -c "${numeric_cmd}"
 		fi
 	)
 }

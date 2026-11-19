@@ -81,8 +81,8 @@ must never silently shift scientific outputs:
 
 ## Execution Workflow
 
-1. Read `<repo>/AGENTS.md` and `<repo>/.jules/bolt.md` so prior optimizations
-   and rejected approaches are not repeated.
+1. Read `<repo>/AGENTS.md` and `<repo>/.jules/bolt.md` (if present) so prior
+   optimizations and rejected approaches are not repeated.
 2. Check open PR file collisions before editing:
    `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
 3. Create an isolated worktree:

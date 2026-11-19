@@ -69,7 +69,7 @@ Prioritize changes and reachable code paths across these categories:
 
 ## Execution Workflow
 
-1. Inspect `<repo>/AGENTS.md` and `<repo>/.jules/sentinel.md`.
+1. Inspect `<repo>/AGENTS.md` and `<repo>/.jules/sentinel.md` (if present).
 2. Review recent commits (`git -C <repo> log -n 20 --oneline`) and open PRs to
    avoid duplicating active work.
 3. Identify at most **one** concrete **High** or **Warning** finding with a
