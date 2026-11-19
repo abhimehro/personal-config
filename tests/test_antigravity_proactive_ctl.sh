@@ -572,6 +572,7 @@ check "deployed CLI disable removed managed runtime" test ! -d "${HOME}/.gemini/
 
 # deploy_skill_dir rollback restores both managed and unmanaged skills when staging mv fails.
 MOCK_MV_BIN="${TEST_DIR}/mock_mv_bin"
+MOCK_MV_LOG="${TEST_DIR}/mv-rejected.log"
 mkdir -p "${MOCK_MV_BIN}"
 REAL_MV="$(command -v mv)"
 cat >"${MOCK_MV_BIN}/mv" <<EOF
@@ -579,6 +580,7 @@ cat >"${MOCK_MV_BIN}/mv" <<EOF
 for arg in "\$@"; do
 	case "\${arg}" in
 	*/proactive-bolt.tmp.*)
+		printf '%s\n' "\$*" >"${MOCK_MV_LOG}"
 		exit 1
 		;;
 	esac
@@ -596,8 +598,11 @@ for kind in managed unmanaged; do
 		mkdir -p "${BOLT_DIR}"
 	fi
 	echo "preserve-${kind}" >"${BOLT_DIR}/sentinel-${kind}.txt"
+	rm -f "${MOCK_MV_LOG}"
 	check_exit "install fails when ${kind} skill staging mv fails" 1 \
 		env PATH="${MOCK_MV_BIN}:${PATH}" "${CTL_SCRIPT}" install
+	check "${kind} rollback triggered mocked mv rejection" test -s "${MOCK_MV_LOG}"
+	check_grep "${kind} rollback ran staging mv error handler" 'ERROR: failed to move staged directory .*proactive-bolt\.tmp\.' "${TEST_DIR}/check.log"
 	check "${kind} skill restored after failed mv" test -f "${BOLT_DIR}/sentinel-${kind}.txt"
 	check "no lingering ${kind} tmp or backup skill dir after failed mv" \
 		python3 -c 'import glob, sys; sys.exit(1 if glob.glob(sys.argv[1] + ".*") else 0)' "${BOLT_DIR}"
