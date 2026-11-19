@@ -941,6 +941,28 @@ PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains candidate 
 	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
 	--include-worktrees --repo-path "${WS_CLONE}"
 
+MOCK_BIN_NO_VERBATIM="${TEST_DIR}/mock_bin_no_verbatim"
+mkdir -p "${MOCK_BIN_NO_VERBATIM}"
+REAL_GIT="$(command -v git)"
+cat >"${MOCK_BIN_NO_VERBATIM}/git" <<EOF
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "patch-id" ]]; then
+	for arg in "\$@"; do
+		if [[ "\${arg}" == "--verbatim" ]]; then
+			echo "usage: git patch-id [--stable | --unstable]" >&2
+			exit 129
+		fi
+	done
+fi
+exec "${REAL_GIT}" "\$@"
+EOF
+chmod +x "${MOCK_BIN_NO_VERBATIM}/git"
+PATH="${MOCK_BIN_NO_VERBATIM}:${MOCK_BIN_EMPTY}:${PATH}" check_exit \
+	"check-collisions preserves candidate when git patch-id --verbatim is unavailable" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+check_grep "missing git patch-id --verbatim emits warning" "git patch-id --verbatim is unavailable" "${TEST_DIR}/check.log"
+
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"
 # Backdate WT1 (clean, 0 commits ahead), WT2 (dirty), and WT_CAND1 (clean working tree, 1 unmerged commit ahead!)

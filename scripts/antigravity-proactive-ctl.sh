@@ -239,6 +239,7 @@ deploy_skill_dir() {
 	printf 'managed\n' >"${tmp_dir}/${PROACTIVE_MANAGED_MARKER}"
 
 	local old_dir=""
+	local backup_dir=""
 	if [[ -L ${dst_dir} ]]; then
 		rm -f "${dst_dir}"
 	elif [[ -e ${dst_dir} ]]; then
@@ -249,11 +250,21 @@ deploy_skill_dir() {
 		else
 			local backup_ts=""
 			backup_ts="$(date -u +%Y%m%d_%H%M%S)"
-			mv "${dst_dir}" "${dst_dir}.backup.${backup_ts}"
+			backup_dir="${dst_dir}.backup.${backup_ts}"
+			mv "${dst_dir}" "${backup_dir}"
 		fi
 	fi
 
-	mv "${tmp_dir}" "${dst_dir}"
+	if ! mv "${tmp_dir}" "${dst_dir}"; then
+		if [[ -n ${old_dir} ]] && [[ -e ${old_dir} ]]; then
+			mv "${old_dir}" "${dst_dir}" 2>/dev/null || true
+		elif [[ -n ${backup_dir} ]] && [[ -e ${backup_dir} ]]; then
+			mv "${backup_dir}" "${dst_dir}" 2>/dev/null || true
+		fi
+		rm -rf "${tmp_dir}"
+		echo "ERROR: failed to move staged directory ${tmp_dir} into ${dst_dir}" >&2
+		return 1
+	fi
 	if [[ -n ${old_dir} ]] && [[ -d ${old_dir} ]]; then
 		rm -rf "${old_dir}"
 	fi
@@ -1051,10 +1062,10 @@ if marker not in raw:
 try:
     data = json.loads(raw)
 except json.JSONDecodeError:
-    sys.exit(1)
+    sys.exit(11)
 
 if not isinstance(data, dict):
-    sys.exit(1)
+    sys.exit(11)
 
 if "proactive-safety-guard" in data:
     data.pop("proactive-safety-guard", None)
@@ -1064,10 +1075,10 @@ if "proactive-safety-guard" in data:
     tmp.chmod(0o600)
     os.replace(tmp, path)
     if marker in rendered:
-        sys.exit(1)
+        sys.exit(10)
     sys.exit(0)
 
-sys.exit(1)
+sys.exit(10)
 PY
 }
 
@@ -1118,11 +1129,22 @@ cmd_disable() {
 		if [[ -n ${latest_backup} ]] && [[ -f ${latest_backup} ]]; then
 			mv "${latest_backup}" "${hooks_path}"
 			echo "Step 3/3: restored previous hooks.json from ${latest_backup}"
-			if sanitize_restored_hooks "${hooks_path}"; then
+			local sanitize_rc=0
+			sanitize_restored_hooks "${hooks_path}" || sanitize_rc=$?
+			case "${sanitize_rc}" in
+			0)
 				rm -rf "${runtime_dir}"
-			else
-				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json references it"
-			fi
+				;;
+			10)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json still references .gemini/config/proactive (manual cleanup may be needed)"
+				;;
+			11)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json could not be parsed as JSON" >&2
+				;;
+			*)
+				echo "Step 3/3: preserved ${runtime_dir} (hooks inspection exited ${sanitize_rc})" >&2
+				;;
+			esac
 		else
 			rm -rf "${runtime_dir}"
 			echo "Step 3/3: removed global hooks.json (local reports and worktrees preserved)"

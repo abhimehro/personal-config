@@ -517,6 +517,15 @@ PYTEST
 "${CTL_SCRIPT}" install >/dev/null 2>&1
 "${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-preserved.log" 2>&1
 check "runtime dir preserved when restored backup references it outside managed guard" test -d "${HOME}/.gemini/config/proactive"
+check "preserved hooks warning mentions manual cleanup" grep -q "manual cleanup" "${TEST_DIR}/disable-preserved.log"
+
+rm -f "${HOME}/.gemini/config/hooks.json.backup."*
+printf '{invalid json ".gemini/config/proactive"\n' >"${HOME}/.gemini/config/hooks.json"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-invalid-json.log" 2>&1
+check "runtime dir preserved when restored hooks backup is invalid JSON" test -d "${HOME}/.gemini/config/proactive"
+check "invalid JSON hooks log mentions parse failure" grep -q "could not be parsed as JSON" "${TEST_DIR}/disable-invalid-json.log"
+check "invalid JSON hooks content left untouched" grep -q '{invalid json' "${HOME}/.gemini/config/hooks.json"
 
 # Deployed CLI lifecycle (install --pilot, status, disable), --source-repo, and invalid-type/preflight guards.
 export HOME="${TEST_DIR}/deployed-cli-home"

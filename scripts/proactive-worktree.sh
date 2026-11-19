@@ -15,6 +15,8 @@ set -Eeuo pipefail
 
 DEFAULT_WT_ROOT="${HOME}/.gemini/antigravity/worktrees"
 PATCH_ID_CACHE_DIR=""
+VERBATIM_PATCH_ID_CHECKED=0
+VERBATIM_PATCH_ID_OK=0
 
 cleanup_patch_id_cache() {
 	if [[ -n ${PATCH_ID_CACHE_DIR} ]] && [[ -d ${PATCH_ID_CACHE_DIR} ]]; then
@@ -827,12 +829,30 @@ ensure_patch_id_cache_dir() {
 	fi
 }
 
+require_verbatim_patch_id() {
+	if [[ ${VERBATIM_PATCH_ID_CHECKED} -eq 1 ]]; then
+		[[ ${VERBATIM_PATCH_ID_OK} -eq 1 ]]
+		return $?
+	fi
+	VERBATIM_PATCH_ID_CHECKED=1
+	if git patch-id --verbatim </dev/null >/dev/null 2>&1; then
+		VERBATIM_PATCH_ID_OK=1
+		return 0
+	fi
+	VERBATIM_PATCH_ID_OK=0
+	echo "[WARN] git patch-id --verbatim is unavailable; squash-merge detection degraded to ancestry-only" >&2
+	return 1
+}
+
 collect_upstream_patch_ids() {
 	local wt_dir="$1"
 	local merge_base="$2"
 	local upstream_ref="$3"
 
 	UPSTREAM_PATCH_IDS_FILE=""
+	if ! require_verbatim_patch_id; then
+		return 1
+	fi
 	local upstream_sha=""
 	upstream_sha="$(git -C "${wt_dir}" rev-parse --verify --quiet "${upstream_ref}" 2>/dev/null || true)"
 	if [[ -z ${upstream_sha} ]]; then
