@@ -196,7 +196,10 @@ if command -v corepack >/dev/null 2>&1; then
 		log_info "Corepack not available or timed out"
 	fi
 else
-	log_info "Corepack not available (Node.js 16+ required)"
+	# Node 25+ no longer bundles corepack, so this is a PATH/availability condition,
+	# not a version problem. The old message claimed "Node.js 16+ required" while
+	# running on Node v26.
+	log_info "Corepack not found on PATH (not bundled with Node ${NODE_VERSION:-$(node --version 2>/dev/null || echo 'unknown')}); skipping toolchain setup"
 fi
 
 # Security audit (non-blocking, with timeout)

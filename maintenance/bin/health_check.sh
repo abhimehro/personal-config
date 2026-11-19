@@ -8,6 +8,8 @@ export HOME=${HOME:-/Users/speedybee}
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
+# launchd runs without a login shell; create the log dir so output is not lost.
+mkdir -p "$LOG_DIR" 2>/dev/null || true
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -141,9 +143,26 @@ if command -v vm_stat >/dev/null 2>&1; then
 	FREE_MB=$(((FREE_PAGES * PAGE_SIZE) / 1024 / 1024))
 	append "Free memory: ${FREE_MB} MB"
 
-	# Warn if very low memory
-	if ((FREE_MB < 100)); then
+	# "Pages free" alone is a poor health signal: macOS deliberately keeps it low by
+	# using otherwise-idle RAM for cache, so a healthy machine routinely shows tens
+	# of MB free (observed 60 MB free while memory_pressure reported 35% free).
+	# Judge pressure by the system's own metric instead, and keep the raw figure
+	# above as informational context only.
+	MEM_FREE_PCT=""
+	if command -v memory_pressure >/dev/null 2>&1; then
+		MEM_FREE_PCT=$(memory_pressure 2>/dev/null |
+			awk -F': ' '/System-wide memory free percentage/ {gsub(/%/,"",$2); print $2}' | tr -d ' ')
+	fi
+	if [[ -n $MEM_FREE_PCT ]]; then
+		append "Memory free percentage: ${MEM_FREE_PCT}%"
+		if ((MEM_FREE_PCT < 10)); then
+			log_warn "Low memory pressure headroom: ${MEM_FREE_PCT}% free"
+			LOW_MEMORY=1
+		fi
+	elif ((FREE_MB < 100)); then
+		# Fallback only when memory_pressure is unavailable.
 		log_warn "Very low free memory: ${FREE_MB} MB"
+		LOW_MEMORY=1
 	fi
 fi
 
@@ -161,6 +180,7 @@ if command -v bc >/dev/null 2>&1; then
 	HIGH_LOAD_THRESHOLD=$(echo "$CPU_COUNT * 2" | bc 2>/dev/null || echo "9999")
 	if (($(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l 2>/dev/null || echo 0))); then
 		log_warn "High system load: ${LOAD_1MIN} (CPUs: ${CPU_COUNT})"
+		HIGH_LOAD=1
 	fi
 fi
 
@@ -368,6 +388,20 @@ log_info "Health report saved to ${REPORT_FILE}"
 # Determine overall health status
 HEALTH_ISSUES=0
 ISSUE_REASONS=()
+LOW_MEMORY=${LOW_MEMORY:-0}
+HIGH_LOAD=${HIGH_LOAD:-0}
+
+# Memory and load are counted here. They were previously only logged as warnings,
+# so a run with 64 MB free and load 76.31 on 8 CPUs still reported "System healthy".
+if [[ $LOW_MEMORY -eq 1 ]]; then
+	HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
+	ISSUE_REASONS+=("Low memory ${FREE_MB:-?} MB")
+fi
+
+if [[ $HIGH_LOAD -eq 1 ]]; then
+	HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
+	ISSUE_REASONS+=("High load ${LOAD_1MIN:-?}")
+fi
 
 if [[ ${ROOT_USE:-0} -ge ${DISK_WARN_VAL:-80} ]]; then
 	HEALTH_ISSUES=$((HEALTH_ISSUES + 1))

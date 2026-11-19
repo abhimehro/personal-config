@@ -3,6 +3,10 @@ set -euo pipefail
 # Ensure HOME is set in launchd environment (which lacks login shell context)
 export HOME=${HOME:-/Users/speedybee}
 
+# launchd runs without a login shell; create the log dir so output is not lost.
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
 # Google Drive Backup Script
 # Supports --light (daily) and --full (weekly) modes.
 # Light: Backs up critical configs and documents.
@@ -132,7 +136,46 @@ if [[ ! -d $DEST ]]; then
 fi
 
 # rsync setup
-RSYNC=(/usr/bin/rsync -aE --ignore-errors --partial --human-readable --stats)
+# -E is omitted for the Google Drive destination only. /usr/bin/rsync on macOS is
+# openrsync, whose extended-attribute path reads phantom AppleDouble ._* sidecars
+# that do not exist, failing with "Resource deadlock avoided" / "empty link" on
+# nearly every file (33,645 errors and a non-zero exit in a single week).
+#
+# TRADEOFF: -a alone does NOT copy extended attributes or resource forks; -aE does
+# (verified 2026-11-16). That loss is acceptable for Google Drive, which does not
+# preserve macOS xattrs or resource forks anyway, so -E bought no durable fidelity
+# there while costing a clean exit status. A local/APFS destination (--dest) DOES
+# preserve them, so -E is retained for non-cloud destinations to avoid silently
+# downgrading those backups.
+#
+# Cloud detection uses the verified File Provider root (~/Library/CloudStorage)
+# rather than matching directory names, so a local path that merely contains
+# "Dropbox" or "GoogleDrive" is still treated as local and keeps -E.
+# Override with BACKUP_PRESERVE_XATTRS=1 (force -E) or 0 (force off).
+RSYNC=(/usr/bin/rsync -a --ignore-errors --partial --human-readable --stats)
+preserve_xattrs="${BACKUP_PRESERVE_XATTRS:-auto}"
+# Resolve the cloud root once so the comparison is against a real absolute path
+# rather than a literal "$HOME/..." string that would never match.
+CLOUD_ROOT="$HOME/Library/CloudStorage"
+case "$preserve_xattrs" in
+auto)
+	case "$DEST" in
+	"$CLOUD_ROOT"/*) preserve_xattrs=0 ;; # cloud: xattrs not preserved remotely
+	*) preserve_xattrs=1 ;;
+	esac
+	;;
+0 | 1) : ;; # explicit override
+*)
+	echo "WARNING: BACKUP_PRESERVE_XATTRS='$preserve_xattrs' is not auto/0/1; using auto." >&2
+	case "$DEST" in
+	"$CLOUD_ROOT"/*) preserve_xattrs=0 ;;
+	*) preserve_xattrs=1 ;;
+	esac
+	;;
+esac
+if [[ $preserve_xattrs == "1" ]]; then
+	RSYNC+=(-E)
+fi
 
 if [[ -f $EXCLUDES_FILE ]]; then
 	echo "Using exclusions from: $EXCLUDES_FILE"
@@ -244,7 +287,11 @@ run_rsync_relative() {
 	if [[ $rc -eq 0 ]]; then
 		echo "✅ $label backup completed successfully"
 	elif [[ $rc -eq 23 ]]; then
-		echo "⚠️  $label backup completed with file errors (code 23 - usually harmless ._* files)"
+		# rsync 23 is "partial transfer due to error", not a benign AppleDouble
+		# condition. Treat it as a failure so an incomplete backup cannot report
+		# success. (24, vanished files, remains a normal warning.)
+		echo "⚠️  $label backup completed with PARTIAL TRANSFER (code 23)" >&2
+		return 23
 	elif [[ $rc -eq 24 ]]; then
 		echo "⚠️  $label backup completed with vanished files (code 24 - normal)"
 	else
@@ -276,3 +323,11 @@ else
 	echo "⚠️  Backup completed with $BACKUP_ERRORS errors"
 fi
 echo "=========================================="
+
+# Propagate failure to launchd. Without this the script exits 0 even when every
+# rsync leg failed, so `launchctl` reports success and health_check.sh sees
+# "Launch agents: All running normally" while backups are silently broken.
+if [[ $BACKUP_ERRORS -gt 0 ]]; then
+	exit 1
+fi
+exit 0

@@ -282,6 +282,11 @@ limitation. Don't let me proceed until I can explain it myself.
 
 ## Hard Boundaries
 
+- ✅ **Pre-submission review**: Before committing/PR, run the `ocr`
+  (open-code-review) pass — `ocr review --audience agent -b "<context>"`, or
+  delegate mode (`ocr delegate preview`/`rule` + self-review) when no LLM
+  provider is configured. Disposition Critical/High findings first. See
+  `.devin/rules/open-code-review.md`.
 - ❌ No autonomous auth/authorization logic.
 - ❌ No destructive commands (`rm -rf`, `force-push`) without explicit "Yes" in
   the chat.
@@ -390,8 +395,9 @@ links: <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
 
 - Mem is Abhi's primary personal notebook; agents create notes he needs to
   review there via the Mem MCP. Notion is dedicated exclusively to agent use.
-  Stage 3 packets and other workflow artifacts continue to land in their
-  Notion destinations; do not redirect those handoffs to Mem.
+  Stage 3 human-decision packets go to each repo's 'PR lifecycle: needs human
+  decision' GitHub issue; other workflow artifacts continue to land in their
+  Notion destinations. Do not redirect those handoffs to Mem.
 
 - Keep code, READMEs, and repository plans in the repository. Save durable
   decisions, preferences, and project state to Notion.

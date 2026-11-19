@@ -1,5 +1,5 @@
 [user]
-	name = abhimehro
+	name = Abhi Mehrotra
 	email = 84992105+abhimehro@users.noreply.github.com
 	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoWdkOM4r8DcuM2m0Q5bCYamjwJHVw7gm98v5liGpvr GitHub SSH Key
 [commit]
@@ -8,8 +8,8 @@
 [core]
 	excludesfile = /Users/speedybee/.gitignore_global
 	pager = delta
-	hooksPath = /Users/speedybee/.git-hooks
-	editor = /Users/speedybee/.git-hooks/lrc/lrc_editor.sh
+	hooksPath = /Users/speedybee/.sonar/sonarqube-cli/hooks
+	editor = /opt/homebrew/bin/nvim
 [mergetool]
 	keepBackup = true
 [gpg]

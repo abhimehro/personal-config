@@ -37,7 +37,9 @@ class TestPrLifecycleSchema(unittest.TestCase):
     def test_schema_file_read_oserror_raises_value_error(self) -> None:
         """Verify that OSError when reading schema file raises ValueError."""
         with mock.patch("pathlib.Path.read_text", side_effect=OSError("Read failure")):
-            with self.assertRaisesRegex(ValueError, "invalid JSON Schema: Read failure"):
+            with self.assertRaisesRegex(
+                ValueError, "invalid JSON Schema: Read failure"
+            ):
                 validate_schema(self.example_ledger)
 
     def test_schema_file_invalid_json_raises_value_error(self) -> None:
@@ -50,21 +52,27 @@ class TestPrLifecycleSchema(unittest.TestCase):
         """Verify that missing top-level required fields report root location."""
         ledger = copy.deepcopy(self.example_ledger)
         del ledger["schema_version"]
-        with self.assertRaisesRegex(ValueError, r"^schema root: 'schema_version' is a required property"):
+        with self.assertRaisesRegex(
+            ValueError, r"^schema root: 'schema_version' is a required property"
+        ):
             validate_schema(ledger)
 
     def test_root_additional_properties_rejected(self) -> None:
         """Verify that top-level additional properties are rejected at root location."""
         ledger = copy.deepcopy(self.example_ledger)
         ledger["unrecognized_field"] = "unexpected"
-        with self.assertRaisesRegex(ValueError, r"^schema root: Additional properties are not allowed"):
+        with self.assertRaisesRegex(
+            ValueError, r"^schema root: Additional properties are not allowed"
+        ):
             validate_schema(ledger)
 
     def test_nested_item_error_reports_dotted_path(self) -> None:
         """Verify that errors inside items array report items.<index>.<field>."""
         ledger = copy.deepcopy(self.example_ledger)
         ledger["items"][0]["pr"] = 0  # minimum is 1 in schema
-        with self.assertRaisesRegex(ValueError, r"^schema items\.0\.pr: 0 is less than the minimum of 1"):
+        with self.assertRaisesRegex(
+            ValueError, r"^schema items\.0\.pr: 0 is less than the minimum of 1"
+        ):
             validate_schema(ledger)
 
     def test_nested_item_invalid_url_reports_dotted_path(self) -> None:

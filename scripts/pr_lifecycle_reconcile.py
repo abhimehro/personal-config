@@ -921,6 +921,7 @@ def _hold_sentinel_security_item(
     ledger["ledger_revision"] = int(ledger.get("ledger_revision") or 0) + 1
     return {"event_id": None}
 
+
 def _stale_close_preflight(
     action: dict[str, Any], repository: str, pr_number: int
 ) -> str | None:

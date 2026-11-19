@@ -1,6 +1,9 @@
 #!/bin/bash
 
 SELF='screencapture-nag-remover'
+# launchd runs without a login shell; create the log dir so output is not lost.
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
 FQPN=$(realpath "$0")
 PLIST="$HOME/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist"
 AGENT_PLIST="$HOME/Library/LaunchAgents/$SELF.plist"

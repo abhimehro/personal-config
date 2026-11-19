@@ -100,11 +100,50 @@ notify() {
 	fi
 }
 
+# Ensure the maintenance log directory exists and is writable.
+# launchd jobs run without a login shell; a missing directory silently
+# discards all output, which makes scheduled runs unauditable.
+ensure_log_dir() {
+	local dir="${1:-${LOG_DIR:-$HOME/Library/Logs/maintenance}}"
+	if [[ ! -d $dir ]]; then
+		mkdir -p "$dir" 2>/dev/null || {
+			printf 'ERROR: cannot create log directory: %s\n' "$dir" >&2
+			return 1
+		}
+	fi
+	if [[ ! -w $dir ]]; then
+		printf 'ERROR: log directory is not writable: %s\n' "$dir" >&2
+		return 1
+	fi
+	return 0
+}
+
 # Prune old log files
 prune_logs() {
 	local days="${LOG_RETENTION_DAYS:-60}"
 	if [[ -d $LOG_DIR ]]; then
-		find "$LOG_DIR" -type f -name "*.log" -mtime +"$days" -delete 2>/dev/null || true
+		# Cover .err and .out as well as .log. launchd writes stderr/stdout to .err/.out,
+		# and those were previously never pruned, so a single noisy job could grow
+		# unbounded (googledrive_backup_full.err reached 6.6 MB in one week).
+		#
+		# Skip files a writer still holds open: unlinking them would send later writes
+		# to an unlinked inode and would not reclaim space until the writer closed it.
+		local old_log
+		while IFS= read -r old_log; do
+			[[ -n $old_log ]] || continue
+			# Without lsof we cannot tell whether a writer still holds the file, so
+			# only prune .log (which launchd does not write to directly) and leave
+			# .err/.out alone rather than risk unlinking an open file.
+			if ! command -v lsof >/dev/null 2>&1; then
+				case "$old_log" in
+				*.err | *.out) continue ;;
+				esac
+			elif lsof -- "$old_log" >/dev/null 2>&1; then
+				continue
+			fi
+			rm -f "$old_log" 2>/dev/null || true
+		done < <(find "$LOG_DIR" -type f \( -name "*.log" -o -name "*.err" -o -name "*.out" \) \
+			-mtime +"$days" 2>/dev/null)
 	fi
 }
 
