@@ -375,7 +375,7 @@ def compute(x):
 EOF
 NOLINT_BIN="${TEST_DIR}/nolint_bin"
 mkdir -p "${NOLINT_BIN}"
-for b in bash git python3 make cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test; do
+for b in bash env git python3 make cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test; do
 	if p="$(command -v "${b}" 2>/dev/null)"; then
 		ln -sf "${p}" "${NOLINT_BIN}/${b}"
 	fi
@@ -398,6 +398,44 @@ check_exit "static checks block on an undefined-name finding" 2 \
 	"${TARGET_SCRIPT}" verify --worktree "${WT_SEM}" --lens code-health --test-cmd "make test"
 check_grep "static checks surface the F821 finding" "F821 Undefined name" "${TEST_DIR}/check.log"
 rm -f "${RUFF_FAIL_FLAG}" "${WT_SEM}/src/names.py" "${WT_SEM}/.verify-env.log"
+
+# (i) uv-managed static checks pass --frozen iff uv.lock is present (without downgrading lockfiles)
+UV_MOCK_BIN="${TEST_DIR}/uv_mock_bin"
+mkdir -p "${UV_MOCK_BIN}"
+for b in bash env git python3 make cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test; do
+	if p="$(command -v "${b}" 2>/dev/null)"; then
+		ln -sf "${p}" "${UV_MOCK_BIN}/${b}"
+	fi
+done
+UV_ARGS_LOG="${TEST_DIR}/uv_args.log"
+cat >"${UV_MOCK_BIN}/uv" <<MOCK
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${UV_ARGS_LOG}"
+exit 0
+MOCK
+chmod +x "${UV_MOCK_BIN}/uv"
+cat >"${WT_SEM}/src/names.py" <<'EOF'
+def compute(x):
+    return x + 1
+EOF
+cat >"${WT_SEM}/pyproject.toml" <<'EOF'
+[project]
+name = "demo"
+version = "0.1.0"
+EOF
+touch "${WT_SEM}/uv.lock"
+: >"${UV_ARGS_LOG}"
+check_exit "uv static checks pass --frozen when uv.lock exists" 0 \
+	env PATH="${UV_MOCK_BIN}" HOME="${HOME}" "${TARGET_SCRIPT}" verify \
+	--worktree "${WT_SEM}" --lens code-health --allow-harness-changes --test-cmd "true"
+check_grep "uv static check invocation includes --frozen with uv.lock" "(^| )--frozen( |$)" "${UV_ARGS_LOG}"
+rm -f "${WT_SEM}/uv.lock"
+: >"${UV_ARGS_LOG}"
+check_exit "uv static checks omit --frozen when uv.lock is absent" 0 \
+	env PATH="${UV_MOCK_BIN}" HOME="${HOME}" "${TARGET_SCRIPT}" verify \
+	--worktree "${WT_SEM}" --lens code-health --allow-harness-changes --test-cmd "true"
+check "uv static check invocation omits --frozen without uv.lock" bash -c "! grep -q -- '--frozen' '${UV_ARGS_LOG}'"
+rm -f "${WT_SEM}/src/names.py" "${WT_SEM}/pyproject.toml" "${UV_ARGS_LOG}"
 
 # 5. Mock gh CLI to test file-path PR collision & remote/local throttle
 cat >"${MOCK_BIN}/gh" <<'MOCK'
@@ -653,12 +691,282 @@ check_grep "check-collisions reports both the PR and the candidate worktree" "li
 # 5f. print-test-cmd is the single source of truth the ctl CLI's base-check reads,
 #     so the repo -> test-command mapping cannot drift from the one verify uses.
 PTC_MAPPED="$("${TARGET_SCRIPT}" print-test-cmd --repo-name abhimehro/ctrld-sync)"
-check "print-test-cmd strips the owner and prints the mapped compound command" test "${PTC_MAPPED}" = "uv run --all-extras pytest tests/ test_main.py -q && uv run --all-extras ruff check ."
+check "print-test-cmd strips the owner and prints the mapped compound command" test "${PTC_MAPPED}" = "uv run --frozen --all-extras pytest tests/ test_main.py -q && uv run --frozen --all-extras ruff check ."
 PTC_DEFAULT="$("${TARGET_SCRIPT}" print-test-cmd --repo-name some-unmapped-repo)"
 check "print-test-cmd falls back to the pytest default for an unmapped repo" test "${PTC_DEFAULT}" = "python3 -m pytest -q"
 check_exit "print-test-cmd requires --repo-name" 1 "${TARGET_SCRIPT}" print-test-cmd
 check_exit "print-test-cmd rejects an unknown flag" 1 \
 	"${TARGET_SCRIPT}" print-test-cmd --repo-name ctrld-sync --nonsense
+
+# 5g. Squash-merged local worktrees (1-commit and multi-commit) must not remain
+#     counted as unreviewed candidates in check-throttle, check-collisions, or cleanup.
+SQUASH_BARE="${TEST_DIR}/squash-remote.git"
+SQUASH_SEED="${TEST_DIR}/squash-seed"
+SQUASH_CLONE="${TEST_DIR}/squash-repo"
+SQUASH_WT_ROOT="${TEST_DIR}/squash-worktrees"
+mkdir -p "${SQUASH_WT_ROOT}"
+git init -q --bare "${SQUASH_BARE}"
+git clone -q "${BARE_REMOTE}" "${SQUASH_SEED}"
+git -C "${SQUASH_SEED}" remote set-url origin "${SQUASH_BARE}"
+git -C "${SQUASH_SEED}" push -q origin HEAD:refs/heads/main
+git -C "${SQUASH_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${SQUASH_BARE}" "${SQUASH_CLONE}"
+git -C "${SQUASH_CLONE}" config user.email "test@example.com"
+git -C "${SQUASH_CLONE}" config user.name "Test User"
+git -C "${SQUASH_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+WT_SQ1="$("${TARGET_SCRIPT}" prepare --repo-path "${SQUASH_CLONE}" --lens bolt --worktree-root "${SQUASH_WT_ROOT}")"
+git -C "${WT_SQ1}" config user.email "test@example.com"
+git -C "${WT_SQ1}" config user.name "Test User"
+echo "sq1" >"${WT_SQ1}/src/sq1.py"
+git -C "${WT_SQ1}" add -A
+git -C "${WT_SQ1}" commit -q -m "⚡bolt: single commit candidate"
+
+WT_SQ2="$("${TARGET_SCRIPT}" prepare --repo-path "${SQUASH_CLONE}" --lens code-health --worktree-root "${SQUASH_WT_ROOT}")"
+git -C "${WT_SQ2}" config user.email "test@example.com"
+git -C "${WT_SQ2}" config user.name "Test User"
+echo "sq2-a" >"${WT_SQ2}/src/sq2.py"
+git -C "${WT_SQ2}" add -A
+git -C "${WT_SQ2}" commit -q -m "chore(qa): multi commit part 1"
+echo "sq2-b" >>"${WT_SQ2}/src/sq2.py"
+git -C "${WT_SQ2}" add -A
+git -C "${WT_SQ2}" commit -q -m "chore(qa): multi commit part 2"
+
+WT_UNMERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${SQUASH_CLONE}" --lens palette --worktree-root "${SQUASH_WT_ROOT}")"
+git -C "${WT_UNMERGED}" config user.email "test@example.com"
+git -C "${WT_UNMERGED}" config user.name "Test User"
+echo "unmerged-1" >"${WT_UNMERGED}/src/unmerged.py"
+git -C "${WT_UNMERGED}" add -A
+git -C "${WT_UNMERGED}" commit -q -m "🎨palette: unmerged part 1"
+echo "unmerged-2" >>"${WT_UNMERGED}/src/unmerged.py"
+git -C "${WT_UNMERGED}" add -A
+git -C "${WT_UNMERGED}" commit -q -m "🎨palette: unmerged part 2"
+
+# Advance main with an unrelated commit, then squash-merge both WT_SQ1 and WT_SQ2
+echo "unrelated main change" >"${SQUASH_CLONE}/src/unrelated_main.py"
+git -C "${SQUASH_CLONE}" add -A
+git -C "${SQUASH_CLONE}" commit -q -m "docs: unrelated main update"
+SQ1_HEAD="$(git -C "${WT_SQ1}" rev-parse HEAD)"
+SQ2_HEAD="$(git -C "${WT_SQ2}" rev-parse HEAD)"
+git -C "${SQUASH_CLONE}" merge --squash -q "${SQ1_HEAD}"
+git -C "${SQUASH_CLONE}" commit -q -m "⚡bolt: single commit candidate (#101)"
+git -C "${SQUASH_CLONE}" merge --squash -q "${SQ2_HEAD}"
+git -C "${SQUASH_CLONE}" commit -q -m "chore(qa): multi commit (#102)"
+git -C "${SQUASH_CLONE}" push -q origin main
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle excludes 1-commit and multi-commit squash-merged worktrees" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/squash-repo --worktree-root "${SQUASH_WT_ROOT}" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}" --max-open 2
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle still counts unmerged candidate alongside squash-merged ones" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/squash-repo --worktree-root "${SQUASH_WT_ROOT}" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}" --max-open 1
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions ignores 1-commit squash-merged worktree path" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq1.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions ignores multi-commit squash-merged worktree path" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions still detects unmerged candidate path" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/unmerged.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+
+# A candidate with a merged prefix and a new follow-up is still unreviewed.
+# This prevents cherry/patch-id matching from accepting a partial merge.
+echo "sq1 follow-up" >>"${WT_SQ1}/src/sq1.py"
+git -C "${WT_SQ1}" commit -qam "bolt: unmerged follow-up"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "collision retains candidate with only its prefix merged" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq1.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "throttle counts partially merged candidate" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/squash-repo --worktree-root "${SQUASH_WT_ROOT}" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}" --max-open 2
+# Restore the fully merged candidate for the lookback & cleanup assertions below.
+git -C "${WT_SQ1}" reset -q --hard "${SQ1_HEAD}"
+
+# Unbounded upstream scan stays intact beyond 200 commits, while explicit PROACTIVE_SQUASH_LOOKBACK is honored
+python3 - "${SQUASH_CLONE}" <<'PYFAST'
+import subprocess, sys
+repo = sys.argv[1]
+proc = subprocess.Popen(
+    ["git", "-C", repo, "fast-import", "--quiet"],
+    stdin=subprocess.PIPE,
+    text=True,
+)
+parent = subprocess.check_output(["git", "-C", repo, "rev-parse", "main"], text=True).strip()
+lines = []
+for i in range(205):
+    data = f"noise {i}\n"
+    msg = f"docs: noise {i}\n"
+    lines.append(f"commit refs/heads/main\nmark :{i+1}\ncommitter T <t@e.com> {1700000000+i} +0000\ndata {len(msg)}\n{msg}")
+    if i == 0:
+        lines.append(f"from {parent}\n")
+    lines.append(f"M 100644 inline src/noise.txt\ndata {len(data)}\n{data}\n")
+proc.communicate("".join(lines))
+assert proc.returncode == 0
+PYFAST
+git -C "${SQUASH_CLONE}" reset -q --hard main
+git -C "${SQUASH_CLONE}" push -q origin main
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "unbounded scan still detects squash-merged candidate past 200 upstream commits" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit \
+	"bounded PROACTIVE_SQUASH_LOOKBACK=5 conservatively retains candidate outside lookback window" 4 \
+	env PROACTIVE_SQUASH_LOOKBACK=5 "${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+
+MOCK_BIN_NO_VERBATIM="${TEST_DIR}/mock_bin_no_verbatim"
+mkdir -p "${MOCK_BIN_NO_VERBATIM}"
+REAL_GIT="$(command -v git)"
+cat >"${MOCK_BIN_NO_VERBATIM}/git" <<EOF
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "patch-id" ]]; then
+	for arg in "\$@"; do
+		if [[ "\${arg}" == "--verbatim" ]]; then
+			echo "usage: git patch-id [--stable | --unstable]" >&2
+			exit 129
+		fi
+	done
+fi
+exec "${REAL_GIT}" "\$@"
+EOF
+chmod +x "${MOCK_BIN_NO_VERBATIM}/git"
+PATH="${MOCK_BIN_NO_VERBATIM}:${MOCK_BIN_EMPTY}:${PATH}" check_exit \
+	"check-collisions retains squash-merged candidate when git patch-id --verbatim is unavailable" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/squash-repo --file "src/sq2.py" \
+	--include-worktrees --repo-path "${SQUASH_CLONE}"
+check_grep "missing git patch-id --verbatim emits warning" "git patch-id --verbatim is unavailable" "${TEST_DIR}/check.log"
+check "missing git patch-id --verbatim warns only once per run" \
+	python3 -c 'import sys; sys.exit(0 if open(sys.argv[1], encoding="utf-8").read().count("git patch-id --verbatim is unavailable") == 1 else 1)' "${TEST_DIR}/check.log"
+
+touch -t 202001010000 "${WT_SQ1}" "${WT_SQ2}" "${WT_UNMERGED}"
+check_exit "cleanup runs on squash-merged worktrees" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${SQUASH_WT_ROOT}"
+check "cleanup removed stale 1-commit squash-merged worktree WT_SQ1" test ! -d "${WT_SQ1}"
+check "cleanup removed stale multi-commit squash-merged worktree WT_SQ2" test ! -d "${WT_SQ2}"
+check "cleanup preserved stale unmerged multi-commit worktree WT_UNMERGED" test -d "${WT_UNMERGED}"
+
+# 5h. Patch equivalence must preserve semantically significant whitespace (e.g., Python indentation/strings).
+WS_BARE="${TEST_DIR}/ws-remote.git"
+WS_SEED="${TEST_DIR}/ws-seed"
+WS_CLONE="${TEST_DIR}/ws-repo"
+WS_WT_ROOT="${TEST_DIR}/ws-worktrees"
+mkdir -p "${WS_WT_ROOT}"
+git init -q --bare "${WS_BARE}"
+git init -q "${WS_SEED}"
+git -C "${WS_SEED}" config user.email "test@example.com"
+git -C "${WS_SEED}" config user.name "Test User"
+git -C "${WS_SEED}" checkout -q -b main
+mkdir -p "${WS_SEED}/src"
+cat >"${WS_SEED}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+EOF
+cat >"${WS_SEED}/src/str_case.py" <<'EOF'
+def label():
+    return "a b"
+EOF
+git -C "${WS_SEED}" add -A
+git -C "${WS_SEED}" commit -q -m "base"
+git -C "${WS_SEED}" remote add origin "${WS_BARE}"
+git -C "${WS_SEED}" push -q -u origin main
+git -C "${WS_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${WS_BARE}" "${WS_CLONE}"
+git -C "${WS_CLONE}" config user.email "test@example.com"
+git -C "${WS_CLONE}" config user.name "Test User"
+git -C "${WS_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+WT_WS_INDENT="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens bolt --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_WS_INDENT}" config user.email "test@example.com"
+git -C "${WT_WS_INDENT}" config user.name "Test User"
+cat >"${WT_WS_INDENT}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+        finish()
+EOF
+git -C "${WT_WS_INDENT}" commit -qam "⚡bolt: finish inside conditional"
+
+WT_WS_STR="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens palette --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_WS_STR}" config user.email "test@example.com"
+git -C "${WT_WS_STR}" config user.name "Test User"
+cat >"${WT_WS_STR}/src/str_case.py" <<'EOF'
+def label():
+    return "ab"
+EOF
+git -C "${WT_WS_STR}" commit -qam "🎨palette: compact label"
+
+# Upstream commits differ ONLY by indentation (4 spaces outside `if`) and internal string spaces ("a  b")
+cat >"${WS_CLONE}/src/app.py" <<'EOF'
+def run(enabled):
+    if enabled:
+        prepare()
+    finish()
+EOF
+git -C "${WS_CLONE}" commit -qam "upstream finish outside conditional"
+cat >"${WS_CLONE}/src/str_case.py" <<'EOF'
+def label():
+    return "a  b"
+EOF
+git -C "${WS_CLONE}" commit -qam "upstream two spaces"
+git -C "${WS_CLONE}" push -q origin main
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle retains whitespace-divergent Python candidates" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ws-repo --worktree-root "${WS_WT_ROOT}" \
+	--include-worktrees --repo-path "${WS_CLONE}" --max-open 2
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains indentation-different Python candidate" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/app.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains string-whitespace-different Python candidate" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/str_case.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+touch -t 202001010000 "${WT_WS_INDENT}" "${WT_WS_STR}"
+check_exit "cleanup runs cleanly on whitespace-divergent candidates" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${WS_WT_ROOT}"
+check "cleanup preserved indentation-different candidate WT_WS_INDENT" test -d "${WT_WS_INDENT}"
+check "cleanup preserved string-whitespace-different candidate WT_WS_STR" test -d "${WT_WS_STR}"
+
+# 5i. Linear individually cherry-picked multi-commit branch vs merge commit resolution
+WT_CHERRY="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens code-health --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_CHERRY}" config user.email "test@example.com"
+git -C "${WT_CHERRY}" config user.name "Test User"
+echo "c1" >"${WT_CHERRY}/src/cherry_only.py"
+git -C "${WT_CHERRY}" add -A
+git -C "${WT_CHERRY}" commit -q -m "chore(qa): cherry part 1"
+CHERRY_C1="$(git -C "${WT_CHERRY}" rev-parse HEAD)"
+echo "c2" >>"${WT_CHERRY}/src/cherry_only.py"
+git -C "${WT_CHERRY}" add -A
+git -C "${WT_CHERRY}" commit -q -m "chore(qa): cherry part 2"
+CHERRY_C2="$(git -C "${WT_CHERRY}" rev-parse HEAD)"
+echo "diverge" >"${WS_CLONE}/src/cherry_diverge.py"
+git -C "${WS_CLONE}" add -A
+git -C "${WS_CLONE}" commit -q -m "docs: diverge main before cherry-pick"
+git -C "${WS_CLONE}" cherry-pick "${CHERRY_C1}" "${CHERRY_C2}" >/dev/null
+git -C "${WS_CLONE}" push -q origin main
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions excludes individually cherry-picked multi-commit branch" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/cherry_only.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
+
+WT_MERGE="$("${TARGET_SCRIPT}" prepare --repo-path "${WS_CLONE}" --lens code-health --worktree-root "${WS_WT_ROOT}")"
+git -C "${WT_MERGE}" config user.email "test@example.com"
+git -C "${WT_MERGE}" config user.name "Test User"
+echo "merge_c1" >"${WT_MERGE}/src/merge_case.py"
+git -C "${WT_MERGE}" add -A
+git -C "${WT_MERGE}" commit -q -m "chore(qa): candidate commit A"
+MERGE_C1="$(git -C "${WT_MERGE}" rev-parse HEAD)"
+git -C "${WS_CLONE}" cherry-pick "${MERGE_C1}" >/dev/null
+echo "upstream_override" >"${WS_CLONE}/src/merge_case.py"
+git -C "${WS_CLONE}" add -A
+git -C "${WS_CLONE}" commit -q -m "upstream override to 2"
+git -C "${WS_CLONE}" push -q origin main
+git -C "${WT_MERGE}" fetch -q origin
+git -C "${WT_MERGE}" merge -q --no-edit -s ours origin/main
+echo "candidate_conflict_resolution" >"${WT_MERGE}/src/merge_case.py"
+git -C "${WT_MERGE}" add -A
+git -C "${WT_MERGE}" commit -q --amend --no-edit
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions retains candidate with merge-commit resolution" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ws-repo --file "src/merge_case.py" \
+	--include-worktrees --repo-path "${WS_CLONE}"
 
 # 6. TTL cleanup (default 21d) prunes stale empty worktrees, preserves dirty, unmerged-commit, and fresh worktrees
 echo "uncommitted" >"${WT2}/dirty.txt"

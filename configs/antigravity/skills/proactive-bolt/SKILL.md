@@ -84,13 +84,13 @@ must never silently shift scientific outputs:
 1. Read `<repo>/AGENTS.md` and `<repo>/.jules/bolt.md` (if present) so prior
    optimizations and rejected approaches are not repeated.
 2. Check open PR file collisions before editing:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
 3. Create an isolated worktree:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens bolt --mode local`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens bolt --mode local`
 4. Measure baseline timing or operation counts, apply the minimal change in the
    worktree, and measure after-change timing.
 5. Run hardened verification:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens bolt [--numeric-check-cmd "<cmd>"]`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens bolt [--numeric-check-cmd "<cmd>"]`
    Independently of the numeric gate, `verify` runs a base-relative **semantic
    test-coverage gate**: touched Python files get an AST parse + undefined-name
    (F82) check, and every touched Python test file is AST-diffed against

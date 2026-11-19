@@ -47,12 +47,12 @@ as `maintenance/bin/*`, `media-streaming/scripts/*`,
 1. Read `<repo>/AGENTS.md` and `<repo>/.jules/palette.md` (if present) to avoid
    repeating completed polish passes or violating house style.
 2. Verify no open PR touches the candidate file:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-collisions --repo abhimehro/<repo> --file <relpath>`
 3. Create an isolated worktree:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens palette --mode local`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh prepare --repo-path <repo> --lens palette --mode local`
 4. Implement the change with zero impact on machine-parsed stdout contracts, and
    verify with:
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens palette`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh verify --worktree <worktree_path> --lens palette`
    `verify` also enforces an AST parse + undefined-name (F82) floor on every
    touched Python file and a base-relative test-coverage gate that blocks
    (`exit 2`) on silently lost tests even when the suite passes, so a palette

@@ -41,12 +41,12 @@ listed pilot subset) using isolated worktrees and strict approval gates.
 1. Prune clean, already-merged or no-op worktrees older than 21 days (longer
    than the 2-week pilot; both dirty worktrees and clean worktrees holding
    unmerged commits ahead of `base_sha` are preserved automatically):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh cleanup --ttl-days 21`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh cleanup --ttl-days 21`
 2. Check both the local `2B` candidate worktree throttle (`>= 2` local dirty or
    unmerged-commit candidate worktrees for `<repo>`, or any `> 7` days old) and
    the remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
    `> 7` days old):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
    `--include-worktrees` counts candidates registered in git under **any**
    worktree root, not only the default one, so a candidate prepared elsewhere
    cannot slip past the cap. Human worktrees (no `proactive-meta.json`, branch
@@ -82,7 +82,7 @@ that exact path — neither an open PR in `abhimehro/<repo>` nor a live local
 candidate worktree:
 
 ```bash
-"$HOME/dev/personal-config/scripts/proactive-worktree.sh" check-collisions \
+"$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" check-collisions \
   --repo "abhimehro/<repo>" \
   --file "<relpath>" \
   --include-worktrees \
@@ -112,7 +112,7 @@ why in the digest.
    `remote.origin.pushurl = DISABLED` in `local` mode):
 
    ```bash
-   WT_PATH="$("$HOME/dev/personal-config/scripts/proactive-worktree.sh" prepare \
+   WT_PATH="$("$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" prepare \
      --repo-path "$HOME/dev/<repo>" \
      --lens "<lens>" \
      --mode local)"
@@ -129,7 +129,7 @@ why in the digest.
    `GITHUB_TOKEN` inside verification subprocesses):
 
    ```bash
-   "$HOME/dev/personal-config/scripts/proactive-worktree.sh" verify \
+   "$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" verify \
      --worktree "$WT_PATH" \
      --lens "<lens>"
    ```
@@ -160,7 +160,9 @@ why in the digest.
 
    - A gate the sweep itself controls — a tamper-evident build/test path, the
      semantic test-coverage gate, or the `--numeric-check-cmd` assertion — is
-     caused by the change by construction. Discard `"$WT_PATH"` and report why.
+     caused by the change by construction. Record the report first, then
+     force-remove the uncommitted worktree
+     (`git -C "$HOME/dev/<repo>" worktree remove --force "$WT_PATH" && git -C "$HOME/dev/<repo>" branch -D "<branch_name>"`).
    - A failure in the repository's own test or build command is **not**
      automatically the candidate's fault. Jules stranded four good PRs on base
      breakage: deleting a cyclomatic-complexity-1 helper _lowered_ CodeScene
@@ -208,7 +210,14 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
 - **Isolated Worktree & Branch:** `<worktree_path>` (`<branch_name>`)
 - **Promotion Commands (for human review after pilot graduation):** Exact `git`
   / `gh pr create --draft` commands for `bolt`, `palette`, or `code-health` (or
-  private GitHub Security Advisory workflow for `sentinel`)
+  private GitHub Security Advisory workflow for `sentinel`), plus cleanup
+  commands once the report is written and any failure has been classified:
+  normal removal (`git worktree remove <worktree_path>` and
+  `git branch -D <branch_name>`) for clean merged candidates, or forced removal
+  (`git worktree remove --force <worktree_path>` and
+  `git branch -D <branch_name>`) for explicitly classified discards
+  (`CAUSED_BY_CHANGE` / sweep-gate blocks) that may retain uncommitted edits.
+  Never remove worktrees with unclassified failures.
 
 Do **not** push branches or open pull requests during the `2B` local-first
 pilot.

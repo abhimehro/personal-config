@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Control and Ordered-Rollback Script for Antigravity Proactive Workflows.
-# Manages global skill symlinks, PreToolUse safety hook link, chmod 700 report
-# and transcript permissions, staged sidecars (without ever self-enabling
+# Manages copy-on-deploy skills, safety hook, and runtime scripts under
+# $HOME/.gemini/config/proactive (decoupled from the repo working tree), chmod 700
+# report and transcript permissions, staged sidecars (without ever self-enabling
 # user_config.json), disposable timezone-aware cron canaries, verified
 # post-merge Sentinel leases, MISSED slot auditing, and base-relative
 # classification of verify failures so pre-existing breakage is never charged to
@@ -24,6 +25,7 @@ SKILLS=(
 PILOT_SIDECAR_ID="proactive-pilot-ctrld-sync"
 TRIAGE_SIDECAR_ID="proactive-pilot-triage"
 CANARY_SIDECAR_ID="proactive-cron-canary"
+PROACTIVE_MANAGED_MARKER=".managed-by-proactive-ctl"
 
 # base-check's EXIT trap outlives the function that sets it, so its cleanup state
 # has to be global: a `local` would be unbound by then and, under `set -u`, the
@@ -55,7 +57,7 @@ trim_test_segment() {
 usage() {
 	cat <<'EOF'
 Usage:
-  antigravity-proactive-ctl.sh install [--pilot]
+  antigravity-proactive-ctl.sh install [--pilot] [--source-repo <dir>]
   antigravity-proactive-ctl.sh status
   antigravity-proactive-ctl.sh canary-stage [--offset-minutes <n>] [--timezone <iana_tz>]
   antigravity-proactive-ctl.sh canary-clean
@@ -92,40 +94,244 @@ validate_repo_name() {
 	fi
 }
 
-link_item() {
-	local link_path="$1"
-	local target_path="$2"
+file_sha256() {
+	python3 - "$1" <<'PY'
+import hashlib
+import pathlib
+import sys
 
-	if [[ ! -e ${target_path} ]]; then
-		echo "[ERROR] Missing target in repository: ${target_path}" >&2
-		exit 1
-	fi
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+}
 
-	if [[ -L ${link_path} ]] && [[ "$(readlink "${link_path}")" == "${target_path}" ]]; then
+atomic_install_file() {
+	local mode="$1"
+	local src="$2"
+	local dst="$3"
+	local tmp_dst="${dst}.tmp.$$"
+
+	install -m "${mode}" "${src}" "${tmp_dst}"
+	mv -f "${tmp_dst}" "${dst}"
+}
+
+resolve_install_source_root() {
+	local explicit_source="$1"
+	local runtime_dir="$2"
+
+	if [[ -n ${explicit_source} ]]; then
+		if [[ ! -d ${explicit_source} ]]; then
+			echo "[ERROR] install: --source-repo is not a directory: ${explicit_source}" >&2
+			exit 1
+		fi
+		(cd "${explicit_source}" && pwd)
 		return 0
 	fi
 
-	if [[ -e ${link_path} ]] && [[ ! -L ${link_path} ]]; then
-		local backup_ts
+	if [[ -f "${REPO_ROOT}/configs/antigravity/hooks/proactive-guard.py" ]]; then
+		printf '%s' "${REPO_ROOT}"
+		return 0
+	fi
+
+	if [[ -f "${runtime_dir}/.source-repo" ]]; then
+		local recorded_root=""
+		recorded_root="$(cat "${runtime_dir}/.source-repo" 2>/dev/null || true)"
+		if [[ -n ${recorded_root} ]] && [[ -d ${recorded_root} ]] && [[ -f "${recorded_root}/configs/antigravity/hooks/proactive-guard.py" ]]; then
+			printf '%s' "${recorded_root}"
+			return 0
+		fi
+		echo "[ERROR] install: recorded checkout path is unavailable (${recorded_root:-empty}); pass --source-repo <personal-config-dir>" >&2
+		exit 1
+	fi
+
+	echo "[ERROR] install requires a personal-config checkout (run from the repo or pass --source-repo <dir>)" >&2
+	exit 1
+}
+
+resolve_legacy_repo_root() {
+	local runtime_dir="$1"
+
+	if [[ -f "${REPO_ROOT}/configs/antigravity/hooks.json" ]]; then
+		printf '%s' "${REPO_ROOT}"
+		return 0
+	fi
+	if [[ -f "${runtime_dir}/.source-repo" ]]; then
+		cat "${runtime_dir}/.source-repo" 2>/dev/null || true
+		return 0
+	fi
+}
+
+validate_install_sources() {
+	local source_root="$1"
+	local stage_pilot="$2"
+
+	local req_file=""
+	for req_file in \
+		"${source_root}/scripts/proactive-worktree.sh" \
+		"${source_root}/scripts/antigravity-proactive-ctl.sh" \
+		"${source_root}/configs/antigravity/hooks/proactive-guard.py" \
+		"${source_root}/configs/antigravity/hooks.json"; do
+		if [[ ! -f ${req_file} ]]; then
+			echo "[ERROR] Missing installation source asset: ${req_file}" >&2
+			exit 1
+		fi
+	done
+
+	if ! python3 -m json.tool "${source_root}/configs/antigravity/hooks.json" >/dev/null 2>&1; then
+		echo "[ERROR] Invalid JSON in source hooks.json: ${source_root}/configs/antigravity/hooks.json" >&2
+		exit 1
+	fi
+
+	local skill=""
+	for skill in "${SKILLS[@]}"; do
+		local skill_src="${source_root}/configs/antigravity/skills/${skill}"
+		if [[ ! -d ${skill_src} ]] || [[ ! -f "${skill_src}/SKILL.md" ]]; then
+			echo "[ERROR] Missing skill source or SKILL.md: ${skill_src}" >&2
+			exit 1
+		fi
+	done
+
+	if [[ ${stage_pilot} -eq 1 ]]; then
+		local sid=""
+		for sid in "${PILOT_SIDECAR_ID}" "${TRIAGE_SIDECAR_ID}"; do
+			local sidecar_src="${source_root}/configs/antigravity/sidecars/${sid}.sidecar.json"
+			if [[ -f ${sidecar_src} ]] && ! python3 -m json.tool "${sidecar_src}" >/dev/null 2>&1; then
+				echo "[ERROR] Invalid JSON in sidecar template: ${sidecar_src}" >&2
+				exit 1
+			fi
+		done
+	fi
+}
+
+deploy_runtime_files() {
+	local source_root="$1"
+	local runtime_dir="$2"
+	local worktree_src="${source_root}/scripts/proactive-worktree.sh"
+	local ctl_src="${source_root}/scripts/antigravity-proactive-ctl.sh"
+	local guard_src="${source_root}/configs/antigravity/hooks/proactive-guard.py"
+
+	mkdir -p "${runtime_dir}/scripts" "${runtime_dir}/hooks"
+	chmod 700 "${runtime_dir}" "${runtime_dir}/scripts" "${runtime_dir}/hooks"
+	atomic_install_file 755 "${worktree_src}" "${runtime_dir}/scripts/proactive-worktree.sh"
+	atomic_install_file 755 "${ctl_src}" "${runtime_dir}/scripts/antigravity-proactive-ctl.sh"
+	atomic_install_file 644 "${guard_src}" "${runtime_dir}/hooks/proactive-guard.py"
+
+	local tmp_source="${runtime_dir}/.source-repo.tmp.$$"
+	printf '%s\n' "${source_root}" >"${tmp_source}"
+	chmod 600 "${tmp_source}"
+	mv -f "${tmp_source}" "${runtime_dir}/.source-repo"
+}
+
+deploy_skill_dir() {
+	local dst_dir="$1"
+	local src_dir="$2"
+
+	if [[ ! -d ${src_dir} ]]; then
+		echo "[ERROR] Missing skill directory in repository: ${src_dir}" >&2
+		exit 1
+	fi
+
+	# Stage the replacement completely before touching the live destination so
+	# an interrupted copy never removes the working skill directory.
+	local tmp_dir="${dst_dir}.tmp.$$"
+	rm -rf "${tmp_dir}"
+	mkdir -p "${tmp_dir}"
+	cp -R "${src_dir}/." "${tmp_dir}/"
+	printf 'managed\n' >"${tmp_dir}/${PROACTIVE_MANAGED_MARKER}"
+
+	local old_dir=""
+	local backup_dir=""
+	if [[ -L ${dst_dir} ]]; then
+		rm -f "${dst_dir}"
+	elif [[ -e ${dst_dir} ]]; then
+		if [[ -d ${dst_dir} ]] && [[ -f "${dst_dir}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			old_dir="${dst_dir}.old.$$"
+			rm -rf "${old_dir}"
+			mv "${dst_dir}" "${old_dir}"
+		else
+			local backup_ts=""
+			backup_ts="$(date -u +%Y%m%d_%H%M%S)"
+			backup_dir="${dst_dir}.backup.${backup_ts}"
+			mv "${dst_dir}" "${backup_dir}"
+		fi
+	fi
+
+	if ! mv "${tmp_dir}" "${dst_dir}"; then
+		if [[ -n ${old_dir} ]] && [[ -e ${old_dir} ]]; then
+			mv "${old_dir}" "${dst_dir}" 2>/dev/null || true
+		elif [[ -n ${backup_dir} ]] && [[ -e ${backup_dir} ]]; then
+			mv "${backup_dir}" "${dst_dir}" 2>/dev/null || true
+		fi
+		rm -rf "${tmp_dir}"
+		echo "ERROR: failed to move staged directory ${tmp_dir} into ${dst_dir}" >&2
+		return 1
+	fi
+	if [[ -n ${old_dir} ]] && [[ -d ${old_dir} ]]; then
+		rm -rf "${old_dir}"
+	fi
+}
+
+is_hooks_file_managed() {
+	local hooks_file="$1"
+	local stamp_file="$2"
+	local legacy_root="${3:-}"
+
+	if [[ -L ${hooks_file} ]]; then
+		[[ -n ${legacy_root} ]] && [[ "$(readlink "${hooks_file}")" == "${legacy_root}/configs/antigravity/hooks.json" ]]
+		return $?
+	fi
+
+	if [[ ! -f ${hooks_file} ]] || [[ ! -f ${stamp_file} ]]; then
+		return 1
+	fi
+
+	local current_hash=""
+	local recorded_hash=""
+	current_hash="$(file_sha256 "${hooks_file}" 2>/dev/null || true)"
+	recorded_hash="$(cat "${stamp_file}" 2>/dev/null || true)"
+	[[ -n ${current_hash} && ${current_hash} == "${recorded_hash}" ]]
+}
+
+deploy_hooks_file() {
+	local dst_file="$1"
+	local src_file="$2"
+	local stamp_file="$3"
+	local legacy_root="${4:-}"
+
+	if [[ ! -f ${src_file} ]]; then
+		echo "[ERROR] Missing hooks file in repository: ${src_file}" >&2
+		exit 1
+	fi
+
+	if [[ -L ${dst_file} ]]; then
+		rm -f "${dst_file}"
+	elif [[ -f ${dst_file} ]] && ! is_hooks_file_managed "${dst_file}" "${stamp_file}" "${legacy_root}"; then
+		local backup_ts=""
 		backup_ts="$(date -u +%Y%m%d_%H%M%S)"
-		mv "${link_path}" "${link_path}.backup.${backup_ts}"
+		mv "${dst_file}" "${dst_file}.backup.${backup_ts}"
 	fi
 
-	if [[ -L ${link_path} ]]; then
-		rm -f "${link_path}"
-	fi
+	mkdir -p "$(dirname "${dst_file}")" "$(dirname "${stamp_file}")"
+	atomic_install_file 600 "${src_file}" "${dst_file}"
 
-	mkdir -p "$(dirname "${link_path}")"
-	ln -s "${target_path}" "${link_path}"
+	local tmp_stamp="${stamp_file}.tmp.$$"
+	file_sha256 "${dst_file}" >"${tmp_stamp}"
+	chmod 600 "${tmp_stamp}"
+	mv -f "${tmp_stamp}" "${stamp_file}"
 }
 
 cmd_install() {
 	local stage_pilot=0
+	local explicit_source=""
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--pilot)
 			stage_pilot=1
 			shift
+			;;
+		--source-repo)
+			require_flag_value "install" "$1" "$#"
+			explicit_source="$2"
+			shift 2
 			;;
 		*)
 			echo "[ERROR] Unknown flag for install: $1" >&2
@@ -138,8 +344,13 @@ cmd_install() {
 	local agy_dir="${HOME}/.gemini/antigravity"
 	local cli_dir="${HOME}/.gemini/antigravity-cli"
 	local skills_dir="${config_dir}/skills"
+	local runtime_dir="${config_dir}/proactive"
 	local reports_dir="${agy_dir}/proactive-reports"
 	local worktrees_dir="${agy_dir}/worktrees"
+
+	local source_root=""
+	source_root="$(resolve_install_source_root "${explicit_source}" "${runtime_dir}")"
+	validate_install_sources "${source_root}" "${stage_pilot}"
 
 	mkdir -p "${skills_dir}" "${reports_dir}" "${worktrees_dir}"
 	chmod 700 "${reports_dir}" "${worktrees_dir}"
@@ -150,32 +361,39 @@ cmd_install() {
 		chmod 700 "${cli_dir}" 2>/dev/null || true
 	fi
 
+	deploy_runtime_files "${source_root}" "${runtime_dir}"
+
 	local skill=""
 	for skill in "${SKILLS[@]}"; do
-		link_item \
+		deploy_skill_dir \
 			"${skills_dir}/${skill}" \
-			"${REPO_ROOT}/configs/antigravity/skills/${skill}"
+			"${source_root}/configs/antigravity/skills/${skill}"
 	done
 
-	link_item \
+	deploy_hooks_file \
 		"${config_dir}/hooks.json" \
-		"${REPO_ROOT}/configs/antigravity/hooks.json"
+		"${source_root}/configs/antigravity/hooks.json" \
+		"${runtime_dir}/.hooks-managed" \
+		"${source_root}"
 
 	if [[ ${stage_pilot} -eq 1 ]]; then
 		local sid=""
 		for sid in "${PILOT_SIDECAR_ID}" "${TRIAGE_SIDECAR_ID}"; do
-			local sidecar_src="${REPO_ROOT}/configs/antigravity/sidecars/${sid}.sidecar.json"
+			local sidecar_src="${source_root}/configs/antigravity/sidecars/${sid}.sidecar.json"
 			if [[ -f ${sidecar_src} ]]; then
 				local sidecar_dir="${config_dir}/sidecars/${sid}"
 				mkdir -p "${sidecar_dir}"
 				python3 - "${sidecar_src}" "${sidecar_dir}/sidecar.json" "${HOME}" <<'PY'
+import os
 import pathlib
 import sys
 
 src = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 dst = pathlib.Path(sys.argv[2])
-dst.write_text(src.replace("__HOME__", sys.argv[3]), encoding="utf-8")
-dst.chmod(0o600)
+tmp = dst.with_name(f".{dst.name}.tmp.{os.getpid()}")
+tmp.write_text(src.replace("__HOME__", sys.argv[3]), encoding="utf-8")
+tmp.chmod(0o600)
+os.replace(tmp, dst)
 PY
 			fi
 		done
@@ -224,23 +442,79 @@ report_sidecar_status() {
 	echo "${prefix}_next_run=${next_run}"
 }
 
+report_exec_state() {
+	local target_path="$1"
+	if [[ -L ${target_path} ]] && [[ ! -e ${target_path} ]]; then
+		printf 'broken-symlink'
+	elif [[ -f ${target_path} ]] && [[ -x ${target_path} ]]; then
+		printf 'ok'
+	elif [[ -e ${target_path} ]] && [[ ! -f ${target_path} ]]; then
+		printf 'invalid-type'
+	elif [[ -f ${target_path} ]]; then
+		printf 'not-executable'
+	else
+		printf 'missing'
+	fi
+}
+
+report_file_state() {
+	local target_path="$1"
+	if [[ -L ${target_path} ]] && [[ ! -e ${target_path} ]]; then
+		printf 'broken-symlink'
+	elif [[ -f ${target_path} ]]; then
+		printf 'ok'
+	elif [[ -e ${target_path} ]] && [[ ! -f ${target_path} ]]; then
+		printf 'invalid-type'
+	else
+		printf 'missing'
+	fi
+}
+
 cmd_status() {
 	local config_dir="${HOME}/.gemini/config"
 	local agy_dir="${HOME}/.gemini/antigravity"
+	local runtime_dir="${config_dir}/proactive"
 	local linked=0
+	local dangling_links=0
 	local total="${#SKILLS[@]}"
 	local skill=""
 
 	for skill in "${SKILLS[@]}"; do
-		if [[ -L "${config_dir}/skills/${skill}" ]]; then
+		local skill_path="${config_dir}/skills/${skill}"
+		if [[ -L ${skill_path} ]] && [[ ! -e ${skill_path} ]]; then
+			dangling_links=$((dangling_links + 1))
+		elif [[ -d ${skill_path} ]] && [[ -f "${skill_path}/SKILL.md" ]]; then
 			linked=$((linked + 1))
 		fi
 	done
 
+	local hooks_path="${config_dir}/hooks.json"
 	local hooks_linked="no"
-	if [[ -L "${config_dir}/hooks.json" ]]; then
+	local hooks_mode="absent"
+	if [[ -L ${hooks_path} ]] && [[ ! -e ${hooks_path} ]]; then
+		dangling_links=$((dangling_links + 1))
+		hooks_mode="broken-symlink"
+	elif [[ -L ${hooks_path} ]] && [[ -f ${hooks_path} ]]; then
 		hooks_linked="yes"
+		hooks_mode="symlink"
+	elif [[ -f ${hooks_path} ]]; then
+		hooks_linked="yes"
+		hooks_mode="copy"
 	fi
+
+	local runtime_worktree_sh=""
+	local runtime_ctl_sh=""
+	local runtime_guard_py=""
+	runtime_worktree_sh="$(report_exec_state "${runtime_dir}/scripts/proactive-worktree.sh")"
+	runtime_ctl_sh="$(report_exec_state "${runtime_dir}/scripts/antigravity-proactive-ctl.sh")"
+	runtime_guard_py="$(report_file_state "${runtime_dir}/hooks/proactive-guard.py")"
+
+	local rt_state=""
+	for rt_state in "${runtime_worktree_sh}" "${runtime_ctl_sh}" "${runtime_guard_py}"; do
+		if [[ ${rt_state} == "broken-symlink" ]]; then
+			dangling_links=$((dangling_links + 1))
+		fi
+	done
 
 	local canary_state="absent"
 	if [[ -f "${config_dir}/sidecars/${CANARY_SIDECAR_ID}/sidecar.json" ]]; then
@@ -249,6 +523,11 @@ cmd_status() {
 
 	echo "skills_linked=${linked}/${total}"
 	echo "hooks_linked=${hooks_linked}"
+	echo "hooks_mode=${hooks_mode}"
+	echo "dangling_links=${dangling_links}"
+	echo "runtime_worktree_sh=${runtime_worktree_sh}"
+	echo "runtime_ctl_sh=${runtime_ctl_sh}"
+	echo "runtime_guard_py=${runtime_guard_py}"
 	report_sidecar_status "pilot" "${PILOT_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
 	report_sidecar_status "triage" "${TRIAGE_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
 	echo "canary_sidecar=${canary_state}"
@@ -765,8 +1044,50 @@ cmd_base_check() {
 	return 0
 }
 
+sanitize_restored_hooks() {
+	local hooks_file="$1"
+
+	python3 - "${hooks_file}" <<'PY'
+import json
+import os
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+raw = path.read_text(encoding="utf-8", errors="replace")
+marker = ".gemini/config/proactive"
+if marker not in raw:
+    sys.exit(0)
+
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    sys.exit(11)
+
+if not isinstance(data, dict):
+    sys.exit(11)
+
+if "proactive-safety-guard" in data:
+    data.pop("proactive-safety-guard", None)
+    rendered = json.dumps(data, indent=2) + "\n"
+    tmp = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    tmp.write_text(rendered, encoding="utf-8")
+    tmp.chmod(0o600)
+    os.replace(tmp, path)
+    if marker in rendered:
+        sys.exit(10)
+    sys.exit(0)
+
+sys.exit(10)
+PY
+}
+
 cmd_disable() {
 	local config_dir="${HOME}/.gemini/config"
+	local runtime_dir="${config_dir}/proactive"
+	local stamp_file="${runtime_dir}/.hooks-managed"
+	local legacy_root=""
+	legacy_root="$(resolve_legacy_repo_root "${runtime_dir}")"
 
 	# Step 1/3: Stop/remove sidecars FIRST so no scheduled sweep can fire unguarded.
 	local sid=""
@@ -775,39 +1096,64 @@ cmd_disable() {
 		rm -f "${sidecar_dir}/sidecar.json" "${sidecar_dir}/user_config.json"
 		rmdir "${sidecar_dir}" 2>/dev/null || true
 	done
-	echo "Step 1/3: removed sidecar definitions before unlinking safety hooks"
+	echo "Step 1/3: removed sidecar definitions before removing safety hooks"
 
-	# Step 2/3: Remove only the global proactive skill symlinks that install created.
-	# A user-managed symlink at the same path must survive rollback untouched.
+	# Step 2/3: Remove only the proactive skill symlinks/copies that install created.
+	# User-managed symlinks or unmanaged directories at the same path must survive rollback.
 	local skill=""
 	local removed_skills=0
 	for skill in "${SKILLS[@]}"; do
-		local skill_link="${config_dir}/skills/${skill}"
-		if [[ -L ${skill_link} ]] && [[ "$(readlink "${skill_link}")" == "${REPO_ROOT}/configs/antigravity/skills/${skill}" ]]; then
-			rm -f "${skill_link}"
+		local skill_path="${config_dir}/skills/${skill}"
+		if [[ -L ${skill_path} ]] && [[ -n ${legacy_root} ]] && [[ "$(readlink "${skill_path}")" == "${legacy_root}/configs/antigravity/skills/${skill}" ]]; then
+			rm -f "${skill_path}"
 			removed_skills=$((removed_skills + 1))
-		elif [[ -L ${skill_link} ]]; then
-			echo "Step 2/3: skipped ${skill_link} (symlink not created by install; leaving in place)"
+		elif [[ -L ${skill_path} ]]; then
+			echo "Step 2/3: skipped ${skill_path} (symlink not created by install; leaving in place)"
+		elif [[ -d ${skill_path} ]] && [[ -f "${skill_path}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			rm -rf "${skill_path}"
+			removed_skills=$((removed_skills + 1))
+		elif [[ -e ${skill_path} ]]; then
+			echo "Step 2/3: skipped ${skill_path} (directory not managed by install; leaving in place)"
 		fi
 	done
-	echo "Step 2/3: unlinked ${removed_skills} proactive skill symlinks"
+	echo "Step 2/3: removed ${removed_skills} managed proactive skill(s)"
 
-	# Step 3/3: Unlink global hooks.json LAST, and only if install created the link.
-	local hooks_link="${config_dir}/hooks.json"
-	if [[ -L ${hooks_link} ]] && [[ "$(readlink "${hooks_link}")" != "${REPO_ROOT}/configs/antigravity/hooks.json" ]]; then
-		echo "Step 3/3: skipped ${hooks_link} (symlink not created by install; leaving in place)"
-	elif [[ -L ${hooks_link} ]]; then
-		rm -f "${config_dir}/hooks.json"
-		local latest_backup
+	# Step 3/3: Remove global hooks.json LAST, and only if install created it.
+	# Select and inspect any restored backup before deleting runtime_dir so custom
+	# hooks that still reference ~/.gemini/config/proactive/ keep their target alive.
+	local hooks_path="${config_dir}/hooks.json"
+	if is_hooks_file_managed "${hooks_path}" "${stamp_file}" "${legacy_root}"; then
+		local latest_backup=""
 		latest_backup="$(find "${config_dir}" -maxdepth 1 -name "hooks.json.backup.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]" -type f 2>/dev/null | sort -r | head -n 1 || true)"
+		rm -f "${hooks_path}"
 		if [[ -n ${latest_backup} ]] && [[ -f ${latest_backup} ]]; then
+			mv "${latest_backup}" "${hooks_path}"
 			echo "Step 3/3: restored previous hooks.json from ${latest_backup}"
-			mv "${latest_backup}" "${config_dir}/hooks.json"
+			local sanitize_rc=0
+			sanitize_restored_hooks "${hooks_path}" || sanitize_rc=$?
+			case "${sanitize_rc}" in
+			0)
+				rm -rf "${runtime_dir}"
+				;;
+			10)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json still references .gemini/config/proactive (manual cleanup may be needed)"
+				;;
+			11)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json could not be parsed as JSON" >&2
+				;;
+			*)
+				echo "Step 3/3: preserved ${runtime_dir} (hooks inspection exited ${sanitize_rc})" >&2
+				;;
+			esac
 		else
-			echo "Step 3/3: unlinked global hooks.json (local reports and worktrees preserved)"
+			rm -rf "${runtime_dir}"
+			echo "Step 3/3: removed global hooks.json (local reports and worktrees preserved)"
 		fi
+	elif [[ -L ${hooks_path} ]] || [[ -e ${hooks_path} ]]; then
+		echo "Step 3/3: skipped ${hooks_path} (not managed by install; leaving in place)"
 	else
-		echo "Step 3/3: hooks.json already unlinked"
+		rm -rf "${runtime_dir}"
+		echo "Step 3/3: hooks.json already removed"
 	fi
 
 	cat <<'EOF'
