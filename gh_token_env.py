@@ -11,11 +11,14 @@ Precedence for ``GH_TOKEN``:
 
 import os
 import re
+import json
 import stat
+import subprocess
+import sys
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping
 
 # Legacy path referenced in ABHI-954 / TruffleHog finding (gitignored, out of repo).
 # Resolved relative to this source file so it is stable regardless of the process
@@ -192,3 +195,31 @@ def missing_gh_token_message() -> str:
         "GH_TOKEN is not set. Export GH_TOKEN, use `gh auth login`, or set "
         f"GH_TOKEN_ENV_FILE. See {_RUNBOOK}."
     )
+
+
+def run_gh(cmd_list: list[str], *, parse_json: bool = True) -> Any:
+    """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            cmd_list,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError) as e:
+        print(
+            f"gh command failed or timed out ({type(e).__name__}): {cmd_list[0] if cmd_list else cmd_list}",
+            file=sys.stderr,
+        )
+        return None
+    if result.returncode != 0:
+        return None
+    if not parse_json:
+        return result.stdout
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None

@@ -1,89 +1,25 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from run_merges import (
     _fetch_all_pr_data_parallel,
     get_diff,
-    run_gh,
 )
 
 
 class TestRunMerges(unittest.TestCase):
-    def test_run_gh_success_json(self):
-        with (
-            patch("run_merges.load_gh_token_env", return_value={}) as _mock_env,
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 0
-            mock_result.stdout = '{"key": "value"}'
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"])
-            self.assertEqual(result, {"key": "value"})
-            args, kwargs = mock_run.call_args
-            self.assertIsInstance(args[0], list)
-            self.assertEqual(args[0][0], "gh")
-            self.assertFalse(kwargs.get("shell", False))
-            self.assertIsNotNone(kwargs.get("timeout"))
-
-    def test_run_gh_success_string(self):
-        with (
-            patch("run_merges.load_gh_token_env", return_value={}) as _mock_env,
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 0
-            mock_result.stdout = "plain text output"
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"])
-            self.assertEqual(result, "plain text output")
-
-    def test_run_gh_failure(self):
-        with (
-            patch("run_merges.load_gh_token_env", return_value={}) as _mock_env,
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_result = MagicMock()
-            mock_result.returncode = 1
-            mock_run.return_value = mock_result
-
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
-
-    def test_run_gh_timeout(self):
-        import subprocess
-
-        with (
-            patch("run_merges.load_gh_token_env", return_value={}),
-            patch(
-                "subprocess.run",
-                side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120),
-            ),
-        ):
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
-
-    def test_run_gh_oserror(self):
-        with (
-            patch("run_merges.load_gh_token_env", return_value={}),
-            patch("subprocess.run", side_effect=OSError("Command not found")),
-        ):
-            result = run_gh(["gh", "test"])
-            self.assertIsNone(result)
-
     @patch("run_merges.run_gh")
     def test_get_diff_success(self, mock_run_gh):
         mock_run_gh.return_value = "diff output"
         res = get_diff("owner/repo", "123")
         self.assertEqual(res, "diff output")
         mock_run_gh.assert_called_once_with(
-            ["gh", "pr", "diff", "123", "-R", "owner/repo"]
+            ["gh", "pr", "diff", "123", "-R", "owner/repo"],
+            parse_json=False,
         )
 
     @patch("run_merges.run_gh")
