@@ -7,6 +7,12 @@ from concurrent.futures import ThreadPoolExecutor
 from gh_token_env import load_gh_token_env
 from pr_reference import PRReference
 
+# ⚡ Bolt Optimization: Module-level tuple constants to avoid re-instantiating tuple/list
+# objects on every iteration of PR processing loops.
+_UNMERGEABLE_STATUSES = ("DIRTY", "CONFLICTING")
+_DANGEROUS_EVAL_PATTERNS = ("eval(", "exec(", "dangerouslysetinnerhtml")
+_SENSITIVE_DOMAIN_KEYWORDS = ("auth", "payment", "migration", "sql")
+
 
 def run_gh(cmd_list):
     """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
@@ -44,7 +50,7 @@ def _fetch_pr_diff_only(item, info):
     repo, pr, title = item
     ref = PRReference.from_parts(repo, pr)
     diff = ""
-    if info and info.get("mergeStateStatus") not in ["DIRTY", "CONFLICTING"]:
+    if info and info.get("mergeStateStatus") not in _UNMERGEABLE_STATUSES:
         diff = get_diff(ref.repo, str(ref.number))
     return ref.repo, str(ref.number), title, info, diff
 
@@ -212,7 +218,7 @@ if __name__ == "__main__":
             continue
 
         status = info.get("mergeStateStatus")
-        if status in ["DIRTY", "CONFLICTING"]:
+        if status in _UNMERGEABLE_STATUSES:
             print(f"Status is {status}, moving to conflicting.")
             results["conflicting"].append((repo, pr, title))
             continue
@@ -223,7 +229,7 @@ if __name__ == "__main__":
         escalate = False
         reasons = []
 
-        for dangerous in ("eval(", "exec(", "dangerouslysetinnerhtml"):
+        for dangerous in _DANGEROUS_EVAL_PATTERNS:
             if dangerous in diff_lower:
                 escalate = True
                 reasons.append("Dangerous evaluation function detected.")
@@ -238,7 +244,7 @@ if __name__ == "__main__":
             reasons.append("Weakened .env.example.")
 
         title_lower = title.lower()
-        for sensitive in ("auth", "payment", "migration", "sql"):
+        for sensitive in _SENSITIVE_DOMAIN_KEYWORDS:
             if sensitive in title_lower:
                 escalate = True
                 reasons.append("Touches sensitive domain (auth/payments/db).")
