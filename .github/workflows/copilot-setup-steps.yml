@@ -7,10 +7,6 @@ on:
         description: "Specific request for the development partner"
         required: false
         type: string
-  pull_request:
-    types: [opened, synchronize, reopened]
-  issues:
-    types: [opened, labeled]
 
 jobs:
   copilot-setup-steps:
