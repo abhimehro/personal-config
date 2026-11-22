@@ -44,8 +44,8 @@ lint:
     # -format via pinact_run.py. Stay on 4.1.1 until plugins emit --format.
     # Verified 2026-11-03: pinact 5.0.2 errors "unknown flag: -format".
     # PINACT-PIN: trunk upgrade ignores this comment and bumps past 4.1.1.
-    # Always revert to pinact@4.1.1 after upgrading; see
-    # maintenance/scripts/trunk_upgrade_guarded.sh
+    # Always revert to pinact@4.1.1 after upgrading; use
+    # maintenance/bin/trunk_upgrade_guarded.sh which enforces this pin.
     - pinact@4.1.1
     - actionlint@1.7.12
     - bandit@1.9.4
