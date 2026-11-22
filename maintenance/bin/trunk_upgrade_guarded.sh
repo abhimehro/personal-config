@@ -36,10 +36,6 @@ log() {
 	echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [trunk-guard] $*" | tee -a "$LOG_FILE"
 }
 
-warn() {
-	echo "$(date '+%Y-%m-%d %H:%M:%S') [WARN] [trunk-guard] $*" | tee -a "$LOG_FILE" >&2
-}
-
 fail() {
 	echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] [trunk-guard] $*" | tee -a "$LOG_FILE" >&2
 }
@@ -87,11 +83,34 @@ for repo in "${repos[@]}"; do
 	fi
 
 	# 2. Revert pinact if it moved past the pin.
+	# SECURITY/BUGFIX: extract the version ONLY from the enabled entry line
+	# (`- pinact@...`), never from comments, which also contain pinact@X
+	# strings and would mask a real version bump (head -1 on a full-file
+	# grep matched the comment first).
 	if grep -qE "^\s*- pinact@" "$repo/.trunk/trunk.yaml"; then
-		current="$(grep -oE 'pinact@[0-9.]+' "$repo/.trunk/trunk.yaml" | head -1 | cut -d@ -f2)"
-		if [[ "$current" != "$PINACT_PIN" ]]; then
+		current="$(grep -E '^\s*- pinact@' "$repo/.trunk/trunk.yaml" | grep -oE '[0-9.]+' | head -1)"
+		if [[ $current != "$PINACT_PIN" ]]; then
 			log "$name: reverting pinact $current -> $PINACT_PIN"
-			sed -i '' "s/- pinact@${current}/- pinact@${PINACT_PIN}/" "$repo/.trunk/trunk.yaml"
+			sed -i '' "s/^\([[:space:]]*- pinact@\)${current}/\1${PINACT_PIN}/" "$repo/.trunk/trunk.yaml"
+		fi
+		# 2b. Repair the PINACT-PIN comment: `trunk upgrade` regenerates the
+		# whole lint.enabled block and rewrites version strings inside
+		# interleaved comments (observed 2026-11-22: "Always revert to
+		# pinact@4.1.1" became "pinact@5.0.2"). Normalize any
+		# "revert to pinact@X" comment back to the pin.
+		if grep -qE "#.*[Rr]evert to pinact@([0-9.]+)" "$repo/.trunk/trunk.yaml"; then
+			comment_ver="$(grep -oE '[Rr]evert to pinact@[0-9.]+' "$repo/.trunk/trunk.yaml" | grep -oE '[0-9.]+$' | head -1)"
+			if [[ $comment_ver != "$PINACT_PIN" ]]; then
+				log "$name: repairing PINACT-PIN comment $comment_ver -> $PINACT_PIN"
+				sed -i '' "s/\([Rr]evert to pinact@\)${comment_ver}/\1${PINACT_PIN}/" "$repo/.trunk/trunk.yaml"
+			fi
+		fi
+		# 2c. Hard verification: the enabled entry MUST equal the pin now.
+		final="$(grep -E '^\s*- pinact@' "$repo/.trunk/trunk.yaml" | grep -oE '[0-9.]+' | head -1)"
+		if [[ $final != "$PINACT_PIN" ]]; then
+			fail "$name: pinact still at $final after revert; inspect manually"
+			FAILED+=("$name")
+			continue
 		fi
 	fi
 
@@ -117,9 +136,10 @@ runtimes, plugins, and CLI upgraded to latest." >>"$LOG_FILE" 2>&1 || {
 			continue
 		}
 		# 5. Push via gh HTTPS credentials (SSH-agent-safe).
-		if ! git -C "$repo" -c credential.helper='!gh auth git-credential' \
-			-c url."https://github.com/".insteadOf="git@github.com:" \
-			-c url."https://github.com/".insteadOf="ssh://git@github.com/" \
+		# SC2140: url.<base>.insteadOf keys are quoted as a single word.
+		if ! git -C "$repo" -c 'credential.helper=!gh auth git-credential' \
+			-c 'url.https://github.com/.insteadOf=git@github.com:' \
+			-c 'url.https://github.com/.insteadOf=ssh://git@github.com/' \
 			push origin HEAD >>"$LOG_FILE" 2>&1; then
 			fail "$name: push failed (committed locally; push manually)"
 			FAILED+=("$name")
