@@ -1,7 +1,7 @@
 # Notion agent workspace + Mem handoffs
 
-Notion is the agents' shared workspace and documentation hub; **Mem** is
-Abhi's personal notebook — the channel for handoffs to him.
+Notion is the agents' shared workspace and documentation hub; **Mem** is Abhi's
+personal notebook — the channel for handoffs to him.
 
 - **Before starting any task** that depends on Abhi's personal or project
   context (PR sweeps, the pr-lifecycle pipeline, and any coding task), read the

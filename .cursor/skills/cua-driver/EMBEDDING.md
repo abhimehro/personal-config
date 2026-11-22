@@ -1,44 +1,44 @@
 # Embedding cua-driver in your application without introducing new permissions
 
 This guide is for teams shipping a macOS app (an "agent harness") that wants
-cua-driver's background computer-use and agent-cursor overlay **inside their
-own app**, without shipping a second app bundle and without their users ever
-seeing a second macOS permission prompt. Your app requests Accessibility and
-Screen Recording once; the embedded driver inherits those grants.
+cua-driver's background computer-use and agent-cursor overlay **inside their own
+app**, without shipping a second app bundle and without their users ever seeing
+a second macOS permission prompt. Your app requests Accessibility and Screen
+Recording once; the embedded driver inherits those grants.
 
 A working daemon-host reference lives in the cua repo at
 `libs/cua-driver/rust/examples/embedded-host-macos/`
-(https://github.com/trycua/cua). This doc ships standalone in the skill
-pack, so the path is given rather than a relative link.
+(https://github.com/trycua/cua). This doc ships standalone in the skill pack, so
+the path is given rather than a relative link.
 
 ## How macOS attributes these permissions (what you must know)
 
-macOS TCC (the privacy system behind System Settings → Privacy & Security)
-does not attribute Accessibility or Screen Recording to an executable path.
-It attributes them to the **responsible process**: the app at the top of the
+macOS TCC (the privacy system behind System Settings → Privacy & Security) does
+not attribute Accessibility or Screen Recording to an executable path. It
+attributes them to the **responsible process**: the app at the top of the
 process's launch chain, as tracked by the kernel/LaunchServices. When your
 signed app spawns a child with `posix_spawn`, `NSTask`/`Process`, or plain
-`fork`/`exec`, that child stays inside _your_ responsibility chain: TCC
-checks made by the child are answered with **your app's** grants, and any
-prompt it triggered would name **your app**. This is exactly the behavior
-embedding relies on: grant once to the host, and every well-behaved child
-inherits. (Apple documents the attribution chain; you can watch it live with
+`fork`/`exec`, that child stays inside _your_ responsibility chain: TCC checks
+made by the child are answered with **your app's** grants, and any prompt it
+triggered would name **your app**. This is exactly the behavior embedding relies
+on: grant once to the host, and every well-behaved child inherits. (Apple
+documents the attribution chain; you can watch it live with
 `log stream --debug --predicate 'subsystem == "com.apple.TCC" AND eventMessage BEGINSWITH "AttributionChain"'`.)
 
-Two things break the chain, and both are things the embedded driver must
-_not_ do (and, in embedded mode, does not do). First, launching via
-LaunchServices (`open -a …`, `NSWorkspace.open`) makes the launched app its
-own responsible process. Second, a process can explicitly _disclaim_
-responsibility for a child (`responsibility_spawnattrs_setdisclaim`), making
-the child its own responsible process: standalone cua-driver does this on
-purpose so its permissions attach to a stable `com.trycua.driver` identity
-instead of whatever terminal launched it. Embedded mode turns that off.
+Two things break the chain, and both are things the embedded driver must _not_
+do (and, in embedded mode, does not do). First, launching via LaunchServices
+(`open -a …`, `NSWorkspace.open`) makes the launched app its own responsible
+process. Second, a process can explicitly _disclaim_ responsibility for a child
+(`responsibility_spawnattrs_setdisclaim`), making the child its own responsible
+process: standalone cua-driver does this on purpose so its permissions attach to
+a stable `com.trycua.driver` identity instead of whatever terminal launched it.
+Embedded mode turns that off.
 
-Note this is TCC **responsibility** inheritance: it is unrelated to App
-Sandbox inheritance (`com.apple.security.inherit`). This guide assumes a
-non-sandboxed host, which is typical for agent harnesses; a sandboxed host
-spawning a non-sandboxed helper raises separate App Sandbox questions that
-embedded mode does not address.
+Note this is TCC **responsibility** inheritance: it is unrelated to App Sandbox
+inheritance (`com.apple.security.inherit`). This guide assumes a non-sandboxed
+host, which is typical for agent harnesses; a sandboxed host spawning a
+non-sandboxed helper raises separate App Sandbox questions that embedded mode
+does not address.
 
 ## Preferred application SDK: same-process runtime
 
@@ -47,7 +47,7 @@ create `CuaDriver` directly. This path does not start an executable or open a
 socket, and TCC checks execute as the importing application:
 
 ```ts
-import { CuaDriver } from '@trycua/cua-driver';
+import { CuaDriver } from "@trycua/cua-driver";
 
 const driver = CuaDriver.create(undefined);
 try {
@@ -60,15 +60,15 @@ try {
 ```
 
 The direct runtime never presents macOS permission UI. Even
-`check_permissions({prompt: true})` is forced into a read-only check and
-reports the host as the responsible permission owner. After the host changes
+`check_permissions({prompt: true})` is forced into a read-only check and reports
+the host as the responsible permission owner. After the host changes
 Accessibility or Screen Recording grants, fully relaunch the host before
 creating a replacement runtime.
 
-The AppKit agent-cursor overlay is not available in an arbitrary direct
-runtime. Until a host installs a certified main-thread UI adapter, overlay
-methods return structured `facility_unavailable` results. Use the private
-worker or daemon-backed host when the visible overlay is required.
+The AppKit agent-cursor overlay is not available in an arbitrary direct runtime.
+Until a host installs a certified main-thread UI adapter, overlay methods return
+structured `facility_unavailable` results. Use the private worker or
+daemon-backed host when the visible overlay is required.
 
 Use the daemon-backed host below only when the application must also provide a
 stable MCP endpoint to an external agent, coordinate external clients, or keep
@@ -88,28 +88,27 @@ CUA_DRIVER_EMBEDDED=1 cua-driver mcp --socket /tmp/yourapp-cua.sock
 Requirements on the host side:
 
 - **Spawn `cua-driver serve --embedded` directly** as a child process
-  (`Process`/`NSTask`, `posix_spawn`, `exec` from your own code). Do
-  **not** launch the daemon via `open(1)` or `NSWorkspace`: that hands it
-  to LaunchServices and breaks inheritance.
+  (`Process`/`NSTask`, `posix_spawn`, `exec` from your own code). Do **not**
+  launch the daemon via `open(1)` or `NSWorkspace`: that hands it to
+  LaunchServices and breaks inheritance.
 - Give the daemon a private socket and wait until it is accepting connections.
 - Spawn `cua-driver mcp --embedded --socket <path>` and speak MCP over that
   proxy's stdin/stdout (line-delimited JSON-RPC). The proxy never executes
   tools; the host-owned daemon does.
-- Request Accessibility and Screen Recording **from your app** before (or
-  after: the driver just reports "not granted" until then) starting the
-  driver, using `AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt: true])`
-  and `CGRequestScreenCaptureAccess()`.
+- Request Accessibility and Screen Recording **from your app** before (or after:
+  the driver just reports "not granted" until then) starting the driver, using
+  `AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt: true])` and
+  `CGRequestScreenCaptureAccess()`.
 
 Only the exact value `CUA_DRIVER_EMBEDDED=1` enables embedded mode; anything
-else is ignored (fail-safe). `--host-bundle-id` is an advisory label echoed
-in `check_permissions` output and logs: it is **not** a trust signal; trust
-comes from the OS responsibility chain, so there is nothing to spoof by
-setting it.
+else is ignored (fail-safe). `--host-bundle-id` is an advisory label echoed in
+`check_permissions` output and logs: it is **not** a trust signal; trust comes
+from the OS responsibility chain, so there is nothing to spoof by setting it.
 
 ## Choosing the agent permission mode
 
-Embedded hosts own their user-facing permission experience, but they must
-select Cua Driver's immutable runtime mode at trusted launch. The choices are:
+Embedded hosts own their user-facing permission experience, but they must select
+Cua Driver's immutable runtime mode at trusted launch. The choices are:
 
 - `standard`: promptless routine automation, with explicit host authorization
   only for residual boundaries such as an existing logged-in Chromium profile.
@@ -130,13 +129,12 @@ CUA_DRIVER_DANGEROUSLY_BYPASS_APPROVALS=1 \
   cua-driver serve --embedded --socket /tmp/yourapp-cua.sock
 ```
 
-Both values are required and contradictory values fail before the daemon
-binds. They belong in trusted launcher configuration; never expose either as
-an agent-settable MCP or raw-socket argument. Interactive operators can use
-the equivalent single CLI shortcut, `--dangerously-bypass-approvals`, which
-selects unrestricted mode and records the acknowledgement. The older
-`autonomous` mode name remains accepted as an alias for `bounded` during
-migration.
+Both values are required and contradictory values fail before the daemon binds.
+They belong in trusted launcher configuration; never expose either as an
+agent-settable MCP or raw-socket argument. Interactive operators can use the
+equivalent single CLI shortcut, `--dangerously-bypass-approvals`, which selects
+unrestricted mode and records the acknowledgement. The older `autonomous` mode
+name remains accepted as an alias for `bounded` during migration.
 
 ### Node and Electron daemon hosts
 
@@ -146,11 +144,11 @@ until its socket accepts connections, returns SDK and MCP connection details,
 and owns restart and cleanup:
 
 ```ts
-import { CuaDriver, EmbeddedCuaDriverHost } from '@trycua/cua-driver';
+import { CuaDriver, EmbeddedCuaDriverHost } from "@trycua/cua-driver";
 
 const embedded = new EmbeddedCuaDriverHost(
-  '/path/inside/YourApp.app/Contents/Resources/cua-driver',
-  'com.example.your-app'
+  "/path/inside/YourApp.app/Contents/Resources/cua-driver",
+  "com.example.your-app",
 );
 const connection = await embedded.start();
 const driver = CuaDriver.connect(connection.socketPath);
@@ -169,18 +167,17 @@ the calls run as the importing host, not the child driver. The host still owns
 permission UI, status, and restart policy. These functions use the same
 generated Rust SDK; there is no second native FFI dependency. Some macOS
 releases refuse to raise a Screen Recording prompt; in that case, open the
-Screen Recording settings pane with
-`openMacOSScreenRecordingSettings()`, ask the user to add the host app, and
-start the driver only after both checks return true.
+Screen Recording settings pane with `openMacOSScreenRecordingSettings()`, ask
+the user to add the host app, and start the driver only after both checks return
+true.
 
 Destroy the SDK client and call `await embedded.stop()` from every orderly
 shutdown path. If grants change, destroy the SDK client, call
 `embedded.restart()`, and reconnect. Electron hosts must defer their first
 `before-quit` event until cleanup completes because asynchronous cleanup cannot
-run after the host process exits. Normal OpenClaw
-gateway and Hermes YAML configurations remain standalone integrations; use the
-package only when their signed Node or Electron app process directly owns the
-daemon child.
+run after the host process exits. Normal OpenClaw gateway and Hermes YAML
+configurations remain standalone integrations; use the package only when their
+signed Node or Electron app process directly owns the daemon child.
 
 ### Lifecycle rules
 
@@ -195,27 +192,27 @@ daemon child.
 - The Rust owner holds a parent-liveness pipe, so host death closes the daemon;
   orderly shutdown should still await `stop()`.
 - Capture modality belongs to each observation or action target, not to the
-  lifecycle session. One embedded daemon can concurrently serve exact window
-  and desktop calls without changing session state.
+  lifecycle session. One embedded daemon can concurrently serve exact window and
+  desktop calls without changing session state.
 - Permission changes require destroying clients, restarting the daemon, and
   reconnecting. A connection from the old generation is never reusable.
 
 ## Bounding the post-action window observation
 
-After an input action, the driver watches the window list for a short time so
-it can report a menu, dialog, or new window that the action opened. On macOS,
-the watch lasts up to 1000 ms. The action's result waits for at most the first
-300 ms of it; when nothing has changed by then, the result returns and the rest
-of the watch runs detached, still holding the focus-steal lease. A window that
+After an input action, the driver watches the window list for a short time so it
+can report a menu, dialog, or new window that the action opened. On macOS, the
+watch lasts up to 1000 ms. The action's result waits for at most the first 300
+ms of it; when nothing has changed by then, the result returns and the rest of
+the watch runs detached, still holding the focus-steal lease. A window that
 opens during that remainder is reported on the next action's result as
 `After the previous action returned, it opened new window(s): …`. The next
 action, or any activation the driver performs, ends the detached remainder
-first. On Linux X11 the result waits for the whole watch. A host that already observes
-its target continuously can shorten it through two variables set at trusted
-launch, in the environment of the `serve --embedded` child (or of the host
-process when you use the same-process runtime). `EmbeddedCuaDriverHost` starts
-that child from an allowlisted environment that admits both variables, so pass
-them in its `environment` option or set them in the host process:
+first. On Linux X11 the result waits for the whole watch. A host that already
+observes its target continuously can shorten it through two variables set at
+trusted launch, in the environment of the `serve --embedded` child (or of the
+host process when you use the same-process runtime). `EmbeddedCuaDriverHost`
+starts that child from an allowlisted environment that admits both variables, so
+pass them in its `environment` option or set them in the host process:
 
 | Variable                              | Meaning                                              | Default                         | Accepted range                            |
 | ------------------------------------- | ---------------------------------------------------- | ------------------------------- | ----------------------------------------- |
@@ -223,10 +220,9 @@ them in its `environment` option or set them in the host process:
 | `CUA_DRIVER_WINDOW_CHANGE_POLL_MS`    | Interval between window-list reads during that wait. | 50                              | 5 to 1000, and never longer than the wait |
 
 Unset, empty, or unparsable values, such as `-1`, `1.5`, or `100ms`, keep the
-default, so a daemon launched without these variables behaves exactly as
-before. No tool argument can change the bound. Every ingress strips
-underscore-prefixed arguments, so an agent cannot shorten its own focus
-protection.
+default, so a daemon launched without these variables behaves exactly as before.
+No tool argument can change the bound. Every ingress strips underscore-prefixed
+arguments, so an agent cannot shorten its own focus protection.
 
 ```sh
 CUA_DRIVER_EMBEDDED=1 \
@@ -245,16 +241,16 @@ A shorter wait costs something on each platform. Choose a value knowingly.
   remains, and it still covers the action plus a 50 ms settle when the target
   was not frontmost. An app that activates later stays frontmost, so the host
   must detect and correct that itself.
-- **macOS: missing result suffixes.** A window that appears after the wait
-  ends is not reported. With `0`, results never carry
+- **macOS: missing result suffixes.** A window that appears after the wait ends
+  is not reported. With `0`, results never carry
   `Action opened new window(s): …` or
   `Action caused a different app to become frontmost.`
 - **Linux X11 foreground delivery: weaker evidence.** A foreground-delivery
   action (`"delivery_mode": "foreground"`) reports `effect: "confirmed"` when
-  the target opened or closed a window during the wait. A dialog that maps after a shorter wait
-  leaves the action `unverifiable`. Qt file dialogs can take 300 to 600 ms to
-  map. With `0`, foreground actions never report window-change evidence. Focus
-  checks and `suspected_noop` detection are unchanged.
+  the target opened or closed a window during the wait. A dialog that maps after
+  a shorter wait leaves the action `unverifiable`. Qt file dialogs can take 300
+  to 600 ms to map. With `0`, foreground actions never report window-change
+  evidence. Focus checks and `suspected_noop` detection are unchanged.
 - **Windows: no effect.** The Windows adapter does not wait for window changes
   after an action, so it ignores both variables.
 
@@ -265,11 +261,11 @@ with `0`.
 ### Steps inside `run_steps` and `run_script` (macOS)
 
 Two waits make up most of a macOS action's latency: the agent cursor's glide to
-the target (600 ms or more with the default `steady` timing) and the first 300 ms
-of the window watch above. A call that is one step of a `run_steps` batch or a
-`run_script` program is followed at once by another step, so the driver shortens
-both for it: the step waits at most 120 ms for the cursor to arrive and 100 ms
-for a window change. The cursor keeps gliding and the watch keeps running
+the target (600 ms or more with the default `steady` timing) and the first 300
+ms of the window watch above. A call that is one step of a `run_steps` batch or
+a `run_script` program is followed at once by another step, so the driver
+shortens both for it: the step waits at most 120 ms for the cursor to arrive and
+100 ms for a window change. The cursor keeps gliding and the watch keeps running
 detached, as above, so a window that opens late is still reported on the next
 action's result. The last step of a `run_steps` batch, and every direct call,
 keep the full waits, so the batch's final result still reports what it left
@@ -289,19 +285,19 @@ is most of the call's latency. A host whose targets accept faster input can
 shorten it at trusted launch with one variable, in the same environment as the
 window-observation variables above. `EmbeddedCuaDriverHost` admits it too:
 
-| Variable                | Meaning                                         | Default | Accepted range                                        |
-| ----------------------- | ----------------------------------------------- | ------- | ----------------------------------------------------- |
-| `CUA_DRIVER_KEY_GAP_MS` | Gap between synthesized key events, per event.  | 8       | 2 to 100; smaller values are raised, larger clamped   |
+| Variable                | Meaning                                        | Default | Accepted range                                      |
+| ----------------------- | ---------------------------------------------- | ------- | --------------------------------------------------- |
+| `CUA_DRIVER_KEY_GAP_MS` | Gap between synthesized key events, per event. | 8       | 2 to 100; smaller values are raised, larger clamped |
 
-Unset, empty, or unparsable values keep the default. No tool argument can
-change the gap. An explicit `type_text` `delay_ms` still applies on top of it.
+Unset, empty, or unparsable values keep the default. No tool argument can change
+the gap. An explicit `type_text` `delay_ms` still applies on top of it.
 
 - **macOS only.** Linux keeps its fixed 10 ms key delay and Windows its own
   pacing; neither reads this variable.
 - **What a shorter gap costs.** Some targets coalesce or drop key events that
   arrive back to back, most often remote-input forwarders and apps under heavy
-  load. Read the field back after typing before relying on a low value for a
-  new target. The 2 ms floor exists because `0` posts events with no gap at all.
+  load. Read the field back after typing before relying on a low value for a new
+  target. The 2 ms floor exists because `0` posts events with no gap at all.
 
 Measured on macOS 27 with TextEdit in the background, typing a 185-character
 ASCII sentence through the PID-routed key path took about 3650 ms at the default
@@ -318,32 +314,32 @@ and about 980 ms at `2`. All ten read-backs (five per value) matched exactly.
 | Permission prompts / startup gate             | May prompt once               | **Never prompts**                      |
 | Settings → Privacy & Security entries         | CuaDriver                     | your app only                          |
 | `check_permissions` `source.attribution`      | `driver-daemon` (or `caller`) | `host`                                 |
-| Overlay, background input, capture, all tools | full                          | full, identical                       |
+| Overlay, background input, capture, all tools | full                          | full, identical                        |
 
-Everything else is unchanged: the agent-cursor overlay, background (no-focus-steal)
-clicking and typing, AX tree reads, and per-window screenshots.
+Everything else is unchanged: the agent-cursor overlay, background
+(no-focus-steal) clicking and typing, AX tree reads, and per-window screenshots.
 When embedded mode is off, nothing in this feature is active: standalone
 behavior is byte-for-byte what it was.
 
 ## The responsibility-chain requirement, exactly
 
 The host must be the responsible process for the driver. That holds
-automatically when you spawn the `serve` daemon directly and embedded mode
-is on. If the daemon were allowed to disclaim (standalone behavior), macOS
-would treat it as its own responsible process: your user would get a _second_ prompt
-attributed to the driver binary, a second Settings entry, and capture/AX
-would fail until that second grant. That is the exact experience embedding exists
-to eliminate. Embedded mode short-circuits the disclaim re-exec
-(`responsibility.rs`) and the installed-app daemon relaunch. MCP is
-always a proxy, so the embedded daemon remains the single process that checks
-TCC and executes tools.
+automatically when you spawn the `serve` daemon directly and embedded mode is
+on. If the daemon were allowed to disclaim (standalone behavior), macOS would
+treat it as its own responsible process: your user would get a _second_ prompt
+attributed to the driver binary, a second Settings entry, and capture/AX would
+fail until that second grant. That is the exact experience embedding exists to
+eliminate. Embedded mode short-circuits the disclaim re-exec
+(`responsibility.rs`) and the installed-app daemon relaunch. MCP is always a
+proxy, so the embedded daemon remains the single process that checks TCC and
+executes tools.
 
 ### App + gateway architectures
 
-`--embedded` does not transfer a GUI app's permissions to the driver; it
-only keeps the driver inside its **spawner's** TCC responsibility chain. If
-your product has a GUI app that owns the macOS grants and a separate
-gateway, daemon, or Node process that spawns MCP servers, registering
+`--embedded` does not transfer a GUI app's permissions to the driver; it only
+keeps the driver inside its **spawner's** TCC responsibility chain. If your
+product has a GUI app that owns the macOS grants and a separate gateway, daemon,
+or Node process that spawns MCP servers, registering
 `cua-driver serve --embedded` with the gateway makes the daemon inherit the
 gateway's identity, not the app's. Spawn the daemon from the GUI app itself;
 gateways may connect an MCP proxy to the app-owned private socket.
@@ -358,16 +354,16 @@ gateway / node daemon                           YourApp.app
 ```
 
 `health_report(include=["bundle_identity"])` detects this wiring error by
-resolving the daemon's direct parent through macOS. It fails when the parent
-is not an identifiable app or when its observed bundle identifier differs
-from `CUA_DRIVER_HOST_BUNDLE_ID`. `check_permissions.source.attribution`
-still describes the configured mode; use the two reports together when
-diagnosing embedding.
+resolving the daemon's direct parent through macOS. It fails when the parent is
+not an identifiable app or when its observed bundle identifier differs from
+`CUA_DRIVER_HOST_BUNDLE_ID`. `check_permissions.source.attribution` still
+describes the configured mode; use the two reports together when diagnosing
+embedding.
 
 ## Reading `check_permissions` from the host
 
-Call the `check_permissions` tool over MCP. In embedded mode it never raises
-a dialog (the `prompt` argument is ignored) and returns:
+Call the `check_permissions` tool over MCP. In embedded mode it never raises a
+dialog (the `prompt` argument is ignored) and returns:
 
 ```json
 {
@@ -389,24 +385,24 @@ a dialog (the `prompt` argument is ignored) and returns:
 ```
 
 - `accessibility` / `screen_recording`: the live TCC state _of your app's
-  grant_, answered from inside the driver process (which shares your
-  identity). If both are true, it is safe to drive the desktop.
+  grant_, answered from inside the driver process (which shares your identity).
+  If both are true, it is safe to drive the desktop.
 - `screen_recording_capturable` / `direct_capture_status`: embedded
   `check_permissions` is read-only and never runs Tahoe's prompt-capable
-  ScreenCaptureKit probe, so these are `null` / `not_checked`. The host owns
-  the permission UX and should verify pixels with an explicit screenshot or
-  capture operation after explaining the prompt.
+  ScreenCaptureKit probe, so these are `null` / `not_checked`. The host owns the
+  permission UX and should verify pixels with an explicit screenshot or capture
+  operation after explaining the prompt.
 - `source.attribution` values:
-  - `host`: embedded mode; booleans reflect the host's grant. What you
-    should always see when embedding.
-  - `driver-daemon`: standalone daemon owning `com.trycua.driver`. If you
-    see this while embedding, embedded mode is not actually set.
-  - `caller`: a non-embedded, non-bundle launch (e.g. someone ran the
-    binary from a terminal); booleans reflect the terminal's grants.
+  - `host`: embedded mode; booleans reflect the host's grant. What you should
+    always see when embedding.
+  - `driver-daemon`: standalone daemon owning `com.trycua.driver`. If you see
+    this while embedding, embedded mode is not actually set.
+  - `caller`: a non-embedded, non-bundle launch (e.g. someone ran the binary
+    from a terminal); booleans reflect the terminal's grants.
 
-If a permission is missing, the correct reaction is: **the host requests
-it** (the two API calls above), then re-calls `check_permissions`. The
-driver never owns the host's OS permission experience.
+If a permission is missing, the correct reaction is: **the host requests it**
+(the two API calls above), then re-calls `check_permissions`. The driver never
+owns the host's OS permission experience.
 
 Heads-up on grant timing: macOS caches TCC answers per process. If your app
 requests/receives the grants _after_ the driver child is already running,
@@ -415,12 +411,11 @@ restart the driver child so it re-queries with a fresh cache.
 ## Minimal host example (copy-paste)
 
 The file below is the complete reference host: mirrored verbatim from
-`libs/cua-driver/rust/examples/embedded-host-macos/ExampleAgentHarness.swift`
-in the cua repo (which also has a build-and-run `demo.sh` covering the
-TCC-reset flow).
-It requests the two grants as the host, spawns an embedded daemon plus an MCP
-proxy, and runs the whole demo sequence: attribution check, background screenshot,
-background AX read, agent-cursor glide.
+`libs/cua-driver/rust/examples/embedded-host-macos/ExampleAgentHarness.swift` in
+the cua repo (which also has a build-and-run `demo.sh` covering the TCC-reset
+flow). It requests the two grants as the host, spawns an embedded daemon plus an
+MCP proxy, and runs the whole demo sequence: attribution check, background
+screenshot, background AX read, agent-cursor glide.
 
 `ExampleAgentHarness.swift`:
 
@@ -610,8 +605,8 @@ daemon.terminate()
 exit(pass ? 0 : 1)
 ```
 
-Build it as a signed app bundle (a stable signing identity is what keys
-the TCC grant rows to your app):
+Build it as a signed app bundle (a stable signing identity is what keys the TCC
+grant rows to your app):
 
 ```sh
 mkdir -p ExampleAgentHarness.app/Contents/MacOS
@@ -632,36 +627,37 @@ tail -f /tmp/cua-embedded-demo.log
 
 ## Troubleshooting
 
-**"I still get a second permission prompt / a second Settings entry."**
-Embedded mode is not in effect for the process doing the TCC check. Causes,
-in order of likelihood: (a) `CUA_DRIVER_EMBEDDED` is not exactly `1`, or was
-set on your app but not passed into the daemon child's environment; (b) the daemon
-was launched via `open(1)` / `NSWorkspace` instead of spawned directly, so
-it is its own responsible process; (c) the MCP proxy connected to an old standalone `CuaDriver.app` daemon. Check
-`check_permissions` → `source.attribution` (must be `host`) and verify
-that the proxy uses the host's private socket. To see exactly which identity macOS is charging,
-run: `log stream --debug --predicate 'subsystem == "com.apple.TCC" AND
-eventMessage BEGINSWITH "AttributionChain"'` and trigger the action again.
+**"I still get a second permission prompt / a second Settings entry."** Embedded
+mode is not in effect for the process doing the TCC check. Causes, in order of
+likelihood: (a) `CUA_DRIVER_EMBEDDED` is not exactly `1`, or was set on your app
+but not passed into the daemon child's environment; (b) the daemon was launched
+via `open(1)` / `NSWorkspace` instead of spawned directly, so it is its own
+responsible process; (c) the MCP proxy connected to an old standalone
+`CuaDriver.app` daemon. Check `check_permissions` → `source.attribution` (must
+be `host`) and verify that the proxy uses the host's private socket. To see
+exactly which identity macOS is charging, run:
+`log stream --debug --predicate 'subsystem == "com.apple.TCC" AND
+eventMessage BEGINSWITH "AttributionChain"'`
+and trigger the action again.
 
-**"Screenshots come back black even though `screen_recording: true`."**
-The read-only permission check cannot verify direct ScreenCaptureKit access
-without risking a system dialog. Exercise an explicit screenshot only after
-the host has explained the OS permission. If that fails, the grant may not
-belong to the driver's current responsible identity, may have been reset, or
-the driver may have escaped the host's chain (see the previous item). Restart
-the driver child after any grant change: TCC answers are cached per process.
+**"Screenshots come back black even though `screen_recording: true`."** The
+read-only permission check cannot verify direct ScreenCaptureKit access without
+risking a system dialog. Exercise an explicit screenshot only after the host has
+explained the OS permission. If that fails, the grant may not belong to the
+driver's current responsible identity, may have been reset, or the driver may
+have escaped the host's chain (see the previous item). Restart the driver child
+after any grant change: TCC answers are cached per process.
 
-**"The AX tree comes back empty / clicks do nothing."**
-`AXIsProcessTrusted()` is false for the effective identity. The host hasn't
-been granted Accessibility, or was granted it _after_ the driver child
-started (per-process cache again: restart the child), or the app was
-re-signed/moved so the existing grant row no longer matches it (remove and
-re-add it in System Settings, or `tccutil reset Accessibility <your-bundle-id>`
-and re-grant).
+**"The AX tree comes back empty / clicks do nothing."** `AXIsProcessTrusted()`
+is false for the effective identity. The host hasn't been granted Accessibility,
+or was granted it _after_ the driver child started (per-process cache again:
+restart the child), or the app was re-signed/moved so the existing grant row no
+longer matches it (remove and re-add it in System Settings, or
+`tccutil reset Accessibility <your-bundle-id>` and re-grant).
 
-**"It worked, then stopped after I updated/re-signed my app."**
-TCC grant rows are keyed to the app's code-signing identity. A signature
-change can orphan the old row. Reset and re-grant:
+**"It worked, then stopped after I updated/re-signed my app."** TCC grant rows
+are keyed to the app's code-signing identity. A signature change can orphan the
+old row. Reset and re-grant:
 `tccutil reset Accessibility com.yourco.yourapp && tccutil reset ScreenCapture com.yourco.yourapp`.
 
 ## Platform notes (Windows / Linux)
@@ -669,17 +665,17 @@ change can orphan the old row. Reset and re-grant:
 Embedding also works on Windows and Linux (X11) with **no per-app permission
 ceremony**. The host still spawns a daemon in the intended interactive session
 or desktop, then points MCP and CLI adapters at its private socket. The
-one-grant inheritance story in this guide is macOS-specific because macOS is
-the platform where Accessibility and Screen Recording grants follow the
+one-grant inheritance story in this guide is macOS-specific because macOS is the
+platform where Accessibility and Screen Recording grants follow the
 responsibility chain.
 
 Two known exceptions:
 
 - **Windows, elevated / UWP targets**: pixel or SendInput delivery into a
-  higher-integrity target requires an interactively launched High-IL daemon
-  (the installed autostart task uses `RunLevel=Highest`). The
-  `cua-driver-uia` pipe is a reserved, default-off daemon-internal boundary;
-  embedding hosts and other public clients must not launch or connect to it.
+  higher-integrity target requires an interactively launched High-IL daemon (the
+  installed autostart task uses `RunLevel=Highest`). The `cua-driver-uia` pipe
+  is a reserved, default-off daemon-internal boundary; embedding hosts and other
+  public clients must not launch or connect to it.
 - **Linux Wayland** (compositor-specific): capture goes through XDG desktop
-  portals, which prompt per-session at capture time and cannot be
-  pre-granted by the host. X11 has no portal gate.
+  portals, which prompt per-session at capture time and cannot be pre-granted by
+  the host. X11 has no portal gate.

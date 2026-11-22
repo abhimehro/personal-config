@@ -1,25 +1,25 @@
 # Optional visual-region parsing
 
 Use `parse_visual_regions` when a current Cua Driver screenshot contains useful
-text or icons that accessibility and typed browser state do not expose. The
-tool returns model-neutral observations. It does not decide that a region is
+text or icons that accessibility and typed browser state do not expose. The tool
+returns model-neutral observations. It does not decide that a region is
 interactive, choose an action, or grant permission to act.
 
 This capability is delivered by the separately installed `cua-perception`
 extension. It is absent from the default Cua Driver installation. The default
-local Driver remains MIT licensed. The extension's ledgers record the
-OmniParser detector artifact as AGPL-3.0-only and the PP-OCR detector and
-recognizer as Apache-2.0. The packaged ONNX Runtime must
-report its exact version, hash, license, and notices. Inspect the exact catalog,
-manifest, SBOM, source ledger, model ledger, and built artifact rather than
-applying the Driver license to them. Distribution and remote service require the applicable notices, corresponding source/conversion
-material, and AGPL network source path.
+local Driver remains MIT licensed. The extension's ledgers record the OmniParser
+detector artifact as AGPL-3.0-only and the PP-OCR detector and recognizer as
+Apache-2.0. The packaged ONNX Runtime must report its exact version, hash,
+license, and notices. Inspect the exact catalog, manifest, SBOM, source ledger,
+model ledger, and built artifact rather than applying the Driver license to
+them. Distribution and remote service require the applicable notices,
+corresponding source/conversion material, and AGPL network source path.
 
 ## Inspect before installing
 
-Never install the extension merely because a parse returned `not_installed`.
-Use the signed catalog for this platform from a `cua-perception-v<version>`
-GitHub release, downloaded beside its archive, then inspect the exact artifact:
+Never install the extension merely because a parse returned `not_installed`. Use
+the signed catalog for this platform from a `cua-perception-v<version>` GitHub
+release, downloaded beside its archive, then inspect the exact artifact:
 
 ```bash
 cua-driver extension inspect cua-perception --catalog <catalog.json>
@@ -39,13 +39,13 @@ after inspecting the proposed replacement. Use
 `cua-driver extension remove cua-perception` to remove extension-owned artifacts
 when they are not in use.
 
-If `inspect` cannot present authenticated metadata for the exact artifact,
-stop. Do not invent an artifact URL, substitute an unsigned archive, or infer
+If `inspect` cannot present authenticated metadata for the exact artifact, stop.
+Do not invent an artifact URL, substitute an unsigned archive, or infer
 availability from the repository's Latest release.
 
 Installation is never a side effect of Driver startup, capture, parsing, or
-update checks. Parsing does not download code or model weights. The extension
-is Rust-based and does not install Python. Driver does not request, store, or
+update checks. Parsing does not download code or model weights. The extension is
+Rust-based and does not install Python. Driver does not request, store, or
 forward Jev or any other decision-provider credential.
 
 ## Capture, parse, act once, and reobserve
@@ -56,9 +56,9 @@ cannot resolve its `capture_id`. Keep the four stages separate within the same
 runtime:
 
 1. Capture the exact native window with `get_window_state`, or an explicitly
-   authorized desktop with `get_desktop_state`. Use a
-   native-resolution capture when the extension requires it and retain the
-   returned `capture_id`, target, dimensions, and action-coordinate mapping.
+   authorized desktop with `get_desktop_state`. Use a native-resolution capture
+   when the extension requires it and retain the returned `capture_id`, target,
+   dimensions, and action-coordinate mapping.
 2. Call `parse_visual_regions` with that `capture_id` and bounded options. For
    example, request only `text`, set `min_confidence`, and cap `max_regions`.
 3. Prefer accessibility or typed browser evidence when it identifies the same
@@ -92,13 +92,13 @@ move, scroll, navigation, display-layout change, or target-identity change.
 
 ## Handle failures by category
 
-- `not_installed`: the optional `cua-perception` extension is absent. Continue with
-  accessibility, browser, or caller-owned visual reasoning unless the user has
-  chosen to inspect and install the extension.
+- `not_installed`: the optional `cua-perception` extension is absent. Continue
+  with accessibility, browser, or caller-owned visual reasoning unless the user
+  has chosen to inspect and install the extension.
 - `capture_not_found`, `capture_expired`, `capture_stale`, or
   `capture_generation_mismatch`: take a fresh capture and parse that new ID.
-- `unsupported_target` or `unsupported_platform`: use another observation
-  route and preserve the reported limitation.
+- `unsupported_target` or `unsupported_platform`: use another observation route
+  and preserve the reported limitation.
 - `incompatible_protocol` or `artifact_invalid`: stop using the extension;
   inspect its exact installed state before any update or reinstall.
 - `worker_launch_failed`, `worker_crashed`, `worker_cancelled`, `timeout`, or
@@ -120,6 +120,6 @@ use them only when already authorized for the workflow.
 An external chooser, including a `jev-use` recipe, receives a bounded table of
 opaque action IDs rather than open-ended Driver tool access. The caller keeps
 provider setup and credentials outside Driver, validates one returned ID, and
-dispatches the complete prebuilt action unchanged. See [Use jev-use with visual
-regions](https://cua.ai/docs/cua-driver/guides/visual-regions);
+dispatches the complete prebuilt action unchanged. See
+[Use jev-use with visual regions](https://cua.ai/docs/cua-driver/guides/visual-regions);
 do not add provider SDK logic or credentials to this skill.

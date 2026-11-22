@@ -352,22 +352,22 @@ Canonical policy references:
 ### Open-code-review (`ocr`) during agent work
 
 The `ocr` CLI
-([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) is
-the mechanical review pass for this workspace:
+([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) is the
+mechanical review pass for this workspace:
 
-- **Reviewing a PR:** `ocr delegate preview --format json --from <base-ref> --to
-  <head-ref>` + `ocr delegate rule --format json --from <base-ref> --to <head-ref> <paths>` on the
-  range, then review every
-  `reviewable_files` entry against its rule group (or
+- **Reviewing a PR:**
+  `ocr delegate preview --format json --from <base-ref> --to
+  <head-ref>` +
+  `ocr delegate rule --format json --from <base-ref> --to <head-ref> <paths>` on
+  the range, then review every `reviewable_files` entry against its rule group
+  (or
   `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>`
-  when an LLM provider is
-  configured).
+  when an LLM provider is configured).
 - **Before submitting code / opening a PR:** `ocr review --audience agent` on
   the workspace when a provider is configured, `ocr delegate` commands
-  otherwise; disposition
-  Critical/High findings before pushing.
-- **Install:** prefer `npm i -g @alibaba-group/open-code-review`; where npm
-  is unavailable,
+  otherwise; disposition Critical/High findings before pushing.
+- **Install:** prefer `npm i -g @alibaba-group/open-code-review`; where npm is
+  unavailable,
   `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
   Delegate mode needs no provider; never hardcode API keys.
 
@@ -927,9 +927,9 @@ relationships, 298 execution flows).
 ## Notion agent context (consult first)
 
 Use Notion as the durable shared memory and workspace across agents. Before
-starting any task that depends on Abhi's personal or project context, read
-the Agent Operating Guide (version 0.0.6) and the Agent Workflow Registry it
-links: <https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
+starting any task that depends on Abhi's personal or project context, read the
+Agent Operating Guide (version 0.0.6) and the Agent Workflow Registry it links:
+<https://app.notion.com/p/4107419416de81eeb956c2e482cd093b>
 
 - Search Notion before answering questions that depend on personal or project
   context.
