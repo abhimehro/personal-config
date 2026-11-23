@@ -159,6 +159,10 @@ class TestMoleGlobRestoration(unittest.TestCase):
             "HOME": str(self.home),
             "LC_ALL": "C",
             "REPO_ROOT": str(ROOT),
+            # Suppress Mole's interactive sudo probes (user.sh guards its
+            # bare `sudo test -d` screensaver scan with this flag); without
+            # it every parametrized state triggered a Touch ID prompt.
+            "MOLE_TEST_MODE": "1",
             "STATE_MODE": options.mode,
             "STATE_SUFFIX": options.suffix,
             "INITIAL_NULLGLOB": str(int(options.state[0])),

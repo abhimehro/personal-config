@@ -45,3 +45,9 @@
 # The tree is ~6.5 MB, which is negligible against the diagnostic value of
 # GitNexus auto-sync cycle logs, launchd stdout/stderr, and backup logs.
 /Users/speedybee/Library/Logs
+
+# SonarQube CLI state (global git hooks installed by `sonar integrate git`,
+# logs, user data). Not a cache: wiping it breaks global core.hookspath
+# secret-scanning (observed 2026-11-21). Also removed from dev.sh clean_dev_cicd.
+/Users/speedybee/.sonar
+/Users/speedybee/.sonar/*

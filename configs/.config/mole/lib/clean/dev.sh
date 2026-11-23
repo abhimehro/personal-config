@@ -1260,7 +1260,10 @@ clean_dev_cicd() {
 	safe_clean ~/.cache/gitlab-runner/* "GitLab Runner cache"
 	safe_clean ~/.github/cache/* "GitHub Actions cache"
 	safe_clean ~/.circleci/cache/* "CircleCI cache"
-	safe_clean ~/.sonar/* "SonarQube cache"
+	# ~/.sonar holds SonarQube CLI state (git hooks, logs, user data), not a
+	# cache. Wiping it breaks the global core.hookspath secret-scanning hooks
+	# (observed 2026-11-21: hooks and saved connection were destroyed).
+	# Protected in the whitelist as well; do not re-add here.
 }
 # Database tool caches.
 clean_dev_database() {

@@ -34,16 +34,16 @@ error() { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 CHECK_ONLY=0
 case "${1:-}" in
-	--check) CHECK_ONLY=1 ;;
-	-h | --help)
-		sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
-		exit 0
-		;;
-	"") ;;
-	*)
-		error "Unknown argument: $1"
-		exit 2
-		;;
+--check) CHECK_ONLY=1 ;;
+-h | --help)
+	sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+	exit 0
+	;;
+"") ;;
+*)
+	error "Unknown argument: $1"
+	exit 2
+	;;
 esac
 
 [[ -r $SOURCE_FILE ]] || {

@@ -1,0 +1,17 @@
+{
+  "vendor": "ardia",
+  "version": "0.3.0",
+  "companions": [
+    "cua-driver"
+  ],
+  "files": [
+    "SKILL.md",
+    "references/automation.md",
+    "references/config.md",
+    "references/daily-reports.md",
+    "references/flows.md",
+    "references/script.md",
+    "references/troubleshooting.md",
+    "references/userscripts.md"
+  ]
+}
