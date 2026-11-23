@@ -230,6 +230,7 @@ decisions record — is in
 # Issue a 5-minute verified post-merge lease before updating .jules/sentinel.md
 ./scripts/antigravity-proactive-ctl.sh sentinel-post-merge --repo ctrld-sync --pr <merged_pr>
 
-# Ordered rollback (removes sidecars -> removes managed skills -> removes hooks.json & runtime dir last)
+# Ordered rollback (removes sidecars -> removes managed skills -> removes hooks.json & runtime dir last;
+# keeps hooks.json / runtime dir if user-edited or referenced by a restored custom hook)
 ./scripts/antigravity-proactive-ctl.sh disable
 ```

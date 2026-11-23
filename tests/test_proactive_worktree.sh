@@ -436,6 +436,7 @@ rm -f "${WT_SEM}/uv.lock"
 check_exit "uv static checks omit --frozen when uv.lock is absent" 0 \
 	env PATH="${UV_MOCK_BIN}" HOME="${HOME}" "${TARGET_SCRIPT}" verify \
 	--worktree "${WT_SEM}" --lens code-health --allow-harness-changes --test-cmd "true"
+check_grep "uv static checks still invoke uv run ruff without uv.lock" "(^| )run --all-extras ruff check( |$)" "${UV_ARGS_LOG}"
 check "uv static check invocation omits --frozen without uv.lock" bash -c "! grep -q -- '--frozen' '${UV_ARGS_LOG}'"
 rm -f "${WT_SEM}/src/names.py" "${WT_SEM}/pyproject.toml" "${UV_ARGS_LOG}"
 
@@ -1698,11 +1699,26 @@ check_exit "preflight personal-config passes with make/bash/python3" 0 \
 	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/personal-config --repo-path "${PF_PC}"
 PF_NO_MAKE_BIN="${TEST_DIR}/pf_no_make_bin"
 mkdir -p "${PF_NO_MAKE_BIN}"
-for b in env git python3 bash cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test gh; do
+for b in env git bash cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test gh; do
 	if p="$(PATH="${PF_MOCK_BIN}:${PATH}" command -v "${b}" 2>/dev/null)"; then
 		ln -sf "${p}" "${PF_NO_MAKE_BIN}/${b}"
 	fi
 done
+cat >"${PF_NO_MAKE_BIN}/python3" <<MOCK
+#!/usr/bin/env bash
+if [[ "\$1" == "-m" && "\$2" == "pytest" && "\$3" == "--version" ]]; then
+	if [[ -n "\${PF_PYTEST_FAIL:-}" && -f "\${PF_PYTEST_FAIL}" ]]; then
+		exit 1
+	fi
+	echo "pytest 8.0.0"
+	exit 0
+fi
+if [[ "\$1" == "-c" && "\$2" == *"import pyflakes"* ]]; then
+	exit 1
+fi
+exec "${REAL_PY3_PATH}" "\$@"
+MOCK
+chmod +x "${PF_NO_MAKE_BIN}/python3"
 check_exit "preflight personal-config fails exit 7 when make is missing" 7 \
 	env PATH="${PF_NO_MAKE_BIN}" "${TARGET_SCRIPT}" preflight --repo abhimehro/personal-config --repo-path "${PF_PC}"
 
@@ -1852,7 +1868,7 @@ check "cleanup --prune-merged preserves unmerged repeated-block branch" \
 	git -C "${DUP_CLONE}" rev-parse --verify --quiet "${DUP_BRANCH}"
 check_exit "preflight --auto-heal passes without pruning unmerged repeated-block candidate" 0 \
 	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
-	--repo abhimehro/some-unmapped-repo --repo-path "${DUP_CLONE}" --worktree-root "${DUP_WT_ROOT}" --auto-heal
+	--repo abhimehro/dup-repo --repo-path "${DUP_CLONE}" --worktree-root "${DUP_WT_ROOT}" --auto-heal
 check "preflight --auto-heal preserved unmerged worktree after repeated-block edit" test -d "${WT_DUP}"
 
 # 15. Explicit --repo identity in prepare for renamed checkouts (D2)
@@ -1917,6 +1933,171 @@ bash -c 'source "$1"; run_with_timeout 0.3 bash -c '\''sleep 1 && touch "$1" & w
 check "run_with_timeout returns 124 when terminating process group" test "${rc_pg}" -eq 124
 sleep 1.4
 check "run_with_timeout terminated child background subprocess before marker write" test ! -e "${TIMEOUT_MARKER}"
+
+# 18. Additional hardening regressions ([3], [6], [11]/[16]/[21], [20], [25])
+
+# [3] preflight --auto-heal repairs dangling refs/remotes/origin/HEAD
+DANGLE_CLONE="${TEST_DIR}/dangle_clone/personal-config"
+mkdir -p "${TEST_DIR}/dangle_clone"
+git clone -q "${PRUNE_BARE}" "${DANGLE_CLONE}"
+git -C "${DANGLE_CLONE}" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/deleted-branch
+check "dangling origin/HEAD does not resolve before auto-heal" bash -c \
+	"! git -C '${DANGLE_CLONE}' rev-parse --verify --quiet 'refs/remotes/origin/HEAD^{commit}' >/dev/null 2>&1"
+check_exit "preflight --auto-heal repairs dangling origin/HEAD" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/personal-config --repo-path "${DANGLE_CLONE}" --worktree-root "${PF_HEAL_WT_ROOT}" --auto-heal
+check "preflight --auto-heal restores valid origin/HEAD target" \
+	git -C "${DANGLE_CLONE}" rev-parse --verify --quiet "refs/remotes/origin/HEAD^{commit}"
+
+# [6] TTL cleanup preserves expired squash-merged worktree when offline, removes once reachable
+TTL_WT_ROOT="${TEST_DIR}/ttl_offline_wt"
+TTL_CLONE="${TEST_DIR}/ttl_offline_clone"
+TTL_UPDATER="${TEST_DIR}/ttl_offline_updater"
+mkdir -p "${TTL_WT_ROOT}"
+git clone -q "${PRUNE_BARE}" "${TTL_CLONE}"
+git -C "${TTL_CLONE}" remote set-head origin -a >/dev/null 2>&1
+WT_TTL_SQ="$("${TARGET_SCRIPT}" prepare --repo abhimehro/ttl-repo --repo-path "${TTL_CLONE}" --lens bolt --worktree-root "${TTL_WT_ROOT}")"
+printf 'squash change\n' >"${WT_TTL_SQ}/ttl_feature.txt"
+git -C "${WT_TTL_SQ}" add ttl_feature.txt
+git -C "${WT_TTL_SQ}" commit -q -m "ttl feature"
+SQ_COMMIT="$(git -C "${WT_TTL_SQ}" rev-parse HEAD)"
+
+git clone -q "${PRUNE_BARE}" "${TTL_UPDATER}"
+git -C "${TTL_UPDATER}" config user.email "test@example.com"
+git -C "${TTL_UPDATER}" config user.name "Test"
+git -C "${TTL_UPDATER}" fetch -q "${WT_TTL_SQ}" "${SQ_COMMIT}"
+git -C "${TTL_UPDATER}" merge --squash -q "${SQ_COMMIT}"
+git -C "${TTL_UPDATER}" commit -q -m "squash merge ttl feature"
+git -C "${TTL_UPDATER}" push -q origin main
+
+python3 - "${WT_TTL_SQ}" <<'PY'
+import os, sys, time
+old = time.time() - (30 * 86400)
+os.utime(sys.argv[1], (old, old))
+PY
+git -C "${TTL_CLONE}" remote set-url origin "${TEST_DIR}/offline-ttl-remote.git"
+check_exit "TTL cleanup completes safely offline" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${TTL_WT_ROOT}" --ttl-days 21
+check "TTL cleanup preserves expired squash-merged worktree when origin fetch fails" test -d "${WT_TTL_SQ}"
+
+git -C "${TTL_CLONE}" remote set-url origin "${PRUNE_BARE}"
+check_exit "TTL cleanup succeeds when origin is reachable" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${TTL_WT_ROOT}" --ttl-days 21
+check "TTL cleanup removes expired squash-merged worktree once origin fetch succeeds" test ! -d "${WT_TTL_SQ}"
+
+# [11], [16], [21] Broken base_sha preservation, sibling prefix isolation, and git-common-dir isolation
+ISO_WT_ROOT="${TEST_DIR}/iso_wt_root"
+mkdir -p "${ISO_WT_ROOT}" "${TEST_DIR}/iso_main" "${TEST_DIR}/iso_other" "${TEST_DIR}/iso_sib"
+ISO_MAIN="${TEST_DIR}/iso_main/proj"
+ISO_OTHER="${TEST_DIR}/iso_other/proj"
+ISO_SIB="${TEST_DIR}/iso_sib/proj-tools"
+git clone -q "${PRUNE_BARE}" "${ISO_MAIN}"
+git clone -q "${PRUNE_BARE}" "${ISO_OTHER}"
+git clone -q "${PRUNE_BARE}" "${ISO_SIB}"
+git -C "${ISO_MAIN}" remote set-head origin -a >/dev/null 2>&1
+git -C "${ISO_OTHER}" remote set-head origin -a >/dev/null 2>&1
+git -C "${ISO_SIB}" remote set-head origin -a >/dev/null 2>&1
+
+WT_BROKEN_BASE="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_MAIN}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
+WT_BROKEN_GIT_DIR="$(git -C "${WT_BROKEN_BASE}" rev-parse --git-dir)"
+python3 - "${WT_BROKEN_GIT_DIR}/proactive-meta.json" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+doc["base_sha"] = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+PY
+python3 - "${WT_BROKEN_BASE}" <<'PY'
+import os, sys, time
+old = time.time() - (30 * 86400)
+os.utime(sys.argv[1], (old, old))
+PY
+check_exit "TTL cleanup handles corrupt base_sha safely" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${ISO_WT_ROOT}" --ttl-days 21
+check "TTL cleanup preserves expired worktree whose base_sha is missing" test -d "${WT_BROKEN_BASE}"
+
+WT_ISO_THIS="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_MAIN}" --lens code-health --worktree-root "${ISO_WT_ROOT}")"
+WT_ISO_OTHER="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_OTHER}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
+WT_ISO_SIB="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj-tools --repo-path "${ISO_SIB}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
+git -C "${WT_BROKEN_BASE}" commit --allow-empty -q -m "keep unmerged broken-base candidate distinct"
+
+check_exit "preflight --auto-heal isolates pruning to matching clone only" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/proj --repo-path "${ISO_MAIN}" --worktree-root "${ISO_WT_ROOT}" --auto-heal
+check_grep "preflight --auto-heal pruned only the matching clone merged worktree" "^merged_worktrees_pruned=1$" "${TEST_DIR}/check.log"
+check "preflight --auto-heal removed matching clone merged worktree" test ! -d "${WT_ISO_THIS}"
+check "preflight --auto-heal preserved same-named worktree from different clone" test -d "${WT_ISO_OTHER}"
+check "preflight --auto-heal preserved sibling proj-tools worktree" test -d "${WT_ISO_SIB}"
+
+# [20] run_with_timeout SIGKILLs lingering child that ignores SIGTERM after leader exits
+TRAPPED_MARKER="${TEST_DIR}/pg_trapped_child.marker"
+rc_trap=0
+bash -c 'source "$1"; run_with_timeout 0.3 bash -c '\''(trap "" TERM; sleep 1.2 && touch "$1") & sleep 0.6'\'' _ "$2"' _ "${TARGET_SCRIPT}" "${TRAPPED_MARKER}" 2>"${TEST_DIR}/pg_trap_timeout.err" || rc_trap=$?
+check "run_with_timeout returns 124 for SIGTERM-ignoring child group" test "${rc_trap}" -eq 124
+sleep 1.5
+check "run_with_timeout SIGKILLs child that ignored SIGTERM after leader died" test ! -e "${TRAPPED_MARKER}"
+
+# [25] Failing uv with pyproject.toml consistently falls back to repo .venv/bin/ruff in preflight and verify
+UV_FB_BARE="${TEST_DIR}/uv_fb_remote.git"
+UV_FB_SEED="${TEST_DIR}/uv_fb_seed"
+UV_FB_CLONE="${TEST_DIR}/uv_fb_repos/email-security-pipeline"
+UV_FB_WT_ROOT="${TEST_DIR}/uv_fb_wt"
+UV_FB_LOG="${TEST_DIR}/uv_fb_ruff.log"
+UV_FB_BIN="${TEST_DIR}/uv_fb_bin"
+mkdir -p "${TEST_DIR}/uv_fb_repos" "${UV_FB_WT_ROOT}" "${UV_FB_BIN}" "${UV_FB_SEED}"
+for b in env bash git python3 make cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test gh; do
+	if p="$(PATH="${PF_MOCK_BIN}:${PATH}" command -v "${b}" 2>/dev/null)"; then
+		ln -sf "${p}" "${UV_FB_BIN}/${b}"
+	fi
+done
+cat >"${UV_FB_BIN}/uv" <<'MOCK'
+#!/usr/bin/env bash
+exit 1
+MOCK
+chmod +x "${UV_FB_BIN}/uv"
+git init -q --bare "${UV_FB_BARE}"
+git init -q "${UV_FB_SEED}"
+git -C "${UV_FB_SEED}" config user.email "test@example.com"
+git -C "${UV_FB_SEED}" config user.name "Test"
+cat >"${UV_FB_SEED}/pyproject.toml" <<'EOF'
+[project]
+name = "uv-fallback-demo"
+version = "0.1.0"
+EOF
+git -C "${UV_FB_SEED}" add pyproject.toml
+git -C "${UV_FB_SEED}" commit -q -m "add pyproject"
+git -C "${UV_FB_SEED}" branch -M main
+git -C "${UV_FB_SEED}" remote add origin "${UV_FB_BARE}"
+git -C "${UV_FB_SEED}" push -q -u origin main
+git --git-dir="${UV_FB_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${UV_FB_BARE}" "${UV_FB_CLONE}"
+git -C "${UV_FB_CLONE}" remote set-head origin -a >/dev/null 2>&1
+mkdir -p "${UV_FB_CLONE}/.venv/bin"
+cat >"${UV_FB_CLONE}/.venv/bin/ruff" <<MOCK
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${UV_FB_LOG}"
+exit 0
+MOCK
+cat >"${UV_FB_CLONE}/.venv/bin/python3" <<MOCK
+#!/usr/bin/env bash
+if [[ "\$1" == "-m" && "\$2" == "pytest" && "\$3" == "--version" ]]; then
+	echo "pytest 8.0.0"
+	exit 0
+fi
+exec "${REAL_PY3_PATH}" "\$@"
+MOCK
+chmod +x "${UV_FB_CLONE}/.venv/bin/ruff" "${UV_FB_CLONE}/.venv/bin/python3"
+
+check_exit "preflight falls back to .venv/bin/ruff when uv fails despite pyproject.toml" 0 \
+	env PATH="${UV_FB_BIN}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/email-security-pipeline --repo-path "${UV_FB_CLONE}" --skip-fetch
+WT_UV_FB="$("${TARGET_SCRIPT}" prepare --repo abhimehro/email-security-pipeline --repo-path "${UV_FB_CLONE}" --lens code-health --worktree-root "${UV_FB_WT_ROOT}")"
+printf 'def ok():\n    return 1\n' >"${WT_UV_FB}/ok_mod.py"
+: >"${UV_FB_LOG}"
+check_exit "verify also falls back to .venv/bin/ruff when uv fails despite pyproject.toml" 0 \
+	env PATH="${UV_FB_BIN}" "${TARGET_SCRIPT}" verify \
+	--worktree "${WT_UV_FB}" --lens code-health --test-cmd "true"
+check_grep "verify executed repo .venv/bin/ruff F82 fallback" "check --select=F82" "${UV_FB_LOG}"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

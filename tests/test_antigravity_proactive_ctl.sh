@@ -672,8 +672,7 @@ check_grep "base-check classifies candidate-venv failure as CAUSED_BY_CHANGE" "^
 
 cat >"${VENV_OUTER_BIN}/uv" <<'MOCK'
 #!/usr/bin/env bash
-[[ -z ${VIRTUAL_ENV:-} ]]
-[[ ${PATH%%:*} != */.venv/bin ]]
+[[ -z ${VIRTUAL_ENV:-} ]] && [[ ${PATH%%:*} != */.venv/bin ]]
 MOCK
 chmod +x "${VENV_OUTER_BIN}/uv"
 cat >"${VENV_CLONE}/.venv/bin/uv" <<'MOCK'
@@ -988,6 +987,162 @@ WT_RENAMED="$("${WT_SCRIPT}" prepare --repo abhimehro/Seatek_Analysis --repo-pat
 check_exit "base-check accepts worktree prepared with explicit --repo from renamed checkout" 0 \
 	"${CTL_SCRIPT}" base-check --repo Seatek_Analysis --worktree "${WT_RENAMED}" --test-cmd "true"
 check_grep "base-check reports canonical Seatek_Analysis repo identity" "^REPO: abhimehro/Seatek_Analysis$" "${TEST_DIR}/check.log"
+
+# 14. CodeRabbit hardening regressions ([4],[7],[8],[12],[14],[19],[22],[23],[24],[27],[28])
+
+# [4] Weekday-only cron skips weekend across Monday pre-slot / UTC boundary
+SWEEP_DATE_MON_UTC="$("${CTL_SCRIPT}" sweep-date --cron "50 23 * * 1-5" --now "2026-11-23T00:10:00Z")"
+check "sweep-date skips Sunday to Friday for Monday 00:10Z (50 23 * * 1-5)" test "${SWEEP_DATE_MON_UTC}" = "2026-11-20"
+SWEEP_DATE_MON_CST="$("${CTL_SCRIPT}" sweep-date --cron "CRON_TZ=America/Chicago 15 8 * * 1-5" --now "2026-11-23T06:00:00Z")"
+check "sweep-date skips weekend to Friday for Monday 00:00 CST (15 8 * * 1-5)" test "${SWEEP_DATE_MON_CST}" = "2026-11-20"
+
+# [12] & [7] Missing pilot sidecar template fails install --pilot and doctor --fix propagates failure
+BAD_PILOT_SRC="${TEST_DIR}/bad-pilot-src"
+cp -R "${MOCK_SRC}" "${BAD_PILOT_SRC}"
+rm -f "${BAD_PILOT_SRC}/configs/antigravity/sidecars/proactive-pilot-triage.sidecar.json"
+export HOME="${TEST_DIR}/bad-pilot-home"
+mkdir -p "${HOME}/.gemini/config" "${HOME}/dev"
+git init -q "${HOME}/dev/ctrld-sync"
+check_exit "install --pilot fails exit 1 when pilot triage template is missing" 1 \
+	"${BAD_PILOT_SRC}/scripts/antigravity-proactive-ctl.sh" install --pilot --source-repo "${BAD_PILOT_SRC}"
+check_grep "install --pilot names missing pilot template" "Missing pilot sidecar template" "${TEST_DIR}/check.log"
+
+check_exit "doctor --fix reports auto_healed_install=failed and exits 1 when install fails" 1 \
+	"${BAD_PILOT_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --fix --source-repo "${BAD_PILOT_SRC}" --repo ctrld-sync
+check_grep "doctor --fix emits auto_healed_install=failed" "^auto_healed_install=failed$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix emits DEGRADED on failed auto-heal" "^doctor_status=DEGRADED$" "${TEST_DIR}/check.log"
+
+# [8] doctor distinguishes FAIL_FETCH from FAIL_AUTH when preflight exits 6 with git_fetch=failed
+FETCH_MOCK_SRC="${TEST_DIR}/doctor-fetch-src"
+cp -R "${MOCK_SRC}" "${FETCH_MOCK_SRC}"
+cat >"${FETCH_MOCK_SRC}/scripts/proactive-worktree.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "git_fetch=failed"
+echo "preflight=FAIL"
+exit 6
+MOCK
+chmod +x "${FETCH_MOCK_SRC}/scripts/proactive-worktree.sh"
+export HOME="${TEST_DIR}/doctor-fetch-home"
+mkdir -p "${HOME}/.gemini/config" "${HOME}/dev"
+git init -q "${HOME}/dev/ctrld-sync"
+"${FETCH_MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" install --pilot --source-repo "${FETCH_MOCK_SRC}" >/dev/null 2>&1
+check_exit "doctor maps preflight exit 6 git_fetch=failed to FAIL_FETCH" 1 \
+	"${FETCH_MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor emits FAIL_FETCH for fetch failures" "^repo_ctrld-sync=FAIL_FETCH$" "${TEST_DIR}/check.log"
+
+# [27] doctor rejects hooks.json missing enabled proactive-safety-guard or invalid JSON
+export HOME="${TEST_DIR}/doctor-guard-home"
+mkdir -p "${HOME}/.gemini/config" "${HOME}/dev"
+git init -q "${HOME}/dev/ctrld-sync"
+"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" install --pilot --source-repo "${MOCK_SRC}" >/dev/null 2>&1
+printf '{"sonar-secrets":{"enabled":true}}\n' >"${HOME}/.gemini/config/hooks.json"
+check_exit "doctor flags hooks_guard=missing when proactive-safety-guard absent" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor reports hooks_guard=missing" "^hooks_guard=missing$" "${TEST_DIR}/check.log"
+check_grep "doctor reports degraded on missing guard" "^runtime_health=degraded$" "${TEST_DIR}/check.log"
+
+printf '{invalid-json\n' >"${HOME}/.gemini/config/hooks.json"
+check_exit "doctor flags hooks_guard=invalid-json on malformed hooks.json" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor reports hooks_guard=invalid-json" "^hooks_guard=invalid-json$" "${TEST_DIR}/check.log"
+
+# [14] disable detects JSON-escaped \/ runtime marker in restored custom hooks.json
+export HOME="${TEST_DIR}/sanitize-escaped-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+printf '%s\n' '{"custom-escaped":{"cmd":"/custom-home\/.gemini\/config\/proactive\/hooks\/proactive-guard.py"}}' >"${HOME}/.gemini/config/hooks.json"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >"${TEST_DIR}/disable-escaped.log" 2>&1
+check 'disable preserves runtime dir when restored hooks use JSON-escaped \/ marker' test -d "${HOME}/.gemini/config/proactive"
+check "disable keeps custom-escaped hook intact" grep -q "custom-escaped" "${HOME}/.gemini/config/hooks.json"
+
+# [19] install backs up custom non-legacy symlink at skill path instead of deleting it
+export HOME="${TEST_DIR}/custom-skill-symlink-home"
+CUSTOM_SYMLINK_TARGET="${TEST_DIR}/custom-bolt-symlink-target"
+mkdir -p "${HOME}/.gemini/config/skills" "${CUSTOM_SYMLINK_TARGET}"
+printf 'custom bolt\n' >"${CUSTOM_SYMLINK_TARGET}/SKILL.md"
+ln -s "${CUSTOM_SYMLINK_TARGET}" "${HOME}/.gemini/config/skills/proactive-bolt"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+check "install backs up custom non-legacy skill symlink" bash -c "compgen -G '${HOME}/.gemini/config/skills/proactive-bolt.backup.*' >/dev/null"
+check "install replaces custom skill symlink with real managed directory" bash -c "test -d '${HOME}/.gemini/config/skills/proactive-bolt' && test ! -L '${HOME}/.gemini/config/skills/proactive-bolt'"
+
+# [22] audit-missed honors --cron and stage-repo forwards --cron to audit-missed in triage prompt
+export HOME="${TEST_DIR}/audit-cron-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+check_exit "audit-missed records custom --cron scheduled slot" 0 \
+	"${CTL_SCRIPT}" audit-missed --date "2026-11-23" --repo "ctrld-sync" --cron "50 23 * * 1-5"
+check_grep "audit-missed writes custom UTC slot to digest" "^- Scheduled Slot: 2026-11-23 23:50 UTC$" \
+	"${HOME}/.gemini/antigravity/proactive-reports/2026-11-23-ctrld-sync.md"
+check_exit "stage-repo succeeds for custom cron with audit-missed forwarding" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo "ctrld-sync" --cron "50 23 * * 1-5" --triage-cron "10 0 * * 2-6"
+check "stage-repo passes --cron to audit-missed inside triage prompt" python3 - "${HOME}/.gemini/config/sidecars/proactive-triage-ctrld-sync/sidecar.json" <<'PYTEST'
+import json, pathlib, sys
+t_doc = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert "audit-missed --date \"$SWEEP_DATE\" --repo ctrld-sync --cron '50 23 * * 1-5'" in t_doc["args"][-1], t_doc["args"][-1]
+PYTEST
+
+# [28] stage-repo refuses to overwrite custom non-managed sidecars before writing either file
+export HOME="${TEST_DIR}/stage-collision-home"
+mkdir -p "${HOME}/.gemini/config/sidecars/proactive-triage-ctrld-sync"
+printf '{"custom_triage":true}\n' >"${HOME}/.gemini/config/sidecars/proactive-triage-ctrld-sync/sidecar.json"
+check_exit "stage-repo refuses overwrite when triage sidecar is unmanaged custom file" 1 \
+	"${CTL_SCRIPT}" stage-repo --repo "ctrld-sync"
+check "stage-repo leaves custom triage sidecar untouched on collision" grep -q "custom_triage" \
+	"${HOME}/.gemini/config/sidecars/proactive-triage-ctrld-sync/sidecar.json"
+check "stage-repo does not write sweep sidecar when triage sidecar collides" \
+	test ! -e "${HOME}/.gemini/config/sidecars/proactive-sweep-ctrld-sync/sidecar.json"
+
+# [24] hooks.json missing-guard branch emits machine-readable deny JSON on stdout + stderr + exit 2
+rc_hook_json=0
+env HOME="${HOOK_HOME}" sh -c "${HOOK_CMD}" </dev/null >"${TEST_DIR}/hook-missing.out" 2>"${TEST_DIR}/hook-missing.err" || rc_hook_json=$?
+check "hooks.json missing-guard exits 2" test "${rc_hook_json}" -eq 2
+check "hooks.json missing-guard emits valid deny JSON on stdout" python3 - "${TEST_DIR}/hook-missing.out" <<'PYTEST'
+import json, pathlib, sys
+doc = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert doc.get("decision") == "deny" and "missing" in doc.get("reason", ""), doc
+PYTEST
+check_grep "hooks.json missing-guard also logs error on stderr" "proactive-guard\.py missing" "${TEST_DIR}/hook-missing.err"
+
+# [23] base-check prepends worktree PYTHONPATH when falling back to repo .venv/bin (editable install guard)
+ED_BARE="${TEST_DIR}/ed-remote.git"
+ED_SEED="${TEST_DIR}/ed-seed"
+ED_CLONE="${TEST_DIR}/ed-repo"
+ED_WT_ROOT="${TEST_DIR}/ed-wt"
+mkdir -p "${ED_SEED}/edpkg" "${ED_WT_ROOT}"
+git init -q --bare "${ED_BARE}"
+git init -q "${ED_SEED}"
+git -C "${ED_SEED}" config user.email "test@example.com"
+git -C "${ED_SEED}" config user.name "Test"
+printf 'OK = True\n' >"${ED_SEED}/edpkg/__init__.py"
+git -C "${ED_SEED}" add edpkg/__init__.py
+git -C "${ED_SEED}" commit -q -m "init editable pkg"
+git -C "${ED_SEED}" branch -M main
+git -C "${ED_SEED}" remote add origin "${ED_BARE}"
+git -C "${ED_SEED}" push -q -u origin main
+git clone -q "${ED_BARE}" "${ED_CLONE}"
+mkdir -p "${ED_CLONE}/.venv/bin"
+cat >"${ED_CLONE}/.venv/bin/edcheck" <<MOCK
+#!${REAL_PYTHON3}
+import os
+import sys
+
+# Simulate an editable .pth entry pointing at primary clone at the end of sys.path;
+# PYTHONPATH set by run_segment_in must put the candidate/base worktree ahead of it.
+sys.path.append("${ED_CLONE}")
+pp = os.environ.get("PYTHONPATH", "")
+assert pp, "expected PYTHONPATH to be set on repo .venv fallback"
+assert os.path.realpath(pp.split(":")[0]) == os.path.realpath(os.getcwd()), (pp, os.getcwd())
+import edpkg  # noqa: E402
+assert edpkg.OK, f"imported broken edpkg from {edpkg.__file__}"
+MOCK
+chmod +x "${ED_CLONE}/.venv/bin/edcheck"
+WT_ED="$("${WT_SCRIPT}" prepare --repo-path "${ED_CLONE}" --lens code-health --worktree-root "${ED_WT_ROOT}")"
+printf 'OK = False\n' >"${WT_ED}/edpkg/__init__.py"
+git -C "${WT_ED}" commit -aq -m "break candidate edpkg"
+check_exit "base-check uses candidate PYTHONPATH ahead of repo editable path on fallback" 2 \
+	"${CTL_SCRIPT}" base-check --repo ed-repo --worktree "${WT_ED}" --test-cmd "edcheck"
+check_grep "base-check classifies broken candidate with editable venv fallback as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

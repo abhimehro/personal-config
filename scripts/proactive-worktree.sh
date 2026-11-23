@@ -173,13 +173,17 @@ except subprocess.TimeoutExpired:
         try:
             proc.wait(timeout=2)
         except subprocess.TimeoutExpired:
+            pass
+        # Always SIGKILL the full process group after the grace window in case
+        # a background child ignored SIGTERM after the leader exited early.
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
             try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError):
-                try:
-                    proc.kill()
-                except ProcessLookupError:
-                    pass
+                proc.kill()
+            except ProcessLookupError:
+                pass
+        if proc.poll() is None:
             proc.wait()
     sys.stderr.write(f"[ERROR] Command timed out after {sys.argv[1]}s: {cmd[0]}\n")
     sys.exit(124)
@@ -469,18 +473,34 @@ cmd_prepare() {
 			shift 2
 			;;
 		--repo-path)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] prepare: --repo-path requires a value" >&2
+				exit 1
+			fi
 			repo_path="$2"
 			shift 2
 			;;
 		--lens)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] prepare: --lens requires a value" >&2
+				exit 1
+			fi
 			lens="$2"
 			shift 2
 			;;
 		--worktree-root)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] prepare: --worktree-root requires a value" >&2
+				exit 1
+			fi
 			wt_root="$2"
 			shift 2
 			;;
 		--mode)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] prepare: --mode requires a value" >&2
+				exit 1
+			fi
 			mode="$2"
 			shift 2
 			;;
@@ -667,6 +687,46 @@ require_fresh_origin_ref() {
 	fi
 }
 
+F82_CMD=()
+
+resolve_f82_checker_cmd() {
+	local project_dir="$1"
+	local repo_path="$2"
+	local verify_path="$3"
+
+	F82_CMD=()
+	if PATH="${verify_path}" command -v ruff >/dev/null 2>&1; then
+		F82_CMD=(ruff check --select=F82 --no-cache --quiet)
+		return 0
+	fi
+	if PATH="${verify_path}" command -v uv >/dev/null 2>&1 && [[ -f "${project_dir}/pyproject.toml" ]]; then
+		if [[ -f "${project_dir}/uv.lock" ]]; then
+			if (cd "${project_dir}" && run_with_timeout 15 env -u VIRTUAL_ENV PATH="${verify_path}" uv run --frozen --all-extras ruff --version >/dev/null 2>&1); then
+				F82_CMD=(uv run --frozen --all-extras ruff check --select=F82 --no-cache --quiet)
+				return 0
+			fi
+		else
+			if (cd "${project_dir}" && run_with_timeout 15 env -u VIRTUAL_ENV PATH="${verify_path}" uv run --all-extras ruff --version >/dev/null 2>&1); then
+				F82_CMD=(uv run --all-extras ruff check --select=F82 --no-cache --quiet)
+				return 0
+			fi
+		fi
+	fi
+	if [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/ruff" ]]; then
+		F82_CMD=("${repo_path}/.venv/bin/ruff" check --select=F82 --no-cache --quiet)
+		return 0
+	fi
+	if [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/python3" ]] && "${repo_path}/.venv/bin/python3" -c 'import pyflakes' >/dev/null 2>&1; then
+		F82_CMD=("${repo_path}/.venv/bin/python3" -m pyflakes)
+		return 0
+	fi
+	if env -u VIRTUAL_ENV PATH="${verify_path}" python3 -c 'import pyflakes' >/dev/null 2>&1; then
+		F82_CMD=(python3 -m pyflakes)
+		return 0
+	fi
+	return 1
+}
+
 # Static checks on touched Python files. Two tiers:
 #   1. AST parse - dependency-free floor, catches files that do not even parse.
 #      Uses ast rather than py_compile so no __pycache__ is written into the
@@ -699,25 +759,10 @@ PY
 		return 1
 	fi
 
-	# Resolve the undefined-name checker. uv-managed repos (ctrld-sync) ship ruff
-	# through their own lockfile rather than onto PATH, so `uv run ruff` counts as
-	# present - without it this gate would falsely block the best-provisioned repos.
-	local -a f82_cmd=()
-	if command -v ruff >/dev/null 2>&1; then
-		f82_cmd=(ruff check --select=F82 --no-cache --quiet)
-	elif command -v uv >/dev/null 2>&1 && [[ -f ${wt_path}/pyproject.toml ]]; then
-		if [[ -f ${wt_path}/uv.lock ]]; then
-			f82_cmd=(uv run --frozen --all-extras ruff check --select=F82 --no-cache --quiet)
-		else
-			f82_cmd=(uv run --all-extras ruff check --select=F82 --no-cache --quiet)
-		fi
-	elif [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/ruff" ]]; then
-		f82_cmd=("${repo_path}/.venv/bin/ruff" check --select=F82 --no-cache --quiet)
-	elif [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/python3" ]] && "${repo_path}/.venv/bin/python3" -c 'import pyflakes' >/dev/null 2>&1; then
-		f82_cmd=("${repo_path}/.venv/bin/python3" -m pyflakes)
-	elif python3 -c 'import pyflakes' >/dev/null 2>&1; then
-		f82_cmd=(python3 -m pyflakes)
-	else
+	# Resolve the undefined-name checker using the shared probe so preflight
+	# and verify never disagree on which checker is runnable.
+	F82_CMD=()
+	if ! resolve_f82_checker_cmd "${wt_path}" "${repo_path}" "${PATH}"; then
 		# Fail closed. This tier is a required gate, not an advisory: an AST parse
 		# proves a file is syntactically valid, not that its names resolve, so
 		# passing on the floor alone would let an undefined name through in any
@@ -728,7 +773,7 @@ PY
 		echo "[ERROR] No undefined-name checker available (tried ruff, uv run ruff, repo .venv, pyflakes); refusing to emit a pass from the AST parse floor alone. Install the pinned linter (python3 -m pip install -r requirements.txt, which carries ruff) and re-run." >&2
 		return 2
 	fi
-	(cd "${wt_path}" && "${f82_cmd[@]}" "$@")
+	(cd "${wt_path}" && env -u VIRTUAL_ENV "${F82_CMD[@]}" "$@")
 }
 
 # Semantic test-coverage gate: a hunk that applies cleanly can still delete
@@ -1016,11 +1061,18 @@ cmd_verify() {
 	local verify_path=""
 	verify_path="$(resolve_verify_path "${wt_path}" "${repo_path}" "${test_cmd}")"
 
+	local -a py_env=(env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV "PATH=${verify_path}")
+	# When falling back to a primary checkout .venv (no worktree .venv), editable
+	# installs can point sys.path at the primary checkout unless wt_path comes first.
+	if [[ ${test_cmd} != *"uv run"* ]] && [[ ! -d "${wt_path}/.venv" ]]; then
+		py_env+=("PYTHONPATH=${wt_path}${PYTHONPATH:+:${PYTHONPATH}}")
+	fi
+
 	(
 		cd "${wt_path}"
-		env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV PATH="${verify_path}" bash -c "${test_cmd}"
+		"${py_env[@]}" bash -c "${test_cmd}"
 		if [[ -n ${numeric_cmd} ]]; then
-			env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV PATH="${verify_path}" bash -c "${numeric_cmd}"
+			"${py_env[@]}" bash -c "${numeric_cmd}"
 		fi
 	)
 }
@@ -1368,6 +1420,7 @@ is_worktree_merged_into_upstream() {
 
 has_unreviewed_worktree_commits() {
 	local wt_dir="$1"
+	local allow_patch_match="${2:-1}"
 	local wt_git_dir=""
 	wt_git_dir="$(git -C "${wt_dir}" rev-parse --git-dir 2>/dev/null || true)"
 	local base_sha=""
@@ -1381,15 +1434,27 @@ has_unreviewed_worktree_commits() {
 		return 1
 	fi
 
-	local ahead="0"
-	ahead="$(git -C "${wt_dir}" rev-list --count "${base_sha}..HEAD" 2>/dev/null || echo "0")"
+	if ! git -C "${wt_dir}" rev-parse --verify --quiet "${base_sha}^{commit}" >/dev/null 2>&1; then
+		return 0
+	fi
+
+	local ahead=""
+	if ! ahead="$(git -C "${wt_dir}" rev-list --count "${base_sha}..HEAD" 2>/dev/null)" || [[ -z ${ahead} ]]; then
+		return 0
+	fi
 	if [[ ${ahead} -le 0 ]]; then
 		return 1
 	fi
 
 	if git -C "${wt_dir}" rev-parse --verify --quiet "origin/${default_branch}" >/dev/null 2>&1; then
-		if is_worktree_merged_into_upstream "${wt_dir}" "origin/${default_branch}"; then
-			return 1
+		if [[ ${allow_patch_match} -eq 1 ]]; then
+			if is_worktree_merged_into_upstream "${wt_dir}" "origin/${default_branch}"; then
+				return 1
+			fi
+		else
+			if git -C "${wt_dir}" merge-base --is-ancestor HEAD "origin/${default_branch}" 2>/dev/null; then
+				return 1
+			fi
 		fi
 	fi
 	return 0
@@ -1625,6 +1690,15 @@ prune_merged_worktrees() {
 		name_glob="proactive-${repo_filter}-*"
 	fi
 
+	local target_common_dir=""
+	if [[ -n ${pre_fetched_repo} ]] && [[ -d ${pre_fetched_repo} ]]; then
+		local t_rel=""
+		t_rel="$(git -C "${pre_fetched_repo}" rev-parse --git-common-dir 2>/dev/null || true)"
+		if [[ -n ${t_rel} ]]; then
+			target_common_dir="$(cd "${pre_fetched_repo}" 2>/dev/null && cd "${t_rel}" 2>/dev/null && pwd -P || true)"
+		fi
+	fi
+
 	local prune_dirs=""
 	prune_dirs="$(find "${wt_root}" -mindepth 1 -maxdepth 1 -type d -name "${name_glob}" 2>/dev/null || true)"
 	if [[ -z ${prune_dirs} ]]; then
@@ -1641,23 +1715,37 @@ prune_merged_worktrees() {
 	local dir=""
 	while IFS= read -r dir; do
 		[[ -z ${dir} ]] && continue
-		local dirty=""
-		dirty="$(git -C "${dir}" status --porcelain 2>/dev/null || echo "UNKNOWN")"
-		if [[ -n ${dirty} ]]; then
-			echo "[WARN] Preserving dirty or unverified worktree: ${dir}" >&2
-			continue
-		fi
-
 		local wt_git_dir=""
 		wt_git_dir="$(git -C "${dir}" rev-parse --git-dir 2>/dev/null || true)"
 		if [[ -z ${wt_git_dir} ]] || [[ ! -f "${wt_git_dir}/proactive-meta.json" ]]; then
 			continue
 		fi
 
-		local repo_path="" base_sha=""
+		local meta_repo="" repo_path="" base_sha=""
+		meta_repo="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_name",""))' "${wt_git_dir}/proactive-meta.json" 2>/dev/null || true)"
 		repo_path="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_path",""))' "${wt_git_dir}/proactive-meta.json" 2>/dev/null || true)"
 		base_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("base_sha",""))' "${wt_git_dir}/proactive-meta.json" 2>/dev/null || true)"
+		if [[ -n ${repo_filter} ]] && [[ ${meta_repo} != "${repo_filter}" ]]; then
+			continue
+		fi
+		if [[ -n ${target_common_dir} ]]; then
+			local cand_common_rel="" cand_common_dir=""
+			cand_common_rel="$(git -C "${dir}" rev-parse --git-common-dir 2>/dev/null || true)"
+			if [[ -n ${cand_common_rel} ]]; then
+				cand_common_dir="$(cd "${dir}" 2>/dev/null && cd "${cand_common_rel}" 2>/dev/null && pwd -P || true)"
+			fi
+			if [[ ${cand_common_dir} != "${target_common_dir}" ]]; then
+				continue
+			fi
+		fi
 		if [[ -z ${repo_path} ]] || [[ ! -d ${repo_path} ]] || [[ -z ${base_sha} ]]; then
+			continue
+		fi
+
+		local dirty=""
+		dirty="$(git -C "${dir}" status --porcelain 2>/dev/null || echo "UNKNOWN")"
+		if [[ -n ${dirty} ]]; then
+			echo "[WARN] Preserving dirty or unverified worktree: ${dir}" >&2
 			continue
 		fi
 
@@ -1684,17 +1772,19 @@ prune_merged_worktrees() {
 			continue
 		fi
 
-		if has_unreviewed_worktree_commits "${dir}"; then
+		if has_unreviewed_worktree_commits "${dir}" 1; then
 			echo "[WARN] Preserving worktree with unmerged candidate commits: ${dir}" >&2
 			continue
 		fi
 
+		local cand_head=""
+		cand_head="$(git -C "${dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
 		local wt_branch=""
 		wt_branch="$(git -C "${dir}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
-		if git -C "${repo_path}" worktree remove --force "${dir}" 2>/dev/null; then
+		if git -C "${repo_path}" worktree remove "${dir}" 2>/dev/null; then
 			git -C "${repo_path}" worktree prune 2>/dev/null || true
-			if [[ ${wt_branch} == proactive/* ]]; then
-				git -C "${repo_path}" branch -D "${wt_branch}" >/dev/null 2>&1 || true
+			if [[ ${wt_branch} == proactive/* ]] && [[ -n ${cand_head} ]]; then
+				git -C "${repo_path}" update-ref -d "refs/heads/${wt_branch}" "${cand_head}" >/dev/null 2>&1 || true
 			fi
 			PRUNED_MERGED_COUNT=$((PRUNED_MERGED_COUNT + 1))
 		fi
@@ -1742,6 +1832,8 @@ cmd_cleanup() {
 		return 0
 	fi
 
+	local -a ttl_fetched_repos=()
+	local -a ttl_fetched_ok=()
 	local dir=""
 	while IFS= read -r dir; do
 		[[ -z ${dir} ]] && continue
@@ -1751,20 +1843,45 @@ cmd_cleanup() {
 			echo "[WARN] Preserving dirty or unverified worktree: ${dir}" >&2
 			continue
 		fi
-		if has_unreviewed_worktree_commits "${dir}"; then
-			echo "[WARN] Preserving worktree with unmerged candidate commits: ${dir}" >&2
-			continue
-		fi
 		local wt_git_dir=""
 		wt_git_dir="$(git -C "${dir}" rev-parse --git-dir 2>/dev/null || true)"
 		local repo_path=""
 		if [[ -n ${wt_git_dir} ]] && [[ -f "${wt_git_dir}/proactive-meta.json" ]]; then
 			repo_path="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_path",""))' "${wt_git_dir}/proactive-meta.json" 2>/dev/null || true)"
 		fi
+
+		local allow_patch_match=0
 		if [[ -n ${repo_path} ]] && [[ -d ${repo_path} ]]; then
-			if ! git -C "${repo_path}" worktree remove --force "${dir}" 2>/dev/null; then
-				rm -rf "${dir}"
+			local idx=0 cache_hit=0 repo_ok=0 seen_repo=""
+			for seen_repo in ${ttl_fetched_repos[@]+"${ttl_fetched_repos[@]}"}; do
+				if [[ ${seen_repo} == "${repo_path}" ]]; then
+					cache_hit=1
+					repo_ok="${ttl_fetched_ok[${idx}]}"
+					break
+				fi
+				idx=$((idx + 1))
+			done
+			if [[ ${cache_hit} -eq 0 ]]; then
+				if fetch_origin_resilient "${repo_path}"; then
+					repo_ok=1
+				else
+					repo_ok=0
+				fi
+				ttl_fetched_repos+=("${repo_path}")
+				ttl_fetched_ok+=("${repo_ok}")
+			fi
+			allow_patch_match="${repo_ok}"
+		fi
+
+		if has_unreviewed_worktree_commits "${dir}" "${allow_patch_match}"; then
+			echo "[WARN] Preserving worktree with unmerged candidate commits: ${dir}" >&2
+			continue
+		fi
+		if [[ -n ${repo_path} ]] && [[ -d ${repo_path} ]]; then
+			if git -C "${repo_path}" worktree remove "${dir}" 2>/dev/null; then
 				git -C "${repo_path}" worktree prune 2>/dev/null || true
+			else
+				echo "[WARN] Preserving worktree that could not be removed cleanly: ${dir}" >&2
 			fi
 		else
 			rm -rf "${dir}"
@@ -1774,7 +1891,9 @@ cmd_cleanup() {
 
 heal_origin_head() {
 	local repo_path="$1"
-	if git -C "${repo_path}" symbolic-ref --quiet refs/remotes/origin/HEAD >/dev/null 2>&1; then
+	local existing_sym=""
+	existing_sym="$(git -C "${repo_path}" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null || true)"
+	if [[ -n ${existing_sym} ]] && git -C "${repo_path}" rev-parse --verify --quiet "${existing_sym}^{commit}" >/dev/null 2>&1; then
 		return 0
 	fi
 
@@ -1817,30 +1936,7 @@ has_f82_checker() {
 	local repo_path="$1"
 	local verify_path="$2"
 
-	if PATH="${verify_path}" command -v ruff >/dev/null 2>&1; then
-		return 0
-	fi
-	if PATH="${verify_path}" command -v uv >/dev/null 2>&1 && [[ -f "${repo_path}/pyproject.toml" ]]; then
-		if [[ -f "${repo_path}/uv.lock" ]]; then
-			if (cd "${repo_path}" && run_with_timeout 15 env -u VIRTUAL_ENV PATH="${verify_path}" uv run --frozen --all-extras ruff --version >/dev/null 2>&1); then
-				return 0
-			fi
-		else
-			if (cd "${repo_path}" && run_with_timeout 15 env -u VIRTUAL_ENV PATH="${verify_path}" uv run --all-extras ruff --version >/dev/null 2>&1); then
-				return 0
-			fi
-		fi
-	fi
-	if [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/ruff" ]]; then
-		return 0
-	fi
-	if [[ -n ${repo_path} ]] && [[ -x "${repo_path}/.venv/bin/python3" ]] && "${repo_path}/.venv/bin/python3" -c 'import pyflakes' >/dev/null 2>&1; then
-		return 0
-	fi
-	if env -u VIRTUAL_ENV PATH="${verify_path}" python3 -c 'import pyflakes' >/dev/null 2>&1; then
-		return 0
-	fi
-	return 1
+	resolve_f82_checker_cmd "${repo_path}" "${repo_path}" "${verify_path}"
 }
 
 PREFLIGHT_REMEDIATION=""

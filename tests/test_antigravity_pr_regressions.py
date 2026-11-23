@@ -282,6 +282,10 @@ class ProactiveCliRegressions(unittest.TestCase):
                 self.assertFalse((config / "hooks.json").is_symlink())
                 self.assertEqual((config / "hooks.json").read_text(), "{}\n")
                 self.assertFalse((config / "skills/proactive-bolt").is_symlink())
+                self.assertEqual(
+                    (config / "skills/proactive-bolt/SKILL.md").read_text(),
+                    "# proactive-bolt\n",
+                )
                 self.assertTrue(
                     (config / "proactive/scripts/proactive-worktree.sh").is_file()
                 )

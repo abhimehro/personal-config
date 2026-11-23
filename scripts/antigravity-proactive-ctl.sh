@@ -41,6 +41,7 @@ RT_SKILLS_LINKED=0
 RT_SKILLS_TOTAL="${#SKILLS[@]}"
 RT_HOOKS_LINKED="no"
 RT_HOOKS_MODE="absent"
+RT_HOOKS_GUARD="missing"
 RT_DANGLING_LINKS=0
 RT_WORKTREE_SH=""
 RT_CTL_SH=""
@@ -241,7 +242,11 @@ validate_install_sources() {
 		local sid=""
 		for sid in "${PILOT_SIDECAR_ID}" "${TRIAGE_SIDECAR_ID}"; do
 			local sidecar_src="${source_root}/configs/antigravity/sidecars/${sid}.sidecar.json"
-			if [[ -f ${sidecar_src} ]] && ! python3 -m json.tool "${sidecar_src}" >/dev/null 2>&1; then
+			if [[ ! -f ${sidecar_src} ]]; then
+				echo "[ERROR] Missing pilot sidecar template: ${sidecar_src}" >&2
+				exit 1
+			fi
+			if ! python3 -m json.tool "${sidecar_src}" >/dev/null 2>&1; then
 				echo "[ERROR] Invalid JSON in sidecar template: ${sidecar_src}" >&2
 				exit 1
 			fi
@@ -282,13 +287,26 @@ deploy_skill_dir() {
 	local tmp_dir="${dst_dir}.tmp.$$"
 	rm -rf "${tmp_dir}"
 	mkdir -p "${tmp_dir}"
-	cp -R "${src_dir}/." "${tmp_dir}/"
+	if ! cp -R "${src_dir}/." "${tmp_dir}/"; then
+		rm -rf "${tmp_dir}"
+		echo "[ERROR] Failed to stage skill directory from ${src_dir} into ${tmp_dir}" >&2
+		return 1
+	fi
 	printf 'managed\n' >"${tmp_dir}/${PROACTIVE_MANAGED_MARKER}"
 
 	local old_dir=""
 	local backup_dir=""
 	if [[ -L ${dst_dir} ]]; then
-		rm -f "${dst_dir}"
+		local link_target=""
+		link_target="$(readlink "${dst_dir}" 2>/dev/null || true)"
+		if [[ ${link_target} == "${src_dir}" ]]; then
+			rm -f "${dst_dir}"
+		else
+			local backup_ts=""
+			backup_ts="$(date -u +%Y%m%d_%H%M%S)"
+			backup_dir="${dst_dir}.backup.${backup_ts}"
+			mv "${dst_dir}" "${backup_dir}"
+		fi
 	elif [[ -e ${dst_dir} ]]; then
 		if [[ -d ${dst_dir} ]] && [[ -f "${dst_dir}/${PROACTIVE_MANAGED_MARKER}" ]]; then
 			old_dir="${dst_dir}.old.$$"
@@ -305,7 +323,7 @@ deploy_skill_dir() {
 	if ! mv "${tmp_dir}" "${dst_dir}"; then
 		if [[ -n ${old_dir} ]] && [[ -e ${old_dir} ]]; then
 			mv "${old_dir}" "${dst_dir}" 2>/dev/null || true
-		elif [[ -n ${backup_dir} ]] && [[ -e ${backup_dir} ]]; then
+		elif [[ -n ${backup_dir} ]] && { [[ -e ${backup_dir} ]] || [[ -L ${backup_dir} ]]; }; then
 			mv "${backup_dir}" "${dst_dir}" 2>/dev/null || true
 		fi
 		rm -rf "${tmp_dir}"
@@ -561,10 +579,61 @@ collect_runtime_health() {
 		fi
 	done
 
+	local hooks_guard="missing"
+	if [[ -f ${hooks_path} ]]; then
+		hooks_guard="$(
+			python3 - "${hooks_path}" <<'PY'
+import json
+import pathlib
+import sys
+
+try:
+    with pathlib.Path(sys.argv[1]).open(encoding="utf-8") as handle:
+        data = json.load(handle)
+except Exception:
+    print("invalid-json")
+    sys.exit(0)
+
+if not isinstance(data, dict):
+    print("invalid-json")
+    sys.exit(0)
+
+guard = data.get("proactive-safety-guard")
+if not isinstance(guard, dict) or guard.get("enabled") is not True:
+    print("missing")
+    sys.exit(0)
+
+pre_tool = guard.get("PreToolUse")
+if not isinstance(pre_tool, list):
+    print("missing")
+    sys.exit(0)
+
+found = False
+for entry in pre_tool:
+    if not isinstance(entry, dict):
+        continue
+    hooks = entry.get("hooks")
+    if not isinstance(hooks, list):
+        continue
+    for hook in hooks:
+        if isinstance(hook, dict) and hook.get("type") == "command":
+            cmd = hook.get("command")
+            if isinstance(cmd, str) and "proactive-guard.py" in cmd:
+                found = True
+                break
+    if found:
+        break
+
+print("ok" if found else "missing")
+PY
+		)" || hooks_guard="missing"
+	fi
+
 	RT_SKILLS_LINKED="${linked}"
 	RT_SKILLS_TOTAL="${#SKILLS[@]}"
 	RT_HOOKS_LINKED="${hooks_linked}"
 	RT_HOOKS_MODE="${hooks_mode}"
+	RT_HOOKS_GUARD="${hooks_guard}"
 	RT_DANGLING_LINKS="${dangling_links}"
 	RT_WORKTREE_SH="${runtime_worktree_sh}"
 	RT_CTL_SH="${runtime_ctl_sh}"
@@ -575,6 +644,7 @@ runtime_is_healthy() {
 	[[ ${RT_SKILLS_LINKED} -eq ${RT_SKILLS_TOTAL} ]] &&
 		[[ ${RT_HOOKS_LINKED} == "yes" ]] &&
 		[[ ${RT_HOOKS_MODE} == "copy" ]] &&
+		[[ ${RT_HOOKS_GUARD} == "ok" ]] &&
 		[[ ${RT_DANGLING_LINKS} -eq 0 ]] &&
 		[[ ${RT_WORKTREE_SH} == "ok" ]] &&
 		[[ ${RT_CTL_SH} == "ok" ]] &&
@@ -585,6 +655,7 @@ print_runtime_health_fields() {
 	echo "skills_linked=${RT_SKILLS_LINKED}/${RT_SKILLS_TOTAL}"
 	echo "hooks_linked=${RT_HOOKS_LINKED}"
 	echo "hooks_mode=${RT_HOOKS_MODE}"
+	echo "hooks_guard=${RT_HOOKS_GUARD}"
 	echo "dangling_links=${RT_DANGLING_LINKS}"
 	echo "runtime_worktree_sh=${RT_WORKTREE_SH}"
 	echo "runtime_ctl_sh=${RT_CTL_SH}"
@@ -663,7 +734,7 @@ cmd_doctor() {
 		if [[ -n ${source_repo} ]]; then
 			install_args+=(--source-repo "${source_repo}")
 		fi
-		if (cmd_install "${install_args[@]}" >&2); then
+		if bash "${SCRIPT_DIR}/antigravity-proactive-ctl.sh" install "${install_args[@]}" >&2; then
 			collect_runtime_health
 			if runtime_is_healthy; then
 				echo "auto_healed_install=yes"
@@ -736,7 +807,11 @@ cmd_doctor() {
 			repo_status="PASS"
 			;;
 		6)
-			repo_status="FAIL_AUTH"
+			if printf '%s\n' "${pf_out}" | grep -qE '^git_fetch=failed$'; then
+				repo_status="FAIL_FETCH"
+			else
+				repo_status="FAIL_AUTH"
+			fi
 			doctor_ok=0
 			;;
 		7)
@@ -844,6 +919,25 @@ repo_kind = sys.argv[6]
 sweep_cron = sys.argv[7]
 triage_cron = sys.argv[8]
 
+marker = ".gemini/config/proactive/scripts/"
+for existing_path in (sweep_path, triage_path):
+    if existing_path.is_symlink():
+        sys.stderr.write(
+            f"[ERROR] Refusing to overwrite symlinked sidecar: {existing_path}\n"
+        )
+        sys.exit(1)
+    if existing_path.exists():
+        if not existing_path.is_file():
+            sys.stderr.write(
+                f"[ERROR] Refusing to overwrite non-file sidecar path: {existing_path}\n"
+            )
+            sys.exit(1)
+        if marker not in existing_path.read_text(encoding="utf-8", errors="replace"):
+            sys.stderr.write(
+                f"[ERROR] Refusing to overwrite non-managed custom sidecar: {existing_path}\n"
+            )
+            sys.exit(1)
+
 worktree_sh = f"{home_dir}/.gemini/config/proactive/scripts/proactive-worktree.sh"
 ctl_sh = f"{home_dir}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh"
 reports_dir = f"{home_dir}/.gemini/antigravity/proactive-reports"
@@ -888,7 +982,7 @@ triage_prompt = (
     f"[PROACTIVE-TRIAGE] Post-sweep review for {repo_name} (2B, human-in-the-loop). "
     "Do NOT push, open PRs, or re-run the sweep. Steps: "
     f"(1) Resolve SWEEP_DATE via `{ctl_sh} sweep-date --cron {quoted_cron}` and read {reports_dir}/$SWEEP_DATE-{repo_name}.md. "
-    f"(2) If no digest exists, run `{ctl_sh} audit-missed --date \"$SWEEP_DATE\" --repo {repo_name}` once, "
+    f"(2) If no digest exists, run `{ctl_sh} audit-missed --date \"$SWEEP_DATE\" --repo {repo_name} --cron {quoted_cron}` once, "
     "record Status MISSED in the summary, and do NOT retry or start a run. "
     "(3) Otherwise inspect the referenced worktree (git diff --shortstat vs base_sha) and re-check verify exit status from the digest. "
     f"(3b) If verify did not exit 0, run `{ctl_sh} base-check --repo {repo_name} --worktree <worktree_path> --digest <digest_path>` ONCE "
@@ -1204,6 +1298,7 @@ PY
 cmd_audit_missed() {
 	local date_str=""
 	local repo_name=""
+	local cron_expr="CRON_TZ=America/Chicago 15 8 * * 1-5"
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--date)
@@ -1214,6 +1309,11 @@ cmd_audit_missed() {
 		--repo)
 			require_flag_value "audit-missed" "$1" "$#"
 			repo_name="${2##*/}"
+			shift 2
+			;;
+		--cron)
+			require_flag_value "audit-missed" "$1" "$#"
+			cron_expr="$2"
 			shift 2
 			;;
 		*)
@@ -1233,27 +1333,47 @@ cmd_audit_missed() {
 	fi
 	validate_repo_name "${repo_name}" "audit-missed"
 
-	# The pilot sidecar fires at 08:15 America/Chicago, which is 13:15 UTC only under
-	# daylight time and 14:15 UTC under standard time. Resolve the real UTC instant
-	# for this date (this also rejects impossible dates such as 2026-02-30).
-	local slot_utc
-	if ! slot_utc="$(
-		python3 - "${date_str}" <<'PY'
+	# Resolve the scheduled slot description from the cron expression (defaulting to
+	# 08:15 America/Chicago) and validate the calendar date + timezone.
+	local slot_desc=""
+	if ! slot_desc="$(
+		python3 - "${date_str}" "${cron_expr}" <<'PY'
 import datetime
 import sys
 import zoneinfo
 
 day = datetime.date.fromisoformat(sys.argv[1])
-local = datetime.datetime.combine(
-    day, datetime.time(8, 15), tzinfo=zoneinfo.ZoneInfo("America/Chicago")
-)
-print(local.astimezone(datetime.timezone.utc).strftime("%H:%M"))
+cron_expr = sys.argv[2].strip()
+tokens = cron_expr.split()
+tz_name = "UTC"
+while tokens and (tokens[0].startswith("CRON_TZ=") or tokens[0].startswith("TZ=")):
+    tz_name = tokens.pop(0).split("=", 1)[1].strip() or "UTC"
+
+if len(tokens) < 5:
+    sys.stderr.write(f"[ERROR] audit-missed: invalid cron expression: {cron_expr}\n")
+    sys.exit(2)
+
+zone = zoneinfo.ZoneInfo(tz_name)
+min_f, hour_f = tokens[0], tokens[1]
+if min_f.isdigit() and hour_f.isdigit():
+    minute = int(min_f)
+    hour = int(hour_f)
+    if not (0 <= minute <= 59 and 0 <= hour <= 23):
+        sys.stderr.write(f"[ERROR] audit-missed: invalid hour/minute in cron: {cron_expr}\n")
+        sys.exit(2)
+    local = datetime.datetime.combine(day, datetime.time(hour, minute), tzinfo=zone)
+    utc_hm = local.astimezone(datetime.timezone.utc).strftime("%H:%M")
+    if tz_name == "UTC":
+        print(f"{day.isoformat()} {hour:02d}:{minute:02d} UTC")
+    else:
+        print(f"{day.isoformat()} {hour:02d}:{minute:02d} {tz_name} ({utc_hm} UTC)")
+else:
+    print(f"{day.isoformat()} ({cron_expr})")
 PY
 	)"; then
-		echo "[ERROR] audit-missed --date is not a valid calendar date: ${date_str}" >&2
+		echo "[ERROR] audit-missed invalid --date or --cron: date=${date_str} cron=${cron_expr}" >&2
 		exit 1
 	fi
-	local slot_desc="${date_str} 08:15 America/Chicago (${slot_utc} UTC)"
 
 	local reports_dir="${HOME}/.gemini/antigravity/proactive-reports"
 	mkdir -p "${reports_dir}"
@@ -1344,22 +1464,107 @@ if now_raw:
 else:
     now_utc = dt.datetime.now(dt.timezone.utc)
 
-min_f, hour_f = tokens[0], tokens[1]
-if min_f.isdigit() and hour_f.isdigit():
-    minute = int(min_f)
-    hour = int(hour_f)
-    if not (0 <= minute <= 59 and 0 <= hour <= 23):
-        sys.stderr.write(f"[ERROR] sweep-date: invalid hour/minute in cron expression: {cron_expr}\n")
-        sys.exit(1)
-    now_local = now_utc.astimezone(zone)
-    if (now_local.hour, now_local.minute) >= (hour, minute):
-        sched_day = now_local.date()
-    else:
-        sched_day = now_local.date() - dt.timedelta(days=1)
-    sched_local = dt.datetime.combine(sched_day, dt.time(hour, minute), tzinfo=zone)
-    print(sched_local.astimezone(dt.timezone.utc).strftime("%Y-%m-%d"))
-else:
-    print(now_utc.strftime("%Y-%m-%d"))
+MONTH_NAMES = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+DOW_NAMES = {
+    "sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6,
+}
+
+
+def parse_cron_atom(token, min_val, max_val, names=None):
+    low = token.strip().lower()
+    if names and low in names:
+        return names[low]
+    val = int(low)
+    if val < min_val or val > max_val:
+        raise ValueError(f"out of range {min_val}..{max_val}: {token}")
+    return val
+
+
+def parse_cron_field(expr, min_val, max_val, names=None, is_dow=False):
+    result = set()
+    for part in expr.split(","):
+        if not part:
+            raise ValueError(f"empty item in cron field: {expr}")
+        if "/" in part:
+            range_part, step_str = part.split("/", 1)
+            step = int(step_str)
+            if step <= 0:
+                raise ValueError(f"non-positive step in cron field: {expr}")
+        else:
+            range_part, step = part, 1
+
+        if range_part == "*":
+            start, end = min_val, max_val
+        elif "-" in range_part:
+            a_str, b_str = range_part.split("-", 1)
+            start = parse_cron_atom(a_str, min_val, max_val, names)
+            end = parse_cron_atom(b_str, min_val, max_val, names)
+            if start > end:
+                raise ValueError(f"descending range in cron field: {expr}")
+        else:
+            start = parse_cron_atom(range_part, min_val, max_val, names)
+            end = max_val if "/" in part else start
+
+        for v in range(start, end + 1, step):
+            result.add(0 if (is_dow and v == 7) else v)
+
+    if not result:
+        raise ValueError(f"empty match set for cron field: {expr}")
+    return result
+
+
+min_f, hour_f, dom_f, month_f, dow_f = tokens[:5]
+try:
+    minutes = sorted(parse_cron_field(min_f, 0, 59), reverse=True)
+    hours = sorted(parse_cron_field(hour_f, 0, 23), reverse=True)
+    dom_set = parse_cron_field(dom_f, 1, 31)
+    month_set = parse_cron_field(month_f, 1, 12, names=MONTH_NAMES)
+    dow_set = parse_cron_field(dow_f, 0, 7, names=DOW_NAMES, is_dow=True)
+except ValueError as exc:
+    sys.stderr.write(f"[ERROR] sweep-date: invalid cron expression '{cron_expr}': {exc}\n")
+    sys.exit(1)
+
+dom_restricted = dom_f != "*"
+dow_restricted = dow_f != "*"
+now_local = now_utc.astimezone(zone)
+
+best_utc = None
+for day_offset in range(-1, 371):
+    cand_date = now_local.date() - dt.timedelta(days=day_offset)
+    if cand_date.month not in month_set:
+        continue
+    cron_dow = (cand_date.weekday() + 1) % 7
+    dom_ok = cand_date.day in dom_set
+    dow_ok = cron_dow in dow_set
+    day_ok = (dom_ok or dow_ok) if (dom_restricted and dow_restricted) else (dom_ok and dow_ok)
+    if not day_ok:
+        continue
+
+    day_best = None
+    for h in hours:
+        for m in minutes:
+            cand_naive = dt.datetime.combine(cand_date, dt.time(h, m))
+            for fold in (1, 0):
+                cand_local = cand_naive.replace(tzinfo=zone, fold=fold)
+                cand_utc = cand_local.astimezone(dt.timezone.utc)
+                if cand_utc.astimezone(zone).replace(tzinfo=None) != cand_naive:
+                    continue
+                if cand_utc <= now_utc and (day_best is None or cand_utc > day_best):
+                    day_best = cand_utc
+    if day_best is not None and (best_utc is None or day_best > best_utc):
+        best_utc = day_best
+        break
+
+if best_utc is None:
+    sys.stderr.write(
+        f"[ERROR] sweep-date: no scheduled slot found within 370 days for '{cron_expr}'\n"
+    )
+    sys.exit(1)
+
+print(best_utc.strftime("%Y-%m-%d"))
 PY
 }
 
@@ -1486,16 +1691,22 @@ cmd_base_check() {
 		local log="$3"
 		local fallback_repo="${4:-}"
 		local seg_path="${PATH}"
+		local seg_pythonpath="${PYTHONPATH:-}"
 		if [[ ${seg} != *"uv run"* ]]; then
 			if [[ -d "${dir%/}/.venv/bin" ]]; then
 				seg_path="${dir%/}/.venv/bin:${PATH}"
 			elif [[ -n ${fallback_repo} ]] && [[ -d "${fallback_repo%/}/.venv/bin" ]]; then
 				seg_path="${fallback_repo%/}/.venv/bin:${PATH}"
+				seg_pythonpath="${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
 			fi
 		fi
 		(
 			cd "${dir}" || exit 1
-			PATH="${seg_path}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+			if [[ -n ${seg_pythonpath} ]]; then
+				PATH="${seg_path}" PYTHONPATH="${seg_pythonpath}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+			else
+				PATH="${seg_path}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+			fi
 		) >"${log}" 2>&1
 	}
 
@@ -1596,8 +1807,17 @@ import sys
 path = pathlib.Path(sys.argv[1])
 raw = path.read_text(encoding="utf-8", errors="replace")
 marker = ".gemini/config/proactive"
-if marker not in raw:
-    sys.exit(0)
+
+
+def contains_marker(obj: object) -> bool:
+    if isinstance(obj, str):
+        return marker in obj
+    if isinstance(obj, dict):
+        return any(contains_marker(k) or contains_marker(v) for k, v in obj.items())
+    if isinstance(obj, list):
+        return any(contains_marker(item) for item in obj)
+    return False
+
 
 try:
     data = json.loads(raw)
@@ -1607,6 +1827,9 @@ except json.JSONDecodeError:
 if not isinstance(data, dict):
     sys.exit(11)
 
+if not contains_marker(data):
+    sys.exit(0)
+
 if "proactive-safety-guard" in data:
     data.pop("proactive-safety-guard", None)
     rendered = json.dumps(data, indent=2) + "\n"
@@ -1614,7 +1837,7 @@ if "proactive-safety-guard" in data:
     tmp.write_text(rendered, encoding="utf-8")
     tmp.chmod(0o600)
     os.replace(tmp, path)
-    if marker in rendered:
+    if contains_marker(data):
         sys.exit(10)
     sys.exit(0)
 

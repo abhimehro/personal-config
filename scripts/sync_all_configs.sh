@@ -207,8 +207,13 @@ if [[ -f "$REPO_ROOT/scripts/antigravity-proactive-ctl.sh" ]]; then
 	log "Deploying Antigravity proactive runtime, skills, and safety hook (copy-on-deploy)..."
 	bash "$REPO_ROOT/scripts/antigravity-proactive-ctl.sh" install
 elif [[ -d "$REPO_ROOT/configs/antigravity/skills" ]]; then
-	if grep -rq '\.gemini/config/proactive/' "$REPO_ROOT/configs/antigravity" 2>/dev/null; then
+	scan_rc=0
+	grep -rq '\.gemini/config/proactive/' "$REPO_ROOT/configs/antigravity" 2>/dev/null || scan_rc=$?
+	if [[ ${scan_rc} -eq 0 ]]; then
 		error "Missing required controller $REPO_ROOT/scripts/antigravity-proactive-ctl.sh; refusing to activate Antigravity skills or hooks without deploying runtime files under \$HOME/.gemini/config/proactive/"
+		exit 1
+	elif [[ ${scan_rc} -ge 2 ]]; then
+		error "Failed scanning $REPO_ROOT/configs/antigravity for runtime path references (grep exited ${scan_rc})"
 		exit 1
 	fi
 	log "Setting up Antigravity proactive skills and safety hook..."
