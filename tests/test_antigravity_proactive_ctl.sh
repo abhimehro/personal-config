@@ -104,7 +104,10 @@ TRIAGE_SIDECAR_FILE="${HOME}/.gemini/config/sidecars/proactive-pilot-triage/side
 check "disabled pilot sidecar.json created" test -f "${SIDECAR_FILE}"
 check "disabled triage sidecar.json created" test -f "${TRIAGE_SIDECAR_FILE}"
 check_grep "pilot sidecar uses deployed proactive-worktree.sh" "\.gemini/config/proactive/scripts/proactive-worktree\.sh" "${SIDECAR_FILE}"
+check_grep "pilot sidecar includes Step 0 preflight --auto-heal" "preflight --repo abhimehro/ctrld-sync --repo-path .* --auto-heal" "${SIDECAR_FILE}"
+check_grep "pilot sidecar grants gh auth status" '"command\(gh auth status\)"' "${SIDECAR_FILE}"
 check_grep "triage sidecar uses deployed antigravity-proactive-ctl.sh" "\.gemini/config/proactive/scripts/antigravity-proactive-ctl\.sh" "${TRIAGE_SIDECAR_FILE}"
+check_grep "triage sidecar grants ctl doctor" 'antigravity-proactive-ctl\.sh doctor' "${TRIAGE_SIDECAR_FILE}"
 check "user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-ctrld-sync/user_config.json"
 check "triage user_config.json NOT created or self-enabled" test ! -f "${HOME}/.gemini/config/sidecars/proactive-pilot-triage/user_config.json"
 check_grep "sidecar uses weekday daily local Chicago cron" "CRON_TZ=America/Chicago 15 8 \* \* 1-5" "${SIDECAR_FILE}"
@@ -607,6 +610,307 @@ for kind in managed unmanaged; do
 	check "no lingering ${kind} tmp or backup skill dir after failed mv" \
 		python3 -c 'import glob, sys; sys.exit(1 if glob.glob(sys.argv[1] + ".*") else 0)' "${BOLT_DIR}"
 done
+
+# 8. base-check resolves repo_path/.venv/bin (and candidate .venv/bin), strips VIRTUAL_ENV,
+#    and skips .venv prepending when the stage runs through `uv run`.
+export HOME="${TEST_DIR}/venv-bc-home"
+mkdir -p "${HOME}/.gemini/config"
+VENV_REMOTE="${TEST_DIR}/venv-remote.git"
+VENV_SEED="${TEST_DIR}/venv-seed"
+VENV_CLONE="${TEST_DIR}/venv-repo"
+VENV_WT_ROOT="${TEST_DIR}/venv-worktrees"
+VENV_OUTER_BIN="${TEST_DIR}/venv-outer-bin"
+mkdir -p "${VENV_WT_ROOT}" "${VENV_OUTER_BIN}"
+
+git init --bare -q "${VENV_REMOTE}"
+git init -q "${VENV_SEED}"
+git -C "${VENV_SEED}" config user.email "test@example.com"
+git -C "${VENV_SEED}" config user.name "Test User"
+git -C "${VENV_SEED}" checkout -q -b main
+printf 'ok\n' >"${VENV_SEED}/app.txt"
+git -C "${VENV_SEED}" add .
+git -C "${VENV_SEED}" commit -q -m "base"
+git -C "${VENV_SEED}" remote add origin "${VENV_REMOTE}"
+git -C "${VENV_SEED}" push -q -u origin main
+git --git-dir="${VENV_REMOTE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${VENV_REMOTE}" "${VENV_CLONE}"
+git -C "${VENV_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+cat >"${VENV_OUTER_BIN}/fake-runner" <<'MOCK'
+#!/usr/bin/env bash
+echo "OUTER_RUNNER_SHOULD_NOT_WIN" >&2
+exit 1
+MOCK
+chmod +x "${VENV_OUTER_BIN}/fake-runner"
+
+mkdir -p "${VENV_CLONE}/.venv/bin"
+cat >"${VENV_CLONE}/.venv/bin/fake-runner" <<'MOCK'
+#!/usr/bin/env bash
+printf 'RUNNER=repo-venv VIRTUAL_ENV=%s\n' "${VIRTUAL_ENV:-UNSET}"
+[[ -z ${VIRTUAL_ENV:-} ]]
+MOCK
+chmod +x "${VENV_CLONE}/.venv/bin/fake-runner"
+
+WT_VENV_REPO="$("${WT_SCRIPT}" prepare --repo-path "${VENV_CLONE}" --lens code-health --worktree-root "${VENV_WT_ROOT}")"
+check_exit "base-check resolves repo_path/.venv/bin and unsets VIRTUAL_ENV" 0 \
+	env VIRTUAL_ENV="/tmp/stale-venv" PATH="${VENV_OUTER_BIN}:${PATH}" \
+	"${CTL_SCRIPT}" base-check --repo venv-repo --worktree "${WT_VENV_REPO}" --test-cmd "fake-runner"
+check_grep "base-check with repo .venv reports NO_FAILURE" "^VERDICT: NO_FAILURE$" "${TEST_DIR}/check.log"
+
+WT_VENV_CAND="$("${WT_SCRIPT}" prepare --repo-path "${VENV_CLONE}" --lens code-health --worktree-root "${VENV_WT_ROOT}")"
+mkdir -p "${WT_VENV_CAND}/.venv/bin"
+cat >"${WT_VENV_CAND}/.venv/bin/fake-runner" <<'MOCK'
+#!/usr/bin/env bash
+echo "CANDIDATE_VENV_FAIL" >&2
+exit 1
+MOCK
+chmod +x "${WT_VENV_CAND}/.venv/bin/fake-runner"
+check_exit "base-check uses candidate .venv/bin first and falls back to repo_path/.venv/bin on base" 2 \
+	env VIRTUAL_ENV="/tmp/stale-venv" PATH="${VENV_OUTER_BIN}:${PATH}" \
+	"${CTL_SCRIPT}" base-check --repo venv-repo --worktree "${WT_VENV_CAND}" --test-cmd "fake-runner"
+check_grep "base-check classifies candidate-venv failure as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
+
+cat >"${VENV_OUTER_BIN}/uv" <<'MOCK'
+#!/usr/bin/env bash
+[[ -z ${VIRTUAL_ENV:-} ]]
+[[ ${PATH%%:*} != */.venv/bin ]]
+MOCK
+chmod +x "${VENV_OUTER_BIN}/uv"
+cat >"${VENV_CLONE}/.venv/bin/uv" <<'MOCK'
+#!/usr/bin/env bash
+echo "VENV_UV_SHOULD_NOT_BE_PREPENDED" >&2
+exit 1
+MOCK
+chmod +x "${VENV_CLONE}/.venv/bin/uv"
+check_exit "base-check skips .venv prepending for uv run stages while still unsetting VIRTUAL_ENV" 0 \
+	env VIRTUAL_ENV="/tmp/stale-venv" PATH="${VENV_OUTER_BIN}:${PATH}" \
+	"${CTL_SCRIPT}" base-check --repo venv-repo --worktree "${WT_VENV_REPO}" --test-cmd "uv run pytest -q"
+check_grep "base-check uv run stage reports NO_FAILURE" "^VERDICT: NO_FAILURE$" "${TEST_DIR}/check.log"
+
+# 9. doctor and doctor --fix (mocking proactive-worktree.sh via isolated MOCK_SRC)
+export HOME="${TEST_DIR}/doctor-home"
+mkdir -p "${HOME}/.gemini/config" "${HOME}/dev"
+
+MOCK_SRC="${TEST_DIR}/doctor-mock-src"
+mkdir -p "${MOCK_SRC}/scripts" "${MOCK_SRC}/configs/antigravity/hooks" "${MOCK_SRC}/configs/antigravity/sidecars"
+cp "${REPO_ROOT}/scripts/antigravity-proactive-ctl.sh" "${MOCK_SRC}/scripts/"
+cp "${REPO_ROOT}/configs/antigravity/hooks/proactive-guard.py" "${MOCK_SRC}/configs/antigravity/hooks/"
+cp "${REPO_ROOT}/configs/antigravity/hooks.json" "${MOCK_SRC}/configs/antigravity/"
+cp -R "${REPO_ROOT}/configs/antigravity/skills" "${MOCK_SRC}/configs/antigravity/"
+cp "${REPO_ROOT}/configs/antigravity/sidecars/"*.sidecar.json "${MOCK_SRC}/configs/antigravity/sidecars/"
+
+PF_CALLS_LOG="${TEST_DIR}/doctor-pf-calls.log"
+PF_MODE_FILE="${TEST_DIR}/doctor-pf-mode"
+cat >"${MOCK_SRC}/scripts/proactive-worktree.sh" <<MOCK
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${PF_CALLS_LOG}"
+repo=""
+prev_arg=""
+for arg in "\$@"; do
+	if [[ \${prev_arg} == "--repo" ]]; then
+		repo="\${arg##*/}"
+		break
+	fi
+	prev_arg="\${arg}"
+done
+mode="\$(cat "${PF_MODE_FILE}" 2>/dev/null || echo "pass")"
+case "\${mode}" in
+pass)
+	echo "repo=abhimehro/\${repo}"
+	echo "preflight=PASS"
+	exit 0
+	;;
+auth)
+	echo "gh_auth=failed"
+	echo "preflight=FAIL"
+	exit 6
+	;;
+toolchain)
+	echo "toolchain=missing"
+	echo "remediation=uv sync --frozen --all-extras"
+	echo "preflight=FAIL"
+	exit 7
+	;;
+error)
+	echo "preflight=FAIL"
+	exit 2
+	;;
+esac
+MOCK
+chmod +x "${MOCK_SRC}/scripts/proactive-worktree.sh"
+
+git init -q "${HOME}/dev/ctrld-sync"
+
+printf 'pass\n' >"${PF_MODE_FILE}"
+: >"${PF_CALLS_LOG}"
+check_exit "doctor exits 1 when runtime is not installed" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor reports degraded runtime_health" "^runtime_health=degraded$" "${TEST_DIR}/check.log"
+check_grep "doctor still checks target repo and reports PASS" "^repo_ctrld-sync=PASS$" "${TEST_DIR}/check.log"
+check_grep "doctor reports DEGRADED overall status" "^doctor_status=DEGRADED$" "${TEST_DIR}/check.log"
+
+: >"${PF_CALLS_LOG}"
+check_exit "doctor --fix self-heals missing runtime and passes" 0 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --fix --source-repo "${MOCK_SRC}" --repo ctrld-sync
+check_grep "doctor --fix emits auto_healed_install=yes" "^auto_healed_install=yes$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix reports runtime_health=ok" "^runtime_health=ok$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix reports repo PASS" "^repo_ctrld-sync=PASS$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix reports doctor_status=HEALTHY" "^doctor_status=HEALTHY$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix forwards --auto-heal to preflight" "^preflight --repo abhimehro/ctrld-sync --repo-path ${HOME}/dev/ctrld-sync --auto-heal$" "${PF_CALLS_LOG}"
+
+# Reintroduce runtime defects and verify deployed CLI self-heals using recorded .source-repo
+chmod 644 "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+rm -rf "${HOME}/.gemini/config/skills/proactive-palette"
+ln -s "${TEST_DIR}/missing-skill-target" "${HOME}/.gemini/config/skills/proactive-palette"
+check_exit "deployed doctor --fix repairs runtime defects using recorded .source-repo" 0 \
+	"${HOME}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh" doctor --fix --repo ctrld-sync
+check_grep "deployed doctor --fix emits auto_healed_install=yes" "^auto_healed_install=yes$" "${TEST_DIR}/check.log"
+check_grep "deployed doctor --fix restores runtime_health=ok" "^runtime_health=ok$" "${TEST_DIR}/check.log"
+
+: >"${PF_CALLS_LOG}"
+check_exit "doctor defaults to ctrld-sync and forwards --skip-fetch" 0 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --skip-fetch
+check_grep "doctor --skip-fetch forwards flag without --auto-heal" "^preflight --repo abhimehro/ctrld-sync --repo-path ${HOME}/dev/ctrld-sync --skip-fetch$" "${PF_CALLS_LOG}"
+check_grep "doctor reports HEALTHY" "^doctor_status=HEALTHY$" "${TEST_DIR}/check.log"
+
+check_exit "doctor emits MISSING_REPO when repo directory is absent" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo personal-config
+check_grep "doctor prints MISSING_REPO" "^repo_personal-config=MISSING_REPO$" "${TEST_DIR}/check.log"
+check_grep "doctor prints DEGRADED on missing repo" "^doctor_status=DEGRADED$" "${TEST_DIR}/check.log"
+
+printf 'auth\n' >"${PF_MODE_FILE}"
+check_exit "doctor maps preflight exit 6 to FAIL_AUTH" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor prints FAIL_AUTH" "^repo_ctrld-sync=FAIL_AUTH$" "${TEST_DIR}/check.log"
+
+printf 'toolchain\n' >"${PF_MODE_FILE}"
+check_exit "doctor maps preflight exit 7 to FAIL_TOOLCHAIN and surfaces remediation" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor prints FAIL_TOOLCHAIN" "^repo_ctrld-sync=FAIL_TOOLCHAIN$" "${TEST_DIR}/check.log"
+check_grep "doctor surfaces remediation hint" "^repo_ctrld-sync_remediation=uv sync --frozen --all-extras$" "${TEST_DIR}/check.log"
+
+printf 'error\n' >"${PF_MODE_FILE}"
+check_exit "doctor maps unexpected preflight failure to FAIL_ERROR" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor prints FAIL_ERROR" "^repo_ctrld-sync=FAIL_ERROR$" "${TEST_DIR}/check.log"
+
+printf 'pass\n' >"${PF_MODE_FILE}"
+for all_r in ctrld-sync email-security-pipeline personal-config Hydrograph_Versus_Seatek_Sensors_Project Seatek_Analysis series_correction_project_updated repoprompt-ce; do
+	git init -q "${HOME}/dev/${all_r}"
+done
+: >"${PF_CALLS_LOG}"
+check_exit "doctor --all-repos checks all 7 repos and exits 0 when healthy" 0 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --all-repos
+for all_r in ctrld-sync email-security-pipeline personal-config Hydrograph_Versus_Seatek_Sensors_Project Seatek_Analysis series_correction_project_updated repoprompt-ce; do
+	check_grep "doctor --all-repos reports PASS for ${all_r}" "^repo_${all_r}=PASS$" "${TEST_DIR}/check.log"
+done
+
+# 10. stage-repo stages core and research sidecars cleanly and disable removes only managed ones
+export HOME="${TEST_DIR}/stage-repo-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+
+check_exit "stage-repo stages core repo sidecars" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo abhimehro/email-security-pipeline
+CORE_SWEEP="${HOME}/.gemini/config/sidecars/proactive-sweep-email-security-pipeline/sidecar.json"
+CORE_TRIAGE="${HOME}/.gemini/config/sidecars/proactive-triage-email-security-pipeline/sidecar.json"
+check "core sweep sidecar created" test -f "${CORE_SWEEP}"
+check "core triage sidecar created" test -f "${CORE_TRIAGE}"
+check "core sweep user_config.json NOT created" test ! -f "${HOME}/.gemini/config/sidecars/proactive-sweep-email-security-pipeline/user_config.json"
+check "core triage user_config.json NOT created" test ! -f "${HOME}/.gemini/config/sidecars/proactive-triage-email-security-pipeline/user_config.json"
+check "core sweep sidecar mode 0600" python3 -c 'import os,sys; sys.exit(0 if (os.stat(sys.argv[1]).st_mode & 0o777)==0o600 else 1)' "${CORE_SWEEP}"
+check "core triage sidecar mode 0600" python3 -c 'import os,sys; sys.exit(0 if (os.stat(sys.argv[1]).st_mode & 0o777)==0o600 else 1)' "${CORE_TRIAGE}"
+check "core sweep sidecar is valid JSON with expanded HOME and core lenses" python3 - "${CORE_SWEEP}" "${HOME}" <<'PYTEST'
+import json, pathlib, sys
+raw = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+home = sys.argv[2]
+assert "__HOME__" not in raw
+doc = json.loads(raw)
+assert doc["args"][0] == "CRON_TZ=America/Chicago 15 8 * * 1-5"
+prompt = doc["args"][-1]
+assert f"{home}/.gemini/config/proactive/scripts/proactive-worktree.sh preflight --repo abhimehro/email-security-pipeline --repo-path {home}/dev/email-security-pipeline --auto-heal" in prompt
+assert "bolt, code-health, and palette" in prompt
+grants = doc["agent_permissions"]["access_grants"]
+assert doc["agent_permissions"]["allows_user_interactions"] is False
+assert "command(gh auth status)" in grants
+assert f"command({home}/.gemini/config/proactive/scripts/proactive-worktree.sh)" in grants
+PYTEST
+check "core triage sidecar is valid JSON with doctor grant" python3 - "${CORE_TRIAGE}" "${HOME}" <<'PYTEST'
+import json, pathlib, sys
+raw = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+home = sys.argv[2]
+assert "__HOME__" not in raw
+doc = json.loads(raw)
+assert doc["args"][0] == "CRON_TZ=America/Chicago 35 8 * * 1-5"
+grants = doc["agent_permissions"]["access_grants"]
+assert doc["agent_permissions"]["allows_user_interactions"] is True
+assert f"command({home}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh doctor)" in grants
+PYTEST
+
+check_exit "stage-repo stages research repo sidecars with custom crons" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo Seatek_Analysis --cron "CRON_TZ=UTC 0 9 * * 1-5" --triage-cron "CRON_TZ=UTC 25 9 * * 1-5" --repo-path "__HOME__/research/Seatek_Analysis"
+RES_SWEEP="${HOME}/.gemini/config/sidecars/proactive-sweep-Seatek_Analysis/sidecar.json"
+RES_TRIAGE="${HOME}/.gemini/config/sidecars/proactive-triage-Seatek_Analysis/sidecar.json"
+check "research sweep sidecar enforces no palette and mandatory numeric check" python3 - "${RES_SWEEP}" "${RES_TRIAGE}" "${HOME}" <<'PYTEST'
+import json, pathlib, sys
+s_raw = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+t_raw = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+home = sys.argv[3]
+assert "__HOME__" not in s_raw and "__HOME__" not in t_raw
+s_doc = json.loads(s_raw)
+t_doc = json.loads(t_raw)
+assert s_doc["args"][0] == "CRON_TZ=UTC 0 9 * * 1-5"
+assert t_doc["args"][0] == "CRON_TZ=UTC 25 9 * * 1-5"
+prompt = s_doc["args"][-1]
+assert f"{home}/research/Seatek_Analysis" in prompt
+assert "--numeric-check-cmd" in prompt
+assert "NEVER run palette" in prompt
+assert "code-health and bolt" in prompt
+assert f"read_file({home}/research/Seatek_Analysis)" in s_doc["agent_permissions"]["access_grants"]
+PYTEST
+
+check_exit "stage-repo rejects missing --repo" 1 "${CTL_SCRIPT}" stage-repo
+check_exit "stage-repo rejects dot-dot --repo" 1 "${CTL_SCRIPT}" stage-repo --repo "abhimehro/.."
+
+UNRELATED_DIR="${HOME}/.gemini/config/sidecars/proactive-sweep-user-custom"
+mkdir -p "${UNRELATED_DIR}"
+printf '{"builtin": "schedule", "args": ["0 10 * * *", "echo", "custom"]}\n' >"${UNRELATED_DIR}/sidecar.json"
+printf '{"enabled": true}\n' >"${UNRELATED_DIR}/user_config.json"
+
+"${CTL_SCRIPT}" disable >/dev/null 2>&1
+check "disable removes managed staged core sweep sidecar" test ! -e "${CORE_SWEEP}"
+check "disable removes managed staged core triage sidecar" test ! -e "${CORE_TRIAGE}"
+check "disable removes managed staged research sweep sidecar" test ! -e "${RES_SWEEP}"
+check "disable removes managed staged research triage sidecar" test ! -e "${RES_TRIAGE}"
+check "disable preserves unrelated proactive-sweep-* sidecar.json" test -f "${UNRELATED_DIR}/sidecar.json"
+check "disable preserves unrelated proactive-sweep-* user_config.json" test -f "${UNRELATED_DIR}/user_config.json"
+
+# 11. configs/antigravity/hooks.json prefers deployed guard, falls back to repo checkout, and fails closed (exit 2)
+HOOK_HOME="${TEST_DIR}/hook-fallback-home"
+mkdir -p "${HOOK_HOME}/.gemini/config/proactive/hooks" "${HOOK_HOME}/dev/personal-config/configs/antigravity/hooks"
+HOOK_CMD="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["proactive-safety-guard"]["PreToolUse"][0]["hooks"][0]["command"])' "${REPO_ROOT}/configs/antigravity/hooks.json")"
+check "hooks.json command retains .gemini/config/proactive/ marker" grep -qF ".gemini/config/proactive/" "${REPO_ROOT}/configs/antigravity/hooks.json"
+
+cat >"${HOOK_HOME}/.gemini/config/proactive/hooks/proactive-guard.py" <<'PY'
+print('{"decision":"allow","reason":"from-deployed"}')
+PY
+cat >"${HOOK_HOME}/dev/personal-config/configs/antigravity/hooks/proactive-guard.py" <<'PY'
+print('{"decision":"allow","reason":"from-repo-fallback"}')
+PY
+
+check_exit "hooks.json command succeeds when deployed guard exists" 0 \
+	env HOME="${HOOK_HOME}" sh -c "${HOOK_CMD}" </dev/null
+check_grep "hooks.json prefers deployed guard over repo checkout" "from-deployed" "${TEST_DIR}/check.log"
+
+rm -f "${HOOK_HOME}/.gemini/config/proactive/hooks/proactive-guard.py"
+check_exit "hooks.json command succeeds via repo fallback when deployed guard is missing" 0 \
+	env HOME="${HOOK_HOME}" sh -c "${HOOK_CMD}" </dev/null
+check_grep "hooks.json falls back to repo checkout guard" "from-repo-fallback" "${TEST_DIR}/check.log"
+
+rm -f "${HOOK_HOME}/dev/personal-config/configs/antigravity/hooks/proactive-guard.py"
+check_exit "hooks.json fails closed with exit 2 when both deployed and repo guards are missing" 2 \
+	env HOME="${HOOK_HOME}" sh -c "${HOOK_CMD}" </dev/null
+check_grep "hooks.json prints clear missing-guard error" "proactive-guard\.py missing" "${TEST_DIR}/check.log"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

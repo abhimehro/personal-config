@@ -23,6 +23,7 @@
       "command(__HOME__/bin/agent-zsh -c)",
       "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh audit-missed)",
       "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh base-check)",
+      "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh doctor)",
       "command(git -C)"
     ]
   }

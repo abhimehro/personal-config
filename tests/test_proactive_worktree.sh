@@ -50,6 +50,8 @@ chmod +x "${LINT_BIN}/ruff"
 RUFF_FAIL_FLAG="${TEST_DIR}/ruff_reports_finding"
 export RUFF_MOCK_FAIL_FILE="${RUFF_FAIL_FLAG}"
 export PATH="${LINT_BIN}:${PATH}"
+export PROACTIVE_FETCH_BACKOFF_S=0
+export PROACTIVE_GH_BACKOFF_S=0
 
 PASS=0
 FAIL=0
@@ -980,6 +982,788 @@ check "cleanup removed stale empty worktree WT1" test ! -d "${WT1}"
 check "cleanup preserved stale dirty worktree WT2" test -d "${WT2}"
 check "cleanup preserved stale worktree WT_CAND1 with unmerged commit" test -d "${WT_CAND1}"
 check "cleanup preserved fresh worktree WT3" test -d "${WT3}"
+
+# 7. Portable bounded timeout helper & GitHub SSH URL detector
+run_wt_timeout() {
+	(
+		source "${TARGET_SCRIPT}"
+		run_with_timeout "$@"
+	)
+}
+
+check_not_grep() {
+	local pattern="$1"
+	local file="$2"
+	if grep -q -- "${pattern}" "${file}" 2>/dev/null; then
+		return 1
+	fi
+	return 0
+}
+
+check_ssh_url_expect() {
+	local url="$1"
+	local expected_rc="$2"
+	(
+		source "${TARGET_SCRIPT}"
+		local rc=0
+		is_github_ssh_url "${url}" || rc=$?
+		[[ ${rc} -eq ${expected_rc} ]]
+	)
+}
+
+check_fetch_transport() {
+	local force_ssh="$1"
+	local repo_dir="$2"
+	local expected_transport="$3"
+	env PATH="${FETCH_MOCK_BIN}:${PATH}" PROACTIVE_FETCH_FORCE_SSH="${force_ssh}" \
+		bash -s "${TARGET_SCRIPT}" "${repo_dir}" "${expected_transport}" <<'EOF'
+set -Eeuo pipefail
+source "$1"
+fetch_origin_resilient "$2"
+[[ ${LAST_FETCH_TRANSPORT} == "$3" ]]
+EOF
+}
+
+run_fetch_exhaust_with_summary() {
+	local retries="$1"
+	local backoff_s="$2"
+	local repo_dir="$3"
+	env PATH="${FETCH_MOCK_BIN}:${PATH}" PROACTIVE_FETCH_RETRIES="${retries}" PROACTIVE_FETCH_BACKOFF_S="${backoff_s}" \
+		bash -s "${TARGET_SCRIPT}" "${repo_dir}" <<'EOF'
+set -Eeuo pipefail
+source "$1"
+rc=0
+fetch_origin_resilient "$2" || rc=$?
+printf 'SUMMARY=%s\n' "${FETCH_FAILURE_SUMMARY}" >&2
+exit "${rc}"
+EOF
+}
+
+run_fetch_invalid_knobs() {
+	local repo_dir="$1"
+	env PATH="${FETCH_MOCK_BIN}:${PATH}" \
+		PROACTIVE_FETCH_RETRIES=bogus \
+		PROACTIVE_FETCH_BACKOFF_S=-1 \
+		PROACTIVE_FETCH_TIMEOUT_S=0 \
+		PROACTIVE_FETCH_FORCE_SSH=yes \
+		bash -s "${TARGET_SCRIPT}" "${repo_dir}" <<'EOF'
+set -Eeuo pipefail
+source "$1"
+fetch_origin_resilient "$2" >/dev/null
+EOF
+}
+
+check_sleep_backoff_log() {
+	local log_file="$1"
+	local expected="$2"
+	local head_val=""
+	head_val="$(head -n 2 "${log_file}" | tr '\n' ',')"
+	[[ ${head_val} == "${expected}" ]]
+}
+
+check_git_config_unset() {
+	local repo_dir="$1"
+	local key="$2"
+	local val=""
+	val="$(git -C "${repo_dir}" config --get "${key}" 2>/dev/null || true)"
+	[[ -z ${val} ]]
+}
+
+check_git_ref_absent() {
+	local repo_dir="$1"
+	local ref_name="$2"
+	if git -C "${repo_dir}" show-ref --verify --quiet "${ref_name}"; then
+		return 1
+	fi
+	return 0
+}
+
+check_resolve_verify_prefix() {
+	local wt_dir="$1"
+	local repo_dir="$2"
+	local cmd="$3"
+	local expected_prefix="$4"
+	local expect_match="$5"
+	(
+		source "${TARGET_SCRIPT}"
+		local out=""
+		out="$(resolve_verify_path "${wt_dir}" "${repo_dir}" "${cmd}")"
+		if [[ ${expect_match} == "yes" ]]; then
+			[[ ${out} == "${expected_prefix}"* ]]
+		else
+			[[ ${out} != "${expected_prefix}"* ]]
+		fi
+	)
+}
+
+check_exit "run_with_timeout passes through exit 0" 0 \
+	run_wt_timeout 5 true
+check_exit "run_with_timeout propagates child exit code 42" 42 \
+	run_wt_timeout 5 bash -c "exit 42"
+check_exit "run_with_timeout exits 124 on timeout without leaking args" 124 \
+	run_wt_timeout 1 python3 -c "import time; time.sleep(5)" --secret-token-flag
+check_grep "run_with_timeout prints cmd[0] on timeout" "Command timed out after 1s: python3" "${TEST_DIR}/check.log"
+check "run_with_timeout timeout stderr omits secret args" \
+	check_not_grep "--secret-token-flag" "${TEST_DIR}/check.log"
+check_exit "run_with_timeout exits 127 when command is missing without leaking args" 127 \
+	run_wt_timeout 5 nonexistent_cmd_for_test --secret-flag
+check_grep "run_with_timeout reports missing cmd[0]" "Command not found: nonexistent_cmd_for_test" "${TEST_DIR}/check.log"
+check "run_with_timeout missing-cmd stderr omits secret args" \
+	check_not_grep "--secret-flag" "${TEST_DIR}/check.log"
+
+check "is_github_ssh_url accepts git@github.com:*" \
+	check_ssh_url_expect "git@github.com:abhimehro/ctrld-sync.git" 0
+check "is_github_ssh_url accepts ssh://git@github.com/*" \
+	check_ssh_url_expect "ssh://git@github.com/abhimehro/ctrld-sync.git" 0
+check "is_github_ssh_url rejects https://github.com/*" \
+	check_ssh_url_expect "https://github.com/abhimehro/ctrld-sync.git" 1
+check "is_github_ssh_url rejects non-GitHub SSH URL" \
+	check_ssh_url_expect "git@gitlab.com:abhimehro/ctrld-sync.git" 1
+
+# 8. Resilient headless Git fetch transports, fallback, backoff, env validation, & prepare fallback
+FETCH_MOCK_BIN="${TEST_DIR}/fetch_mock_bin"
+mkdir -p "${FETCH_MOCK_BIN}"
+FETCH_LOG="${TEST_DIR}/fetch_git.log"
+FETCH_SLEEP_LOG="${TEST_DIR}/fetch_sleep.log"
+FETCH_MODE_FILE="${TEST_DIR}/fetch_mode"
+REAL_GIT_BIN="$(command -v git)"
+
+cat >"${FETCH_MOCK_BIN}/gh" <<'MOCK'
+#!/usr/bin/env bash
+exit 0
+MOCK
+chmod +x "${FETCH_MOCK_BIN}/gh"
+
+cat >"${FETCH_MOCK_BIN}/sleep" <<MOCK
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${FETCH_SLEEP_LOG}"
+exit 0
+MOCK
+chmod +x "${FETCH_MOCK_BIN}/sleep"
+
+cat >"${FETCH_MOCK_BIN}/git" <<MOCK
+#!/usr/bin/env bash
+is_fetch=0
+has_gh_helper=0
+has_instead_of=0
+for arg in "\$@"; do
+	case "\${arg}" in
+	fetch)
+		is_fetch=1
+		;;
+	*gh\ auth\ git-credential*)
+		has_gh_helper=1
+		;;
+	url.https://github.com/.insteadOf=*)
+		has_instead_of=1
+		;;
+	esac
+done
+if [[ \${is_fetch} -eq 1 ]]; then
+	printf 'TERM=%s SSH=%s ARGS=%s\n' "\${GIT_TERMINAL_PROMPT:-}" "\${GIT_SSH_COMMAND:-}" "\$*" >>"${FETCH_LOG}"
+	mode="\$(cat "${FETCH_MODE_FILE}" 2>/dev/null || echo "ok")"
+	case "\${mode}" in
+	all_ok)
+		exit 0
+		;;
+	fail_https_gh)
+		if [[ \${has_gh_helper} -eq 1 ]]; then
+			echo "fatal: gh auth token rejected" >&2
+			exit 1
+		fi
+		exit 0
+		;;
+	fail_both_https)
+		if [[ \${has_instead_of} -eq 1 ]]; then
+			echo "fatal: https blocked" >&2
+			exit 1
+		fi
+		exit 0
+		;;
+	fail_all)
+		echo "fatal: simulated fetch failure line 1" >&2
+		echo "fatal: simulated fetch failure final" >&2
+		exit 1
+		;;
+	sleep_hang)
+		python3 -c 'import time; time.sleep(5)'
+		exit 0
+		;;
+	esac
+fi
+exec "${REAL_GIT_BIN}" "\$@"
+MOCK
+chmod +x "${FETCH_MOCK_BIN}/git"
+
+SSH_REMOTE_CLONE="${TEST_DIR}/ssh-remote-clone"
+git clone -q "${BARE_REMOTE}" "${SSH_REMOTE_CLONE}"
+git -C "${SSH_REMOTE_CLONE}" remote set-head origin -a >/dev/null 2>&1
+git -C "${SSH_REMOTE_CLONE}" remote set-url origin "git@github.com:abhimehro/demo.git"
+
+# 8a. https-gh primary transport for GitHub SSH URL
+: >"${FETCH_LOG}"
+printf 'all_ok\n' >"${FETCH_MODE_FILE}"
+check "fetch_origin_resilient uses https-gh first for GitHub SSH URL" \
+	check_fetch_transport 0 "${SSH_REMOTE_CLONE}" "https-gh"
+check_grep "https-gh disables terminal prompts" "TERM=0" "${FETCH_LOG}"
+check_grep "https-gh configures gh credential helper" "credential\.helper=!gh auth git-credential" "${FETCH_LOG}"
+check_grep "https-gh rewrites git@github.com: to https" "url\.https://github\.com/\.insteadOf=git@github\.com:" "${FETCH_LOG}"
+check_grep "https-gh rewrites ssh://git@github.com/ to https" "url\.https://github\.com/\.insteadOf=ssh://git@github\.com/" "${FETCH_LOG}"
+
+# 8b. https-gh -> https-anon fallback
+: >"${FETCH_LOG}"
+printf 'fail_https_gh\n' >"${FETCH_MODE_FILE}"
+check "fetch_origin_resilient falls back from https-gh to https-anon" \
+	check_fetch_transport 0 "${SSH_REMOTE_CLONE}" "https-anon"
+
+# 8c. https-anon -> ssh-batch fallback
+: >"${FETCH_LOG}"
+printf 'fail_both_https\n' >"${FETCH_MODE_FILE}"
+check "fetch_origin_resilient falls back from https-anon to ssh-batch" \
+	check_fetch_transport 0 "${SSH_REMOTE_CLONE}" "ssh-batch"
+check_grep "ssh-batch configures BatchMode=yes and ConnectTimeout=10" "SSH=ssh -o BatchMode=yes -o ConnectTimeout=10" "${FETCH_LOG}"
+
+# 8d. PROACTIVE_FETCH_FORCE_SSH=1 skips HTTPS transports
+: >"${FETCH_LOG}"
+printf 'all_ok\n' >"${FETCH_MODE_FILE}"
+check "PROACTIVE_FETCH_FORCE_SSH=1 forces ssh-batch directly" \
+	check_fetch_transport 1 "${SSH_REMOTE_CLONE}" "ssh-batch"
+check "PROACTIVE_FETCH_FORCE_SSH=1 does not attempt HTTPS rewrite" \
+	check_not_grep "insteadOf=" "${FETCH_LOG}"
+
+# 8e. Local bare remote and https:// use direct transport
+: >"${FETCH_LOG}"
+check "fetch_origin_resilient uses direct transport for local bare remote" \
+	check_fetch_transport 0 "${LOCAL_CLONE}" "direct"
+
+# 8f. Retries, backoff_s * attempt, failure summary, and invalid env knob warnings
+: >"${FETCH_LOG}"
+: >"${FETCH_SLEEP_LOG}"
+printf 'fail_all\n' >"${FETCH_MODE_FILE}"
+check_exit "fetch_origin_resilient fails when all transports exhaust retries" 1 \
+	run_fetch_exhaust_with_summary 3 1 "${SSH_REMOTE_CLONE}"
+check_grep "fetch failure summary records https-gh last stderr line" "https-gh: fatal: simulated fetch failure final" "${TEST_DIR}/check.log"
+check_grep "fetch failure summary records https-anon last stderr line" "https-anon: fatal: simulated fetch failure final" "${TEST_DIR}/check.log"
+check_grep "fetch failure summary records ssh-batch last stderr line" "ssh-batch: fatal: simulated fetch failure final" "${TEST_DIR}/check.log"
+check "fetch retry backoff scales as backoff_s * attempt (1 then 2)" \
+	check_sleep_backoff_log "${FETCH_SLEEP_LOG}" "1,2,"
+
+printf 'all_ok\n' >"${FETCH_MODE_FILE}"
+check_exit "invalid fetch env knobs warn and fall back cleanly" 0 \
+	run_fetch_invalid_knobs "${LOCAL_CLONE}"
+check_grep "invalid PROACTIVE_FETCH_RETRIES logs warning" "Ignoring invalid PROACTIVE_FETCH_RETRIES=bogus" "${TEST_DIR}/check.log"
+check_grep "invalid PROACTIVE_FETCH_BACKOFF_S logs warning" "Ignoring invalid PROACTIVE_FETCH_BACKOFF_S=-1" "${TEST_DIR}/check.log"
+check_grep "invalid PROACTIVE_FETCH_TIMEOUT_S logs warning" "Ignoring invalid PROACTIVE_FETCH_TIMEOUT_S=0" "${TEST_DIR}/check.log"
+check_grep "invalid PROACTIVE_FETCH_FORCE_SSH logs warning" "Ignoring invalid PROACTIVE_FETCH_FORCE_SSH=yes" "${TEST_DIR}/check.log"
+
+# 8g. Hung fetch times out via PROACTIVE_FETCH_TIMEOUT_S and fails closed in require_fresh_origin_ref
+printf 'sleep_hang\n' >"${FETCH_MODE_FILE}"
+check_exit "check-throttle fails closed with exit 6 when fetch times out" 6 \
+	env PATH="${FETCH_MOCK_BIN}:${PATH}" PROACTIVE_FETCH_RETRIES=1 PROACTIVE_FETCH_TIMEOUT_S=1 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/demo --worktree-root "${WT_ROOT}" --repo-path "${LOCAL_CLONE}" --include-worktrees
+check_grep "timed-out fetch includes tried summary" "tried: direct:" "${TEST_DIR}/check.log"
+
+# 8h. cmd_prepare warns and falls back to local ref when fetch fails
+printf 'fail_all\n' >"${FETCH_MODE_FILE}"
+WT_FALLBACK=""
+WT_FALLBACK="$(env PATH="${FETCH_MOCK_BIN}:${PATH}" PROACTIVE_FETCH_RETRIES=1 "${TARGET_SCRIPT}" prepare --repo-path "${SSH_REMOTE_CLONE}" --lens bolt --worktree-root "${WT_ROOT}" 2>"${TEST_DIR}/prepare_warn.log")"
+check "prepare still creates worktree when fetch fails" test -d "${WT_FALLBACK}"
+check_grep "prepare emits fallback warning on fetch failure" "\[WARN\] prepare: could not refresh origin" "${TEST_DIR}/prepare_warn.log"
+git -C "${SSH_REMOTE_CLONE}" worktree remove --force "${WT_FALLBACK}"
+
+# 9. Resilient GitHub CLI wrapper run_gh_resilient
+GH_MOCK_BIN="${TEST_DIR}/gh_mock_bin"
+mkdir -p "${GH_MOCK_BIN}"
+GH_COUNT_FILE="${TEST_DIR}/gh_count"
+GH_MODE_FILE="${TEST_DIR}/gh_mode"
+cat >"${GH_MOCK_BIN}/gh" <<MOCK
+#!/usr/bin/env bash
+cnt=0
+if [[ -f "${GH_COUNT_FILE}" ]]; then
+	cnt="\$(cat "${GH_COUNT_FILE}")"
+fi
+cnt=\$((cnt + 1))
+printf '%s\n' "\${cnt}" >"${GH_COUNT_FILE}"
+mode="\$(cat "${GH_MODE_FILE}" 2>/dev/null || echo "ok")"
+case "\${mode}" in
+transient_recover)
+	if [[ \${cnt} -lt 2 ]]; then
+		echo "HTTP 502 Bad Gateway" >&2
+		exit 1
+	fi
+	echo "[]"
+	exit 0
+	;;
+bad_json_recover)
+	if [[ \${cnt} -lt 2 ]]; then
+		echo "{not-valid-json"
+		exit 0
+	fi
+	echo "[]"
+	exit 0
+	;;
+bad_json_always)
+	echo "not-json"
+	exit 0
+	;;
+perm_401)
+	echo "HTTP 401: Bad credentials" >&2
+	exit 1
+	;;
+perm_not_logged_in)
+	echo "To get started with GitHub CLI, please run: gh auth login" >&2
+	echo "You are not logged into any GitHub hosts" >&2
+	exit 1
+	;;
+perm_404)
+	echo "HTTP 404: Not Found" >&2
+	exit 1
+	;;
+perm_repo)
+	echo "GraphQL: Could not resolve to a Repository with the name 'o/r'." >&2
+	exit 1
+	;;
+perm_flag)
+	echo "unknown flag: --bogus" >&2
+	exit 1
+	;;
+timeout_hang)
+	python3 -c 'import time; time.sleep(5)'
+	exit 0
+	;;
+esac
+echo "[]"
+MOCK
+chmod +x "${GH_MOCK_BIN}/gh"
+
+printf '0\n' >"${GH_COUNT_FILE}"
+printf 'transient_recover\n' >"${GH_MODE_FILE}"
+PATH="${GH_MOCK_BIN}:${PATH}" check_exit "check-collisions recovers from transient gh failure on retry" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/other.py"
+check "run_gh_resilient retried transient failure (2 attempts)" test "$(cat "${GH_COUNT_FILE}")" = "2"
+
+printf '0\n' >"${GH_COUNT_FILE}"
+printf 'bad_json_recover\n' >"${GH_MODE_FILE}"
+PATH="${GH_MOCK_BIN}:${PATH}" check_exit "check-throttle retries when gh --json emits invalid JSON" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}"
+check "run_gh_resilient retried invalid JSON output (2 attempts)" test "$(cat "${GH_COUNT_FILE}")" = "2"
+
+printf '0\n' >"${GH_COUNT_FILE}"
+printf 'bad_json_always\n' >"${GH_MODE_FILE}"
+PATH="${GH_MOCK_BIN}:${PATH}" check_exit "check-collisions exits 6 when gh --json always returns invalid JSON" 6 \
+	env PROACTIVE_GH_RETRIES=2 "${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/other.py"
+check_grep "run_gh_resilient reports attempt count on JSON failure" "failed after 2 attempt\(s\):" "${TEST_DIR}/check.log"
+
+for perm_mode in perm_401 perm_not_logged_in perm_404 perm_repo perm_flag; do
+	printf '0\n' >"${GH_COUNT_FILE}"
+	printf '%s\n' "${perm_mode}" >"${GH_MODE_FILE}"
+	PATH="${GH_MOCK_BIN}:${PATH}" check_exit "run_gh_resilient fails fast on ${perm_mode}" 6 \
+		env PROACTIVE_GH_RETRIES=3 "${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/other.py"
+	check "run_gh_resilient did not retry permanent error ${perm_mode}" test "$(cat "${GH_COUNT_FILE}")" = "1"
+	check_grep "run_gh_resilient reports 1 attempt on ${perm_mode}" "failed after 1 attempt\(s\):" "${TEST_DIR}/check.log"
+done
+
+printf '0\n' >"${GH_COUNT_FILE}"
+printf 'timeout_hang\n' >"${GH_MODE_FILE}"
+PATH="${GH_MOCK_BIN}:${PATH}" check_exit "run_gh_resilient bounds hung gh via PROACTIVE_GH_TIMEOUT_S" 6 \
+	env PROACTIVE_GH_RETRIES=2 PROACTIVE_GH_TIMEOUT_S=1 "${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${EMPTY_WT_ROOT}"
+check "run_gh_resilient retried hung gh up to PROACTIVE_GH_RETRIES=2" test "$(cat "${GH_COUNT_FILE}")" = "2"
+check_grep "run_gh_resilient reports 2 attempts after timeout" "failed after 2 attempt\(s\):" "${TEST_DIR}/check.log"
+
+# 10. Headless local-mode commit safety (worktree-scoped commit.gpgsign=false)
+WT_LOCAL_GPG="$("${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens bolt --mode local --worktree-root "${WT_ROOT}")"
+WT_DRAFT_GPG="$("${TARGET_SCRIPT}" prepare --repo-path "${LOCAL_CLONE}" --lens bolt --mode draft-pr --worktree-root "${WT_ROOT}")"
+check "prepare --mode local sets worktree commit.gpgsign=false" \
+	test "$(git -C "${WT_LOCAL_GPG}" config --get commit.gpgsign)" = "false"
+check "prepare --mode local does not alter primary checkout commit.gpgsign" \
+	check_git_config_unset "${LOCAL_CLONE}" "commit.gpgsign"
+check "prepare --mode draft-pr leaves commit.gpgsign unset" \
+	check_git_config_unset "${WT_DRAFT_GPG}" "commit.gpgsign"
+check "prepare --mode draft-pr leaves pushurl enabled" \
+	test "$(git -C "${WT_DRAFT_GPG}" remote get-url --push origin)" != "DISABLED"
+git -C "${LOCAL_CLONE}" worktree remove --force "${WT_LOCAL_GPG}"
+git -C "${LOCAL_CLONE}" worktree remove --force "${WT_DRAFT_GPG}"
+
+# 11. Multi-repo test runner & repo .venv resolution
+PTC_SERIES="$("${TARGET_SCRIPT}" print-test-cmd --repo-name series_correction_project_updated)"
+check "print-test-cmd maps series_correction_project_updated to scripts/tests/" \
+	test "${PTC_SERIES}" = "MPLBACKEND=Agg python3 -m pytest scripts/tests/ -q"
+
+mkdir -p "${TEST_DIR}/rvp_uv/.venv/bin" "${TEST_DIR}/rvp_wt/.venv/bin" "${TEST_DIR}/rvp_repo/.venv/bin"
+check "resolve_verify_path skips .venv when test_cmd uses uv run" \
+	check_resolve_verify_prefix "${TEST_DIR}/rvp_uv" "${TEST_DIR}/rvp_uv" "uv run pytest" "${TEST_DIR}/rvp_uv/.venv/bin:" "no"
+check "resolve_verify_path prefers wt_path/.venv/bin over repo_path/.venv/bin" \
+	check_resolve_verify_prefix "${TEST_DIR}/rvp_wt" "${TEST_DIR}/rvp_repo" "python3 -m pytest" "${TEST_DIR}/rvp_wt/.venv/bin:" "yes"
+check "resolve_verify_path falls back to repo_path/.venv/bin when wt has no .venv" \
+	check_resolve_verify_prefix "${TEST_DIR}/rvp_missing" "${TEST_DIR}/rvp_repo" "python3 -m pytest" "${TEST_DIR}/rvp_repo/.venv/bin:" "yes"
+
+VENV_CLONE="${TEST_DIR}/venv-repo"
+git clone -q "${BARE_REMOTE}" "${VENV_CLONE}"
+git -C "${VENV_CLONE}" remote set-head origin -a >/dev/null 2>&1
+mkdir -p "${VENV_CLONE}/.venv/bin"
+REAL_PY3_PATH="$(command -v python3)"
+cat >"${VENV_CLONE}/.venv/bin/python3" <<MOCK
+#!/usr/bin/env bash
+exec "${REAL_PY3_PATH}" "\$@"
+MOCK
+cat >"${VENV_CLONE}/.venv/bin/pytest_marker" <<'MOCK'
+#!/usr/bin/env bash
+printf 'VENV_STATE=%s TOOL=%s\n' "${VIRTUAL_ENV:-UNSET}" "$0" > .venv-verify.log
+exit 0
+MOCK
+cat >"${VENV_CLONE}/.venv/bin/ruff" <<'MOCK'
+#!/usr/bin/env bash
+if [[ -n "${REPO_VENV_RUFF_FAIL:-}" && -f "${REPO_VENV_RUFF_FAIL}" ]]; then
+	echo "src/venv_names.py:2:5: F821 Undefined name \`from_venv\`"
+	exit 1
+fi
+exit 0
+MOCK
+chmod +x "${VENV_CLONE}/.venv/bin/python3" "${VENV_CLONE}/.venv/bin/pytest_marker" "${VENV_CLONE}/.venv/bin/ruff"
+
+WT_VENV="$("${TARGET_SCRIPT}" prepare --repo-path "${VENV_CLONE}" --lens code-health --worktree-root "${WT_ROOT}")"
+cat >"${WT_VENV}/src/venv_names.py" <<'EOF'
+def ok(x):
+    return x + 1
+EOF
+# Run with NOLINT_BIN (no global ruff/uv) + poisoned VIRTUAL_ENV to prove cmd_verify
+# unsets VIRTUAL_ENV, injects repo .venv/bin onto PATH, and resolves .venv/bin/ruff.
+check_exit "verify resolves repo .venv/bin for test_cmd and static checks while unsetting VIRTUAL_ENV" 0 \
+	env PATH="${NOLINT_BIN}" HOME="${HOME}" VIRTUAL_ENV="/tmp/stale-other-venv" \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_VENV}" --lens code-health --test-cmd "pytest_marker"
+check_grep "verify cleared VIRTUAL_ENV and ran repo .venv tool" "^VENV_STATE=UNSET TOOL=.*\.venv/bin/pytest_marker$" "${WT_VENV}/.venv-verify.log"
+
+# Verify repo .venv/bin/ruff findings still block
+REPO_VENV_RUFF_FAIL_FLAG="${TEST_DIR}/repo_venv_ruff_fail"
+touch "${REPO_VENV_RUFF_FAIL_FLAG}"
+check_exit "verify blocks when repo .venv/bin/ruff reports F821" 2 \
+	env PATH="${NOLINT_BIN}" HOME="${HOME}" REPO_VENV_RUFF_FAIL="${REPO_VENV_RUFF_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_VENV}" --lens code-health --test-cmd "pytest_marker"
+check_grep "verify surfaces F821 from repo .venv/bin/ruff" "F821 Undefined name" "${TEST_DIR}/check.log"
+rm -f "${REPO_VENV_RUFF_FAIL_FLAG}"
+
+# Verify fallback to repo .venv/bin/python3 -m pyflakes when ruff is absent
+rm -f "${VENV_CLONE}/.venv/bin/ruff"
+cat >"${VENV_CLONE}/.venv/bin/python3" <<MOCK
+#!/usr/bin/env bash
+if [[ "\$1" == "-c" && "\${2:-}" == "import pyflakes" ]]; then
+	exit 0
+fi
+if [[ "\$1" == "-m" && "\$2" == "pyflakes" ]]; then
+	if [[ -n "\${REPO_VENV_PYFLAKES_FAIL:-}" && -f "\${REPO_VENV_PYFLAKES_FAIL}" ]]; then
+		echo "src/venv_names.py:2: undefined name 'from_pyflakes'"
+		exit 1
+	fi
+	exit 0
+fi
+exec "${REAL_PY3_PATH}" "\$@"
+MOCK
+chmod +x "${VENV_CLONE}/.venv/bin/python3"
+check_exit "verify falls back to repo .venv/bin/python3 pyflakes when ruff absent" 0 \
+	env PATH="${NOLINT_BIN}" HOME="${HOME}" \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_VENV}" --lens code-health --test-cmd "pytest_marker"
+touch "${REPO_VENV_RUFF_FAIL_FLAG}"
+check_exit "verify blocks when repo .venv/bin/python3 pyflakes reports finding" 2 \
+	env PATH="${NOLINT_BIN}" HOME="${HOME}" REPO_VENV_PYFLAKES_FAIL="${REPO_VENV_RUFF_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" verify --worktree "${WT_VENV}" --lens code-health --test-cmd "pytest_marker"
+check_grep "verify surfaces finding from repo .venv/bin/python3 pyflakes" "undefined name 'from_pyflakes'" "${TEST_DIR}/check.log"
+rm -f "${REPO_VENV_RUFF_FAIL_FLAG}"
+git -C "${VENV_CLONE}" worktree remove --force "${WT_VENV}"
+
+# 12. Self-healing cleanup --prune-merged
+PRUNE_BARE="${TEST_DIR}/prune-remote.git"
+PRUNE_SEED="${TEST_DIR}/prune-seed"
+PRUNE_CLONE="${TEST_DIR}/prune-repo"
+PRUNE_WT_ROOT="${TEST_DIR}/prune-worktrees"
+mkdir -p "${PRUNE_WT_ROOT}"
+git init -q --bare "${PRUNE_BARE}"
+git clone -q "${BARE_REMOTE}" "${PRUNE_SEED}"
+git -C "${PRUNE_SEED}" remote set-url origin "${PRUNE_BARE}"
+git -C "${PRUNE_SEED}" push -q origin HEAD:refs/heads/main
+git -C "${PRUNE_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${PRUNE_BARE}" "${PRUNE_CLONE}"
+git -C "${PRUNE_CLONE}" config user.email "test@example.com"
+git -C "${PRUNE_CLONE}" config user.name "Test User"
+git -C "${PRUNE_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+# (a) Fresh ancestor-merged worktree
+WT_P_ANC="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
+BR_P_ANC="$(git -C "${WT_P_ANC}" symbolic-ref --short HEAD)"
+git -C "${WT_P_ANC}" config user.email "test@example.com"
+git -C "${WT_P_ANC}" config user.name "Test User"
+echo "anc" >"${WT_P_ANC}/src/anc.py"
+git -C "${WT_P_ANC}" add -A
+git -C "${WT_P_ANC}" commit -q -m "⚡bolt: ancestor merged"
+git -C "${PRUNE_CLONE}" merge -q --no-edit "$(git -C "${WT_P_ANC}" rev-parse HEAD)"
+
+# (b) Fresh squash-merged worktree
+WT_P_SQ="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens code-health --worktree-root "${PRUNE_WT_ROOT}")"
+BR_P_SQ="$(git -C "${WT_P_SQ}" symbolic-ref --short HEAD)"
+git -C "${WT_P_SQ}" config user.email "test@example.com"
+git -C "${WT_P_SQ}" config user.name "Test User"
+echo "sq" >"${WT_P_SQ}/src/sq_prune.py"
+git -C "${WT_P_SQ}" add -A
+git -C "${WT_P_SQ}" commit -q -m "chore(qa): squash merged"
+git -C "${PRUNE_CLONE}" merge --squash -q "$(git -C "${WT_P_SQ}" rev-parse HEAD)"
+git -C "${PRUNE_CLONE}" commit -q -m "chore(qa): squash merged (#200)"
+git -C "${PRUNE_CLONE}" push -q origin main
+
+# (c) Fresh clean unmerged worktree (must survive)
+WT_P_UNMERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
+BR_P_UNMERGED="$(git -C "${WT_P_UNMERGED}" symbolic-ref --short HEAD)"
+git -C "${WT_P_UNMERGED}" config user.email "test@example.com"
+git -C "${WT_P_UNMERGED}" config user.name "Test User"
+echo "keep" >"${WT_P_UNMERGED}/src/keep_unmerged.py"
+git -C "${WT_P_UNMERGED}" add -A
+git -C "${WT_P_UNMERGED}" commit -q -m "⚡bolt: unmerged keep"
+
+# (d) Fresh dirty worktree (must survive)
+WT_P_DIRTY="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
+echo "dirty" >"${WT_P_DIRTY}/dirty.txt"
+
+# (e) Clean merged worktree on non-proactive/* branch: worktree removed, human branch kept!
+WT_P_HUMAN_BR="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
+git -C "${WT_P_HUMAN_BR}" checkout -q -b feature/human-keep
+
+# Default cleanup without --prune-merged keeps all fresh worktrees
+check_exit "plain cleanup preserves fresh merged worktrees (21d TTL intact)" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${PRUNE_WT_ROOT}"
+check "plain cleanup kept fresh WT_P_ANC" test -d "${WT_P_ANC}"
+check "plain cleanup kept fresh WT_P_SQ" test -d "${WT_P_SQ}"
+
+# cleanup --prune-merged removes merged worktrees & proactive/* branches, keeps unmerged/dirty & non-proactive branch
+check_exit "cleanup --prune-merged runs cleanly" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${PRUNE_WT_ROOT}" --prune-merged
+check "cleanup --prune-merged removed fresh ancestor-merged WT_P_ANC" test ! -d "${WT_P_ANC}"
+check "cleanup --prune-merged deleted proactive/* branch for WT_P_ANC" \
+	check_git_ref_absent "${PRUNE_CLONE}" "refs/heads/${BR_P_ANC}"
+check "cleanup --prune-merged removed fresh squash-merged WT_P_SQ" test ! -d "${WT_P_SQ}"
+check "cleanup --prune-merged deleted proactive/* branch for WT_P_SQ" \
+	check_git_ref_absent "${PRUNE_CLONE}" "refs/heads/${BR_P_SQ}"
+check "cleanup --prune-merged removed clean merged WT_P_HUMAN_BR" test ! -d "${WT_P_HUMAN_BR}"
+check "cleanup --prune-merged kept non-proactive branch feature/human-keep" \
+	git -C "${PRUNE_CLONE}" show-ref --verify --quiet "refs/heads/feature/human-keep"
+check "cleanup --prune-merged preserved unmerged WT_P_UNMERGED" test -d "${WT_P_UNMERGED}"
+check "cleanup --prune-merged kept unmerged branch" \
+	git -C "${PRUNE_CLONE}" show-ref --verify --quiet "refs/heads/${BR_P_UNMERGED}"
+check "cleanup --prune-merged preserved dirty WT_P_DIRTY" test -d "${WT_P_DIRTY}"
+
+# Preserve worktree when repo_path fetch fails
+PRUNE_BROKEN_CLONE="${TEST_DIR}/prune-broken-clone"
+git clone -q "${PRUNE_BARE}" "${PRUNE_BROKEN_CLONE}"
+git -C "${PRUNE_BROKEN_CLONE}" remote set-head origin -a >/dev/null 2>&1
+WT_P_BROKEN="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_BROKEN_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
+git -C "${PRUNE_BROKEN_CLONE}" remote set-url origin "${TEST_DIR}/nonexistent-prune-remote.git"
+check_exit "cleanup --prune-merged preserves worktree when origin fetch fails" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${PRUNE_WT_ROOT}" --prune-merged
+check "cleanup --prune-merged kept WT_P_BROKEN on fetch error" test -d "${WT_P_BROKEN}"
+
+# 13. preflight subcommand (validation, auto-heal, skip-fetch, gh auth, all 7 repo toolchains)
+PF_MOCK_BIN="${TEST_DIR}/pf_mock_bin"
+mkdir -p "${PF_MOCK_BIN}"
+PF_GH_FAIL="${TEST_DIR}/pf_gh_fail"
+cat >"${PF_MOCK_BIN}/gh" <<MOCK
+#!/usr/bin/env bash
+if [[ -f "${PF_GH_FAIL}" ]]; then
+	echo "You are not logged into any GitHub hosts" >&2
+	exit 1
+fi
+echo "Logged in to github.com"
+exit 0
+MOCK
+cat >"${PF_MOCK_BIN}/uv" <<'MOCK'
+#!/usr/bin/env bash
+if [[ -n "${PF_UV_FAIL:-}" && -f "${PF_UV_FAIL}" ]]; then
+	exit 1
+fi
+exit 0
+MOCK
+cat >"${PF_MOCK_BIN}/flake8" <<'MOCK'
+#!/usr/bin/env bash
+echo "7.0.0"
+exit 0
+MOCK
+cat >"${PF_MOCK_BIN}/Rscript" <<'MOCK'
+#!/usr/bin/env bash
+if [[ -n "${PF_RSCRIPT_FAIL:-}" && -f "${PF_RSCRIPT_FAIL}" ]]; then
+	exit 1
+fi
+exit 0
+MOCK
+chmod +x "${PF_MOCK_BIN}/gh" "${PF_MOCK_BIN}/uv" "${PF_MOCK_BIN}/flake8" "${PF_MOCK_BIN}/Rscript"
+
+# Build a clean python3 wrapper in PF_MOCK_BIN that answers pytest --version
+cat >"${PF_MOCK_BIN}/python3" <<MOCK
+#!/usr/bin/env bash
+if [[ "\$1" == "-m" && "\$2" == "pytest" && "\$3" == "--version" ]]; then
+	if [[ -n "\${PF_PYTEST_FAIL:-}" && -f "\${PF_PYTEST_FAIL}" ]]; then
+		exit 1
+	fi
+	echo "pytest 8.0.0"
+	exit 0
+fi
+exec "${REAL_PY3_PATH}" "\$@"
+MOCK
+chmod +x "${PF_MOCK_BIN}/python3"
+
+# 13a. Validation & auth/fetch failures
+check_exit "preflight requires --repo and --repo-path" 1 \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/ctrld-sync
+check_exit "preflight rejects non-git --repo-path" 1 \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/ctrld-sync --repo-path "${TEST_DIR}/not-a-git-repo"
+
+check_exit "preflight exits 6 on git fetch failure" 6 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/prune-broken-clone --repo-path "${PRUNE_BROKEN_CLONE}"
+check_grep "preflight reports git_fetch=failed" "^git_fetch=failed$" "${TEST_DIR}/check.log"
+check_grep "preflight reports preflight=FAIL on fetch failure" "^preflight=FAIL$" "${TEST_DIR}/check.log"
+
+touch "${PF_GH_FAIL}"
+check_exit "preflight exits 6 on gh auth failure" 6 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/personal-config --repo-path "${PRUNE_CLONE}"
+check_grep "preflight reports gh_auth=failed" "^gh_auth=failed$" "${TEST_DIR}/check.log"
+rm -f "${PF_GH_FAIL}"
+
+# --skip-fetch bypasses fetch failure on broken remote
+PF_SKIP_REPO="${TEST_DIR}/pf_repos/personal-config"
+mkdir -p "${TEST_DIR}/pf_repos"
+git clone -q "${PRUNE_BARE}" "${PF_SKIP_REPO}"
+git -C "${PF_SKIP_REPO}" remote set-url origin "${TEST_DIR}/nonexistent-skip-remote.git"
+check_exit "preflight --skip-fetch succeeds without network fetch" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/personal-config --repo-path "${PF_SKIP_REPO}" --skip-fetch
+check_grep "preflight --skip-fetch reports git_fetch=skipped" "^git_fetch=skipped$" "${TEST_DIR}/check.log"
+check_grep "preflight --skip-fetch reports preflight=PASS" "^preflight=PASS$" "${TEST_DIR}/check.log"
+
+# 13b. --auto-heal repairs missing origin/HEAD and prunes merged worktrees for that repo only
+PF_HEAL_WT_ROOT="${TEST_DIR}/pf_heal_wt"
+mkdir -p "${PF_HEAL_WT_ROOT}"
+PF_HEAL_REPO="${TEST_DIR}/pf_heal_repos/personal-config"
+mkdir -p "${TEST_DIR}/pf_heal_repos"
+git clone -q "${PRUNE_BARE}" "${PF_HEAL_REPO}"
+git -C "${PF_HEAL_REPO}" remote set-head origin -a >/dev/null 2>&1
+WT_HEAL_MERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${PF_HEAL_REPO}" --lens bolt --worktree-root "${PF_HEAL_WT_ROOT}")"
+WT_HEAL_OTHER="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PF_HEAL_WT_ROOT}")"
+# Delete origin/HEAD to verify --auto-heal restores it
+git -C "${PF_HEAL_REPO}" remote set-head origin -d >/dev/null 2>&1
+check_exit "preflight --auto-heal passes and heals repo state" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/personal-config --repo-path "${PF_HEAL_REPO}" --worktree-root "${PF_HEAL_WT_ROOT}" --auto-heal
+check_grep "preflight --auto-heal reports repo" "^repo=abhimehro/personal-config$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports git_fetch=ok" "^git_fetch=ok$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports fetch_transport" "^fetch_transport=direct$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports gh_auth=ok" "^gh_auth=ok$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports toolchain=ok" "^toolchain=ok$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports merged_worktrees_pruned=1" "^merged_worktrees_pruned=1$" "${TEST_DIR}/check.log"
+check_grep "preflight --auto-heal reports preflight=PASS" "^preflight=PASS$" "${TEST_DIR}/check.log"
+check "preflight --auto-heal restored origin/HEAD" \
+	git -C "${PF_HEAL_REPO}" symbolic-ref --quiet refs/remotes/origin/HEAD
+check "preflight --auto-heal pruned personal-config merged worktree" test ! -d "${WT_HEAL_MERGED}"
+check "preflight --auto-heal left other repo worktree untouched" test -d "${WT_HEAL_OTHER}"
+
+# 13c. All 7 repository toolchains + unmapped repo (PASS and FAIL exit 7)
+PF_REPOS_DIR="${TEST_DIR}/pf_all_repos"
+mkdir -p "${PF_REPOS_DIR}"
+
+make_pf_repo() {
+	local rname="$1"
+	local rdir="${PF_REPOS_DIR}/${rname}"
+	git clone -q "${PRUNE_BARE}" "${rdir}"
+	git -C "${rdir}" remote set-head origin -a >/dev/null 2>&1
+	printf '%s' "${rdir}"
+}
+
+# (1) ctrld-sync: uv + uv.lock + ruff F82
+PF_CTRLD="$(make_pf_repo "ctrld-sync")"
+check_exit "preflight ctrld-sync fails exit 7 when uv.lock is missing" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/ctrld-sync --repo-path "${PF_CTRLD}"
+check_grep "preflight ctrld-sync missing prints toolchain=missing" "^toolchain=missing$" "${TEST_DIR}/check.log"
+check_grep "preflight ctrld-sync missing prints remediation" "^remediation=" "${TEST_DIR}/check.log"
+check_grep "preflight ctrld-sync missing prints preflight=FAIL" "^preflight=FAIL$" "${TEST_DIR}/check.log"
+touch "${PF_CTRLD}/uv.lock"
+check_exit "preflight ctrld-sync passes with uv + uv.lock + ruff" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/ctrld-sync --repo-path "${PF_CTRLD}"
+check_grep "preflight ctrld-sync reports toolchain=ok" "^toolchain=ok$" "${TEST_DIR}/check.log"
+PF_UV_FAIL_FLAG="${TEST_DIR}/pf_uv_fail"
+touch "${PF_UV_FAIL_FLAG}"
+check_exit "preflight ctrld-sync fails exit 7 when uv run ruff fails" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" PF_UV_FAIL="${PF_UV_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/ctrld-sync --repo-path "${PF_CTRLD}"
+rm -f "${PF_UV_FAIL_FLAG}"
+
+# (2) personal-config: make, bash, python3
+PF_PC="$(make_pf_repo "personal-config")"
+check_exit "preflight personal-config passes with make/bash/python3" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/personal-config --repo-path "${PF_PC}"
+PF_NO_MAKE_BIN="${TEST_DIR}/pf_no_make_bin"
+mkdir -p "${PF_NO_MAKE_BIN}"
+for b in env git python3 bash cat grep sed mktemp dirname pwd rm touch uname tr cut head wc tee ln mkdir date sort awk find xargs basename expr test gh; do
+	if p="$(PATH="${PF_MOCK_BIN}:${PATH}" command -v "${b}" 2>/dev/null)"; then
+		ln -sf "${p}" "${PF_NO_MAKE_BIN}/${b}"
+	fi
+done
+check_exit "preflight personal-config fails exit 7 when make is missing" 7 \
+	env PATH="${PF_NO_MAKE_BIN}" "${TARGET_SCRIPT}" preflight --repo abhimehro/personal-config --repo-path "${PF_PC}"
+
+# (3) email-security-pipeline: pytest + F82
+PF_ESP="$(make_pf_repo "email-security-pipeline")"
+check_exit "preflight email-security-pipeline passes with pytest + F82" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/email-security-pipeline --repo-path "${PF_ESP}"
+PF_PYTEST_FAIL_FLAG="${TEST_DIR}/pf_pytest_fail"
+touch "${PF_PYTEST_FAIL_FLAG}"
+check_exit "preflight email-security-pipeline fails exit 7 without pytest" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" PF_PYTEST_FAIL="${PF_PYTEST_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/email-security-pipeline --repo-path "${PF_ESP}"
+rm -f "${PF_PYTEST_FAIL_FLAG}"
+check_exit "preflight email-security-pipeline fails exit 7 without F82 checker" 7 \
+	env PATH="${PF_NO_MAKE_BIN}" "${TARGET_SCRIPT}" preflight --repo abhimehro/email-security-pipeline --repo-path "${PF_ESP}"
+
+# (4) Hydrograph_Versus_Seatek_Sensors_Project: pytest + flake8 + F82
+PF_HYDRO="$(make_pf_repo "Hydrograph_Versus_Seatek_Sensors_Project")"
+check_exit "preflight Hydrograph passes with pytest + flake8 + F82" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project --repo-path "${PF_HYDRO}"
+check_exit "preflight Hydrograph fails exit 7 without flake8" 7 \
+	env PATH="${PF_NO_MAKE_BIN}" "${TARGET_SCRIPT}" preflight --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project --repo-path "${PF_HYDRO}"
+
+# (5) series_correction_project_updated: pytest + scripts/tests/ + F82
+PF_SERIES="$(make_pf_repo "series_correction_project_updated")"
+check_exit "preflight series_correction fails exit 7 without scripts/tests/" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/series_correction_project_updated --repo-path "${PF_SERIES}"
+mkdir -p "${PF_SERIES}/scripts/tests"
+check_exit "preflight series_correction passes with scripts/tests/ + pytest + F82" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/series_correction_project_updated --repo-path "${PF_SERIES}"
+
+# (6) Seatek_Analysis: Rscript + testthat
+PF_SEATEK="$(make_pf_repo "Seatek_Analysis")"
+check_exit "preflight Seatek_Analysis passes when Rscript loads testthat" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/Seatek_Analysis --repo-path "${PF_SEATEK}"
+PF_RSCRIPT_FAIL_FLAG="${TEST_DIR}/pf_rscript_fail"
+touch "${PF_RSCRIPT_FAIL_FLAG}"
+check_exit "preflight Seatek_Analysis fails exit 7 when testthat cannot load" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" PF_RSCRIPT_FAIL="${PF_RSCRIPT_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/Seatek_Analysis --repo-path "${PF_SEATEK}"
+rm -f "${PF_RSCRIPT_FAIL_FLAG}"
+
+# (7) repoprompt-ce: executable .agents/skills/rpce-contribution-check/scripts/preflight.sh
+PF_RPCE="$(make_pf_repo "repoprompt-ce")"
+check_exit "preflight repoprompt-ce fails exit 7 when rpce preflight.sh is missing" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/repoprompt-ce --repo-path "${PF_RPCE}"
+mkdir -p "${PF_RPCE}/.agents/skills/rpce-contribution-check/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' >"${PF_RPCE}/.agents/skills/rpce-contribution-check/scripts/preflight.sh"
+chmod +x "${PF_RPCE}/.agents/skills/rpce-contribution-check/scripts/preflight.sh"
+check_exit "preflight repoprompt-ce passes when rpce preflight.sh is executable" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/repoprompt-ce --repo-path "${PF_RPCE}"
+
+# (8) unmapped repo: python3 -m pytest --version
+PF_UNMAPPED="$(make_pf_repo "some-unmapped-repo")"
+check_exit "preflight unmapped repo passes with pytest" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight --repo abhimehro/some-unmapped-repo --repo-path "${PF_UNMAPPED}"
+touch "${PF_PYTEST_FAIL_FLAG}"
+check_exit "preflight unmapped repo fails exit 7 without pytest" 7 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" PF_PYTEST_FAIL="${PF_PYTEST_FAIL_FLAG}" \
+	"${TARGET_SCRIPT}" preflight --repo abhimehro/some-unmapped-repo --repo-path "${PF_UNMAPPED}"
+rm -f "${PF_PYTEST_FAIL_FLAG}"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
