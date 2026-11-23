@@ -36,6 +36,10 @@ log() {
 	echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [trunk-guard] $*" | tee -a "$LOG_FILE"
 }
 
+warn() {
+	echo "$(date '+%Y-%m-%d %H:%M:%S') [WARN] [trunk-guard] $*" | tee -a "$LOG_FILE" >&2
+}
+
 fail() {
 	echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] [trunk-guard] $*" | tee -a "$LOG_FILE" >&2
 }
@@ -119,6 +123,15 @@ for repo in "${repos[@]}"; do
 		fail "$name: trunk config validation failed after upgrade; inspect manually"
 		FAILED+=("$name")
 		continue
+	fi
+
+	# 3b. Prune unreferenced tool versions from the shared cache.
+	# Upgrades accumulate old versions in ~/.cache/trunk/tools (observed
+	# 2026-11-22: 276 stale versions, 4.9 GB). `trunk cache prune` removes
+	# only files no repository needs, so pinned versions (e.g. pinact@4.1.1)
+	# survive. Run per repo; the cache is shared, so later repos no-op.
+	if ! (cd "$repo" && trunk cache prune >>"$LOG_FILE" 2>&1); then
+		warn "trunk cache prune failed for $name (non-fatal)"
 	fi
 
 	# 4. Commit only trunk.yaml if changed.
