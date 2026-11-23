@@ -1065,7 +1065,11 @@ cmd_verify() {
 	# When falling back to a primary checkout .venv (no worktree .venv), editable
 	# installs can point sys.path at the primary checkout unless wt_path comes first.
 	if [[ ${test_cmd} != *"uv run"* ]] && [[ ! -d "${wt_path}/.venv" ]]; then
-		py_env+=("PYTHONPATH=${wt_path}${PYTHONPATH:+:${PYTHONPATH}}")
+		if [[ -d "${wt_path%/}/src" ]]; then
+			py_env+=("PYTHONPATH=${wt_path%/}/src:${wt_path%/}${PYTHONPATH:+:${PYTHONPATH}}")
+		else
+			py_env+=("PYTHONPATH=${wt_path%/}${PYTHONPATH:+:${PYTHONPATH}}")
+		fi
 	fi
 
 	(
@@ -1772,13 +1776,23 @@ prune_merged_worktrees() {
 			continue
 		fi
 
+		local cand_head=""
+		cand_head="$(git -C "${dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+		if [[ -z ${cand_head} ]] || [[ ${cand_head} == "${base_sha}" ]]; then
+			continue
+		fi
+
 		if has_unreviewed_worktree_commits "${dir}" 1; then
 			echo "[WARN] Preserving worktree with unmerged candidate commits: ${dir}" >&2
 			continue
 		fi
 
-		local cand_head=""
-		cand_head="$(git -C "${dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+		local current_head=""
+		current_head="$(git -C "${dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+		if [[ ${current_head} != "${cand_head}" ]]; then
+			echo "[WARN] Preserving worktree whose HEAD changed during integration check: ${dir}" >&2
+			continue
+		fi
 		local wt_branch=""
 		wt_branch="$(git -C "${dir}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
 		if git -C "${repo_path}" worktree remove "${dir}" 2>/dev/null; then
@@ -1889,11 +1903,16 @@ cmd_cleanup() {
 	done <<<"${stale_dirs}"
 }
 
-heal_origin_head() {
+origin_head_resolves() {
 	local repo_path="$1"
 	local existing_sym=""
 	existing_sym="$(git -C "${repo_path}" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null || true)"
-	if [[ -n ${existing_sym} ]] && git -C "${repo_path}" rev-parse --verify --quiet "${existing_sym}^{commit}" >/dev/null 2>&1; then
+	[[ -n ${existing_sym} ]] && git -C "${repo_path}" rev-parse --verify --quiet "${existing_sym}^{commit}" >/dev/null 2>&1
+}
+
+heal_origin_head() {
+	local repo_path="$1"
+	if origin_head_resolves "${repo_path}"; then
 		return 0
 	fi
 
@@ -1910,7 +1929,7 @@ heal_origin_head() {
 				-c "url.https://github.com/.insteadOf=ssh://git@github.com/" \
 				remote set-head origin -a >/dev/null 2>&1 || true
 		fi
-		if ! git -C "${repo_path}" symbolic-ref --quiet refs/remotes/origin/HEAD >/dev/null 2>&1; then
+		if ! origin_head_resolves "${repo_path}"; then
 			run_with_timeout 15 env GIT_TERMINAL_PROMPT=0 \
 				git -C "${repo_path}" \
 				-c credential.helper= \
@@ -1924,7 +1943,7 @@ heal_origin_head() {
 			git -C "${repo_path}" remote set-head origin -a >/dev/null 2>&1 || true
 	fi
 
-	if ! git -C "${repo_path}" symbolic-ref --quiet refs/remotes/origin/HEAD >/dev/null 2>&1; then
+	if ! origin_head_resolves "${repo_path}"; then
 		if git -C "${repo_path}" rev-parse --verify --quiet refs/remotes/origin/main >/dev/null 2>&1; then
 			git -C "${repo_path}" remote set-head origin main >/dev/null 2>&1 || true
 		fi

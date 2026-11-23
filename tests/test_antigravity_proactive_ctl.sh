@@ -1144,6 +1144,81 @@ check_exit "base-check uses candidate PYTHONPATH ahead of repo editable path on 
 	"${CTL_SCRIPT}" base-check --repo ed-repo --worktree "${WT_ED}" --test-cmd "edcheck"
 check_grep "base-check classifies broken candidate with editable venv fallback as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
 
+# 15. CodeRabbit pass-2 regressions ([4], [8] src-layout, [20])
+
+# [8] src/-layout candidate PYTHONPATH takes precedence over primary src/ editable path
+SRCE_BARE="${TEST_DIR}/srce-remote.git"
+SRCE_SEED="${TEST_DIR}/srce-seed"
+SRCE_CLONE="${TEST_DIR}/srce-repo"
+SRCE_WT_ROOT="${TEST_DIR}/srce-wt"
+mkdir -p "${SRCE_SEED}/src/srcpkg" "${SRCE_WT_ROOT}"
+git init -q --bare "${SRCE_BARE}"
+git init -q "${SRCE_SEED}"
+git -C "${SRCE_SEED}" config user.email "test@example.com"
+git -C "${SRCE_SEED}" config user.name "Test"
+printf 'OK = True\n' >"${SRCE_SEED}/src/srcpkg/__init__.py"
+git -C "${SRCE_SEED}" add src/srcpkg/__init__.py
+git -C "${SRCE_SEED}" commit -q -m "init src-layout pkg"
+git -C "${SRCE_SEED}" branch -M main
+git -C "${SRCE_SEED}" remote add origin "${SRCE_BARE}"
+git -C "${SRCE_SEED}" push -q -u origin main
+git clone -q "${SRCE_BARE}" "${SRCE_CLONE}"
+mkdir -p "${SRCE_CLONE}/.venv/bin"
+cat >"${SRCE_CLONE}/.venv/bin/srccheck" <<MOCK
+#!${REAL_PYTHON3}
+import os
+import sys
+
+sys.path.append(os.path.join("${SRCE_CLONE}", "src"))
+pp = os.environ.get("PYTHONPATH", "")
+assert pp, "expected PYTHONPATH on src-layout repo .venv fallback"
+assert os.path.realpath(pp.split(":")[0]) == os.path.realpath(os.path.join(os.getcwd(), "src")), (pp, os.getcwd())
+import srcpkg  # noqa: E402
+assert srcpkg.OK, f"imported broken srcpkg from {srcpkg.__file__}"
+MOCK
+chmod +x "${SRCE_CLONE}/.venv/bin/srccheck"
+WT_SRCE="$("${WT_SCRIPT}" prepare --repo-path "${SRCE_CLONE}" --lens code-health --worktree-root "${SRCE_WT_ROOT}")"
+printf 'OK = False\n' >"${WT_SRCE}/src/srcpkg/__init__.py"
+git -C "${WT_SRCE}" commit -aq -m "break candidate srcpkg"
+check_exit "base-check prepends src/ to PYTHONPATH for src-layout repos" 2 \
+	"${CTL_SCRIPT}" base-check --repo srce-repo --worktree "${WT_SRCE}" --test-cmd "srccheck"
+check_grep "base-check classifies broken src-layout candidate as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
+
+# [4] Custom sidecar referencing .gemini/config/proactive/scripts/ without marker survives stage-repo and disable
+export HOME="${TEST_DIR}/sidecar-ownership-home"
+mkdir -p "${HOME}/.gemini/config/sidecars/proactive-sweep-ctrld-sync"
+CUSTOM_REF_SIDECAR="${HOME}/.gemini/config/sidecars/proactive-sweep-ctrld-sync/sidecar.json"
+printf '{"builtin":"schedule","args":["0 9 * * *","%s/.gemini/config/proactive/scripts/custom.sh"]}\n' "${HOME}" >"${CUSTOM_REF_SIDECAR}"
+printf '{"enabled":true}\n' >"${HOME}/.gemini/config/sidecars/proactive-sweep-ctrld-sync/user_config.json"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+check_exit "stage-repo refuses overwrite of unmanaged sidecar referencing proactive scripts" 1 \
+	"${CTL_SCRIPT}" stage-repo --repo ctrld-sync
+check "stage-repo preserved custom sidecar lacking ownership marker" grep -q "custom.sh" "${CUSTOM_REF_SIDECAR}"
+"${CTL_SCRIPT}" disable >/dev/null 2>&1
+check "disable preserved custom sidecar lacking ownership marker" test -f "${CUSTOM_REF_SIDECAR}"
+
+# [20] Custom proactive-safety-guard entry without proactive marker survives disable alongside custom runtime hook
+export HOME="${TEST_DIR}/custom-guard-entry-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+python3 - "${HOME}/.gemini/config/hooks.json" <<'PYTEST'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(json.dumps({
+    "proactive-safety-guard": {"enabled": True, "PreToolUse": [{"matcher": "Edit", "hooks": [{"type": "command", "command": "echo user-custom-guard"}]}]},
+    "other-runtime-hook": {"cmd": "$HOME/.gemini/config/proactive/hooks/helper.py"},
+}) + "\n", encoding="utf-8")
+PYTEST
+"${CTL_SCRIPT}" install >/dev/null 2>&1
+"${CTL_SCRIPT}" disable >/dev/null 2>&1
+check "disable preserves custom proactive-safety-guard when it lacks proactive marker" python3 - "${HOME}/.gemini/config/hooks.json" <<'PYTEST'
+import json, pathlib, sys
+d = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert "proactive-safety-guard" in d, d
+assert "user-custom-guard" in json.dumps(d["proactive-safety-guard"])
+assert "other-runtime-hook" in d
+PYTEST
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

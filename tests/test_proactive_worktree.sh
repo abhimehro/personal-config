@@ -430,7 +430,7 @@ touch "${WT_SEM}/uv.lock"
 check_exit "uv static checks pass --frozen when uv.lock exists" 0 \
 	env PATH="${UV_MOCK_BIN}" HOME="${HOME}" "${TARGET_SCRIPT}" verify \
 	--worktree "${WT_SEM}" --lens code-health --allow-harness-changes --test-cmd "true"
-check_grep "uv static check invocation includes --frozen with uv.lock" "(^| )--frozen( |$)" "${UV_ARGS_LOG}"
+check_grep "uv static check invocation includes --frozen with uv.lock" "(^| )run --frozen --all-extras ruff check( |$)" "${UV_ARGS_LOG}"
 rm -f "${WT_SEM}/uv.lock"
 : >"${UV_ARGS_LOG}"
 check_exit "uv static checks omit --frozen when uv.lock is absent" 0 \
@@ -1525,6 +1525,13 @@ echo "dirty" >"${WT_P_DIRTY}/dirty.txt"
 # (e) Clean merged worktree on non-proactive/* branch: worktree removed, human branch kept!
 WT_P_HUMAN_BR="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PRUNE_WT_ROOT}")"
 git -C "${WT_P_HUMAN_BR}" checkout -q -b feature/human-keep
+git -C "${WT_P_HUMAN_BR}" config user.email "test@example.com"
+git -C "${WT_P_HUMAN_BR}" config user.name "Test User"
+echo "human" >"${WT_P_HUMAN_BR}/src/human_merged.py"
+git -C "${WT_P_HUMAN_BR}" add -A
+git -C "${WT_P_HUMAN_BR}" commit -q -m "human merged commit"
+git -C "${PRUNE_CLONE}" merge -q --no-edit "$(git -C "${WT_P_HUMAN_BR}" rev-parse HEAD)"
+git -C "${PRUNE_CLONE}" push -q origin main
 
 # Default cleanup without --prune-merged keeps all fresh worktrees
 check_exit "plain cleanup preserves fresh merged worktrees (21d TTL intact)" 0 \
@@ -1645,6 +1652,17 @@ mkdir -p "${TEST_DIR}/pf_heal_repos"
 git clone -q "${PRUNE_BARE}" "${PF_HEAL_REPO}"
 git -C "${PF_HEAL_REPO}" remote set-head origin -a >/dev/null 2>&1
 WT_HEAL_MERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${PF_HEAL_REPO}" --lens bolt --worktree-root "${PF_HEAL_WT_ROOT}")"
+printf 'merged candidate\n' >"${WT_HEAL_MERGED}/pf_heal_merged.txt"
+git -C "${WT_HEAL_MERGED}" add pf_heal_merged.txt
+git -C "${WT_HEAL_MERGED}" commit -q -m "candidate commit merged upstream"
+PF_HEAL_UPDATER="${TEST_DIR}/pf_heal_updater"
+git clone -q "${PRUNE_BARE}" "${PF_HEAL_UPDATER}"
+git -C "${PF_HEAL_UPDATER}" config user.email "test@example.com"
+git -C "${PF_HEAL_UPDATER}" config user.name "Test"
+git -C "${PF_HEAL_UPDATER}" fetch -q "${WT_HEAL_MERGED}" "$(git -C "${WT_HEAL_MERGED}" rev-parse HEAD)"
+git -C "${PF_HEAL_UPDATER}" merge --ff-only -q FETCH_HEAD
+git -C "${PF_HEAL_UPDATER}" push -q origin main
+WT_FRESH_ZERO="$("${TARGET_SCRIPT}" prepare --repo-path "${PF_HEAL_REPO}" --lens code-health --worktree-root "${PF_HEAL_WT_ROOT}")"
 WT_HEAL_OTHER="$("${TARGET_SCRIPT}" prepare --repo-path "${PRUNE_CLONE}" --lens bolt --worktree-root "${PF_HEAL_WT_ROOT}")"
 # Delete origin/HEAD to verify --auto-heal restores it
 git -C "${PF_HEAL_REPO}" remote set-head origin -d >/dev/null 2>&1
@@ -1661,6 +1679,7 @@ check_grep "preflight --auto-heal reports preflight=PASS" "^preflight=PASS$" "${
 check "preflight --auto-heal restored origin/HEAD" \
 	git -C "${PF_HEAL_REPO}" symbolic-ref --quiet refs/remotes/origin/HEAD
 check "preflight --auto-heal pruned personal-config merged worktree" test ! -d "${WT_HEAL_MERGED}"
+check "preflight --auto-heal preserved zero-commit fresh worktree" test -d "${WT_FRESH_ZERO}"
 check "preflight --auto-heal left other repo worktree untouched" test -d "${WT_HEAL_OTHER}"
 
 # 13c. All 7 repository toolchains + unmapped repo (PASS and FAIL exit 7)
@@ -2017,6 +2036,16 @@ check_exit "TTL cleanup handles corrupt base_sha safely" 0 \
 check "TTL cleanup preserves expired worktree whose base_sha is missing" test -d "${WT_BROKEN_BASE}"
 
 WT_ISO_THIS="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_MAIN}" --lens code-health --worktree-root "${ISO_WT_ROOT}")"
+printf 'iso merged\n' >"${WT_ISO_THIS}/iso_merged.txt"
+git -C "${WT_ISO_THIS}" add iso_merged.txt
+git -C "${WT_ISO_THIS}" commit -q -m "iso candidate commit"
+ISO_UPDATER="${TEST_DIR}/iso_updater"
+git clone -q "${PRUNE_BARE}" "${ISO_UPDATER}"
+git -C "${ISO_UPDATER}" config user.email "test@example.com"
+git -C "${ISO_UPDATER}" config user.name "Test"
+git -C "${ISO_UPDATER}" fetch -q "${WT_ISO_THIS}" "$(git -C "${WT_ISO_THIS}" rev-parse HEAD)"
+git -C "${ISO_UPDATER}" merge --ff-only -q FETCH_HEAD
+git -C "${ISO_UPDATER}" push -q origin main
 WT_ISO_OTHER="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_OTHER}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
 WT_ISO_SIB="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj-tools --repo-path "${ISO_SIB}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
 git -C "${WT_BROKEN_BASE}" commit --allow-empty -q -m "keep unmerged broken-base candidate distinct"

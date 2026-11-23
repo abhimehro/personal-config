@@ -155,8 +155,11 @@ atomic_install_file() {
 		echo "[WARN] Moved unexpected directory aside from ${dst} -> ${invalid_backup}" >&2
 	fi
 
-	install -m "${mode}" "${src}" "${tmp_dst}"
-	if ! mv -f "${tmp_dst}" "${dst}"; then
+	if ! install -m "${mode}" "${src}" "${tmp_dst}"; then
+		rm -f "${tmp_dst}"
+		return 1
+	fi
+	if ! python3 -c 'import os, sys; os.replace(sys.argv[1], sys.argv[2])' "${tmp_dst}" "${dst}"; then
 		rm -f "${tmp_dst}"
 		return 1
 	fi
@@ -367,16 +370,29 @@ deploy_hooks_file() {
 		exit 1
 	fi
 
+	mkdir -p "$(dirname "${dst_file}")" "$(dirname "${stamp_file}")"
+
+	local backup_file=""
 	if [[ -L ${dst_file} ]]; then
-		rm -f "${dst_file}"
+		:
 	elif [[ -f ${dst_file} ]] && ! is_hooks_file_managed "${dst_file}" "${stamp_file}" "${legacy_root}"; then
 		local backup_ts=""
 		backup_ts="$(date -u +%Y%m%d_%H%M%S)"
-		mv "${dst_file}" "${dst_file}.backup.${backup_ts}"
+		backup_file="${dst_file}.backup.${backup_ts}"
+		if ! cp -p "${dst_file}" "${backup_file}" || ! chmod 600 "${backup_file}"; then
+			rm -f "${backup_file}"
+			echo "[ERROR] Failed to back up unmanaged hooks file: ${dst_file}" >&2
+			return 1
+		fi
 	fi
 
-	mkdir -p "$(dirname "${dst_file}")" "$(dirname "${stamp_file}")"
-	atomic_install_file 600 "${src_file}" "${dst_file}"
+	if ! atomic_install_file 600 "${src_file}" "${dst_file}"; then
+		if [[ -n ${backup_file} ]] && [[ -f ${backup_file} ]] && [[ ! -e ${dst_file} ]]; then
+			cp -p "${backup_file}" "${dst_file}" 2>/dev/null || true
+		fi
+		echo "[ERROR] Failed to install hooks file into ${dst_file}" >&2
+		return 1
+	fi
 
 	local tmp_stamp="${stamp_file}.tmp.$$"
 	file_sha256 "${dst_file}" >"${tmp_stamp}"
@@ -618,7 +634,7 @@ for entry in pre_tool:
     for hook in hooks:
         if isinstance(hook, dict) and hook.get("type") == "command":
             cmd = hook.get("command")
-            if isinstance(cmd, str) and "proactive-guard.py" in cmd:
+            if isinstance(cmd, str) and ".gemini/config/proactive/hooks/proactive-guard.py" in cmd:
                 found = True
                 break
     if found:
@@ -919,9 +935,9 @@ repo_kind = sys.argv[6]
 sweep_cron = sys.argv[7]
 triage_cron = sys.argv[8]
 
-marker = ".gemini/config/proactive/scripts/"
+marker_name = ".managed-by-proactive-ctl"
 for existing_path in (sweep_path, triage_path):
-    if existing_path.is_symlink():
+    if existing_path.parent.is_symlink() or existing_path.is_symlink():
         sys.stderr.write(
             f"[ERROR] Refusing to overwrite symlinked sidecar: {existing_path}\n"
         )
@@ -932,7 +948,7 @@ for existing_path in (sweep_path, triage_path):
                 f"[ERROR] Refusing to overwrite non-file sidecar path: {existing_path}\n"
             )
             sys.exit(1)
-        if marker not in existing_path.read_text(encoding="utf-8", errors="replace"):
+        if not (existing_path.parent / marker_name).is_file():
             sys.stderr.write(
                 f"[ERROR] Refusing to overwrite non-managed custom sidecar: {existing_path}\n"
             )
@@ -944,6 +960,7 @@ reports_dir = f"{home_dir}/.gemini/antigravity/proactive-reports"
 worktrees_dir = f"{home_dir}/.gemini/antigravity/worktrees"
 skills_dir = f"{home_dir}/.gemini/config/skills"
 quoted_cron = shlex.quote(sweep_cron)
+quoted_repo_path = shlex.quote(repo_path)
 
 if repo_kind == "research":
     lens_guidance = (
@@ -966,11 +983,11 @@ sweep_prompt = (
     f"(GitHub repo abhimehro/{repo_name}) in strict local-only mode (2B). "
     f"Time-box this run to 15 minutes and produce at most 1 verified improvement ({lens_guidance}). "
     f"Read {repo_path}/AGENTS.md (and {repo_path}/.jules/ journals if present) first, "
-    f"run Step 0 {worktree_sh} preflight --repo abhimehro/{repo_name} --repo-path {repo_path} --auto-heal, "
+    f"run Step 0 {worktree_sh} preflight --repo abhimehro/{repo_name} --repo-path {quoted_repo_path} --auto-heal, "
     f"then run {worktree_sh} cleanup --ttl-days 21 and check-throttle --repo abhimehro/{repo_name} "
-    f"--include-worktrees --repo-path {repo_path}, check open-PR file collisions via check-collisions "
+    f"--include-worktrees --repo-path {quoted_repo_path}, check open-PR file collisions via check-collisions "
     f"before editing, prepare an isolated local worktree via prepare --repo abhimehro/{repo_name} "
-    f"--repo-path {repo_path} --lens <lens> --mode local, "
+    f"--repo-path {quoted_repo_path} --lens <lens> --mode local, "
     f"{verify_guidance} without modifying build, lock, script, or test harnesses, "
     "and if verify reports a semantic test-coverage BLOCK restore the lost coverage rather than deleting "
     "tests or pinning --expected-test-count, resolve SWEEP_DATE via "
@@ -1052,12 +1069,12 @@ triage_doc = {
 }
 
 
-def atomic_write_0600(dst: pathlib.Path, doc: dict) -> None:
+def atomic_write_text_0600(dst: pathlib.Path, text: str) -> None:
     tmp = dst.with_name(f".{dst.name}.tmp.{os.getpid()}")
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(json.dumps(doc, indent=2) + "\n")
+            handle.write(text)
         os.chmod(tmp, 0o600)
         os.replace(tmp, dst)
     except Exception:
@@ -1066,8 +1083,10 @@ def atomic_write_0600(dst: pathlib.Path, doc: dict) -> None:
         raise
 
 
-atomic_write_0600(sweep_path, sweep_doc)
-atomic_write_0600(triage_path, triage_doc)
+atomic_write_text_0600(sweep_path, json.dumps(sweep_doc, indent=2) + "\n")
+atomic_write_text_0600(triage_path, json.dumps(triage_doc, indent=2) + "\n")
+atomic_write_text_0600(sweep_path.parent / marker_name, "managed\n")
+atomic_write_text_0600(triage_path.parent / marker_name, "managed\n")
 PY
 
 	echo "Staged proactive-sweep-${repo_name} (${repo_kind}) at ${sweep_dir}/sidecar.json"
@@ -1697,7 +1716,11 @@ cmd_base_check() {
 				seg_path="${dir%/}/.venv/bin:${PATH}"
 			elif [[ -n ${fallback_repo} ]] && [[ -d "${fallback_repo%/}/.venv/bin" ]]; then
 				seg_path="${fallback_repo%/}/.venv/bin:${PATH}"
-				seg_pythonpath="${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
+				if [[ -d "${dir%/}/src" ]]; then
+					seg_pythonpath="${dir%/}/src:${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
+				else
+					seg_pythonpath="${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
+				fi
 			fi
 		fi
 		(
@@ -1830,7 +1853,7 @@ if not isinstance(data, dict):
 if not contains_marker(data):
     sys.exit(0)
 
-if "proactive-safety-guard" in data:
+if "proactive-safety-guard" in data and contains_marker(data["proactive-safety-guard"]):
     data.pop("proactive-safety-guard", None)
     rendered = json.dumps(data, indent=2) + "\n"
     tmp = path.with_name(f".{path.name}.tmp.{os.getpid()}")
@@ -1863,8 +1886,8 @@ cmd_disable() {
 	for dyn_dir in "${config_dir}/sidecars"/proactive-sweep-* "${config_dir}/sidecars"/proactive-triage-*; do
 		[[ ! -L ${dyn_dir} ]] && [[ -d ${dyn_dir} ]] || continue
 		local dyn_sidecar="${dyn_dir}/sidecar.json"
-		if [[ ! -L ${dyn_sidecar} ]] && [[ -f ${dyn_sidecar} ]] && grep -qF '.gemini/config/proactive/scripts/' "${dyn_sidecar}" 2>/dev/null; then
-			rm -f "${dyn_sidecar}" "${dyn_dir}/user_config.json"
+		if [[ ! -L ${dyn_sidecar} ]] && [[ -f ${dyn_sidecar} ]] && [[ -f "${dyn_dir}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			rm -f "${dyn_sidecar}" "${dyn_dir}/user_config.json" "${dyn_dir}/${PROACTIVE_MANAGED_MARKER}"
 			rmdir "${dyn_dir}" 2>/dev/null || true
 		fi
 	done
