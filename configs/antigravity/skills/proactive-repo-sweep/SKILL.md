@@ -36,17 +36,53 @@ listed pilot subset) using isolated worktrees and strict approval gates.
 
 ## Step-by-Step Sweep Protocol
 
+### Step 0: Pre-Flight & Self-Healing
+
+Before touching any repository state, run pre-flight validation and
+self-healing:
+
+```bash
+"$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" preflight \
+  --repo "abhimehro/<repo>" \
+  --repo-path "$HOME/dev/<repo>" \
+  --auto-heal
+```
+
+`preflight --auto-heal` verifies and repairs headless readiness before the sweep
+burns time on edits:
+
+1. Prunes stale git worktree entries (`git worktree prune`) and removes clean,
+   already-merged `proactive-<repo>-*` worktrees (including squash-merged
+   candidates).
+2. Refreshes `origin` via headless HTTPS+`gh` fetch fallback (`https-gh` using
+   `gh auth git-credential` when `origin` is a GitHub SSH URL, falling back to
+   `https-anon` and bounded `ssh -o BatchMode=yes`), avoiding interactive
+   1Password Touch ID stalls in unattended cron sessions.
+3. Confirms `gh auth status` within a bounded timeout (exits `6` on fetch or
+   auth failure).
+4. Verifies the target repository's verification toolchain is ready (exits `7`
+   with an actionable `remediation=` hint if `uv`, `.venv`, `pytest`, `flake8`,
+   `ruff`/`pyflakes`, `Rscript`+`testthat`, or `preflight.sh` is missing).
+
+If `preflight` exits `6` or `7`, stop early and write a short digest noting the
+failure and any `remediation=` command. Operators can also repair deployed
+skills/hooks/runtime files and run pre-flight checks across repos with:
+
+```bash
+"$HOME/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh" doctor --fix
+```
+
 ### Step 1: Cleanup Expired Reviewed Worktrees and Check Local + Remote Throttle
 
 1. Prune clean, already-merged or no-op worktrees older than 21 days (longer
    than the 2-week pilot; both dirty worktrees and clean worktrees holding
    unmerged commits ahead of `base_sha` are preserved automatically):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh cleanup --ttl-days 21`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh cleanup --ttl-days 21`
 2. Check both the local `2B` candidate worktree throttle (`>= 2` local dirty or
    unmerged-commit candidate worktrees for `<repo>`, or any `> 7` days old) and
    the remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
    `> 7` days old):
-   `$HOME/dev/personal-config/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
    `--include-worktrees` counts candidates registered in git under **any**
    worktree root, not only the default one, so a candidate prepared elsewhere
    cannot slip past the cap. Human worktrees (no `proactive-meta.json`, branch
@@ -82,7 +118,7 @@ that exact path — neither an open PR in `abhimehro/<repo>` nor a live local
 candidate worktree:
 
 ```bash
-"$HOME/dev/personal-config/scripts/proactive-worktree.sh" check-collisions \
+"$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" check-collisions \
   --repo "abhimehro/<repo>" \
   --file "<relpath>" \
   --include-worktrees \
@@ -106,13 +142,17 @@ why in the digest.
 
 ### Step 4: Isolated Worktree Edit and Hardened Verification
 
-1. Prepare an isolated worktree (fetches `origin`, resolves default branch via
-   `refs/remotes/origin/HEAD`, creates a collision-proof
-   `YYYYMMDDTHHMMSSZ-pid-nonce` worktree, and sets
-   `remote.origin.pushurl = DISABLED` in `local` mode):
+1. Prepare an isolated worktree (refreshes `origin` via headless HTTPS+`gh`
+   fetch fallback, resolves default branch via `refs/remotes/origin/HEAD`,
+   creates a collision-proof `YYYYMMDDTHHMMSSZ-pid-nonce` worktree, and in
+   `local` mode sets worktree-scoped `remote.origin.pushurl = DISABLED` and
+   `commit.gpgsign = false` so unattended `2B` local commits never block on
+   1Password Touch ID prompts while leaving `~/.gitconfig` and primary checkouts
+   untouched):
 
    ```bash
-   WT_PATH="$("$HOME/dev/personal-config/scripts/proactive-worktree.sh" prepare \
+   WT_PATH="$("$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" prepare \
+     --repo "abhimehro/<repo>" \
      --repo-path "$HOME/dev/<repo>" \
      --lens "<lens>" \
      --mode local)"
@@ -125,11 +165,13 @@ why in the digest.
    `.ruff.toml`, `.python-version`, `DESCRIPTION`, `NAMESPACE`, `.Renviron`,
    `scripts/*`, `Scripts/*`, `conftest.py`, `*/conftest.py`, `tests/*`,
    `*/tests/*`, `Tests/*`, `.jules/sentinel.md`).
-3. Run hardened verification (strips `SSH_AUTH_SOCK`, `GH_TOKEN`, and
-   `GITHUB_TOKEN` inside verification subprocesses):
+3. Run hardened verification (strips `SSH_AUTH_SOCK`, `GH_TOKEN`,
+   `GITHUB_TOKEN`, and `VIRTUAL_ENV`, and auto-prepends `<wt>/.venv/bin` or
+   `<repo_path>/.venv/bin` to `PATH` when the test command does not use
+   `uv run`):
 
    ```bash
-   "$HOME/dev/personal-config/scripts/proactive-worktree.sh" verify \
+   "$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" verify \
      --worktree "$WT_PATH" \
      --lens "<lens>"
    ```
@@ -160,7 +202,16 @@ why in the digest.
 
    - A gate the sweep itself controls — a tamper-evident build/test path, the
      semantic test-coverage gate, or the `--numeric-check-cmd` assertion — is
-     caused by the change by construction. Discard `"$WT_PATH"` and report why.
+     caused by the change by construction. Record the report first, then
+     force-remove the uncommitted worktree only after confirming the digest and
+     worktree variables are non-empty:
+
+     ```bash
+     [[ -s "$DIGEST_PATH" && -n "$WT_PATH" && -n "$BRANCH_NAME" ]] && \
+       git -C "$HOME/dev/<repo>" worktree remove --force "$WT_PATH" && \
+       git -C "$HOME/dev/<repo>" branch -D "$BRANCH_NAME"
+     ```
+
    - A failure in the repository's own test or build command is **not**
      automatically the candidate's fault. Jules stranded four good PRs on base
      breakage: deleting a cyclomatic-complexity-1 helper _lowered_ CodeScene
@@ -170,8 +221,7 @@ why in the digest.
      a provisional `Substatus: GATE_FAILURE` in the digest, and stop. The
      `08:35` triage slot runs `antigravity-proactive-ctl.sh base-check`, which
      re-runs the failing stage on a pristine `base_sha` worktree and appends a
-     `## Base-Check
-     Classification` verdict to the same digest. Never run
+     `## Base-Check Classification` verdict to the same digest. Never run
      `base-check` inside the sweep: a base re-run can double test time and the
      sweep is boxed at 15 minutes. Never delete a worktree whose failure has not
      been classified — that destroys the evidence the classification needs.
@@ -208,7 +258,15 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
 - **Isolated Worktree & Branch:** `<worktree_path>` (`<branch_name>`)
 - **Promotion Commands (for human review after pilot graduation):** Exact `git`
   / `gh pr create --draft` commands for `bolt`, `palette`, or `code-health` (or
-  private GitHub Security Advisory workflow for `sentinel`)
+  private GitHub Security Advisory workflow for `sentinel`), plus guarded
+  cleanup commands once the report is written and any failure has been
+  classified — normal removal
+  (`[[ -s "$DIGEST_PATH" && -n "$WT_PATH" && -n "$BRANCH_NAME" ]] && git -C "$HOME/dev/<repo>" worktree remove "$WT_PATH" && git -C "$HOME/dev/<repo>" branch -D "$BRANCH_NAME"`)
+  for clean merged candidates, or forced removal
+  (`[[ -s "$DIGEST_PATH" && -n "$WT_PATH" && -n "$BRANCH_NAME" ]] && git -C "$HOME/dev/<repo>" worktree remove --force "$WT_PATH" && git -C "$HOME/dev/<repo>" branch -D "$BRANCH_NAME"`)
+  for explicitly classified discards (`CAUSED_BY_CHANGE` / sweep-gate blocks)
+  that may retain uncommitted edits. Never remove worktrees with unclassified
+  failures.
 
 Do **not** push branches or open pull requests during the `2B` local-first
 pilot.

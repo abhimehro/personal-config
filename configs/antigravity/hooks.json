@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$HOME/dev/personal-config/configs/antigravity/hooks/proactive-guard.py\"",
+            "command": "bash -c 'if [ -f \"$HOME/.gemini/config/proactive/hooks/proactive-guard.py\" ]; then exec python3 \"$HOME/.gemini/config/proactive/hooks/proactive-guard.py\"; elif [ -f \"$HOME/dev/personal-config/configs/antigravity/hooks/proactive-guard.py\" ]; then exec python3 \"$HOME/dev/personal-config/configs/antigravity/hooks/proactive-guard.py\"; else printf \"{\\\"decision\\\":\\\"deny\\\",\\\"reason\\\":\\\"proactive-guard.py missing from both deployed runtime and repo checkout\\\"}\\n\"; echo \"[ERROR] proactive-guard.py missing from both deployed runtime and repo checkout\" >&2; exit 2; fi'",
             "timeout": 10
           }
         ]

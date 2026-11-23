@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Control and Ordered-Rollback Script for Antigravity Proactive Workflows.
-# Manages global skill symlinks, PreToolUse safety hook link, chmod 700 report
-# and transcript permissions, staged sidecars (without ever self-enabling
+# Manages copy-on-deploy skills, safety hook, and runtime scripts under
+# $HOME/.gemini/config/proactive (decoupled from the repo working tree), chmod 700
+# report and transcript permissions, staged sidecars (without ever self-enabling
 # user_config.json), disposable timezone-aware cron canaries, verified
 # post-merge Sentinel leases, MISSED slot auditing, and base-relative
 # classification of verify failures so pre-existing breakage is never charged to
@@ -21,9 +22,42 @@ SKILLS=(
 	"proactive-repo-sweep"
 )
 
+ALL_PROACTIVE_REPOS=(
+	"ctrld-sync"
+	"email-security-pipeline"
+	"personal-config"
+	"Hydrograph_Versus_Seatek_Sensors_Project"
+	"Seatek_Analysis"
+	"series_correction_project_updated"
+	"repoprompt-ce"
+)
+
 PILOT_SIDECAR_ID="proactive-pilot-ctrld-sync"
 TRIAGE_SIDECAR_ID="proactive-pilot-triage"
 CANARY_SIDECAR_ID="proactive-cron-canary"
+PROACTIVE_MANAGED_MARKER=".managed-by-proactive-ctl"
+
+RT_SKILLS_LINKED=0
+RT_SKILLS_TOTAL="${#SKILLS[@]}"
+RT_HOOKS_LINKED="no"
+RT_HOOKS_MODE="absent"
+RT_HOOKS_GUARD="missing"
+RT_DANGLING_LINKS=0
+RT_WORKTREE_SH=""
+RT_CTL_SH=""
+RT_GUARD_PY=""
+
+is_research_repo() {
+	local name="$1"
+	case "${name}" in
+	Hydrograph_Versus_Seatek_Sensors_Project | Seatek_Analysis | series_correction_project_updated)
+		return 0
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
 
 # base-check's EXIT trap outlives the function that sets it, so its cleanup state
 # has to be global: a `local` would be unbound by then and, under `set -u`, the
@@ -55,12 +89,15 @@ trim_test_segment() {
 usage() {
 	cat <<'EOF'
 Usage:
-  antigravity-proactive-ctl.sh install [--pilot]
+  antigravity-proactive-ctl.sh install [--pilot] [--source-repo <dir>]
   antigravity-proactive-ctl.sh status
+  antigravity-proactive-ctl.sh doctor [--fix] [--source-repo <dir>] [--repo <name> ...] [--all-repos] [--skip-fetch]
+  antigravity-proactive-ctl.sh stage-repo --repo <name> [--cron "<expr>"] [--triage-cron "<expr>"] [--repo-path <dir>]
   antigravity-proactive-ctl.sh canary-stage [--offset-minutes <n>] [--timezone <iana_tz>]
   antigravity-proactive-ctl.sh canary-clean
   antigravity-proactive-ctl.sh sentinel-post-merge --repo <name> --pr <number>
   antigravity-proactive-ctl.sh audit-missed --date <YYYY-MM-DD> --repo <name>
+  antigravity-proactive-ctl.sh sweep-date --cron "<expr>" [--now "<ISO-8601>"]
   antigravity-proactive-ctl.sh base-check --repo <name> --worktree <dir> [--digest <path>] [--test-cmd <cmd>]
   antigravity-proactive-ctl.sh disable
 
@@ -92,40 +129,290 @@ validate_repo_name() {
 	fi
 }
 
-link_item() {
-	local link_path="$1"
-	local target_path="$2"
+file_sha256() {
+	python3 - "$1" <<'PY'
+import hashlib
+import pathlib
+import sys
 
-	if [[ ! -e ${target_path} ]]; then
-		echo "[ERROR] Missing target in repository: ${target_path}" >&2
-		exit 1
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+}
+
+atomic_install_file() {
+	local mode="$1"
+	local src="$2"
+	local dst="$3"
+	local tmp_dst="${dst}.tmp.$$"
+
+	if [[ -d ${dst} ]] && [[ ! -L ${dst} ]]; then
+		local invalid_backup=""
+		invalid_backup="${dst}.invalid-dir.$(date -u +%Y%m%dT%H%M%SZ).$$"
+		if ! mv "${dst}" "${invalid_backup}"; then
+			echo "[ERROR] Cannot move directory out of managed file path ${dst}" >&2
+			return 1
+		fi
+		echo "[WARN] Moved unexpected directory aside from ${dst} -> ${invalid_backup}" >&2
 	fi
 
-	if [[ -L ${link_path} ]] && [[ "$(readlink "${link_path}")" == "${target_path}" ]]; then
+	if ! install -m "${mode}" "${src}" "${tmp_dst}"; then
+		rm -f "${tmp_dst}"
+		return 1
+	fi
+	if ! python3 -c 'import os, sys; os.replace(sys.argv[1], sys.argv[2])' "${tmp_dst}" "${dst}"; then
+		rm -f "${tmp_dst}"
+		return 1
+	fi
+}
+
+resolve_install_source_root() {
+	local explicit_source="$1"
+	local runtime_dir="$2"
+
+	if [[ -n ${explicit_source} ]]; then
+		if [[ ! -d ${explicit_source} ]]; then
+			echo "[ERROR] install: --source-repo is not a directory: ${explicit_source}" >&2
+			exit 1
+		fi
+		(cd "${explicit_source}" && pwd)
 		return 0
 	fi
 
-	if [[ -e ${link_path} ]] && [[ ! -L ${link_path} ]]; then
-		local backup_ts
+	if [[ -f "${REPO_ROOT}/configs/antigravity/hooks/proactive-guard.py" ]]; then
+		printf '%s' "${REPO_ROOT}"
+		return 0
+	fi
+
+	if [[ -f "${runtime_dir}/.source-repo" ]]; then
+		local recorded_root=""
+		recorded_root="$(cat "${runtime_dir}/.source-repo" 2>/dev/null || true)"
+		if [[ -n ${recorded_root} ]] && [[ -d ${recorded_root} ]] && [[ -f "${recorded_root}/configs/antigravity/hooks/proactive-guard.py" ]]; then
+			printf '%s' "${recorded_root}"
+			return 0
+		fi
+		echo "[ERROR] install: recorded checkout path is unavailable (${recorded_root:-empty}); pass --source-repo <personal-config-dir>" >&2
+		exit 1
+	fi
+
+	echo "[ERROR] install requires a personal-config checkout (run from the repo or pass --source-repo <dir>)" >&2
+	exit 1
+}
+
+resolve_legacy_repo_root() {
+	local runtime_dir="$1"
+
+	if [[ -f "${REPO_ROOT}/configs/antigravity/hooks.json" ]]; then
+		printf '%s' "${REPO_ROOT}"
+		return 0
+	fi
+	if [[ -f "${runtime_dir}/.source-repo" ]]; then
+		cat "${runtime_dir}/.source-repo" 2>/dev/null || true
+		return 0
+	fi
+}
+
+validate_install_sources() {
+	local source_root="$1"
+	local stage_pilot="$2"
+
+	local req_file=""
+	for req_file in \
+		"${source_root}/scripts/proactive-worktree.sh" \
+		"${source_root}/scripts/antigravity-proactive-ctl.sh" \
+		"${source_root}/configs/antigravity/hooks/proactive-guard.py" \
+		"${source_root}/configs/antigravity/hooks.json"; do
+		if [[ ! -f ${req_file} ]]; then
+			echo "[ERROR] Missing installation source asset: ${req_file}" >&2
+			exit 1
+		fi
+	done
+
+	if ! python3 -m json.tool "${source_root}/configs/antigravity/hooks.json" >/dev/null 2>&1; then
+		echo "[ERROR] Invalid JSON in source hooks.json: ${source_root}/configs/antigravity/hooks.json" >&2
+		exit 1
+	fi
+
+	local skill=""
+	for skill in "${SKILLS[@]}"; do
+		local skill_src="${source_root}/configs/antigravity/skills/${skill}"
+		if [[ ! -d ${skill_src} ]] || [[ ! -f "${skill_src}/SKILL.md" ]]; then
+			echo "[ERROR] Missing skill source or SKILL.md: ${skill_src}" >&2
+			exit 1
+		fi
+	done
+
+	if [[ ${stage_pilot} -eq 1 ]]; then
+		local sid=""
+		for sid in "${PILOT_SIDECAR_ID}" "${TRIAGE_SIDECAR_ID}"; do
+			local sidecar_src="${source_root}/configs/antigravity/sidecars/${sid}.sidecar.json"
+			if [[ ! -f ${sidecar_src} ]]; then
+				echo "[ERROR] Missing pilot sidecar template: ${sidecar_src}" >&2
+				exit 1
+			fi
+			if ! python3 -m json.tool "${sidecar_src}" >/dev/null 2>&1; then
+				echo "[ERROR] Invalid JSON in sidecar template: ${sidecar_src}" >&2
+				exit 1
+			fi
+		done
+	fi
+}
+
+deploy_runtime_files() {
+	local source_root="$1"
+	local runtime_dir="$2"
+	local worktree_src="${source_root}/scripts/proactive-worktree.sh"
+	local ctl_src="${source_root}/scripts/antigravity-proactive-ctl.sh"
+	local guard_src="${source_root}/configs/antigravity/hooks/proactive-guard.py"
+
+	mkdir -p "${runtime_dir}/scripts" "${runtime_dir}/hooks"
+	chmod 700 "${runtime_dir}" "${runtime_dir}/scripts" "${runtime_dir}/hooks"
+	atomic_install_file 755 "${worktree_src}" "${runtime_dir}/scripts/proactive-worktree.sh"
+	atomic_install_file 755 "${ctl_src}" "${runtime_dir}/scripts/antigravity-proactive-ctl.sh"
+	atomic_install_file 644 "${guard_src}" "${runtime_dir}/hooks/proactive-guard.py"
+
+	local tmp_source="${runtime_dir}/.source-repo.tmp.$$"
+	printf '%s\n' "${source_root}" >"${tmp_source}"
+	chmod 600 "${tmp_source}"
+	mv -f "${tmp_source}" "${runtime_dir}/.source-repo"
+}
+
+deploy_skill_dir() {
+	local dst_dir="$1"
+	local src_dir="$2"
+
+	if [[ ! -d ${src_dir} ]]; then
+		echo "[ERROR] Missing skill directory in repository: ${src_dir}" >&2
+		exit 1
+	fi
+
+	# Stage the replacement completely before touching the live destination so
+	# an interrupted copy never removes the working skill directory.
+	local tmp_dir="${dst_dir}.tmp.$$"
+	rm -rf "${tmp_dir}"
+	mkdir -p "${tmp_dir}"
+	if ! cp -R "${src_dir}/." "${tmp_dir}/"; then
+		rm -rf "${tmp_dir}"
+		echo "[ERROR] Failed to stage skill directory from ${src_dir} into ${tmp_dir}" >&2
+		return 1
+	fi
+	printf 'managed\n' >"${tmp_dir}/${PROACTIVE_MANAGED_MARKER}"
+
+	local old_dir=""
+	local backup_dir=""
+	if [[ -L ${dst_dir} ]]; then
+		local link_target=""
+		link_target="$(readlink "${dst_dir}" 2>/dev/null || true)"
+		if [[ ${link_target} == "${src_dir}" ]]; then
+			rm -f "${dst_dir}"
+		else
+			local backup_ts=""
+			backup_ts="$(date -u +%Y%m%d_%H%M%S)"
+			backup_dir="${dst_dir}.backup.${backup_ts}"
+			mv "${dst_dir}" "${backup_dir}"
+		fi
+	elif [[ -e ${dst_dir} ]]; then
+		if [[ -d ${dst_dir} ]] && [[ -f "${dst_dir}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			old_dir="${dst_dir}.old.$$"
+			rm -rf "${old_dir}"
+			mv "${dst_dir}" "${old_dir}"
+		else
+			local backup_ts=""
+			backup_ts="$(date -u +%Y%m%d_%H%M%S)"
+			backup_dir="${dst_dir}.backup.${backup_ts}"
+			mv "${dst_dir}" "${backup_dir}"
+		fi
+	fi
+
+	if ! mv "${tmp_dir}" "${dst_dir}"; then
+		if [[ -n ${old_dir} ]] && [[ -e ${old_dir} ]]; then
+			mv "${old_dir}" "${dst_dir}" 2>/dev/null || true
+		elif [[ -n ${backup_dir} ]] && { [[ -e ${backup_dir} ]] || [[ -L ${backup_dir} ]]; }; then
+			mv "${backup_dir}" "${dst_dir}" 2>/dev/null || true
+		fi
+		rm -rf "${tmp_dir}"
+		echo "ERROR: failed to move staged directory ${tmp_dir} into ${dst_dir}" >&2
+		return 1
+	fi
+	if [[ -n ${old_dir} ]] && [[ -d ${old_dir} ]]; then
+		rm -rf "${old_dir}"
+	fi
+}
+
+is_hooks_file_managed() {
+	local hooks_file="$1"
+	local stamp_file="$2"
+	local legacy_root="${3:-}"
+
+	if [[ -L ${hooks_file} ]]; then
+		[[ -n ${legacy_root} ]] && [[ "$(readlink "${hooks_file}")" == "${legacy_root}/configs/antigravity/hooks.json" ]]
+		return $?
+	fi
+
+	if [[ ! -f ${hooks_file} ]] || [[ ! -f ${stamp_file} ]]; then
+		return 1
+	fi
+
+	local current_hash=""
+	local recorded_hash=""
+	current_hash="$(file_sha256 "${hooks_file}" 2>/dev/null || true)"
+	recorded_hash="$(cat "${stamp_file}" 2>/dev/null || true)"
+	[[ -n ${current_hash} && ${current_hash} == "${recorded_hash}" ]]
+}
+
+deploy_hooks_file() {
+	local dst_file="$1"
+	local src_file="$2"
+	local stamp_file="$3"
+	local legacy_root="${4:-}"
+
+	if [[ ! -f ${src_file} ]]; then
+		echo "[ERROR] Missing hooks file in repository: ${src_file}" >&2
+		exit 1
+	fi
+
+	mkdir -p "$(dirname "${dst_file}")" "$(dirname "${stamp_file}")"
+
+	local backup_file=""
+	if [[ -L ${dst_file} ]]; then
+		:
+	elif [[ -f ${dst_file} ]] && ! is_hooks_file_managed "${dst_file}" "${stamp_file}" "${legacy_root}"; then
+		local backup_ts=""
 		backup_ts="$(date -u +%Y%m%d_%H%M%S)"
-		mv "${link_path}" "${link_path}.backup.${backup_ts}"
+		backup_file="${dst_file}.backup.${backup_ts}"
+		if ! install -m 600 "${dst_file}" "${backup_file}"; then
+			rm -f "${backup_file}"
+			echo "[ERROR] Failed to back up unmanaged hooks file: ${dst_file}" >&2
+			return 1
+		fi
 	fi
 
-	if [[ -L ${link_path} ]]; then
-		rm -f "${link_path}"
+	if ! atomic_install_file 600 "${src_file}" "${dst_file}"; then
+		if [[ -n ${backup_file} ]] && [[ -f ${backup_file} ]] && [[ ! -e ${dst_file} ]]; then
+			cp -p "${backup_file}" "${dst_file}" 2>/dev/null || true
+		fi
+		echo "[ERROR] Failed to install hooks file into ${dst_file}" >&2
+		return 1
 	fi
 
-	mkdir -p "$(dirname "${link_path}")"
-	ln -s "${target_path}" "${link_path}"
+	local tmp_stamp="${stamp_file}.tmp.$$"
+	file_sha256 "${dst_file}" >"${tmp_stamp}"
+	chmod 600 "${tmp_stamp}"
+	mv -f "${tmp_stamp}" "${stamp_file}"
 }
 
 cmd_install() {
 	local stage_pilot=0
+	local explicit_source=""
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--pilot)
 			stage_pilot=1
 			shift
+			;;
+		--source-repo)
+			require_flag_value "install" "$1" "$#"
+			explicit_source="$2"
+			shift 2
 			;;
 		*)
 			echo "[ERROR] Unknown flag for install: $1" >&2
@@ -138,8 +425,13 @@ cmd_install() {
 	local agy_dir="${HOME}/.gemini/antigravity"
 	local cli_dir="${HOME}/.gemini/antigravity-cli"
 	local skills_dir="${config_dir}/skills"
+	local runtime_dir="${config_dir}/proactive"
 	local reports_dir="${agy_dir}/proactive-reports"
 	local worktrees_dir="${agy_dir}/worktrees"
+
+	local source_root=""
+	source_root="$(resolve_install_source_root "${explicit_source}" "${runtime_dir}")"
+	validate_install_sources "${source_root}" "${stage_pilot}"
 
 	mkdir -p "${skills_dir}" "${reports_dir}" "${worktrees_dir}"
 	chmod 700 "${reports_dir}" "${worktrees_dir}"
@@ -150,32 +442,39 @@ cmd_install() {
 		chmod 700 "${cli_dir}" 2>/dev/null || true
 	fi
 
+	deploy_runtime_files "${source_root}" "${runtime_dir}"
+
 	local skill=""
 	for skill in "${SKILLS[@]}"; do
-		link_item \
+		deploy_skill_dir \
 			"${skills_dir}/${skill}" \
-			"${REPO_ROOT}/configs/antigravity/skills/${skill}"
+			"${source_root}/configs/antigravity/skills/${skill}"
 	done
 
-	link_item \
+	deploy_hooks_file \
 		"${config_dir}/hooks.json" \
-		"${REPO_ROOT}/configs/antigravity/hooks.json"
+		"${source_root}/configs/antigravity/hooks.json" \
+		"${runtime_dir}/.hooks-managed" \
+		"${source_root}"
 
 	if [[ ${stage_pilot} -eq 1 ]]; then
 		local sid=""
 		for sid in "${PILOT_SIDECAR_ID}" "${TRIAGE_SIDECAR_ID}"; do
-			local sidecar_src="${REPO_ROOT}/configs/antigravity/sidecars/${sid}.sidecar.json"
+			local sidecar_src="${source_root}/configs/antigravity/sidecars/${sid}.sidecar.json"
 			if [[ -f ${sidecar_src} ]]; then
 				local sidecar_dir="${config_dir}/sidecars/${sid}"
 				mkdir -p "${sidecar_dir}"
 				python3 - "${sidecar_src}" "${sidecar_dir}/sidecar.json" "${HOME}" <<'PY'
+import os
 import pathlib
 import sys
 
 src = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 dst = pathlib.Path(sys.argv[2])
-dst.write_text(src.replace("__HOME__", sys.argv[3]), encoding="utf-8")
-dst.chmod(0o600)
+tmp = dst.with_name(f".{dst.name}.tmp.{os.getpid()}")
+tmp.write_text(src.replace("__HOME__", sys.argv[3]), encoding="utf-8")
+tmp.chmod(0o600)
+os.replace(tmp, dst)
 PY
 			fi
 		done
@@ -224,35 +523,574 @@ report_sidecar_status() {
 	echo "${prefix}_next_run=${next_run}"
 }
 
-cmd_status() {
+report_exec_state() {
+	local target_path="$1"
+	if [[ -L ${target_path} ]] && [[ ! -e ${target_path} ]]; then
+		printf 'broken-symlink'
+	elif [[ -f ${target_path} ]] && [[ -x ${target_path} ]]; then
+		printf 'ok'
+	elif [[ -e ${target_path} ]] && [[ ! -f ${target_path} ]]; then
+		printf 'invalid-type'
+	elif [[ -f ${target_path} ]]; then
+		printf 'not-executable'
+	else
+		printf 'missing'
+	fi
+}
+
+report_file_state() {
+	local target_path="$1"
+	if [[ -L ${target_path} ]] && [[ ! -e ${target_path} ]]; then
+		printf 'broken-symlink'
+	elif [[ -f ${target_path} ]]; then
+		printf 'ok'
+	elif [[ -e ${target_path} ]] && [[ ! -f ${target_path} ]]; then
+		printf 'invalid-type'
+	else
+		printf 'missing'
+	fi
+}
+
+collect_runtime_health() {
 	local config_dir="${HOME}/.gemini/config"
-	local agy_dir="${HOME}/.gemini/antigravity"
+	local runtime_dir="${config_dir}/proactive"
 	local linked=0
-	local total="${#SKILLS[@]}"
+	local dangling_links=0
 	local skill=""
 
 	for skill in "${SKILLS[@]}"; do
-		if [[ -L "${config_dir}/skills/${skill}" ]]; then
+		local skill_path="${config_dir}/skills/${skill}"
+		if [[ -L ${skill_path} ]] && [[ ! -e ${skill_path} ]]; then
+			dangling_links=$((dangling_links + 1))
+		elif [[ -d ${skill_path} ]] && [[ -f "${skill_path}/SKILL.md" ]]; then
 			linked=$((linked + 1))
 		fi
 	done
 
+	local hooks_path="${config_dir}/hooks.json"
 	local hooks_linked="no"
-	if [[ -L "${config_dir}/hooks.json" ]]; then
+	local hooks_mode="absent"
+	if [[ -L ${hooks_path} ]] && [[ ! -e ${hooks_path} ]]; then
+		dangling_links=$((dangling_links + 1))
+		hooks_mode="broken-symlink"
+	elif [[ -L ${hooks_path} ]] && [[ -f ${hooks_path} ]]; then
 		hooks_linked="yes"
+		hooks_mode="symlink"
+	elif [[ -f ${hooks_path} ]]; then
+		hooks_linked="yes"
+		hooks_mode="copy"
 	fi
+
+	local runtime_worktree_sh=""
+	local runtime_ctl_sh=""
+	local runtime_guard_py=""
+	runtime_worktree_sh="$(report_exec_state "${runtime_dir}/scripts/proactive-worktree.sh")"
+	runtime_ctl_sh="$(report_exec_state "${runtime_dir}/scripts/antigravity-proactive-ctl.sh")"
+	runtime_guard_py="$(report_file_state "${runtime_dir}/hooks/proactive-guard.py")"
+
+	local rt_state=""
+	for rt_state in "${runtime_worktree_sh}" "${runtime_ctl_sh}" "${runtime_guard_py}"; do
+		if [[ ${rt_state} == "broken-symlink" ]]; then
+			dangling_links=$((dangling_links + 1))
+		fi
+	done
+
+	local hooks_guard="missing"
+	if [[ -f ${hooks_path} ]]; then
+		hooks_guard="$(
+			python3 - "${hooks_path}" <<'PY'
+import json
+import pathlib
+import sys
+
+try:
+    with pathlib.Path(sys.argv[1]).open(encoding="utf-8") as handle:
+        data = json.load(handle)
+except Exception:
+    print("invalid-json")
+    sys.exit(0)
+
+if not isinstance(data, dict):
+    print("invalid-json")
+    sys.exit(0)
+
+guard = data.get("proactive-safety-guard")
+if not isinstance(guard, dict) or guard.get("enabled") is not True:
+    print("missing")
+    sys.exit(0)
+
+pre_tool = guard.get("PreToolUse")
+if not isinstance(pre_tool, list):
+    print("missing")
+    sys.exit(0)
+
+found = False
+for entry in pre_tool:
+    if not isinstance(entry, dict):
+        continue
+    hooks = entry.get("hooks")
+    if not isinstance(hooks, list):
+        continue
+    for hook in hooks:
+        if isinstance(hook, dict) and hook.get("type") == "command":
+            cmd = hook.get("command")
+            if isinstance(cmd, str) and ".gemini/config/proactive/hooks/proactive-guard.py" in cmd:
+                found = True
+                break
+    if found:
+        break
+
+print("ok" if found else "missing")
+PY
+		)" || hooks_guard="missing"
+	fi
+
+	RT_SKILLS_LINKED="${linked}"
+	RT_SKILLS_TOTAL="${#SKILLS[@]}"
+	RT_HOOKS_LINKED="${hooks_linked}"
+	RT_HOOKS_MODE="${hooks_mode}"
+	RT_HOOKS_GUARD="${hooks_guard}"
+	RT_DANGLING_LINKS="${dangling_links}"
+	RT_WORKTREE_SH="${runtime_worktree_sh}"
+	RT_CTL_SH="${runtime_ctl_sh}"
+	RT_GUARD_PY="${runtime_guard_py}"
+}
+
+runtime_is_healthy() {
+	[[ ${RT_SKILLS_LINKED} -eq ${RT_SKILLS_TOTAL} ]] &&
+		[[ ${RT_HOOKS_LINKED} == "yes" ]] &&
+		[[ ${RT_HOOKS_MODE} == "copy" ]] &&
+		[[ ${RT_HOOKS_GUARD} == "ok" ]] &&
+		[[ ${RT_DANGLING_LINKS} -eq 0 ]] &&
+		[[ ${RT_WORKTREE_SH} == "ok" ]] &&
+		[[ ${RT_CTL_SH} == "ok" ]] &&
+		[[ ${RT_GUARD_PY} == "ok" ]]
+}
+
+print_runtime_health_fields() {
+	echo "skills_linked=${RT_SKILLS_LINKED}/${RT_SKILLS_TOTAL}"
+	echo "hooks_linked=${RT_HOOKS_LINKED}"
+	echo "hooks_mode=${RT_HOOKS_MODE}"
+	echo "hooks_guard=${RT_HOOKS_GUARD}"
+	echo "dangling_links=${RT_DANGLING_LINKS}"
+	echo "runtime_worktree_sh=${RT_WORKTREE_SH}"
+	echo "runtime_ctl_sh=${RT_CTL_SH}"
+	echo "runtime_guard_py=${RT_GUARD_PY}"
+}
+
+cmd_status() {
+	local config_dir="${HOME}/.gemini/config"
+	local agy_dir="${HOME}/.gemini/antigravity"
+
+	collect_runtime_health
 
 	local canary_state="absent"
 	if [[ -f "${config_dir}/sidecars/${CANARY_SIDECAR_ID}/sidecar.json" ]]; then
 		canary_state="present"
 	fi
 
-	echo "skills_linked=${linked}/${total}"
-	echo "hooks_linked=${hooks_linked}"
+	print_runtime_health_fields
 	report_sidecar_status "pilot" "${PILOT_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
 	report_sidecar_status "triage" "${TRIAGE_SIDECAR_ID}" "${config_dir}" "${agy_dir}"
 	echo "canary_sidecar=${canary_state}"
 	echo "reports_dir=${agy_dir}/proactive-reports"
+}
+
+cmd_doctor() {
+	local fix_mode=0
+	local source_repo=""
+	local all_repos=0
+	local skip_fetch=0
+	local explicit_repos=()
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--fix)
+			fix_mode=1
+			shift
+			;;
+		--source-repo)
+			require_flag_value "doctor" "$1" "$#"
+			source_repo="$2"
+			shift 2
+			;;
+		--repo)
+			require_flag_value "doctor" "$1" "$#"
+			local r_arg=""
+			r_arg="${2##*/}"
+			validate_repo_name "${r_arg}" "doctor"
+			explicit_repos+=("${r_arg}")
+			shift 2
+			;;
+		--all-repos)
+			all_repos=1
+			shift
+			;;
+		--skip-fetch)
+			skip_fetch=1
+			shift
+			;;
+		*)
+			echo "[ERROR] Unknown flag for doctor: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -n ${source_repo} ]] && [[ ! -d ${source_repo} ]]; then
+		echo "[ERROR] doctor: --source-repo is not a directory: ${source_repo}" >&2
+		exit 1
+	fi
+
+	local doctor_ok=1
+	collect_runtime_health
+
+	if ! runtime_is_healthy && [[ ${fix_mode} -eq 1 ]]; then
+		local -a install_args=(--pilot)
+		if [[ -n ${source_repo} ]]; then
+			install_args+=(--source-repo "${source_repo}")
+		fi
+		if bash "${SCRIPT_DIR}/antigravity-proactive-ctl.sh" install "${install_args[@]}" >&2; then
+			collect_runtime_health
+			if runtime_is_healthy; then
+				echo "auto_healed_install=yes"
+			else
+				echo "auto_healed_install=failed"
+			fi
+		else
+			echo "auto_healed_install=failed"
+		fi
+	fi
+
+	if runtime_is_healthy; then
+		echo "runtime_health=ok"
+	else
+		echo "runtime_health=degraded"
+		doctor_ok=0
+	fi
+	print_runtime_health_fields
+
+	local worktree_sh=""
+	if [[ -x "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh" ]]; then
+		worktree_sh="${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+	else
+		worktree_sh="${SCRIPT_DIR}/proactive-worktree.sh"
+	fi
+
+	if [[ ! -x ${worktree_sh} ]]; then
+		echo "[ERROR] doctor: proactive-worktree.sh not found or not executable: ${worktree_sh}" >&2
+		echo "doctor_status=DEGRADED"
+		exit 1
+	fi
+
+	local target_repos=()
+	if [[ ${#explicit_repos[@]} -gt 0 ]]; then
+		target_repos=("${explicit_repos[@]}")
+	elif [[ ${all_repos} -eq 1 ]]; then
+		target_repos=("${ALL_PROACTIVE_REPOS[@]}")
+	else
+		target_repos=("ctrld-sync")
+	fi
+
+	local r=""
+	for r in "${target_repos[@]}"; do
+		local repo_dir="${HOME}/dev/${r}"
+		if [[ ! -d ${repo_dir} ]] || { [[ ! -e "${repo_dir}/.git" ]] && ! git -C "${repo_dir}" rev-parse --git-dir >/dev/null 2>&1; }; then
+			echo "repo_${r}=MISSING_REPO"
+			doctor_ok=0
+			continue
+		fi
+
+		local -a preflight_args=(
+			preflight
+			--repo "abhimehro/${r}"
+			--repo-path "${repo_dir}"
+		)
+		if [[ ${fix_mode} -eq 1 ]]; then
+			preflight_args+=(--auto-heal)
+		fi
+		if [[ ${skip_fetch} -eq 1 ]]; then
+			preflight_args+=(--skip-fetch)
+		fi
+
+		local pf_out=""
+		local pf_rc=0
+		pf_out="$("${worktree_sh}" "${preflight_args[@]}" 2>&1)" || pf_rc=$?
+
+		local repo_status=""
+		case "${pf_rc}" in
+		0)
+			repo_status="PASS"
+			;;
+		6)
+			if printf '%s\n' "${pf_out}" | grep -qE '^git_fetch=failed$'; then
+				repo_status="FAIL_FETCH"
+			else
+				repo_status="FAIL_AUTH"
+			fi
+			doctor_ok=0
+			;;
+		7)
+			repo_status="FAIL_TOOLCHAIN"
+			doctor_ok=0
+			;;
+		*)
+			repo_status="FAIL_ERROR"
+			doctor_ok=0
+			;;
+		esac
+
+		echo "repo_${r}=${repo_status}"
+		if [[ ${pf_rc} -eq 7 ]]; then
+			local rem_line=""
+			rem_line="$(printf '%s\n' "${pf_out}" | grep -E '^remediation=' | head -n 1 || true)"
+			if [[ -n ${rem_line} ]]; then
+				echo "repo_${r}_remediation=${rem_line#remediation=}"
+			fi
+		fi
+		if [[ ${pf_rc} -ne 0 ]] && [[ -n ${pf_out} ]]; then
+			printf '[doctor:%s] %s\n' "${r}" "${pf_out}" >&2
+		fi
+	done
+
+	if [[ ${doctor_ok} -eq 1 ]]; then
+		echo "doctor_status=HEALTHY"
+		return 0
+	fi
+	echo "doctor_status=DEGRADED"
+	exit 1
+}
+
+cmd_stage_repo() {
+	local repo_name=""
+	local sweep_cron="CRON_TZ=America/Chicago 15 8 * * 1-5"
+	local triage_cron="CRON_TZ=America/Chicago 35 8 * * 1-5"
+	local repo_path=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--repo)
+			require_flag_value "stage-repo" "$1" "$#"
+			repo_name="${2##*/}"
+			shift 2
+			;;
+		--cron)
+			require_flag_value "stage-repo" "$1" "$#"
+			sweep_cron="$2"
+			shift 2
+			;;
+		--triage-cron)
+			require_flag_value "stage-repo" "$1" "$#"
+			triage_cron="$2"
+			shift 2
+			;;
+		--repo-path)
+			require_flag_value "stage-repo" "$1" "$#"
+			repo_path="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for stage-repo: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${repo_name} ]]; then
+		echo "[ERROR] stage-repo requires --repo <name>" >&2
+		exit 1
+	fi
+	validate_repo_name "${repo_name}" "stage-repo"
+	if [[ -z ${sweep_cron} ]] || [[ -z ${triage_cron} ]]; then
+		echo "[ERROR] stage-repo requires non-empty --cron and --triage-cron values" >&2
+		exit 1
+	fi
+	if [[ -z ${repo_path} ]]; then
+		repo_path="__HOME__/dev/${repo_name}"
+	fi
+
+	local repo_kind="core"
+	if is_research_repo "${repo_name}"; then
+		repo_kind="research"
+	fi
+
+	local config_dir="${HOME}/.gemini/config"
+	local sweep_dir="${config_dir}/sidecars/proactive-sweep-${repo_name}"
+	local triage_dir="${config_dir}/sidecars/proactive-triage-${repo_name}"
+	mkdir -p "${sweep_dir}" "${triage_dir}"
+
+	python3 - "${sweep_dir}/sidecar.json" "${triage_dir}/sidecar.json" "${HOME}" "${repo_name}" "${repo_path}" "${repo_kind}" "${sweep_cron}" "${triage_cron}" <<'PY'
+import json
+import os
+import pathlib
+import shlex
+import sys
+
+sweep_path = pathlib.Path(sys.argv[1])
+triage_path = pathlib.Path(sys.argv[2])
+home_dir = sys.argv[3]
+repo_name = sys.argv[4]
+repo_path = sys.argv[5].replace("__HOME__", home_dir)
+repo_kind = sys.argv[6]
+sweep_cron = sys.argv[7]
+triage_cron = sys.argv[8]
+
+marker_name = ".managed-by-proactive-ctl"
+for existing_path in (sweep_path, triage_path):
+    if existing_path.parent.is_symlink() or existing_path.is_symlink():
+        sys.stderr.write(
+            f"[ERROR] Refusing to overwrite symlinked sidecar: {existing_path}\n"
+        )
+        sys.exit(1)
+    if existing_path.exists():
+        if not existing_path.is_file():
+            sys.stderr.write(
+                f"[ERROR] Refusing to overwrite non-file sidecar path: {existing_path}\n"
+            )
+            sys.exit(1)
+        if not (existing_path.parent / marker_name).is_file():
+            sys.stderr.write(
+                f"[ERROR] Refusing to overwrite non-managed custom sidecar: {existing_path}\n"
+            )
+            sys.exit(1)
+
+worktree_sh = f"{home_dir}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+ctl_sh = f"{home_dir}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh"
+reports_dir = f"{home_dir}/.gemini/antigravity/proactive-reports"
+worktrees_dir = f"{home_dir}/.gemini/antigravity/worktrees"
+skills_dir = f"{home_dir}/.gemini/config/skills"
+quoted_cron = shlex.quote(sweep_cron)
+quoted_repo_path = shlex.quote(repo_path)
+
+if repo_kind == "research":
+    lens_guidance = (
+        "rotating code-health and bolt lenses across weekdays, plus a read-only "
+        "sentinel check; NEVER run palette on this scientific research repository"
+    )
+    verify_guidance = (
+        "verify via verify --worktree <wt_path> --lens <lens> "
+        "(passing mandatory --numeric-check-cmd tolerance verification whenever lens is bolt)"
+    )
+else:
+    lens_guidance = (
+        "rotating bolt, code-health, and palette lenses across weekdays, "
+        "plus a read-only sentinel check"
+    )
+    verify_guidance = "verify via verify --worktree <wt_path> --lens <lens>"
+
+sweep_prompt = (
+    f"[PROACTIVE-SWEEP] Run /proactive-repo-sweep on {repo_path} "
+    f"(GitHub repo abhimehro/{repo_name}) in strict local-only mode (2B). "
+    f"Time-box this run to 15 minutes and produce at most 1 verified improvement ({lens_guidance}). "
+    f"Read {repo_path}/AGENTS.md (and {repo_path}/.jules/ journals if present) first, "
+    f"run Step 0 {worktree_sh} preflight --repo abhimehro/{repo_name} --repo-path {quoted_repo_path} --auto-heal, "
+    f"then run {worktree_sh} cleanup --ttl-days 21 and check-throttle --repo abhimehro/{repo_name} "
+    f"--include-worktrees --repo-path {quoted_repo_path}, check open-PR file collisions via check-collisions "
+    f"before editing, prepare an isolated local worktree via prepare --repo abhimehro/{repo_name} "
+    f"--repo-path {quoted_repo_path} --lens <lens> --mode local, "
+    f"{verify_guidance} without modifying build, lock, script, or test harnesses, "
+    "and if verify reports a semantic test-coverage BLOCK restore the lost coverage rather than deleting "
+    "tests or pinning --expected-test-count, resolve SWEEP_DATE via "
+    f"`{ctl_sh} sweep-date --cron {quoted_cron}`, and write a chmod 600 digest report to "
+    f"{reports_dir}/$SWEEP_DATE-{repo_name}.md. Do not push branches, open PRs, or edit .jules/sentinel.md."
+)
+
+triage_prompt = (
+    f"[PROACTIVE-TRIAGE] Post-sweep review for {repo_name} (2B, human-in-the-loop). "
+    "Do NOT push, open PRs, or re-run the sweep. Steps: "
+    f"(1) Resolve SWEEP_DATE via `{ctl_sh} sweep-date --cron {quoted_cron}` and read {reports_dir}/$SWEEP_DATE-{repo_name}.md. "
+    f"(2) If no digest exists, run `{ctl_sh} audit-missed --date \"$SWEEP_DATE\" --repo {repo_name} --cron {quoted_cron}` once, "
+    "record Status MISSED in the summary, and do NOT retry or start a run. "
+    "(3) Otherwise inspect the referenced worktree (git diff --shortstat vs base_sha) and re-check verify exit status from the digest. "
+    f"(3b) If verify did not exit 0, run `{ctl_sh} base-check --repo {repo_name} --worktree <worktree_path> --digest <digest_path>` ONCE "
+    "and report its VERDICT line: FLAKE_ON_RETRY or PRE_EXISTING_ON_BASE (exit 0) means the candidate is still promotable "
+    "and any base breakage is filed separately, while CAUSED_BY_CHANGE (exit 2) means discard the candidate. "
+    "Never re-run the sweep to fix a failure that base-check attributes to base. "
+    "(4) Post a TIGHT summary to the user with exactly these fields: repo, Status, "
+    "Substatus (NONE|FLOAT_REORDER_DRIFT|GATE_FAILURE|PRE_EXISTING_FAILURE), base-check Verdict when it ran, "
+    "verify exit code, diff size (files/+/-), and a one-line call: 'worth a look' or 'skip'. "
+    "Never print secrets or sentinel details beyond the Status and a pointer to the local digest path. "
+    "Sentinel stays local-only (SECURITY_REPORT_ONLY), never staged for a public PR."
+)
+
+sweep_doc = {
+    "builtin": "schedule",
+    "args": [sweep_cron, "agentapi", "new-conversation", "--", sweep_prompt],
+    "restart_policy": "always",
+    "display_name": f"Proactive Sweep ({repo_name})",
+    "description": (
+        f"Scheduled ({sweep_cron}) isolated local-only proactive sweep on {repo_name} "
+        f"({repo_kind}) ahead of the PR lifecycle."
+    ),
+    "agent_permissions": {
+        "allows_user_interactions": False,
+        "workspace_uris": [f"file://{worktrees_dir}"],
+        "access_grants": [
+            f"read_file({repo_path})",
+            f"read_file({skills_dir})",
+            f"read_file({reports_dir})",
+            f"write_file({reports_dir})",
+            f"write_file({worktrees_dir})",
+            f"command({home_dir}/bin/agent-zsh -c)",
+            f"command({worktree_sh})",
+            f"command({ctl_sh} sweep-date)",
+            "command(gh pr list)",
+            "command(gh auth status)",
+            "command(git -C)",
+        ],
+    },
+}
+
+triage_doc = {
+    "builtin": "schedule",
+    "args": [triage_cron, "agentapi", "new-conversation", "--", triage_prompt],
+    "restart_policy": "always",
+    "display_name": f"Proactive Triage Review ({repo_name})",
+    "description": (
+        f"Scheduled ({triage_cron}) post-sweep review for {repo_name}; "
+        "inspects the proactive digest and outputs a tight triage summary."
+    ),
+    "agent_permissions": {
+        "allows_user_interactions": True,
+        "workspace_uris": [f"file://{reports_dir}"],
+        "access_grants": [
+            f"read_file({reports_dir})",
+            f"write_file({reports_dir})",
+            f"read_file({worktrees_dir})",
+            f"write_file({worktrees_dir})",
+            f"command({home_dir}/bin/agent-zsh -c)",
+            f"command({ctl_sh} sweep-date)",
+            f"command({ctl_sh} audit-missed)",
+            f"command({ctl_sh} base-check)",
+            f"command({ctl_sh} doctor)",
+            "command(git -C)",
+        ],
+    },
+}
+
+
+def atomic_write_text_0600(dst: pathlib.Path, text: str) -> None:
+    tmp = dst.with_name(f".{dst.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, dst)
+    except Exception:
+        if tmp.exists():
+            tmp.unlink()
+        raise
+
+
+atomic_write_text_0600(sweep_path, json.dumps(sweep_doc, indent=2) + "\n")
+atomic_write_text_0600(triage_path, json.dumps(triage_doc, indent=2) + "\n")
+atomic_write_text_0600(sweep_path.parent / marker_name, "managed\n")
+atomic_write_text_0600(triage_path.parent / marker_name, "managed\n")
+PY
+
+	echo "Staged proactive-sweep-${repo_name} (${repo_kind}) at ${sweep_dir}/sidecar.json"
+	echo "Staged proactive-triage-${repo_name} (${repo_kind}) at ${triage_dir}/sidecar.json"
 }
 
 cmd_canary_stage() {
@@ -479,6 +1317,7 @@ PY
 cmd_audit_missed() {
 	local date_str=""
 	local repo_name=""
+	local cron_expr="CRON_TZ=America/Chicago 15 8 * * 1-5"
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--date)
@@ -489,6 +1328,11 @@ cmd_audit_missed() {
 		--repo)
 			require_flag_value "audit-missed" "$1" "$#"
 			repo_name="${2##*/}"
+			shift 2
+			;;
+		--cron)
+			require_flag_value "audit-missed" "$1" "$#"
+			cron_expr="$2"
 			shift 2
 			;;
 		*)
@@ -508,27 +1352,57 @@ cmd_audit_missed() {
 	fi
 	validate_repo_name "${repo_name}" "audit-missed"
 
-	# The pilot sidecar fires at 08:15 America/Chicago, which is 13:15 UTC only under
-	# daylight time and 14:15 UTC under standard time. Resolve the real UTC instant
-	# for this date (this also rejects impossible dates such as 2026-02-30).
-	local slot_utc
-	if ! slot_utc="$(
-		python3 - "${date_str}" <<'PY'
+	# Resolve the scheduled slot description from the cron expression (defaulting to
+	# 08:15 America/Chicago) and validate the calendar date + timezone.
+	local slot_desc=""
+	if ! slot_desc="$(
+		python3 - "${date_str}" "${cron_expr}" <<'PY'
 import datetime
 import sys
 import zoneinfo
 
 day = datetime.date.fromisoformat(sys.argv[1])
-local = datetime.datetime.combine(
-    day, datetime.time(8, 15), tzinfo=zoneinfo.ZoneInfo("America/Chicago")
-)
-print(local.astimezone(datetime.timezone.utc).strftime("%H:%M"))
+cron_expr = sys.argv[2].strip()
+tokens = cron_expr.split()
+tz_name = "UTC"
+while tokens and (tokens[0].startswith("CRON_TZ=") or tokens[0].startswith("TZ=")):
+    tz_name = tokens.pop(0).split("=", 1)[1].strip() or "UTC"
+
+if len(tokens) < 5:
+    sys.stderr.write(f"[ERROR] audit-missed: invalid cron expression: {cron_expr}\n")
+    sys.exit(2)
+
+zone = zoneinfo.ZoneInfo(tz_name)
+min_f, hour_f = tokens[0], tokens[1]
+if min_f.isdigit() and hour_f.isdigit():
+    minute = int(min_f)
+    hour = int(hour_f)
+    if not (0 <= minute <= 59 and 0 <= hour <= 23):
+        sys.stderr.write(f"[ERROR] audit-missed: invalid hour/minute in cron: {cron_expr}\n")
+        sys.exit(2)
+    local_day = day
+    local = datetime.datetime.combine(day, datetime.time(hour, minute), tzinfo=zone)
+    for offset in (-1, 0, 1):
+        cand_day = day + datetime.timedelta(days=offset)
+        cand_local = datetime.datetime.combine(
+            cand_day, datetime.time(hour, minute), tzinfo=zone
+        )
+        if cand_local.astimezone(datetime.timezone.utc).date() == day:
+            local_day = cand_day
+            local = cand_local
+            break
+    utc_hm = local.astimezone(datetime.timezone.utc).strftime("%H:%M")
+    if tz_name == "UTC":
+        print(f"{local_day.isoformat()} {hour:02d}:{minute:02d} UTC")
+    else:
+        print(f"{local_day.isoformat()} {hour:02d}:{minute:02d} {tz_name} ({utc_hm} UTC)")
+else:
+    print(f"{day.isoformat()} ({cron_expr})")
 PY
 	)"; then
-		echo "[ERROR] audit-missed --date is not a valid calendar date: ${date_str}" >&2
+		echo "[ERROR] audit-missed invalid --date or --cron: date=${date_str} cron=${cron_expr}" >&2
 		exit 1
 	fi
-	local slot_desc="${date_str} 08:15 America/Chicago (${slot_utc} UTC)"
 
 	local reports_dir="${HOME}/.gemini/antigravity/proactive-reports"
 	mkdir -p "${reports_dir}"
@@ -553,6 +1427,174 @@ EOF
 		chmod 600 "${report_file}"
 	)
 	echo "MISSED_RECORDED: ${report_file}"
+}
+
+cmd_sweep_date() {
+	local cron_expr=""
+	local now_str=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--cron)
+			require_flag_value "sweep-date" "$1" "$#"
+			cron_expr="$2"
+			shift 2
+			;;
+		--now)
+			require_flag_value "sweep-date" "$1" "$#"
+			now_str="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for sweep-date: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${cron_expr} ]]; then
+		echo '[ERROR] sweep-date requires --cron "<expr>"' >&2
+		exit 1
+	fi
+
+	python3 - "${cron_expr}" "${now_str}" <<'PY'
+import datetime as dt
+import sys
+import zoneinfo
+
+cron_expr = sys.argv[1].strip()
+now_raw = sys.argv[2].strip()
+
+tokens = cron_expr.split()
+tz_name = "UTC"
+while tokens and (tokens[0].startswith("CRON_TZ=") or tokens[0].startswith("TZ=")):
+    tz_name = tokens.pop(0).split("=", 1)[1].strip() or "UTC"
+
+if len(tokens) < 5:
+    sys.stderr.write(f"[ERROR] sweep-date: invalid cron expression: {cron_expr}\n")
+    sys.exit(1)
+
+try:
+    zone = zoneinfo.ZoneInfo(tz_name)
+except zoneinfo.ZoneInfoNotFoundError:
+    sys.stderr.write(f"[ERROR] sweep-date: unknown timezone in cron expression: {tz_name}\n")
+    sys.exit(1)
+
+if now_raw:
+    try:
+        now_dt = dt.datetime.fromisoformat(now_raw.replace("Z", "+00:00"))
+    except ValueError:
+        sys.stderr.write(f"[ERROR] sweep-date: invalid --now timestamp: {now_raw}\n")
+        sys.exit(1)
+    if now_dt.tzinfo is None:
+        now_utc = now_dt.replace(tzinfo=dt.timezone.utc)
+    else:
+        now_utc = now_dt.astimezone(dt.timezone.utc)
+else:
+    now_utc = dt.datetime.now(dt.timezone.utc)
+
+MONTH_NAMES = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+DOW_NAMES = {
+    "sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6,
+}
+
+
+def parse_cron_atom(token, min_val, max_val, names=None):
+    low = token.strip().lower()
+    if names and low in names:
+        return names[low]
+    val = int(low)
+    if val < min_val or val > max_val:
+        raise ValueError(f"out of range {min_val}..{max_val}: {token}")
+    return val
+
+
+def parse_cron_field(expr, min_val, max_val, names=None, is_dow=False):
+    result = set()
+    for part in expr.split(","):
+        if not part:
+            raise ValueError(f"empty item in cron field: {expr}")
+        if "/" in part:
+            range_part, step_str = part.split("/", 1)
+            step = int(step_str)
+            if step <= 0:
+                raise ValueError(f"non-positive step in cron field: {expr}")
+        else:
+            range_part, step = part, 1
+
+        if range_part == "*":
+            start, end = min_val, max_val
+        elif "-" in range_part:
+            a_str, b_str = range_part.split("-", 1)
+            start = parse_cron_atom(a_str, min_val, max_val, names)
+            end = parse_cron_atom(b_str, min_val, max_val, names)
+            if start > end:
+                raise ValueError(f"descending range in cron field: {expr}")
+        else:
+            start = parse_cron_atom(range_part, min_val, max_val, names)
+            end = max_val if "/" in part else start
+
+        for v in range(start, end + 1, step):
+            result.add(0 if (is_dow and v == 7) else v)
+
+    if not result:
+        raise ValueError(f"empty match set for cron field: {expr}")
+    return result
+
+
+min_f, hour_f, dom_f, month_f, dow_f = tokens[:5]
+try:
+    minutes = sorted(parse_cron_field(min_f, 0, 59), reverse=True)
+    hours = sorted(parse_cron_field(hour_f, 0, 23), reverse=True)
+    dom_set = parse_cron_field(dom_f, 1, 31)
+    month_set = parse_cron_field(month_f, 1, 12, names=MONTH_NAMES)
+    dow_set = parse_cron_field(dow_f, 0, 7, names=DOW_NAMES, is_dow=True)
+except ValueError as exc:
+    sys.stderr.write(f"[ERROR] sweep-date: invalid cron expression '{cron_expr}': {exc}\n")
+    sys.exit(1)
+
+dom_restricted = dom_f != "*"
+dow_restricted = dow_f != "*"
+now_local = now_utc.astimezone(zone)
+
+best_utc = None
+for day_offset in range(-1, 371):
+    cand_date = now_local.date() - dt.timedelta(days=day_offset)
+    if cand_date.month not in month_set:
+        continue
+    cron_dow = (cand_date.weekday() + 1) % 7
+    dom_ok = cand_date.day in dom_set
+    dow_ok = cron_dow in dow_set
+    day_ok = (dom_ok or dow_ok) if (dom_restricted and dow_restricted) else (dom_ok and dow_ok)
+    if not day_ok:
+        continue
+
+    day_best = None
+    for h in hours:
+        for m in minutes:
+            cand_naive = dt.datetime.combine(cand_date, dt.time(h, m))
+            for fold in (1, 0):
+                cand_local = cand_naive.replace(tzinfo=zone, fold=fold)
+                cand_utc = cand_local.astimezone(dt.timezone.utc)
+                if cand_utc.astimezone(zone).replace(tzinfo=None) != cand_naive:
+                    continue
+                if cand_utc <= now_utc and (day_best is None or cand_utc > day_best):
+                    day_best = cand_utc
+    if day_best is not None and (best_utc is None or day_best > best_utc):
+        best_utc = day_best
+        break
+
+if best_utc is None:
+    sys.stderr.write(
+        f"[ERROR] sweep-date: no scheduled slot found within 370 days for '{cron_expr}'\n"
+    )
+    sys.exit(1)
+
+print(best_utc.strftime("%Y-%m-%d"))
+PY
 }
 
 # G-4: a verify failure is not automatically the candidate's fault. Jules stranded
@@ -624,9 +1666,10 @@ cmd_base_check() {
 		exit 1
 	fi
 
-	local meta_repo="" base_sha=""
-	meta_repo="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_name",""))' "${meta_file}" 2>/dev/null || true)"
-	base_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("base_sha",""))' "${meta_file}" 2>/dev/null || true)"
+	local meta_repo="" base_sha="" repo_path=""
+	meta_repo="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_name") or "")' "${meta_file}" 2>/dev/null || true)"
+	base_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("base_sha") or "")' "${meta_file}" 2>/dev/null || true)"
+	repo_path="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("repo_path") or "")' "${meta_file}" 2>/dev/null || true)"
 	if [[ ${meta_repo} != "${repo_name}" ]]; then
 		echo "[ERROR] base-check --repo ${repo_name} does not match the worktree's repo_name '${meta_repo}'" >&2
 		exit 1
@@ -669,14 +1712,34 @@ cmd_base_check() {
 	fi
 
 	# Credentials are stripped for the same reason verify strips them: a gate must
-	# not pass because the ambient environment can reach a remote.
+	# not pass because the ambient environment can reach a remote. Non-uv stages
+	# also auto-resolve the repo or worktree .venv/bin and strip ambient VIRTUAL_ENV.
 	run_segment_in() {
 		local dir="$1"
 		local seg="$2"
 		local log="$3"
+		local fallback_repo="${4:-}"
+		local seg_path="${PATH}"
+		local seg_pythonpath="${PYTHONPATH:-}"
+		if [[ ${seg} != *"uv run"* ]]; then
+			if [[ -d "${dir%/}/.venv/bin" ]]; then
+				seg_path="${dir%/}/.venv/bin:${PATH}"
+			elif [[ -n ${fallback_repo} ]] && [[ -d "${fallback_repo%/}/.venv/bin" ]]; then
+				seg_path="${fallback_repo%/}/.venv/bin:${PATH}"
+				if [[ -d "${dir%/}/src" ]]; then
+					seg_pythonpath="${dir%/}/src:${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
+				else
+					seg_pythonpath="${dir%/}${seg_pythonpath:+:${seg_pythonpath}}"
+				fi
+			fi
+		fi
 		(
 			cd "${dir}" || exit 1
-			env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN bash -c "${seg}"
+			if [[ -n ${seg_pythonpath} ]]; then
+				PATH="${seg_path}" PYTHONPATH="${seg_pythonpath}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+			else
+				PATH="${seg_path}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+			fi
 		) >"${log}" 2>&1
 	}
 
@@ -685,7 +1748,7 @@ cmd_base_check() {
 	local cand_fail_idx=-1
 	local cand_fail_seg=""
 	for seg in "${segments[@]}"; do
-		if ! run_segment_in "${wt_path}" "${seg}" "${BASE_CHECK_DIR}/cand-${idx}.log"; then
+		if ! run_segment_in "${wt_path}" "${seg}" "${BASE_CHECK_DIR}/cand-${idx}.log" "${repo_path}"; then
 			cand_fail_idx="${idx}"
 			cand_fail_seg="${seg}"
 			break
@@ -704,7 +1767,7 @@ cmd_base_check() {
 		# were unrelated flaky shards, which a retry catches without a base run.
 		echo "[INFO] candidate failed stage ${cand_fail_idx}: ${cand_fail_seg}" >&2
 		tail -n 15 "${BASE_CHECK_DIR}/cand-${cand_fail_idx}.log" >&2 || true
-		if run_segment_in "${wt_path}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/cand-retry.log"; then
+		if run_segment_in "${wt_path}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/cand-retry.log" "${repo_path}"; then
 			verdict="FLAKE_ON_RETRY"
 			substatus="NONE"
 			detail="stage ${cand_fail_idx} (${cand_fail_seg}) failed once then passed on retry; treated as a flake, not a regression"
@@ -713,7 +1776,7 @@ cmd_base_check() {
 			local base_fail_seg=""
 			local bidx=0
 			for seg in "${segments[@]}"; do
-				if ! run_segment_in "${BASE_CHECK_WT}" "${seg}" "${BASE_CHECK_DIR}/base-${bidx}.log"; then
+				if ! run_segment_in "${BASE_CHECK_WT}" "${seg}" "${BASE_CHECK_DIR}/base-${bidx}.log" "${repo_path}"; then
 					base_fail_idx="${bidx}"
 					base_fail_seg="${seg}"
 					break
@@ -765,8 +1828,62 @@ cmd_base_check() {
 	return 0
 }
 
+sanitize_restored_hooks() {
+	local hooks_file="$1"
+
+	python3 - "${hooks_file}" <<'PY'
+import json
+import os
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+raw = path.read_text(encoding="utf-8", errors="replace")
+marker = ".gemini/config/proactive"
+
+
+def contains_marker(obj: object) -> bool:
+    if isinstance(obj, str):
+        return marker in obj
+    if isinstance(obj, dict):
+        return any(contains_marker(k) or contains_marker(v) for k, v in obj.items())
+    if isinstance(obj, list):
+        return any(contains_marker(item) for item in obj)
+    return False
+
+
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    sys.exit(11)
+
+if not isinstance(data, dict):
+    sys.exit(11)
+
+if not contains_marker(data):
+    sys.exit(0)
+
+if "proactive-safety-guard" in data and contains_marker(data["proactive-safety-guard"]):
+    data.pop("proactive-safety-guard", None)
+    rendered = json.dumps(data, indent=2) + "\n"
+    tmp = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    tmp.write_text(rendered, encoding="utf-8")
+    tmp.chmod(0o600)
+    os.replace(tmp, path)
+    if contains_marker(data):
+        sys.exit(10)
+    sys.exit(0)
+
+sys.exit(10)
+PY
+}
+
 cmd_disable() {
 	local config_dir="${HOME}/.gemini/config"
+	local runtime_dir="${config_dir}/proactive"
+	local stamp_file="${runtime_dir}/.hooks-managed"
+	local legacy_root=""
+	legacy_root="$(resolve_legacy_repo_root "${runtime_dir}")"
 
 	# Step 1/3: Stop/remove sidecars FIRST so no scheduled sweep can fire unguarded.
 	local sid=""
@@ -775,39 +1892,73 @@ cmd_disable() {
 		rm -f "${sidecar_dir}/sidecar.json" "${sidecar_dir}/user_config.json"
 		rmdir "${sidecar_dir}" 2>/dev/null || true
 	done
-	echo "Step 1/3: removed sidecar definitions before unlinking safety hooks"
+	local dyn_dir=""
+	for dyn_dir in "${config_dir}/sidecars"/proactive-sweep-* "${config_dir}/sidecars"/proactive-triage-*; do
+		[[ ! -L ${dyn_dir} ]] && [[ -d ${dyn_dir} ]] || continue
+		local dyn_sidecar="${dyn_dir}/sidecar.json"
+		if [[ ! -L ${dyn_sidecar} ]] && [[ -f ${dyn_sidecar} ]] && [[ -f "${dyn_dir}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			rm -f "${dyn_sidecar}" "${dyn_dir}/user_config.json" "${dyn_dir}/${PROACTIVE_MANAGED_MARKER}"
+			rmdir "${dyn_dir}" 2>/dev/null || true
+		fi
+	done
+	echo "Step 1/3: removed sidecar definitions before removing safety hooks"
 
-	# Step 2/3: Remove only the global proactive skill symlinks that install created.
-	# A user-managed symlink at the same path must survive rollback untouched.
+	# Step 2/3: Remove only the proactive skill symlinks/copies that install created.
+	# User-managed symlinks or unmanaged directories at the same path must survive rollback.
 	local skill=""
 	local removed_skills=0
 	for skill in "${SKILLS[@]}"; do
-		local skill_link="${config_dir}/skills/${skill}"
-		if [[ -L ${skill_link} ]] && [[ "$(readlink "${skill_link}")" == "${REPO_ROOT}/configs/antigravity/skills/${skill}" ]]; then
-			rm -f "${skill_link}"
+		local skill_path="${config_dir}/skills/${skill}"
+		if [[ -L ${skill_path} ]] && [[ -n ${legacy_root} ]] && [[ "$(readlink "${skill_path}")" == "${legacy_root}/configs/antigravity/skills/${skill}" ]]; then
+			rm -f "${skill_path}"
 			removed_skills=$((removed_skills + 1))
-		elif [[ -L ${skill_link} ]]; then
-			echo "Step 2/3: skipped ${skill_link} (symlink not created by install; leaving in place)"
+		elif [[ -L ${skill_path} ]]; then
+			echo "Step 2/3: skipped ${skill_path} (symlink not created by install; leaving in place)"
+		elif [[ -d ${skill_path} ]] && [[ -f "${skill_path}/${PROACTIVE_MANAGED_MARKER}" ]]; then
+			rm -rf "${skill_path}"
+			removed_skills=$((removed_skills + 1))
+		elif [[ -e ${skill_path} ]]; then
+			echo "Step 2/3: skipped ${skill_path} (directory not managed by install; leaving in place)"
 		fi
 	done
-	echo "Step 2/3: unlinked ${removed_skills} proactive skill symlinks"
+	echo "Step 2/3: removed ${removed_skills} managed proactive skill(s)"
 
-	# Step 3/3: Unlink global hooks.json LAST, and only if install created the link.
-	local hooks_link="${config_dir}/hooks.json"
-	if [[ -L ${hooks_link} ]] && [[ "$(readlink "${hooks_link}")" != "${REPO_ROOT}/configs/antigravity/hooks.json" ]]; then
-		echo "Step 3/3: skipped ${hooks_link} (symlink not created by install; leaving in place)"
-	elif [[ -L ${hooks_link} ]]; then
-		rm -f "${config_dir}/hooks.json"
-		local latest_backup
+	# Step 3/3: Remove global hooks.json LAST, and only if install created it.
+	# Select and inspect any restored backup before deleting runtime_dir so custom
+	# hooks that still reference ~/.gemini/config/proactive/ keep their target alive.
+	local hooks_path="${config_dir}/hooks.json"
+	if is_hooks_file_managed "${hooks_path}" "${stamp_file}" "${legacy_root}"; then
+		local latest_backup=""
 		latest_backup="$(find "${config_dir}" -maxdepth 1 -name "hooks.json.backup.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]" -type f 2>/dev/null | sort -r | head -n 1 || true)"
+		rm -f "${hooks_path}"
 		if [[ -n ${latest_backup} ]] && [[ -f ${latest_backup} ]]; then
+			mv "${latest_backup}" "${hooks_path}"
 			echo "Step 3/3: restored previous hooks.json from ${latest_backup}"
-			mv "${latest_backup}" "${config_dir}/hooks.json"
+			local sanitize_rc=0
+			sanitize_restored_hooks "${hooks_path}" || sanitize_rc=$?
+			case "${sanitize_rc}" in
+			0)
+				rm -rf "${runtime_dir}"
+				;;
+			10)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json still references .gemini/config/proactive (manual cleanup may be needed)"
+				;;
+			11)
+				echo "Step 3/3: preserved ${runtime_dir} because restored hooks.json could not be parsed as JSON" >&2
+				;;
+			*)
+				echo "Step 3/3: preserved ${runtime_dir} (hooks inspection exited ${sanitize_rc})" >&2
+				;;
+			esac
 		else
-			echo "Step 3/3: unlinked global hooks.json (local reports and worktrees preserved)"
+			rm -rf "${runtime_dir}"
+			echo "Step 3/3: removed global hooks.json (local reports and worktrees preserved)"
 		fi
+	elif [[ -L ${hooks_path} ]] || [[ -e ${hooks_path} ]]; then
+		echo "Step 3/3: skipped ${hooks_path} (not managed by install; leaving in place)"
 	else
-		echo "Step 3/3: hooks.json already unlinked"
+		rm -rf "${runtime_dir}"
+		echo "Step 3/3: hooks.json already removed"
 	fi
 
 	cat <<'EOF'
@@ -838,6 +1989,12 @@ main() {
 	status)
 		cmd_status "$@"
 		;;
+	doctor)
+		cmd_doctor "$@"
+		;;
+	stage-repo)
+		cmd_stage_repo "$@"
+		;;
 	canary-stage)
 		cmd_canary_stage "$@"
 		;;
@@ -849,6 +2006,9 @@ main() {
 		;;
 	audit-missed)
 		cmd_audit_missed "$@"
+		;;
+	sweep-date)
+		cmd_sweep_date "$@"
 		;;
 	base-check)
 		cmd_base_check "$@"
