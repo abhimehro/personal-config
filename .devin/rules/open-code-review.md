@@ -1,22 +1,24 @@
 # Open-code-review (`ocr`)
 
 Use the `ocr` CLI
-([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) as
-the mechanical code-review pass in two workflows:
+([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) as the
+mechanical code-review pass in two workflows:
 
 1. **Reviewing a PR or diff** — run the delegate flow against the range:
-   `ocr delegate preview --format json --from <base-ref> --to <head-ref>` for the
-   reviewable/excluded file list, then `ocr delegate rule --format json --from
-   <base-ref> --to <head-ref> <paths>` for the per-file review checklist. Review every `reviewable_files`
-   entry against its rule group; do not silently skip files. When an LLM
-   provider is configured (`ocr llm test` passes),
-   `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>` may
-   run the pass instead.
+   `ocr delegate preview --format json --from <base-ref> --to <head-ref>` for
+   the reviewable/excluded file list, then
+   `ocr delegate rule --format json --from
+   <base-ref> --to <head-ref> <paths>`
+   for the per-file review checklist. Review every `reviewable_files` entry
+   against its rule group; do not silently skip files. When an LLM provider is
+   configured (`ocr llm test` passes),
+   `ocr review --audience agent -b "<context>" --from <base-ref> --to <head-ref>`
+   may run the pass instead.
 2. **Before submitting code** — after changes are ready and before commit/PR,
-   run `ocr review --audience agent -b "<context>"` on the workspace when an
-   LLM provider is configured, `ocr delegate preview`/`rule` + agent review
-   otherwise. Fix or explicitly disposition
-   Critical/High findings before pushing.
+   run `ocr review --audience agent -b "<context>"` on the workspace when an LLM
+   provider is configured, `ocr delegate preview`/`rule` + agent review
+   otherwise. Fix or explicitly disposition Critical/High findings before
+   pushing.
 
 Rules:
 
@@ -27,8 +29,8 @@ Rules:
   context.
 - `ocr` findings inform gates; they never override sticky guards, security
   gates, or human holds.
-- Missing CLI: prefer `npm i -g @alibaba-group/open-code-review`; where
-  npm is unavailable,
+- Missing CLI: prefer `npm i -g @alibaba-group/open-code-review`; where npm is
+  unavailable,
   `OCR_INSTALL_DIR=$HOME/bin sh -c "$(curl -fsSL https://raw.githubusercontent.com/alibaba/open-code-review/main/install.sh)"`.
 - Vendored skills: `.agents/skills/open-code-review/` and
   `.agents/skills/open-code-review-delegate/` (mirrored into `.claude/skills`,

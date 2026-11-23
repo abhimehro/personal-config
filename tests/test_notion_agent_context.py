@@ -23,9 +23,7 @@ class TestNotionAgentContext(unittest.TestCase):
     def _context(self, path: str) -> str:
         """Isolate guidance so unrelated sections cannot satisfy assertions."""
         text = (ROOT / path).read_text(encoding="utf-8")
-        headings = list(
-            re.finditer(rf"^{re.escape(HEADING)}\s*$", text, re.MULTILINE)
-        )
+        headings = list(re.finditer(rf"^{re.escape(HEADING)}\s*$", text, re.MULTILINE))
         self.assertEqual(len(headings), 1, f"{path}: expected one context section")
         remainder = text[headings[0].end() :]
         section = re.split(r"^#{1,2} ", remainder, maxsplit=1, flags=re.MULTILINE)[0]
@@ -38,7 +36,9 @@ class TestNotionAgentContext(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self._context(path), canonical)
 
-    def test_context_dependent_tasks_consult_the_versioned_guide_and_registry(self) -> None:
+    def test_context_dependent_tasks_consult_the_versioned_guide_and_registry(
+        self,
+    ) -> None:
         for path in ENTRY_POINTS:
             with self.subTest(path=path):
                 section = self._context(path)
@@ -72,7 +72,9 @@ class TestNotionAgentContext(unittest.TestCase):
                     self._context(path),
                 )
 
-    def test_repository_artifacts_and_durable_memory_have_explicit_destinations(self) -> None:
+    def test_repository_artifacts_and_durable_memory_have_explicit_destinations(
+        self,
+    ) -> None:
         for path in ENTRY_POINTS:
             with self.subTest(path=path):
                 section = self._context(path)

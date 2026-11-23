@@ -6,7 +6,8 @@ instead of Fish.
 ## Setup
 
 1. Open **Settings, Extensions, Script Commands**.
-2. Click **Add Script Directory** and choose `~/dev/personal-config/raycast-scripts`.
+2. Click **Add Script Directory** and choose
+   `~/dev/personal-config/raycast-scripts`.
 3. The commands below appear in Root Search.
 
 ## Scripts
@@ -45,8 +46,8 @@ Both are overridable, since each is defined as `${VAR:-default}` in
 
 ### Working directory
 
-`PWD` is **not** forced. The launcher only auto-cds into `AGENT_WORKSPACE`
-when the shell starts in `/` or `$HOME`:
+`PWD` is **not** forced. The launcher only auto-cds into `AGENT_WORKSPACE` when
+the shell starts in `/` or `$HOME`:
 
 ```text
 launched from / or ~        -> PWD=/Users/speedybee/dev/abhimehro

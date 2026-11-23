@@ -21,6 +21,9 @@
 /Users/speedybee/.vscode
 /Users/speedybee/.agents
 /Users/speedybee/.gemini
+# SonarQube CLI state (global git hooks, logs, user data); wiping it breaks
+# global core.hookspath secret-scanning (observed 2026-11-21).
+/Users/speedybee/.sonar
 
 # User logs
 # Mole sweeps every child of ~/Library/Logs with no age filter, so partial
