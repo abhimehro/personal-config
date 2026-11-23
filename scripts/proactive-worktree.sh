@@ -42,7 +42,7 @@ cleanup_runtime_temps() {
 usage() {
 	cat <<'EOF'
 Usage:
-  proactive-worktree.sh prepare --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
+  proactive-worktree.sh prepare [--repo <owner/name|name>] --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
   proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
   proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees]
   proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees]
@@ -145,6 +145,8 @@ run_with_timeout() {
 	fi
 	local rc=0
 	python3 - "${timeout_s}" "$@" <<'PY' || rc=$?
+import os
+import signal
 import subprocess
 import sys
 
@@ -155,10 +157,30 @@ except ValueError:
     sys.exit(1)
 
 cmd = sys.argv[2:]
+proc = None
 try:
-    proc = subprocess.run(cmd, timeout=timeout_val)
-    sys.exit(proc.returncode)
+    proc = subprocess.Popen(cmd, start_new_session=True)
+    sys.exit(proc.wait(timeout=timeout_val))
 except subprocess.TimeoutExpired:
+    if proc is not None:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                pass
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                try:
+                    proc.kill()
+                except ProcessLookupError:
+                    pass
+            proc.wait()
     sys.stderr.write(f"[ERROR] Command timed out after {sys.argv[1]}s: {cmd[0]}\n")
     sys.exit(124)
 except FileNotFoundError:
@@ -166,6 +188,37 @@ except FileNotFoundError:
     sys.exit(127)
 PY
 	return "${rc}"
+}
+
+resolve_github_host() {
+	local repo_path="$1"
+	local remote_url=""
+	remote_url="$(git -C "${repo_path}" remote get-url origin 2>/dev/null || true)"
+	local host=""
+	case "${remote_url}" in
+	ssh://git@*)
+		host="${remote_url#ssh://git@}"
+		host="${host%%/*}"
+		host="${host%%:*}"
+		;;
+	git@*:*)
+		host="${remote_url#git@}"
+		host="${host%%:*}"
+		;;
+	https://* | http://*)
+		host="${remote_url#*://}"
+		host="${host#*@}"
+		host="${host%%/*}"
+		host="${host%%:*}"
+		;;
+	*)
+		host=""
+		;;
+	esac
+	if [[ -z ${host} ]]; then
+		host="github.com"
+	fi
+	printf '%s' "${host}"
 }
 
 is_github_ssh_url() {
@@ -399,6 +452,7 @@ resolve_default_branch() {
 }
 
 cmd_prepare() {
+	local explicit_repo=""
 	local repo_path=""
 	local lens=""
 	local wt_root="${DEFAULT_WT_ROOT}"
@@ -406,6 +460,14 @@ cmd_prepare() {
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
+		--repo)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] prepare: --repo requires a value" >&2
+				exit 1
+			fi
+			explicit_repo="$2"
+			shift 2
+			;;
 		--repo-path)
 			repo_path="$2"
 			shift 2
@@ -470,8 +532,16 @@ cmd_prepare() {
 		exit 1
 	fi
 
-	local repo_name
-	repo_name="$(basename "${repo_path}")"
+	local repo_name=""
+	if [[ -n ${explicit_repo} ]]; then
+		repo_name="${explicit_repo##*/}"
+	else
+		repo_name="$(basename "${repo_path}")"
+	fi
+	if [[ ! ${repo_name} =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+		echo "[ERROR] prepare: invalid repo name '${repo_name}'" >&2
+		exit 1
+	fi
 	if is_research_repo "${repo_name}" && [[ ${lens} == "palette" ]]; then
 		echo "[ERROR] Palette lens is disabled for research repository ${repo_name}" >&2
 		exit 3
@@ -504,7 +574,7 @@ cmd_prepare() {
 	if [[ ${mode} == "local" ]]; then
 		git -C "${repo_path}" config extensions.worktreeConfig true
 		git -C "${wt_path}" config --worktree remote.origin.pushurl "DISABLED"
-		# Prevent 1Password op-ssh-sign Touch ID hangs during unattended 2B
+		# Prevent op-ssh-sign Touch ID hangs during unattended 2B
 		# candidate commits without touching ~/.gitconfig or primary checkouts.
 		git -C "${wt_path}" config --worktree commit.gpgsign false
 	fi
@@ -1232,6 +1302,24 @@ all_linear_commits_in_patch_ids() {
 	[[ ${matched} -eq ${commit_count} ]]
 }
 
+is_head_integrated_into_upstream_tree() {
+	local wt_dir="$1"
+	local upstream_ref="$2"
+
+	local upstream_tree=""
+	upstream_tree="$(git -C "${wt_dir}" rev-parse "${upstream_ref}^{tree}" 2>/dev/null || true)"
+	if [[ -z ${upstream_tree} ]]; then
+		return 1
+	fi
+
+	local merge_out=""
+	if ! merge_out="$(git -C "${wt_dir}" merge-tree --write-tree "${upstream_ref}" HEAD 2>/dev/null)"; then
+		return 1
+	fi
+	local merged_tree="${merge_out%%$'\n'*}"
+	[[ -n ${merged_tree} ]] && [[ ${merged_tree} == "${upstream_tree}" ]]
+}
+
 is_worktree_merged_into_upstream() {
 	local wt_dir="$1"
 	local upstream_ref="$2"
@@ -1251,14 +1339,17 @@ is_worktree_merged_into_upstream() {
 	fi
 
 	# Multi-commit (and single-commit) squash merges produce one upstream commit whose
-	# verbatim patch-id matches the combined branch diff.
+	# verbatim patch-id matches the combined branch diff, AND merging HEAD into
+	# upstream_ref produces the exact same tree as upstream_ref (distinguishing true
+	# integration from identical repeated blocks elsewhere in a file).
 	local branch_patch_id=""
 	branch_patch_id="$(
 		{
 			git -C "${wt_dir}" diff --no-renames "${merge_base}..HEAD" 2>/dev/null || true
 		} | git patch-id --verbatim 2>/dev/null | awk 'NR == 1 { print $1 }' || true
 	)"
-	if [[ -n ${branch_patch_id} ]] && grep -qxF "${branch_patch_id}" "${UPSTREAM_PATCH_IDS_FILE}"; then
+	if [[ -n ${branch_patch_id} ]] && grep -qxF "${branch_patch_id}" "${UPSTREAM_PATCH_IDS_FILE}" &&
+		is_head_integrated_into_upstream_tree "${wt_dir}" "${upstream_ref}"; then
 		return 0
 	fi
 
@@ -1271,7 +1362,8 @@ is_worktree_merged_into_upstream() {
 		return 1
 	fi
 
-	all_linear_commits_in_patch_ids "${wt_dir}" "${upstream_ref}" "${UPSTREAM_PATCH_IDS_FILE}"
+	all_linear_commits_in_patch_ids "${wt_dir}" "${upstream_ref}" "${UPSTREAM_PATCH_IDS_FILE}" &&
+		is_head_integrated_into_upstream_tree "${wt_dir}" "${upstream_ref}"
 }
 
 has_unreviewed_worktree_commits() {
@@ -1959,7 +2051,9 @@ cmd_preflight() {
 		fi
 	fi
 
-	if ! command -v gh >/dev/null 2>&1 || ! run_with_timeout 15 gh auth status >/dev/null 2>&1; then
+	local gh_host=""
+	gh_host="$(resolve_github_host "${repo_path}")"
+	if ! command -v gh >/dev/null 2>&1 || ! run_with_timeout 15 gh auth status --hostname "${gh_host}" >/dev/null 2>&1; then
 		echo "repo=${repo}"
 		echo "git_fetch=${git_fetch_state}"
 		echo "fetch_transport=${fetch_transport}"

@@ -152,6 +152,7 @@ why in the digest.
 
    ```bash
    WT_PATH="$("$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh" prepare \
+     --repo "abhimehro/<repo>" \
      --repo-path "$HOME/dev/<repo>" \
      --lens "<lens>" \
      --mode local)"
@@ -210,6 +211,7 @@ why in the digest.
        git -C "$HOME/dev/<repo>" worktree remove --force "$WT_PATH" && \
        git -C "$HOME/dev/<repo>" branch -D "$BRANCH_NAME"
      ```
+
    - A failure in the repository's own test or build command is **not**
      automatically the candidate's fault. Jules stranded four good PRs on base
      breakage: deleting a cyclomatic-complexity-1 helper _lowered_ CodeScene
@@ -219,8 +221,7 @@ why in the digest.
      a provisional `Substatus: GATE_FAILURE` in the digest, and stop. The
      `08:35` triage slot runs `antigravity-proactive-ctl.sh base-check`, which
      re-runs the failing stage on a pristine `base_sha` worktree and appends a
-     `## Base-Check
-     Classification` verdict to the same digest. Never run
+     `## Base-Check Classification` verdict to the same digest. Never run
      `base-check` inside the sweep: a base re-run can double test time and the
      sweep is boxed at 15 minutes. Never delete a worktree whose failure has not
      been classified — that destroys the evidence the classification needs.

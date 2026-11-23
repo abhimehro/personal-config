@@ -1765,6 +1765,159 @@ check_exit "preflight unmapped repo fails exit 7 without pytest" 7 \
 	"${TARGET_SCRIPT}" preflight --repo abhimehro/some-unmapped-repo --repo-path "${PF_UNMAPPED}"
 rm -f "${PF_PYTEST_FAIL_FLAG}"
 
+# 14. Squash/patch-id false-positive guard on identical repeated blocks (D1)
+DUP_BARE="${TEST_DIR}/dup-remote.git"
+DUP_SEED="${TEST_DIR}/dup-seed"
+DUP_CLONE="${TEST_DIR}/dup-repo"
+DUP_WT_ROOT="${TEST_DIR}/dup-wt"
+mkdir -p "${DUP_SEED}" "${DUP_WT_ROOT}"
+git init -q --bare "${DUP_BARE}"
+git init -q "${DUP_SEED}"
+git -C "${DUP_SEED}" config user.email "test@example.com"
+git -C "${DUP_SEED}" config user.name "Test"
+cat >"${DUP_SEED}/dup.py" <<'EOF'
+# Header one
+alpha = 1
+beta = 2
+TARGET = "old"
+gamma = 3
+delta = 4
+epsilon = 5
+
+# Spacer 1
+# Spacer 2
+# Spacer 3
+# Spacer 4
+# Spacer 5
+# Spacer 6
+# Spacer 7
+# Spacer 8
+
+# Header two
+alpha = 1
+beta = 2
+TARGET = "old"
+gamma = 3
+delta = 4
+epsilon = 5
+EOF
+git -C "${DUP_SEED}" add dup.py
+git -C "${DUP_SEED}" commit -q -m "base with repeated identical blocks"
+git -C "${DUP_SEED}" branch -M main
+git -C "${DUP_SEED}" remote add origin "${DUP_BARE}"
+git -C "${DUP_SEED}" push -q -u origin main
+git --git-dir="${DUP_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${DUP_BARE}" "${DUP_CLONE}"
+git -C "${DUP_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+WT_DUP="$("${TARGET_SCRIPT}" prepare --repo abhimehro/dup-repo --repo-path "${DUP_CLONE}" --lens bolt --worktree-root "${DUP_WT_ROOT}")"
+DUP_BRANCH="$(git -C "${WT_DUP}" symbolic-ref --quiet --short HEAD)"
+python3 - "${WT_DUP}/dup.py" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+text = p.read_text(encoding="utf-8")
+parts = text.rsplit('TARGET = "old"', 1)
+assert len(parts) == 2
+p.write_text(parts[0] + 'TARGET = "new"' + parts[1], encoding="utf-8")
+PY
+git -C "${WT_DUP}" add dup.py
+git -C "${WT_DUP}" commit -q -m "bolt: update second identical block"
+
+# Upstream independently modifies ONLY the first identical block with the same line change.
+UP_CLONE="${TEST_DIR}/dup-upstream"
+git clone -q "${DUP_BARE}" "${UP_CLONE}"
+git -C "${UP_CLONE}" config user.email "maintainer@example.com"
+git -C "${UP_CLONE}" config user.name "Maintainer"
+python3 - "${UP_CLONE}/dup.py" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+text = p.read_text(encoding="utf-8")
+parts = text.split('TARGET = "old"', 1)
+assert len(parts) == 2
+p.write_text(parts[0] + 'TARGET = "new"' + parts[1], encoding="utf-8")
+PY
+git -C "${UP_CLONE}" add dup.py
+git -C "${UP_CLONE}" commit -q -m "feat: update first identical block upstream"
+git -C "${UP_CLONE}" push -q origin main
+git -C "${DUP_CLONE}" fetch -q origin
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle retains candidate when upstream matched only another identical block" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/dup-repo --worktree-root "${DUP_WT_ROOT}" --include-worktrees --repo-path "${DUP_CLONE}" --max-open 1
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-collisions detects unmerged candidate despite repeated-block patch-id match" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/dup-repo --file "dup.py" --include-worktrees --repo-path "${DUP_CLONE}"
+check_exit "cleanup --prune-merged runs safely on repeated-block candidate" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${DUP_WT_ROOT}" --prune-merged
+check "cleanup --prune-merged preserves unmerged repeated-block worktree" test -d "${WT_DUP}"
+check "cleanup --prune-merged preserves unmerged repeated-block branch" \
+	git -C "${DUP_CLONE}" rev-parse --verify --quiet "${DUP_BRANCH}"
+check_exit "preflight --auto-heal passes without pruning unmerged repeated-block candidate" 0 \
+	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/some-unmapped-repo --repo-path "${DUP_CLONE}" --worktree-root "${DUP_WT_ROOT}" --auto-heal
+check "preflight --auto-heal preserved unmerged worktree after repeated-block edit" test -d "${WT_DUP}"
+
+# 15. Explicit --repo identity in prepare for renamed checkouts (D2)
+RENAMED_SEATEK="${TEST_DIR}/custom-clones/seatek-local"
+mkdir -p "${TEST_DIR}/custom-clones"
+git clone -q "${PRUNE_BARE}" "${RENAMED_SEATEK}"
+git -C "${RENAMED_SEATEK}" remote set-head origin -a >/dev/null 2>&1
+check_exit "prepare --repo rejects palette on renamed Seatek_Analysis checkout" 3 \
+	"${TARGET_SCRIPT}" prepare --repo abhimehro/Seatek_Analysis --repo-path "${RENAMED_SEATEK}" --lens palette --worktree-root "${DUP_WT_ROOT}"
+WT_RENAMED_SEATEK="$("${TARGET_SCRIPT}" prepare --repo abhimehro/Seatek_Analysis --repo-path "${RENAMED_SEATEK}" --lens code-health --worktree-root "${DUP_WT_ROOT}")"
+check "prepare --repo names worktree slug after explicit repo identity" \
+	test "$(basename "${WT_RENAMED_SEATEK}")" != "" -a -z "${WT_RENAMED_SEATEK##*/proactive-Seatek_Analysis-code-health-*}"
+check "prepare --repo writes canonical repo_name into proactive-meta.json" python3 - "${WT_RENAMED_SEATEK}" <<'PY'
+import json, pathlib, subprocess, sys
+git_dir = subprocess.check_output(["git", "-C", sys.argv[1], "rev-parse", "--git-dir"], text=True).strip()
+meta = json.loads((pathlib.Path(git_dir) / "proactive-meta.json").read_text(encoding="utf-8"))
+assert meta["repo_name"] == "Seatek_Analysis", meta
+PY
+
+# 16. Host-scoped gh auth status ignores unrelated expired hosts (D5)
+HOST_GH_BIN="${TEST_DIR}/host_gh_bin"
+HOST_GH_LOG="${TEST_DIR}/host_gh_args.log"
+mkdir -p "${HOST_GH_BIN}"
+cat >"${HOST_GH_BIN}/gh" <<MOCK
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${HOST_GH_LOG}"
+if [[ "\$1" == "auth" && "\$2" == "status" ]]; then
+	if [[ "\$3" == "--hostname" && "\$4" == "github.com" ]]; then
+		echo "Logged in to github.com"
+		exit 0
+	fi
+	if [[ "\$3" == "--hostname" && "\$4" == "ghe.example.com" ]]; then
+		echo "Logged in to ghe.example.com"
+		exit 0
+	fi
+	echo "Failed logging in to unrelated.example.invalid" >&2
+	exit 1
+fi
+exit 0
+MOCK
+chmod +x "${HOST_GH_BIN}/gh"
+HOST_REPO_GH="${TEST_DIR}/host_repo_gh"
+git clone -q "${PRUNE_BARE}" "${HOST_REPO_GH}"
+git -C "${HOST_REPO_GH}" remote set-url origin "git@github.com:abhimehro/email-security-pipeline.git"
+: >"${HOST_GH_LOG}"
+check_exit "preflight scopes gh auth status to origin hostname (github.com)" 0 \
+	env PATH="${HOST_GH_BIN}:${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/email-security-pipeline --repo-path "${HOST_REPO_GH}" --skip-fetch
+check_grep "preflight invoked gh auth status --hostname github.com" "^auth status --hostname github.com$" "${HOST_GH_LOG}"
+
+git -C "${HOST_REPO_GH}" remote set-url origin "https://ghe.example.com/org/email-security-pipeline.git"
+: >"${HOST_GH_LOG}"
+check_exit "preflight scopes gh auth status to GHE origin hostname" 0 \
+	env PATH="${HOST_GH_BIN}:${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo org/email-security-pipeline --repo-path "${HOST_REPO_GH}" --skip-fetch
+check_grep "preflight invoked gh auth status --hostname ghe.example.com" "^auth status --hostname ghe.example.com$" "${HOST_GH_LOG}"
+
+# 17. run_with_timeout terminates full process group on timeout (D6)
+TIMEOUT_MARKER="${TEST_DIR}/pg_child_escaped.marker"
+rc_pg=0
+bash -c 'source "$1"; run_with_timeout 0.3 bash -c '\''sleep 1 && touch "$1" & wait'\'' _ "$2"' _ "${TARGET_SCRIPT}" "${TIMEOUT_MARKER}" 2>"${TEST_DIR}/pg_timeout.err" || rc_pg=$?
+check "run_with_timeout returns 124 when terminating process group" test "${rc_pg}" -eq 124
+sleep 1.4
+check "run_with_timeout terminated child background subprocess before marker write" test ! -e "${TIMEOUT_MARKER}"
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

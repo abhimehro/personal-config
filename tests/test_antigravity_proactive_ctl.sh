@@ -912,6 +912,83 @@ check_exit "hooks.json fails closed with exit 2 when both deployed and repo guar
 	env HOME="${HOOK_HOME}" sh -c "${HOOK_CMD}" </dev/null
 check_grep "hooks.json prints clear missing-guard error" "proactive-guard\.py missing" "${TEST_DIR}/check.log"
 
+# 12. doctor --fix recovers when a directory occupies a runtime file path (D4)
+export HOME="${TEST_DIR}/doctor-dir-home"
+mkdir -p "${HOME}/.gemini/config" "${HOME}/dev"
+git init -q "${HOME}/dev/ctrld-sync"
+"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" install --pilot --source-repo "${MOCK_SRC}" >/dev/null 2>&1
+rm -f "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+mkdir -p "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh/nested"
+check_exit "doctor detects invalid-type when directory occupies proactive-worktree.sh" 1 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --repo ctrld-sync
+check_grep "doctor reports invalid-type for directory at file path" "^runtime_worktree_sh=invalid-type$" "${TEST_DIR}/check.log"
+check_grep "doctor reports degraded on invalid-type" "^runtime_health=degraded$" "${TEST_DIR}/check.log"
+
+check_exit "doctor --fix displaces occupying directory and restores executable file" 0 \
+	"${MOCK_SRC}/scripts/antigravity-proactive-ctl.sh" doctor --fix --source-repo "${MOCK_SRC}" --repo ctrld-sync
+check_grep "doctor --fix reports auto_healed_install=yes only after runtime is healthy" "^auto_healed_install=yes$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix reports runtime_health=ok after dir repair" "^runtime_health=ok$" "${TEST_DIR}/check.log"
+check_grep "doctor --fix reports runtime_worktree_sh=ok" "^runtime_worktree_sh=ok$" "${TEST_DIR}/check.log"
+check "repaired proactive-worktree.sh is a regular executable file" \
+	test -f "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh" -a -x "${HOME}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+check "unexpected directory was preserved as .invalid-dir backup" \
+	python3 - "${HOME}/.gemini/config/proactive/scripts" <<'PY'
+import pathlib, sys
+matches = list(pathlib.Path(sys.argv[1]).glob("proactive-worktree.sh.invalid-dir.*"))
+assert len(matches) == 1 and matches[0].is_dir(), matches
+PY
+
+# 13. sweep-date + overnight UTC-midnight stage-repo alignment (D3) & renamed base-check (D2)
+SWEEP_DATE_UTC="$("${CTL_SCRIPT}" sweep-date --cron "50 23 * * 1-5" --now "2026-11-24T00:10:00Z")"
+check "sweep-date maps post-midnight UTC triage to previous UTC sweep date" test "${SWEEP_DATE_UTC}" = "2026-11-23"
+SWEEP_DATE_CDT="$("${CTL_SCRIPT}" sweep-date --cron "CRON_TZ=America/Chicago 50 18 * * 1-5" --now "2026-07-15T00:10:00Z")"
+check "sweep-date handles CRON_TZ=America/Chicago across UTC midnight (CDT)" test "${SWEEP_DATE_CDT}" = "2026-07-14"
+SWEEP_DATE_DAY="$("${CTL_SCRIPT}" sweep-date --cron "CRON_TZ=America/Chicago 15 8 * * 1-5" --now "2026-11-23T14:35:00Z")"
+check "sweep-date keeps same UTC date for morning CST sweep" test "${SWEEP_DATE_DAY}" = "2026-11-23"
+
+export HOME="${TEST_DIR}/stage-overnight-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+check_exit "stage-repo supports overnight crons spanning UTC midnight" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo Seatek_Analysis --repo-path "__HOME__/research/seatek-local" \
+	--cron "50 23 * * 1-5" --triage-cron "10 0 * * 2-6"
+check "overnight stage-repo binds --repo in prepare and sweep-date in both sidecars" python3 - "${HOME}" <<'PY'
+import json, pathlib, sys
+home = pathlib.Path(sys.argv[1])
+s_doc = json.loads((home / ".gemini/config/sidecars/proactive-sweep-Seatek_Analysis/sidecar.json").read_text(encoding="utf-8"))
+t_doc = json.loads((home / ".gemini/config/sidecars/proactive-triage-Seatek_Analysis/sidecar.json").read_text(encoding="utf-8"))
+assert "prepare --repo abhimehro/Seatek_Analysis" in s_doc["args"][-1]
+assert "sweep-date --cron '50 23 * * 1-5'" in s_doc["args"][-1]
+assert "sweep-date --cron '50 23 * * 1-5'" in t_doc["args"][-1]
+assert '--date "$SWEEP_DATE"' in t_doc["args"][-1]
+ctl_cmd = f"command({home}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh sweep-date)"
+assert ctl_cmd in s_doc["agent_permissions"]["access_grants"]
+assert ctl_cmd in t_doc["agent_permissions"]["access_grants"]
+PY
+
+RENAMED_BASE="${TEST_DIR}/renamed-seatek-remote.git"
+RENAMED_SEED="${TEST_DIR}/renamed-seatek-seed"
+RENAMED_CLONE="${TEST_DIR}/custom-seatek/seatek-local"
+RENAMED_WT_ROOT="${TEST_DIR}/renamed-wt"
+mkdir -p "${RENAMED_SEED}" "${TEST_DIR}/custom-seatek" "${RENAMED_WT_ROOT}"
+git init -q --bare "${RENAMED_BASE}"
+git init -q "${RENAMED_SEED}"
+git -C "${RENAMED_SEED}" config user.email "test@example.com"
+git -C "${RENAMED_SEED}" config user.name "Test"
+printf 'ok\n' >"${RENAMED_SEED}/README.md"
+git -C "${RENAMED_SEED}" add README.md
+git -C "${RENAMED_SEED}" commit -q -m "init"
+git -C "${RENAMED_SEED}" branch -M main
+git -C "${RENAMED_SEED}" remote add origin "${RENAMED_BASE}"
+git -C "${RENAMED_SEED}" push -q -u origin main
+git --git-dir="${RENAMED_BASE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${RENAMED_BASE}" "${RENAMED_CLONE}"
+git -C "${RENAMED_CLONE}" remote set-head origin -a >/dev/null 2>&1
+WT_RENAMED="$("${WT_SCRIPT}" prepare --repo abhimehro/Seatek_Analysis --repo-path "${RENAMED_CLONE}" --lens code-health --worktree-root "${RENAMED_WT_ROOT}")"
+check_exit "base-check accepts worktree prepared with explicit --repo from renamed checkout" 0 \
+	"${CTL_SCRIPT}" base-check --repo Seatek_Analysis --worktree "${WT_RENAMED}" --test-cmd "true"
+check_grep "base-check reports canonical Seatek_Analysis repo identity" "^REPO: abhimehro/Seatek_Analysis$" "${TEST_DIR}/check.log"
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

@@ -96,6 +96,7 @@ Usage:
   antigravity-proactive-ctl.sh canary-clean
   antigravity-proactive-ctl.sh sentinel-post-merge --repo <name> --pr <number>
   antigravity-proactive-ctl.sh audit-missed --date <YYYY-MM-DD> --repo <name>
+  antigravity-proactive-ctl.sh sweep-date --cron "<expr>" [--now "<ISO-8601>"]
   antigravity-proactive-ctl.sh base-check --repo <name> --worktree <dir> [--digest <path>] [--test-cmd <cmd>]
   antigravity-proactive-ctl.sh disable
 
@@ -143,8 +144,21 @@ atomic_install_file() {
 	local dst="$3"
 	local tmp_dst="${dst}.tmp.$$"
 
+	if [[ -d ${dst} ]] && [[ ! -L ${dst} ]]; then
+		local invalid_backup=""
+		invalid_backup="${dst}.invalid-dir.$(date -u +%Y%m%dT%H%M%SZ).$$"
+		if ! mv "${dst}" "${invalid_backup}"; then
+			echo "[ERROR] Cannot move directory out of managed file path ${dst}" >&2
+			return 1
+		fi
+		echo "[WARN] Moved unexpected directory aside from ${dst} -> ${invalid_backup}" >&2
+	fi
+
 	install -m "${mode}" "${src}" "${tmp_dst}"
-	mv -f "${tmp_dst}" "${dst}"
+	if ! mv -f "${tmp_dst}" "${dst}"; then
+		rm -f "${tmp_dst}"
+		return 1
+	fi
 }
 
 resolve_install_source_root() {
@@ -651,7 +665,11 @@ cmd_doctor() {
 		fi
 		if (cmd_install "${install_args[@]}" >&2); then
 			collect_runtime_health
-			echo "auto_healed_install=yes"
+			if runtime_is_healthy; then
+				echo "auto_healed_install=yes"
+			else
+				echo "auto_healed_install=failed"
+			fi
 		else
 			echo "auto_healed_install=failed"
 		fi
@@ -814,6 +832,7 @@ cmd_stage_repo() {
 import json
 import os
 import pathlib
+import shlex
 import sys
 
 sweep_path = pathlib.Path(sys.argv[1])
@@ -830,6 +849,7 @@ ctl_sh = f"{home_dir}/.gemini/config/proactive/scripts/antigravity-proactive-ctl
 reports_dir = f"{home_dir}/.gemini/antigravity/proactive-reports"
 worktrees_dir = f"{home_dir}/.gemini/antigravity/worktrees"
 skills_dir = f"{home_dir}/.gemini/config/skills"
+quoted_cron = shlex.quote(sweep_cron)
 
 if repo_kind == "research":
     lens_guidance = (
@@ -855,18 +875,20 @@ sweep_prompt = (
     f"run Step 0 {worktree_sh} preflight --repo abhimehro/{repo_name} --repo-path {repo_path} --auto-heal, "
     f"then run {worktree_sh} cleanup --ttl-days 21 and check-throttle --repo abhimehro/{repo_name} "
     f"--include-worktrees --repo-path {repo_path}, check open-PR file collisions via check-collisions "
-    f"before editing, prepare an isolated local worktree via prepare --repo-path {repo_path} --lens <lens> --mode local, "
+    f"before editing, prepare an isolated local worktree via prepare --repo abhimehro/{repo_name} "
+    f"--repo-path {repo_path} --lens <lens> --mode local, "
     f"{verify_guidance} without modifying build, lock, script, or test harnesses, "
     "and if verify reports a semantic test-coverage BLOCK restore the lost coverage rather than deleting "
-    "tests or pinning --expected-test-count, and write a chmod 600 digest report to "
-    f"{reports_dir}/$(date -u +%Y-%m-%d)-{repo_name}.md. Do not push branches, open PRs, or edit .jules/sentinel.md."
+    "tests or pinning --expected-test-count, resolve SWEEP_DATE via "
+    f"`{ctl_sh} sweep-date --cron {quoted_cron}`, and write a chmod 600 digest report to "
+    f"{reports_dir}/$SWEEP_DATE-{repo_name}.md. Do not push branches, open PRs, or edit .jules/sentinel.md."
 )
 
 triage_prompt = (
     f"[PROACTIVE-TRIAGE] Post-sweep review for {repo_name} (2B, human-in-the-loop). "
     "Do NOT push, open PRs, or re-run the sweep. Steps: "
-    f"(1) Read {reports_dir}/$(date -u +%Y-%m-%d)-{repo_name}.md. "
-    f"(2) If no digest exists, run `{ctl_sh} audit-missed --date $(date -u +%Y-%m-%d) --repo {repo_name}` once, "
+    f"(1) Resolve SWEEP_DATE via `{ctl_sh} sweep-date --cron {quoted_cron}` and read {reports_dir}/$SWEEP_DATE-{repo_name}.md. "
+    f"(2) If no digest exists, run `{ctl_sh} audit-missed --date \"$SWEEP_DATE\" --repo {repo_name}` once, "
     "record Status MISSED in the summary, and do NOT retry or start a run. "
     "(3) Otherwise inspect the referenced worktree (git diff --shortstat vs base_sha) and re-check verify exit status from the digest. "
     f"(3b) If verify did not exit 0, run `{ctl_sh} base-check --repo {repo_name} --worktree <worktree_path> --digest <digest_path>` ONCE "
@@ -900,6 +922,7 @@ sweep_doc = {
             f"write_file({worktrees_dir})",
             f"command({home_dir}/bin/agent-zsh -c)",
             f"command({worktree_sh})",
+            f"command({ctl_sh} sweep-date)",
             "command(gh pr list)",
             "command(gh auth status)",
             "command(git -C)",
@@ -925,6 +948,7 @@ triage_doc = {
             f"read_file({worktrees_dir})",
             f"write_file({worktrees_dir})",
             f"command({home_dir}/bin/agent-zsh -c)",
+            f"command({ctl_sh} sweep-date)",
             f"command({ctl_sh} audit-missed)",
             f"command({ctl_sh} base-check)",
             f"command({ctl_sh} doctor)",
@@ -1254,6 +1278,89 @@ EOF
 		chmod 600 "${report_file}"
 	)
 	echo "MISSED_RECORDED: ${report_file}"
+}
+
+cmd_sweep_date() {
+	local cron_expr=""
+	local now_str=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--cron)
+			require_flag_value "sweep-date" "$1" "$#"
+			cron_expr="$2"
+			shift 2
+			;;
+		--now)
+			require_flag_value "sweep-date" "$1" "$#"
+			now_str="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for sweep-date: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${cron_expr} ]]; then
+		echo '[ERROR] sweep-date requires --cron "<expr>"' >&2
+		exit 1
+	fi
+
+	python3 - "${cron_expr}" "${now_str}" <<'PY'
+import datetime as dt
+import sys
+import zoneinfo
+
+cron_expr = sys.argv[1].strip()
+now_raw = sys.argv[2].strip()
+
+tokens = cron_expr.split()
+tz_name = "UTC"
+while tokens and (tokens[0].startswith("CRON_TZ=") or tokens[0].startswith("TZ=")):
+    tz_name = tokens.pop(0).split("=", 1)[1].strip() or "UTC"
+
+if len(tokens) < 5:
+    sys.stderr.write(f"[ERROR] sweep-date: invalid cron expression: {cron_expr}\n")
+    sys.exit(1)
+
+try:
+    zone = zoneinfo.ZoneInfo(tz_name)
+except zoneinfo.ZoneInfoNotFoundError:
+    sys.stderr.write(f"[ERROR] sweep-date: unknown timezone in cron expression: {tz_name}\n")
+    sys.exit(1)
+
+if now_raw:
+    try:
+        now_dt = dt.datetime.fromisoformat(now_raw.replace("Z", "+00:00"))
+    except ValueError:
+        sys.stderr.write(f"[ERROR] sweep-date: invalid --now timestamp: {now_raw}\n")
+        sys.exit(1)
+    if now_dt.tzinfo is None:
+        now_utc = now_dt.replace(tzinfo=dt.timezone.utc)
+    else:
+        now_utc = now_dt.astimezone(dt.timezone.utc)
+else:
+    now_utc = dt.datetime.now(dt.timezone.utc)
+
+min_f, hour_f = tokens[0], tokens[1]
+if min_f.isdigit() and hour_f.isdigit():
+    minute = int(min_f)
+    hour = int(hour_f)
+    if not (0 <= minute <= 59 and 0 <= hour <= 23):
+        sys.stderr.write(f"[ERROR] sweep-date: invalid hour/minute in cron expression: {cron_expr}\n")
+        sys.exit(1)
+    now_local = now_utc.astimezone(zone)
+    if (now_local.hour, now_local.minute) >= (hour, minute):
+        sched_day = now_local.date()
+    else:
+        sched_day = now_local.date() - dt.timedelta(days=1)
+    sched_local = dt.datetime.combine(sched_day, dt.time(hour, minute), tzinfo=zone)
+    print(sched_local.astimezone(dt.timezone.utc).strftime("%Y-%m-%d"))
+else:
+    print(now_utc.strftime("%Y-%m-%d"))
+PY
 }
 
 # G-4: a verify failure is not automatically the candidate's fault. Jules stranded
@@ -1643,6 +1750,9 @@ main() {
 		;;
 	audit-missed)
 		cmd_audit_missed "$@"
+		;;
+	sweep-date)
+		cmd_sweep_date "$@"
 		;;
 	base-check)
 		cmd_base_check "$@"
