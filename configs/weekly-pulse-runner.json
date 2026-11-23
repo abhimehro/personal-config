@@ -11,11 +11,12 @@
     "timezone": "America/Chicago",
     "cron_local": "0 18 * * 0",
     "cron_utc_winter_cst": "0 0 * * 1",
-    "note": "Use cron_local with TZ=America/Chicago when supported; use cron_utc_winter_cst on UTC-only runners like GitHub Actions during CST."
+    "note": "Use cron_local with TZ=America/Chicago when supported; use cron_utc_winter_cst on UTC-only runners like GitHub Actions during CST. Before dispatch, derive the Chicago calendar date, require it to fall within shadow_trial_window, and inject WINDOW_END_ISO for Sunday at 18:00 America/Chicago."
   },
   "runtime_parameters": {
+    "WINDOW_END_ISO_ADAPTER": "At dispatch, resolve the scheduled Sunday at 18:00 America/Chicago as an RFC 3339 timestamp with its UTC offset (for example, 2026-11-29T18:00:00-06:00) and inject it as WINDOW_END_ISO.",
     "WINDOW_DAYS": 7,
-    "WINDOW_INCLUSIVE": true,
+    "WINDOW_BOUNDS": "[start, end)",
     "WINDOW_TIMEZONE": "America/Chicago",
     "STALE_PR_DAYS": 5,
     "PROMPT_VERSION": "v1.1-shadow",
