@@ -199,13 +199,16 @@ resolve_github_host() {
 	local remote_url=""
 	remote_url="$(git -C "${repo_path}" remote get-url origin 2>/dev/null || true)"
 	local host=""
+	local is_ssh=0
 	case "${remote_url}" in
 	ssh://git@*)
+		is_ssh=1
 		host="${remote_url#ssh://git@}"
 		host="${host%%/*}"
 		host="${host%%:*}"
 		;;
 	git@*:*)
+		is_ssh=1
 		host="${remote_url#git@}"
 		host="${host%%:*}"
 		;;
@@ -219,6 +222,17 @@ resolve_github_host() {
 		host=""
 		;;
 	esac
+	if [[ ${is_ssh} -eq 1 ]] && [[ -n ${host} ]]; then
+		if [[ ${host} == "github-proton" ]]; then
+			host="github.com"
+		elif command -v ssh >/dev/null 2>&1; then
+			local resolved_host=""
+			resolved_host="$(ssh -G "${host}" 2>/dev/null | awk '$1 == "hostname" && $2 != "" { print $2; exit }' || true)"
+			if [[ -n ${resolved_host} ]]; then
+				host="${resolved_host}"
+			fi
+		fi
+	fi
 	if [[ -z ${host} ]]; then
 		host="github.com"
 	fi
@@ -1303,7 +1317,7 @@ collect_upstream_patch_ids() {
 
 	ensure_patch_id_cache_dir
 	local cache_key=""
-	cache_key="$(python3 -c 'import hashlib, sys; print(hashlib.sha256("|".join(sys.argv[1:]).encode()).hexdigest())' "${common_dir}" "${merge_base}" "${upstream_sha}" "${lookback}")"
+	cache_key="$(python3 -c 'import hashlib, sys; print(hashlib.sha256("|".join(sys.argv[1:]).encode()).hexdigest())' "v2" "${common_dir}" "${merge_base}" "${upstream_sha}" "${lookback}")"
 	local cache_file="${PATCH_ID_CACHE_DIR}/${cache_key}"
 
 	if [[ ! -f ${cache_file} ]]; then
@@ -1316,7 +1330,7 @@ collect_upstream_patch_ids() {
 		local tmp_cache="${cache_file}.tmp.$$"
 		{
 			"${log_args[@]}" 2>/dev/null || true
-		} | git patch-id --verbatim 2>/dev/null | awk '{ print $1 }' >"${tmp_cache}" || true
+		} | git patch-id --verbatim 2>/dev/null | awk '{ print $1, $2 }' >"${tmp_cache}" || true
 		mv -f "${tmp_cache}" "${cache_file}"
 	fi
 
@@ -1349,7 +1363,7 @@ all_linear_commits_in_patch_ids() {
 	local matched=0
 	while IFS= read -r pid; do
 		[[ -n ${pid} ]] || continue
-		if ! grep -qxF "${pid}" "${cache_file}"; then
+		if ! awk -v p="${pid}" '$1 == p { found=1; exit } END { exit !found }' "${cache_file}"; then
 			return 1
 		fi
 		matched=$((matched + 1))
@@ -1395,18 +1409,26 @@ is_worktree_merged_into_upstream() {
 	fi
 
 	# Multi-commit (and single-commit) squash merges produce one upstream commit whose
-	# verbatim patch-id matches the combined branch diff, AND merging HEAD into
-	# upstream_ref produces the exact same tree as upstream_ref (distinguishing true
-	# integration from identical repeated blocks elsewhere in a file).
+	# verbatim patch-id matches the combined branch diff, AND merging HEAD into that
+	# matching upstream squash commit produces the exact same tree (preserving true
+	# squash integration even after later upstream edits while still rejecting
+	# identical repeated blocks elsewhere in a file).
 	local branch_patch_id=""
 	branch_patch_id="$(
 		{
 			git -C "${wt_dir}" diff --no-renames "${merge_base}..HEAD" 2>/dev/null || true
 		} | git patch-id --verbatim 2>/dev/null | awk 'NR == 1 { print $1 }' || true
 	)"
-	if [[ -n ${branch_patch_id} ]] && grep -qxF "${branch_patch_id}" "${UPSTREAM_PATCH_IDS_FILE}" &&
-		is_head_integrated_into_upstream_tree "${wt_dir}" "${upstream_ref}"; then
-		return 0
+	if [[ -n ${branch_patch_id} ]]; then
+		local matched_shas=""
+		matched_shas="$(awk -v p="${branch_patch_id}" '$1 == p && $2 != "" { print $2 }' "${UPSTREAM_PATCH_IDS_FILE}" || true)"
+		local matched_sha=""
+		while IFS= read -r matched_sha; do
+			[[ -n ${matched_sha} ]] || continue
+			if is_head_integrated_into_upstream_tree "${wt_dir}" "${matched_sha}"; then
+				return 0
+			fi
+		done <<<"${matched_shas}"
 	fi
 
 	# For non-squashed rebased/cherry-picked commits, preserve linear-history safety:

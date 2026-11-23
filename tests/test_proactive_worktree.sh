@@ -1654,7 +1654,7 @@ git -C "${PF_HEAL_REPO}" remote set-head origin -a >/dev/null 2>&1
 WT_HEAL_MERGED="$("${TARGET_SCRIPT}" prepare --repo-path "${PF_HEAL_REPO}" --lens bolt --worktree-root "${PF_HEAL_WT_ROOT}")"
 printf 'merged candidate\n' >"${WT_HEAL_MERGED}/pf_heal_merged.txt"
 git -C "${WT_HEAL_MERGED}" add pf_heal_merged.txt
-git -C "${WT_HEAL_MERGED}" commit -q -m "candidate commit merged upstream"
+git -C "${WT_HEAL_MERGED}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "candidate commit merged upstream"
 PF_HEAL_UPDATER="${TEST_DIR}/pf_heal_updater"
 git clone -q "${PRUNE_BARE}" "${PF_HEAL_UPDATER}"
 git -C "${PF_HEAL_UPDATER}" config user.email "test@example.com"
@@ -1856,7 +1856,7 @@ assert len(parts) == 2
 p.write_text(parts[0] + 'TARGET = "new"' + parts[1], encoding="utf-8")
 PY
 git -C "${WT_DUP}" add dup.py
-git -C "${WT_DUP}" commit -q -m "bolt: update second identical block"
+git -C "${WT_DUP}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "bolt: update second identical block"
 
 # Upstream independently modifies ONLY the first identical block with the same line change.
 UP_CLONE="${TEST_DIR}/dup-upstream"
@@ -1945,6 +1945,13 @@ check_exit "preflight scopes gh auth status to GHE origin hostname" 0 \
 	--repo org/email-security-pipeline --repo-path "${HOST_REPO_GH}" --skip-fetch
 check_grep "preflight invoked gh auth status --hostname ghe.example.com" "^auth status --hostname ghe.example.com$" "${HOST_GH_LOG}"
 
+git -C "${HOST_REPO_GH}" remote set-url origin "git@github-proton:abhimehro/email-security-pipeline.git"
+: >"${HOST_GH_LOG}"
+check_exit "preflight maps github-proton SSH alias to github.com for gh auth" 0 \
+	env PATH="${HOST_GH_BIN}:${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
+	--repo abhimehro/email-security-pipeline --repo-path "${HOST_REPO_GH}" --skip-fetch
+check_grep "preflight checked github.com for github-proton remote" "^auth status --hostname github.com$" "${HOST_GH_LOG}"
+
 # 17. run_with_timeout terminates full process group on timeout (D6)
 TIMEOUT_MARKER="${TEST_DIR}/pg_child_escaped.marker"
 rc_pg=0
@@ -1978,7 +1985,7 @@ git -C "${TTL_CLONE}" remote set-head origin -a >/dev/null 2>&1
 WT_TTL_SQ="$("${TARGET_SCRIPT}" prepare --repo abhimehro/ttl-repo --repo-path "${TTL_CLONE}" --lens bolt --worktree-root "${TTL_WT_ROOT}")"
 printf 'squash change\n' >"${WT_TTL_SQ}/ttl_feature.txt"
 git -C "${WT_TTL_SQ}" add ttl_feature.txt
-git -C "${WT_TTL_SQ}" commit -q -m "ttl feature"
+git -C "${WT_TTL_SQ}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "ttl feature"
 SQ_COMMIT="$(git -C "${WT_TTL_SQ}" rev-parse HEAD)"
 
 git clone -q "${PRUNE_BARE}" "${TTL_UPDATER}"
@@ -2038,7 +2045,7 @@ check "TTL cleanup preserves expired worktree whose base_sha is missing" test -d
 WT_ISO_THIS="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_MAIN}" --lens code-health --worktree-root "${ISO_WT_ROOT}")"
 printf 'iso merged\n' >"${WT_ISO_THIS}/iso_merged.txt"
 git -C "${WT_ISO_THIS}" add iso_merged.txt
-git -C "${WT_ISO_THIS}" commit -q -m "iso candidate commit"
+git -C "${WT_ISO_THIS}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "iso candidate commit"
 ISO_UPDATER="${TEST_DIR}/iso_updater"
 git clone -q "${PRUNE_BARE}" "${ISO_UPDATER}"
 git -C "${ISO_UPDATER}" config user.email "test@example.com"
@@ -2048,7 +2055,7 @@ git -C "${ISO_UPDATER}" merge --ff-only -q FETCH_HEAD
 git -C "${ISO_UPDATER}" push -q origin main
 WT_ISO_OTHER="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj --repo-path "${ISO_OTHER}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
 WT_ISO_SIB="$("${TARGET_SCRIPT}" prepare --repo abhimehro/proj-tools --repo-path "${ISO_SIB}" --lens bolt --worktree-root "${ISO_WT_ROOT}")"
-git -C "${WT_BROKEN_BASE}" commit --allow-empty -q -m "keep unmerged broken-base candidate distinct"
+git -C "${WT_BROKEN_BASE}" -c user.email="test@example.com" -c user.name="Test" commit --allow-empty -q -m "keep unmerged broken-base candidate distinct"
 
 check_exit "preflight --auto-heal isolates pruning to matching clone only" 0 \
 	env PATH="${PF_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" preflight \
@@ -2127,6 +2134,50 @@ check_exit "verify also falls back to .venv/bin/ruff when uv fails despite pypro
 	env PATH="${UV_FB_BIN}" "${TARGET_SCRIPT}" verify \
 	--worktree "${WT_UV_FB}" --lens code-health --test-cmd "true"
 check_grep "verify executed repo .venv/bin/ruff F82 fallback" "check --select=F82" "${UV_FB_LOG}"
+
+# [BUG_0001] Squash merge followed by overlapping upstream edit stays recognized as merged
+SQ_OVER_BARE="${TEST_DIR}/sq_over_remote.git"
+SQ_OVER_SEED="${TEST_DIR}/sq_over_seed"
+SQ_OVER_CLONE="${TEST_DIR}/sq_over_clone"
+SQ_OVER_UPD="${TEST_DIR}/sq_over_updater"
+SQ_OVER_WT_ROOT="${TEST_DIR}/sq_over_wt"
+mkdir -p "${SQ_OVER_SEED}" "${SQ_OVER_WT_ROOT}"
+git init -q --bare "${SQ_OVER_BARE}"
+git init -q "${SQ_OVER_SEED}"
+git -C "${SQ_OVER_SEED}" config user.email "test@example.com"
+git -C "${SQ_OVER_SEED}" config user.name "Test"
+printf 'limit = 10\n' >"${SQ_OVER_SEED}/cfg.py"
+git -C "${SQ_OVER_SEED}" add cfg.py
+git -C "${SQ_OVER_SEED}" commit -q -m "base limit"
+git -C "${SQ_OVER_SEED}" branch -M main
+git -C "${SQ_OVER_SEED}" remote add origin "${SQ_OVER_BARE}"
+git -C "${SQ_OVER_SEED}" push -q -u origin main
+git --git-dir="${SQ_OVER_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${SQ_OVER_BARE}" "${SQ_OVER_CLONE}"
+git -C "${SQ_OVER_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+WT_SQ_OVER="$("${TARGET_SCRIPT}" prepare --repo abhimehro/sq-over --repo-path "${SQ_OVER_CLONE}" --lens bolt --worktree-root "${SQ_OVER_WT_ROOT}")"
+printf 'limit = 20\n' >"${WT_SQ_OVER}/cfg.py"
+git -C "${WT_SQ_OVER}" add cfg.py
+git -C "${WT_SQ_OVER}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "bolt: raise limit to 20"
+
+git clone -q "${SQ_OVER_BARE}" "${SQ_OVER_UPD}"
+git -C "${SQ_OVER_UPD}" config user.email "test@example.com"
+git -C "${SQ_OVER_UPD}" config user.name "Test"
+git -C "${SQ_OVER_UPD}" fetch -q "${WT_SQ_OVER}" "$(git -C "${WT_SQ_OVER}" rev-parse HEAD)"
+git -C "${SQ_OVER_UPD}" merge --squash -q FETCH_HEAD
+git -C "${SQ_OVER_UPD}" commit -q -m "squash merge limit 20"
+printf 'limit = 30\n' >"${SQ_OVER_UPD}/cfg.py"
+git -C "${SQ_OVER_UPD}" add cfg.py
+git -C "${SQ_OVER_UPD}" commit -q -m "follow-up overlapping edit limit 30"
+git -C "${SQ_OVER_UPD}" push -q origin main
+git -C "${SQ_OVER_CLONE}" fetch -q origin
+
+PATH="${MOCK_BIN_EMPTY}:${PATH}" check_exit "check-throttle recognizes squash merge despite later overlapping upstream edit" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/sq-over --worktree-root "${SQ_OVER_WT_ROOT}" --include-worktrees --repo-path "${SQ_OVER_CLONE}" --max-open 1
+check_exit "cleanup --prune-merged runs on squash-then-edited candidate" 0 \
+	"${TARGET_SCRIPT}" cleanup --worktree-root "${SQ_OVER_WT_ROOT}" --prune-merged
+check "cleanup --prune-merged removed squash-then-edited worktree" test ! -d "${WT_SQ_OVER}"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

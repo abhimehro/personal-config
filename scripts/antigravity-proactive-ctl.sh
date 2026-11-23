@@ -379,7 +379,7 @@ deploy_hooks_file() {
 		local backup_ts=""
 		backup_ts="$(date -u +%Y%m%d_%H%M%S)"
 		backup_file="${dst_file}.backup.${backup_ts}"
-		if ! cp -p "${dst_file}" "${backup_file}" || ! chmod 600 "${backup_file}"; then
+		if ! install -m 600 "${dst_file}" "${backup_file}"; then
 			rm -f "${backup_file}"
 			echo "[ERROR] Failed to back up unmanaged hooks file: ${dst_file}" >&2
 			return 1
@@ -1380,12 +1380,22 @@ if min_f.isdigit() and hour_f.isdigit():
     if not (0 <= minute <= 59 and 0 <= hour <= 23):
         sys.stderr.write(f"[ERROR] audit-missed: invalid hour/minute in cron: {cron_expr}\n")
         sys.exit(2)
+    local_day = day
     local = datetime.datetime.combine(day, datetime.time(hour, minute), tzinfo=zone)
+    for offset in (-1, 0, 1):
+        cand_day = day + datetime.timedelta(days=offset)
+        cand_local = datetime.datetime.combine(
+            cand_day, datetime.time(hour, minute), tzinfo=zone
+        )
+        if cand_local.astimezone(datetime.timezone.utc).date() == day:
+            local_day = cand_day
+            local = cand_local
+            break
     utc_hm = local.astimezone(datetime.timezone.utc).strftime("%H:%M")
     if tz_name == "UTC":
-        print(f"{day.isoformat()} {hour:02d}:{minute:02d} UTC")
+        print(f"{local_day.isoformat()} {hour:02d}:{minute:02d} UTC")
     else:
-        print(f"{day.isoformat()} {hour:02d}:{minute:02d} {tz_name} ({utc_hm} UTC)")
+        print(f"{local_day.isoformat()} {hour:02d}:{minute:02d} {tz_name} ({utc_hm} UTC)")
 else:
     print(f"{day.isoformat()} ({cron_expr})")
 PY

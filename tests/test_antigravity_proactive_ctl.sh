@@ -1139,7 +1139,7 @@ MOCK
 chmod +x "${ED_CLONE}/.venv/bin/edcheck"
 WT_ED="$("${WT_SCRIPT}" prepare --repo-path "${ED_CLONE}" --lens code-health --worktree-root "${ED_WT_ROOT}")"
 printf 'OK = False\n' >"${WT_ED}/edpkg/__init__.py"
-git -C "${WT_ED}" commit -aq -m "break candidate edpkg"
+git -C "${WT_ED}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "break candidate edpkg"
 check_exit "base-check uses candidate PYTHONPATH ahead of repo editable path on fallback" 2 \
 	"${CTL_SCRIPT}" base-check --repo ed-repo --worktree "${WT_ED}" --test-cmd "edcheck"
 check_grep "base-check classifies broken candidate with editable venv fallback as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
@@ -1179,7 +1179,7 @@ MOCK
 chmod +x "${SRCE_CLONE}/.venv/bin/srccheck"
 WT_SRCE="$("${WT_SCRIPT}" prepare --repo-path "${SRCE_CLONE}" --lens code-health --worktree-root "${SRCE_WT_ROOT}")"
 printf 'OK = False\n' >"${WT_SRCE}/src/srcpkg/__init__.py"
-git -C "${WT_SRCE}" commit -aq -m "break candidate srcpkg"
+git -C "${WT_SRCE}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "break candidate srcpkg"
 check_exit "base-check prepends src/ to PYTHONPATH for src-layout repos" 2 \
 	"${CTL_SCRIPT}" base-check --repo srce-repo --worktree "${WT_SRCE}" --test-cmd "srccheck"
 check_grep "base-check classifies broken src-layout candidate as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
@@ -1218,6 +1218,16 @@ assert "proactive-safety-guard" in d, d
 assert "user-custom-guard" in json.dumps(d["proactive-safety-guard"])
 assert "other-runtime-hook" in d
 PYTEST
+
+# [BUG_0004] Overnight zoned cron crossing UTC midnight records local date rather than UTC date
+export HOME="${TEST_DIR}/audit-overnight-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+check_exit "audit-missed handles zoned evening cron crossing UTC midnight" 0 \
+	"${CTL_SCRIPT}" audit-missed --date "2026-11-21" --repo "ctrld-sync" --cron "CRON_TZ=America/Chicago 50 18 * * 1-5"
+check_grep "audit-missed records Friday local date for Saturday 00:50 UTC digest" \
+	"^- Scheduled Slot: 2026-11-20 18:50 America/Chicago \(00:50 UTC\)$" \
+	"${HOME}/.gemini/antigravity/proactive-reports/2026-11-21-ctrld-sync.md"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
