@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1758
+ledger_revision: 1759
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -55269,11 +55269,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -55289,7 +55290,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-18T14:44:22Z'
+  updated_at_utc: '2026-11-24T14:45:36Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/email-security-pipeline#1935@3a0bf85157bdde783848e750942cd0c3e3976207
   repository: abhimehro/email-security-pipeline
   pr: 1935
