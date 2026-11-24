@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1756
+ledger_revision: 1758
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -49314,10 +49314,10 @@ items:
   changed_paths:
   - .github/workflows/changelog.yml
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE1_INTAKE
-  current_owner: stage1
-  next_owner: stage1
-  terminal_disposition: null
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
   safe_default: Leave open; no merge or close until Stage 1 guardrails run.
   next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-09
     by reconcile).'
@@ -49327,9 +49327,10 @@ items:
     evidence: 0
     recovery: 0
     mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-11-09T21:40:30Z'
+  handoffs:
+  - evt-reconcile-20261124144432-c6d3da50
+  revision: 1
+  updated_at_utc: '2026-11-24T14:44:32Z'
   guardrail_source: path_eval
   guardrail_evidence: null
 - key: abhimehro/series_correction_project_updated#655@3faf20b183369c05d3d26bac70ab0cd4827a77dc
@@ -55270,7 +55271,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/agentics-maintenance.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -97181,6 +97183,26 @@ events:
   idempotency_key: abhimehro/personal-config#2814@aa70fb2bc10a014657f2ce2854ef1b2d54fca5db:evt-reconcile-20261123144917-5326a53e
   status: PROJECTED
   created_at_utc: '2026-11-23T14:49:17Z'
+  acknowledged_at_utc: null
+  reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
+    label; closed before review → CLOSED_UNREVIEWED
+  successful: null
+  policy_revision: null
+- event_id: evt-reconcile-20261124144432-c6d3da50
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#919@124b060fe301c9c56f1d0f5f07bf667f8bcd148f
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_UNREVIEWED
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#919@124b060fe301c9c56f1d0f5f07bf667f8bcd148f:evt-reconcile-20261124144432-c6d3da50
+  status: PROJECTED
+  created_at_utc: '2026-11-24T14:44:32Z'
   acknowledged_at_utc: null
   reason: live PR state=CLOSED unmerged under REVIEW_SECURITY without disposition
     label; closed before review → CLOSED_UNREVIEWED
