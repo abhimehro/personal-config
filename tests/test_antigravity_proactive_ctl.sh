@@ -2316,6 +2316,43 @@ PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_PREREQ}" >/dev/null 2>&1 || rm -rf "${WT_HARD_PREREQ}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
+# (8) Devin c_A2: cached BASE_PREREQ_FAILED in digest must still set base_check_escalate (BASE_CHECK_UNUSABLE)
+WT_HARD_CACHED_FAIL="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra3():\n    return 4\n' >"${WT_HARD_CACHED_FAIL}/src/extra3.py"
+git -C "${WT_HARD_CACHED_FAIL}" add src/extra3.py
+git -C "${WT_HARD_CACHED_FAIL}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra3"
+CACHED_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_CACHED_FAIL}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-18 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_CACHED_FAIL}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_CACHED_FAIL}
+- Content Fingerprint: ${CACHED_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge escalates cached BASE_PREREQ_FAILED as BASE_CHECK_UNUSABLE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-18 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records BASE_CHECK_UNUSABLE for cached BASE_PREREQ_FAILED" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CACHED_FAIL}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CACHED_FAIL}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CACHED_FAIL}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

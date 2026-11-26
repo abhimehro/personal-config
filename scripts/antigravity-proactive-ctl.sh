@@ -3152,7 +3152,6 @@ for repo in target_repos:
             defer_sub = meta.get("judge_subreason", "")
             offline_retryable = (not skip_tier2) and (
                 defer_sub in ("TIER2_SKIPPED_OFFLINE", "OPEN_PR_COLLISIONS_UNVERIFIED")
-                or (defer_sub == "COLLISION_OR_UNVERIFIABLE" and wt_repo_dir is not None and not is_local_origin_repo(wt_repo_dir))
             )
             if not offline_retryable:
                 continue
@@ -3237,6 +3236,10 @@ for repo in target_repos:
                     if base_check_verdict == "CAUSED_BY_CHANGE":
                         verdict = "JUDGE_REJECT"
                         subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
+                    elif base_check_verdict == "BASE_PREREQ_FAILED" or base_check_verdict.startswith("EXIT_"):
+                        base_check_escalate = True
+                    elif base_check_verdict not in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE"):
+                        cached_reused = False
             if not cached_reused:
                 bc_cmd = ["bash", ctl_sh, "base-check", "--repo", repo, "--worktree", str(wt_dir)]
                 if cand_digest is not None and cand_digest.is_file():
@@ -3524,10 +3527,12 @@ for repo in target_repos:
                     subreason = "DIRTY_UNCOMMITTED_WORKTREE"
                 elif not merge_tree_clean:
                     subreason = "UPSTREAM_MERGE_CONFLICT"
-                elif collisions_rc != 0 or not files_changed_ok or not open_pr_collisions_checked:
+                elif collisions_rc != 0 or not files_changed_ok:
                     subreason = "COLLISION_OR_UNVERIFIABLE"
                 elif skip_tier2:
                     subreason = "TIER2_SKIPPED_OFFLINE"
+                elif not open_pr_collisions_checked:
+                    subreason = "OPEN_PR_COLLISIONS_UNVERIFIED"
                 elif untested_critical:
                     subreason = "CRITICAL_UNTESTED_BLAST_RADIUS"
                 elif (
