@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1763
+ledger_revision: 1764
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -55402,6 +55402,74 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-11-18T14:44:22Z'
+- key: abhimehro/personal-config#2831@c737135f604fc058beef07e900d7c67751d8a311
+  repository: abhimehro/personal-config
+  pr: 2831
+  url: https://github.com/abhimehro/personal-config/pull/2831
+  base_sha: 886ac042e3a546a512961243e92aece0f390ef22
+  head_sha: c737135f604fc058beef07e900d7c67751d8a311
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+  author_type: HUMAN
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-26
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2831
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-26T14:58:22Z'
+- key: abhimehro/personal-config#2837@7790c93d18dc76baa73a1385d35c1e8119da058a
+  repository: abhimehro/personal-config
+  pr: 2837
+  url: https://github.com/abhimehro/personal-config/pull/2837
+  base_sha: e290f95f78ac16a5f6cd9e6eb82e295523ccdc25
+  head_sha: 7790c93d18dc76baa73a1385d35c1e8119da058a
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-26
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2837
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-26T14:58:22Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
