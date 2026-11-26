@@ -3222,24 +3222,38 @@ for repo in target_repos:
         if not verdict and cand_substatus == "GATE_FAILURE":
             cached_reused = False
             if "## Base-Check Classification" in cand_digest_text:
-                bc_block = cand_digest_text.split("## Base-Check Classification", 1)[1].split("\n## ", 1)[0]
-                m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z_]+)", bc_block)
-                m_wt = re.search(r"(?im)^\s*-\s*Worktree:\s*(.+)$", bc_block)
-                m_fp = re.search(r"(?im)^\s*-\s*Content Fingerprint:\s*([0-9a-f]{64})\b", bc_block)
-                wt_matches = bool(
-                    m_wt and m_wt.group(1).strip() in (str(wt_dir), os.path.realpath(str(wt_dir)))
-                )
-                fp_matches = bool(m_fp and eval_fingerprint and m_fp.group(1).strip() == eval_fingerprint)
-                if m_bcv and wt_matches and fp_matches:
-                    cached_reused = True
-                    base_check_verdict = m_bcv.group(1).strip()
-                    if base_check_verdict == "CAUSED_BY_CHANGE":
+                # Walk classifications newest-first so a later successful rerun supersedes an earlier inconclusive one.
+                bc_blocks = [
+                    seg.split("\n## ", 1)[0]
+                    for seg in cand_digest_text.split("## Base-Check Classification")[1:]
+                ]
+                for bc_block in reversed(bc_blocks):
+                    m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z0-9_]+)", bc_block)
+                    m_wt = re.search(r"(?im)^\s*-\s*Worktree:\s*(.+)$", bc_block)
+                    m_fp = re.search(r"(?im)^\s*-\s*Content Fingerprint:\s*([0-9a-f]{64})\b", bc_block)
+                    wt_matches = bool(
+                        m_wt and m_wt.group(1).strip() in (str(wt_dir), os.path.realpath(str(wt_dir)))
+                    )
+                    fp_matches = bool(m_fp and eval_fingerprint and m_fp.group(1).strip() == eval_fingerprint)
+                    if not (m_bcv and wt_matches and fp_matches):
+                        continue
+                    cached_verdict = m_bcv.group(1).strip()
+                    inconclusive = cached_verdict == "BASE_PREREQ_FAILED" or cached_verdict.startswith("EXIT_")
+                    if inconclusive and force_rejudge:
+                        break
+                    if cached_verdict == "CAUSED_BY_CHANGE":
+                        cached_reused = True
+                        base_check_verdict = cached_verdict
                         verdict = "JUDGE_REJECT"
                         subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
-                    elif base_check_verdict == "BASE_PREREQ_FAILED" or base_check_verdict.startswith("EXIT_"):
+                    elif inconclusive:
+                        cached_reused = True
+                        base_check_verdict = cached_verdict
                         base_check_escalate = True
-                    elif base_check_verdict not in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE"):
-                        cached_reused = False
+                    elif cached_verdict in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE"):
+                        cached_reused = True
+                        base_check_verdict = cached_verdict
+                    break
             if not cached_reused:
                 bc_cmd = ["bash", ctl_sh, "base-check", "--repo", repo, "--worktree", str(wt_dir)]
                 if cand_digest is not None and cand_digest.is_file():
@@ -3253,7 +3267,8 @@ for repo in target_repos:
                     subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
                 elif bc_rc != 0:
                     base_check_escalate = True
-                    base_check_verdict = f"EXIT_{bc_rc}"
+                    if not m_out:
+                        base_check_verdict = f"EXIT_{bc_rc}"
 
         # Diff sizing (committed range vs base_sha, pinned to captured head_sha).
         changed_files = []
@@ -3527,11 +3542,11 @@ for repo in target_repos:
                     subreason = "DIRTY_UNCOMMITTED_WORKTREE"
                 elif not merge_tree_clean:
                     subreason = "UPSTREAM_MERGE_CONFLICT"
-                elif collisions_rc != 0 or not files_changed_ok:
+                elif (collisions_rc not in (0, 5)) or not files_changed_ok:
                     subreason = "COLLISION_OR_UNVERIFIABLE"
                 elif skip_tier2:
                     subreason = "TIER2_SKIPPED_OFFLINE"
-                elif not open_pr_collisions_checked:
+                elif collisions_rc == 5 or not open_pr_collisions_checked:
                     subreason = "OPEN_PR_COLLISIONS_UNVERIFIED"
                 elif untested_critical:
                     subreason = "CRITICAL_UNTESTED_BLAST_RADIUS"

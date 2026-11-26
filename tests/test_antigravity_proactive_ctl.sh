@@ -2353,6 +2353,50 @@ PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CACHED_FAIL}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CACHED_FAIL}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
+# (9) Devin dLLi: newest matching Base-Check Classification supersedes an earlier BASE_PREREQ_FAILED for the same fingerprint
+WT_HARD_NEWEST="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra4():\n    return 5\n' >"${WT_HARD_NEWEST}/src/extra4.py"
+git -C "${WT_HARD_NEWEST}" add src/extra4.py
+git -C "${WT_HARD_NEWEST}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra4"
+NEWEST_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_NEWEST}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-19-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-19 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_NEWEST}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_NEWEST}
+- Content Fingerprint: ${NEWEST_FP}
+
+## Base-Check Classification
+
+- Verdict: PRE_EXISTING_ON_BASE
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_NEWEST}
+- Content Fingerprint: ${NEWEST_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-19-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge reuses newest Base-Check Classification over earlier BASE_PREREQ_FAILED" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-19 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records PRE_EXISTING_ON_BASE (not BASE_CHECK_UNUSABLE) from newest classification" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_NEWEST}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[0]
+assert w[0]["subreason"] != "BASE_CHECK_UNUSABLE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_NEWEST}" >/dev/null 2>&1 || rm -rf "${WT_HARD_NEWEST}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]
