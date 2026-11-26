@@ -2202,21 +2202,35 @@ def parse_digest_field(text, field_name):
     return match.group(1).strip() if match else ""
 
 
-def append_judge_section_to_digest(digest_file, section_text, head_sha):
+def append_judge_section_to_digest(digest_file, section_text, head_sha, wt_str=""):
     if digest_file is None or not digest_file.exists() or digest_file.is_symlink():
         return
     existing = digest_file.read_text(encoding="utf-8", errors="replace")
-    marker = "\n## Judge Evaluation\n"
-    if marker in existing or existing.startswith("## Judge Evaluation\n"):
+    wt_real = os.path.realpath(wt_str) if wt_str else ""
+    new_sec = section_text.strip()
+    blocks = re.split(r"(?m)(?=^## )", existing) if existing else []
+
+    def is_matching_judge_block(blk):
+        s = blk.lstrip()
+        if not (s.startswith("## Judge Evaluation\n") or s.startswith("## Judge Evaluation\r\n") or s.strip() == "## Judge Evaluation"):
+            return False
         if force_rejudge:
-            if existing.startswith("## Judge Evaluation\n"):
-                existing = ""
-            else:
-                existing = existing.split(marker, 1)[0].rstrip() + "\n"
-        elif head_sha and f"- Head SHA: {head_sha}" in existing:
+            return True
+        if head_sha == "NO_WORKTREE":
+            return "- Head SHA: NO_WORKTREE" in s or "- Worktree:" not in s
+        if wt_str:
+            return (f"- Worktree: {wt_str}" in s) or (wt_real and f"- Worktree: {wt_real}" in s) or ("- Worktree:" not in s)
+        return True
+
+    matching_blocks = [b for b in blocks if is_matching_judge_block(b)]
+    if not force_rejudge and len(matching_blocks) == 1:
+        if matching_blocks[0].strip() == new_sec and (not head_sha or f"- Head SHA: {head_sha}" in matching_blocks[0]):
             os.chmod(digest_file, 0o600)
             return
-    updated = existing.rstrip() + "\n\n" + section_text.strip() + "\n"
+
+    kept = [b.rstrip() for b in blocks if b.strip() and not is_matching_judge_block(b)]
+    kept.append(new_sec)
+    updated = "\n\n".join(kept).rstrip() + "\n"
     tmp = digest_file.with_name(f".{digest_file.name}.tmp.{os.getpid()}")
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     try:
@@ -2784,8 +2798,13 @@ def parse_lrc_review(raw_text, rc):
     return "completed", counts
 
 
+had_preflight_failure = False
+
 for repo in target_repos:
     default_repo_dir = repo_root_parent / repo
+    preflight_missing_toolchain = False
+    repo_preflight_failed = False
+    judge_degraded = False
     today_digest = reports_dir / f"{sweep_date}-{repo}.md"
     today_text = ""
     today_status = "MISSING"
@@ -2860,9 +2879,19 @@ for repo in target_repos:
                         ],
                         timeout_s=90,
                     )
-                    if pf_rc != 0:
+                    if pf_rc == 7:
+                        preflight_missing_toolchain = True
+                        judge_degraded = True
+                        sys.stderr.write(
+                            pf_err
+                            or pf_out
+                            or f"[WARN] judge: preflight reported missing verification toolchain (exit 7) for {repo}; continuing with per-repo escalation\n"
+                        )
+                    elif pf_rc != 0:
                         sys.stderr.write(pf_err or pf_out or f"[ERROR] judge: preflight failed (exit {pf_rc}) for {repo}\n")
-                        sys.exit(6)
+                        had_preflight_failure = True
+                        repo_preflight_failed = True
+                        break
                 else:
                     # Offline local-bare-origin test fallback: still enforce fresh local fetch & prune merged.
                     f_rc, _, f_err = run_bounded(
@@ -2871,9 +2900,17 @@ for repo in target_repos:
                     )
                     if f_rc != 0:
                         sys.stderr.write(f"[ERROR] judge: git fetch failed for {owner_dir}: {f_err}\n")
-                        sys.exit(6)
+                        had_preflight_failure = True
+                        repo_preflight_failed = True
+                        break
                     run_bounded(["git", "-C", str(owner_dir), "worktree", "prune"], timeout_s=15)
                     run_bounded([worktree_sh, "cleanup", "--worktree-root", str(wt_root), "--prune-merged"], timeout_s=30)
+            if repo_preflight_failed:
+                if len(target_repos) == 1:
+                    sys.exit(6)
+                print(f"repo={repo}")
+                print("judge_status=PREFLIGHT_FAILED")
+                continue
             if refreshed_any:
                 worktrees, effective_repo_dir, owning_repos = discover_repo_worktrees(repo, default_repo_dir)
 
@@ -2928,7 +2965,6 @@ for repo in target_repos:
 
     judged_now = 0
     rejected_now = 0
-    judge_degraded = False
     gitnexus_refreshed = False
 
     for wt_dir, meta in active_wts:
@@ -3334,6 +3370,7 @@ for repo in target_repos:
                 and head_sha
                 and head_sha != base_sha
                 and not base_check_escalate
+                and not preflight_missing_toolchain
                 and merge_tree_clean
                 and files_changed_ok
                 and collisions_rc == 0
@@ -3351,7 +3388,9 @@ for repo in target_repos:
                 subreason = "ALL_TIERS_CLEAN"
             else:
                 verdict = "JUDGE_ESCALATE_HUMAN"
-                if base_check_escalate:
+                if preflight_missing_toolchain:
+                    subreason = "PREFLIGHT_MISSING_TOOLCHAIN"
+                elif base_check_escalate:
                     subreason = "BASE_CHECK_UNUSABLE"
                 elif dirty or not head_sha or head_sha == base_sha:
                     subreason = "DIRTY_UNCOMMITTED_WORKTREE"
@@ -3540,7 +3579,7 @@ for repo in target_repos:
             f"lrc={lrc_status}\n"
             f"- {action_line}"
         )
-        append_judge_section_to_digest(cand_digest, eval_section, head_sha)
+        append_judge_section_to_digest(cand_digest, eval_section, head_sha, wt_str=str(wt_dir))
 
     # (e) Re-scan remaining live worktrees for accurate post-Judge queue counts.
     rem_wts, _, _ = discover_repo_worktrees(repo, default_repo_dir)
@@ -3569,6 +3608,9 @@ for repo in target_repos:
     print(f"judged_open={judged_open}")
     print(f"expired_preserved={expired_preserved}")
     print(f"judge_status={'DEGRADED' if judge_degraded else 'OK'}")
+
+if had_preflight_failure:
+    sys.exit(6)
 PY
 }
 

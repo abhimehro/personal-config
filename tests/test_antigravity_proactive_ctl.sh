@@ -1143,6 +1143,8 @@ git -C "${WT_ED}" -c user.email="test@example.com" -c user.name="Test" commit -a
 check_exit "base-check uses candidate PYTHONPATH ahead of repo editable path on fallback" 2 \
 	"${CTL_SCRIPT}" base-check --repo ed-repo --worktree "${WT_ED}" --test-cmd "edcheck"
 check_grep "base-check classifies broken candidate with editable venv fallback as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
+ED_STATUS="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null git -C "${WT_ED}" status --porcelain --untracked-files=all)"
+check "base-check leaves candidate worktree free of untracked bytecode" test -z "${ED_STATUS}"
 
 # 15. CodeRabbit pass-2 regressions ([4], [8] src-layout, [20])
 
@@ -1893,7 +1895,7 @@ mkdir -p "${S16_HARD_WT}" "${S16_HARD_REPORTS}" "${S16_HARD_REPOS}" "${S16_HARD_
 cp "${S16_MOCK_BIN}/gh" "${S16_MOCK_BIN}/ruff" "${S16_MOCK_BIN}/coderabbit" "${S16_MOCK_BIN}/lrc" "${S16_HARD_BIN}/"
 cat >"${S16_HARD_BIN}/uv" <<'MOCK'
 #!/usr/bin/env bash
-if [[ "$1" == "run" && "$2" == "pytest" ]]; then
+if [[ "$*" == *"pytest"* ]]; then
 	exec python3 -m unittest discover -s tests -p "test_*.py" -q
 fi
 exit 0
@@ -2056,12 +2058,15 @@ PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_E}" >/dev/null 2>&1 || rm -rf "${WT_HARD_E}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
-WT_HARD_D="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens bolt --worktree-root "${S16_HARD_WT}")"
-# Break test on base first so base-check classifies as PRE_EXISTING_ON_BASE
+# Break test on base and sync S16_HARD_CLONE BEFORE prepare so base_sha genuinely fails tests (PRE_EXISTING_ON_BASE)
 printf 'def helper():\n    return 99\n' >"${S16_HARD_SEED}/src/mod.py"
 git -C "${S16_HARD_SEED}" commit -aq -m "break test on base"
 git -C "${S16_HARD_SEED}" push -q origin main
-printf 'def helper():\n    return 99\n' >"${WT_HARD_D}/src/mod.py"
+git -C "${S16_HARD_CLONE}" fetch -q origin main
+git -C "${S16_HARD_CLONE}" reset -q --hard origin/main
+
+WT_HARD_D="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens bolt --worktree-root "${S16_HARD_WT}")"
+printf '# unrelated dirty edit on already-broken base\n' >>"${WT_HARD_D}/src/mod.py"
 cat >"${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" <<EOF
 # Proactive Sweep Digest (2026-12-13 - ctrld-sync)
 
@@ -2076,11 +2081,41 @@ PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge transitions dirty cleared GATE_
 	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-13 \
 	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
 check_grep "dirty cleared GATE_FAILURE reports judged_now=1 and judged_open=1" "^judged_open=1$" "${TEST_DIR}/check.log"
+check "ledger confirms PRE_EXISTING_ON_BASE classification for dirty cleared candidate" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_D}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[0]
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+PYTEST
 
 printf '# further dirty mutation\n' >>"${WT_HARD_D}/src/mod.py"
 PATH="${S16_HARD_BIN}:${PATH}" check_exit "mutating dirty worktree invalidates fingerprinted JUDGED back to UNJUDGED" 5 \
 	"${WT_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S16_HARD_WT}" \
 	--include-worktrees --repo-path "${S16_HARD_CLONE}" --max-open 1
+
+# (3b) Devin bbJX: committing a revision after prior base-check + Judge updates ## Judge Evaluation cleanly without --force-rejudge
+printf 'clean\n' >"${S16_HARD_OCR_MODE}"
+printf 'low\n' >"${S16_HARD_GN_MODE}"
+printf 'def helper():\n    return 1\n' >"${WT_HARD_D}/src/mod.py"
+git -C "${WT_HARD_D}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "fix mod helper on candidate branch"
+HEAD_HARD_D_REV="$(git -C "${WT_HARD_D}" rev-parse HEAD)"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge re-evaluates new commit and replaces stale Judge Evaluation block without --force-rejudge" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-13 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "digest Judge Evaluation updated to new HEAD SHA without retaining stale Action" \
+	python3 - "${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" "${HEAD_HARD_D_REV}" <<'PYTEST'
+import pathlib, re, sys
+txt = pathlib.Path(sys.argv[1]).read_text()
+new_sha = sys.argv[2]
+assert txt.count("## Judge Evaluation") == 1, txt
+judge_blk = [b for b in re.split(r"(?m)(?=^## )", txt) if b.startswith("## Judge Evaluation")][0]
+assert f"- Head SHA: {new_sha}" in judge_blk, judge_blk
+assert "- Verdict: JUDGE_PASS_ROUTINE" in judge_blk, judge_blk
+assert "- Action:" not in judge_blk or "Verdict: JUDGE_PASS_ROUTINE" in judge_blk, judge_blk
+PYTEST
 
 # (4) CodeRabbit axnE: SECURITY_REPORT_ONLY with 0 active worktrees deduplicates NO_WORKTREE cleanly across re-runs
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_D}" >/dev/null 2>&1 || rm -rf "${WT_HARD_D}"
@@ -2105,6 +2140,82 @@ import pathlib, sys
 txt = pathlib.Path(sys.argv[1]).read_text()
 assert txt.count("## Judge Evaluation") == 1, txt
 assert "- Head SHA: NO_WORKTREE" in txt, txt
+PYTEST
+
+# (5) Devin bbHG: preflight exit 7 on an early repo escalates that repo without aborting later healthy repos
+S16_HARD_ESP_BARE="${TEST_DIR}/s16-hard-esp.git"
+S16_HARD_ESP_SEED="${TEST_DIR}/s16-hard-esp-seed"
+S16_HARD_ESP_CLONE="${S16_HARD_REPOS}/email-security-pipeline"
+mkdir -p "${S16_HARD_ESP_SEED}/src"
+git init -q --bare "${S16_HARD_ESP_BARE}"
+git init -q "${S16_HARD_ESP_SEED}"
+git -C "${S16_HARD_ESP_SEED}" config user.email "test@example.com"
+git -C "${S16_HARD_ESP_SEED}" config user.name "Test"
+cat >"${S16_HARD_ESP_SEED}/Makefile" <<'EOF'
+test:
+	@true
+EOF
+printf 'VALUE = 1\n' >"${S16_HARD_ESP_SEED}/src/svc.py"
+git -C "${S16_HARD_ESP_SEED}" add .
+git -C "${S16_HARD_ESP_SEED}" commit -q -m "esp hard seed"
+git -C "${S16_HARD_ESP_SEED}" branch -M main
+git -C "${S16_HARD_ESP_SEED}" remote add origin "${S16_HARD_ESP_BARE}"
+git -C "${S16_HARD_ESP_SEED}" push -q -u origin main
+git --git-dir="${S16_HARD_ESP_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S16_HARD_ESP_BARE}" "${S16_HARD_ESP_CLONE}"
+git -C "${S16_HARD_ESP_CLONE}" remote set-head origin -a >/dev/null 2>&1
+mkdir -p "${S16_HARD_ESP_CLONE}/.venv/bin"
+cat >"${S16_HARD_ESP_CLONE}/.venv/bin/python3" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "-m" && "$2" == "pytest" ]]; then
+	echo "pytest 8.0.0"
+	exit 0
+fi
+exec "${S16_REAL_PY3}" "$@"
+MOCK
+ln -sf "${S16_MOCK_BIN}/ruff" "${S16_HARD_ESP_CLONE}/.venv/bin/ruff"
+chmod +x "${S16_HARD_ESP_CLONE}/.venv/bin/python3"
+
+WT_HARD_MISS_TC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra():\n    return 2\n' >"${WT_HARD_MISS_TC}/src/extra.py"
+git -C "${WT_HARD_MISS_TC}" add src/extra.py
+git -C "${WT_HARD_MISS_TC}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra"
+# Remove uv.lock from S16_HARD_CLONE clone (untracked/committed removal on local clone worktree) so preflight exits 7
+rm -f "${S16_HARD_CLONE}/uv.lock"
+
+WT_HARD_ESP="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/email-security-pipeline --repo-path "${S16_HARD_ESP_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'VALUE = 2\n' >"${WT_HARD_ESP}/src/svc.py"
+git -C "${WT_HARD_ESP}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "update svc"
+
+cat >"${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-15 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_MISS_TC}
+EOF
+cat >"${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md" <<EOF
+# Proactive Sweep Digest (2026-12-15 - email-security-pipeline)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_ESP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "multi-repo judge continues to email-security-pipeline after ctrld-sync preflight exit 7" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --repo email-security-pipeline --date 2026-12-15 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ctrld-sync escalated with PREFLIGHT_MISSING_TOOLCHAIN and email-security-pipeline passed cleanly" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_MISS_TC}" "${WT_HARD_ESP}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+cs = [r for r in rows if r.get("worktree") == sys.argv[2]]
+esp = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(cs) == 1 and cs[0]["subreason"] == "PREFLIGHT_MISSING_TOOLCHAIN", cs
+assert len(esp) == 1 and esp[0]["verdict"] == "JUDGE_PASS_ROUTINE", esp
 PYTEST
 
 echo ""
