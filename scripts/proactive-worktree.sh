@@ -44,8 +44,10 @@ usage() {
 Usage:
   proactive-worktree.sh prepare [--repo <owner/name|name>] --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
   proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
-  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees]
-  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees]
+  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees] [--exclude-worktree <dir>]
+  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-judged-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees] [--auto-expire]
+  proactive-worktree.sh set-state --worktree <dir> --state <UNJUDGED|JUDGED|EXPIRED|REJECTED> [--verdict <verdict>] [--subreason <reason>]
+  proactive-worktree.sh reopen --worktree <dir>
   proactive-worktree.sh cleanup [--worktree-root <dir>] [--ttl-days <days>] [--prune-merged]
   proactive-worktree.sh preflight --repo <owner/name> --repo-path <dir> [--worktree-root <dir>] [--auto-heal] [--skip-fetch]
   proactive-worktree.sh print-test-cmd --repo-name <name>
@@ -629,6 +631,7 @@ meta = {
     "lens": sys.argv[6],
     "mode": sys.argv[7],
     "created_at": sys.argv[8],
+    "lifecycle_state": "UNJUDGED",
 }
 meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 PY
@@ -1100,6 +1103,7 @@ cmd_check_collisions() {
 	local repo_path=""
 	local include_worktrees=0
 	local target_files=()
+	local excluded_worktrees=()
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1118,6 +1122,14 @@ cmd_check_collisions() {
 		--include-worktrees)
 			include_worktrees=1
 			shift
+			;;
+		--exclude-worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] check-collisions: --exclude-worktree requires a value" >&2
+				exit 1
+			fi
+			excluded_worktrees+=("$2")
+			shift 2
 			;;
 		*)
 			echo "[ERROR] Unknown flag for check-collisions: $1" >&2
@@ -1150,6 +1162,13 @@ cmd_check_collisions() {
 		local main_top="" wt_list="" wt_line="" candidate_dir="" wt_git_dir="" wt_branch=""
 		local is_candidate=0
 		local candidate_dirs=()
+		local excluded_keys=()
+		local ex_wt="" ex_key=""
+		for ex_wt in ${excluded_worktrees[@]+"${excluded_worktrees[@]}"}; do
+			[[ -d ${ex_wt} ]] || continue
+			ex_key="$(git -C "${ex_wt}" rev-parse --absolute-git-dir 2>/dev/null || true)"
+			[[ -n ${ex_key} ]] && excluded_keys+=("${ex_key}")
+		done
 
 		main_top="$(git -C "${repo_path}" rev-parse --show-toplevel 2>/dev/null || true)"
 		# Enumerate first and check the status: a silently empty list would
@@ -1164,6 +1183,15 @@ cmd_check_collisions() {
 			candidate_dir="${wt_line#worktree }"
 			[[ -n ${candidate_dir} ]] || continue
 			[[ ${candidate_dir} == "${main_top}" ]] && continue
+			local cand_abs_git="" skip_excluded=0
+			cand_abs_git="$(git -C "${candidate_dir}" rev-parse --absolute-git-dir 2>/dev/null || true)"
+			for ex_key in ${excluded_keys[@]+"${excluded_keys[@]}"}; do
+				if [[ -n ${cand_abs_git} ]] && [[ ${cand_abs_git} == "${ex_key}" ]]; then
+					skip_excluded=1
+					break
+				fi
+			done
+			[[ ${skip_excluded} -eq 1 ]] && continue
 			is_candidate=0
 			wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
 			if [[ -n ${wt_git_dir} ]] && [[ -f ${wt_git_dir}/proactive-meta.json ]]; then
@@ -1486,14 +1514,214 @@ has_unreviewed_worktree_commits() {
 	return 0
 }
 
+cmd_set_state() {
+	local wt_path=""
+	local new_state=""
+	local verdict=""
+	local subreason=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --worktree requires a value" >&2
+				exit 1
+			fi
+			wt_path="$2"
+			shift 2
+			;;
+		--state)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --state requires a value" >&2
+				exit 1
+			fi
+			new_state="$2"
+			shift 2
+			;;
+		--verdict)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --verdict requires a value" >&2
+				exit 1
+			fi
+			verdict="$2"
+			shift 2
+			;;
+		--subreason)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --subreason requires a value" >&2
+				exit 1
+			fi
+			subreason="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for set-state: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${wt_path} ]] || [[ ! -d ${wt_path} ]] || [[ -z ${new_state} ]]; then
+		echo "[ERROR] set-state requires an existing --worktree and --state" >&2
+		exit 1
+	fi
+
+	case "${new_state}" in
+	UNJUDGED | JUDGED | EXPIRED | REJECTED) ;;
+	*)
+		echo "[ERROR] Invalid --state '${new_state}' (expected UNJUDGED|JUDGED|EXPIRED|REJECTED)" >&2
+		exit 1
+		;;
+	esac
+
+	local wt_git_dir=""
+	wt_git_dir="$(git -C "${wt_path}" rev-parse --git-dir 2>/dev/null || true)"
+	if [[ -z ${wt_git_dir} ]] || [[ ! -f "${wt_git_dir}/proactive-meta.json" ]]; then
+		echo "[ERROR] set-state: missing proactive-meta.json for ${wt_path}" >&2
+		exit 1
+	fi
+
+	local dirty=""
+	dirty="$(git -C "${wt_path}" status --porcelain 2>/dev/null || echo "UNKNOWN")"
+	if [[ ${new_state} == "JUDGED" ]] && [[ -n ${dirty} ]]; then
+		echo "[ERROR] set-state: refusing to mark dirty worktree as JUDGED: ${wt_path}" >&2
+		exit 2
+	fi
+
+	local head_sha=""
+	head_sha="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+	if [[ -z ${head_sha} ]]; then
+		echo "[ERROR] set-state: could not resolve HEAD for ${wt_path}" >&2
+		exit 1
+	fi
+
+	python3 - "${wt_git_dir}/proactive-meta.json" "${new_state}" "${head_sha}" "${verdict}" "${subreason}" <<'PY'
+import datetime as dt
+import json
+import os
+import pathlib
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+state = sys.argv[2]
+head_sha = sys.argv[3]
+verdict = sys.argv[4]
+subreason = sys.argv[5]
+now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+meta = json.loads(meta_path.read_text(encoding="utf-8"))
+meta["lifecycle_state"] = state
+if state == "JUDGED":
+    meta["judged_head_sha"] = head_sha
+    meta["judged_at"] = now_str
+    if verdict:
+        meta["judge_verdict"] = verdict
+    if subreason:
+        meta["judge_subreason"] = subreason
+elif state == "EXPIRED":
+    meta["expired_head_sha"] = head_sha
+    meta["expired_at"] = now_str
+    if subreason:
+        meta["expire_reason"] = subreason
+elif state == "REJECTED":
+    meta["rejected_head_sha"] = head_sha
+    meta["rejected_at"] = now_str
+    if verdict:
+        meta["judge_verdict"] = verdict
+    if subreason:
+        meta["judge_subreason"] = subreason
+elif state == "UNJUDGED":
+    meta.pop("judged_head_sha", None)
+    meta.pop("expired_head_sha", None)
+
+tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w", encoding="utf-8") as handle:
+    handle.write(json.dumps(meta, indent=2) + "\n")
+os.replace(tmp, meta_path)
+PY
+}
+
+cmd_reopen() {
+	local wt_path=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] reopen: --worktree requires a value" >&2
+				exit 1
+			fi
+			wt_path="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for reopen: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${wt_path} ]] || [[ ! -d ${wt_path} ]]; then
+		echo "[ERROR] reopen requires an existing --worktree directory" >&2
+		exit 1
+	fi
+
+	local wt_git_dir=""
+	wt_git_dir="$(git -C "${wt_path}" rev-parse --git-dir 2>/dev/null || true)"
+	if [[ -z ${wt_git_dir} ]] || [[ ! -f "${wt_git_dir}/proactive-meta.json" ]]; then
+		echo "[ERROR] reopen: missing proactive-meta.json for ${wt_path}" >&2
+		exit 1
+	fi
+
+	local dirty=""
+	dirty="$(git -C "${wt_path}" status --porcelain 2>/dev/null || echo "UNKNOWN")"
+	local head_sha=""
+	head_sha="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+
+	python3 - "${wt_git_dir}/proactive-meta.json" "${head_sha}" "${dirty}" <<'PY'
+import datetime as dt
+import json
+import os
+import pathlib
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+head_sha = sys.argv[2]
+dirty = sys.argv[3]
+now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+meta = json.loads(meta_path.read_text(encoding="utf-8"))
+if "original_created_at" not in meta and meta.get("created_at"):
+    meta["original_created_at"] = meta["created_at"]
+meta["reopened_at"] = now_str
+meta.pop("expired_head_sha", None)
+meta.pop("expired_at", None)
+
+if not dirty and head_sha and meta.get("judged_head_sha") == head_sha:
+    meta["lifecycle_state"] = "JUDGED"
+else:
+    meta["lifecycle_state"] = "UNJUDGED"
+    meta.pop("judged_head_sha", None)
+
+tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w", encoding="utf-8") as handle:
+    handle.write(json.dumps(meta, indent=2) + "\n")
+os.replace(tmp, meta_path)
+print(f"REOPENED: state={meta['lifecycle_state']} head={head_sha}")
+PY
+}
+
 cmd_check_throttle() {
 	local repo=""
 	local wt_root="${DEFAULT_WT_ROOT}"
 	local max_open=2
+	local max_judged_open=5
 	local max_age_days=7
 	local now_epoch=""
 	local repo_path=""
 	local include_worktrees=0
+	local auto_expire=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1507,6 +1735,10 @@ cmd_check_throttle() {
 			;;
 		--max-open)
 			max_open="$2"
+			shift 2
+			;;
+		--max-judged-open)
+			max_judged_open="$2"
 			shift 2
 			;;
 		--max-age-days)
@@ -1523,6 +1755,10 @@ cmd_check_throttle() {
 			;;
 		--include-worktrees)
 			include_worktrees=1
+			shift
+			;;
+		--auto-expire)
+			auto_expire=1
 			shift
 			;;
 		*)
@@ -1626,36 +1862,111 @@ cmd_check_throttle() {
 
 	if [[ ${#candidates[@]} -gt 0 ]]; then
 		local local_candidates=0
+		local judged_candidates=0
 		for candidate_dir in "${candidates[@]}"; do
 			local dirty=""
 			dirty="$(git -C "${candidate_dir}" status --porcelain 2>/dev/null || true)"
 			if [[ -n ${dirty} ]] || has_unreviewed_worktree_commits "${candidate_dir}"; then
-				local_candidates=$((local_candidates + 1))
 				local wt_git_dir=""
 				wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
+				local head_sha=""
+				head_sha="$(git -C "${candidate_dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+				local bucket="UNJUDGED"
 				if [[ -n ${wt_git_dir} ]] && [[ -f "${wt_git_dir}/proactive-meta.json" ]]; then
-					python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" <<'PY'
+					bucket="$(
+						python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" "${dirty}" "${head_sha}" "${auto_expire}" <<'PY'
 import datetime as dt
 import json
+import os
+import pathlib
 import sys
 
-meta = json.loads(open(sys.argv[1], encoding="utf-8").read())
+meta_path = pathlib.Path(sys.argv[1])
 max_age = int(sys.argv[2])
 now_ts = int(sys.argv[3]) if sys.argv[3] else int(dt.datetime.now(dt.timezone.utc).timestamp())
-created_raw = meta.get("created_at", "")
-if created_raw:
-    created_dt = dt.datetime.strptime(created_raw, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
-    age_days = (now_ts - int(created_dt.timestamp())) / 86400.0
+cand_dir = sys.argv[4]
+dirty = sys.argv[5]
+head_sha = sys.argv[6]
+auto_expire = sys.argv[7] == "1"
+
+meta = json.loads(meta_path.read_text(encoding="utf-8"))
+raw_state = meta.get("lifecycle_state", "UNJUDGED")
+judged_sha = meta.get("judged_head_sha", "")
+expired_sha = meta.get("expired_head_sha") or judged_sha
+
+# Post-judgment dirty edits or new commits invalidate head-bound Judge evidence.
+if dirty:
+    eff_state = "UNJUDGED"
+elif raw_state == "EXPIRED" and head_sha and expired_sha == head_sha:
+    print("EXPIRED")
+    sys.exit(0)
+elif raw_state == "JUDGED" and head_sha and judged_sha == head_sha:
+    eff_state = "JUDGED"
+else:
+    eff_state = "UNJUDGED"
+
+age_anchor = meta.get("reopened_at") or meta.get("created_at", "")
+age_days = 0.0
+if age_anchor:
+    anchor_dt = dt.datetime.strptime(age_anchor, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
+    age_days = (now_ts - int(anchor_dt.timestamp())) / 86400.0
+
+if eff_state == "JUDGED":
     if age_days > max_age:
-        sys.stderr.write(f"THROTTLED: Unreviewed local candidate worktree {sys.argv[4]} is {age_days:.1f} days old (> {max_age}d)\n")
+        if auto_expire:
+            meta["lifecycle_state"] = "EXPIRED"
+            meta["expired_head_sha"] = head_sha
+            meta["expired_at"] = dt.datetime.fromtimestamp(now_ts, dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            meta["expire_reason"] = "SLA_7D_AUTO_EXPIRE"
+            tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(json.dumps(meta, indent=2) + "\n")
+            os.replace(tmp, meta_path)
+            sys.stderr.write(
+                f"[INFO] Auto-expired >{max_age}d judged candidate worktree on disk (preserved): {cand_dir}\n"
+            )
+            print("EXPIRED")
+            sys.exit(0)
+        sys.stderr.write(
+            f"THROTTLED: Judged local candidate worktree {cand_dir} is {age_days:.1f} days old (> {max_age}d)\n"
+        )
         sys.exit(5)
+    print("JUDGED")
+    sys.exit(0)
+
+if age_anchor and age_days > max_age:
+    sys.stderr.write(
+        f"THROTTLED: Unreviewed local candidate worktree {cand_dir} is {age_days:.1f} days old (> {max_age}d)\n"
+    )
+    sys.exit(5)
+print("UNJUDGED")
 PY
+					)" || exit $?
 				fi
+
+				case "${bucket}" in
+				UNJUDGED)
+					local_candidates=$((local_candidates + 1))
+					;;
+				JUDGED)
+					judged_candidates=$((judged_candidates + 1))
+					;;
+				EXPIRED) ;;
+				*)
+					local_candidates=$((local_candidates + 1))
+					;;
+				esac
 			fi
 		done
 
 		if [[ ${local_candidates} -ge ${max_open} ]]; then
 			echo "THROTTLED: ${local_candidates} unreviewed local candidate worktrees for ${repo_short} (cap=${max_open})" >&2
+			exit 5
+		fi
+
+		if [[ ${judged_candidates} -ge ${max_judged_open} ]]; then
+			echo "THROTTLED: ${judged_candidates} judged local candidate worktrees awaiting promotion/review for ${repo_short} (judged_cap=${max_judged_open})" >&2
 			exit 5
 		fi
 	fi
@@ -2279,6 +2590,12 @@ main() {
 		;;
 	check-throttle)
 		cmd_check_throttle "$@"
+		;;
+	set-state)
+		cmd_set_state "$@"
+		;;
+	reopen)
+		cmd_reopen "$@"
 		;;
 	cleanup)
 		cmd_cleanup "$@"

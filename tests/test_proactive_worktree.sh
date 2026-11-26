@@ -2179,6 +2179,259 @@ check_exit "cleanup --prune-merged runs on squash-then-edited candidate" 0 \
 	"${TARGET_SCRIPT}" cleanup --worktree-root "${SQ_OVER_WT_ROOT}" --prune-merged
 check "cleanup --prune-merged removed squash-then-edited worktree" test ! -d "${WT_SQ_OVER}"
 
+# 19. Lifecycle state transitions (UNJUDGED / JUDGED / EXPIRED), head-bound tamper
+#     downgrade, --auto-expire, reopen, and check-collisions --exclude-worktree
+S19_MOCK_BIN="${TEST_DIR}/s19_mock_bin"
+S19_BARE="${TEST_DIR}/s19_remote.git"
+S19_SEED="${TEST_DIR}/s19_seed"
+S19_CLONE="${TEST_DIR}/s19_repos/ctrld-sync"
+S19_WT_ROOT="${TEST_DIR}/s19_wt"
+mkdir -p "${S19_MOCK_BIN}" "${S19_SEED}/src" "${TEST_DIR}/s19_repos" "${S19_WT_ROOT}"
+
+cat >"${S19_MOCK_BIN}/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+	exit 0
+fi
+echo "[]"
+exit 0
+MOCK
+chmod +x "${S19_MOCK_BIN}/gh"
+
+git init -q --bare "${S19_BARE}"
+git init -q "${S19_SEED}"
+git -C "${S19_SEED}" config user.email "test@example.com"
+git -C "${S19_SEED}" config user.name "Test"
+printf 'alpha = 1\n' >"${S19_SEED}/src/alpha.py"
+printf 'beta = 1\n' >"${S19_SEED}/src/beta.py"
+printf 'gamma = 1\n' >"${S19_SEED}/src/gamma.py"
+git -C "${S19_SEED}" add src/alpha.py src/beta.py src/gamma.py
+git -C "${S19_SEED}" commit -q -m "s19 initial commit"
+git -C "${S19_SEED}" branch -M main
+git -C "${S19_SEED}" remote add origin "${S19_BARE}"
+git -C "${S19_SEED}" push -q -u origin main
+git --git-dir="${S19_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S19_BARE}" "${S19_CLONE}"
+git -C "${S19_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+# 19.1 prepare initializes lifecycle_state=UNJUDGED in <wt_git_dir>/proactive-meta.json
+WT_S19_A="$("${TARGET_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S19_CLONE}" --lens bolt --worktree-root "${S19_WT_ROOT}")"
+WT_S19_B="$("${TARGET_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S19_CLONE}" --lens code-health --worktree-root "${S19_WT_ROOT}")"
+WT_S19_A_GIT="$(git -C "${WT_S19_A}" rev-parse --git-dir)"
+WT_S19_B_GIT="$(git -C "${WT_S19_B}" rev-parse --git-dir)"
+BRANCH_S19_A="$(git -C "${WT_S19_A}" symbolic-ref --quiet --short HEAD)"
+
+check "prepare initializes lifecycle_state=UNJUDGED in proactive-meta.json" python3 - "${WT_S19_A_GIT}/proactive-meta.json" <<'PY'
+import json
+import pathlib
+import sys
+
+meta = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert meta.get("lifecycle_state") == "UNJUDGED", meta
+assert "judged_head_sha" not in meta, meta
+PY
+
+check_exit "set-state rejects unknown lifecycle state" 1 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_A}" --state INVALID_STATE
+check_exit "set-state rejects missing --worktree" 1 \
+	"${TARGET_SCRIPT}" set-state --state JUDGED
+
+# 19.2 set-state refuses dirty worktrees (exit 2), records judged_head_sha on clean committed
+#      worktrees, frees UNJUDGED cap=2 slot, and counts against --max-judged-open
+printf 'alpha = 2\n' >"${WT_S19_A}/src/alpha.py"
+check_exit "set-state refuses dirty worktree with exit 2" 2 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_A}" --state JUDGED --verdict JUDGE_ESCALATE_HUMAN --subreason TEST
+check_grep "set-state explains dirty worktree refusal" "refusing to mark dirty worktree as JUDGED" "${TEST_DIR}/check.log"
+
+git -C "${WT_S19_A}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "bolt: update alpha"
+printf 'beta = 2\n' >"${WT_S19_B}/src/beta.py"
+git -C "${WT_S19_B}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "chore(qa): update beta"
+
+S19_A_HEAD="$(git -C "${WT_S19_A}" rev-parse HEAD)"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle blocks when 2 UNJUDGED candidates exist (cap=2)" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open 2
+
+check_exit "set-state marks clean committed worktree as JUDGED" 0 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_A}" --state JUDGED --verdict JUDGE_ESCALATE_HUMAN --subreason TEST
+
+check "set-state records judged_head_sha, verdict, subreason, and 0600 mode" python3 - "${WT_S19_A_GIT}/proactive-meta.json" "${S19_A_HEAD}" <<'PY'
+import json
+import os
+import pathlib
+import sys
+
+p = pathlib.Path(sys.argv[1])
+meta = json.loads(p.read_text(encoding="utf-8"))
+assert meta.get("lifecycle_state") == "JUDGED", meta
+assert meta.get("judged_head_sha") == sys.argv[2], meta
+assert meta.get("judge_verdict") == "JUDGE_ESCALATE_HUMAN", meta
+assert meta.get("judge_subreason") == "TEST", meta
+assert meta.get("judged_at"), meta
+assert (os.stat(p).st_mode & 0o777) == 0o600, oct(os.stat(p).st_mode)
+PY
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "transitioning to JUDGED frees the UNJUDGED cap=2 slot in check-throttle" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open 2
+
+check_exit "set-state marks second clean candidate worktree as JUDGED" 0 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_B}" --state JUDGED --verdict JUDGE_PASS_ROUTINE --subreason CLEAN
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle passes when 2 JUDGED candidates are below default max-judged-open=5" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle blocks with exit 5 when 2 JUDGED worktrees hit --max-judged-open 2" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open 2
+check_grep "check-throttle reports judged_cap exhaustion" "2 judged local candidate worktrees awaiting promotion/review.*judged_cap=2" "${TEST_DIR}/check.log"
+
+# 19.3 Head-binding tamper protection: dirtying OR committing on a JUDGED worktree
+#      downgrades it back to UNJUDGED in check-throttle
+WT_S19_C="$("${TARGET_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S19_CLONE}" --lens palette --worktree-root "${S19_WT_ROOT}")"
+WT_S19_C_GIT="$(git -C "${WT_S19_C}" rev-parse --git-dir)"
+printf 'gamma = 2\n' >"${WT_S19_C}/src/gamma.py"
+git -C "${WT_S19_C}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "palette: update gamma"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "1 UNJUDGED + 2 JUDGED passes --max-open 2 before tamper" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open 2 --max-judged-open 5
+
+printf '# dirty tamper\n' >>"${WT_S19_A}/src/alpha.py"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "dirtying a JUDGED worktree downgrades it to UNJUDGED in check-throttle" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open 2 --max-judged-open 5
+check_grep "dirty JUDGED worktree counts toward unreviewed local cap" "2 unreviewed local candidate worktrees" "${TEST_DIR}/check.log"
+git -C "${WT_S19_A}" checkout -q -- src/alpha.py
+
+printf '# post-judge commit\n' >>"${WT_S19_A}/src/alpha.py"
+git -C "${WT_S19_A}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "tamper commit after judgment"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "new commit on JUDGED worktree invalidates judged_head_sha and downgrades to UNJUDGED" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open 2 --max-judged-open 5
+check_grep "post-judgment commit counts toward unreviewed local cap" "2 unreviewed local candidate worktrees" "${TEST_DIR}/check.log"
+
+# Re-judge WT_S19_A at its new HEAD so it returns to JUDGED
+check_exit "re-judging WT_S19_A binds new judged_head_sha" 0 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_A}" --state JUDGED --verdict JUDGE_ESCALATE_HUMAN --subreason REJUDGED
+
+# 19.4 check-throttle --auto-expire auto-transitions >7d JUDGED worktrees to EXPIRED on disk
+#      (preserving worktree + branch), whereas >7d UNJUDGED worktrees STILL fail closed (exit 5)
+# Set deterministic created_at anchors so we test JUDGED >7d independently first, then UNJUDGED >7d.
+S19_ORIG_CREATED_A="20261101T120000Z"
+S19_ORIG_CREATED_B="20261101T120500Z"
+S19_RECENT_CREATED_C="20261109T120000Z"
+S19_DAY10_EPOCH="$(
+	python3 - <<'PY'
+import datetime as dt
+
+print(int(dt.datetime(2026, 11, 11, 12, 0, 0, tzinfo=dt.timezone.utc).timestamp()))
+PY
+)"
+S19_DAY20_EPOCH="$(
+	python3 - <<'PY'
+import datetime as dt
+
+print(int(dt.datetime(2026, 11, 21, 12, 0, 0, tzinfo=dt.timezone.utc).timestamp()))
+PY
+)"
+
+python3 - "${WT_S19_A_GIT}/proactive-meta.json" "${S19_ORIG_CREATED_A}" \
+	"${WT_S19_B_GIT}/proactive-meta.json" "${S19_ORIG_CREATED_B}" \
+	"${WT_S19_C_GIT}/proactive-meta.json" "${S19_RECENT_CREATED_C}" <<'PY'
+import json
+import pathlib
+import sys
+
+for idx in range(1, len(sys.argv), 2):
+    p = pathlib.Path(sys.argv[idx])
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    doc["created_at"] = sys.argv[idx + 1]
+    p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+PY
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle without --auto-expire blocks on >7d JUDGED worktree" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --now-epoch "${S19_DAY10_EPOCH}"
+check_grep "check-throttle names stale JUDGED worktree without --auto-expire" "Judged local candidate worktree .* is 10\.0 days old" "${TEST_DIR}/check.log"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle --auto-expire transitions >7d JUDGED worktrees to EXPIRED and exits 0" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --now-epoch "${S19_DAY10_EPOCH}" --auto-expire
+check_grep "check-throttle logs auto-expire preservation notice" "Auto-expired >7d judged candidate worktree on disk \(preserved\)" "${TEST_DIR}/check.log"
+check "auto-expired worktree directory preserved on disk" test -d "${WT_S19_A}"
+check "auto-expired worktree branch preserved in git" git -C "${S19_CLONE}" rev-parse --verify --quiet "${BRANCH_S19_A}"
+check "auto-expired metadata records EXPIRED state and SLA_7D_AUTO_EXPIRE" python3 - "${WT_S19_A_GIT}/proactive-meta.json" "${WT_S19_B_GIT}/proactive-meta.json" <<'PY'
+import json
+import pathlib
+import sys
+
+for arg in sys.argv[1:]:
+    meta = json.loads(pathlib.Path(arg).read_text(encoding="utf-8"))
+    assert meta.get("lifecycle_state") == "EXPIRED", meta
+    assert meta.get("expire_reason") == "SLA_7D_AUTO_EXPIRE", meta
+    assert meta.get("expired_head_sha"), meta
+    assert meta.get("expired_at") == "20261111T120000Z", meta
+PY
+
+# At DAY20, WT_S19_C (UNJUDGED, created 2026-11-09) is >7 days old and MUST STILL fail closed even with --auto-expire!
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "UNJUDGED worktree >7d STILL fails closed (exit 5) even with --auto-expire" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --now-epoch "${S19_DAY20_EPOCH}" --auto-expire
+check_grep "check-throttle reports >7d UNJUDGED candidate despite --auto-expire" "Unreviewed local candidate worktree .* is 12\.0 days old" "${TEST_DIR}/check.log"
+check "UNJUDGED worktree was NOT auto-expired on disk" python3 - "${WT_S19_C_GIT}/proactive-meta.json" <<'PY'
+import json
+import pathlib
+import sys
+
+meta = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert meta.get("lifecycle_state") == "UNJUDGED", meta
+PY
+
+# 19.5 reopen transitions an EXPIRED worktree back to JUDGED with reopened_at and preserves original_created_at
+check_exit "reopen transitions EXPIRED WT_S19_A back to JUDGED" 0 \
+	"${TARGET_SCRIPT}" reopen --worktree "${WT_S19_A}"
+check_grep "reopen prints JUDGED state confirmation" "^REOPENED: state=JUDGED head=" "${TEST_DIR}/check.log"
+check "reopen sets JUDGED, reopened_at, preserves original_created_at, and clears expired_*" python3 - "${WT_S19_A_GIT}/proactive-meta.json" "${S19_ORIG_CREATED_A}" <<'PY'
+import json
+import pathlib
+import sys
+
+meta = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert meta.get("lifecycle_state") == "JUDGED", meta
+assert meta.get("reopened_at"), meta
+assert meta.get("original_created_at") == sys.argv[2], meta
+assert "expired_head_sha" not in meta, meta
+assert "expired_at" not in meta, meta
+PY
+
+# 19.6 check-collisions --include-worktrees --exclude-worktree <wt> ignores <wt> itself (exit 0)
+#      while still detecting collisions (exit 4) on files touched by other JUDGED and EXPIRED worktrees
+# Current states: WT_S19_A = JUDGED (src/alpha.py), WT_S19_B = EXPIRED (src/beta.py), WT_S19_C = UNJUDGED (src/gamma.py)
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions detects WT_S19_C self-path without --exclude-worktree" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/gamma.py" \
+	--include-worktrees --repo-path "${S19_CLONE}"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions --exclude-worktree ignores excluded worktree itself (exit 0)" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/gamma.py" \
+	--include-worktrees --repo-path "${S19_CLONE}" --exclude-worktree "${WT_S19_C}"
+
+ln -s "${WT_S19_C}" "${TEST_DIR}/s19_wt_c_symlink"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions --exclude-worktree resolves symlinked worktree identity via git-dir" 0 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/gamma.py" \
+	--include-worktrees --repo-path "${S19_CLONE}" --exclude-worktree "${TEST_DIR}/s19_wt_c_symlink"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions with --exclude-worktree still detects collision against JUDGED worktree (exit 4)" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/alpha.py" \
+	--include-worktrees --repo-path "${S19_CLONE}" --exclude-worktree "${WT_S19_C}"
+check_grep "check-collisions names the colliding JUDGED worktree" "live candidate worktree .* already touches src/alpha\.py" "${TEST_DIR}/check.log"
+
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions with --exclude-worktree still detects collision against EXPIRED worktree (exit 4)" 4 \
+	"${TARGET_SCRIPT}" check-collisions --repo abhimehro/ctrld-sync --file "src/beta.py" \
+	--include-worktrees --repo-path "${S19_CLONE}" --exclude-worktree "${WT_S19_C}"
+check_grep "check-collisions names the colliding EXPIRED worktree" "live candidate worktree .* already touches src/beta\.py" "${TEST_DIR}/check.log"
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

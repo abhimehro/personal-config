@@ -5,25 +5,33 @@
     "agentapi",
     "new-conversation",
     "--",
-    "[PROACTIVE-TRIAGE] Weekday 08:35 local (America/Chicago) post-sweep review for the ctrld-sync pilot (2B, human-in-the-loop). Do NOT push, open PRs, or re-run the sweep. Steps: (1) Read __HOME__/.gemini/antigravity/proactive-reports/$(date -u +%Y-%m-%d)-<repo>.md for the pilot repo (ctrld-sync in Week 1; the repo named in the sidecar prompt in Week 2). (2) If no digest exists, run `__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh audit-missed --date $(date -u +%Y-%m-%d) --repo <repo>` once, record Status MISSED in the summary, and do NOT retry or start a run. (3) Otherwise inspect the referenced worktree (git diff --shortstat vs base_sha) and re-check verify exit status from the digest. (3b) If verify did not exit 0, run `__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh base-check --repo <repo> --worktree <worktree_path> --digest <digest_path>` ONCE and report its VERDICT line: FLAKE_ON_RETRY or PRE_EXISTING_ON_BASE (exit 0) means the candidate is still promotable and any base breakage is filed separately, while CAUSED_BY_CHANGE (exit 2) means discard the candidate. Never re-run the sweep to fix a failure that base-check attributes to base. (4) Post a TIGHT summary to the user with exactly these fields: repo, Status, Substatus (NONE|FLOAT_REORDER_DRIFT|GATE_FAILURE|PRE_EXISTING_FAILURE), base-check Verdict when it ran, verify exit code, diff size (files/+/-), and a one-line call: 'worth a look' or 'skip'. Never print secrets or sentinel details beyond the Status and a pointer to the local digest path. Sentinel stays local-only (SECURITY_REPORT_ONLY), never staged for a public PR."
+    "[PROACTIVE-JUDGE-SHADOW] Weekday 08:35 local (America/Chicago) post-sweep Judge & queue resolution for the ctrld-sync pilot (2B, shadow-ledger + two-tier state transitions). Do NOT push, open PRs, or re-run the sweep. Steps: (1) Resolve SWEEP_DATE via `__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh sweep-date --cron 'CRON_TZ=America/Chicago 15 8 * * 1-5'` and check __HOME__/.gemini/antigravity/proactive-reports/$SWEEP_DATE-ctrld-sync.md. (2) If no digest exists, run `__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh audit-missed --date \"$SWEEP_DATE\" --repo ctrld-sync --cron 'CRON_TZ=America/Chicago 15 8 * * 1-5'` once. (3) Run `__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh judge --repo ctrld-sync --date \"$SWEEP_DATE\" --cron 'CRON_TZ=America/Chicago 15 8 * * 1-5'` to evaluate all UNJUDGED candidate worktrees across Tier 1 (merge-tree, check-collisions, open-code-review, gitnexus-review) and Tier 2 (CodeRabbit, plus sparing LiveReview `lrc` only on eligible tie-breakers; never transmit sentinel diffs to cloud reviewers), run base-check automatically on any non-zero verify failure, retire JUDGE_REJECT regressions, transition JUDGE_PASS_ROUTINE / JUDGE_ESCALATE_HUMAN worktrees to JUDGED, auto-expire >7d JUDGED worktrees on disk, and append 0600 receipts to judge-shadow-ledger.jsonl. (4) Post a TIGHT summary with: repo, Status, Substatus, Judge Verdict(s), Queue Health (unjudged_open, judged_open, expired_preserved), verify exit code, diff size (files/+/-), and a one-line call: 'worth a look' or 'skip'. Never print secrets or sentinel details beyond Status and local digest path."
   ],
   "restart_policy": "always",
-  "display_name": "Proactive Triage Review (ctrld-sync Pilot)",
-  "description": "Every weekday (Mon-Fri) at 08:35 local (America/Chicago, 20 minutes post-sweep), reviews the proactive digest and outputs a tight triage summary.",
+  "display_name": "Proactive Judge & Triage (ctrld-sync Pilot)",
+  "description": "Every weekday (Mon-Fri) at 08:35 local (America/Chicago, 20 minutes post-sweep), runs the automated Judge across ctrld-sync digests and unjudged candidate worktrees.",
   "agent_permissions": {
     "allows_user_interactions": true,
     "workspace_uris": [
       "file://__HOME__/.gemini/antigravity/proactive-reports"
     ],
     "access_grants": [
+      "read_file(__HOME__/dev/ctrld-sync)",
       "read_file(__HOME__/.gemini/antigravity/proactive-reports)",
       "write_file(__HOME__/.gemini/antigravity/proactive-reports)",
       "read_file(__HOME__/.gemini/antigravity/worktrees)",
       "write_file(__HOME__/.gemini/antigravity/worktrees)",
       "command(__HOME__/bin/agent-zsh -c)",
+      "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh sweep-date)",
       "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh audit-missed)",
       "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh base-check)",
+      "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh judge)",
       "command(__HOME__/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh doctor)",
+      "command(__HOME__/.gemini/config/proactive/scripts/proactive-worktree.sh)",
+      "command(ocr)",
+      "command(coderabbit)",
+      "command(lrc)",
+      "command(node)",
       "command(git -C)"
     ]
   }

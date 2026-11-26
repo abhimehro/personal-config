@@ -72,17 +72,34 @@ skills/hooks/runtime files and run pre-flight checks across repos with:
 "$HOME/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh" doctor --fix
 ```
 
-### Step 1: Cleanup Expired Reviewed Worktrees and Check Local + Remote Throttle
+### Step 1: Cleanup Expired Reviewed Worktrees and Check Two-Tier Local + Remote Throttle
 
 1. Prune clean, already-merged or no-op worktrees older than 21 days (longer
    than the 2-week pilot; both dirty worktrees and clean worktrees holding
    unmerged commits ahead of `base_sha` are preserved automatically):
    `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh cleanup --ttl-days 21`
-2. Check both the local `2B` candidate worktree throttle (`>= 2` local dirty or
-   unmerged-commit candidate worktrees for `<repo>`, or any `> 7` days old) and
-   the remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
+2. Check the two-tier local `2B` candidate worktree lifecycle throttle plus the
+   remote open proactive Draft PR throttle (`>= 2` open bot Draft PRs or any
    `> 7` days old):
-   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>"`
+   `$HOME/.gemini/config/proactive/scripts/proactive-worktree.sh check-throttle --repo abhimehro/<repo> --include-worktrees --repo-path "$HOME/dev/<repo>" --auto-expire`
+   - **`UNJUDGED` tier (`--max-open 2`, strict `> 7d` fail-closed):** `prepare`
+     stamps `"lifecycle_state": "UNJUDGED"` into
+     `<wt_git_dir>/proactive-meta.json`. Unreviewed candidates remain capped at
+     `2` and still fail closed past `7` days even when `--auto-expire` is set.
+     Dirty edits or new commits after judgment invalidate `judged_head_sha` and
+     automatically downgrade the worktree back to `UNJUDGED`.
+   - **`JUDGED` & `EXPIRED` tiers (`--max-judged-open 5`, `> 7d` auto-expire):**
+     Once the companion `[PROACTIVE-JUDGE-SHADOW]` slot evaluates a clean
+     committed candidate (`set-state --state JUDGED`), it leaves the `UNJUDGED`
+     `cap=2` slot and counts only against `--max-judged-open` (default `5`), so
+     judged candidates awaiting human review do not starve subsequent weekday
+     sweeps. Under `--auto-expire`, `JUDGED` worktrees older than `7` days
+     transition on disk to `EXPIRED` (`SLA_7D_AUTO_EXPIRE`, branch and worktree
+     preserved; restorable via `proactive-worktree.sh reopen --worktree <dir>`).
+   - **`REJECTED` tier:** Deterministic harness/coverage violations and
+     `base-check` `CAUSED_BY_CHANGE` regressions are logged to
+     `judge-shadow-ledger.jsonl` and retired automatically by the Judge.
+
    `--include-worktrees` counts candidates registered in git under **any**
    worktree root, not only the default one, so a candidate prepared elsewhere
    cannot slip past the cap. Human worktrees (no `proactive-meta.json`, branch
@@ -129,9 +146,14 @@ candidate worktree:
 there are no bot PRs at all, so a PR-only check is a **no-op for exactly the
 collision class that stranded real work**: two sessions editing the same file in
 the same burst. The flag unions in the changed paths of every live candidate
-worktree (dirty, or holding commits not yet on the default branch). A candidate
-whose work already merged is excluded, so it cannot block that path for the
-whole 21-day TTL.
+worktree (`UNJUDGED`, `JUDGED`, or preserved `EXPIRED` candidates that are dirty
+or hold commits not yet on the default branch). When re-checking collisions from
+an existing candidate worktree (such as inside
+`antigravity-proactive-ctl.sh judge`), pass repeatable
+`--exclude-worktree <dir>` so the candidate excludes itself while still
+detecting collisions against every sibling candidate worktree. A candidate whose
+work already merged is excluded automatically, so it cannot block that path for
+the whole 21-day TTL.
 
 Exit codes: `4` = collision — pick a non-overlapping candidate or conclude as a
 clean no-op. `5` = `UNVERIFIABLE`, the open-PR listing was truncated, so a
@@ -219,14 +241,17 @@ why in the digest.
      morning-brief change was blocked by a refactoring-agent test failure. Keep
      the worktree in place, record the exact verify command, its exit code, and
      a provisional `Substatus: GATE_FAILURE` in the digest, and stop. The
-     `08:35` triage slot runs `antigravity-proactive-ctl.sh base-check`, which
-     re-runs the failing stage on a pristine `base_sha` worktree and appends a
-     `## Base-Check Classification` verdict to the same digest. Never run
-     `base-check` inside the sweep: a base re-run can double test time and the
-     sweep is boxed at 15 minutes. Never delete a worktree whose failure has not
-     been classified — that destroys the evidence the classification needs.
+     companion `[PROACTIVE-JUDGE-SHADOW]` slot (`08:35` pilot or `+20m` under
+     `stage-repo --stagger`) runs `antigravity-proactive-ctl.sh judge`, which
+     invokes `base-check` automatically on any unclassified `GATE_FAILURE`
+     worktree, re-running the failing stage on a pristine `base_sha` worktree
+     and appending a `## Base-Check Classification` verdict to the same digest.
+     Never run `base-check` inside the sweep: a base re-run can double test time
+     and the sweep is boxed at 15 minutes. Never delete a worktree whose failure
+     has not been classified — that destroys the evidence the classification
+     needs.
 
-### Step 5: Write Local Digest (`2B` Strict Local-First Gate)
+### Step 5: Write Local Digest (`2B` Strict Local-First Gate) & Post-Sweep Judge Hand-Off
 
 Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
 (`chmod 600`) containing:
@@ -242,11 +267,11 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
   FLOAT_REORDER_DRIFT` after discarding the candidate so
   float-reorder noise is tracked separately from real `GATE_FAILURE`
   regressions). The sweep only ever writes the first three;
-  `PRE_EXISTING_FAILURE` is appended by the `08:35` triage slot's `base-check`
-  in a `## Base-Check Classification` section, along with its `Verdict`
+  `PRE_EXISTING_FAILURE` is appended by `base-check` during the post-sweep Judge
+  slot in a `## Base-Check Classification` section, along with its `Verdict`
   (`NO_FAILURE` | `FLAKE_ON_RETRY` | `PRE_EXISTING_ON_BASE` |
-  `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` means discard the candidate; the
-  other three leave it promotable and any base breakage gets filed separately.
+  `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` retires the candidate; the other
+  three leave it promotable and any base breakage gets filed separately.
 - **Repository & Base Commit:** `abhimehro/<repo>` @ `<base_sha>`
 - **Lens:** `sentinel` | `bolt` | `palette` | `code-health`
 - **Summary & Failure/Perf Mechanism:** 2-4 concise sentences with file/line
@@ -267,6 +292,33 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
   for explicitly classified discards (`CAUSED_BY_CHANGE` / sweep-gate blocks)
   that may retain uncommitted edits. Never remove worktrees with unclassified
   failures.
+
+20 minutes after each sweep slot, the companion `[PROACTIVE-JUDGE-SHADOW]`
+sidecar runs
+`antigravity-proactive-ctl.sh judge --repo <repo> --date "$SWEEP_DATE" --cron "<sweep_cron>"`
+to evaluate every `UNJUDGED` candidate worktree across:
+
+- **Tier 1 (Local / Graph):** fast `verify --test-cmd true` policy/coverage
+  probe, `base-check` on `GATE_FAILURE`, `git merge-tree --write-tree`,
+  `check-collisions --include-worktrees --exclude-worktree <wt>`,
+  `ocr delegate preview`, and `gitnexus-review` (`node .gitnexus/run.cjs impact`
+  upstream blast-radius + symbol test-reference check).
+- **Tier 2 (Reviewer Stack — never run on `sentinel` or
+  `SECURITY_REPORT_ONLY`):** `open-code-review`
+  (`ocr review --audience agent --format json`), `CodeRabbit`
+  (`coderabbit review --agent --committed --base-commit <base_sha>`), and
+  sparing LiveReview
+  (`lrc review --no-serve --output json --range <base_sha>...HEAD` only on
+  `<= 250` LOC tie-breakers at `< 1` run/day with `>= 2000` remaining monthly
+  LOC).
+- **Ledger & Digest Resolution:** Appends a `0600` receipt to
+  `$HOME/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl`,
+  appends `## Judge Evaluation` ending with deterministic
+  `Action: promote | reject | expire (default: expire on <YYYY-MM-DD>)` (or
+  `Action: reject (retired automatically on <YYYY-MM-DD>)` on `JUDGE_REJECT`),
+  auto-retires `JUDGE_REJECT` regressions, transitions clean evaluated
+  candidates to `JUDGED`, and auto-expires `> 7d` `JUDGED` worktrees to
+  `EXPIRED` on disk.
 
 Do **not** push branches or open pull requests during the `2B` local-first
 pilot.
