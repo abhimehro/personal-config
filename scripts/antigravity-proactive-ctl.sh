@@ -1802,9 +1802,9 @@ cmd_base_check() {
 		(
 			cd "${dir}" || exit 1
 			if [[ -n ${seg_pythonpath} ]]; then
-				PATH="${seg_path}" PYTHONPATH="${seg_pythonpath}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+				PYTHONDONTWRITEBYTECODE=1 PATH="${seg_path}" PYTHONPATH="${seg_pythonpath}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
 			else
-				PATH="${seg_path}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
+				PYTHONDONTWRITEBYTECODE=1 PATH="${seg_path}" env -u SSH_AUTH_SOCK -u GH_TOKEN -u GITHUB_TOKEN -u VIRTUAL_ENV bash -c "${seg}"
 			fi
 		) >"${log}" 2>&1
 	}
