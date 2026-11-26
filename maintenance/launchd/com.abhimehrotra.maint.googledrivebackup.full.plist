@@ -24,7 +24,7 @@
 		<string>--no-delete</string>
 	</array>
 	<key>RunAtLoad</key>
-	<true/>
+	<false/>
 	<key>StandardErrorPath</key>
 	<string>/Users/speedybee/Library/Logs/maintenance/googledrive_backup_full.err</string>
 	<key>StandardOutPath</key>

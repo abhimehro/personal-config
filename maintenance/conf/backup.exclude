@@ -21,6 +21,9 @@
 *.vpn
 vpn.conf
 
+# Do not recursively download cloud media into its own backup.
+CloudMedia/mounted/
+
 # Shell History (often contains sensitive commands/tokens)
 .bash_history
 .zsh_history
