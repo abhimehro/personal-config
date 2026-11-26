@@ -2096,7 +2096,8 @@ PATH="${S16_HARD_BIN}:${PATH}" check_exit "mutating dirty worktree invalidates f
 	"${WT_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S16_HARD_WT}" \
 	--include-worktrees --repo-path "${S16_HARD_CLONE}" --max-open 1
 
-# (3b) Devin bbJX: committing a revision after prior base-check + Judge updates ## Judge Evaluation cleanly without --force-rejudge
+# (3b) Devin bbJX & b576 & b5-U: append level-1 '# Reviewer notes' after Judge Evaluation, commit revision, re-run without --force-rejudge
+printf '\n# Reviewer notes\nManual check verified base failure.\n' >>"${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md"
 printf 'clean\n' >"${S16_HARD_OCR_MODE}"
 printf 'low\n' >"${S16_HARD_GN_MODE}"
 printf 'def helper():\n    return 1\n' >"${WT_HARD_D}/src/mod.py"
@@ -2105,16 +2106,18 @@ HEAD_HARD_D_REV="$(git -C "${WT_HARD_D}" rev-parse HEAD)"
 PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge re-evaluates new commit and replaces stale Judge Evaluation block without --force-rejudge" 0 \
 	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-13 \
 	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
-check "digest Judge Evaluation updated to new HEAD SHA without retaining stale Action" \
+check "digest Judge Evaluation updated in-place preserving '# Reviewer notes' without stale Action" \
 	python3 - "${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" "${HEAD_HARD_D_REV}" <<'PYTEST'
 import pathlib, re, sys
 txt = pathlib.Path(sys.argv[1]).read_text()
 new_sha = sys.argv[2]
 assert txt.count("## Judge Evaluation") == 1, txt
-judge_blk = [b for b in re.split(r"(?m)(?=^## )", txt) if b.startswith("## Judge Evaluation")][0]
+assert "# Reviewer notes\nManual check verified base failure." in txt, txt
+judge_blk = [b for b in re.split(r"(?m)(?=^#{1,2}\s)", txt) if b.startswith("## Judge Evaluation")][0]
 assert f"- Head SHA: {new_sha}" in judge_blk, judge_blk
 assert "- Verdict: JUDGE_PASS_ROUTINE" in judge_blk, judge_blk
-assert "- Action:" not in judge_blk or "Verdict: JUDGE_PASS_ROUTINE" in judge_blk, judge_blk
+action_lines = [ln for ln in judge_blk.splitlines() if ln.strip().startswith("- Action:")]
+assert action_lines and "- Action: promote | reject | expire" in action_lines[0] and len(action_lines) == 1, judge_blk
 PYTEST
 
 # (4) CodeRabbit axnE: SECURITY_REPORT_ONLY with 0 active worktrees deduplicates NO_WORKTREE cleanly across re-runs
@@ -2217,6 +2220,39 @@ esp = [r for r in rows if r.get("worktree") == sys.argv[3]]
 assert len(cs) == 1 and cs[0]["subreason"] == "PREFLIGHT_MISSING_TOOLCHAIN", cs
 assert len(esp) == 1 and esp[0]["verdict"] == "JUDGE_PASS_ROUTINE", esp
 PYTEST
+
+# (6) Devin cF5S: unreadable untracked file causing empty starting fingerprint prevents deletion even on Makefile JUDGE_REJECT
+if [[ $(id -u) -ne 0 ]]; then
+	touch "${S16_HARD_CLONE}/uv.lock"
+	WT_HARD_UNREAD="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+	printf '\t@echo tamper\n' >>"${WT_HARD_UNREAD}/Makefile"
+	git -C "${WT_HARD_UNREAD}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "tamper Makefile with unreadable file"
+	printf 'secret note\n' >"${WT_HARD_UNREAD}/unreadable.log"
+	chmod 000 "${WT_HARD_UNREAD}/unreadable.log"
+	cat >"${S16_HARD_REPORTS}/2026-12-16-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-16 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_UNREAD}
+EOF
+	chmod 600 "${S16_HARD_REPORTS}/2026-12-16-ctrld-sync.md"
+	PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge escalates without deleting worktree when fingerprint fails on unreadable file" 0 \
+		"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-16 \
+		--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+	check "unreadable-fingerprint worktree preserved on disk despite Makefile tamper" test -d "${WT_HARD_UNREAD}"
+	check "ledger recorded WORKTREE_IDENTITY_UNVERIFIED JUDGE_ESCALATE_HUMAN" \
+		python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_UNREAD}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+u = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(u) == 1, rows
+assert u[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", u[0]
+assert u[0]["subreason"] == "WORKTREE_IDENTITY_UNVERIFIED", u[0]
+PYTEST
+	chmod 600 "${WT_HARD_UNREAD}/unreadable.log" || true
+fi
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

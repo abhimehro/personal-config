@@ -1861,22 +1861,28 @@ import subprocess
 import sys
 
 wt_dir_str, head_val = sys.argv[1], sys.argv[2]
-h = hashlib.sha256()
-h.update(f"HEAD:{head_val}\n".encode("utf-8"))
 st = subprocess.run(
     ["git", "-C", wt_dir_str, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
     capture_output=True,
 )
-h.update(st.stdout or b"")
+if st.returncode != 0:
+    sys.exit(1)
 diff = subprocess.run(
     ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
     capture_output=True,
 )
-h.update(diff.stdout or b"")
+if diff.returncode != 0:
+    sys.exit(1)
 untracked = subprocess.run(
     ["git", "-C", wt_dir_str, "ls-files", "--others", "--exclude-standard", "-z"],
     capture_output=True,
 )
+if untracked.returncode != 0:
+    sys.exit(1)
+h = hashlib.sha256()
+h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+h.update(st.stdout or b"")
+h.update(diff.stdout or b"")
 for raw_rel in (untracked.stdout or b"").split(b"\x00"):
     if not raw_rel:
         continue
@@ -1891,7 +1897,7 @@ for raw_rel in (untracked.stdout or b"").split(b"\x00"):
                 data = fh.read()
             h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
     except OSError:
-        h.update(b"ERR\x00")
+        sys.exit(1)
 print(h.hexdigest())
 PY
 	)"
@@ -2208,7 +2214,41 @@ def append_judge_section_to_digest(digest_file, section_text, head_sha, wt_str="
     existing = digest_file.read_text(encoding="utf-8", errors="replace")
     wt_real = os.path.realpath(wt_str) if wt_str else ""
     new_sec = section_text.strip()
-    blocks = re.split(r"(?m)(?=^## )", existing) if existing else []
+
+    def split_top_blocks(text):
+        blocks_out = []
+        cur = []
+        fence_char = ""
+        fence_len = 0
+        for ln in text.splitlines(keepends=True):
+            stripped = ln.lstrip()
+            m_fence = re.match(r"^(`{3,}|~{3,})(.*)$", stripped.rstrip("\r\n"))
+            if fence_char:
+                if (
+                    m_fence
+                    and m_fence.group(1)[0] == fence_char
+                    and len(m_fence.group(1)) >= fence_len
+                    and not m_fence.group(2).strip()
+                ):
+                    fence_char = ""
+                    fence_len = 0
+                cur.append(ln)
+                continue
+            if m_fence and not (m_fence.group(1)[0] == "`" and "`" in m_fence.group(2)):
+                fence_char = m_fence.group(1)[0]
+                fence_len = len(m_fence.group(1))
+                cur.append(ln)
+                continue
+            if re.match(r"^#{1,2}\s", ln) and cur:
+                blocks_out.append("".join(cur))
+                cur = [ln]
+            else:
+                cur.append(ln)
+        if cur:
+            blocks_out.append("".join(cur))
+        return blocks_out
+
+    blocks = split_top_blocks(existing) if existing else []
 
     def is_matching_judge_block(blk):
         s = blk.lstrip()
@@ -2228,8 +2268,18 @@ def append_judge_section_to_digest(digest_file, section_text, head_sha, wt_str="
             os.chmod(digest_file, 0o600)
             return
 
-    kept = [b.rstrip() for b in blocks if b.strip() and not is_matching_judge_block(b)]
-    kept.append(new_sec)
+    kept = []
+    inserted = False
+    for b in blocks:
+        if is_matching_judge_block(b):
+            if not inserted:
+                kept.append(new_sec)
+                inserted = True
+            continue
+        if b.strip():
+            kept.append(b.rstrip())
+    if not inserted:
+        kept.append(new_sec)
     updated = "\n\n".join(kept).rstrip() + "\n"
     tmp = digest_file.with_name(f".{digest_file.name}.tmp.{os.getpid()}")
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -2810,7 +2860,7 @@ had_preflight_failure = False
 
 for repo in target_repos:
     default_repo_dir = repo_root_parent / repo
-    preflight_missing_toolchain = False
+    missing_toolchain_repos = set()
     repo_preflight_failed = False
     judge_degraded = False
     today_digest = reports_dir / f"{sweep_date}-{repo}.md"
@@ -2888,12 +2938,12 @@ for repo in target_repos:
                         timeout_s=90,
                     )
                     if pf_rc == 7:
-                        preflight_missing_toolchain = True
+                        missing_toolchain_repos.add(os.path.realpath(str(owner_dir)))
                         judge_degraded = True
                         sys.stderr.write(
                             pf_err
                             or pf_out
-                            or f"[WARN] judge: preflight reported missing verification toolchain (exit 7) for {repo}; continuing with per-repo escalation\n"
+                            or f"[WARN] judge: preflight reported missing verification toolchain (exit 7) for {repo} ({owner_dir}); continuing with clone-scoped escalation\n"
                         )
                     elif pf_rc != 0:
                         sys.stderr.write(pf_err or pf_out or f"[ERROR] judge: preflight failed (exit {pf_rc}) for {repo}\n")
@@ -2985,6 +3035,9 @@ for repo in target_repos:
         lens = (meta.get("lens") or "code-health").strip().lower()
         wt_repo_str = meta.get("repo_path") or (str(effective_repo_dir) if effective_repo_dir else "")
         wt_repo_dir = pathlib.Path(wt_repo_str) if wt_repo_str else None
+        wt_missing_toolchain = bool(
+            wt_repo_str and os.path.realpath(wt_repo_str) in missing_toolchain_repos
+        )
 
         # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge.
         if bucket == "JUDGED" and not force_rejudge:
@@ -3378,7 +3431,7 @@ for repo in target_repos:
                 and head_sha
                 and head_sha != base_sha
                 and not base_check_escalate
-                and not preflight_missing_toolchain
+                and not wt_missing_toolchain
                 and merge_tree_clean
                 and files_changed_ok
                 and collisions_rc == 0
@@ -3396,7 +3449,7 @@ for repo in target_repos:
                 subreason = "ALL_TIERS_CLEAN"
             else:
                 verdict = "JUDGE_ESCALATE_HUMAN"
-                if preflight_missing_toolchain:
+                if wt_missing_toolchain:
                     subreason = "PREFLIGHT_MISSING_TOOLCHAIN"
                 elif base_check_escalate:
                     subreason = "BASE_CHECK_UNUSABLE"
@@ -3421,12 +3474,20 @@ for repo in target_repos:
                 else:
                     subreason = "REVIEWER_DEGRADED_OR_INCOMPLETE"
 
-        # Verify worktree identity did not change mid-evaluation before recording state or retiring.
+        # Verify worktree identity is verified and unchanged mid-evaluation before recording state or retiring.
         mutated_mid_eval = False
         rc_ch, ch_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", "HEAD"], timeout_s=10)
         cur_head_sha = ch_out.strip() if rc_ch == 0 else ""
         cur_fp = compute_wt_content_fingerprint(wt_dir, cur_head_sha) if cur_head_sha else ""
-        if (head_sha and cur_head_sha != head_sha) or (eval_fingerprint and cur_fp != eval_fingerprint):
+        if not head_sha or not eval_fingerprint or not cur_fp or cur_head_sha != head_sha:
+            mutated_mid_eval = True
+            judge_degraded = True
+            verdict = "JUDGE_ESCALATE_HUMAN"
+            if not eval_fingerprint or not cur_fp or not head_sha:
+                subreason = "WORKTREE_IDENTITY_UNVERIFIED"
+            else:
+                subreason = "WORKTREE_CHANGED_DURING_EVAL"
+        elif cur_fp != eval_fingerprint:
             mutated_mid_eval = True
             verdict = "JUDGE_ESCALATE_HUMAN"
             subreason = "WORKTREE_CHANGED_DURING_EVAL"
