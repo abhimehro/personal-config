@@ -17,8 +17,8 @@ Each archive contains an online SQLite backup of data/jellyfin.db, config, root,
 plugin files and settings, playlists, and the device identifier when available.
 It excludes media, regenerable artwork/cache, and standalone admin credentials.
 SQLite is transaction-consistent; the supporting files are copied individually.
-Logs are ~/Library/Logs/maintenance/jellyfin-backup.{out,err}. A verified File
-Provider readback is not a receipt from the remote Google Drive service.
+Logs are ~/Library/Logs/jellyfin-backup.{out,err}. A verified File Provider
+readback is not a receipt from the remote Google Drive service.
 
 ## Test or restore in a private staging directory
 

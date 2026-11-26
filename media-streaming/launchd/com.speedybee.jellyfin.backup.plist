@@ -7,6 +7,6 @@
 <string>/Users/speedybee/dev/personal-config/media-streaming/scripts/backup-jellyfin.py</string>
 </array>
 <key>StartCalendarInterval</key><dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>45</integer></dict>
-<key>StandardOutPath</key><string>/Users/speedybee/Library/Logs/maintenance/jellyfin-backup.out</string>
-<key>StandardErrorPath</key><string>/Users/speedybee/Library/Logs/maintenance/jellyfin-backup.err</string>
+<key>StandardOutPath</key><string>/Users/speedybee/Library/Logs/jellyfin-backup.out</string>
+<key>StandardErrorPath</key><string>/Users/speedybee/Library/Logs/jellyfin-backup.err</string>
 </dict></plist>
