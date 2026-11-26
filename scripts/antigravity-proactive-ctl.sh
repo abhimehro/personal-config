@@ -1044,7 +1044,8 @@ sweep_prompt = (
     f"then run {worktree_sh} cleanup --ttl-days 21 and check-throttle --repo abhimehro/{repo_name} "
     f"--include-worktrees --repo-path {quoted_repo_path} --auto-expire, "
     f"check open-PR and live-worktree file collisions via check-collisions --repo abhimehro/{repo_name} "
-    f"--include-worktrees --repo-path {quoted_repo_path} before editing, "
+    f"--include-worktrees --repo-path {quoted_repo_path} --file <relpath> "
+    "(repeatable for each proposed edit) before editing, "
     f"prepare an isolated local worktree via prepare --repo abhimehro/{repo_name} "
     f"--repo-path {quoted_repo_path} --lens <lens> --mode local, "
     f"{verify_guidance} without modifying build, lock, script, or test harnesses, "
@@ -1837,36 +1838,70 @@ cmd_base_check() {
 			substatus="NONE"
 			detail="stage ${cand_fail_idx} (${cand_fail_seg}) failed once then passed on retry; treated as a flake, not a regression"
 		else
-			local base_fail_idx=-1
-			local base_fail_seg=""
-			local bidx=0
-			for seg in "${segments[@]}"; do
-				if ! run_segment_in "${BASE_CHECK_WT}" "${seg}" "${BASE_CHECK_DIR}/base-${bidx}.log" "${repo_path}"; then
-					base_fail_idx="${bidx}"
-					base_fail_seg="${seg}"
-					break
-				fi
-				bidx=$((bidx + 1))
-			done
-
-			if [[ ${base_fail_idx} -ge 0 ]]; then
-				verdict="PRE_EXISTING_ON_BASE"
-				substatus="PRE_EXISTING_FAILURE"
-				detail="base_sha ${base_sha} also fails stage ${base_fail_idx} (${base_fail_seg}); candidate fails stage ${cand_fail_idx} (${cand_fail_seg}). Promote the candidate and file the base breakage separately."
-				tail -n 15 "${BASE_CHECK_DIR}/base-${base_fail_idx}.log" >&2 || true
-			else
+			if run_segment_in "${BASE_CHECK_WT}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" "${repo_path}"; then
 				verdict="CAUSED_BY_CHANGE"
 				substatus="GATE_FAILURE"
-				detail="all ${#segments[@]} stage(s) pass at base_sha ${base_sha} but stage ${cand_fail_idx} (${cand_fail_seg}) fails in the candidate; this is a real regression, discard the candidate"
+				detail="stage ${cand_fail_idx} (${cand_fail_seg}) passes at base_sha ${base_sha} but fails in the candidate; this is a real regression, discard the candidate"
+			else
+				verdict="PRE_EXISTING_ON_BASE"
+				substatus="PRE_EXISTING_FAILURE"
+				detail="base_sha ${base_sha} also fails stage ${cand_fail_idx} (${cand_fail_seg}). Promote the candidate and file the base breakage separately."
+				tail -n 15 "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" >&2 || true
 			fi
 		fi
 	fi
+
+	local bc_head="" bc_fp=""
+	bc_head="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+	bc_fp="$(
+		python3 - "${wt_path}" "${bc_head}" <<'PY' 2>/dev/null || true
+import hashlib
+import os
+import subprocess
+import sys
+
+wt_dir_str, head_val = sys.argv[1], sys.argv[2]
+h = hashlib.sha256()
+h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+st = subprocess.run(
+    ["git", "-C", wt_dir_str, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+    capture_output=True,
+)
+h.update(st.stdout or b"")
+diff = subprocess.run(
+    ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
+    capture_output=True,
+)
+h.update(diff.stdout or b"")
+untracked = subprocess.run(
+    ["git", "-C", wt_dir_str, "ls-files", "--others", "--exclude-standard", "-z"],
+    capture_output=True,
+)
+for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+    if not raw_rel:
+        continue
+    rel = raw_rel.decode("utf-8", errors="replace")
+    p = os.path.join(wt_dir_str, rel)
+    h.update(rel.encode("utf-8") + b"\x00")
+    try:
+        if os.path.islink(p):
+            h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+        elif os.path.isfile(p):
+            with open(p, "rb") as fh:
+                data = fh.read()
+            h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+    except OSError:
+        h.update(b"ERR\x00")
+print(h.hexdigest())
+PY
+	)"
 
 	echo "VERDICT: ${verdict}"
 	echo "SUBSTATUS: ${substatus}"
 	echo "REPO: abhimehro/${repo_name}"
 	echo "BASE_SHA: ${base_sha}"
 	echo "WORKTREE: ${wt_path}"
+	echo "CONTENT_FINGERPRINT: ${bc_fp}"
 	echo "DETAIL: ${detail}"
 
 	if [[ -n ${digest} ]]; then
@@ -1879,6 +1914,8 @@ cmd_base_check() {
 				echo "- Verdict: ${verdict}"
 				echo "- Substatus: ${substatus}"
 				echo "- Base SHA: ${base_sha}"
+				echo "- Head SHA: ${bc_head}"
+				echo "- Content Fingerprint: ${bc_fp}"
 				echo "- Worktree: ${wt_path}"
 				echo "- Detail: ${detail}"
 			} >>"${digest}"
@@ -2030,6 +2067,7 @@ cmd_judge() {
 
 	python3 - "${worktree_sh}" "${ctl_sh}" "${reports_dir}" "${ledger_file}" "${sweep_date}" "${wt_root}" "${repo_root_parent}" "${max_age_days}" "${now_epoch}" "${skip_tier2}" "${with_lrc}" "${force_rejudge}" "${target_repos[@]}" <<'PY'
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -2225,8 +2263,17 @@ def discover_repo_worktrees(repo, default_repo_dir):
     seen = set()
     discovered = []
     meta_repo_paths = []
+    default_wt_seen = False
+    default_real = os.path.realpath(str(default_repo_dir)) if is_git_repo(default_repo_dir) else ""
 
-    def add_wt(cand_path, require_meta_match=False):
+    def record_repo_path(rp_str):
+        if rp_str and pathlib.Path(rp_str).is_dir() and is_git_repo(pathlib.Path(rp_str)):
+            rp_real = os.path.realpath(rp_str)
+            if all(os.path.realpath(x) != rp_real for x in meta_repo_paths):
+                meta_repo_paths.append(rp_str)
+
+    def add_wt(cand_path, require_meta_match=False, from_default_scan=False):
+        nonlocal default_wt_seen
         if not cand_path.is_dir():
             return
         key = abs_git_key(cand_path)
@@ -2248,8 +2295,10 @@ def discover_repo_worktrees(repo, default_repo_dir):
         seen.add(key)
         discovered.append(cand_path)
         rp = meta.get("repo_path", "")
-        if rp and pathlib.Path(rp).is_dir() and rp not in meta_repo_paths:
-            meta_repo_paths.append(rp)
+        if rp:
+            record_repo_path(rp)
+        elif from_default_scan:
+            default_wt_seen = True
 
     if wt_root.is_dir():
         prefix = f"proactive-{repo}-"
@@ -2266,6 +2315,7 @@ def discover_repo_worktrees(repo, default_repo_dir):
             scan_repos.append(rp_obj)
 
     for repo_dir in scan_repos:
+        is_def = bool(default_real and os.path.realpath(str(repo_dir)) == default_real)
         rc_t, top_out, _ = run_bounded(["git", "-C", str(repo_dir), "rev-parse", "--show-toplevel"], timeout_s=10)
         main_top = os.path.realpath(top_out.strip()) if rc_t == 0 and top_out.strip() else ""
         rc_l, list_out, _ = run_bounded(["git", "-C", str(repo_dir), "worktree", "list", "--porcelain"], timeout_s=15)
@@ -2279,14 +2329,14 @@ def discover_repo_worktrees(repo, default_repo_dir):
                 continue
             if main_top and os.path.realpath(wt_str) == main_top:
                 continue
-            add_wt(pathlib.Path(wt_str), require_meta_match=True)
+            add_wt(pathlib.Path(wt_str), require_meta_match=True, from_default_scan=is_def)
 
-    effective_repo = default_repo_dir if is_git_repo(default_repo_dir) else None
-    if effective_repo is None and meta_repo_paths:
-        first_rp = pathlib.Path(meta_repo_paths[0])
-        if is_git_repo(first_rp):
-            effective_repo = first_rp
-    return discovered, effective_repo
+    owning_repos = [pathlib.Path(rp) for rp in meta_repo_paths]
+    if is_git_repo(default_repo_dir) and (default_wt_seen or not owning_repos):
+        if all(os.path.realpath(str(x)) != default_real for x in owning_repos):
+            owning_repos.append(default_repo_dir)
+    effective_repo = owning_repos[0] if owning_repos else None
+    return discovered, effective_repo, owning_repos
 
 
 def is_gh_usable_for_repo(repo_dir):
@@ -2302,6 +2352,14 @@ def is_gh_usable_for_repo(repo_dir):
     # and avoid false auth failures from system gh under an isolated temp HOME.
     rc_a, _, _ = run_bounded([gh_bin, "auth", "status", "--hostname", "github.com"], timeout_s=10)
     return rc_a == 0
+
+
+def is_local_origin_repo(repo_dir):
+    if repo_dir is None:
+        return False
+    rc_u, url_out, _ = run_bounded(["git", "-C", str(repo_dir), "remote", "get-url", "origin"], timeout_s=10)
+    origin_url = url_out.strip() if rc_u == 0 else ""
+    return bool(origin_url) and os.path.exists(origin_url)
 
 
 def check_local_worktree_collisions(repo_dir, exclude_wt, changed_files):
@@ -2337,8 +2395,10 @@ def check_local_worktree_collisions(repo_dir, exclude_wt, changed_files):
         c_base = meta.get("base_sha", "")
         if not c_base:
             return 6
-        _, d_out, _ = run_bounded(["git", "-C", str(cand_path), "diff", "--no-renames", "--name-only", c_base], timeout_s=15)
-        _, u_out, _ = run_bounded(["git", "-C", str(cand_path), "ls-files", "--others", "--exclude-standard"], timeout_s=15)
+        rc_df, d_out, _ = run_bounded(["git", "-C", str(cand_path), "diff", "--no-renames", "--name-only", c_base], timeout_s=15)
+        rc_ls, u_out, _ = run_bounded(["git", "-C", str(cand_path), "ls-files", "--others", "--exclude-standard"], timeout_s=15)
+        if rc_df != 0 or rc_ls != 0:
+            return 6
         touched = {os.path.normpath(x.strip()) for x in (d_out + "\n" + u_out).splitlines() if x.strip()}
         if touched & target_set:
             return 4
@@ -2369,6 +2429,41 @@ def is_active_candidate_wt(wt_dir, meta):
     return True
 
 
+def compute_wt_content_fingerprint(wt_dir, head_sha_val):
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_sha_val}\n".encode("utf-8"))
+    st = subprocess.run(
+        ["git", "-C", str(wt_dir), "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        capture_output=True,
+    )
+    h.update(st.stdout or b"")
+    diff = subprocess.run(
+        ["git", "-C", str(wt_dir), "diff", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    h.update(diff.stdout or b"")
+    untracked = subprocess.run(
+        ["git", "-C", str(wt_dir), "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+        if not raw_rel:
+            continue
+        rel = raw_rel.decode("utf-8", errors="replace")
+        p = os.path.join(str(wt_dir), rel)
+        h.update(rel.encode("utf-8") + b"\x00")
+        try:
+            if os.path.islink(p):
+                h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+            elif os.path.isfile(p):
+                with open(p, "rb") as fh:
+                    data = fh.read()
+                h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+        except OSError:
+            h.update(b"ERR\x00")
+    return h.hexdigest()
+
+
 def effective_wt_bucket(wt_dir, meta):
     rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain"], timeout_s=10)
     dirty = (rc_d != 0) or bool(dirty_out.strip())
@@ -2377,9 +2472,27 @@ def effective_wt_bucket(wt_dir, meta):
     raw_state = meta.get("lifecycle_state", "UNJUDGED")
     judged_sha = meta.get("judged_head_sha", "")
     expired_sha = meta.get("expired_head_sha") or judged_sha
+    live_fp = compute_wt_content_fingerprint(wt_dir, head_sha) if (dirty and head_sha) else ""
 
     if dirty:
-        bucket = "UNJUDGED"
+        if (
+            raw_state == "EXPIRED"
+            and head_sha
+            and expired_sha == head_sha
+            and meta.get("expired_dirty_fingerprint")
+            and meta.get("expired_dirty_fingerprint") == live_fp
+        ):
+            bucket = "EXPIRED"
+        elif (
+            raw_state == "JUDGED"
+            and head_sha
+            and judged_sha == head_sha
+            and meta.get("judged_dirty_fingerprint")
+            and meta.get("judged_dirty_fingerprint") == live_fp
+        ):
+            bucket = "JUDGED"
+        else:
+            bucket = "UNJUDGED"
     elif raw_state == "EXPIRED" and head_sha and expired_sha == head_sha:
         bucket = "EXPIRED"
     elif raw_state == "JUDGED" and head_sha and judged_sha == head_sha:
@@ -2404,8 +2517,6 @@ def match_candidate_digest(repo, wt_dir, wt_branch, base_sha, head_sha, today_di
         p for p in reports_dir.iterdir()
         if p.is_file() and not p.is_symlink() and p.name.endswith(suffix)
     ]
-    candidates.sort(key=lambda p: (0 if p == today_digest else 1, p.name), reverse=False)
-    # Sort newest date first while keeping today_digest first if tied
     candidates.sort(key=lambda p: p.name, reverse=True)
     if today_digest in candidates:
         candidates.remove(today_digest)
@@ -2414,31 +2525,54 @@ def match_candidate_digest(repo, wt_dir, wt_branch, base_sha, head_sha, today_di
     wt_str = str(wt_dir)
     wt_real = os.path.realpath(wt_str)
     short_sha = head_sha[:7] if len(head_sha) >= 7 and head_sha != base_sha else ""
+    other_cand_re = re.compile(
+        r"(?im)(?:proactive/[A-Za-z0-9._-]+|proactive-[A-Za-z0-9._-]+|^\s*(?:-\s*)?(?:\*\*)?(?:Isolated\s+)?Worktree(?:\s*&\s*Branch)?(?:\*\*)?\s*:\s*`?/[^\s`]+)"
+    )
 
+    eligible = []
     for p in candidates:
         txt = p.read_text(encoding="utf-8", errors="replace")
         st_p = parse_digest_field(txt, "Status").upper()
         sub_p = parse_digest_field(txt, "Substatus").upper()
         if st_p in ("THROTTLED", "MISSED", "CLEAN_NO_OP") and sub_p != "GATE_FAILURE":
             continue
-        if wt_str in txt or wt_real in txt:
+        eligible.append((p, txt, st_p))
+
+    exact_matches = [
+        (p, txt, st_p)
+        for p, txt, st_p in eligible
+        if (wt_str in txt or wt_real in txt or (wt_branch and wt_branch in txt))
+    ]
+    for p, txt, st_p in exact_matches:
+        if st_p == "SECURITY_REPORT_ONLY":
             return p, txt
-        if wt_branch and wt_branch in txt:
-            return p, txt
-        if short_sha and short_sha in txt:
-            return p, txt
+    if exact_matches:
+        return exact_matches[0][0], exact_matches[0][1]
+
+    if short_sha:
+        sha_matches = [
+            (p, txt, st_p)
+            for p, txt, st_p in eligible
+            if short_sha in txt and not other_cand_re.search(txt)
+        ]
+        for p, txt, st_p in sha_matches:
+            if st_p == "SECURITY_REPORT_ONLY":
+                return p, txt
+        if sha_matches:
+            return sha_matches[0][0], sha_matches[0][1]
 
     if today_digest.is_file() and not today_digest.is_symlink():
         txt = today_digest.read_text(encoding="utf-8", errors="replace")
         st = parse_digest_field(txt, "Status").upper()
         sub = parse_digest_field(txt, "Substatus").upper()
-        if st in ("CANDIDATE_READY", "SECURITY_REPORT_ONLY") or sub == "GATE_FAILURE":
+        names_other_candidate = bool(other_cand_re.search(txt))
+        if (st in ("CANDIDATE_READY", "SECURITY_REPORT_ONLY") or sub == "GATE_FAILURE") and not names_other_candidate:
             return today_digest, txt
     return None, ""
 
 
-def extract_changed_symbols(wt_dir, base_sha):
-    rc, diff_out, _ = run_bounded(["git", "-C", str(wt_dir), "diff", "-U0", f"{base_sha}..HEAD"], timeout_s=20)
+def extract_changed_symbols(wt_dir, base_sha, head_ref="HEAD"):
+    rc, diff_out, _ = run_bounded(["git", "-C", str(wt_dir), "diff", "-U0", f"{base_sha}..{head_ref}"], timeout_s=20)
     if rc != 0 or not diff_out:
         return []
     syms = []
@@ -2495,7 +2629,7 @@ def count_symbol_test_references(wt_dir, symbols):
 def parse_ocr_review(raw_text):
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     if not raw_text.strip():
-        return True, counts
+        return False, counts
     try:
         data = json.loads(raw_text)
     except json.JSONDecodeError:
@@ -2511,11 +2645,18 @@ def parse_ocr_review(raw_text):
                 break
         if items is None:
             src = data.get("summary") if isinstance(data.get("summary"), dict) else data
+            found_count_key = False
             for sev in ("critical", "high", "medium", "low"):
-                val = src.get(sev)
-                if isinstance(val, int) and val >= 0:
-                    counts[sev] = val
-            return True, counts
+                if sev in src:
+                    val = src.get(sev)
+                    if type(val) is int and val >= 0:
+                        counts[sev] = val
+                        found_count_key = True
+                    else:
+                        return False, counts
+            return found_count_key, counts
+    else:
+        return False, counts
 
     for item in items:
         if not isinstance(item, dict):
@@ -2684,46 +2825,57 @@ for repo in target_repos:
                 }
             )
 
-    worktrees, effective_repo_dir = discover_repo_worktrees(repo, default_repo_dir)
+    worktrees, effective_repo_dir, owning_repos = discover_repo_worktrees(repo, default_repo_dir)
 
-    # Refresh origin & auto-heal merged worktrees when candidates exist and origin is configured.
-    if worktrees and effective_repo_dir is not None:
-        rc_orig, orig_out, _ = run_bounded(
-            ["git", "-C", str(effective_repo_dir), "remote", "get-url", "origin"],
-            timeout_s=10,
-        )
-        origin_url = orig_out.strip() if rc_orig == 0 else ""
-        if origin_url:
-            if is_gh_usable_for_repo(effective_repo_dir):
-                pf_rc, pf_out, pf_err = run_bounded(
-                    [
-                        worktree_sh,
-                        "preflight",
-                        "--repo",
-                        f"abhimehro/{repo}",
-                        "--repo-path",
-                        str(effective_repo_dir),
-                        "--worktree-root",
-                        str(wt_root),
-                        "--auto-heal",
-                    ],
-                    timeout_s=90,
+    # Refresh origin & auto-heal merged worktrees across owning clones (stay offline under --skip-tier2).
+    if worktrees and owning_repos:
+        if skip_tier2:
+            for owner_dir in owning_repos:
+                run_bounded(["git", "-C", str(owner_dir), "worktree", "prune"], timeout_s=15)
+            run_bounded([worktree_sh, "cleanup", "--worktree-root", str(wt_root), "--prune-merged"], timeout_s=30)
+            worktrees, effective_repo_dir, owning_repos = discover_repo_worktrees(repo, default_repo_dir)
+        else:
+            refreshed_any = False
+            for owner_dir in owning_repos:
+                rc_orig, orig_out, _ = run_bounded(
+                    ["git", "-C", str(owner_dir), "remote", "get-url", "origin"],
+                    timeout_s=10,
                 )
-                if pf_rc == 6:
-                    sys.stderr.write(pf_err or pf_out or f"[ERROR] judge: preflight failed (exit 6) for {repo}\n")
-                    sys.exit(6)
-            else:
-                # Offline local-bare-origin test fallback: still enforce fresh local fetch & prune merged.
-                f_rc, _, f_err = run_bounded(
-                    ["git", "-C", str(effective_repo_dir), "fetch", "--prune", "--quiet", "origin"],
-                    timeout_s=30,
-                )
-                if f_rc != 0:
-                    sys.stderr.write(f"[ERROR] judge: git fetch failed for {effective_repo_dir}: {f_err}\n")
-                    sys.exit(6)
-                run_bounded(["git", "-C", str(effective_repo_dir), "worktree", "prune"], timeout_s=15)
-                run_bounded([worktree_sh, "cleanup", "--worktree-root", str(wt_root), "--prune-merged"], timeout_s=30)
-            worktrees, effective_repo_dir = discover_repo_worktrees(repo, default_repo_dir)
+                origin_url = orig_out.strip() if rc_orig == 0 else ""
+                if not origin_url:
+                    continue
+                refreshed_any = True
+                if is_gh_usable_for_repo(owner_dir):
+                    pf_rc, pf_out, pf_err = run_bounded(
+                        [
+                            worktree_sh,
+                            "preflight",
+                            "--repo",
+                            f"abhimehro/{repo}",
+                            "--repo-path",
+                            str(owner_dir),
+                            "--worktree-root",
+                            str(wt_root),
+                            "--auto-heal",
+                        ],
+                        timeout_s=90,
+                    )
+                    if pf_rc != 0:
+                        sys.stderr.write(pf_err or pf_out or f"[ERROR] judge: preflight failed (exit {pf_rc}) for {repo}\n")
+                        sys.exit(6)
+                else:
+                    # Offline local-bare-origin test fallback: still enforce fresh local fetch & prune merged.
+                    f_rc, _, f_err = run_bounded(
+                        ["git", "-C", str(owner_dir), "fetch", "--prune", "--quiet", "origin"],
+                        timeout_s=30,
+                    )
+                    if f_rc != 0:
+                        sys.stderr.write(f"[ERROR] judge: git fetch failed for {owner_dir}: {f_err}\n")
+                        sys.exit(6)
+                    run_bounded(["git", "-C", str(owner_dir), "worktree", "prune"], timeout_s=15)
+                    run_bounded([worktree_sh, "cleanup", "--worktree-root", str(wt_root), "--prune-merged"], timeout_s=30)
+            if refreshed_any:
+                worktrees, effective_repo_dir, owning_repos = discover_repo_worktrees(repo, default_repo_dir)
 
     active_wts = []
     for wt_dir in worktrees:
@@ -2765,6 +2917,7 @@ for repo in target_repos:
         sec_section = (
             "## Judge Evaluation\n\n"
             f"- Date: {sweep_date}\n"
+            "- Head SHA: NO_WORKTREE\n"
             "- Verdict: JUDGE_ESCALATE_HUMAN\n"
             "- Subreason: SECURITY_REPORT_ONLY_LOCAL_BOUNDARY\n"
             "- Tier 1: local_report_only=true\n"
@@ -2775,10 +2928,12 @@ for repo in target_repos:
 
     judged_now = 0
     rejected_now = 0
+    judge_degraded = False
     gitnexus_refreshed = False
 
     for wt_dir, meta in active_wts:
         bucket, dirty, head_sha, age_days = effective_wt_bucket(wt_dir, meta)
+        eval_fingerprint = compute_wt_content_fingerprint(wt_dir, head_sha) if head_sha else ""
         rc_b, br_out, _ = run_bounded(["git", "-C", str(wt_dir), "symbolic-ref", "--quiet", "--short", "HEAD"], timeout_s=10)
         wt_branch = br_out.strip() if rc_b == 0 else ""
         base_sha = meta.get("base_sha", "")
@@ -2787,49 +2942,55 @@ for repo in target_repos:
         wt_repo_str = meta.get("repo_path") or (str(effective_repo_dir) if effective_repo_dir else "")
         wt_repo_dir = pathlib.Path(wt_repo_str) if wt_repo_str else None
 
-        # (c) Auto-expire >max_age_days JUDGED clean worktrees on disk when not --force-rejudge.
+        # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge.
         if bucket == "JUDGED" and not force_rejudge:
             if age_days > max_age_days:
-                run_bounded(
-                    [
-                        worktree_sh,
-                        "set-state",
-                        "--worktree",
-                        str(wt_dir),
-                        "--state",
-                        "EXPIRED",
-                        "--subreason",
-                        "SLA_7D_AUTO_EXPIRE",
-                    ],
-                    timeout_s=15,
-                )
-                append_ledger_row(
-                    {
-                        "timestamp": now_iso,
-                        "date": sweep_date,
-                        "repo": repo,
-                        "digest_status": today_status,
-                        "digest_path": "",
-                        "worktree": str(wt_dir),
-                        "worktree_key": str(wt_dir),
-                        "branch": wt_branch,
-                        "base_sha": base_sha,
-                        "head_sha": head_sha,
-                        "lens": lens,
-                        "verdict": "EXPIRED",
-                        "subreason": "SLA_7D_AUTO_EXPIRE",
-                        "ocr_review": "skipped",
-                        "coderabbit": "skipped",
-                        "lrc": "skipped_policy",
-                        "tier1": {"age_days": round(age_days, 2)},
-                        "tier2": {
+                exp_cmd = [
+                    worktree_sh,
+                    "set-state",
+                    "--worktree",
+                    str(wt_dir),
+                    "--state",
+                    "EXPIRED",
+                    "--subreason",
+                    "SLA_7D_AUTO_EXPIRE",
+                ]
+                if head_sha:
+                    exp_cmd.extend(["--expected-head", head_sha])
+                if dirty:
+                    exp_cmd.append("--allow-dirty-fingerprint")
+                exp_rc, _, exp_err = run_bounded(exp_cmd, timeout_s=15)
+                if exp_rc == 0:
+                    append_ledger_row(
+                        {
+                            "timestamp": now_iso,
+                            "date": sweep_date,
+                            "repo": repo,
+                            "digest_status": today_status,
+                            "digest_path": "",
+                            "worktree": str(wt_dir),
+                            "worktree_key": str(wt_dir),
+                            "branch": wt_branch,
+                            "base_sha": base_sha,
+                            "head_sha": head_sha,
+                            "lens": lens,
+                            "verdict": "EXPIRED",
+                            "subreason": "SLA_7D_AUTO_EXPIRE",
                             "ocr_review": "skipped",
                             "coderabbit": "skipped",
                             "lrc": "skipped_policy",
-                        },
-                        "lrc_executed": False,
-                    }
-                )
+                            "tier1": {"age_days": round(age_days, 2)},
+                            "tier2": {
+                                "ocr_review": "skipped",
+                                "coderabbit": "skipped",
+                                "lrc": "skipped_policy",
+                            },
+                            "lrc_executed": False,
+                        }
+                    )
+                else:
+                    judge_degraded = True
+                    sys.stderr.write(exp_err or f"[WARN] judge: failed to transition expired worktree {wt_dir} (exit {exp_rc})\n")
             continue
 
         if bucket == "EXPIRED" and not force_rejudge:
@@ -2853,9 +3014,14 @@ for repo in target_repos:
         collisions_rc = 0
         ocr_preview_status = "skipped"
         gitnexus_risk = "NONE"
+        gitnexus_degraded = False
+        verify_env_missing_linter = False
         symbol_test_refs = 0
         files_changed = 0
+        files_changed_ok = False
         diff_loc = 0
+        diff_loc_measured = False
+        open_pr_collisions_checked = False
         ocr_review_ok = False
         ocr_status = "skipped"
         ocr_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
@@ -2866,25 +3032,48 @@ for repo in target_repos:
         lrc_executed = False
         base_check_verdict = "NOT_NEEDED"
 
-        # Fast deterministic policy & semantic coverage probe.
+        # Fast deterministic policy & semantic coverage probe (replays exact saved verify overrides for this HEAD).
         verify_cmd = [worktree_sh, "verify", "--worktree", str(wt_dir), "--lens", lens, "--test-cmd", "true"]
         if repo in RESEARCH_REPOS and lens == "bolt":
             verify_cmd.extend(["--numeric-check-cmd", "true"])
-        v_rc, _, _ = run_bounded(verify_cmd, timeout_s=60)
-        if v_rc in (2, 3):
+        if not dirty and head_sha and meta.get("verify_head_sha") == head_sha:
+            if meta.get("verify_allow_test_edits"):
+                verify_cmd.append("--allow-test-edits")
+            if meta.get("verify_allow_harness_changes"):
+                verify_cmd.append("--allow-harness-changes")
+            if meta.get("verify_expected_test_count"):
+                verify_cmd.extend(["--expected-test-count", str(meta["verify_expected_test_count"])])
+        v_rc, v_out, v_err = run_bounded(verify_cmd, timeout_s=60)
+        if v_rc == 2 and "No undefined-name checker available" in (v_out + v_err):
+            verify_env_missing_linter = True
+            verdict = "JUDGE_ESCALATE_HUMAN"
+            subreason = "VERIFY_ENV_MISSING_LINTER"
+        elif v_rc in (2, 3):
             verdict = "JUDGE_REJECT"
             subreason = "HARNESS_OR_COVERAGE_VIOLATION"
+        elif v_rc != 0:
+            verdict = "JUDGE_ESCALATE_HUMAN"
+            subreason = "VERIFY_UNEXPECTED_ERROR"
 
         # Base-check classification for provisional GATE_FAILURE digests.
         if not verdict and cand_substatus == "GATE_FAILURE":
+            cached_reused = False
             if "## Base-Check Classification" in cand_digest_text:
-                m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z_]+)", cand_digest_text.split("## Base-Check Classification", 1)[1])
-                if m_bcv:
+                bc_block = cand_digest_text.split("## Base-Check Classification", 1)[1].split("\n## ", 1)[0]
+                m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z_]+)", bc_block)
+                m_wt = re.search(r"(?im)^\s*-\s*Worktree:\s*(.+)$", bc_block)
+                m_fp = re.search(r"(?im)^\s*-\s*Content Fingerprint:\s*([0-9a-f]{64})\b", bc_block)
+                wt_matches = bool(
+                    m_wt and m_wt.group(1).strip() in (str(wt_dir), os.path.realpath(str(wt_dir)))
+                )
+                fp_matches = bool(m_fp and eval_fingerprint and m_fp.group(1).strip() == eval_fingerprint)
+                if m_bcv and wt_matches and fp_matches:
+                    cached_reused = True
                     base_check_verdict = m_bcv.group(1).strip()
                     if base_check_verdict == "CAUSED_BY_CHANGE":
                         verdict = "JUDGE_REJECT"
                         subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
-            else:
+            if not cached_reused:
                 bc_cmd = ["bash", ctl_sh, "base-check", "--repo", repo, "--worktree", str(wt_dir)]
                 if cand_digest is not None and cand_digest.is_file():
                     bc_cmd.extend(["--digest", str(cand_digest)])
@@ -2899,21 +3088,24 @@ for repo in target_repos:
                     base_check_escalate = True
                     base_check_verdict = f"EXIT_{bc_rc}"
 
-        # Diff sizing (committed range vs base_sha).
+        # Diff sizing (committed range vs base_sha, pinned to captured head_sha).
         changed_files = []
+        diff_target = head_sha or "HEAD"
         if base_sha:
             rc_df, df_out, _ = run_bounded(
-                ["git", "-C", str(wt_dir), "diff", "--no-renames", "--name-only", f"{base_sha}..HEAD"],
+                ["git", "-C", str(wt_dir), "diff", "--no-renames", "--name-only", f"{base_sha}..{diff_target}"],
                 timeout_s=15,
             )
             if rc_df == 0:
+                files_changed_ok = True
                 changed_files = [ln.strip() for ln in df_out.splitlines() if ln.strip()]
                 files_changed = len(changed_files)
             rc_ns, ns_out, _ = run_bounded(
-                ["git", "-C", str(wt_dir), "diff", "--no-renames", "--numstat", f"{base_sha}..HEAD"],
+                ["git", "-C", str(wt_dir), "diff", "--no-renames", "--numstat", f"{base_sha}..{diff_target}"],
                 timeout_s=15,
             )
             if rc_ns == 0:
+                diff_loc_measured = True
                 for ln in ns_out.splitlines():
                     parts = ln.split("\t")
                     if len(parts) >= 2:
@@ -2934,12 +3126,12 @@ for repo in target_repos:
 
         if not verdict and is_sentinel:
             # Hard Privacy Gate: NEVER invoke cloud reviewers (ocr review, coderabbit, lrc).
-            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, "HEAD"], timeout_s=20)
+            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
             merge_tree_clean = rc_mt == 0
             ocr_bin = shutil.which("ocr")
             if ocr_bin and base_sha:
                 rc_op, _, _ = run_bounded(
-                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", "HEAD"],
+                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
                     cwd=wt_dir,
                     timeout_s=30,
                 )
@@ -2952,11 +3144,11 @@ for repo in target_repos:
 
         elif not verdict:
             # Tier 1: merge-tree, check-collisions, ocr delegate preview, GitNexus impact.
-            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, "HEAD"], timeout_s=20)
+            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
             merge_tree_clean = rc_mt == 0
 
             if changed_files and wt_repo_dir is not None and is_git_repo(wt_repo_dir):
-                if shutil.which("gh") and is_gh_usable_for_repo(wt_repo_dir):
+                if not skip_tier2 and shutil.which("gh") and is_gh_usable_for_repo(wt_repo_dir):
                     col_cmd = [
                         worktree_sh,
                         "check-collisions",
@@ -2971,15 +3163,21 @@ for repo in target_repos:
                     for cf in changed_files:
                         col_cmd.extend(["--file", cf])
                     collisions_rc, _, _ = run_bounded(col_cmd, timeout_s=60)
+                    open_pr_collisions_checked = True
                 else:
                     collisions_rc = check_local_worktree_collisions(wt_repo_dir, wt_dir, changed_files)
+                    open_pr_collisions_checked = is_local_origin_repo(wt_repo_dir)
+            elif not changed_files:
+                collisions_rc = 0 if files_changed_ok else 6
+                open_pr_collisions_checked = files_changed_ok
             else:
-                collisions_rc = 0
+                collisions_rc = 6
+                open_pr_collisions_checked = False
 
             ocr_bin = shutil.which("ocr")
             if ocr_bin and base_sha:
                 rc_op, _, _ = run_bounded(
-                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", "HEAD"],
+                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
                     cwd=wt_dir,
                     timeout_s=30,
                 )
@@ -2992,20 +3190,26 @@ for repo in target_repos:
                 if "stale" in (gn_st_out + gn_st_err).lower() and not skip_tier2 and not gitnexus_refreshed:
                     run_bounded([node_bin, str(run_cjs), "analyze", "--index-only"], cwd=wt_repo_dir, timeout_s=90)
                     gitnexus_refreshed = True
-                changed_syms = extract_changed_symbols(wt_dir, base_sha) if base_sha else []
+                changed_syms = extract_changed_symbols(wt_dir, base_sha, diff_target) if base_sha else []
                 symbol_test_refs = count_symbol_test_references(wt_dir, changed_syms)
                 for sym in changed_syms:
-                    _, imp_out, imp_err = run_bounded(
+                    imp_rc, imp_out, imp_err = run_bounded(
                         [node_bin, str(run_cjs), "impact", sym, "--direction", "upstream", "--repo", str(wt_repo_dir)],
                         cwd=wt_repo_dir,
                         timeout_s=20,
                     )
                     combined_imp = imp_out + "\n" + imp_err
+                    matched_risk = False
                     for rk in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"):
                         if re.search(rf'(?i)(?:"risk"\s*:\s*"{rk}"|\brisk\s*[:=]\s*{rk}\b)', combined_imp):
+                            matched_risk = True
                             if RISK_ORDER[rk] > RISK_ORDER[gitnexus_risk]:
                                 gitnexus_risk = rk
                             break
+                    if imp_rc != 0 or not matched_risk:
+                        gitnexus_degraded = True
+                        if RISK_ORDER["UNKNOWN"] > RISK_ORDER[gitnexus_risk]:
+                            gitnexus_risk = "UNKNOWN"
 
             # Tier 2: ocr review + CodeRabbit + sparing lrc (only when not --skip-tier2 and committed).
             if not skip_tier2 and not dirty and base_sha and head_sha and head_sha != base_sha and not base_check_escalate:
@@ -3023,7 +3227,7 @@ for repo in target_repos:
                                 "--from",
                                 base_sha,
                                 "--to",
-                                "HEAD",
+                                diff_target,
                                 "--output",
                                 str(tmp_ocr),
                                 "-b",
@@ -3091,6 +3295,9 @@ for repo in target_repos:
                 if (
                     lrc_trigger
                     and lrc_bin
+                    and diff_loc_measured
+                    and bool(base_sha)
+                    and bool(head_sha)
                     and diff_loc <= 250
                     and count_daily_lrc_runs(sweep_date) < 1
                 ):
@@ -3100,7 +3307,7 @@ for repo in target_repos:
                     can_trig, rem_loc = parse_lrc_usage(u_out) if u_rc == 0 else (False, None)
                     if can_trig and rem_loc is not None and rem_loc >= 2000:
                         l_rc, l_out, _ = run_bounded(
-                            [lrc_bin, "review", "--no-serve", "--output", "json", "--range", f"{base_sha}...HEAD"],
+                            [lrc_bin, "review", "--no-serve", "--output", "json", "--range", f"{base_sha}...{diff_target}"],
                             cwd=wt_dir,
                             timeout_s=180,
                         )
@@ -3128,8 +3335,11 @@ for repo in target_repos:
                 and head_sha != base_sha
                 and not base_check_escalate
                 and merge_tree_clean
+                and files_changed_ok
                 and collisions_rc == 0
+                and open_pr_collisions_checked
                 and not skip_tier2
+                and not gitnexus_degraded
                 and ocr_review_ok
                 and (ocr_counts["critical"] + ocr_counts["high"]) == 0
                 and coderabbit_status == "review_completed"
@@ -3147,7 +3357,7 @@ for repo in target_repos:
                     subreason = "DIRTY_UNCOMMITTED_WORKTREE"
                 elif not merge_tree_clean:
                     subreason = "UPSTREAM_MERGE_CONFLICT"
-                elif collisions_rc != 0:
+                elif collisions_rc != 0 or not files_changed_ok or not open_pr_collisions_checked:
                     subreason = "COLLISION_OR_UNVERIFIABLE"
                 elif skip_tier2:
                     subreason = "TIER2_SKIPPED_OFFLINE"
@@ -3159,8 +3369,20 @@ for repo in target_repos:
                     or (lrc_counts["critical"] + lrc_counts["high"] + lrc_counts["major"]) > 0
                 ):
                     subreason = "REVIEWER_FINDINGS_PRESENT"
+                elif gitnexus_degraded:
+                    subreason = "GITNEXUS_DEGRADED"
                 else:
                     subreason = "REVIEWER_DEGRADED_OR_INCOMPLETE"
+
+        # Verify worktree identity did not change mid-evaluation before recording state or retiring.
+        mutated_mid_eval = False
+        rc_ch, ch_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", "HEAD"], timeout_s=10)
+        cur_head_sha = ch_out.strip() if rc_ch == 0 else ""
+        cur_fp = compute_wt_content_fingerprint(wt_dir, cur_head_sha) if cur_head_sha else ""
+        if (head_sha and cur_head_sha != head_sha) or (eval_fingerprint and cur_fp != eval_fingerprint):
+            mutated_mid_eval = True
+            verdict = "JUDGE_ESCALATE_HUMAN"
+            subreason = "WORKTREE_CHANGED_DURING_EVAL"
 
         tier1_summary = {
             "verify_probe_rc": v_rc,
@@ -3169,6 +3391,7 @@ for repo in target_repos:
             "collisions_rc": collisions_rc,
             "ocr_preview": ocr_preview_status,
             "gitnexus_risk": gitnexus_risk,
+            "gitnexus_degraded": gitnexus_degraded,
             "symbol_test_refs": symbol_test_refs,
         }
         tier2_summary = {
@@ -3205,10 +3428,99 @@ for repo in target_repos:
         }
         append_ledger_row(ledger_entry)
 
+        cand_expire_date = EXPIRE_DATE
+        age_anchor_str = meta.get("reopened_at") or meta.get("created_at", "")
+        if age_anchor_str:
+            try:
+                anc_date = (
+                    dt.datetime.strptime(age_anchor_str, "%Y%m%dT%H%M%SZ")
+                    .replace(tzinfo=dt.timezone.utc)
+                    .date()
+                )
+                eff_start = min(anc_date, dt.date.fromisoformat(sweep_date))
+                cand_expire_date = (eff_start + dt.timedelta(days=max_age_days)).isoformat()
+            except ValueError:
+                cand_expire_date = EXPIRE_DATE
+
+        retired_ok = False
+        if not mutated_mid_eval:
+            if verdict == "JUDGE_REJECT":
+                rej_cmd = [
+                    worktree_sh,
+                    "set-state",
+                    "--worktree",
+                    str(wt_dir),
+                    "--state",
+                    "REJECTED",
+                    "--verdict",
+                    verdict,
+                    "--subreason",
+                    subreason,
+                ]
+                if head_sha:
+                    rej_cmd.extend(["--expected-head", head_sha])
+                rej_rc, _, rej_err = run_bounded(rej_cmd, timeout_s=15)
+                if rej_rc == 0 and ledger_path.is_file() and ledger_path.stat().st_size > 0:
+                    retired_ok = True
+                    if wt_dir.is_dir():
+                        if wt_repo_dir is not None and is_git_repo(wt_repo_dir):
+                            rm_rc, _, rm_err = run_bounded(
+                                ["git", "-C", str(wt_repo_dir), "worktree", "remove", "--force", str(wt_dir)],
+                                timeout_s=20,
+                            )
+                            run_bounded(["git", "-C", str(wt_repo_dir), "worktree", "prune"], timeout_s=15)
+                            if rm_rc != 0:
+                                retired_ok = False
+                                sys.stderr.write(rm_err or f"[WARN] judge: worktree remove failed for {wt_dir} (exit {rm_rc})\n")
+                            elif wt_branch.startswith("proactive/"):
+                                br_rc, _, br_err = run_bounded(
+                                    ["git", "-C", str(wt_repo_dir), "branch", "-D", wt_branch],
+                                    timeout_s=15,
+                                )
+                                if br_rc != 0:
+                                    retired_ok = False
+                                    sys.stderr.write(br_err or f"[WARN] judge: branch delete failed for {wt_branch} (exit {br_rc})\n")
+                        else:
+                            retired_ok = False
+                            sys.stderr.write(f"[WARN] judge: owning repo unavailable for retiring {wt_dir}\n")
+                else:
+                    sys.stderr.write(rej_err or f"[WARN] judge: set-state REJECTED failed for {wt_dir} (exit {rej_rc})\n")
+                if retired_ok:
+                    rejected_now += 1
+                else:
+                    judge_degraded = True
+            else:
+                dirty_cleared = dirty and base_check_verdict in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE")
+                if (not dirty and not verify_env_missing_linter) or dirty_cleared:
+                    st_cmd = [
+                        worktree_sh,
+                        "set-state",
+                        "--worktree",
+                        str(wt_dir),
+                        "--state",
+                        "JUDGED",
+                        "--verdict",
+                        verdict,
+                        "--subreason",
+                        subreason,
+                    ]
+                    if head_sha:
+                        st_cmd.extend(["--expected-head", head_sha])
+                    if dirty_cleared:
+                        st_cmd.append("--allow-dirty-fingerprint")
+                    st_rc, _, _ = run_bounded(st_cmd, timeout_s=15)
+                    if st_rc == 0:
+                        judged_now += 1
+                    else:
+                        judge_degraded = True
+
         if verdict == "JUDGE_REJECT":
-            action_line = f"Action: reject (retired automatically on {sweep_date})"
+            if retired_ok:
+                action_line = f"Action: reject (retired automatically on {sweep_date})"
+            else:
+                action_line = f"Action: reject (manual worktree removal required on {sweep_date})"
         else:
-            action_line = f"Action: promote | reject | expire (default: expire on {EXPIRE_DATE})"
+            action_line = f"Action: promote | reject | expire (default: expire on {cand_expire_date})"
 
         mt_label = "clean" if merge_tree_clean else "conflict_or_unrun"
         eval_section = (
@@ -3230,51 +3542,8 @@ for repo in target_repos:
         )
         append_judge_section_to_digest(cand_digest, eval_section, head_sha)
 
-        if verdict == "JUDGE_REJECT":
-            run_bounded(
-                [
-                    worktree_sh,
-                    "set-state",
-                    "--worktree",
-                    str(wt_dir),
-                    "--state",
-                    "REJECTED",
-                    "--verdict",
-                    verdict,
-                    "--subreason",
-                    subreason,
-                ],
-                timeout_s=15,
-            )
-            if ledger_path.is_file() and ledger_path.stat().st_size > 0 and wt_dir.is_dir():
-                if wt_repo_dir is not None and is_git_repo(wt_repo_dir):
-                    run_bounded(["git", "-C", str(wt_repo_dir), "worktree", "remove", "--force", str(wt_dir)], timeout_s=20)
-                    run_bounded(["git", "-C", str(wt_repo_dir), "worktree", "prune"], timeout_s=15)
-                    if wt_branch.startswith("proactive/"):
-                        run_bounded(["git", "-C", str(wt_repo_dir), "branch", "-D", wt_branch], timeout_s=15)
-            rejected_now += 1
-        else:
-            if not dirty:
-                st_rc, _, _ = run_bounded(
-                    [
-                        worktree_sh,
-                        "set-state",
-                        "--worktree",
-                        str(wt_dir),
-                        "--state",
-                        "JUDGED",
-                        "--verdict",
-                        verdict,
-                        "--subreason",
-                        subreason,
-                    ],
-                    timeout_s=15,
-                )
-                if st_rc == 0:
-                    judged_now += 1
-
     # (e) Re-scan remaining live worktrees for accurate post-Judge queue counts.
-    rem_wts, _ = discover_repo_worktrees(repo, default_repo_dir)
+    rem_wts, _, _ = discover_repo_worktrees(repo, default_repo_dir)
     unjudged_open = 0
     judged_open = 0
     expired_preserved = 0
@@ -3299,7 +3568,7 @@ for repo in target_repos:
     print(f"unjudged_open={unjudged_open}")
     print(f"judged_open={judged_open}")
     print(f"expired_preserved={expired_preserved}")
-    print("judge_status=OK")
+    print(f"judge_status={'DEGRADED' if judge_degraded else 'OK'}")
 PY
 }
 

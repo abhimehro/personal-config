@@ -283,6 +283,8 @@ decisions record — is in
 ./scripts/antigravity-proactive-ctl.sh stage-repo --repo Seatek_Analysis --stagger
 
 # Run post-sweep Judge evaluation (full Tier 1 + Tier 2 stack, or offline Tier 1 only via --skip-tier2)
+# Note: --skip-tier2 runs strictly offline (skips origin refresh, GitHub open-PR collision checks, and Tier 2 reviewers),
+# so candidates on remote GitHub-hosted clones escalate as COLLISION_OR_UNVERIFIABLE or TIER2_SKIPPED_OFFLINE until online Judge runs.
 ./scripts/antigravity-proactive-ctl.sh judge --repo ctrld-sync
 ./scripts/antigravity-proactive-ctl.sh judge --all-repos --skip-tier2
 

@@ -46,7 +46,7 @@ Usage:
   proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
   proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees] [--exclude-worktree <dir>]
   proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-judged-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees] [--auto-expire]
-  proactive-worktree.sh set-state --worktree <dir> --state <UNJUDGED|JUDGED|EXPIRED|REJECTED> [--verdict <verdict>] [--subreason <reason>]
+  proactive-worktree.sh set-state --worktree <dir> --state <UNJUDGED|JUDGED|EXPIRED|REJECTED> [--verdict <verdict>] [--subreason <reason>] [--expected-head <sha>] [--allow-dirty-fingerprint]
   proactive-worktree.sh reopen --worktree <dir>
   proactive-worktree.sh cleanup [--worktree-root <dir>] [--ttl-days <days>] [--prune-merged]
   proactive-worktree.sh preflight --repo <owner/name> --repo-path <dir> [--worktree-root <dir>] [--auto-heal] [--skip-fetch]
@@ -1096,6 +1096,41 @@ cmd_verify() {
 			"${py_env[@]}" bash -c "${numeric_cmd}"
 		fi
 	)
+
+	local v_head=""
+	v_head="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+	if [[ -n ${v_head} ]] && [[ -f ${meta_file} ]]; then
+		python3 - "${meta_file}" "${v_head}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" <<'PY'
+import json
+import os
+import pathlib
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+head_sha = sys.argv[2]
+allow_tests = sys.argv[3] == "1"
+allow_harness = sys.argv[4] == "1"
+expected_count = sys.argv[5]
+
+meta = json.loads(meta_path.read_text(encoding="utf-8"))
+if allow_tests or allow_harness or expected_count:
+    meta["verify_head_sha"] = head_sha
+    meta["verify_allow_test_edits"] = allow_tests
+    meta["verify_allow_harness_changes"] = allow_harness
+    meta["verify_expected_test_count"] = expected_count
+else:
+    meta.pop("verify_head_sha", None)
+    meta.pop("verify_allow_test_edits", None)
+    meta.pop("verify_allow_harness_changes", None)
+    meta.pop("verify_expected_test_count", None)
+
+tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w", encoding="utf-8") as handle:
+    handle.write(json.dumps(meta, indent=2) + "\n")
+os.replace(tmp, meta_path)
+PY
+	fi
 }
 
 cmd_check_collisions() {
@@ -1519,6 +1554,8 @@ cmd_set_state() {
 	local new_state=""
 	local verdict=""
 	local subreason=""
+	local expected_head=""
+	local allow_dirty_fp=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1554,6 +1591,18 @@ cmd_set_state() {
 			subreason="$2"
 			shift 2
 			;;
+		--expected-head)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --expected-head requires a value" >&2
+				exit 1
+			fi
+			expected_head="$2"
+			shift 2
+			;;
+		--allow-dirty-fingerprint)
+			allow_dirty_fp=1
+			shift
+			;;
 		*)
 			echo "[ERROR] Unknown flag for set-state: $1" >&2
 			exit 1
@@ -1583,7 +1632,7 @@ cmd_set_state() {
 
 	local dirty=""
 	dirty="$(git -C "${wt_path}" status --porcelain 2>/dev/null || echo "UNKNOWN")"
-	if [[ ${new_state} == "JUDGED" ]] && [[ -n ${dirty} ]]; then
+	if [[ ${new_state} == "JUDGED" ]] && [[ -n ${dirty} ]] && [[ ${allow_dirty_fp} -eq 0 ]]; then
 		echo "[ERROR] set-state: refusing to mark dirty worktree as JUDGED: ${wt_path}" >&2
 		exit 2
 	fi
@@ -1594,12 +1643,18 @@ cmd_set_state() {
 		echo "[ERROR] set-state: could not resolve HEAD for ${wt_path}" >&2
 		exit 1
 	fi
+	if [[ -n ${expected_head} ]] && [[ ${head_sha} != "${expected_head}" ]]; then
+		echo "[ERROR] set-state: HEAD moved during evaluation (expected ${expected_head}, got ${head_sha})" >&2
+		exit 2
+	fi
 
-	python3 - "${wt_git_dir}/proactive-meta.json" "${new_state}" "${head_sha}" "${verdict}" "${subreason}" <<'PY'
+	python3 - "${wt_git_dir}/proactive-meta.json" "${new_state}" "${head_sha}" "${verdict}" "${subreason}" "${wt_path}" "${dirty}" "${allow_dirty_fp}" <<'PY'
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
+import subprocess
 import sys
 
 meta_path = pathlib.Path(sys.argv[1])
@@ -1607,13 +1662,70 @@ state = sys.argv[2]
 head_sha = sys.argv[3]
 verdict = sys.argv[4]
 subreason = sys.argv[5]
+wt_dir_str = sys.argv[6]
+dirty = sys.argv[7]
+allow_dirty_fp = sys.argv[8] == "1"
 now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
+
+def compute_content_fingerprint(wt_path_s, head_val):
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    st = subprocess.run(
+        ["git", "-C", wt_path_s, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        capture_output=True,
+    )
+    h.update(st.stdout or b"")
+    diff = subprocess.run(
+        ["git", "-C", wt_path_s, "diff", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    h.update(diff.stdout or b"")
+    untracked = subprocess.run(
+        ["git", "-C", wt_path_s, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+        if not raw_rel:
+            continue
+        rel = raw_rel.decode("utf-8", errors="replace")
+        p = os.path.join(wt_path_s, rel)
+        h.update(rel.encode("utf-8") + b"\x00")
+        try:
+            if os.path.islink(p):
+                h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+            elif os.path.isfile(p):
+                with open(p, "rb") as fh:
+                    data = fh.read()
+                h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+        except OSError:
+            h.update(b"ERR\x00")
+    return h.hexdigest()
+
+
+dirty_fp = compute_content_fingerprint(wt_dir_str, head_sha) if (dirty and allow_dirty_fp) else ""
 meta = json.loads(meta_path.read_text(encoding="utf-8"))
+if state == "EXPIRED":
+    cur_state = meta.get("lifecycle_state", "")
+    cur_judged_sha = meta.get("judged_head_sha", "")
+    if cur_state != "JUDGED" or not cur_judged_sha or cur_judged_sha != head_sha:
+        sys.stderr.write(
+            f"[ERROR] set-state EXPIRED requires an active JUDGED worktree matching HEAD {head_sha} (got state={cur_state or 'UNSET'} judged_head={cur_judged_sha or 'NONE'})\n"
+        )
+        sys.exit(2)
+    if dirty:
+        live_fp = compute_content_fingerprint(wt_dir_str, head_sha)
+        if not meta.get("judged_dirty_fingerprint") or meta.get("judged_dirty_fingerprint") != live_fp:
+            sys.stderr.write("[ERROR] set-state EXPIRED requires matching judged_dirty_fingerprint for dirty worktree\n")
+            sys.exit(2)
 meta["lifecycle_state"] = state
 if state == "JUDGED":
     meta["judged_head_sha"] = head_sha
     meta["judged_at"] = now_str
+    if dirty_fp:
+        meta["judged_dirty_fingerprint"] = dirty_fp
+    else:
+        meta.pop("judged_dirty_fingerprint", None)
     if verdict:
         meta["judge_verdict"] = verdict
     if subreason:
@@ -1621,6 +1733,8 @@ if state == "JUDGED":
 elif state == "EXPIRED":
     meta["expired_head_sha"] = head_sha
     meta["expired_at"] = now_str
+    if dirty_fp:
+        meta["expired_dirty_fingerprint"] = dirty_fp
     if subreason:
         meta["expire_reason"] = subreason
 elif state == "REJECTED":
@@ -1633,6 +1747,8 @@ elif state == "REJECTED":
 elif state == "UNJUDGED":
     meta.pop("judged_head_sha", None)
     meta.pop("expired_head_sha", None)
+    meta.pop("judged_dirty_fingerprint", None)
+    meta.pop("expired_dirty_fingerprint", None)
 
 tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
 fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -1691,17 +1807,23 @@ dirty = sys.argv[3]
 now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 meta = json.loads(meta_path.read_text(encoding="utf-8"))
+cur_state = meta.get("lifecycle_state", "")
+if cur_state != "EXPIRED":
+    sys.stderr.write(f"[ERROR] reopen requires lifecycle_state == EXPIRED (got {cur_state or 'UNSET'})\n")
+    sys.exit(2)
 if "original_created_at" not in meta and meta.get("created_at"):
     meta["original_created_at"] = meta["created_at"]
 meta["reopened_at"] = now_str
 meta.pop("expired_head_sha", None)
 meta.pop("expired_at", None)
+meta.pop("expired_dirty_fingerprint", None)
 
 if not dirty and head_sha and meta.get("judged_head_sha") == head_sha:
     meta["lifecycle_state"] = "JUDGED"
 else:
     meta["lifecycle_state"] = "UNJUDGED"
     meta.pop("judged_head_sha", None)
+    meta.pop("judged_dirty_fingerprint", None)
 
 tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
 fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -1772,6 +1894,24 @@ cmd_check_throttle() {
 		echo "[ERROR] check-throttle requires --repo" >&2
 		exit 1
 	fi
+
+	if [[ ! ${max_open} =~ ^[0-9]+$ ]] || [[ $((10#${max_open})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-open must be a positive integer (got '${max_open}')" >&2
+		exit 1
+	fi
+	max_open="$((10#${max_open}))"
+
+	if [[ ! ${max_judged_open} =~ ^[0-9]+$ ]] || [[ $((10#${max_judged_open})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-judged-open must be a positive integer (got '${max_judged_open}')" >&2
+		exit 1
+	fi
+	max_judged_open="$((10#${max_judged_open}))"
+
+	if [[ ! ${max_age_days} =~ ^[0-9]+$ ]] || [[ $((10#${max_age_days})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-age-days must be a positive integer (got '${max_age_days}')" >&2
+		exit 1
+	fi
+	max_age_days="$((10#${max_age_days}))"
 
 	if [[ ${include_worktrees} -eq 1 ]] && [[ -z ${repo_path} ]]; then
 		echo "[ERROR] --include-worktrees requires --repo-path so git worktree list can be resolved" >&2
@@ -1876,9 +2016,11 @@ cmd_check_throttle() {
 					bucket="$(
 						python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" "${dirty}" "${head_sha}" "${auto_expire}" <<'PY'
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
+import subprocess
 import sys
 
 meta_path = pathlib.Path(sys.argv[1])
@@ -1889,14 +2031,70 @@ dirty = sys.argv[5]
 head_sha = sys.argv[6]
 auto_expire = sys.argv[7] == "1"
 
+
+def compute_content_fingerprint(wt_dir_str, head_val):
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    st = subprocess.run(
+        ["git", "-C", wt_dir_str, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        capture_output=True,
+    )
+    h.update(st.stdout or b"")
+    diff = subprocess.run(
+        ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    h.update(diff.stdout or b"")
+    untracked = subprocess.run(
+        ["git", "-C", wt_dir_str, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+        if not raw_rel:
+            continue
+        rel = raw_rel.decode("utf-8", errors="replace")
+        p = os.path.join(wt_dir_str, rel)
+        h.update(rel.encode("utf-8") + b"\x00")
+        try:
+            if os.path.islink(p):
+                h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+            elif os.path.isfile(p):
+                with open(p, "rb") as fh:
+                    data = fh.read()
+                h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+        except OSError:
+            h.update(b"ERR\x00")
+    return h.hexdigest()
+
+
 meta = json.loads(meta_path.read_text(encoding="utf-8"))
 raw_state = meta.get("lifecycle_state", "UNJUDGED")
 judged_sha = meta.get("judged_head_sha", "")
 expired_sha = meta.get("expired_head_sha") or judged_sha
+live_fp = compute_content_fingerprint(cand_dir, head_sha) if (dirty and head_sha) else ""
 
-# Post-judgment dirty edits or new commits invalidate head-bound Judge evidence.
+# Post-judgment dirty edits or new commits invalidate head-bound Judge evidence,
+# unless a base-check-cleared dirty candidate matches its recorded content fingerprint.
 if dirty:
-    eff_state = "UNJUDGED"
+    if (
+        raw_state == "EXPIRED"
+        and head_sha
+        and expired_sha == head_sha
+        and meta.get("expired_dirty_fingerprint")
+        and meta.get("expired_dirty_fingerprint") == live_fp
+    ):
+        print("EXPIRED")
+        sys.exit(0)
+    if (
+        raw_state == "JUDGED"
+        and head_sha
+        and judged_sha == head_sha
+        and meta.get("judged_dirty_fingerprint")
+        and meta.get("judged_dirty_fingerprint") == live_fp
+    ):
+        eff_state = "JUDGED"
+    else:
+        eff_state = "UNJUDGED"
 elif raw_state == "EXPIRED" and head_sha and expired_sha == head_sha:
     print("EXPIRED")
     sys.exit(0)
@@ -1918,6 +2116,8 @@ if eff_state == "JUDGED":
             meta["expired_head_sha"] = head_sha
             meta["expired_at"] = dt.datetime.fromtimestamp(now_ts, dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             meta["expire_reason"] = "SLA_7D_AUTO_EXPIRE"
+            if live_fp:
+                meta["expired_dirty_fingerprint"] = live_fp
             tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
             fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:

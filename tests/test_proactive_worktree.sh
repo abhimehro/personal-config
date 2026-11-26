@@ -2432,6 +2432,21 @@ PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-collisions with --exclude-workt
 	--include-worktrees --repo-path "${S19_CLONE}" --exclude-worktree "${WT_S19_C}"
 check_grep "check-collisions names the colliding EXPIRED worktree" "live candidate worktree .* already touches src/beta\.py" "${TEST_DIR}/check.log"
 
+# 19.7 State transition & check-throttle flag hardening regressions
+check_exit "set-state EXPIRED refuses UNJUDGED worktree WT_S19_C (exit 2)" 2 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_C}" --state EXPIRED --subreason "MANUAL"
+check_exit "reopen refuses UNJUDGED worktree WT_S19_C (exit 2)" 2 \
+	"${TARGET_SCRIPT}" reopen --worktree "${WT_S19_C}"
+check_exit "check-throttle rejects non-numeric --max-judged-open (exit 1)" 1 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--max-judged-open "abc"
+check_exit "check-throttle rejects zero --max-judged-open (exit 1)" 1 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--max-judged-open "0"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle normalizes leading-zero 08 safely (exit 0)" 0 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "08" --max-open "09" --max-age-days "30"
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]
