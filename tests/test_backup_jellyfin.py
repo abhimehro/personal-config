@@ -28,7 +28,6 @@ class TestBackupJellyfin(unittest.TestCase):
 
     def setUp(self) -> None:
         prev_umask = os.umask(0o022)
-        os.umask(prev_umask)
         self.addCleanup(os.umask, prev_umask)
 
     def _setup_wal_fixture(
