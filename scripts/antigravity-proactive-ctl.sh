@@ -1064,7 +1064,7 @@ triage_prompt = (
     f"(3) Run `{ctl_sh} judge --repo {repo_name} --date \"$SWEEP_DATE\" --cron {quoted_cron}` to evaluate all UNJUDGED "
     "candidate worktrees across Tier 1 (merge-tree, check-collisions, open-code-review, gitnexus-review) and Tier 2 "
     "(CodeRabbit, plus sparing LiveReview `lrc` only on eligible tie-breakers; never transmit sentinel diffs to cloud reviewers), "
-    "run base-check automatically on any non-zero verify failure, retire JUDGE_REJECT regressions, transition "
+    "run base-check automatically on any provisional GATE_FAILURE verify failure not already decided by the policy probe, retire JUDGE_REJECT regressions, transition "
     "JUDGE_PASS_ROUTINE / JUDGE_ESCALATE_HUMAN worktrees to JUDGED, auto-expire >7d JUDGED worktrees on disk, and append "
     "0600 receipts to judge-shadow-ledger.jsonl. "
     "(4) Post a TIGHT summary with: repo, Status, Substatus, Judge Verdict(s), Queue Health "
@@ -1838,15 +1838,30 @@ cmd_base_check() {
 			substatus="NONE"
 			detail="stage ${cand_fail_idx} (${cand_fail_seg}) failed once then passed on retry; treated as a flake, not a regression"
 		else
-			if run_segment_in "${BASE_CHECK_WT}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" "${repo_path}"; then
-				verdict="CAUSED_BY_CHANGE"
-				substatus="GATE_FAILURE"
-				detail="stage ${cand_fail_idx} (${cand_fail_seg}) passes at base_sha ${base_sha} but fails in the candidate; this is a real regression, discard the candidate"
-			else
-				verdict="PRE_EXISTING_ON_BASE"
-				substatus="PRE_EXISTING_FAILURE"
-				detail="base_sha ${base_sha} also fails stage ${cand_fail_idx} (${cand_fail_seg}). Promote the candidate and file the base breakage separately."
-				tail -n 15 "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" >&2 || true
+			local b_idx=0
+			local prereq_failed=0
+			while [[ ${b_idx} -lt ${cand_fail_idx} ]]; do
+				if ! run_segment_in "${BASE_CHECK_WT}" "${segments[${b_idx}]}" "${BASE_CHECK_DIR}/base-${b_idx}.log" "${repo_path}"; then
+					prereq_failed=1
+					verdict="BASE_PREREQ_FAILED"
+					substatus="PRE_EXISTING_FAILURE"
+					detail="prerequisite stage ${b_idx} (${segments[${b_idx}]}) failed at base_sha ${base_sha}, so target stage ${cand_fail_idx} (${cand_fail_seg}) comparison is inconclusive"
+					tail -n 15 "${BASE_CHECK_DIR}/base-${b_idx}.log" >&2 || true
+					break
+				fi
+				b_idx=$((b_idx + 1))
+			done
+			if [[ ${prereq_failed} -eq 0 ]]; then
+				if run_segment_in "${BASE_CHECK_WT}" "${cand_fail_seg}" "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" "${repo_path}"; then
+					verdict="CAUSED_BY_CHANGE"
+					substatus="GATE_FAILURE"
+					detail="stage ${cand_fail_idx} (${cand_fail_seg}) passes at base_sha ${base_sha} but fails in the candidate; this is a real regression, discard the candidate"
+				else
+					verdict="PRE_EXISTING_ON_BASE"
+					substatus="PRE_EXISTING_FAILURE"
+					detail="base_sha ${base_sha} also fails stage ${cand_fail_idx} (${cand_fail_seg}). Promote the candidate and file the base breakage separately."
+					tail -n 15 "${BASE_CHECK_DIR}/base-${cand_fail_idx}.log" >&2 || true
+				fi
 			fi
 		fi
 	fi
@@ -1867,6 +1882,12 @@ st = subprocess.run(
 )
 if st.returncode != 0:
     sys.exit(1)
+staged = subprocess.run(
+    ["git", "-C", wt_dir_str, "diff", "--cached", "--no-ext-diff", "--binary", "HEAD"],
+    capture_output=True,
+)
+if staged.returncode != 0:
+    sys.exit(1)
 diff = subprocess.run(
     ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
     capture_output=True,
@@ -1881,21 +1902,24 @@ if untracked.returncode != 0:
     sys.exit(1)
 h = hashlib.sha256()
 h.update(f"HEAD:{head_val}\n".encode("utf-8"))
-h.update(st.stdout or b"")
-h.update(diff.stdout or b"")
+h.update(b"STATUS:\n" + (st.stdout or b""))
+h.update(b"STAGED:\n" + (staged.stdout or b""))
+h.update(b"WORKTREE:\n" + (diff.stdout or b""))
+wt_bytes = os.fsencode(wt_dir_str)
 for raw_rel in (untracked.stdout or b"").split(b"\x00"):
     if not raw_rel:
         continue
-    rel = raw_rel.decode("utf-8", errors="replace")
-    p = os.path.join(wt_dir_str, rel)
-    h.update(rel.encode("utf-8") + b"\x00")
+    p = os.path.join(wt_bytes, raw_rel)
+    h.update(raw_rel + b"\x00")
     try:
         if os.path.islink(p):
-            h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+            h.update(b"L:" + os.readlink(p) + b"\x00")
         elif os.path.isfile(p):
             with open(p, "rb") as fh:
                 data = fh.read()
             h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+        else:
+            sys.exit(1)
     except OSError:
         sys.exit(1)
 print(h.hexdigest())
@@ -1932,6 +1956,9 @@ PY
 
 	if [[ ${verdict} == "CAUSED_BY_CHANGE" ]]; then
 		exit 2
+	fi
+	if [[ ${verdict} == "BASE_PREREQ_FAILED" ]]; then
+		exit 6
 	fi
 	return 0
 }
@@ -2470,7 +2497,7 @@ def check_local_worktree_collisions(repo_dir, exclude_wt, changed_files):
 
 
 def is_active_candidate_wt(wt_dir, meta):
-    rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain"], timeout_s=10)
+    rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain", "--untracked-files=all"], timeout_s=10)
     if rc_d != 0 or dirty_out.strip():
         return True
     base_sha = meta.get("base_sha", "")
@@ -2500,6 +2527,12 @@ def compute_wt_content_fingerprint(wt_dir, head_sha_val):
     )
     if st.returncode != 0:
         return ""
+    staged = subprocess.run(
+        ["git", "-C", str(wt_dir), "diff", "--cached", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    if staged.returncode != 0:
+        return ""
     diff = subprocess.run(
         ["git", "-C", str(wt_dir), "diff", "--no-ext-diff", "--binary", "HEAD"],
         capture_output=True,
@@ -2514,35 +2547,38 @@ def compute_wt_content_fingerprint(wt_dir, head_sha_val):
         return ""
     h = hashlib.sha256()
     h.update(f"HEAD:{head_sha_val}\n".encode("utf-8"))
-    h.update(st.stdout or b"")
-    h.update(diff.stdout or b"")
+    h.update(b"STATUS:\n" + (st.stdout or b""))
+    h.update(b"STAGED:\n" + (staged.stdout or b""))
+    h.update(b"WORKTREE:\n" + (diff.stdout or b""))
+    wt_bytes = os.fsencode(str(wt_dir))
     for raw_rel in (untracked.stdout or b"").split(b"\x00"):
         if not raw_rel:
             continue
-        rel = raw_rel.decode("utf-8", errors="replace")
-        p = os.path.join(str(wt_dir), rel)
-        h.update(rel.encode("utf-8") + b"\x00")
+        p = os.path.join(wt_bytes, raw_rel)
+        h.update(raw_rel + b"\x00")
         try:
             if os.path.islink(p):
-                h.update(b"L:" + os.readlink(p).encode("utf-8", errors="replace") + b"\x00")
+                h.update(b"L:" + os.readlink(p) + b"\x00")
             elif os.path.isfile(p):
                 with open(p, "rb") as fh:
                     data = fh.read()
                 h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+            else:
+                return ""
         except OSError:
             return ""
     return h.hexdigest()
 
 
 def effective_wt_bucket(wt_dir, meta):
-    rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain"], timeout_s=10)
+    rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain", "--untracked-files=all"], timeout_s=10)
     dirty = (rc_d != 0) or bool(dirty_out.strip())
     rc_h, head_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", "HEAD"], timeout_s=10)
     head_sha = head_out.strip() if rc_h == 0 else ""
     raw_state = meta.get("lifecycle_state", "UNJUDGED")
     judged_sha = meta.get("judged_head_sha", "")
     expired_sha = meta.get("expired_head_sha") or judged_sha
-    live_fp = compute_wt_content_fingerprint(wt_dir, head_sha) if (dirty and head_sha) else ""
+    live_fp = compute_wt_content_fingerprint(wt_dir, head_sha) if (rc_d == 0 and dirty and head_sha) else ""
 
     if dirty:
         if not live_fp:
@@ -2565,9 +2601,19 @@ def effective_wt_bucket(wt_dir, meta):
             bucket = "JUDGED"
         else:
             bucket = "UNJUDGED"
-    elif raw_state == "EXPIRED" and head_sha and expired_sha == head_sha:
+    elif (
+        raw_state == "EXPIRED"
+        and head_sha
+        and expired_sha == head_sha
+        and not meta.get("expired_dirty_fingerprint")
+    ):
         bucket = "EXPIRED"
-    elif raw_state == "JUDGED" and head_sha and judged_sha == head_sha:
+    elif (
+        raw_state == "JUDGED"
+        and head_sha
+        and judged_sha == head_sha
+        and not meta.get("judged_dirty_fingerprint")
+    ):
         bucket = "JUDGED"
     else:
         bucket = "UNJUDGED"
@@ -2828,16 +2874,14 @@ def parse_lrc_usage(raw_text):
 
 def parse_lrc_review(raw_text, rc):
     counts = {"critical": 0, "high": 0, "major": 0, "medium": 0, "minor": 0, "low": 0}
-    if rc != 0:
+    if rc != 0 or not raw_text.strip():
         return "degraded", counts
-    if not raw_text.strip():
-        return "completed", counts
     try:
         data = json.loads(raw_text)
     except json.JSONDecodeError:
         return "degraded", counts
 
-    items = []
+    items = None
     if isinstance(data, list):
         items = data
     elif isinstance(data, dict):
@@ -2845,6 +2889,21 @@ def parse_lrc_review(raw_text, rc):
             if isinstance(data.get(k), list):
                 items = data[k]
                 break
+        if items is None:
+            src = data.get("summary") if isinstance(data.get("summary"), dict) else data
+            found_count = False
+            for sev in ("critical", "high", "major", "medium", "minor", "low"):
+                if sev in src:
+                    val = src.get(sev)
+                    if type(val) is int and val >= 0:
+                        counts[sev] = val
+                        found_count = True
+                    else:
+                        return "degraded", counts
+            return ("completed" if found_count else "degraded"), counts
+    else:
+        return "degraded", counts
+
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -3039,7 +3098,8 @@ for repo in target_repos:
             wt_repo_str and os.path.realpath(wt_repo_str) in missing_toolchain_repos
         )
 
-        # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge.
+        # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge,
+        #     while keeping offline/unverified-PR deferrals retryable on online runs.
         if bucket == "JUDGED" and not force_rejudge:
             if age_days > max_age_days:
                 exp_cmd = [
@@ -3088,7 +3148,14 @@ for repo in target_repos:
                 else:
                     judge_degraded = True
                     sys.stderr.write(exp_err or f"[WARN] judge: failed to transition expired worktree {wt_dir} (exit {exp_rc})\n")
-            continue
+                continue
+            defer_sub = meta.get("judge_subreason", "")
+            offline_retryable = (not skip_tier2) and (
+                defer_sub in ("TIER2_SKIPPED_OFFLINE", "OPEN_PR_COLLISIONS_UNVERIFIED")
+                or (defer_sub == "COLLISION_OR_UNVERIFIABLE" and wt_repo_dir is not None and not is_local_origin_repo(wt_repo_dir))
+            )
+            if not offline_retryable:
+                continue
 
         if bucket == "EXPIRED" and not force_rejudge:
             continue
@@ -3616,6 +3683,8 @@ for repo in target_repos:
                         st_cmd.extend(["--expected-head", head_sha])
                     if dirty_cleared:
                         st_cmd.append("--allow-dirty-fingerprint")
+                        if eval_fingerprint:
+                            st_cmd.extend(["--expected-dirty-fingerprint", eval_fingerprint])
                     st_rc, _, _ = run_bounded(st_cmd, timeout_s=15)
                     if st_rc == 0:
                         judged_now += 1

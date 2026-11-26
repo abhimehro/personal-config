@@ -2446,6 +2446,39 @@ check_exit "check-throttle rejects zero --max-judged-open (exit 1)" 1 \
 PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle normalizes leading-zero 08 safely (exit 0)" 0 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
 	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "08" --max-open "09" --max-age-days "30"
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle enforces leading-zero --max-judged-open 01 against single JUDGED candidate (exit 5)" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "01" --max-open "09" --max-age-days "30"
+check_grep "check-throttle reports judged_cap=1 for leading-zero 01 override" "judged_cap=1" "${TEST_DIR}/check.log"
+
+# 19.8 Dirty vs staged vs clean lifecycle security hardening regressions
+printf 'dirty=1\n' >>"${WT_S19_C}/src/gamma.py"
+check_exit "set-state rejects --expected-dirty-fingerprint mismatch on dirty worktree" 2 \
+	"${TARGET_SCRIPT}" set-state --worktree "${WT_S19_C}" --state JUDGED --allow-dirty-fingerprint \
+	--expected-dirty-fingerprint "0000000000000000000000000000000000000000000000000000000000000000"
+git -C "${WT_S19_C}" add src/gamma.py
+PATH="${S19_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" set-state --worktree "${WT_S19_C}" --state JUDGED --allow-dirty-fingerprint >/dev/null
+printf 'dirty=2\n' >>"${WT_S19_C}/src/gamma.py"
+PATH="${S19_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" set-state --worktree "${WT_S19_C}" --state UNJUDGED >/dev/null
+git -C "${WT_S19_C}" reset -q HEAD src/gamma.py
+git -C "${WT_S19_C}" checkout -q -- src/gamma.py
+# Dirty judgment binding: mark dirty, set JUDGED with fingerprint, change index only -> UNJUDGED; revert clean -> UNJUDGED
+printf 'staged_v1=1\n' >"${WT_S19_C}/src/gamma.py"
+git -C "${WT_S19_C}" add src/gamma.py
+printf 'wt_v1=1\n' >"${WT_S19_C}/src/gamma.py"
+PATH="${S19_MOCK_BIN}:${PATH}" "${TARGET_SCRIPT}" set-state --worktree "${WT_S19_C}" --state JUDGED --allow-dirty-fingerprint >/dev/null
+printf 'staged_v2=2\n' >"${WT_S19_C}/src/gamma.py"
+git -C "${WT_S19_C}" add src/gamma.py
+printf 'wt_v1=1\n' >"${WT_S19_C}/src/gamma.py"
+# Note WT_S19_A is JUDGED and WT_S19_C was dirty-JUDGED; changing only index invalidates WT_S19_C back to UNJUDGED (--max-open 1 hits 5)
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "changing only staged index content invalidates dirty JUDGED fingerprint" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30"
+git -C "${WT_S19_C}" reset -q HEAD src/gamma.py
+git -C "${WT_S19_C}" checkout -q -- src/gamma.py
+PATH="${S19_MOCK_BIN}:${PATH}" check_exit "cleaning dirty-JUDGED worktree without re-judging keeps it UNJUDGED" 5 \
+	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

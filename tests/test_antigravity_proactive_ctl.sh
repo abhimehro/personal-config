@@ -1547,7 +1547,13 @@ assert row["lrc"] == "skipped_policy", row
 d_txt = digest.read_text(encoding="utf-8")
 assert "## Judge Evaluation" in d_txt, d_txt
 assert "- Verdict: JUDGE_ESCALATE_HUMAN" in d_txt, d_txt
-assert "- Action: promote | reject | expire (default: expire on 2026-12-02)" in d_txt, d_txt
+import datetime as dt
+import subprocess
+git_d = subprocess.check_output(["git", "-C", wt1, "rev-parse", "--git-dir"], text=True).strip()
+created_str = json.loads((pathlib.Path(git_d) / "proactive-meta.json").read_text())["created_at"]
+created_d = dt.datetime.strptime(created_str, "%Y%m%dT%H%M%SZ").date()
+exp_d = (min(created_d, dt.date(2026, 11, 25)) + dt.timedelta(days=7)).isoformat()
+assert f"- Action: promote | reject | expire (default: expire on {exp_d})" in d_txt, d_txt
 for ln in d_txt.splitlines():
     assert not ln.rstrip().endswith("?"), f"open-ended question line found: {ln}"
 PYTEST
@@ -1583,7 +1589,7 @@ PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge emits JUDGE_PASS_ROUTINE when o
 check "judge invoked ocr review and coderabbit but spared lrc" \
 	bash -c "test -s '${S16_OCR_REVIEW_LOG}' && test -s '${S16_CR_LOG}' && test ! -s '${S16_LRC_LOG}'"
 check "judge ledger and digest record JUDGE_PASS_ROUTINE and lrc=skipped_policy" \
-	python3 - "${S16_LEDGER}" "${DIGEST_PASS}" "${WT_S16_PASS}" <<'PYTEST'
+	python3 - "${S16_LEDGER}" "${DIGEST_PASS}" "${WT_S16_PASS}" "${WT_S16_OFF1}" <<'PYTEST'
 import json
 import pathlib
 import sys
@@ -1598,10 +1604,18 @@ assert row["ocr_review"] == "completed", row
 assert row["coderabbit"] == "review_completed", row
 assert row["lrc"] == "skipped_policy", row
 assert row["lrc_executed"] is False, row
+off1_rows = [r for r in rows if r.get("worktree") == sys.argv[4]]
+assert any(r.get("verdict") == "JUDGE_PASS_ROUTINE" for r in off1_rows), off1_rows
 
 d_txt = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
 assert "- Verdict: JUDGE_PASS_ROUTINE" in d_txt, d_txt
-assert "- Action: promote | reject | expire (default: expire on 2026-12-03)" in d_txt, d_txt
+import datetime as dt
+import subprocess
+git_d = subprocess.check_output(["git", "-C", sys.argv[3], "rev-parse", "--git-dir"], text=True).strip()
+created_str = json.loads((pathlib.Path(git_d) / "proactive-meta.json").read_text())["created_at"]
+created_d = dt.datetime.strptime(created_str, "%Y%m%dT%H%M%SZ").date()
+exp_d = (min(created_d, dt.date(2026, 11, 26)) + dt.timedelta(days=7)).isoformat()
+assert f"- Action: promote | reject | expire (default: expire on {exp_d})" in d_txt, d_txt
 for ln in d_txt.splitlines():
     assert not ln.rstrip().endswith("?"), ln
 PYTEST
@@ -2278,6 +2292,29 @@ assert u[0]["subreason"] == "WORKTREE_IDENTITY_UNVERIFIED", u[0]
 PYTEST
 	chmod 600 "${WT_HARD_UNREAD}/unreadable.log" || true
 fi
+
+# (7) CodeRabbit cgNi + cgOG: base-check prereq failure returns exit 6 (BASE_PREREQ_FAILED) & null lrc review is degraded
+WT_HARD_PREREQ="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+touch "${WT_HARD_PREREQ}/cand_prereq.ok"
+check_exit "base-check exits 6 (BASE_PREREQ_FAILED) when prerequisite stage fails on base" 6 \
+	"${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_PREREQ}" --test-cmd "test -f cand_prereq.ok && false"
+check_grep "base-check prints BASE_PREREQ_FAILED verdict" "^VERDICT: BASE_PREREQ_FAILED$" "${TEST_DIR}/check.log"
+check "parse_lrc_review rejects empty and JSON null outputs as degraded" \
+	python3 - "${CTL_SCRIPT}" <<'PYTEST'
+import pathlib, re, sys
+src = pathlib.Path(sys.argv[1]).read_text()
+m = re.search(r"(def parse_lrc_review\(.*?\n)(?=\nhad_preflight_failure)", src, re.S)
+assert m, "parse_lrc_review not found"
+ns = {"json": __import__("json")}
+exec(m.group(1), ns)
+fn = ns["parse_lrc_review"]
+assert fn("", 0)[0] == "degraded"
+assert fn("null", 0)[0] == "degraded"
+assert fn("{}", 0)[0] == "degraded"
+assert fn('{"findings":[]}', 0)[0] == "completed"
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_PREREQ}" >/dev/null 2>&1 || rm -rf "${WT_HARD_PREREQ}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
