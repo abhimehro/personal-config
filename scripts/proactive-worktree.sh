@@ -1669,22 +1669,28 @@ now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def compute_content_fingerprint(wt_path_s, head_val):
-    h = hashlib.sha256()
-    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
     st = subprocess.run(
         ["git", "-C", wt_path_s, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
         capture_output=True,
     )
-    h.update(st.stdout or b"")
+    if st.returncode != 0:
+        return ""
     diff = subprocess.run(
         ["git", "-C", wt_path_s, "diff", "--no-ext-diff", "--binary", "HEAD"],
         capture_output=True,
     )
-    h.update(diff.stdout or b"")
+    if diff.returncode != 0:
+        return ""
     untracked = subprocess.run(
         ["git", "-C", wt_path_s, "ls-files", "--others", "--exclude-standard", "-z"],
         capture_output=True,
     )
+    if untracked.returncode != 0:
+        return ""
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    h.update(st.stdout or b"")
+    h.update(diff.stdout or b"")
     for raw_rel in (untracked.stdout or b"").split(b"\x00"):
         if not raw_rel:
             continue
@@ -1699,11 +1705,14 @@ def compute_content_fingerprint(wt_path_s, head_val):
                     data = fh.read()
                 h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
         except OSError:
-            h.update(b"ERR\x00")
+            return ""
     return h.hexdigest()
 
 
 dirty_fp = compute_content_fingerprint(wt_dir_str, head_sha) if (dirty and allow_dirty_fp) else ""
+if dirty and allow_dirty_fp and state in ("JUDGED", "EXPIRED") and not dirty_fp:
+    sys.stderr.write("[ERROR] set-state: unable to verify content fingerprint for dirty worktree\n")
+    sys.exit(2)
 meta = json.loads(meta_path.read_text(encoding="utf-8"))
 if state == "EXPIRED":
     cur_state = meta.get("lifecycle_state", "")
@@ -2033,22 +2042,28 @@ auto_expire = sys.argv[7] == "1"
 
 
 def compute_content_fingerprint(wt_dir_str, head_val):
-    h = hashlib.sha256()
-    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
     st = subprocess.run(
         ["git", "-C", wt_dir_str, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
         capture_output=True,
     )
-    h.update(st.stdout or b"")
+    if st.returncode != 0:
+        return ""
     diff = subprocess.run(
         ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
         capture_output=True,
     )
-    h.update(diff.stdout or b"")
+    if diff.returncode != 0:
+        return ""
     untracked = subprocess.run(
         ["git", "-C", wt_dir_str, "ls-files", "--others", "--exclude-standard", "-z"],
         capture_output=True,
     )
+    if untracked.returncode != 0:
+        return ""
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    h.update(st.stdout or b"")
+    h.update(diff.stdout or b"")
     for raw_rel in (untracked.stdout or b"").split(b"\x00"):
         if not raw_rel:
             continue
@@ -2063,7 +2078,7 @@ def compute_content_fingerprint(wt_dir_str, head_val):
                     data = fh.read()
                 h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
         except OSError:
-            h.update(b"ERR\x00")
+            return ""
     return h.hexdigest()
 
 

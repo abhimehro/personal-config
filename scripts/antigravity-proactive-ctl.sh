@@ -2444,22 +2444,28 @@ def is_active_candidate_wt(wt_dir, meta):
 
 
 def compute_wt_content_fingerprint(wt_dir, head_sha_val):
-    h = hashlib.sha256()
-    h.update(f"HEAD:{head_sha_val}\n".encode("utf-8"))
     st = subprocess.run(
         ["git", "-C", str(wt_dir), "status", "--porcelain=v1", "-z", "--untracked-files=all"],
         capture_output=True,
     )
-    h.update(st.stdout or b"")
+    if st.returncode != 0:
+        return ""
     diff = subprocess.run(
         ["git", "-C", str(wt_dir), "diff", "--no-ext-diff", "--binary", "HEAD"],
         capture_output=True,
     )
-    h.update(diff.stdout or b"")
+    if diff.returncode != 0:
+        return ""
     untracked = subprocess.run(
         ["git", "-C", str(wt_dir), "ls-files", "--others", "--exclude-standard", "-z"],
         capture_output=True,
     )
+    if untracked.returncode != 0:
+        return ""
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_sha_val}\n".encode("utf-8"))
+    h.update(st.stdout or b"")
+    h.update(diff.stdout or b"")
     for raw_rel in (untracked.stdout or b"").split(b"\x00"):
         if not raw_rel:
             continue
@@ -2474,7 +2480,7 @@ def compute_wt_content_fingerprint(wt_dir, head_sha_val):
                     data = fh.read()
                 h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
         except OSError:
-            h.update(b"ERR\x00")
+            return ""
     return h.hexdigest()
 
 
@@ -2489,7 +2495,9 @@ def effective_wt_bucket(wt_dir, meta):
     live_fp = compute_wt_content_fingerprint(wt_dir, head_sha) if (dirty and head_sha) else ""
 
     if dirty:
-        if (
+        if not live_fp:
+            bucket = "UNJUDGED"
+        elif (
             raw_state == "EXPIRED"
             and head_sha
             and expired_sha == head_sha
