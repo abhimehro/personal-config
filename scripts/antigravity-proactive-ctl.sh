@@ -2221,22 +2221,22 @@ def append_judge_section_to_digest(digest_file, section_text, head_sha, wt_str="
         fence_char = ""
         fence_len = 0
         for ln in text.splitlines(keepends=True):
-            stripped = ln.lstrip()
-            m_fence = re.match(r"^(`{3,}|~{3,})(.*)$", stripped.rstrip("\r\n"))
+            no_eol = ln.rstrip("\r\n")
             if fence_char:
+                m_close = re.match(r"^\s*(`{3,}|~{3,})\s*$", no_eol)
                 if (
-                    m_fence
-                    and m_fence.group(1)[0] == fence_char
-                    and len(m_fence.group(1)) >= fence_len
-                    and not m_fence.group(2).strip()
+                    m_close
+                    and m_close.group(1)[0] == fence_char
+                    and len(m_close.group(1)) >= fence_len
                 ):
                     fence_char = ""
                     fence_len = 0
                 cur.append(ln)
                 continue
-            if m_fence and not (m_fence.group(1)[0] == "`" and "`" in m_fence.group(2)):
-                fence_char = m_fence.group(1)[0]
-                fence_len = len(m_fence.group(1))
+            m_open = re.match(r"^(?:\s*(?:[-*+]|\d+[.)])\s+|\s*)(`{3,}|~{3,})(.*)$", no_eol)
+            if m_open and not (m_open.group(1)[0] == "`" and "`" in m_open.group(2)):
+                fence_char = m_open.group(1)[0]
+                fence_len = len(m_open.group(1))
                 cur.append(ln)
                 continue
             if re.match(r"^#{1,2}\s", ln) and cur:

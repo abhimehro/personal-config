@@ -2074,6 +2074,10 @@ cat >"${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" <<EOF
 - Substatus: GATE_FAILURE
 - Lens: bolt
 - Worktree: ${WT_HARD_D}
+- Verification Receipt:
+  - \`\`\`sh
+    make test
+    \`\`\`
 EOF
 chmod 600 "${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md"
 
@@ -2112,6 +2116,7 @@ import pathlib, re, sys
 txt = pathlib.Path(sys.argv[1]).read_text()
 new_sha = sys.argv[2]
 assert txt.count("## Judge Evaluation") == 1, txt
+assert "- ```sh\n    make test\n    ```" in txt, txt
 assert "# Reviewer notes\nManual check verified base failure." in txt, txt
 judge_blk = [b for b in re.split(r"(?m)(?=^#{1,2}\s)", txt) if b.startswith("## Judge Evaluation")][0]
 assert f"- Head SHA: {new_sha}" in judge_blk, judge_blk
@@ -2183,8 +2188,15 @@ WT_HARD_MISS_TC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo 
 printf 'def extra():\n    return 2\n' >"${WT_HARD_MISS_TC}/src/extra.py"
 git -C "${WT_HARD_MISS_TC}" add src/extra.py
 git -C "${WT_HARD_MISS_TC}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra"
-# Remove uv.lock from S16_HARD_CLONE clone (untracked/committed removal on local clone worktree) so preflight exits 7
+# Remove uv.lock from S16_HARD_CLONE clone 1 so preflight exits 7, while clone 2 of ctrld-sync retains uv.lock
 rm -f "${S16_HARD_CLONE}/uv.lock"
+S16_HARD_CLONE2="${TEST_DIR}/s16-hard-ctrld-clone2"
+git clone -q "${S16_HARD_BARE}" "${S16_HARD_CLONE2}"
+git -C "${S16_HARD_CLONE2}" remote set-head origin -a >/dev/null 2>&1
+WT_HARD_CLONE2="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE2}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra2():\n    return 3\n' >"${WT_HARD_CLONE2}/src/extra2.py"
+git -C "${WT_HARD_CLONE2}" add src/extra2.py
+git -C "${WT_HARD_CLONE2}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra2"
 
 WT_HARD_ESP="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/email-security-pipeline --repo-path "${S16_HARD_ESP_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
 printf 'VALUE = 2\n' >"${WT_HARD_ESP}/src/svc.py"
@@ -2198,6 +2210,14 @@ cat >"${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" <<EOF
 - Lens: code-health
 - Worktree: ${WT_HARD_MISS_TC}
 EOF
+cat >"${S16_HARD_REPORTS}/2026-12-17-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-17 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_CLONE2}
+EOF
 cat >"${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md" <<EOF
 # Proactive Sweep Digest (2026-12-15 - email-security-pipeline)
 
@@ -2206,20 +2226,25 @@ cat >"${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md" <<EOF
 - Lens: code-health
 - Worktree: ${WT_HARD_ESP}
 EOF
-chmod 600 "${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md"
+chmod 600 "${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-17-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md"
 
-PATH="${S16_HARD_BIN}:${PATH}" check_exit "multi-repo judge continues to email-security-pipeline after ctrld-sync preflight exit 7" 0 \
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "multi-repo judge isolates preflight exit 7 per clone and continues to email-security-pipeline" 0 \
 	"${CTL_SCRIPT}" judge --repo ctrld-sync --repo email-security-pipeline --date 2026-12-15 \
 	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
-check "ctrld-sync escalated with PREFLIGHT_MISSING_TOOLCHAIN and email-security-pipeline passed cleanly" \
-	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_MISS_TC}" "${WT_HARD_ESP}" <<'PYTEST'
+check "ctrld-sync clone 1 escalated with PREFLIGHT_MISSING_TOOLCHAIN while clone 2 and email-security-pipeline passed cleanly" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_MISS_TC}" "${WT_HARD_CLONE2}" "${WT_HARD_ESP}" <<'PYTEST'
 import json, pathlib, sys
 rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
-cs = [r for r in rows if r.get("worktree") == sys.argv[2]]
-esp = [r for r in rows if r.get("worktree") == sys.argv[3]]
-assert len(cs) == 1 and cs[0]["subreason"] == "PREFLIGHT_MISSING_TOOLCHAIN", cs
+cs1 = [r for r in rows if r.get("worktree") == sys.argv[2]]
+cs2 = [r for r in rows if r.get("worktree") == sys.argv[3]]
+esp = [r for r in rows if r.get("worktree") == sys.argv[4]]
+assert len(cs1) == 1 and cs1[0]["subreason"] == "PREFLIGHT_MISSING_TOOLCHAIN", cs1
+assert len(cs2) == 1 and cs2[0]["verdict"] == "JUDGE_PASS_ROUTINE", cs2
 assert len(esp) == 1 and esp[0]["verdict"] == "JUDGE_PASS_ROUTINE", esp
 PYTEST
+git -C "${S16_HARD_CLONE2}" worktree remove --force "${WT_HARD_CLONE2}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CLONE2}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_MISS_TC}" >/dev/null 2>&1 || rm -rf "${WT_HARD_MISS_TC}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 # (6) Devin cF5S: unreadable untracked file causing empty starting fingerprint prevents deletion even on Makefile JUDGE_REJECT
 if [[ $(id -u) -ne 0 ]]; then
