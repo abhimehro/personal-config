@@ -11,13 +11,13 @@ decisions record — is in
 
 ## Decision and Scope Codes
 
-| Code                       | Meaning                                                                                                                                                                                                                                                                                                                                                        |
-| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                                                                                                                                                       |
-| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                                                                                                                                                                     |
-| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests.                                                                                                                                       |
-| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                                                                                                                                                                  |
-| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`). `CRON_TZ` is **per-sidecar**, not globally pinned: the pilot sidecars use `CRON_TZ=America/Chicago` (08:15 sweep, 08:35 triage) so the digest lands when a human reads it, and `canary-stage` defaults to `--timezone America/Chicago` (with `UTC` still selectable explicitly). |
+| Code                       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`1B` (Pilot Scope)**     | Initial 5-repository set matching legacy proactive coverage (`ctrld-sync`, `email-security-pipeline`, `Hydrograph_Versus_Seatek_Sensors_Project`, `Seatek_Analysis`, `personal-config`).                                                                                                                                                                                                                                                                                                              |
+| **`1A` (Expanded Scope)**  | Full 7-repository set (`1B` plus `repoprompt-ce` and `series_correction_project_updated`).                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **`2B` (Local-Only Mode)** | Sweeps execute inside isolated worktrees under `$HOME/.gemini/antigravity/worktrees/` and write local `chmod 600` digests under `$HOME/.gemini/antigravity/proactive-reports/` with zero remote pushes or pull requests.                                                                                                                                                                                                                                                                              |
+| **`2A` (Draft PR Mode)**   | Post-graduation mode for `bolt`, `palette`, and `code-health` only (`sentinel` remains permanently off public Draft PRs), backed by server-side `pull_request` rulesets on `~DEFAULT_BRANCH`.                                                                                                                                                                                                                                                                                                         |
+| **`3B` (Native Sidecars)** | Uses Antigravity's built-in `schedule` sidecar (`agentapi new-conversation`). `CRON_TZ` is **per-sidecar**, not globally pinned: the pilot sidecars use `CRON_TZ=America/Chicago` (08:15 sweep, 08:35 `[PROACTIVE-JUDGE-SHADOW]` Judge & Triage), `stage-repo --stagger` assigns deterministic 25-minute weekday intervals across all 7 repositories (`08:15`/`08:35` through `10:45`/`11:05`), and `canary-stage` defaults to `--timezone America/Chicago` (with `UTC` still selectable explicitly). |
 
 ## Installed Components
 
@@ -105,18 +105,31 @@ decisions record — is in
   verified-merged worktrees. `check-throttle` refreshes `origin` before any
   ref-based verdict and fails closed (`exit 6`) rather than judging against a
   stale ref, and `--include-worktrees` extends the local cap across every
-  git-registered proactive worktree rather than only the default root.
-  `check-collisions --include-worktrees --repo-path <clone>` closes the same gap
+  git-registered proactive worktree rather than only the default root. Candidate
+  worktrees follow a **two-tier head-bound lifecycle** in `proactive-meta.json`:
+  `prepare` initializes `"lifecycle_state": "UNJUDGED"` (`cap=2` via
+  `--max-open 2`, strict `> 7d` fail-closed age gate), `set-state --worktree
+  <dir> --state <UNJUDGED|JUDGED|EXPIRED|REJECTED> [--verdict <v>] [--subreason
+  <s>]` transitions clean committed worktrees while binding `judged_head_sha` to
+  `HEAD` (any subsequent dirty edit or new commit automatically downgrades the
+  worktree back to `UNJUDGED`), `--max-judged-open 5` bounds evaluated
+  `JUDGED` candidates separately so unmerged candidates awaiting human review do
+  not block fresh sweeps, `--auto-expire` transitions `> 7d` `JUDGED` worktrees
+  on disk to `EXPIRED` (`SLA_7D_AUTO_EXPIRE`, branch and worktree preserved,
+  while keeping `UNJUDGED` `> 7d` fail-closed), and `reopen --worktree <dir>`
+  restores an `EXPIRED` candidate with `reopened_at` and `original_created_at`.
+  `check-collisions --include-worktrees --repo-path <clone> [--exclude-worktree
+  <dir>]` closes the same gap
   for file ownership: under `2B` local-first mode there are no bot PRs, so a
   PR-only collision check is a no-op for exactly the class that stranded real
   work — two sessions editing the same file in one burst. It unions in every
-  live candidate worktree's changed paths (excluding one whose work already
-  merged, so it cannot block that path for the whole TTL), fails closed on a
-  truncated PR listing (`exit 5`) or an unenumerable worktree set (`exit 6`),
-  and reports a collision as `exit 4`. `print-test-cmd --repo-name <name>`
-  exposes the repo-to-test-command mapping (including
-  `MPLBACKEND=Agg python3 -m
-  pytest scripts/tests/ -q` for
+  live candidate worktree's changed paths (`UNJUDGED`, `JUDGED`, and preserved
+  `EXPIRED` candidates, excluding `--exclude-worktree` self-checks and any
+  worktree whose work already merged so merged branches cannot block paths for
+  the whole TTL), fails closed on a truncated PR listing (`exit 5`) or an
+  unenumerable worktree set (`exit 6`), and reports a collision as `exit 4`.
+  `print-test-cmd --repo-name <name>` exposes the repo-to-test-command mapping
+  (including `MPLBACKEND=Agg python3 -m pytest scripts/tests/ -q` for
   `series_correction_project_updated`) so the control CLI resolves the same
   command `verify` runs instead of duplicating it.
 - **Control & Ordered Rollback CLI (`scripts/antigravity-proactive-ctl.sh`):**
@@ -126,11 +139,12 @@ decisions record — is in
   [--all-repos] [--skip-fetch]`),
   multi-repo sidecar staging
   (`stage-repo --repo
-  <name> [--cron "<expr>"] [--triage-cron "<expr>"] [--repo-path <dir>]`),
+  <name> [--stagger] [--cron "<expr>"] [--triage-cron "<expr>"] [--repo-path <dir>]`),
   disposable timezone-aware cron verification (`canary-stage` / `canary-clean`),
   merged-PR-verified Sentinel journal leases (`sentinel-post-merge`),
   missed-wake logging (`audit-missed`), base-relative failure classification
-  (`base-check`), and ordered teardown (`disable`).
+  (`base-check`), two-tier automated candidate judging (`judge`), and ordered
+  teardown (`disable`).
 
   `doctor` checks deployed runtime health (`skills_linked`, `hooks_linked`,
   `hooks_mode`, `dangling_links`, `runtime_*`) — repairing defects via
@@ -143,15 +157,77 @@ decisions record — is in
   `remediation` hints on `FAIL_TOOLCHAIN` (`exit 7`) and emitting
   `doctor_status=HEALTHY` (`exit 0`) or `DEGRADED` (`exit 1`). `stage-repo`
   atomically writes `0600` `proactive-sweep-<repo>` and
-  `proactive-triage-<repo>` sidecars (never creating `user_config.json`),
-  granting `preflight --auto-heal`, `gh auth
-  status`, and `doctor` access
-  while tailoring lens rotation for research repos (`code-health`, `bolt` with
-  mandatory `--numeric-check-cmd`, read-only `sentinel`, never `palette`) vs
-  core repos (`bolt`, `code-health`, `palette`, read-only `sentinel`). `disable`
-  also tears down staged `proactive-sweep-*` / `proactive-triage-*` sidecars
-  only when their `sidecar.json` references `.gemini/config/proactive/scripts/`,
-  leaving unrelated user sidecars untouched.
+  `proactive-triage-<repo>` (`[PROACTIVE-JUDGE-SHADOW]`) sidecars (never
+  creating `user_config.json`), granting `preflight --auto-heal`,
+  `gh auth
+  status`, `judge`, `ocr`, `coderabbit`, `lrc`, `node`, and `doctor`
+  access while tailoring lens rotation for research repos (`code-health`, `bolt`
+  with mandatory `--numeric-check-cmd`, read-only `sentinel`, never `palette`)
+  vs core repos (`bolt`, `code-health`, `palette`, read-only `sentinel`). When
+  `--stagger` is passed without explicit `--cron` / `--triage-cron`,
+  `stage-repo` assigns deterministic staggered weekday start times
+  (`CRON_TZ=America/Chicago`, 25-minute start-time spacing with a +20-minute
+  Judge companion — note that staggering gives each repo a distinct start time
+  rather than serializing overlapping long runs): `ctrld-sync` (`08:15` /
+  `08:35`), `email-security-pipeline` (`08:40` / `09:00`), `personal-config`
+  (`09:05` / `09:25`), `Hydrograph_Versus_Seatek_Sensors_Project` (`09:30` /
+  `09:50`), `Seatek_Analysis` (`09:55` / `10:15`),
+  `series_correction_project_updated` (`10:20` / `10:40`), and `repoprompt-ce`
+  (`10:45` / `11:05`). Without `--stagger`, `stage-repo` preserves the `08:15` /
+  `08:35` default schedule. `disable` also tears down staged `proactive-sweep-*`
+  / `proactive-triage-*` sidecars only when their directory carries
+  `.managed-by-proactive-ctl`, leaving unrelated user sidecars untouched.
+
+  `judge [--repo <name> ...] [--all-repos] [--date <YYYY-MM-DD>] [--cron "<expr>"]
+  [--skip-tier2] [--with-lrc] [--force-rejudge]`
+  runs in the companion `[PROACTIVE-JUDGE-SHADOW]` slot to evaluate `UNJUDGED`
+  candidate worktrees and prevent queue deadlocks:
+  - **Tier 1 (Local / Deterministic & Graph):** Runs a fast policy/semantic
+    coverage probe (`proactive-worktree.sh verify --test-cmd true`), runs
+    `base-check` automatically on any unclassified `Substatus: GATE_FAILURE`
+    digest, checks conflict-free upstream integration via
+    `git merge-tree
+    --write-tree`, checks open-PR and sibling-worktree file
+    collisions via
+    `check-collisions --include-worktrees --exclude-worktree <wt>`, runs
+    `ocr
+    delegate preview`, and runs `gitnexus-review`
+    (`node .gitnexus/run.cjs
+    impact` upstream blast-radius + symbol
+    test-reference verification, refreshing a stale index once per repo via
+    `analyze --index-only` when Tier 2 is enabled).
+  - **Tier 2 (Reviewer Stack & Hard Privacy Boundary):** Strictly skipped when
+    `lens == "sentinel"` or `Status: SECURITY_REPORT_ONLY` so security findings
+    never leave the host. Otherwise runs `open-code-review`
+    (`ocr review
+    --audience agent --format json`), `CodeRabbit`
+    (`coderabbit auth status
+    --agent` +
+    `coderabbit review --agent --committed --base-commit <base_sha>`, preserving
+    `critical`, `major`, `minor`, `trivial`, and `info` severities), and sparing
+    LiveReview
+    (`lrc review --no-serve --output json --range
+    <base_sha>...HEAD` only
+    when `--with-lrc` is requested, CodeRabbit did not complete with 0
+    critical/high OCR issues, or GitNexus reports `HIGH` risk with 0
+    critical/major/high CodeRabbit+OCR issues — gated to `<= 250` diff LOC,
+    `< 1` daily `lrc` run in `judge-shadow-ledger.jsonl`, and
+    `lrc usage
+    inspect` reporting `can_trigger_reviews: true` with `>= 2000`
+    remaining monthly LOC).
+  - **Verdicts, Shadow Ledger & Digest Contract:** Appends `0600` JSONL rows to
+    `$HOME/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl` and
+    `## Judge Evaluation` to the candidate digest. `JUDGE_REJECT` (deterministic
+    harness/coverage violation or `base-check` `CAUSED_BY_CHANGE`) writes
+    `Action: reject (retired automatically on <YYYY-MM-DD>)` and force-removes
+    the rejected worktree and `proactive/*` branch after confirming the ledger
+    receipt is on disk. `JUDGE_PASS_ROUTINE` (all tiers clean) and
+    `JUDGE_ESCALATE_HUMAN` (findings, degraded reviewer, `--skip-tier2`,
+    `sentinel` local boundary, or untested `CRITICAL` blast radius) transition
+    clean worktrees to `JUDGED` and emit deterministic
+    `Action: promote | reject | expire (default: expire on <YYYY-MM-DD>)` (never
+    an open-ended question), while `> 7d` `JUDGED` worktrees auto-expire to
+    `EXPIRED` on disk.
 
   `base-check --repo <name> --worktree <dir> [--digest <path>]` answers the
   question a bare verify exit code cannot: **was this failure caused by the
@@ -204,8 +280,17 @@ decisions record — is in
 ./scripts/antigravity-proactive-ctl.sh doctor --all-repos
 ./scripts/antigravity-proactive-ctl.sh doctor --fix --repo ctrld-sync
 
-# Stage disabled sweep + triage sidecars for an additional repository (core or research)
-./scripts/antigravity-proactive-ctl.sh stage-repo --repo Seatek_Analysis
+# Stage disabled sweep + Judge/triage sidecars (add --stagger for staggered start-time slots across repos)
+./scripts/antigravity-proactive-ctl.sh stage-repo --repo Seatek_Analysis --stagger
+
+# Run post-sweep Judge evaluation (full Tier 1 + Tier 2 stack, or offline Tier 1 only via --skip-tier2)
+# Note: --skip-tier2 runs strictly offline (skips origin refresh, GitHub open-PR collision checks, and Tier 2 reviewers),
+# so candidates on remote GitHub-hosted clones escalate as COLLISION_OR_UNVERIFIABLE or TIER2_SKIPPED_OFFLINE until online Judge runs.
+./scripts/antigravity-proactive-ctl.sh judge --repo ctrld-sync
+./scripts/antigravity-proactive-ctl.sh judge --all-repos --skip-tier2
+
+# Reopen an auto-expired (>7d) judged candidate worktree for fresh promotion review
+./scripts/proactive-worktree.sh reopen --worktree "$HOME/.gemini/antigravity/worktrees/<candidate>"
 
 # Run standalone preflight with auto-heal on one repository
 ./scripts/proactive-worktree.sh preflight --repo abhimehro/ctrld-sync --repo-path "$HOME/dev/ctrld-sync" --auto-heal

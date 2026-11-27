@@ -1143,6 +1143,8 @@ git -C "${WT_ED}" -c user.email="test@example.com" -c user.name="Test" commit -a
 check_exit "base-check uses candidate PYTHONPATH ahead of repo editable path on fallback" 2 \
 	"${CTL_SCRIPT}" base-check --repo ed-repo --worktree "${WT_ED}" --test-cmd "edcheck"
 check_grep "base-check classifies broken candidate with editable venv fallback as CAUSED_BY_CHANGE" "^VERDICT: CAUSED_BY_CHANGE$" "${TEST_DIR}/check.log"
+ED_STATUS="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null git -C "${WT_ED}" status --porcelain --untracked-files=all)"
+check "base-check leaves candidate worktree free of untracked bytecode" test -z "${ED_STATUS}"
 
 # 15. CodeRabbit pass-2 regressions ([4], [8] src-layout, [20])
 
@@ -1228,6 +1230,1515 @@ check_exit "audit-missed handles zoned evening cron crossing UTC midnight" 0 \
 check_grep "audit-missed records Friday local date for Saturday 00:50 UTC digest" \
 	"^- Scheduled Slot: 2026-11-20 18:50 America/Chicago \(00:50 UTC\)$" \
 	"${HOME}/.gemini/antigravity/proactive-reports/2026-11-21-ctrld-sync.md"
+
+# 16. stage-repo --stagger schedules, [PROACTIVE-JUDGE-SHADOW] sidecar grants, and
+#     two-tier Judge flows (offline, clean routine pass, major escalation, sentinel
+#     privacy gate, harness/regression rejection retirement, and >7d auto-expire)
+
+# 16.1 stage-repo --stagger vs default schedules and Judge sidecar grants
+export HOME="${TEST_DIR}/s16-stagger-home"
+mkdir -p "${HOME}/.gemini/config"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+
+check_exit "stage-repo --stagger stages ctrld-sync" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo ctrld-sync --stagger
+check_exit "stage-repo --stagger stages email-security-pipeline" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo email-security-pipeline --stagger
+check_exit "stage-repo --stagger stages Seatek_Analysis" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo Seatek_Analysis --stagger
+check_exit "stage-repo without --stagger keeps default 08:15 / 08:35 schedule" 0 \
+	"${CTL_SCRIPT}" stage-repo --repo personal-config
+
+check "stage-repo --stagger generates distinct non-overlapping weekday crons and Judge grants" \
+	python3 - "${HOME}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+home = pathlib.Path(sys.argv[1])
+sidecars = home / ".gemini/config/sidecars"
+
+
+def load_pair(repo: str):
+    s = json.loads((sidecars / f"proactive-sweep-{repo}/sidecar.json").read_text(encoding="utf-8"))
+    t = json.loads((sidecars / f"proactive-triage-{repo}/sidecar.json").read_text(encoding="utf-8"))
+    return s, t
+
+
+cs_s, cs_t = load_pair("ctrld-sync")
+esp_s, esp_t = load_pair("email-security-pipeline")
+sea_s, sea_t = load_pair("Seatek_Analysis")
+pc_s, pc_t = load_pair("personal-config")
+
+assert cs_s["args"][0] == "CRON_TZ=America/Chicago 15 8 * * 1-5", cs_s["args"][0]
+assert cs_t["args"][0] == "CRON_TZ=America/Chicago 35 8 * * 1-5", cs_t["args"][0]
+assert esp_s["args"][0] == "CRON_TZ=America/Chicago 40 8 * * 1-5", esp_s["args"][0]
+assert esp_t["args"][0] == "CRON_TZ=America/Chicago 0 9 * * 1-5", esp_t["args"][0]
+assert sea_s["args"][0] == "CRON_TZ=America/Chicago 55 9 * * 1-5", sea_s["args"][0]
+assert sea_t["args"][0] == "CRON_TZ=America/Chicago 15 10 * * 1-5", sea_t["args"][0]
+
+staggered_crons = [
+    cs_s["args"][0],
+    cs_t["args"][0],
+    esp_s["args"][0],
+    esp_t["args"][0],
+    sea_s["args"][0],
+    sea_t["args"][0],
+]
+assert len(set(staggered_crons)) == 6, staggered_crons
+
+def to_minutes(expr: str) -> int:
+    parts = expr.split()
+    return int(parts[2]) * 60 + int(parts[1])
+
+mins = [to_minutes(c) for c in staggered_crons]
+assert mins == sorted(mins), mins
+for idx in range(1, len(mins)):
+    assert mins[idx] > mins[idx - 1], mins
+
+# Default without --stagger preserves 15 8 / 35 8
+assert pc_s["args"][0] == "CRON_TZ=America/Chicago 15 8 * * 1-5", pc_s["args"][0]
+assert pc_t["args"][0] == "CRON_TZ=America/Chicago 35 8 * * 1-5", pc_t["args"][0]
+
+ctl_sh = f"{home}/.gemini/config/proactive/scripts/antigravity-proactive-ctl.sh"
+wt_sh = f"{home}/.gemini/config/proactive/scripts/proactive-worktree.sh"
+
+for repo, s_doc, t_doc in (
+    ("ctrld-sync", cs_s, cs_t),
+    ("email-security-pipeline", esp_s, esp_t),
+    ("Seatek_Analysis", sea_s, sea_t),
+    ("personal-config", pc_s, pc_t),
+):
+    s_prompt = s_doc["args"][-1]
+    t_prompt = t_doc["args"][-1]
+    assert "--auto-expire" in s_prompt, s_prompt
+    assert "--include-worktrees" in s_prompt, s_prompt
+    assert t_prompt.startswith("[PROACTIVE-JUDGE-SHADOW]"), t_prompt
+    assert f"{ctl_sh} judge --repo {repo}" in t_prompt, t_prompt
+    grants = t_doc["agent_permissions"]["access_grants"]
+    for req_grant in (
+        f"read_file({home}/dev/{repo})",
+        f"command({ctl_sh} judge)",
+        f"command({ctl_sh} doctor)",
+        f"command({ctl_sh} base-check)",
+        f"command({ctl_sh} audit-missed)",
+        f"command({ctl_sh} sweep-date)",
+        f"command({wt_sh})",
+        "command(ocr)",
+        "command(coderabbit)",
+        "command(lrc)",
+        "command(node)",
+    ):
+        assert req_grant in grants, (repo, req_grant, grants)
+PYTEST
+
+# 16.2 judge offline (--skip-tier2) and mocked Tier 2 reviewer flows
+export HOME="${TEST_DIR}/s16-judge-home"
+S16_MOCK_BIN="${TEST_DIR}/s16_mock_bin"
+S16_REPOS_PARENT="${TEST_DIR}/s16_dev"
+S16_WT_ROOT="${TEST_DIR}/s16_worktrees"
+S16_BARE="${TEST_DIR}/s16_ctrl_remote.git"
+S16_SEED="${TEST_DIR}/s16_ctrl_seed"
+S16_CLONE="${S16_REPOS_PARENT}/ctrld-sync"
+S16_REPORTS="${HOME}/.gemini/antigravity/proactive-reports"
+S16_LEDGER="${S16_REPORTS}/judge-shadow-ledger.jsonl"
+
+export S16_OCR_PREVIEW_LOG="${TEST_DIR}/s16_ocr_preview.log"
+export S16_OCR_REVIEW_LOG="${TEST_DIR}/s16_ocr_review.log"
+export S16_OCR_MODE_FILE="${TEST_DIR}/s16_ocr_mode"
+export S16_CR_LOG="${TEST_DIR}/s16_cr.log"
+export S16_CR_MODE_FILE="${TEST_DIR}/s16_cr_mode"
+export S16_LRC_LOG="${TEST_DIR}/s16_lrc.log"
+export S16_REAL_PY3
+S16_REAL_PY3="$(command -v python3)"
+
+mkdir -p "${HOME}/.gemini/config" "${S16_MOCK_BIN}" "${S16_REPOS_PARENT}" "${S16_WT_ROOT}" "${S16_SEED}/src"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+
+cat >"${S16_MOCK_BIN}/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+	exit 0
+fi
+echo "[]"
+exit 0
+MOCK
+
+cat >"${S16_MOCK_BIN}/ruff" <<'MOCK'
+#!/usr/bin/env bash
+exit 0
+MOCK
+
+cat >"${S16_MOCK_BIN}/uv" <<'MOCK'
+#!/usr/bin/env bash
+exit 0
+MOCK
+
+cat >"${S16_MOCK_BIN}/ocr" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "delegate" && "$2" == "preview" ]]; then
+	printf '%s\n' "$*" >>"${S16_OCR_PREVIEW_LOG}"
+	echo '{"files":[]}'
+	exit 0
+fi
+if [[ "$1" == "review" ]]; then
+	printf '%s\n' "$*" >>"${S16_OCR_REVIEW_LOG}"
+	out_file=""
+	prev=""
+	for arg in "$@"; do
+		if [[ ${prev} == "--output" ]]; then
+			out_file="${arg}"
+		fi
+		prev="${arg}"
+	done
+	mode="$(cat "${S16_OCR_MODE_FILE}" 2>/dev/null || echo "clean")"
+	payload='{"findings":[]}'
+	if [[ ${mode} == "high" ]]; then
+		payload='{"findings":[{"severity":"high","message":"unsafe shell interpolation"}]}'
+	fi
+	if [[ -n ${out_file} ]]; then
+		printf '%s\n' "${payload}" >"${out_file}"
+	fi
+	printf '%s\n' "${payload}"
+	exit 0
+fi
+exit 0
+MOCK
+
+cat >"${S16_MOCK_BIN}/coderabbit" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${S16_CR_LOG}"
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+	echo '{"authenticated":true}'
+	exit 0
+fi
+if [[ "$1" == "review" ]]; then
+	mode="$(cat "${S16_CR_MODE_FILE}" 2>/dev/null || echo "clean")"
+	case "${mode}" in
+	clean)
+		echo '{"type":"complete","status":"review_completed","findings":[]}'
+		exit 0
+		;;
+	major)
+		echo '{"type":"finding","severity":"major","message":"stale cache lock not released on exception"}'
+		echo '{"type":"complete","status":"review_completed"}'
+		exit 0
+		;;
+	degraded)
+		echo '{"type":"action_required","status":"rate_limited"}'
+		exit 1
+		;;
+	esac
+fi
+exit 0
+MOCK
+
+cat >"${S16_MOCK_BIN}/lrc" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${S16_LRC_LOG}"
+if [[ "$1" == "usage" ]]; then
+	echo '{"can_trigger_reviews":true,"envelope":{"loc_remaining_month":5000}}'
+	exit 0
+fi
+if [[ "$1" == "review" ]]; then
+	echo '{"findings":[]}'
+	exit 0
+fi
+exit 0
+MOCK
+
+chmod +x \
+	"${S16_MOCK_BIN}/gh" \
+	"${S16_MOCK_BIN}/ruff" \
+	"${S16_MOCK_BIN}/uv" \
+	"${S16_MOCK_BIN}/ocr" \
+	"${S16_MOCK_BIN}/coderabbit" \
+	"${S16_MOCK_BIN}/lrc"
+
+git init -q --bare "${S16_BARE}"
+git init -q "${S16_SEED}"
+git -C "${S16_SEED}" config user.email "test@example.com"
+git -C "${S16_SEED}" config user.name "Test"
+cat >"${S16_SEED}/Makefile" <<'EOF'
+test:
+	@true
+EOF
+cat >"${S16_SEED}/pyproject.toml" <<'EOF'
+[project]
+name = "ctrld-sync-fixture"
+version = "0.1.0"
+EOF
+touch "${S16_SEED}/uv.lock"
+printf 'def alpha():\n    return 1\n' >"${S16_SEED}/src/mod1.py"
+printf 'def beta():\n    return 2\n' >"${S16_SEED}/src/mod2.py"
+printf 'def clean_fn():\n    return 3\n' >"${S16_SEED}/src/pass_clean.py"
+printf 'def major_fn():\n    return 4\n' >"${S16_SEED}/src/major_case.py"
+printf 'def tiebreak_fn():\n    return 5\n' >"${S16_SEED}/src/tiebreak.py"
+printf 'def sentinel_fn():\n    return 6\n' >"${S16_SEED}/src/sentinel_note.py"
+git -C "${S16_SEED}" add .
+git -C "${S16_SEED}" commit -q -m "s16 seed"
+git -C "${S16_SEED}" branch -M main
+git -C "${S16_SEED}" remote add origin "${S16_BARE}"
+git -C "${S16_SEED}" push -q -u origin main
+git --git-dir="${S16_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S16_BARE}" "${S16_CLONE}"
+git -C "${S16_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+# (a) Offline (--skip-tier2): evaluates UNJUDGED worktrees -> 0600 ledger, ## Judge Evaluation
+#     with deterministic Action line (zero '?' at end), transitions to JUDGED, unblocks check-throttle
+WT_S16_OFF1="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens bolt --worktree-root "${S16_WT_ROOT}")"
+WT_S16_OFF2="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens code-health --worktree-root "${S16_WT_ROOT}")"
+printf 'def alpha():\n    return 10\n' >"${WT_S16_OFF1}/src/mod1.py"
+git -C "${WT_S16_OFF1}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "bolt: speed up alpha"
+printf 'def beta():\n    return 20\n' >"${WT_S16_OFF2}/src/mod2.py"
+git -C "${WT_S16_OFF2}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "chore(qa): clean beta"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "2 UNJUDGED candidates block check-throttle before judge runs" 5 \
+	"${WT_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S16_WT_ROOT}" \
+	--include-worktrees --repo-path "${S16_CLONE}" --max-open 2
+
+DIGEST_OFF="${S16_REPORTS}/2026-11-25-ctrld-sync.md"
+cat >"${DIGEST_OFF}" <<EOF
+# Proactive Sweep Digest (2026-11-25 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: bolt
+- Worktree: ${WT_S16_OFF1}
+EOF
+chmod 600 "${DIGEST_OFF}"
+: >"${S16_OCR_REVIEW_LOG}"
+: >"${S16_CR_LOG}"
+: >"${S16_LRC_LOG}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge --skip-tier2 evaluates UNJUDGED worktrees offline" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-25 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}" --skip-tier2
+check_grep "judge --skip-tier2 reports judged_now=2" "^judged_now=2$" "${TEST_DIR}/check.log"
+check_grep "judge --skip-tier2 reports unjudged_open=0" "^unjudged_open=0$" "${TEST_DIR}/check.log"
+check_grep "judge --skip-tier2 reports judged_open=2" "^judged_open=2$" "${TEST_DIR}/check.log"
+check "judge --skip-tier2 skips cloud ocr review, coderabbit, and lrc" \
+	bash -c "test ! -s '${S16_OCR_REVIEW_LOG}' && test ! -s '${S16_CR_LOG}' && test ! -s '${S16_LRC_LOG}'"
+check "judge writes 0600 judge-shadow-ledger.jsonl and deterministic digest evaluation without '?'" \
+	python3 - "${S16_LEDGER}" "${DIGEST_OFF}" "${WT_S16_OFF1}" <<'PYTEST'
+import json
+import os
+import pathlib
+import sys
+
+ledger = pathlib.Path(sys.argv[1])
+digest = pathlib.Path(sys.argv[2])
+wt1 = sys.argv[3]
+
+assert ledger.is_file()
+assert (os.stat(ledger).st_mode & 0o777) == 0o600, oct(os.stat(ledger).st_mode)
+assert (os.stat(digest).st_mode & 0o777) == 0o600, oct(os.stat(digest).st_mode)
+
+rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == wt1]
+assert len(wt_rows) == 1, rows
+row = wt_rows[0]
+assert row["verdict"] == "JUDGE_ESCALATE_HUMAN", row
+assert row["subreason"] == "TIER2_SKIPPED_OFFLINE", row
+assert row["ocr_review"] == "skipped_tier2", row
+assert row["coderabbit"] == "skipped_tier2", row
+assert row["lrc"] == "skipped_policy", row
+
+d_txt = digest.read_text(encoding="utf-8")
+assert "## Judge Evaluation" in d_txt, d_txt
+assert "- Verdict: JUDGE_ESCALATE_HUMAN" in d_txt, d_txt
+import datetime as dt
+import subprocess
+git_d = subprocess.check_output(["git", "-C", wt1, "rev-parse", "--git-dir"], text=True).strip()
+created_str = json.loads((pathlib.Path(git_d) / "proactive-meta.json").read_text())["created_at"]
+created_d = dt.datetime.strptime(created_str, "%Y%m%dT%H%M%SZ").date()
+exp_d = (min(created_d, dt.date(2026, 11, 25)) + dt.timedelta(days=7)).isoformat()
+assert f"- Action: promote | reject | expire (default: expire on {exp_d})" in d_txt, d_txt
+for ln in d_txt.splitlines():
+    assert not ln.rstrip().endswith("?"), f"open-ended question line found: {ln}"
+PYTEST
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge transitioning candidates to JUDGED unblocks check-throttle" 0 \
+	"${WT_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S16_WT_ROOT}" \
+	--include-worktrees --repo-path "${S16_CLONE}" --max-open 2
+
+# (b) Clean ocr (0 issues) + clean coderabbit (review_completed, 0 findings) -> JUDGE_PASS_ROUTINE
+#     and keeps lrc skipped_policy (sparing lrc usage!)
+WT_S16_PASS="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens code-health --worktree-root "${S16_WT_ROOT}")"
+printf 'def clean_fn():\n    return 30\n' >"${WT_S16_PASS}/src/pass_clean.py"
+git -C "${WT_S16_PASS}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "chore(qa): simplify clean_fn"
+DIGEST_PASS="${S16_REPORTS}/2026-11-26-ctrld-sync.md"
+cat >"${DIGEST_PASS}" <<EOF
+# Proactive Sweep Digest (2026-11-26 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_S16_PASS}
+EOF
+chmod 600 "${DIGEST_PASS}"
+printf 'clean\n' >"${S16_OCR_MODE_FILE}"
+printf 'clean\n' >"${S16_CR_MODE_FILE}"
+: >"${S16_OCR_REVIEW_LOG}"
+: >"${S16_CR_LOG}"
+: >"${S16_LRC_LOG}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge emits JUDGE_PASS_ROUTINE when ocr and coderabbit pass cleanly" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-26 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}"
+check "judge invoked ocr review and coderabbit but spared lrc" \
+	bash -c "test -s '${S16_OCR_REVIEW_LOG}' && test -s '${S16_CR_LOG}' && test ! -s '${S16_LRC_LOG}'"
+check "judge ledger and digest record JUDGE_PASS_ROUTINE and lrc=skipped_policy" \
+	python3 - "${S16_LEDGER}" "${DIGEST_PASS}" "${WT_S16_PASS}" "${WT_S16_OFF1}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(wt_rows) == 1, rows
+row = wt_rows[0]
+assert row["verdict"] == "JUDGE_PASS_ROUTINE", row
+assert row["subreason"] == "ALL_TIERS_CLEAN", row
+assert row["ocr_review"] == "completed", row
+assert row["coderabbit"] == "review_completed", row
+assert row["lrc"] == "skipped_policy", row
+assert row["lrc_executed"] is False, row
+off1_rows = [r for r in rows if r.get("worktree") == sys.argv[4]]
+assert any(r.get("verdict") == "JUDGE_PASS_ROUTINE" for r in off1_rows), off1_rows
+
+d_txt = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+assert "- Verdict: JUDGE_PASS_ROUTINE" in d_txt, d_txt
+import datetime as dt
+import subprocess
+git_d = subprocess.check_output(["git", "-C", sys.argv[3], "rev-parse", "--git-dir"], text=True).strip()
+created_str = json.loads((pathlib.Path(git_d) / "proactive-meta.json").read_text())["created_at"]
+created_d = dt.datetime.strptime(created_str, "%Y%m%dT%H%M%SZ").date()
+exp_d = (min(created_d, dt.date(2026, 11, 26)) + dt.timedelta(days=7)).isoformat()
+assert f"- Action: promote | reject | expire (default: expire on {exp_d})" in d_txt, d_txt
+for ln in d_txt.splitlines():
+    assert not ln.rstrip().endswith("?"), ln
+PYTEST
+
+# Verify sparing lrc tie-breaker DOES run when explicitly requested (--with-lrc) and quota permits
+WT_S16_LRC="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens code-health --worktree-root "${S16_WT_ROOT}")"
+printf 'def tiebreak_fn():\n    return 50\n' >"${WT_S16_LRC}/src/tiebreak.py"
+git -C "${WT_S16_LRC}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "chore(qa): tiebreak edit"
+: >"${S16_LRC_LOG}"
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge --with-lrc runs lrc usage check and review when eligible" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-26 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}" --with-lrc
+check "lrc mock recorded usage inspect and review calls under --with-lrc" test -s "${S16_LRC_LOG}"
+check "ledger records lrc_executed=True and lrc=completed for tie-breaker run" \
+	python3 - "${S16_LEDGER}" "${WT_S16_LRC}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(wt_rows) == 1, rows
+assert wt_rows[0]["lrc_executed"] is True, wt_rows[0]
+assert wt_rows[0]["lrc"] == "completed", wt_rows[0]
+PYTEST
+
+# (c) Mocked coderabbit returning a major finding -> JUDGE_ESCALATE_HUMAN (preserving severity)
+WT_S16_MAJOR="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens bolt --worktree-root "${S16_WT_ROOT}")"
+printf 'def major_fn():\n    return 40\n' >"${WT_S16_MAJOR}/src/major_case.py"
+git -C "${WT_S16_MAJOR}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "bolt: refactor major_fn"
+DIGEST_MAJOR="${S16_REPORTS}/2026-11-27-ctrld-sync.md"
+cat >"${DIGEST_MAJOR}" <<EOF
+# Proactive Sweep Digest (2026-11-27 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: bolt
+- Worktree: ${WT_S16_MAJOR}
+EOF
+chmod 600 "${DIGEST_MAJOR}"
+printf 'clean\n' >"${S16_OCR_MODE_FILE}"
+printf 'major\n' >"${S16_CR_MODE_FILE}"
+: >"${S16_LRC_LOG}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge escalates candidate when coderabbit reports a major finding" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-27 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}"
+check "judge preserves coderabbit major severity count and emits JUDGE_ESCALATE_HUMAN" \
+	python3 - "${S16_LEDGER}" "${DIGEST_MAJOR}" "${WT_S16_MAJOR}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(wt_rows) == 1, rows
+row = wt_rows[0]
+assert row["verdict"] == "JUDGE_ESCALATE_HUMAN", row
+assert row["subreason"] == "REVIEWER_FINDINGS_PRESENT", row
+assert row["coderabbit"] == "review_completed", row
+assert row["tier2"]["coderabbit_counts"]["major"] == 1, row
+
+d_txt = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+assert "- Verdict: JUDGE_ESCALATE_HUMAN" in d_txt, d_txt
+assert "major=1" in d_txt, d_txt
+PYTEST
+
+# (d) sentinel lens / SECURITY_REPORT_ONLY -> strictly skips cloud coderabbit, ocr review, and lrc
+#     (verify mock invocation logs are empty!) and emits JUDGE_ESCALATE_HUMAN
+WT_S16_SENT="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens sentinel --worktree-root "${S16_WT_ROOT}")"
+printf 'def sentinel_fn():\n    return 60\n' >"${WT_S16_SENT}/src/sentinel_note.py"
+git -C "${WT_S16_SENT}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "sentinel: local repro"
+DIGEST_SENT="${S16_REPORTS}/2026-11-28-ctrld-sync.md"
+cat >"${DIGEST_SENT}" <<EOF
+# Proactive Sweep Digest (2026-11-28 - ctrld-sync)
+
+- Status: SECURITY_REPORT_ONLY
+- Substatus: NONE
+- Lens: sentinel
+- Worktree: ${WT_S16_SENT}
+EOF
+chmod 600 "${DIGEST_SENT}"
+printf 'clean\n' >"${S16_CR_MODE_FILE}"
+: >"${S16_OCR_REVIEW_LOG}"
+: >"${S16_CR_LOG}"
+: >"${S16_LRC_LOG}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge evaluates sentinel candidate locally without cloud reviewers" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-28 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}" --with-lrc
+check "sentinel privacy gate kept ocr review, coderabbit, and lrc invocation logs completely empty" \
+	bash -c "test ! -s '${S16_OCR_REVIEW_LOG}' && test ! -s '${S16_CR_LOG}' && test ! -s '${S16_LRC_LOG}'"
+check "sentinel candidate ledger row records skipped_privacy and JUDGE_ESCALATE_HUMAN" \
+	python3 - "${S16_LEDGER}" "${WT_S16_SENT}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(wt_rows) == 1, rows
+row = wt_rows[0]
+assert row["verdict"] == "JUDGE_ESCALATE_HUMAN", row
+assert row["subreason"] == "SECURITY_REPORT_ONLY_LOCAL_BOUNDARY", row
+assert row["ocr_review"] == "skipped_privacy", row
+assert row["coderabbit"] == "skipped_privacy", row
+assert row["lrc"] == "skipped_privacy", row
+PYTEST
+
+# Also test digest-only SECURITY_REPORT_ONLY (no worktree) on a second repo
+S16_ESP_BARE="${TEST_DIR}/s16_esp_remote.git"
+S16_ESP_SEED="${TEST_DIR}/s16_esp_seed"
+S16_ESP_CLONE="${S16_REPOS_PARENT}/email-security-pipeline"
+mkdir -p "${S16_ESP_SEED}/src"
+git init -q --bare "${S16_ESP_BARE}"
+git init -q "${S16_ESP_SEED}"
+git -C "${S16_ESP_SEED}" config user.email "test@example.com"
+git -C "${S16_ESP_SEED}" config user.name "Test"
+printf 'VALUE = 42\n' >"${S16_ESP_SEED}/src/service.py"
+git -C "${S16_ESP_SEED}" add src/service.py
+git -C "${S16_ESP_SEED}" commit -q -m "esp seed"
+git -C "${S16_ESP_SEED}" branch -M main
+git -C "${S16_ESP_SEED}" remote add origin "${S16_ESP_BARE}"
+git -C "${S16_ESP_SEED}" push -q -u origin main
+git --git-dir="${S16_ESP_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S16_ESP_BARE}" "${S16_ESP_CLONE}"
+git -C "${S16_ESP_CLONE}" remote set-head origin -a >/dev/null 2>&1
+mkdir -p "${S16_ESP_CLONE}/.venv/bin"
+cat >"${S16_ESP_CLONE}/.venv/bin/python3" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "-m" && "$2" == "pytest" ]]; then
+	if [[ "$3" == "--version" ]]; then
+		echo "pytest 8.0.0"
+		exit 0
+	fi
+	exec "${S16_REAL_PY3}" -c "import service; assert service.VALUE == 42"
+fi
+exec "${S16_REAL_PY3}" "$@"
+MOCK
+ln -sf "${S16_MOCK_BIN}/ruff" "${S16_ESP_CLONE}/.venv/bin/ruff"
+chmod +x "${S16_ESP_CLONE}/.venv/bin/python3"
+
+DIGEST_SEC_NOWT="${S16_REPORTS}/2026-11-28-email-security-pipeline.md"
+cat >"${DIGEST_SEC_NOWT}" <<'EOF'
+# Proactive Sweep Digest (2026-11-28 - email-security-pipeline)
+
+- Status: SECURITY_REPORT_ONLY
+- Substatus: NONE
+- Lens: sentinel
+EOF
+chmod 600 "${DIGEST_SEC_NOWT}"
+: >"${S16_OCR_REVIEW_LOG}"
+: >"${S16_CR_LOG}"
+: >"${S16_LRC_LOG}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge handles worktree-less SECURITY_REPORT_ONLY digest with zero cloud calls" 0 \
+	"${CTL_SCRIPT}" judge --repo email-security-pipeline --date 2026-11-28 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}"
+check "worktree-less SECURITY_REPORT_ONLY kept all cloud reviewer logs empty" \
+	bash -c "test ! -s '${S16_OCR_REVIEW_LOG}' && test ! -s '${S16_CR_LOG}' && test ! -s '${S16_LRC_LOG}'"
+check_grep "worktree-less SECURITY_REPORT_ONLY digest receives JUDGE_ESCALATE_HUMAN" \
+	"^- Verdict: JUDGE_ESCALATE_HUMAN$" "${DIGEST_SEC_NOWT}"
+
+# (e) Harness-violating candidate (Makefile edited) AND CAUSED_BY_CHANGE GATE_FAILURE ->
+#     emits JUDGE_REJECT and removes rejected worktree + proactive/* branch after ledger receipt!
+WT_S16_HARNESS="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_CLONE}" --lens code-health --worktree-root "${S16_WT_ROOT}")"
+BRANCH_S16_HARNESS="$(git -C "${WT_S16_HARNESS}" symbolic-ref --quiet --short HEAD)"
+printf '\t@echo tampered\n' >>"${WT_S16_HARNESS}/Makefile"
+git -C "${WT_S16_HARNESS}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "tamper Makefile"
+DIGEST_HARNESS="${S16_REPORTS}/2026-11-30-ctrld-sync.md"
+cat >"${DIGEST_HARNESS}" <<EOF
+# Proactive Sweep Digest (2026-11-30 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_S16_HARNESS}
+EOF
+chmod 600 "${DIGEST_HARNESS}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge rejects harness-violating candidate (Makefile edited)" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-11-30 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}"
+check_grep "judge reports rejected_now=1 for Makefile tamper" "^rejected_now=1$" "${TEST_DIR}/check.log"
+check "judge removed rejected Makefile-tampered worktree directory" test ! -d "${WT_S16_HARNESS}"
+check "judge deleted rejected Makefile-tampered proactive/* branch" \
+	bash -c "! git -C '${S16_CLONE}' rev-parse --verify --quiet 'refs/heads/${BRANCH_S16_HARNESS}' >/dev/null 2>&1"
+check "ledger recorded JUDGE_REJECT receipt for Makefile violation before retirement" \
+	python3 - "${S16_LEDGER}" "${DIGEST_HARNESS}" "${WT_S16_HARNESS}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(wt_rows) == 1, rows
+assert wt_rows[0]["verdict"] == "JUDGE_REJECT", wt_rows[0]
+assert wt_rows[0]["subreason"] == "HARNESS_OR_COVERAGE_VIOLATION", wt_rows[0]
+d_txt = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+assert "- Verdict: JUDGE_REJECT" in d_txt, d_txt
+assert "- Action: reject (retired automatically on 2026-11-30)" in d_txt, d_txt
+for ln in d_txt.splitlines():
+    assert not ln.rstrip().endswith("?"), ln
+PYTEST
+
+# CAUSED_BY_CHANGE GATE_FAILURE candidate -> auto-runs base-check -> JUDGE_REJECT + worktree & branch retirement
+WT_S16_REGR="$(PATH="${S16_MOCK_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/email-security-pipeline --repo-path "${S16_ESP_CLONE}" --lens bolt --worktree-root "${S16_WT_ROOT}")"
+BRANCH_S16_REGR="$(git -C "${WT_S16_REGR}" symbolic-ref --quiet --short HEAD)"
+printf 'VALUE = -1\n' >"${WT_S16_REGR}/src/service.py"
+git -C "${WT_S16_REGR}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "bolt: introduce regression"
+DIGEST_REGR="${S16_REPORTS}/2026-12-01-email-security-pipeline.md"
+cat >"${DIGEST_REGR}" <<EOF
+# Proactive Sweep Digest (2026-12-01 - email-security-pipeline)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: bolt
+- Worktree: ${WT_S16_REGR}
+EOF
+chmod 600 "${DIGEST_REGR}"
+
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge classifies GATE_FAILURE via base-check and rejects CAUSED_BY_CHANGE regression" 0 \
+	"${CTL_SCRIPT}" judge --repo email-security-pipeline --date 2026-12-01 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}"
+check_grep "judge reports rejected_now=1 for CAUSED_BY_CHANGE candidate" "^rejected_now=1$" "${TEST_DIR}/check.log"
+check "judge removed CAUSED_BY_CHANGE rejected worktree directory" test ! -d "${WT_S16_REGR}"
+check "judge deleted CAUSED_BY_CHANGE rejected proactive/* branch" \
+	bash -c "! git -C '${S16_ESP_CLONE}' rev-parse --verify --quiet 'refs/heads/${BRANCH_S16_REGR}' >/dev/null 2>&1"
+check "ledger and digest record BASE_CHECK_CAUSED_BY_CHANGE JUDGE_REJECT receipt" \
+	python3 - "${S16_LEDGER}" "${DIGEST_REGR}" "${WT_S16_REGR}" <<'PYTEST'
+import json
+import pathlib
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+wt_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(wt_rows) == 1, rows
+assert wt_rows[0]["verdict"] == "JUDGE_REJECT", wt_rows[0]
+assert wt_rows[0]["subreason"] == "BASE_CHECK_CAUSED_BY_CHANGE", wt_rows[0]
+d_txt = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+assert "## Base-Check Classification" in d_txt, d_txt
+assert "- Verdict: JUDGE_REJECT" in d_txt, d_txt
+PYTEST
+
+# (f) Auto-expires >7d JUDGED worktrees (--now-epoch) to EXPIRED on disk while logging EXPIRED to ledger
+S16_FUTURE_EPOCH="$(
+	python3 - <<'PY'
+import datetime as dt
+
+print(int(dt.datetime.now(dt.timezone.utc).timestamp()) + (10 * 86400))
+PY
+)"
+PATH="${S16_MOCK_BIN}:${PATH}" check_exit "judge auto-expires >7d JUDGED worktrees to EXPIRED under --now-epoch" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-10 \
+	--worktree-root "${S16_WT_ROOT}" --repo-root-parent "${S16_REPOS_PARENT}" \
+	--now-epoch "${S16_FUTURE_EPOCH}" --skip-tier2
+check_grep "judge reports judged_open=0 after >7d auto-expire" "^judged_open=0$" "${TEST_DIR}/check.log"
+check_grep "judge reports expired_preserved=6 for all 6 prior JUDGED ctrld-sync worktrees" "^expired_preserved=6$" "${TEST_DIR}/check.log"
+check "auto-expired JUDGED worktree remains preserved on disk" test -d "${WT_S16_PASS}"
+check "worktree metadata and judge-shadow-ledger.jsonl both record EXPIRED" \
+	python3 - "${S16_LEDGER}" "${WT_S16_PASS}" <<'PYTEST'
+import json
+import pathlib
+import subprocess
+import sys
+
+rows = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if line.strip()]
+exp_rows = [r for r in rows if r.get("worktree") == sys.argv[2] and r.get("verdict") == "EXPIRED"]
+assert len(exp_rows) == 1, rows
+assert exp_rows[0]["subreason"] == "SLA_7D_AUTO_EXPIRE", exp_rows[0]
+
+git_dir = subprocess.check_output(["git", "-C", sys.argv[2], "rev-parse", "--git-dir"], text=True).strip()
+meta = json.loads((pathlib.Path(git_dir) / "proactive-meta.json").read_text(encoding="utf-8"))
+assert meta.get("lifecycle_state") == "EXPIRED", meta
+assert meta.get("expire_reason") == "SLA_7D_AUTO_EXPIRE", meta
+PYTEST
+
+# 16.3 Judge hardening regressions: T1 digest attribution + SECURITY_REPORT_ONLY precedence,
+#      T2 verify flag replay, T3 dirty fingerprinted JUDGED invalidation, T9 GitNexus degraded,
+#      CodeRabbit empty OCR payload rejection, and NO_WORKTREE SECURITY_REPORT_ONLY deduping
+S16_HARD_HOME="${TEST_DIR}/s16-hard-home"
+S16_HARD_WT="${S16_HARD_HOME}/.gemini/antigravity/worktrees"
+S16_HARD_REPORTS="${S16_HARD_HOME}/.gemini/antigravity/proactive-reports"
+S16_HARD_REPOS="${S16_HARD_HOME}/dev"
+S16_HARD_BARE="${TEST_DIR}/s16-hard-bare.git"
+S16_HARD_SEED="${TEST_DIR}/s16-hard-seed"
+S16_HARD_CLONE="${S16_HARD_REPOS}/ctrld-sync"
+S16_HARD_BIN="${TEST_DIR}/s16-hard-bin"
+mkdir -p "${S16_HARD_WT}" "${S16_HARD_REPORTS}" "${S16_HARD_REPOS}" "${S16_HARD_BIN}" "${S16_HARD_SEED}/src" "${S16_HARD_SEED}/tests"
+
+cp "${S16_MOCK_BIN}/gh" "${S16_MOCK_BIN}/ruff" "${S16_MOCK_BIN}/coderabbit" "${S16_MOCK_BIN}/lrc" "${S16_HARD_BIN}/"
+cat >"${S16_HARD_BIN}/uv" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"pytest"* ]]; then
+	exec python3 -m unittest discover -s tests -p "test_*.py" -q
+fi
+exit 0
+MOCK
+cat >"${S16_HARD_BIN}/ocr" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "delegate" && "$2" == "preview" ]]; then
+	echo '{"files":[]}'
+	exit 0
+fi
+if [[ "$1" == "review" ]]; then
+	printf '%s\n' "$*" >>"${S16_HARD_OCR_LOG}"
+	out_file=""
+	prev=""
+	for arg in "$@"; do
+		if [[ ${prev} == "--output" ]]; then
+			out_file="${arg}"
+		fi
+		prev="${arg}"
+	done
+	mode="$(cat "${S16_HARD_OCR_MODE}" 2>/dev/null || echo "clean")"
+	payload='{"findings":[]}'
+	if [[ ${mode} == "empty" ]]; then
+		payload='{}'
+	fi
+	if [[ -n ${out_file} ]]; then
+		printf '%s\n' "${payload}" >"${out_file}"
+	fi
+	printf '%s\n' "${payload}"
+	exit 0
+fi
+exit 0
+MOCK
+cat >"${S16_HARD_BIN}/node" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"run.cjs impact"* ]]; then
+	mode="$(cat "${S16_HARD_GN_MODE}" 2>/dev/null || echo "low")"
+	if [[ ${mode} == "degraded" ]]; then
+		echo '{"error":"index missing"}' >&2
+		exit 2
+	fi
+	echo '{"risk":"LOW"}'
+	exit 0
+fi
+exit 0
+MOCK
+chmod +x "${S16_HARD_BIN}/uv" "${S16_HARD_BIN}/ocr" "${S16_HARD_BIN}/node"
+
+export S16_HARD_OCR_MODE="${TEST_DIR}/s16-hard-ocr.mode"
+export S16_HARD_OCR_LOG="${TEST_DIR}/s16-hard-ocr.log"
+export S16_HARD_GN_MODE="${TEST_DIR}/s16-hard-gn.mode"
+printf 'clean\n' >"${S16_HARD_OCR_MODE}"
+printf 'low\n' >"${S16_HARD_GN_MODE}"
+: >"${S16_HARD_OCR_LOG}"
+export HOME="${S16_HARD_HOME}"
+"${CTL_SCRIPT}" install --pilot >/dev/null 2>&1
+
+git init -q --bare "${S16_HARD_BARE}"
+git init -q "${S16_HARD_SEED}"
+git -C "${S16_HARD_SEED}" config user.email "test@example.com"
+git -C "${S16_HARD_SEED}" config user.name "Test"
+mkdir -p "${S16_HARD_SEED}/.gitnexus"
+cat >"${S16_HARD_SEED}/.gitnexus/run.cjs" <<'EOF'
+// placeholder
+EOF
+cat >"${S16_HARD_SEED}/Makefile" <<'EOF'
+test:
+	@python3 -m unittest discover -s tests -p "test_*.py" -q
+EOF
+cat >"${S16_HARD_SEED}/pyproject.toml" <<'EOF'
+[project]
+name = "ctrld-sync-hardening-fixture"
+version = "0.1.0"
+EOF
+touch "${S16_HARD_SEED}/uv.lock"
+printf 'def helper():\n    return 1\n' >"${S16_HARD_SEED}/src/mod.py"
+printf 'import unittest\nfrom src.mod import helper\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        self.assertEqual(helper(), 1)\n' >"${S16_HARD_SEED}/tests/test_mod.py"
+git -C "${S16_HARD_SEED}" add .
+git -C "${S16_HARD_SEED}" commit -q -m "hardening seed"
+git -C "${S16_HARD_SEED}" branch -M main
+git -C "${S16_HARD_SEED}" remote add origin "${S16_HARD_BARE}"
+git -C "${S16_HARD_SEED}" push -q -u origin main
+git --git-dir="${S16_HARD_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S16_HARD_BARE}" "${S16_HARD_CLONE}"
+git -C "${S16_HARD_CLONE}" remote set-head origin -a >/dev/null 2>&1
+
+# (1) T1 + CodeRabbit axmu: SECURITY_REPORT_ONLY exact digest takes precedence over today's digest even if today's mentions short_sha
+WT_HARD_SEC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def helper():\n    return 2\n' >"${WT_HARD_SEC}/src/mod.py"
+git -C "${WT_HARD_SEC}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "fix: harden mod"
+SEC_HEAD_SHORT="$(git -C "${WT_HARD_SEC}" rev-parse --short=7 HEAD)"
+cat >"${S16_HARD_REPORTS}/2026-12-10-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-10 - ctrld-sync)
+
+- Status: SECURITY_REPORT_ONLY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_SEC}
+EOF
+cat >"${S16_HARD_REPORTS}/2026-12-11-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-11 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Note: mentions commit ${SEC_HEAD_SHORT} on another branch proactive/other
+- Worktree: ${S16_HARD_WT}/proactive-ctrld-sync-nonexistent
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-10-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-11-ctrld-sync.md"
+
+: >"${S16_HARD_OCR_LOG}"
+: >"${S16_CR_LOG}"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge enforces exact SECURITY_REPORT_ONLY digest over today short-sha match" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-11 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "privacy gate kept cloud ocr review and coderabbit skipped despite code-health lens" \
+	bash -c "test ! -s '${S16_HARD_OCR_LOG}' && test ! -s '${S16_CR_LOG}'"
+
+# Remove WT_HARD_SEC cleanly after verifying privacy gate
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_SEC}" >/dev/null 2>&1 || rm -rf "${WT_HARD_SEC}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (2) T9 + CodeRabbit axm9: empty '{}' OCR payload and degraded GitNexus fail closed to JUDGE_ESCALATE_HUMAN
+WT_HARD_E="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def helper():\n    return 3\n' >"${WT_HARD_E}/src/mod.py"
+printf 'import unittest\nfrom src.mod import helper\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        self.assertEqual(helper(), 3)\n' >"${WT_HARD_E}/tests/test_mod.py"
+git -C "${WT_HARD_E}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "chore: update helper and test"
+# Run verify with --allow-test-edits to test T2 persistence
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "verify --allow-test-edits persists override flags (T2)" 0 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_E}" --lens code-health --test-cmd "true" --allow-test-edits
+
+printf 'empty\n' >"${S16_HARD_OCR_MODE}"
+printf 'degraded\n' >"${S16_HARD_GN_MODE}"
+cat >"${S16_HARD_REPORTS}/2026-12-12-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-12 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_E}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-12-ctrld-sync.md"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge escalates on degraded GitNexus & empty OCR '{}' (never JUDGE_PASS_ROUTINE)" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-12 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "judge recorded T2 verify_probe_rc=0, ocr=degraded, gitnexus_degraded=True, and JUDGE_ESCALATE_HUMAN" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_E}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+assert w[0]["tier1"]["verify_probe_rc"] == 0, w[0]
+assert w[0]["tier1"]["gitnexus_degraded"] is True, w[0]
+assert w[0]["ocr_review"] == "degraded", w[0]
+PYTEST
+
+# (3) T3 + T10: dirty GATE_FAILURE base-check cleared -> fingerprinted JUDGED, invalidated upon subsequent dirty edit
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_E}" >/dev/null 2>&1 || rm -rf "${WT_HARD_E}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# Break test on base and sync S16_HARD_CLONE BEFORE prepare so base_sha genuinely fails tests (PRE_EXISTING_ON_BASE)
+printf 'def helper():\n    return 99\n' >"${S16_HARD_SEED}/src/mod.py"
+git -C "${S16_HARD_SEED}" commit -aq -m "break test on base"
+git -C "${S16_HARD_SEED}" push -q origin main
+git -C "${S16_HARD_CLONE}" fetch -q origin main
+git -C "${S16_HARD_CLONE}" reset -q --hard origin/main
+
+WT_HARD_D="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens bolt --worktree-root "${S16_HARD_WT}")"
+printf '# unrelated dirty edit on already-broken base\n' >>"${WT_HARD_D}/src/mod.py"
+cat >"${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-13 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: bolt
+- Worktree: ${WT_HARD_D}
+- Verification Receipt:
+  - \`\`\`sh
+    make test
+    \`\`\`
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge transitions dirty cleared GATE_FAILURE candidate to fingerprinted JUDGED" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-13 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check_grep "dirty cleared GATE_FAILURE reports judged_now=1 and judged_open=1" "^judged_open=1$" "${TEST_DIR}/check.log"
+check "ledger confirms PRE_EXISTING_ON_BASE classification for dirty cleared candidate" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_D}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[0]
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+PYTEST
+
+printf '# further dirty mutation\n' >>"${WT_HARD_D}/src/mod.py"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "mutating dirty worktree invalidates fingerprinted JUDGED back to UNJUDGED" 5 \
+	"${WT_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S16_HARD_WT}" \
+	--include-worktrees --repo-path "${S16_HARD_CLONE}" --max-open 1
+
+# (3b) Devin bbJX & b576 & b5-U: append level-1 '# Reviewer notes' after Judge Evaluation, commit revision, re-run without --force-rejudge
+printf '\n# Reviewer notes\nManual check verified base failure.\n' >>"${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md"
+printf 'clean\n' >"${S16_HARD_OCR_MODE}"
+printf 'low\n' >"${S16_HARD_GN_MODE}"
+printf 'def helper():\n    return 1\n' >"${WT_HARD_D}/src/mod.py"
+git -C "${WT_HARD_D}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "fix mod helper on candidate branch"
+HEAD_HARD_D_REV="$(git -C "${WT_HARD_D}" rev-parse HEAD)"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge re-evaluates new commit and replaces stale Judge Evaluation block without --force-rejudge" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-13 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "digest Judge Evaluation updated in-place preserving '# Reviewer notes' without stale Action" \
+	python3 - "${S16_HARD_REPORTS}/2026-12-13-ctrld-sync.md" "${HEAD_HARD_D_REV}" <<'PYTEST'
+import pathlib, re, sys
+txt = pathlib.Path(sys.argv[1]).read_text()
+new_sha = sys.argv[2]
+assert txt.count("## Judge Evaluation") == 1, txt
+assert "- ```sh\n    make test\n    ```" in txt, txt
+assert "# Reviewer notes\nManual check verified base failure." in txt, txt
+judge_blk = [b for b in re.split(r"(?m)(?=^#{1,2}\s)", txt) if b.startswith("## Judge Evaluation")][0]
+assert f"- Head SHA: {new_sha}" in judge_blk, judge_blk
+assert "- Verdict: JUDGE_PASS_ROUTINE" in judge_blk, judge_blk
+action_lines = [ln for ln in judge_blk.splitlines() if ln.strip().startswith("- Action:")]
+assert action_lines and "- Action: promote | reject | expire" in action_lines[0] and len(action_lines) == 1, judge_blk
+PYTEST
+
+# (4) CodeRabbit axnE: SECURITY_REPORT_ONLY with 0 active worktrees deduplicates NO_WORKTREE cleanly across re-runs
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_D}" >/dev/null 2>&1 || rm -rf "${WT_HARD_D}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+cat >"${S16_HARD_REPORTS}/2026-12-14-ctrld-sync.md" <<'EOF'
+# Proactive Sweep Digest (2026-12-14 - ctrld-sync)
+
+- Status: SECURITY_REPORT_ONLY
+- Substatus: NONE
+- Lens: sentinel
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-14-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "first judge run annotates NO_WORKTREE SECURITY_REPORT_ONLY" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-14 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "second judge run dedupes NO_WORKTREE Judge Evaluation header" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-14 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "NO_WORKTREE digest contains exactly one ## Judge Evaluation section" \
+	python3 - "${S16_HARD_REPORTS}/2026-12-14-ctrld-sync.md" <<'PYTEST'
+import pathlib, sys
+txt = pathlib.Path(sys.argv[1]).read_text()
+assert txt.count("## Judge Evaluation") == 1, txt
+assert "- Head SHA: NO_WORKTREE" in txt, txt
+PYTEST
+
+# (5) Devin bbHG: preflight exit 7 on an early repo escalates that repo without aborting later healthy repos
+S16_HARD_ESP_BARE="${TEST_DIR}/s16-hard-esp.git"
+S16_HARD_ESP_SEED="${TEST_DIR}/s16-hard-esp-seed"
+S16_HARD_ESP_CLONE="${S16_HARD_REPOS}/email-security-pipeline"
+mkdir -p "${S16_HARD_ESP_SEED}/src"
+git init -q --bare "${S16_HARD_ESP_BARE}"
+git init -q "${S16_HARD_ESP_SEED}"
+git -C "${S16_HARD_ESP_SEED}" config user.email "test@example.com"
+git -C "${S16_HARD_ESP_SEED}" config user.name "Test"
+cat >"${S16_HARD_ESP_SEED}/Makefile" <<'EOF'
+test:
+	@true
+EOF
+printf 'VALUE = 1\n' >"${S16_HARD_ESP_SEED}/src/svc.py"
+git -C "${S16_HARD_ESP_SEED}" add .
+git -C "${S16_HARD_ESP_SEED}" commit -q -m "esp hard seed"
+git -C "${S16_HARD_ESP_SEED}" branch -M main
+git -C "${S16_HARD_ESP_SEED}" remote add origin "${S16_HARD_ESP_BARE}"
+git -C "${S16_HARD_ESP_SEED}" push -q -u origin main
+git --git-dir="${S16_HARD_ESP_BARE}" symbolic-ref HEAD refs/heads/main
+git clone -q "${S16_HARD_ESP_BARE}" "${S16_HARD_ESP_CLONE}"
+git -C "${S16_HARD_ESP_CLONE}" remote set-head origin -a >/dev/null 2>&1
+mkdir -p "${S16_HARD_ESP_CLONE}/.venv/bin"
+cat >"${S16_HARD_ESP_CLONE}/.venv/bin/python3" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "-m" && "$2" == "pytest" ]]; then
+	echo "pytest 8.0.0"
+	exit 0
+fi
+exec "${S16_REAL_PY3}" "$@"
+MOCK
+ln -sf "${S16_MOCK_BIN}/ruff" "${S16_HARD_ESP_CLONE}/.venv/bin/ruff"
+chmod +x "${S16_HARD_ESP_CLONE}/.venv/bin/python3"
+
+WT_HARD_MISS_TC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra():\n    return 2\n' >"${WT_HARD_MISS_TC}/src/extra.py"
+git -C "${WT_HARD_MISS_TC}" add src/extra.py
+git -C "${WT_HARD_MISS_TC}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra"
+# Remove uv.lock from S16_HARD_CLONE clone 1 so preflight exits 7, while clone 2 of ctrld-sync retains uv.lock
+rm -f "${S16_HARD_CLONE}/uv.lock"
+S16_HARD_CLONE2="${TEST_DIR}/s16-hard-ctrld-clone2"
+git clone -q "${S16_HARD_BARE}" "${S16_HARD_CLONE2}"
+git -C "${S16_HARD_CLONE2}" remote set-head origin -a >/dev/null 2>&1
+WT_HARD_CLONE2="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE2}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra2():\n    return 3\n' >"${WT_HARD_CLONE2}/src/extra2.py"
+git -C "${WT_HARD_CLONE2}" add src/extra2.py
+git -C "${WT_HARD_CLONE2}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra2"
+
+WT_HARD_ESP="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/email-security-pipeline --repo-path "${S16_HARD_ESP_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'VALUE = 2\n' >"${WT_HARD_ESP}/src/svc.py"
+git -C "${WT_HARD_ESP}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "update svc"
+
+cat >"${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-15 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_MISS_TC}
+EOF
+cat >"${S16_HARD_REPORTS}/2026-12-17-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-17 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_CLONE2}
+EOF
+cat >"${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md" <<EOF
+# Proactive Sweep Digest (2026-12-15 - email-security-pipeline)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_ESP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-15-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-17-ctrld-sync.md" "${S16_HARD_REPORTS}/2026-12-15-email-security-pipeline.md"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "multi-repo judge isolates preflight exit 7 per clone and continues to email-security-pipeline" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --repo email-security-pipeline --date 2026-12-15 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ctrld-sync clone 1 escalated with PREFLIGHT_MISSING_TOOLCHAIN while clone 2 and email-security-pipeline passed cleanly" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_MISS_TC}" "${WT_HARD_CLONE2}" "${WT_HARD_ESP}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+cs1 = [r for r in rows if r.get("worktree") == sys.argv[2]]
+cs2 = [r for r in rows if r.get("worktree") == sys.argv[3]]
+esp = [r for r in rows if r.get("worktree") == sys.argv[4]]
+assert len(cs1) == 1 and cs1[0]["subreason"] == "PREFLIGHT_MISSING_TOOLCHAIN", cs1
+assert len(cs2) == 1 and cs2[0]["verdict"] == "JUDGE_PASS_ROUTINE", cs2
+assert len(esp) == 1 and esp[0]["verdict"] == "JUDGE_PASS_ROUTINE", esp
+PYTEST
+git -C "${S16_HARD_CLONE2}" worktree remove --force "${WT_HARD_CLONE2}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CLONE2}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_MISS_TC}" >/dev/null 2>&1 || rm -rf "${WT_HARD_MISS_TC}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (6) Devin cF5S: unreadable untracked file causing empty starting fingerprint prevents deletion even on Makefile JUDGE_REJECT
+if [[ $(id -u) -ne 0 ]]; then
+	touch "${S16_HARD_CLONE}/uv.lock"
+	WT_HARD_UNREAD="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+	printf '\t@echo tamper\n' >>"${WT_HARD_UNREAD}/Makefile"
+	git -C "${WT_HARD_UNREAD}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "tamper Makefile with unreadable file"
+	printf 'secret note\n' >"${WT_HARD_UNREAD}/unreadable.log"
+	chmod 000 "${WT_HARD_UNREAD}/unreadable.log"
+	cat >"${S16_HARD_REPORTS}/2026-12-16-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-16 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_UNREAD}
+EOF
+	chmod 600 "${S16_HARD_REPORTS}/2026-12-16-ctrld-sync.md"
+	PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge escalates without deleting worktree when fingerprint fails on unreadable file" 0 \
+		"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-16 \
+		--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+	check "unreadable-fingerprint worktree preserved on disk despite Makefile tamper" test -d "${WT_HARD_UNREAD}"
+	check "ledger recorded WORKTREE_IDENTITY_UNVERIFIED JUDGE_ESCALATE_HUMAN" \
+		python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_UNREAD}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+u = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(u) == 1, rows
+assert u[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", u[0]
+assert u[0]["subreason"] == "WORKTREE_IDENTITY_UNVERIFIED", u[0]
+PYTEST
+	chmod 600 "${WT_HARD_UNREAD}/unreadable.log" || true
+fi
+
+# (7) CodeRabbit cgNi + cgOG: base-check prereq failure returns exit 6 (BASE_PREREQ_FAILED) & null lrc review is degraded
+WT_HARD_PREREQ="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+touch "${WT_HARD_PREREQ}/cand_prereq.ok"
+check_exit "base-check exits 6 (BASE_PREREQ_FAILED) when prerequisite stage fails on base" 6 \
+	"${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_PREREQ}" --test-cmd "test -f cand_prereq.ok && false"
+check_grep "base-check prints BASE_PREREQ_FAILED verdict" "^VERDICT: BASE_PREREQ_FAILED$" "${TEST_DIR}/check.log"
+check "parse_lrc_review rejects empty and JSON null outputs as degraded" \
+	python3 - "${CTL_SCRIPT}" <<'PYTEST'
+import pathlib, re, sys
+src = pathlib.Path(sys.argv[1]).read_text()
+m = re.search(r"(def parse_lrc_review\(.*?\n)(?=\nhad_preflight_failure)", src, re.S)
+assert m, "parse_lrc_review not found"
+ns = {"json": __import__("json")}
+exec(m.group(1), ns)
+fn = ns["parse_lrc_review"]
+assert fn("", 0)[0] == "degraded"
+assert fn("null", 0)[0] == "degraded"
+assert fn("{}", 0)[0] == "degraded"
+assert fn('{"findings":[]}', 0)[0] == "completed"
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_PREREQ}" >/dev/null 2>&1 || rm -rf "${WT_HARD_PREREQ}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (8) Devin c_A2: cached BASE_PREREQ_FAILED in digest must still set base_check_escalate (BASE_CHECK_UNUSABLE)
+WT_HARD_CACHED_FAIL="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra3():\n    return 4\n' >"${WT_HARD_CACHED_FAIL}/src/extra3.py"
+git -C "${WT_HARD_CACHED_FAIL}" add src/extra3.py
+git -C "${WT_HARD_CACHED_FAIL}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra3"
+CACHED_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_CACHED_FAIL}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-18 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_CACHED_FAIL}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_CACHED_FAIL}
+- Content Fingerprint: ${CACHED_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge escalates cached BASE_PREREQ_FAILED as BASE_CHECK_UNUSABLE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-18 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records BASE_CHECK_UNUSABLE for cached BASE_PREREQ_FAILED" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CACHED_FAIL}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
+PYTEST
+# Devin d_w: --force-rejudge bypasses cached BASE_PREREQ_FAILED and replaces it via live base-check
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge --force-rejudge bypasses cached BASE_PREREQ_FAILED and runs live base-check" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-18 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}" --force-rejudge
+check "ledger records live base-check recovery (PRE_EXISTING_ON_BASE / JUDGE_PASS_ROUTINE) after --force-rejudge" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CACHED_FAIL}" "${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 2, rows
+assert w[1]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[1]
+assert w[1]["verdict"] == "JUDGE_PASS_ROUTINE", w[1]
+digest_txt = pathlib.Path(sys.argv[3]).read_text()
+assert digest_txt.count("## Base-Check Classification") == 2, digest_txt
+assert "- Verdict: PRE_EXISTING_ON_BASE" in digest_txt, digest_txt
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CACHED_FAIL}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CACHED_FAIL}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (9) Devin dLLi: newest matching Base-Check Classification supersedes an earlier BASE_PREREQ_FAILED for the same fingerprint
+WT_HARD_NEWEST="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra4():\n    return 5\n' >"${WT_HARD_NEWEST}/src/extra4.py"
+git -C "${WT_HARD_NEWEST}" add src/extra4.py
+git -C "${WT_HARD_NEWEST}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra4"
+NEWEST_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_NEWEST}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-19-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-19 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_NEWEST}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_NEWEST}
+- Content Fingerprint: ${NEWEST_FP}
+
+## Base-Check Classification
+
+- Verdict: PRE_EXISTING_ON_BASE
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_NEWEST}
+- Content Fingerprint: ${NEWEST_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-19-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge reuses newest Base-Check Classification over earlier BASE_PREREQ_FAILED" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-19 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records PRE_EXISTING_ON_BASE (not BASE_CHECK_UNUSABLE) from newest classification" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_NEWEST}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[0]
+assert w[0]["subreason"] != "BASE_CHECK_UNUSABLE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_NEWEST}" >/dev/null 2>&1 || rm -rf "${WT_HARD_NEWEST}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (10) Devin dg-R: truncated open PR listing skips Tier 2 cloud reviewers while subreason is OPEN_PR_COLLISIONS_UNVERIFIED
+S16_TRUNC_BIN="${TEST_DIR}/s16-trunc-bin"
+mkdir -p "${S16_TRUNC_BIN}"
+cat >"${S16_TRUNC_BIN}/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "pr" && "$2" == "list" ]]; then
+	echo '[{"number":99,"title":"big pr","isDraft":false,"createdAt":"2026-11-26T00:00:00Z","changedFiles":5,"files":[{"path":"other.py"}]}]'
+	exit 0
+fi
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+	echo "Logged in to github.com as test"
+	exit 0
+fi
+exit 0
+MOCK
+chmod +x "${S16_TRUNC_BIN}/gh"
+WT_HARD_TRUNC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_trunc():\n    return 6\n' >"${WT_HARD_TRUNC}/src/extra_trunc.py"
+git -C "${WT_HARD_TRUNC}" add src/extra_trunc.py
+git -C "${WT_HARD_TRUNC}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_trunc"
+cat >"${S16_HARD_REPORTS}/2026-12-20-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-20 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_TRUNC}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-20-ctrld-sync.md"
+: >"${S16_HARD_OCR_LOG}"
+: >"${S16_CR_LOG}"
+PATH="${S16_TRUNC_BIN}:${S16_HARD_BIN}:${PATH}" check_exit "judge skips Tier 2 when PR collision listing is truncated (exit 5)" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-20 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "truncated PR collisions skipped cloud ocr review and coderabbit" \
+	bash -c "test ! -s '${S16_HARD_OCR_LOG}' && test ! -s '${S16_CR_LOG}'"
+check "ledger records OPEN_PR_COLLISIONS_UNVERIFIED with skipped Tier 2" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_TRUNC}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["subreason"] == "OPEN_PR_COLLISIONS_UNVERIFIED", w[0]
+assert w[0]["ocr_review"] == "skipped" and w[0]["coderabbit"] == "skipped", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_TRUNC}" >/dev/null 2>&1 || rm -rf "${WT_HARD_TRUNC}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (11) CodeRabbit #6: verify --allow-test-edits run BEFORE commit persists via verify_tree_sha across commit
+WT_HARD_PRECOMMIT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def helper():\n    return 77\n' >"${WT_HARD_PRECOMMIT}/src/mod.py"
+printf 'import unittest\nfrom src.mod import helper\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        self.assertEqual(helper(), 77)\n' >"${WT_HARD_PRECOMMIT}/tests/test_mod.py"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "verify before commit records verify_tree_sha" 0 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_PRECOMMIT}" --lens code-health --test-cmd "true" --allow-test-edits
+git -C "${WT_HARD_PRECOMMIT}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "commit tested tree after verify"
+cat >"${S16_HARD_REPORTS}/2026-12-21-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-21 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_PRECOMMIT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-21-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge honors verify --allow-test-edits across exact-tree commit" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-21 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records JUDGE_PASS_ROUTINE for pre-commit verified tree" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_PRECOMMIT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["verify_probe_rc"] == 0, w[0]
+assert w[0]["verdict"] == "JUDGE_PASS_ROUTINE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_PRECOMMIT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_PRECOMMIT}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (12) CodeRabbit #2: per-symbol CRITICAL test reference check escalates when CRITICAL alpha has 0 refs even if LOW beta is tested
+S16_CRIT_BIN="${TEST_DIR}/s16-crit-bin"
+mkdir -p "${S16_CRIT_BIN}"
+cat >"${S16_CRIT_BIN}/node" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"run.cjs impact alpha"* ]]; then
+	echo '{"risk":"CRITICAL"}'
+	exit 0
+fi
+if [[ "$*" == *"run.cjs impact"* ]]; then
+	echo '{"risk":"LOW"}'
+	exit 0
+fi
+exit 0
+MOCK
+chmod +x "${S16_CRIT_BIN}/node"
+WT_HARD_CRIT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def alpha():\n    return 1\ndef beta():\n    return 2\n' >"${WT_HARD_CRIT}/src/crit_mod.py"
+printf 'import unittest\nfrom src.crit_mod import beta\n\nclass T2(unittest.TestCase):\n    def test_beta(self):\n        self.assertEqual(beta(), 2)\n' >"${WT_HARD_CRIT}/tests/test_crit.py"
+git -C "${WT_HARD_CRIT}" add src/crit_mod.py tests/test_crit.py
+git -C "${WT_HARD_CRIT}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add alpha and beta"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_CRIT}" --lens code-health --test-cmd "true" --allow-test-edits >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-22-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-22 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_CRIT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-22-ctrld-sync.md"
+PATH="${S16_CRIT_BIN}:${S16_HARD_BIN}:${PATH}" check_exit "judge escalates untested CRITICAL symbol even when LOW symbol has test refs" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-22 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records CRITICAL_UNTESTED_BLAST_RADIUS when CRITICAL alpha has zero test refs" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CRIT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+assert w[0]["subreason"] == "CRITICAL_UNTESTED_BLAST_RADIUS", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CRIT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CRIT}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (13) Devin 2aXB + 2aVg: BASE_CHECK_UNUSABLE auto-retries online without --force-rejudge,
+#      and failing verify --test-cmd saves custom command bound to verify_tree_sha
+WT_HARD_RETRY="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra5():\n    return 8\n' >"${WT_HARD_RETRY}/src/extra5.py"
+git -C "${WT_HARD_RETRY}" add src/extra5.py
+git -C "${WT_HARD_RETRY}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra5"
+RETRY_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_RETRY}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-23-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-23 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_RETRY}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_RETRY}
+- Content Fingerprint: ${RETRY_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-23-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "initial judge marks BASE_PREREQ_FAILED as BASE_CHECK_UNUSABLE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-23 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "next online judge retries BASE_CHECK_UNUSABLE without --force-rejudge" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-23 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "online retry bypassed cached BASE_PREREQ_FAILED and cleared candidate" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_RETRY}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 2, rows
+assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
+assert w[1]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[1]
+assert w[1]["verdict"] == "JUDGE_PASS_ROUTINE", w[1]
+PYTEST
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "failing custom verify --test-cmd exits 1 while persisting command" 1 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_RETRY}" --lens code-health --test-cmd "false"
+check "verify persisted failing custom test command and verify_tree_sha" \
+	python3 - "${WT_HARD_RETRY}" <<'PYTEST'
+import json, pathlib, subprocess, sys
+gd = subprocess.check_output(["git", "-C", sys.argv[1], "rev-parse", "--git-dir"], text=True).strip()
+meta = json.loads((pathlib.Path(gd) / "proactive-meta.json").read_text())
+assert meta.get("verify_custom_test_cmd") == "false", meta
+assert meta.get("verify_custom_test_rc") == 1, meta
+assert meta.get("verify_tree_sha"), meta
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_RETRY}" >/dev/null 2>&1 || rm -rf "${WT_HARD_RETRY}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (14) Devin 29UT + 29TH: dirty UNJUDGED BASE_CHECK_UNUSABLE retries online without --force-rejudge,
+#      and failed custom --test-cmd with 'cd ... && ...' replays as a single shell invocation
+WT_HARD_DIRTY_RETRY="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf '# dirty retry line\n' >>"${WT_HARD_DIRTY_RETRY}/src/mod.py"
+DIRTY_RETRY_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_DIRTY_RETRY}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-24-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-24 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_DIRTY_RETRY}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_DIRTY_RETRY}
+- Content Fingerprint: ${DIRTY_RETRY_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-24-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "dirty candidate initially records BASE_CHECK_UNUSABLE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-24 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "next online judge retries dirty UNJUDGED BASE_CHECK_UNUSABLE without --force-rejudge" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-24 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "dirty candidate online retry bypassed cached BASE_PREREQ_FAILED" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_DIRTY_RETRY}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 2, rows
+assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
+assert w[1]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[1]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_DIRTY_RETRY}" >/dev/null 2>&1 || rm -rf "${WT_HARD_DIRTY_RETRY}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+WT_HARD_CDCMD="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf '# cd regression test edit\n' >>"${WT_HARD_CDCMD}/src/mod.py"
+printf 'cand marker\n' >"${WT_HARD_CDCMD}/src/only_in_cand.marker"
+cat >"${S16_HARD_REPORTS}/2026-12-25-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-25 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_CDCMD}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-25-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "custom 'cd src && ...' fails candidate verification while persisting command" 1 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_CDCMD}" --lens code-health --test-cmd "cd src && test -f mod.py && test ! -f only_in_cand.marker"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge replays custom 'cd src && ...' as single shell and detects CAUSED_BY_CHANGE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-25 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records BASE_CHECK_CAUSED_BY_CHANGE JUDGE_REJECT for 'cd ... && ...' command" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CDCMD}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "CAUSED_BY_CHANGE", w[0]
+assert w[0]["verdict"] == "JUDGE_REJECT", w[0]
+assert w[0]["subreason"] == "BASE_CHECK_CAUSED_BY_CHANGE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CDCMD}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CDCMD}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (14) Devin 4721723707: is-active timeout (rc=124) fails closed as active,
+#      while confirmed inactive worktree (rc=1) is skipped
+S16_ACT_DIR="${TEST_DIR}/s16-act-dir"
+mkdir -p "${S16_ACT_DIR}"
+cp "${CTL_SCRIPT}" "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
+chmod +x "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
+WT_HARD_TO="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_to():\n    return 10\n' >"${WT_HARD_TO}/src/extra_to.py"
+git -C "${WT_HARD_TO}" add src/extra_to.py
+git -C "${WT_HARD_TO}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_to"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_TO}" --lens code-health --test-cmd "true" >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-26-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-26 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_TO}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-26-ctrld-sync.md"
+
+WT_HARD_INACT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_inact():\n    return 11\n' >"${WT_HARD_INACT}/src/extra_inact.py"
+git -C "${WT_HARD_INACT}" add src/extra_inact.py
+git -C "${WT_HARD_INACT}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_inact"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_INACT}" --lens code-health --test-cmd "true" >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-27-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-27 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_INACT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-27-ctrld-sync.md"
+
+cat >"${S16_ACT_DIR}/proactive-worktree.sh" <<MOCK
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "is-active" ]]; then
+	wt_arg=""
+	shift || true
+	while [[ \$# -gt 0 ]]; do
+		case "\$1" in
+		--worktree)
+			wt_arg="\${2:-}"
+			shift 2
+			;;
+		*)
+			shift
+			;;
+		esac
+	done
+	if [[ "\${wt_arg}" == "${WT_HARD_TO}" ]]; then
+		exit 124
+	fi
+	if [[ "\${wt_arg}" == "${WT_HARD_INACT}" ]]; then
+		exit 1
+	fi
+fi
+exec "${WT_SCRIPT}" "\$@"
+MOCK
+chmod +x "${S16_ACT_DIR}/proactive-worktree.sh"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge fails closed on is-active timeout (rc=124) and skips inactive (rc=1)" 0 \
+	"${S16_ACT_DIR}/antigravity-proactive-ctl.sh" judge --repo ctrld-sync --date 2026-12-26 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger evaluates timeout candidate and skips confirmed inactive candidate" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_TO}" "${WT_HARD_INACT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+to_rows = [r for r in rows if r.get("worktree") == sys.argv[2]]
+inact_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(to_rows) == 1, f"expected timeout worktree to fail closed as active: {to_rows}"
+assert len(inact_rows) == 0, f"expected confirmed inactive worktree to be skipped: {inact_rows}"
+PYTEST
+rm -rf "${S16_ACT_DIR}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_TO}" >/dev/null 2>&1 || rm -rf "${WT_HARD_TO}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_INACT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_INACT}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

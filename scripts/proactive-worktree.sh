@@ -13,6 +13,10 @@
 
 set -Eeuo pipefail
 
+# Clear inherited repository-location variables so every git -C call resolves the target path.
+unset GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE \
+	GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
+
 DEFAULT_WT_ROOT="${HOME}/.gemini/antigravity/worktrees"
 PATCH_ID_CACHE_DIR=""
 VERBATIM_PATCH_ID_CHECKED=0
@@ -44,8 +48,10 @@ usage() {
 Usage:
   proactive-worktree.sh prepare [--repo <owner/name|name>] --repo-path <dir> --lens <lens> [--worktree-root <dir>] [--mode <local|draft-pr>]
   proactive-worktree.sh verify --worktree <dir> [--lens <lens>] [--test-cmd <cmd>] [--numeric-check-cmd <cmd>] [--allow-harness-changes] [--allow-test-edits] [--expected-test-count <n>]
-  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees]
-  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees]
+  proactive-worktree.sh check-collisions --repo <owner/name> --file <relpath> [--file <relpath> ...] [--repo-path <dir>] [--include-worktrees] [--exclude-worktree <dir>]
+  proactive-worktree.sh check-throttle --repo <owner/name> [--worktree-root <dir>] [--max-open <n>] [--max-judged-open <n>] [--max-age-days <days>] [--now-epoch <sec>] [--repo-path <dir>] [--include-worktrees] [--auto-expire]
+  proactive-worktree.sh set-state --worktree <dir> --state <UNJUDGED|JUDGED|EXPIRED|REJECTED> [--verdict <verdict>] [--subreason <reason>] [--expected-head <sha>] [--allow-dirty-fingerprint] [--expected-dirty-fingerprint <sha256>]
+  proactive-worktree.sh reopen --worktree <dir>
   proactive-worktree.sh cleanup [--worktree-root <dir>] [--ttl-days <days>] [--prune-merged]
   proactive-worktree.sh preflight --repo <owner/name> --repo-path <dir> [--worktree-root <dir>] [--auto-heal] [--skip-fetch]
   proactive-worktree.sh print-test-cmd --repo-name <name>
@@ -629,6 +635,7 @@ meta = {
     "lens": sys.argv[6],
     "mode": sys.argv[7],
     "created_at": sys.argv[8],
+    "lifecycle_state": "UNJUDGED",
 }
 meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 PY
@@ -787,7 +794,13 @@ PY
 		echo "[ERROR] No undefined-name checker available (tried ruff, uv run ruff, repo .venv, pyflakes); refusing to emit a pass from the AST parse floor alone. Install the pinned linter (python3 -m pip install -r requirements.txt, which carries ruff) and re-run." >&2
 		return 2
 	fi
-	(cd "${wt_path}" && env -u VIRTUAL_ENV "${F82_CMD[@]}" "$@")
+	local f82_rc=0
+	(cd "${wt_path}" && env -u VIRTUAL_ENV "${F82_CMD[@]}" "$@") || f82_rc=$?
+	if [[ ${f82_rc} -ge 2 ]]; then
+		echo "[ERROR] Undefined-name checker execution failed (exit ${f82_rc}); refusing to misclassify as a candidate policy violation." >&2
+		return 2
+	fi
+	return "${f82_rc}"
 }
 
 # Semantic test-coverage gate: a hunk that applies cleanly can still delete
@@ -943,6 +956,7 @@ cmd_verify() {
 	local allow_harness=0
 	local allow_tests=0
 	local expected_test_count=""
+	local probe_only=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -973,6 +987,10 @@ cmd_verify() {
 		--expected-test-count)
 			expected_test_count="$2"
 			shift 2
+			;;
+		--probe-only)
+			probe_only=1
+			shift
 			;;
 		*)
 			echo "[ERROR] Unknown flag for verify: $1" >&2
@@ -1068,6 +1086,7 @@ cmd_verify() {
 		echo "[WARN] --expected-test-count given but no Python test file changed; the semantic gate had nothing to enforce" >&2
 	fi
 
+	local explicit_test_cmd="${test_cmd}"
 	if [[ -z ${test_cmd} ]]; then
 		test_cmd="$(default_test_cmd_for_repo "${repo_name}")"
 	fi
@@ -1086,13 +1105,84 @@ cmd_verify() {
 		fi
 	fi
 
+	local v_test_rc=0
 	(
-		cd "${wt_path}"
-		"${py_env[@]}" bash -c "${test_cmd}"
-		if [[ -n ${numeric_cmd} ]]; then
-			"${py_env[@]}" bash -c "${numeric_cmd}"
+		cd "${wt_path}" &&
+			"${py_env[@]}" bash -c "${test_cmd}" &&
+			{ [[ -z ${numeric_cmd} ]] || "${py_env[@]}" bash -c "${numeric_cmd}"; }
+	) || v_test_rc=$?
+
+	local v_head="" v_tree=""
+	v_head="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+	if [[ ${probe_only} -eq 0 ]] && [[ -n ${v_head} ]] && [[ -f ${meta_file} ]]; then
+		local v_tmp_idx=""
+		v_tmp_idx="$(mktemp "${TMPDIR:-/tmp}/proactive-verify-idx.XXXXXX")"
+		rm -f "${v_tmp_idx}"
+		if GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" read-tree HEAD >/dev/null 2>&1; then
+			if GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" add -A >/dev/null 2>&1; then
+				v_tree="$(GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" write-tree 2>/dev/null || true)"
+			fi
 		fi
-	)
+		rm -f "${v_tmp_idx}"
+		python3 - "${meta_file}" "${v_head}" "${v_tree}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" "${explicit_test_cmd}" "${v_test_rc}" <<'PY'
+import fcntl
+import json
+import os
+import pathlib
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+head_sha = sys.argv[2]
+tree_sha = sys.argv[3]
+allow_tests = sys.argv[4] == "1"
+allow_harness = sys.argv[5] == "1"
+expected_count = sys.argv[6]
+custom_test_cmd = sys.argv[7]
+test_rc = int(sys.argv[8])
+
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    if allow_tests or allow_harness or expected_count or custom_test_cmd:
+        meta["verify_head_sha"] = head_sha
+        if tree_sha:
+            meta["verify_tree_sha"] = tree_sha
+        else:
+            meta.pop("verify_tree_sha", None)
+        meta["verify_allow_test_edits"] = allow_tests
+        meta["verify_allow_harness_changes"] = allow_harness
+        meta["verify_expected_test_count"] = expected_count
+        if custom_test_cmd:
+            meta["verify_custom_test_cmd"] = custom_test_cmd
+            meta["verify_custom_test_rc"] = test_rc
+        else:
+            meta.pop("verify_custom_test_cmd", None)
+            meta.pop("verify_custom_test_rc", None)
+    else:
+        meta.pop("verify_head_sha", None)
+        if custom_test_cmd:
+            meta["verify_custom_test_cmd"] = custom_test_cmd
+            meta["verify_custom_test_rc"] = test_rc
+        else:
+            meta.pop("verify_custom_test_cmd", None)
+            meta.pop("verify_custom_test_rc", None)
+        meta.pop("verify_tree_sha", None)
+        meta.pop("verify_allow_test_edits", None)
+        meta.pop("verify_allow_harness_changes", None)
+        meta.pop("verify_expected_test_count", None)
+
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
+PY
+	fi
+	if [[ ${v_test_rc} -ne 0 ]]; then
+		exit "${v_test_rc}"
+	fi
 }
 
 cmd_check_collisions() {
@@ -1100,6 +1190,7 @@ cmd_check_collisions() {
 	local repo_path=""
 	local include_worktrees=0
 	local target_files=()
+	local excluded_worktrees=()
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1118,6 +1209,14 @@ cmd_check_collisions() {
 		--include-worktrees)
 			include_worktrees=1
 			shift
+			;;
+		--exclude-worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] check-collisions: --exclude-worktree requires a value" >&2
+				exit 1
+			fi
+			excluded_worktrees+=("$2")
+			shift 2
 			;;
 		*)
 			echo "[ERROR] Unknown flag for check-collisions: $1" >&2
@@ -1150,6 +1249,13 @@ cmd_check_collisions() {
 		local main_top="" wt_list="" wt_line="" candidate_dir="" wt_git_dir="" wt_branch=""
 		local is_candidate=0
 		local candidate_dirs=()
+		local excluded_keys=()
+		local ex_wt="" ex_key=""
+		for ex_wt in ${excluded_worktrees[@]+"${excluded_worktrees[@]}"}; do
+			[[ -d ${ex_wt} ]] || continue
+			ex_key="$(git -C "${ex_wt}" rev-parse --absolute-git-dir 2>/dev/null || true)"
+			[[ -n ${ex_key} ]] && excluded_keys+=("${ex_key}")
+		done
 
 		main_top="$(git -C "${repo_path}" rev-parse --show-toplevel 2>/dev/null || true)"
 		# Enumerate first and check the status: a silently empty list would
@@ -1164,6 +1270,15 @@ cmd_check_collisions() {
 			candidate_dir="${wt_line#worktree }"
 			[[ -n ${candidate_dir} ]] || continue
 			[[ ${candidate_dir} == "${main_top}" ]] && continue
+			local cand_abs_git="" skip_excluded=0
+			cand_abs_git="$(git -C "${candidate_dir}" rev-parse --absolute-git-dir 2>/dev/null || true)"
+			for ex_key in ${excluded_keys[@]+"${excluded_keys[@]}"}; do
+				if [[ -n ${cand_abs_git} ]] && [[ ${cand_abs_git} == "${ex_key}" ]]; then
+					skip_excluded=1
+					break
+				fi
+			done
+			[[ ${skip_excluded} -eq 1 ]] && continue
 			is_candidate=0
 			wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
 			if [[ -n ${wt_git_dir} ]] && [[ -f ${wt_git_dir}/proactive-meta.json ]]; then
@@ -1184,7 +1299,7 @@ cmd_check_collisions() {
 			require_fresh_origin_ref "${repo_path}"
 		fi
 
-		local cand="" cand_base="" cand_paths="" cand_rel="" cand_dirty="" cand_branch=""
+		local cand="" cand_base="" cand_dirty="" cand_branch=""
 		for cand in ${candidate_dirs[@]+"${candidate_dirs[@]}"}; do
 			cand_dirty="$(git -C "${cand}" status --porcelain 2>/dev/null | head -1)"
 			# A candidate whose work already merged is not a collision: its paths
@@ -1204,20 +1319,14 @@ cmd_check_collisions() {
 				echo "[ERROR] candidate worktree ${cand} has no recorded base_sha; refusing to under-report collisions" >&2
 				exit 6
 			fi
-			cand_paths="$({
-				git -C "${cand}" diff --no-renames --name-only "${cand_base}" 2>/dev/null
-				git -C "${cand}" ls-files --others --exclude-standard 2>/dev/null
-			} | sort -u)"
-			while IFS= read -r cand_rel; do
-				[[ -n ${cand_rel} ]] || continue
-				wt_records+="${cand_rel}"$'\t'"${cand}"$'\t'"${cand_branch}"$'\n'
-			done <<<"${cand_paths}"
+			wt_records+="${cand}"$'\t'"${cand_base}"$'\t'"${cand_branch}"$'\n'
 		done
 	fi
 
 	python3 - "${prs_json}" "${wt_records}" "${target_files[@]}" <<'PY'
 import json
 import os
+import subprocess
 import sys
 
 prs = json.loads(sys.argv[1])
@@ -1251,10 +1360,27 @@ for line in wt_blob.splitlines():
     parts = line.split("\t")
     if len(parts) != 3:
         continue
-    rel, wt_dir, branch = parts[0].strip(), parts[1].strip(), parts[2].strip()
-    if os.path.normpath(rel) in targets:
+    wt_dir, cand_base, branch = parts[0], parts[1].strip(), parts[2].strip()
+    df = subprocess.run(
+        ["git", "-C", wt_dir, "diff", "--no-renames", "--name-only", "-z", cand_base],
+        capture_output=True,
+    )
+    ls = subprocess.run(
+        ["git", "-C", wt_dir, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    if df.returncode != 0 or ls.returncode != 0:
+        sys.stderr.write(f"[ERROR] unable to enumerate changed files for candidate worktree {wt_dir}\n")
+        sys.exit(6)
+    touched = {
+        os.path.normpath(os.fsdecode(part))
+        for raw in (df.stdout or b"", ls.stdout or b"")
+        for part in raw.split(b"\x00")
+        if part
+    }
+    for hit in sorted(touched & targets):
         label = f"branch {branch}" if branch else "detached HEAD"
-        collisions.append(f"COLLISION: live candidate worktree {wt_dir} ({label}) already touches {os.path.normpath(rel)}")
+        collisions.append(f"COLLISION: live candidate worktree {wt_dir} ({label}) already touches {hit}")
 
 if collisions:
     for message in collisions:
@@ -1486,14 +1612,353 @@ has_unreviewed_worktree_commits() {
 	return 0
 }
 
+cmd_set_state() {
+	local wt_path=""
+	local new_state=""
+	local verdict=""
+	local subreason=""
+	local expected_head=""
+	local allow_dirty_fp=0
+	local expected_dirty_fp=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --worktree requires a value" >&2
+				exit 1
+			fi
+			wt_path="$2"
+			shift 2
+			;;
+		--state)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --state requires a value" >&2
+				exit 1
+			fi
+			new_state="$2"
+			shift 2
+			;;
+		--verdict)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --verdict requires a value" >&2
+				exit 1
+			fi
+			verdict="$2"
+			shift 2
+			;;
+		--subreason)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --subreason requires a value" >&2
+				exit 1
+			fi
+			subreason="$2"
+			shift 2
+			;;
+		--expected-head)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --expected-head requires a value" >&2
+				exit 1
+			fi
+			expected_head="$2"
+			shift 2
+			;;
+		--allow-dirty-fingerprint)
+			allow_dirty_fp=1
+			shift
+			;;
+		--expected-dirty-fingerprint)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] set-state: --expected-dirty-fingerprint requires a value" >&2
+				exit 1
+			fi
+			expected_dirty_fp="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for set-state: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${wt_path} ]] || [[ ! -d ${wt_path} ]] || [[ -z ${new_state} ]]; then
+		echo "[ERROR] set-state requires an existing --worktree and --state" >&2
+		exit 1
+	fi
+
+	case "${new_state}" in
+	UNJUDGED | JUDGED | EXPIRED | REJECTED) ;;
+	*)
+		echo "[ERROR] Invalid --state '${new_state}' (expected UNJUDGED|JUDGED|EXPIRED|REJECTED)" >&2
+		exit 1
+		;;
+	esac
+
+	local wt_git_dir=""
+	wt_git_dir="$(git -C "${wt_path}" rev-parse --git-dir 2>/dev/null || true)"
+	if [[ -z ${wt_git_dir} ]] || [[ ! -f "${wt_git_dir}/proactive-meta.json" ]]; then
+		echo "[ERROR] set-state: missing proactive-meta.json for ${wt_path}" >&2
+		exit 1
+	fi
+
+	local dirty=""
+	dirty="$(git -C "${wt_path}" status --porcelain --untracked-files=all 2>/dev/null || echo "UNKNOWN")"
+	if [[ ${new_state} == "JUDGED" ]] && [[ -n ${dirty} ]] && [[ ${allow_dirty_fp} -eq 0 ]]; then
+		echo "[ERROR] set-state: refusing to mark dirty worktree as JUDGED: ${wt_path}" >&2
+		exit 2
+	fi
+
+	local head_sha=""
+	head_sha="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+	if [[ -z ${head_sha} ]]; then
+		echo "[ERROR] set-state: could not resolve HEAD for ${wt_path}" >&2
+		exit 1
+	fi
+	if [[ -n ${expected_head} ]] && [[ ${head_sha} != "${expected_head}" ]]; then
+		echo "[ERROR] set-state: HEAD moved during evaluation (expected ${expected_head}, got ${head_sha})" >&2
+		exit 2
+	fi
+
+	python3 - "${wt_git_dir}/proactive-meta.json" "${new_state}" "${head_sha}" "${verdict}" "${subreason}" "${wt_path}" "${dirty}" "${allow_dirty_fp}" "${expected_dirty_fp}" <<'PY'
+import datetime as dt
+import fcntl
+import hashlib
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+state = sys.argv[2]
+head_sha = sys.argv[3]
+verdict = sys.argv[4]
+subreason = sys.argv[5]
+wt_dir_str = sys.argv[6]
+dirty = sys.argv[7]
+allow_dirty_fp = sys.argv[8] == "1"
+expected_dirty_fp = sys.argv[9]
+now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def compute_content_fingerprint(wt_path_s, head_val):
+    st = subprocess.run(
+        ["git", "-C", wt_path_s, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        capture_output=True,
+    )
+    if st.returncode != 0:
+        return ""
+    staged = subprocess.run(
+        ["git", "-C", wt_path_s, "diff", "--cached", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    if staged.returncode != 0:
+        return ""
+    diff = subprocess.run(
+        ["git", "-C", wt_path_s, "diff", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    if diff.returncode != 0:
+        return ""
+    untracked = subprocess.run(
+        ["git", "-C", wt_path_s, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    if untracked.returncode != 0:
+        return ""
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    h.update(b"STATUS:\n" + (st.stdout or b""))
+    h.update(b"STAGED:\n" + (staged.stdout or b""))
+    h.update(b"WORKTREE:\n" + (diff.stdout or b""))
+    wt_bytes = os.fsencode(wt_path_s)
+    for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+        if not raw_rel:
+            continue
+        p = os.path.join(wt_bytes, raw_rel)
+        h.update(raw_rel + b"\x00")
+        try:
+            if os.path.islink(p):
+                h.update(b"L:" + os.readlink(p) + b"\x00")
+            elif os.path.isfile(p):
+                with open(p, "rb") as fh:
+                    data = fh.read()
+                h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+            else:
+                return ""
+        except OSError:
+            return ""
+    return h.hexdigest()
+
+
+dirty_fp = compute_content_fingerprint(wt_dir_str, head_sha) if (dirty and allow_dirty_fp) else ""
+if dirty and allow_dirty_fp and state in ("JUDGED", "EXPIRED") and not dirty_fp:
+    sys.stderr.write("[ERROR] set-state: unable to verify content fingerprint for dirty worktree\n")
+    sys.exit(2)
+if state == "JUDGED" and expected_dirty_fp and (not dirty or dirty_fp != expected_dirty_fp):
+    sys.stderr.write("[ERROR] set-state: dirty content fingerprint changed or worktree became clean after evaluation\n")
+    sys.exit(2)
+
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    prev_state = meta.get("lifecycle_state", "UNSET")
+    exp_fp = ""
+    if state == "EXPIRED":
+        cur_state = meta.get("lifecycle_state", "")
+        cur_judged_sha = meta.get("judged_head_sha", "")
+        if cur_state != "JUDGED" or not cur_judged_sha or cur_judged_sha != head_sha:
+            sys.stderr.write(
+                f"[ERROR] set-state EXPIRED requires an active JUDGED worktree matching HEAD {head_sha} (got state={cur_state or 'UNSET'} judged_head={cur_judged_sha or 'NONE'})\n"
+            )
+            sys.exit(2)
+        if dirty:
+            live_fp = compute_content_fingerprint(wt_dir_str, head_sha)
+            if not live_fp or not meta.get("judged_dirty_fingerprint") or meta.get("judged_dirty_fingerprint") != live_fp:
+                sys.stderr.write("[ERROR] set-state EXPIRED requires matching judged_dirty_fingerprint for dirty worktree\n")
+                sys.exit(2)
+            exp_fp = live_fp
+        elif meta.get("judged_dirty_fingerprint"):
+            sys.stderr.write("[ERROR] set-state EXPIRED refuses to expire clean snapshot from dirty JUDGED evidence\n")
+            sys.exit(2)
+    meta["lifecycle_state"] = state
+    if state == "JUDGED":
+        meta["judged_head_sha"] = head_sha
+        meta["judged_at"] = now_str
+        if dirty_fp:
+            meta["judged_dirty_fingerprint"] = dirty_fp
+        else:
+            meta.pop("judged_dirty_fingerprint", None)
+        if verdict:
+            meta["judge_verdict"] = verdict
+        if subreason:
+            meta["judge_subreason"] = subreason
+    elif state == "EXPIRED":
+        meta["expired_head_sha"] = head_sha
+        meta["expired_at"] = now_str
+        if exp_fp:
+            meta["expired_dirty_fingerprint"] = exp_fp
+        else:
+            meta.pop("expired_dirty_fingerprint", None)
+        if subreason:
+            meta["expire_reason"] = subreason
+    elif state == "REJECTED":
+        meta["rejected_head_sha"] = head_sha
+        meta["rejected_at"] = now_str
+        if verdict:
+            meta["judge_verdict"] = verdict
+        if subreason:
+            meta["judge_subreason"] = subreason
+    elif state == "UNJUDGED":
+        meta.pop("judged_head_sha", None)
+        meta.pop("expired_head_sha", None)
+        meta.pop("judged_dirty_fingerprint", None)
+        meta.pop("expired_dirty_fingerprint", None)
+
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
+sys.stderr.write(f"SET_STATE: worktree={wt_dir_str} {prev_state}->{state} head={head_sha}\n")
+PY
+}
+
+cmd_reopen() {
+	local wt_path=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			if [[ $# -lt 2 ]]; then
+				echo "[ERROR] reopen: --worktree requires a value" >&2
+				exit 1
+			fi
+			wt_path="$2"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for reopen: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+
+	if [[ -z ${wt_path} ]] || [[ ! -d ${wt_path} ]]; then
+		echo "[ERROR] reopen requires an existing --worktree directory" >&2
+		exit 1
+	fi
+
+	local wt_git_dir=""
+	wt_git_dir="$(git -C "${wt_path}" rev-parse --git-dir 2>/dev/null || true)"
+	if [[ -z ${wt_git_dir} ]] || [[ ! -f "${wt_git_dir}/proactive-meta.json" ]]; then
+		echo "[ERROR] reopen: missing proactive-meta.json for ${wt_path}" >&2
+		exit 1
+	fi
+
+	local dirty=""
+	dirty="$(git -C "${wt_path}" status --porcelain --untracked-files=all 2>/dev/null || echo "UNKNOWN")"
+	local head_sha=""
+	head_sha="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+
+	python3 - "${wt_git_dir}/proactive-meta.json" "${head_sha}" "${dirty}" <<'PY'
+import datetime as dt
+import fcntl
+import json
+import os
+import pathlib
+import sys
+
+meta_path = pathlib.Path(sys.argv[1])
+head_sha = sys.argv[2]
+dirty = sys.argv[3]
+now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    cur_state = meta.get("lifecycle_state", "")
+    if cur_state != "EXPIRED":
+        sys.stderr.write(f"[ERROR] reopen requires lifecycle_state == EXPIRED (got {cur_state or 'UNSET'})\n")
+        sys.exit(2)
+    if "original_created_at" not in meta and meta.get("created_at"):
+        meta["original_created_at"] = meta["created_at"]
+    meta["reopened_at"] = now_str
+    had_dirty_judgment = bool(meta.get("judged_dirty_fingerprint"))
+    meta.pop("expired_head_sha", None)
+    meta.pop("expired_at", None)
+    meta.pop("expired_dirty_fingerprint", None)
+
+    if not dirty and head_sha and meta.get("judged_head_sha") == head_sha and not had_dirty_judgment:
+        meta["lifecycle_state"] = "JUDGED"
+    else:
+        meta["lifecycle_state"] = "UNJUDGED"
+        meta.pop("judged_head_sha", None)
+        meta.pop("judged_dirty_fingerprint", None)
+
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
+print(f"REOPENED: state={meta['lifecycle_state']} head={head_sha}")
+PY
+}
+
 cmd_check_throttle() {
 	local repo=""
 	local wt_root="${DEFAULT_WT_ROOT}"
 	local max_open=2
+	local max_judged_open=5
 	local max_age_days=7
 	local now_epoch=""
 	local repo_path=""
 	local include_worktrees=0
+	local auto_expire=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1507,6 +1972,10 @@ cmd_check_throttle() {
 			;;
 		--max-open)
 			max_open="$2"
+			shift 2
+			;;
+		--max-judged-open)
+			max_judged_open="$2"
 			shift 2
 			;;
 		--max-age-days)
@@ -1525,6 +1994,10 @@ cmd_check_throttle() {
 			include_worktrees=1
 			shift
 			;;
+		--auto-expire)
+			auto_expire=1
+			shift
+			;;
 		*)
 			echo "[ERROR] Unknown flag for check-throttle: $1" >&2
 			exit 1
@@ -1536,6 +2009,24 @@ cmd_check_throttle() {
 		echo "[ERROR] check-throttle requires --repo" >&2
 		exit 1
 	fi
+
+	if [[ ! ${max_open} =~ ^[0-9]+$ ]] || [[ $((10#${max_open})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-open must be a positive integer (got '${max_open}')" >&2
+		exit 1
+	fi
+	max_open="$((10#${max_open}))"
+
+	if [[ ! ${max_judged_open} =~ ^[0-9]+$ ]] || [[ $((10#${max_judged_open})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-judged-open must be a positive integer (got '${max_judged_open}')" >&2
+		exit 1
+	fi
+	max_judged_open="$((10#${max_judged_open}))"
+
+	if [[ ! ${max_age_days} =~ ^[0-9]+$ ]] || [[ $((10#${max_age_days})) -lt 1 ]]; then
+		echo "[ERROR] check-throttle --max-age-days must be a positive integer (got '${max_age_days}')" >&2
+		exit 1
+	fi
+	max_age_days="$((10#${max_age_days}))"
 
 	if [[ ${include_worktrees} -eq 1 ]] && [[ -z ${repo_path} ]]; then
 		echo "[ERROR] --include-worktrees requires --repo-path so git worktree list can be resolved" >&2
@@ -1626,36 +2117,231 @@ cmd_check_throttle() {
 
 	if [[ ${#candidates[@]} -gt 0 ]]; then
 		local local_candidates=0
+		local judged_candidates=0
 		for candidate_dir in "${candidates[@]}"; do
 			local dirty=""
-			dirty="$(git -C "${candidate_dir}" status --porcelain 2>/dev/null || true)"
+			if ! dirty="$(git -C "${candidate_dir}" status --porcelain --untracked-files=all 2>/dev/null)"; then
+				dirty="UNVERIFIABLE"
+			fi
 			if [[ -n ${dirty} ]] || has_unreviewed_worktree_commits "${candidate_dir}"; then
-				local_candidates=$((local_candidates + 1))
 				local wt_git_dir=""
 				wt_git_dir="$(git -C "${candidate_dir}" rev-parse --git-dir 2>/dev/null || true)"
+				local head_sha=""
+				head_sha="$(git -C "${candidate_dir}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
+				local bucket="UNJUDGED"
 				if [[ -n ${wt_git_dir} ]] && [[ -f "${wt_git_dir}/proactive-meta.json" ]]; then
-					python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" <<'PY'
+					bucket="$(
+						python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" "${dirty}" "${head_sha}" "${auto_expire}" <<'PY'
 import datetime as dt
+import fcntl
+import hashlib
 import json
+import os
+import pathlib
+import subprocess
 import sys
 
-meta = json.loads(open(sys.argv[1], encoding="utf-8").read())
+meta_path = pathlib.Path(sys.argv[1])
 max_age = int(sys.argv[2])
 now_ts = int(sys.argv[3]) if sys.argv[3] else int(dt.datetime.now(dt.timezone.utc).timestamp())
-created_raw = meta.get("created_at", "")
-if created_raw:
-    created_dt = dt.datetime.strptime(created_raw, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
-    age_days = (now_ts - int(created_dt.timestamp())) / 86400.0
+cand_dir = sys.argv[4]
+dirty = sys.argv[5]
+head_sha = sys.argv[6]
+auto_expire = sys.argv[7] == "1"
+
+
+def compute_content_fingerprint(wt_dir_str, head_val):
+    st = subprocess.run(
+        ["git", "-C", wt_dir_str, "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        capture_output=True,
+    )
+    if st.returncode != 0:
+        return ""
+    staged = subprocess.run(
+        ["git", "-C", wt_dir_str, "diff", "--cached", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    if staged.returncode != 0:
+        return ""
+    diff = subprocess.run(
+        ["git", "-C", wt_dir_str, "diff", "--no-ext-diff", "--binary", "HEAD"],
+        capture_output=True,
+    )
+    if diff.returncode != 0:
+        return ""
+    untracked = subprocess.run(
+        ["git", "-C", wt_dir_str, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    if untracked.returncode != 0:
+        return ""
+    h = hashlib.sha256()
+    h.update(f"HEAD:{head_val}\n".encode("utf-8"))
+    h.update(b"STATUS:\n" + (st.stdout or b""))
+    h.update(b"STAGED:\n" + (staged.stdout or b""))
+    h.update(b"WORKTREE:\n" + (diff.stdout or b""))
+    wt_bytes = os.fsencode(wt_dir_str)
+    for raw_rel in (untracked.stdout or b"").split(b"\x00"):
+        if not raw_rel:
+            continue
+        p = os.path.join(wt_bytes, raw_rel)
+        h.update(raw_rel + b"\x00")
+        try:
+            if os.path.islink(p):
+                h.update(b"L:" + os.readlink(p) + b"\x00")
+            elif os.path.isfile(p):
+                with open(p, "rb") as fh:
+                    data = fh.read()
+                h.update(f"F:{len(data)}:".encode("utf-8") + data + b"\x00")
+            else:
+                return ""
+        except OSError:
+            return ""
+    return h.hexdigest()
+
+
+meta = json.loads(meta_path.read_text(encoding="utf-8"))
+raw_state = meta.get("lifecycle_state", "UNJUDGED")
+judged_sha = meta.get("judged_head_sha", "")
+expired_sha = meta.get("expired_head_sha") or judged_sha
+live_fp = compute_content_fingerprint(cand_dir, head_sha) if (dirty and dirty != "UNVERIFIABLE" and head_sha) else ""
+
+# Post-judgment dirty edits or new commits invalidate head-bound Judge evidence,
+# unless a base-check-cleared dirty candidate matches its recorded content fingerprint.
+if dirty:
+    if not live_fp:
+        eff_state = "UNJUDGED"
+    elif (
+        raw_state == "EXPIRED"
+        and head_sha
+        and expired_sha == head_sha
+        and meta.get("expired_dirty_fingerprint")
+        and meta.get("expired_dirty_fingerprint") == live_fp
+    ):
+        print("EXPIRED")
+        sys.exit(0)
+    elif (
+        raw_state == "JUDGED"
+        and head_sha
+        and judged_sha == head_sha
+        and meta.get("judged_dirty_fingerprint")
+        and meta.get("judged_dirty_fingerprint") == live_fp
+    ):
+        eff_state = "JUDGED"
+    else:
+        eff_state = "UNJUDGED"
+elif (
+    raw_state == "EXPIRED"
+    and head_sha
+    and expired_sha == head_sha
+    and not meta.get("expired_dirty_fingerprint")
+):
+    print("EXPIRED")
+    sys.exit(0)
+elif (
+    raw_state == "JUDGED"
+    and head_sha
+    and judged_sha == head_sha
+    and not meta.get("judged_dirty_fingerprint")
+):
+    eff_state = "JUDGED"
+else:
+    eff_state = "UNJUDGED"
+
+age_anchor = meta.get("reopened_at") or meta.get("created_at", "")
+age_days = 0.0
+if age_anchor:
+    anchor_dt = dt.datetime.strptime(age_anchor, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
+    age_days = (now_ts - int(anchor_dt.timestamp())) / 86400.0
+
+if eff_state == "JUDGED":
     if age_days > max_age:
-        sys.stderr.write(f"THROTTLED: Unreviewed local candidate worktree {sys.argv[4]} is {age_days:.1f} days old (> {max_age}d)\n")
+        if auto_expire:
+            lock_path = meta_path.with_name("proactive-meta.lock")
+            with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+                os.chmod(lock_path, 0o600)
+                fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                cur_raw = meta.get("lifecycle_state", "UNJUDGED")
+                cur_jsha = meta.get("judged_head_sha", "")
+                cur_exp_sha = meta.get("expired_head_sha") or cur_jsha
+                if cur_raw == "EXPIRED" and head_sha and cur_exp_sha == head_sha:
+                    print("EXPIRED")
+                    sys.exit(0)
+                cur_dirty_fp = meta.get("judged_dirty_fingerprint") or ""
+                fp_matches = (
+                    (bool(live_fp) and bool(cur_dirty_fp) and cur_dirty_fp == live_fp)
+                    if dirty
+                    else (not cur_dirty_fp)
+                )
+                if cur_raw != "JUDGED" or not head_sha or cur_jsha != head_sha or not fp_matches:
+                    print("UNJUDGED")
+                    sys.exit(0)
+                cur_anchor = meta.get("reopened_at") or meta.get("created_at", "")
+                cur_age_days = 0.0
+                if cur_anchor:
+                    cur_dt = dt.datetime.strptime(cur_anchor, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
+                    cur_age_days = (now_ts - int(cur_dt.timestamp())) / 86400.0
+                if cur_age_days <= max_age:
+                    print("JUDGED")
+                    sys.exit(0)
+                meta["lifecycle_state"] = "EXPIRED"
+                meta["expired_head_sha"] = head_sha
+                meta["expired_at"] = dt.datetime.fromtimestamp(now_ts, dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                meta["expire_reason"] = "SLA_7D_AUTO_EXPIRE"
+                if live_fp:
+                    meta["expired_dirty_fingerprint"] = live_fp
+                else:
+                    meta.pop("expired_dirty_fingerprint", None)
+                tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+                fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(json.dumps(meta, indent=2) + "\n")
+                os.replace(tmp, meta_path)
+            sys.stderr.write(
+                f"[INFO] Auto-expired >{max_age}d judged candidate worktree on disk (preserved): {cand_dir}\n"
+            )
+            print("EXPIRED")
+            sys.exit(0)
+        sys.stderr.write(
+            f"THROTTLED: Judged local candidate worktree {cand_dir} is {age_days:.1f} days old (> {max_age}d)\n"
+        )
         sys.exit(5)
+    print("JUDGED")
+    sys.exit(0)
+
+if age_anchor and age_days > max_age:
+    sys.stderr.write(
+        f"THROTTLED: Unreviewed local candidate worktree {cand_dir} is {age_days:.1f} days old (> {max_age}d)\n"
+    )
+    sys.exit(5)
+print("UNJUDGED")
 PY
+					)" || exit $?
 				fi
+
+				case "${bucket}" in
+				UNJUDGED)
+					local_candidates=$((local_candidates + 1))
+					;;
+				JUDGED)
+					judged_candidates=$((judged_candidates + 1))
+					;;
+				EXPIRED) ;;
+				*)
+					local_candidates=$((local_candidates + 1))
+					;;
+				esac
 			fi
 		done
 
 		if [[ ${local_candidates} -ge ${max_open} ]]; then
 			echo "THROTTLED: ${local_candidates} unreviewed local candidate worktrees for ${repo_short} (cap=${max_open})" >&2
+			exit 5
+		fi
+
+		if [[ ${judged_candidates} -ge ${max_judged_open} ]]; then
+			echo "THROTTLED: ${judged_candidates} judged local candidate worktrees awaiting promotion/review for ${repo_short} (judged_cap=${max_judged_open})" >&2
 			exit 5
 		fi
 	fi
@@ -2260,6 +2946,29 @@ cmd_print_test_cmd() {
 	echo
 }
 
+cmd_is_active() {
+	local wt_path=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			wt_path="${2:-}"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for is-active: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+	[[ -n ${wt_path} && -d ${wt_path} ]] || return 1
+	local dirty=""
+	if ! dirty="$(git -C "${wt_path}" status --porcelain --untracked-files=all 2>/dev/null)"; then
+		return 0
+	fi
+	[[ -n ${dirty} ]] && return 0
+	has_unreviewed_worktree_commits "${wt_path}"
+}
+
 main() {
 	if [[ $# -lt 1 ]]; then
 		usage >&2
@@ -2279,6 +2988,15 @@ main() {
 		;;
 	check-throttle)
 		cmd_check_throttle "$@"
+		;;
+	is-active)
+		cmd_is_active "$@"
+		;;
+	set-state)
+		cmd_set_state "$@"
+		;;
+	reopen)
+		cmd_reopen "$@"
 		;;
 	cleanup)
 		cmd_cleanup "$@"
