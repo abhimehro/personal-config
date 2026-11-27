@@ -2120,6 +2120,7 @@ cmd_judge() {
 	fi
 
 	python3 - "${worktree_sh}" "${ctl_sh}" "${reports_dir}" "${ledger_file}" "${sweep_date}" "${wt_root}" "${repo_root_parent}" "${max_age_days}" "${now_epoch}" "${skip_tier2}" "${with_lrc}" "${force_rejudge}" "${target_repos[@]}" <<'PY'
+import contextlib
 import datetime as dt
 import fcntl
 import hashlib
@@ -2552,7 +2553,38 @@ def is_active_candidate_wt(wt_dir, meta):
         rc_m, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-base", "--is-ancestor", "HEAD", f"origin/{default_branch}"], timeout_s=10)
         if rc_m == 0:
             return False
+        rc_ut, ut_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", f"origin/{default_branch}^{{tree}}"], timeout_s=10)
+        rc_mt, mt_out, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", f"origin/{default_branch}", "HEAD"], timeout_s=15)
+        if rc_ut == 0 and rc_mt == 0 and ut_out.strip() and mt_out.strip().splitlines()[0] == ut_out.strip():
+            return False
     return True
+
+
+def compute_wt_tree_sha(wt_dir):
+    tmp_fd, tmp_idx = tempfile.mkstemp(prefix="proactive-judge-idx-")
+    os.close(tmp_fd)
+    try:
+        try:
+            os.unlink(tmp_idx)
+        except OSError:
+            pass
+        env = dict(os.environ, GIT_INDEX_FILE=tmp_idx)
+        rt = subprocess.run(["git", "-C", str(wt_dir), "read-tree", "HEAD"], capture_output=True, env=env, timeout=10)
+        if rt.returncode != 0:
+            return ""
+        ad = subprocess.run(["git", "-C", str(wt_dir), "add", "-A"], capture_output=True, env=env, timeout=15)
+        if ad.returncode != 0:
+            return ""
+        wt = subprocess.run(["git", "-C", str(wt_dir), "write-tree"], capture_output=True, text=True, env=env, timeout=15)
+        return wt.stdout.strip() if wt.returncode == 0 else ""
+    except (subprocess.TimeoutExpired, OSError):
+        return ""
+    finally:
+        try:
+            if os.path.exists(tmp_idx):
+                os.unlink(tmp_idx)
+        except OSError:
+            pass
 
 
 def compute_wt_content_fingerprint(wt_dir, head_sha_val):
@@ -3137,602 +3169,605 @@ for repo in target_repos:
     gitnexus_refreshed = False
 
     for wt_dir, meta in active_wts:
-        bucket, dirty, head_sha, age_days = effective_wt_bucket(wt_dir, meta)
-        eval_fingerprint = compute_wt_content_fingerprint(wt_dir, head_sha) if head_sha else ""
-        rc_b, br_out, _ = run_bounded(["git", "-C", str(wt_dir), "symbolic-ref", "--quiet", "--short", "HEAD"], timeout_s=10)
-        wt_branch = br_out.strip() if rc_b == 0 else ""
-        base_sha = meta.get("base_sha", "")
-        default_branch = meta.get("default_branch", "main") or "main"
-        lens = (meta.get("lens") or "code-health").strip().lower()
-        wt_repo_str = meta.get("repo_path") or (str(effective_repo_dir) if effective_repo_dir else "")
-        wt_repo_dir = pathlib.Path(wt_repo_str) if wt_repo_str else None
-        wt_missing_toolchain = bool(
-            wt_repo_str and os.path.realpath(wt_repo_str) in missing_toolchain_repos
-        )
+        lrc_lock_fh = None
+        try:
+            bucket, dirty, head_sha, age_days = effective_wt_bucket(wt_dir, meta)
+            eval_fingerprint = compute_wt_content_fingerprint(wt_dir, head_sha) if head_sha else ""
+            rc_b, br_out, _ = run_bounded(["git", "-C", str(wt_dir), "symbolic-ref", "--quiet", "--short", "HEAD"], timeout_s=10)
+            wt_branch = br_out.strip() if rc_b == 0 else ""
+            base_sha = meta.get("base_sha", "")
+            default_branch = meta.get("default_branch", "main") or "main"
+            lens = (meta.get("lens") or "code-health").strip().lower()
+            wt_repo_str = meta.get("repo_path") or (str(effective_repo_dir) if effective_repo_dir else "")
+            wt_repo_dir = pathlib.Path(wt_repo_str) if wt_repo_str else None
+            wt_missing_toolchain = bool(
+                wt_repo_str and os.path.realpath(wt_repo_str) in missing_toolchain_repos
+            )
 
-        # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge,
-        #     while keeping offline/unverified-PR/transient-prereq deferrals retryable on online runs.
-        if bucket == "JUDGED" and not force_rejudge:
-            if age_days > max_age_days:
-                exp_cmd = [
-                    worktree_sh,
-                    "set-state",
-                    "--worktree",
-                    str(wt_dir),
-                    "--state",
-                    "EXPIRED",
-                    "--subreason",
-                    "SLA_7D_AUTO_EXPIRE",
-                ]
-                if head_sha:
-                    exp_cmd.extend(["--expected-head", head_sha])
-                if dirty:
-                    exp_cmd.append("--allow-dirty-fingerprint")
-                exp_rc, _, exp_err = run_bounded(exp_cmd, timeout_s=15)
-                if exp_rc == 0:
-                    append_ledger_row(
-                        {
-                            "timestamp": now_iso,
-                            "date": sweep_date,
-                            "repo": repo,
-                            "digest_status": today_status,
-                            "digest_path": "",
-                            "worktree": str(wt_dir),
-                            "worktree_key": str(wt_dir),
-                            "branch": wt_branch,
-                            "base_sha": base_sha,
-                            "head_sha": head_sha,
-                            "lens": lens,
-                            "verdict": "EXPIRED",
-                            "subreason": "SLA_7D_AUTO_EXPIRE",
-                            "ocr_review": "skipped",
-                            "coderabbit": "skipped",
-                            "lrc": "skipped_policy",
-                            "tier1": {"age_days": round(age_days, 2)},
-                            "tier2": {
+            # (c) Auto-expire >max_age_days JUDGED worktrees on disk when not --force-rejudge,
+            #     while keeping offline/unverified-PR/transient-prereq deferrals retryable on online runs.
+            retry_base_check_unusable = False
+            if bucket == "JUDGED" and not force_rejudge:
+                if age_days > max_age_days:
+                    exp_cmd = [
+                        worktree_sh,
+                        "set-state",
+                        "--worktree",
+                        str(wt_dir),
+                        "--state",
+                        "EXPIRED",
+                        "--subreason",
+                        "SLA_7D_AUTO_EXPIRE",
+                    ]
+                    if head_sha:
+                        exp_cmd.extend(["--expected-head", head_sha])
+                    if dirty:
+                        exp_cmd.append("--allow-dirty-fingerprint")
+                    exp_rc, _, exp_err = run_bounded(exp_cmd, timeout_s=15)
+                    if exp_rc == 0:
+                        append_ledger_row(
+                            {
+                                "timestamp": now_iso,
+                                "date": sweep_date,
+                                "repo": repo,
+                                "digest_status": today_status,
+                                "digest_path": "",
+                                "worktree": str(wt_dir),
+                                "worktree_key": str(wt_dir),
+                                "branch": wt_branch,
+                                "base_sha": base_sha,
+                                "head_sha": head_sha,
+                                "lens": lens,
+                                "verdict": "EXPIRED",
+                                "subreason": "SLA_7D_AUTO_EXPIRE",
                                 "ocr_review": "skipped",
                                 "coderabbit": "skipped",
                                 "lrc": "skipped_policy",
-                            },
-                            "lrc_executed": False,
-                        }
-                    )
-                else:
-                    judge_degraded = True
-                    sys.stderr.write(exp_err or f"[WARN] judge: failed to transition expired worktree {wt_dir} (exit {exp_rc})\n")
+                                "tier1": {"age_days": round(age_days, 2)},
+                                "tier2": {
+                                    "ocr_review": "skipped",
+                                    "coderabbit": "skipped",
+                                    "lrc": "skipped_policy",
+                                },
+                                "lrc_executed": False,
+                            }
+                        )
+                    else:
+                        judge_degraded = True
+                        sys.stderr.write(exp_err or f"[WARN] judge: failed to transition expired worktree {wt_dir} (exit {exp_rc})\n")
+                    continue
+                defer_sub = meta.get("judge_subreason", "")
+                offline_retryable = (not skip_tier2) and (
+                    defer_sub in ("TIER2_SKIPPED_OFFLINE", "OPEN_PR_COLLISIONS_UNVERIFIED", "BASE_CHECK_UNUSABLE")
+                )
+                if not offline_retryable:
+                    continue
+                retry_base_check_unusable = defer_sub == "BASE_CHECK_UNUSABLE"
+
+            if bucket == "EXPIRED" and not force_rejudge:
                 continue
-            defer_sub = meta.get("judge_subreason", "")
-            offline_retryable = (not skip_tier2) and (
-                defer_sub in ("TIER2_SKIPPED_OFFLINE", "OPEN_PR_COLLISIONS_UNVERIFIED", "BASE_CHECK_UNUSABLE")
+
+            # (d) Evaluate UNJUDGED worktree (or all unmerged worktrees under --force-rejudge).
+            cand_digest, cand_digest_text = match_candidate_digest(
+                repo, wt_dir, wt_branch, base_sha, head_sha, today_digest
             )
-            if not offline_retryable:
-                continue
+            cand_status = parse_digest_field(cand_digest_text, "Status").upper() if cand_digest_text else today_status
+            cand_substatus = parse_digest_field(cand_digest_text, "Substatus").upper() if cand_digest_text else ""
+            if not meta.get("lens") and cand_digest_text:
+                parsed_lens = parse_digest_field(cand_digest_text, "Lens").lower()
+                if parsed_lens:
+                    lens = parsed_lens
 
-        if bucket == "EXPIRED" and not force_rejudge:
-            continue
+            verdict = ""
+            subreason = ""
+            base_check_escalate = False
+            merge_tree_clean = False
+            collisions_rc = 0
+            ocr_preview_status = "skipped"
+            gitnexus_risk = "NONE"
+            gitnexus_degraded = False
+            verify_env_missing_linter = False
+            has_untested_critical_sym = False
+            symbol_test_refs = 0
+            files_changed = 0
+            files_changed_ok = False
+            diff_loc = 0
+            diff_loc_measured = False
+            open_pr_collisions_checked = False
+            ocr_review_ok = False
+            ocr_status = "skipped"
+            ocr_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+            coderabbit_status = "skipped"
+            cr_counts = {"critical": 0, "major": 0, "minor": 0, "trivial": 0, "info": 0, "none": 0}
+            lrc_status = "skipped_policy"
+            lrc_counts = {"critical": 0, "high": 0, "major": 0, "medium": 0, "minor": 0, "low": 0}
+            lrc_executed = False
+            base_check_verdict = "NOT_NEEDED"
 
-        # (d) Evaluate UNJUDGED worktree (or all unmerged worktrees under --force-rejudge).
-        cand_digest, cand_digest_text = match_candidate_digest(
-            repo, wt_dir, wt_branch, base_sha, head_sha, today_digest
-        )
-        cand_status = parse_digest_field(cand_digest_text, "Status").upper() if cand_digest_text else today_status
-        cand_substatus = parse_digest_field(cand_digest_text, "Substatus").upper() if cand_digest_text else ""
-        if not meta.get("lens") and cand_digest_text:
-            parsed_lens = parse_digest_field(cand_digest_text, "Lens").lower()
-            if parsed_lens:
-                lens = parsed_lens
-
-        verdict = ""
-        subreason = ""
-        base_check_escalate = False
-        merge_tree_clean = False
-        collisions_rc = 0
-        ocr_preview_status = "skipped"
-        gitnexus_risk = "NONE"
-        gitnexus_degraded = False
-        verify_env_missing_linter = False
-        has_untested_critical_sym = False
-        symbol_test_refs = 0
-        files_changed = 0
-        files_changed_ok = False
-        diff_loc = 0
-        diff_loc_measured = False
-        open_pr_collisions_checked = False
-        ocr_review_ok = False
-        ocr_status = "skipped"
-        ocr_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-        coderabbit_status = "skipped"
-        cr_counts = {"critical": 0, "major": 0, "minor": 0, "trivial": 0, "info": 0, "none": 0}
-        lrc_status = "skipped_policy"
-        lrc_counts = {"critical": 0, "high": 0, "major": 0, "medium": 0, "minor": 0, "low": 0}
-        lrc_executed = False
-        base_check_verdict = "NOT_NEEDED"
-        lrc_lock_fh = None
-
-        head_tree_sha = ""
-        if head_sha:
-            rc_ht, ht_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", f"{head_sha}^{{tree}}"], timeout_s=10)
-            if rc_ht == 0:
-                head_tree_sha = ht_out.strip()
-        verify_receipt_matches = bool(
-            not dirty
-            and head_sha
-            and (
-                meta.get("verify_head_sha") == head_sha
-                or (head_tree_sha and meta.get("verify_tree_sha") == head_tree_sha)
+            head_tree_sha = ""
+            if head_sha:
+                rc_ht, ht_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", f"{head_sha}^{{tree}}"], timeout_s=10)
+                if rc_ht == 0:
+                    head_tree_sha = ht_out.strip()
+            cand_tree_sha = compute_wt_tree_sha(wt_dir) if dirty else head_tree_sha
+            verify_receipt_matches = bool(
+                not dirty
+                and head_sha
+                and (
+                    meta.get("verify_head_sha") == head_sha
+                    or (head_tree_sha and meta.get("verify_tree_sha") == head_tree_sha)
+                )
             )
-        )
-        custom_cmd_matches = bool(
-            head_sha
-            and (
-                meta.get("verify_head_sha") == head_sha
-                or (not dirty and head_tree_sha and meta.get("verify_tree_sha") == head_tree_sha)
+            custom_cmd_matches = bool(
+                head_sha
+                and (
+                    (cand_tree_sha and meta.get("verify_tree_sha") and meta.get("verify_tree_sha") == cand_tree_sha)
+                    or (not dirty and not meta.get("verify_tree_sha") and meta.get("verify_head_sha") == head_sha)
+                )
             )
-        )
 
-        # Fast deterministic policy & semantic coverage probe (replays exact saved verify overrides without mutating receipt).
-        verify_cmd = [worktree_sh, "verify", "--worktree", str(wt_dir), "--lens", lens, "--probe-only", "--test-cmd", "true"]
-        if repo in RESEARCH_REPOS and lens == "bolt":
-            verify_cmd.extend(["--numeric-check-cmd", "true"])
-        if verify_receipt_matches:
-            if meta.get("verify_allow_test_edits"):
-                verify_cmd.append("--allow-test-edits")
-            if meta.get("verify_allow_harness_changes"):
-                verify_cmd.append("--allow-harness-changes")
-            if meta.get("verify_expected_test_count"):
-                verify_cmd.extend(["--expected-test-count", str(meta["verify_expected_test_count"])])
-        v_rc, v_out, v_err = run_bounded(verify_cmd, timeout_s=60)
-        if v_rc == 2 and (
-            "No undefined-name checker available" in (v_out + v_err)
-            or "Undefined-name checker execution failed" in (v_out + v_err)
-        ):
-            verify_env_missing_linter = True
-            verdict = "JUDGE_ESCALATE_HUMAN"
-            subreason = "VERIFY_ENV_MISSING_LINTER"
-        elif v_rc in (2, 3):
-            verdict = "JUDGE_REJECT"
-            subreason = "HARNESS_OR_COVERAGE_VIOLATION"
-        elif v_rc != 0:
-            verdict = "JUDGE_ESCALATE_HUMAN"
-            subreason = "VERIFY_UNEXPECTED_ERROR"
+            # Fast deterministic policy & semantic coverage probe (replays exact saved verify overrides without mutating receipt).
+            verify_cmd = [worktree_sh, "verify", "--worktree", str(wt_dir), "--lens", lens, "--probe-only", "--test-cmd", "true"]
+            if repo in RESEARCH_REPOS and lens == "bolt":
+                verify_cmd.extend(["--numeric-check-cmd", "true"])
+            if verify_receipt_matches:
+                if meta.get("verify_allow_test_edits"):
+                    verify_cmd.append("--allow-test-edits")
+                if meta.get("verify_allow_harness_changes"):
+                    verify_cmd.append("--allow-harness-changes")
+                if meta.get("verify_expected_test_count"):
+                    verify_cmd.extend(["--expected-test-count", str(meta["verify_expected_test_count"])])
+            v_rc, v_out, v_err = run_bounded(verify_cmd, timeout_s=60)
+            if v_rc == 2 and (
+                "No undefined-name checker available" in (v_out + v_err)
+                or "Undefined-name checker execution failed" in (v_out + v_err)
+            ):
+                verify_env_missing_linter = True
+                verdict = "JUDGE_ESCALATE_HUMAN"
+                subreason = "VERIFY_ENV_MISSING_LINTER"
+            elif v_rc in (2, 3):
+                verdict = "JUDGE_REJECT"
+                subreason = "HARNESS_OR_COVERAGE_VIOLATION"
+            elif v_rc != 0:
+                verdict = "JUDGE_ESCALATE_HUMAN"
+                subreason = "VERIFY_UNEXPECTED_ERROR"
 
-        # Base-check classification for provisional GATE_FAILURE digests.
-        if not verdict and cand_substatus == "GATE_FAILURE":
-            cached_reused = False
-            if "## Base-Check Classification" in cand_digest_text:
-                # Walk classifications newest-first so a later successful rerun supersedes an earlier inconclusive one.
-                bc_blocks = [
-                    seg.split("\n## ", 1)[0]
-                    for seg in cand_digest_text.split("## Base-Check Classification")[1:]
-                ]
-                for bc_block in reversed(bc_blocks):
-                    m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z0-9_]+)", bc_block)
-                    m_wt = re.search(r"(?im)^\s*-\s*Worktree:\s*(.+)$", bc_block)
-                    m_fp = re.search(r"(?im)^\s*-\s*Content Fingerprint:\s*([0-9a-f]{64})\b", bc_block)
-                    wt_matches = bool(
-                        m_wt and m_wt.group(1).strip() in (str(wt_dir), os.path.realpath(str(wt_dir)))
-                    )
-                    fp_matches = bool(m_fp and eval_fingerprint and m_fp.group(1).strip() == eval_fingerprint)
-                    if not (m_bcv and wt_matches and fp_matches):
-                        continue
-                    cached_verdict = m_bcv.group(1).strip()
-                    inconclusive = cached_verdict == "BASE_PREREQ_FAILED" or cached_verdict.startswith("EXIT_")
-                    if inconclusive and force_rejudge:
+            # Base-check classification for provisional GATE_FAILURE digests.
+            if not verdict and cand_substatus == "GATE_FAILURE":
+                cached_reused = False
+                if "## Base-Check Classification" in cand_digest_text:
+                    # Walk classifications newest-first so a later successful rerun supersedes an earlier inconclusive one.
+                    bc_blocks = [
+                        seg.split("\n## ", 1)[0]
+                        for seg in cand_digest_text.split("## Base-Check Classification")[1:]
+                    ]
+                    for bc_block in reversed(bc_blocks):
+                        m_bcv = re.search(r"(?im)^\s*-\s*Verdict:\s*([A-Z0-9_]+)", bc_block)
+                        m_wt = re.search(r"(?im)^\s*-\s*Worktree:\s*(.+)$", bc_block)
+                        m_fp = re.search(r"(?im)^\s*-\s*Content Fingerprint:\s*([0-9a-f]{64})\b", bc_block)
+                        wt_matches = bool(
+                            m_wt and m_wt.group(1).strip() in (str(wt_dir), os.path.realpath(str(wt_dir)))
+                        )
+                        fp_matches = bool(m_fp and eval_fingerprint and m_fp.group(1).strip() == eval_fingerprint)
+                        if not (m_bcv and wt_matches and fp_matches):
+                            continue
+                        cached_verdict = m_bcv.group(1).strip()
+                        inconclusive = cached_verdict == "BASE_PREREQ_FAILED" or cached_verdict.startswith("EXIT_")
+                        if inconclusive and (force_rejudge or retry_base_check_unusable):
+                            break
+                        if cached_verdict == "CAUSED_BY_CHANGE":
+                            cached_reused = True
+                            base_check_verdict = cached_verdict
+                            verdict = "JUDGE_REJECT"
+                            subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
+                        elif inconclusive:
+                            cached_reused = True
+                            base_check_verdict = cached_verdict
+                            base_check_escalate = True
+                        elif cached_verdict in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE"):
+                            cached_reused = True
+                            base_check_verdict = cached_verdict
                         break
-                    if cached_verdict == "CAUSED_BY_CHANGE":
-                        cached_reused = True
-                        base_check_verdict = cached_verdict
+                if not cached_reused:
+                    bc_cmd = ["bash", ctl_sh, "base-check", "--repo", repo, "--worktree", str(wt_dir)]
+                    if cand_digest is not None and cand_digest.is_file():
+                        bc_cmd.extend(["--digest", str(cand_digest)])
+                    custom_test_cmd = meta.get("verify_custom_test_cmd")
+                    if custom_test_cmd and custom_cmd_matches:
+                        bc_cmd.extend(["--test-cmd", str(custom_test_cmd)])
+                    bc_rc, bc_out, _ = run_bounded(bc_cmd, timeout_s=300)
+                    m_out = re.search(r"(?m)^VERDICT:\s*([A-Z_]+)$", bc_out)
+                    if m_out:
+                        base_check_verdict = m_out.group(1).strip()
+                    if bc_rc == 2 or base_check_verdict == "CAUSED_BY_CHANGE":
                         verdict = "JUDGE_REJECT"
                         subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
-                    elif inconclusive:
-                        cached_reused = True
-                        base_check_verdict = cached_verdict
+                    elif bc_rc != 0:
                         base_check_escalate = True
-                    elif cached_verdict in ("PRE_EXISTING_ON_BASE", "FLAKE_ON_RETRY", "NO_FAILURE"):
-                        cached_reused = True
-                        base_check_verdict = cached_verdict
-                    break
-            if not cached_reused:
-                bc_cmd = ["bash", ctl_sh, "base-check", "--repo", repo, "--worktree", str(wt_dir)]
-                if cand_digest is not None and cand_digest.is_file():
-                    bc_cmd.extend(["--digest", str(cand_digest)])
-                custom_test_cmd = meta.get("verify_custom_test_cmd")
-                if custom_test_cmd and custom_cmd_matches:
-                    bc_cmd.extend(["--test-cmd", str(custom_test_cmd)])
-                bc_rc, bc_out, _ = run_bounded(bc_cmd, timeout_s=300)
-                m_out = re.search(r"(?m)^VERDICT:\s*([A-Z_]+)$", bc_out)
-                if m_out:
-                    base_check_verdict = m_out.group(1).strip()
-                if bc_rc == 2 or base_check_verdict == "CAUSED_BY_CHANGE":
-                    verdict = "JUDGE_REJECT"
-                    subreason = "BASE_CHECK_CAUSED_BY_CHANGE"
-                elif bc_rc != 0:
-                    base_check_escalate = True
-                    if not m_out:
-                        base_check_verdict = f"EXIT_{bc_rc}"
+                        if not m_out:
+                            base_check_verdict = f"EXIT_{bc_rc}"
 
-        # Diff sizing (committed range vs base_sha, pinned to captured head_sha).
-        changed_files = []
-        diff_target = head_sha or "HEAD"
-        if base_sha:
-            ok_df, z_paths = git_paths_z(wt_dir, ["diff", "--no-renames", "--name-only", "-z", f"{base_sha}..{diff_target}"])
-            if ok_df:
-                files_changed_ok = True
-                changed_files = [p for p in z_paths if p]
-                files_changed = len(changed_files)
-            rc_ns, ns_out, _ = run_bounded(
-                ["git", "-C", str(wt_dir), "diff", "--no-renames", "--numstat", f"{base_sha}..{diff_target}"],
-                timeout_s=15,
-            )
-            if rc_ns == 0:
-                diff_loc_measured = True
-                for ln in ns_out.splitlines():
-                    parts = ln.split("\t")
-                    if len(parts) >= 2:
-                        add_n = int(parts[0]) if parts[0].isdigit() else 0
-                        del_n = int(parts[1]) if parts[1].isdigit() else 0
-                        diff_loc += add_n + del_n
-
-        # Upstream ref for local merge-tree check.
-        upstream_ref = f"origin/{default_branch}"
-        rc_ur, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", upstream_ref], timeout_s=10)
-        if rc_ur != 0:
-            upstream_ref = default_branch
-            rc_ur2, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", upstream_ref], timeout_s=10)
-            if rc_ur2 != 0 and base_sha:
-                upstream_ref = base_sha
-
-        is_sentinel = (lens == "sentinel") or (cand_status == "SECURITY_REPORT_ONLY")
-
-        if not verdict and is_sentinel:
-            # Hard Privacy Gate: NEVER invoke cloud reviewers (ocr review, coderabbit, lrc).
-            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
-            merge_tree_clean = rc_mt == 0
-            ocr_bin = shutil.which("ocr")
-            if ocr_bin and base_sha:
-                rc_op, _, _ = run_bounded(
-                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
-                    cwd=wt_dir,
-                    timeout_s=30,
+            # Diff sizing (committed range vs base_sha, pinned to captured head_sha).
+            changed_files = []
+            diff_target = head_sha or "HEAD"
+            if base_sha:
+                ok_df, z_paths = git_paths_z(wt_dir, ["diff", "--no-renames", "--name-only", "-z", f"{base_sha}..{diff_target}"])
+                if ok_df:
+                    files_changed_ok = True
+                    changed_files = [p for p in z_paths if p]
+                    files_changed = len(changed_files)
+                rc_ns, ns_out, _ = run_bounded(
+                    ["git", "-C", str(wt_dir), "diff", "--no-renames", "--numstat", f"{base_sha}..{diff_target}"],
+                    timeout_s=15,
                 )
-                ocr_preview_status = "ok" if rc_op == 0 else "degraded"
-            ocr_status = "skipped_privacy"
-            coderabbit_status = "skipped_privacy"
-            lrc_status = "skipped_privacy"
-            verdict = "JUDGE_ESCALATE_HUMAN"
-            subreason = "SECURITY_REPORT_ONLY_LOCAL_BOUNDARY"
+                if rc_ns == 0:
+                    diff_loc_measured = True
+                    for ln in ns_out.splitlines():
+                        parts = ln.split("\t")
+                        if len(parts) >= 2:
+                            add_n = int(parts[0]) if parts[0].isdigit() else 0
+                            del_n = int(parts[1]) if parts[1].isdigit() else 0
+                            diff_loc += add_n + del_n
 
-        elif not verdict:
-            # Tier 1: merge-tree, check-collisions, ocr delegate preview, GitNexus impact.
-            rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
-            merge_tree_clean = rc_mt == 0
+            # Upstream ref for local merge-tree check.
+            upstream_ref = f"origin/{default_branch}"
+            rc_ur, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", upstream_ref], timeout_s=10)
+            if rc_ur != 0:
+                upstream_ref = default_branch
+                rc_ur2, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", upstream_ref], timeout_s=10)
+                if rc_ur2 != 0 and base_sha:
+                    upstream_ref = base_sha
 
-            collision_paths = list(changed_files)
-            if not collision_paths and dirty and base_sha:
-                ok_dd, d_paths = git_paths_z(wt_dir, ["diff", "--no-renames", "--name-only", "-z", base_sha])
-                ok_du, u_paths = git_paths_z(wt_dir, ["ls-files", "--others", "--exclude-standard", "-z"])
-                if ok_dd and ok_du:
-                    collision_paths = list(dict.fromkeys([p for p in (d_paths + u_paths) if p]))
+            is_sentinel = (lens == "sentinel") or (cand_status == "SECURITY_REPORT_ONLY")
 
-            if collision_paths and wt_repo_dir is not None and is_git_repo(wt_repo_dir):
-                if not skip_tier2 and shutil.which("gh") and is_gh_usable_for_repo(wt_repo_dir):
-                    col_cmd = [
-                        worktree_sh,
-                        "check-collisions",
-                        "--repo",
-                        f"abhimehro/{repo}",
-                        "--include-worktrees",
-                        "--repo-path",
-                        str(wt_repo_dir),
-                        "--exclude-worktree",
-                        str(wt_dir),
-                    ]
-                    for cf in collision_paths:
-                        col_cmd.extend(["--file", cf])
-                    collisions_rc, _, _ = run_bounded(col_cmd, timeout_s=60)
-                    open_pr_collisions_checked = True
-                else:
-                    collisions_rc = check_local_worktree_collisions(wt_repo_dir, wt_dir, collision_paths)
-                    open_pr_collisions_checked = is_local_origin_repo(wt_repo_dir)
-            elif not dirty and not collision_paths:
-                collisions_rc = 0 if files_changed_ok else 6
-                open_pr_collisions_checked = files_changed_ok
-            else:
-                collisions_rc = 6
-                open_pr_collisions_checked = False
-
-            ocr_bin = shutil.which("ocr")
-            if ocr_bin and base_sha:
-                rc_op, _, _ = run_bounded(
-                    [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
-                    cwd=wt_dir,
-                    timeout_s=30,
-                )
-                ocr_preview_status = "ok" if rc_op == 0 else "degraded"
-
-            node_bin = shutil.which("node")
-            run_cjs = (wt_repo_dir / ".gitnexus" / "run.cjs") if wt_repo_dir is not None else None
-            if node_bin and run_cjs is not None and run_cjs.is_file():
-                _, gn_st_out, gn_st_err = run_bounded([node_bin, str(run_cjs), "status"], cwd=wt_repo_dir, timeout_s=20)
-                if "stale" in (gn_st_out + gn_st_err).lower() and not skip_tier2 and not gitnexus_refreshed:
-                    run_bounded([node_bin, str(run_cjs), "analyze", "--index-only"], cwd=wt_repo_dir, timeout_s=90)
-                    gitnexus_refreshed = True
-                changed_syms = extract_changed_symbols(wt_dir, base_sha, diff_target) if base_sha else []
-                symbol_test_refs_map = {sym: count_symbol_test_references(wt_dir, [sym]) for sym in changed_syms}
-                symbol_test_refs = sum(symbol_test_refs_map.values())
-                for sym in changed_syms:
-                    imp_rc, imp_out, imp_err = run_bounded(
-                        [node_bin, str(run_cjs), "impact", sym, "--direction", "upstream", "--repo", str(wt_repo_dir)],
-                        cwd=wt_repo_dir,
-                        timeout_s=20,
+            if not verdict and is_sentinel:
+                # Hard Privacy Gate: NEVER invoke cloud reviewers (ocr review, coderabbit, lrc).
+                rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
+                merge_tree_clean = rc_mt == 0
+                ocr_bin = shutil.which("ocr")
+                if ocr_bin and base_sha:
+                    rc_op, _, _ = run_bounded(
+                        [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
+                        cwd=wt_dir,
+                        timeout_s=30,
                     )
-                    combined_imp = imp_out + "\n" + imp_err
-                    sym_risk = ""
-                    for rk in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"):
-                        if re.search(rf'(?i)(?:"risk"\s*:\s*"{rk}"|\brisk\s*[:=]\s*{rk}\b)', combined_imp):
-                            sym_risk = rk
-                            if RISK_ORDER[rk] > RISK_ORDER[gitnexus_risk]:
-                                gitnexus_risk = rk
-                            break
-                    if sym_risk == "CRITICAL" and symbol_test_refs_map.get(sym, 0) == 0:
-                        has_untested_critical_sym = True
-                    if imp_rc != 0 or not sym_risk:
-                        gitnexus_degraded = True
-                        if RISK_ORDER["UNKNOWN"] > RISK_ORDER[gitnexus_risk]:
-                            gitnexus_risk = "UNKNOWN"
+                    ocr_preview_status = "ok" if rc_op == 0 else "degraded"
+                ocr_status = "skipped_privacy"
+                coderabbit_status = "skipped_privacy"
+                lrc_status = "skipped_privacy"
+                verdict = "JUDGE_ESCALATE_HUMAN"
+                subreason = "SECURITY_REPORT_ONLY_LOCAL_BOUNDARY"
 
-            # Tier 2: ocr review + CodeRabbit + sparing lrc (only when not --skip-tier2, committed, and Tier 1 clean).
-            if (
-                not skip_tier2
-                and not dirty
-                and base_sha
-                and head_sha
-                and head_sha != base_sha
-                and not base_check_escalate
-                and not wt_missing_toolchain
-                and merge_tree_clean
-                and files_changed_ok
-                and collisions_rc == 0
-                and open_pr_collisions_checked
-            ):
-                if ocr_bin:
-                    with tempfile.TemporaryDirectory(prefix="proactive-judge-ocr-") as tmp_d:
-                        tmp_ocr = pathlib.Path(tmp_d) / "ocr-review.json"
-                        ocr_rc, ocr_out, _ = run_bounded(
-                            [
-                                ocr_bin,
-                                "review",
-                                "--audience",
-                                "agent",
-                                "--format",
-                                "json",
-                                "--from",
-                                base_sha,
-                                "--to",
-                                diff_target,
-                                "--output",
-                                str(tmp_ocr),
-                                "-b",
-                                f"Proactive {lens} candidate on abhimehro/{repo}",
-                            ],
-                            cwd=wt_dir,
-                            timeout_s=180,
-                        )
-                        raw_ocr = ""
-                        if tmp_ocr.is_file():
-                            raw_ocr = tmp_ocr.read_text(encoding="utf-8", errors="replace")
-                        if not raw_ocr.strip():
-                            raw_ocr = ocr_out
-                        if ocr_rc == 0:
-                            parsed_ok, ocr_counts = parse_ocr_review(raw_ocr)
-                            ocr_review_ok = parsed_ok
-                            ocr_status = "completed" if parsed_ok else "degraded"
-                        else:
-                            ocr_review_ok = False
-                            ocr_status = "degraded"
-                else:
-                    ocr_review_ok = False
-                    ocr_status = "missing"
+            elif not verdict:
+                # Tier 1: merge-tree, check-collisions, ocr delegate preview, GitNexus impact.
+                rc_mt, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", upstream_ref, diff_target], timeout_s=20)
+                merge_tree_clean = rc_mt == 0
 
-                cr_bin = shutil.which("coderabbit")
-                if cr_bin:
-                    au_rc, au_out, au_err = run_bounded([cr_bin, "auth", "status", "--agent"], cwd=wt_dir, timeout_s=20)
-                    au_blob = au_out + "\n" + au_err
-                    is_authed = False
-                    if au_rc == 0:
-                        for line in au_blob.splitlines():
-                            s = line.strip()
-                            if not s:
-                                continue
-                            try:
-                                aobj = json.loads(s)
-                                if isinstance(aobj, dict) and aobj.get("authenticated") is True:
-                                    is_authed = True
-                                    break
-                            except json.JSONDecodeError:
-                                continue
-                        if not is_authed and re.search(r'(?i)"?authenticated"?\s*:\s*true\b', au_blob):
-                            is_authed = True
-                    if is_authed:
-                        cr_rc, cr_out, _ = run_bounded(
-                            [cr_bin, "review", "--agent", "--committed", "--base-commit", base_sha],
-                            cwd=wt_dir,
-                            timeout_s=420,
-                        )
-                        coderabbit_status, cr_counts = parse_coderabbit_ndjson(cr_out, cr_rc)
+                collision_paths = list(changed_files)
+                if not collision_paths and dirty and base_sha:
+                    ok_dd, d_paths = git_paths_z(wt_dir, ["diff", "--no-renames", "--name-only", "-z", base_sha])
+                    ok_du, u_paths = git_paths_z(wt_dir, ["ls-files", "--others", "--exclude-standard", "-z"])
+                    if ok_dd and ok_du:
+                        collision_paths = list(dict.fromkeys([p for p in (d_paths + u_paths) if p]))
+
+                if collision_paths and wt_repo_dir is not None and is_git_repo(wt_repo_dir):
+                    if not skip_tier2 and shutil.which("gh") and is_gh_usable_for_repo(wt_repo_dir):
+                        col_cmd = [
+                            worktree_sh,
+                            "check-collisions",
+                            "--repo",
+                            f"abhimehro/{repo}",
+                            "--include-worktrees",
+                            "--repo-path",
+                            str(wt_repo_dir),
+                            "--exclude-worktree",
+                            str(wt_dir),
+                        ]
+                        for cf in collision_paths:
+                            col_cmd.extend(["--file", cf])
+                        collisions_rc, _, _ = run_bounded(col_cmd, timeout_s=60)
+                        open_pr_collisions_checked = True
                     else:
-                        coderabbit_status = "unauthenticated"
+                        collisions_rc = check_local_worktree_collisions(wt_repo_dir, wt_dir, collision_paths)
+                        open_pr_collisions_checked = is_local_origin_repo(wt_repo_dir)
+                elif not dirty and not collision_paths:
+                    collisions_rc = 0 if files_changed_ok else 6
+                    open_pr_collisions_checked = files_changed_ok
                 else:
-                    coderabbit_status = "missing"
+                    collisions_rc = 6
+                    open_pr_collisions_checked = False
 
-                # Sparing LiveReview (lrc) tie-breaker policy (serialized daily slot lock).
-                ocr_clean_hi = (ocr_counts["critical"] + ocr_counts["high"]) == 0
-                cr_clean_hi = (cr_counts["critical"] + cr_counts["major"]) == 0
-                lrc_trigger = (
-                    with_lrc
-                    or (coderabbit_status != "review_completed" and ocr_clean_hi)
-                    or (gitnexus_risk == "HIGH" and cr_clean_hi and ocr_clean_hi)
-                )
-                lrc_bin = shutil.which("lrc")
+                ocr_bin = shutil.which("ocr")
+                if ocr_bin and base_sha:
+                    rc_op, _, _ = run_bounded(
+                        [ocr_bin, "delegate", "preview", "--format", "json", "--from", base_sha, "--to", diff_target],
+                        cwd=wt_dir,
+                        timeout_s=30,
+                    )
+                    ocr_preview_status = "ok" if rc_op == 0 else "degraded"
+
+                node_bin = shutil.which("node")
+                run_cjs = (wt_repo_dir / ".gitnexus" / "run.cjs") if wt_repo_dir is not None else None
+                if node_bin and run_cjs is not None and run_cjs.is_file():
+                    _, gn_st_out, gn_st_err = run_bounded([node_bin, str(run_cjs), "status"], cwd=wt_repo_dir, timeout_s=20)
+                    if "stale" in (gn_st_out + gn_st_err).lower() and not skip_tier2 and not gitnexus_refreshed:
+                        run_bounded([node_bin, str(run_cjs), "analyze", "--index-only"], cwd=wt_repo_dir, timeout_s=90)
+                        gitnexus_refreshed = True
+                    changed_syms = extract_changed_symbols(wt_dir, base_sha, diff_target) if base_sha else []
+                    symbol_test_refs_map = {sym: count_symbol_test_references(wt_dir, [sym]) for sym in changed_syms}
+                    symbol_test_refs = sum(symbol_test_refs_map.values())
+                    for sym in changed_syms:
+                        imp_rc, imp_out, imp_err = run_bounded(
+                            [node_bin, str(run_cjs), "impact", sym, "--direction", "upstream", "--repo", str(wt_repo_dir)],
+                            cwd=wt_repo_dir,
+                            timeout_s=20,
+                        )
+                        combined_imp = imp_out + "\n" + imp_err
+                        sym_risk = ""
+                        for rk in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"):
+                            if re.search(rf'(?i)(?:"risk"\s*:\s*"{rk}"|\brisk\s*[:=]\s*{rk}\b)', combined_imp):
+                                sym_risk = rk
+                                if RISK_ORDER[rk] > RISK_ORDER[gitnexus_risk]:
+                                    gitnexus_risk = rk
+                                break
+                        if sym_risk == "CRITICAL" and symbol_test_refs_map.get(sym, 0) == 0:
+                            has_untested_critical_sym = True
+                        if imp_rc != 0 or not sym_risk:
+                            gitnexus_degraded = True
+                            if RISK_ORDER["UNKNOWN"] > RISK_ORDER[gitnexus_risk]:
+                                gitnexus_risk = "UNKNOWN"
+
+                # Tier 2: ocr review + CodeRabbit + sparing lrc (only when not --skip-tier2, committed, and Tier 1 clean).
                 if (
-                    lrc_trigger
-                    and lrc_bin
-                    and diff_loc_measured
-                    and bool(base_sha)
-                    and bool(head_sha)
-                    and diff_loc <= 250
+                    not skip_tier2
+                    and not dirty
+                    and base_sha
+                    and head_sha
+                    and head_sha != base_sha
+                    and not base_check_escalate
+                    and not wt_missing_toolchain
+                    and merge_tree_clean
+                    and files_changed_ok
+                    and collisions_rc == 0
+                    and open_pr_collisions_checked
                 ):
-                    lrc_lock_path = reports_dir / f".lrc-daily-{sweep_date}.lock"
-                    lrc_lock_fh = open(lrc_lock_path, "a+", encoding="utf-8")
-                    os.chmod(lrc_lock_path, 0o600)
-                    fcntl.flock(lrc_lock_fh.fileno(), fcntl.LOCK_EX)
-                    LEDGER_ROWS[:] = load_ledger_rows()
-                    if count_daily_lrc_runs(sweep_date) < 1:
-                        u_rc, u_out, _ = run_bounded([lrc_bin, "usage", "inspect", "--output", "json"], cwd=wt_dir, timeout_s=20)
-                        if u_rc != 0:
-                            u_rc, u_out, _ = run_bounded([lrc_bin, "usage", "inspect"], cwd=wt_dir, timeout_s=20)
-                        can_trig, rem_loc = parse_lrc_usage(u_out) if u_rc == 0 else (False, None)
-                        if can_trig and rem_loc is not None and rem_loc >= 2000:
-                            l_rc, l_out, _ = run_bounded(
-                                [lrc_bin, "review", "--no-serve", "--output", "json", "--range", f"{base_sha}...{diff_target}"],
+                    if ocr_bin:
+                        with tempfile.TemporaryDirectory(prefix="proactive-judge-ocr-") as tmp_d:
+                            tmp_ocr = pathlib.Path(tmp_d) / "ocr-review.json"
+                            ocr_rc, ocr_out, _ = run_bounded(
+                                [
+                                    ocr_bin,
+                                    "review",
+                                    "--audience",
+                                    "agent",
+                                    "--format",
+                                    "json",
+                                    "--from",
+                                    base_sha,
+                                    "--to",
+                                    diff_target,
+                                    "--output",
+                                    str(tmp_ocr),
+                                    "-b",
+                                    f"Proactive {lens} candidate on abhimehro/{repo}",
+                                ],
                                 cwd=wt_dir,
                                 timeout_s=180,
                             )
-                            lrc_executed = True
-                            lrc_status, lrc_counts = parse_lrc_review(l_out, l_rc)
+                            raw_ocr = ""
+                            if tmp_ocr.is_file():
+                                raw_ocr = tmp_ocr.read_text(encoding="utf-8", errors="replace")
+                            if not raw_ocr.strip():
+                                raw_ocr = ocr_out
+                            if ocr_rc == 0:
+                                parsed_ok, ocr_counts = parse_ocr_review(raw_ocr)
+                                ocr_review_ok = parsed_ok
+                                ocr_status = "completed" if parsed_ok else "degraded"
+                            else:
+                                ocr_review_ok = False
+                                ocr_status = "degraded"
+                    else:
+                        ocr_review_ok = False
+                        ocr_status = "missing"
+
+                    cr_bin = shutil.which("coderabbit")
+                    if cr_bin:
+                        au_rc, au_out, au_err = run_bounded([cr_bin, "auth", "status", "--agent"], cwd=wt_dir, timeout_s=20)
+                        au_blob = au_out + "\n" + au_err
+                        is_authed = False
+                        if au_rc == 0:
+                            for line in au_blob.splitlines():
+                                s = line.strip()
+                                if not s:
+                                    continue
+                                try:
+                                    aobj = json.loads(s)
+                                    if isinstance(aobj, dict) and aobj.get("authenticated") is True:
+                                        is_authed = True
+                                        break
+                                except json.JSONDecodeError:
+                                    continue
+                            if not is_authed and re.search(r'(?i)"?authenticated"?\s*:\s*true\b', au_blob):
+                                is_authed = True
+                        if is_authed:
+                            cr_rc, cr_out, _ = run_bounded(
+                                [cr_bin, "review", "--agent", "--committed", "--base-commit", base_sha],
+                                cwd=wt_dir,
+                                timeout_s=420,
+                            )
+                            coderabbit_status, cr_counts = parse_coderabbit_ndjson(cr_out, cr_rc)
+                        else:
+                            coderabbit_status = "unauthenticated"
+                    else:
+                        coderabbit_status = "missing"
+
+                    # Sparing LiveReview (lrc) tie-breaker policy (serialized daily slot lock).
+                    ocr_clean_hi = (ocr_counts["critical"] + ocr_counts["high"]) == 0
+                    cr_clean_hi = (cr_counts["critical"] + cr_counts["major"]) == 0
+                    lrc_trigger = (
+                        with_lrc
+                        or (coderabbit_status != "review_completed" and ocr_clean_hi)
+                        or (gitnexus_risk == "HIGH" and cr_clean_hi and ocr_clean_hi)
+                    )
+                    lrc_bin = shutil.which("lrc")
+                    if (
+                        lrc_trigger
+                        and lrc_bin
+                        and diff_loc_measured
+                        and bool(base_sha)
+                        and bool(head_sha)
+                        and diff_loc <= 250
+                    ):
+                        lrc_lock_path = reports_dir / f".lrc-daily-{sweep_date}.lock"
+                        lrc_lock_fh = open(lrc_lock_path, "a+", encoding="utf-8")
+                        os.chmod(lrc_lock_path, 0o600)
+                        fcntl.flock(lrc_lock_fh.fileno(), fcntl.LOCK_EX)
+                        LEDGER_ROWS[:] = load_ledger_rows()
+                        if count_daily_lrc_runs(sweep_date) < 1:
+                            u_rc, u_out, _ = run_bounded([lrc_bin, "usage", "inspect", "--output", "json"], cwd=wt_dir, timeout_s=20)
+                            if u_rc != 0:
+                                u_rc, u_out, _ = run_bounded([lrc_bin, "usage", "inspect"], cwd=wt_dir, timeout_s=20)
+                            can_trig, rem_loc = parse_lrc_usage(u_out) if u_rc == 0 else (False, None)
+                            if can_trig and rem_loc is not None and rem_loc >= 2000:
+                                l_rc, l_out, _ = run_bounded(
+                                    [lrc_bin, "review", "--no-serve", "--output", "json", "--range", f"{base_sha}...{diff_target}"],
+                                    cwd=wt_dir,
+                                    timeout_s=180,
+                                )
+                                lrc_executed = True
+                                lrc_status, lrc_counts = parse_lrc_review(l_out, l_rc)
+                            else:
+                                lrc_status = "skipped_policy"
+                                lrc_lock_fh.close()
+                                lrc_lock_fh = None
                         else:
                             lrc_status = "skipped_policy"
                             lrc_lock_fh.close()
                             lrc_lock_fh = None
                     else:
                         lrc_status = "skipped_policy"
-                        lrc_lock_fh.close()
-                        lrc_lock_fh = None
-                else:
-                    lrc_status = "skipped_policy"
-            elif skip_tier2:
-                ocr_status = "skipped_tier2"
-                coderabbit_status = "skipped_tier2"
-                lrc_status = "skipped_policy"
-
-            # Final verdict rubric for non-rejected, non-sentinel candidates.
-            lrc_blocking = lrc_executed and (
-                lrc_status != "completed"
-                or (lrc_counts["critical"] + lrc_counts["high"] + lrc_counts["major"]) > 0
-            )
-            untested_critical = has_untested_critical_sym or ((gitnexus_risk == "CRITICAL") and (symbol_test_refs == 0))
-
-            if (
-                not dirty
-                and head_sha
-                and head_sha != base_sha
-                and not base_check_escalate
-                and not wt_missing_toolchain
-                and merge_tree_clean
-                and files_changed_ok
-                and collisions_rc == 0
-                and open_pr_collisions_checked
-                and not skip_tier2
-                and not gitnexus_degraded
-                and ocr_review_ok
-                and (ocr_counts["critical"] + ocr_counts["high"]) == 0
-                and coderabbit_status == "review_completed"
-                and (cr_counts["critical"] + cr_counts["major"]) == 0
-                and not lrc_blocking
-                and not untested_critical
-            ):
-                verdict = "JUDGE_PASS_ROUTINE"
-                subreason = "ALL_TIERS_CLEAN"
-            else:
-                verdict = "JUDGE_ESCALATE_HUMAN"
-                if wt_missing_toolchain:
-                    subreason = "PREFLIGHT_MISSING_TOOLCHAIN"
-                elif base_check_escalate:
-                    subreason = "BASE_CHECK_UNUSABLE"
-                elif dirty or not head_sha or head_sha == base_sha:
-                    subreason = "DIRTY_UNCOMMITTED_WORKTREE"
-                elif not merge_tree_clean:
-                    subreason = "UPSTREAM_MERGE_CONFLICT"
-                elif (collisions_rc not in (0, 5)) or not files_changed_ok:
-                    subreason = "COLLISION_OR_UNVERIFIABLE"
                 elif skip_tier2:
-                    subreason = "TIER2_SKIPPED_OFFLINE"
-                elif collisions_rc == 5 or not open_pr_collisions_checked:
-                    subreason = "OPEN_PR_COLLISIONS_UNVERIFIED"
-                elif untested_critical:
-                    subreason = "CRITICAL_UNTESTED_BLAST_RADIUS"
-                elif (
-                    (ocr_counts["critical"] + ocr_counts["high"]) > 0
-                    or (cr_counts["critical"] + cr_counts["major"]) > 0
+                    ocr_status = "skipped_tier2"
+                    coderabbit_status = "skipped_tier2"
+                    lrc_status = "skipped_policy"
+
+                # Final verdict rubric for non-rejected, non-sentinel candidates.
+                lrc_blocking = lrc_executed and (
+                    lrc_status != "completed"
                     or (lrc_counts["critical"] + lrc_counts["high"] + lrc_counts["major"]) > 0
+                )
+                untested_critical = has_untested_critical_sym or ((gitnexus_risk == "CRITICAL") and (symbol_test_refs == 0))
+
+                if (
+                    not dirty
+                    and head_sha
+                    and head_sha != base_sha
+                    and not base_check_escalate
+                    and not wt_missing_toolchain
+                    and merge_tree_clean
+                    and files_changed_ok
+                    and collisions_rc == 0
+                    and open_pr_collisions_checked
+                    and not skip_tier2
+                    and not gitnexus_degraded
+                    and ocr_review_ok
+                    and (ocr_counts["critical"] + ocr_counts["high"]) == 0
+                    and coderabbit_status == "review_completed"
+                    and (cr_counts["critical"] + cr_counts["major"]) == 0
+                    and not lrc_blocking
+                    and not untested_critical
                 ):
-                    subreason = "REVIEWER_FINDINGS_PRESENT"
-                elif gitnexus_degraded:
-                    subreason = "GITNEXUS_DEGRADED"
+                    verdict = "JUDGE_PASS_ROUTINE"
+                    subreason = "ALL_TIERS_CLEAN"
                 else:
-                    subreason = "REVIEWER_DEGRADED_OR_INCOMPLETE"
+                    verdict = "JUDGE_ESCALATE_HUMAN"
+                    if wt_missing_toolchain:
+                        subreason = "PREFLIGHT_MISSING_TOOLCHAIN"
+                    elif base_check_escalate:
+                        subreason = "BASE_CHECK_UNUSABLE"
+                    elif dirty or not head_sha or head_sha == base_sha:
+                        subreason = "DIRTY_UNCOMMITTED_WORKTREE"
+                    elif not merge_tree_clean:
+                        subreason = "UPSTREAM_MERGE_CONFLICT"
+                    elif (collisions_rc not in (0, 5)) or not files_changed_ok:
+                        subreason = "COLLISION_OR_UNVERIFIABLE"
+                    elif skip_tier2:
+                        subreason = "TIER2_SKIPPED_OFFLINE"
+                    elif collisions_rc == 5 or not open_pr_collisions_checked:
+                        subreason = "OPEN_PR_COLLISIONS_UNVERIFIED"
+                    elif untested_critical:
+                        subreason = "CRITICAL_UNTESTED_BLAST_RADIUS"
+                    elif (
+                        (ocr_counts["critical"] + ocr_counts["high"]) > 0
+                        or (cr_counts["critical"] + cr_counts["major"]) > 0
+                        or (lrc_counts["critical"] + lrc_counts["high"] + lrc_counts["major"]) > 0
+                    ):
+                        subreason = "REVIEWER_FINDINGS_PRESENT"
+                    elif gitnexus_degraded:
+                        subreason = "GITNEXUS_DEGRADED"
+                    else:
+                        subreason = "REVIEWER_DEGRADED_OR_INCOMPLETE"
 
-        # Verify worktree identity is verified and unchanged mid-evaluation before recording state or retiring.
-        mutated_mid_eval = False
-        rc_ch, ch_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", "HEAD"], timeout_s=10)
-        cur_head_sha = ch_out.strip() if rc_ch == 0 else ""
-        cur_fp = compute_wt_content_fingerprint(wt_dir, cur_head_sha) if cur_head_sha else ""
-        if not head_sha or not eval_fingerprint or not cur_fp or cur_head_sha != head_sha:
-            mutated_mid_eval = True
-            judge_degraded = True
-            verdict = "JUDGE_ESCALATE_HUMAN"
-            if not eval_fingerprint or not cur_fp or not head_sha:
-                subreason = "WORKTREE_IDENTITY_UNVERIFIED"
-            else:
+            # Verify worktree identity is verified and unchanged mid-evaluation before recording state or retiring.
+            mutated_mid_eval = False
+            rc_ch, ch_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", "HEAD"], timeout_s=10)
+            cur_head_sha = ch_out.strip() if rc_ch == 0 else ""
+            cur_fp = compute_wt_content_fingerprint(wt_dir, cur_head_sha) if cur_head_sha else ""
+            if not head_sha or not eval_fingerprint or not cur_fp or cur_head_sha != head_sha:
+                mutated_mid_eval = True
+                judge_degraded = True
+                verdict = "JUDGE_ESCALATE_HUMAN"
+                if not eval_fingerprint or not cur_fp or not head_sha:
+                    subreason = "WORKTREE_IDENTITY_UNVERIFIED"
+                else:
+                    subreason = "WORKTREE_CHANGED_DURING_EVAL"
+            elif cur_fp != eval_fingerprint:
+                mutated_mid_eval = True
+                verdict = "JUDGE_ESCALATE_HUMAN"
                 subreason = "WORKTREE_CHANGED_DURING_EVAL"
-        elif cur_fp != eval_fingerprint:
-            mutated_mid_eval = True
-            verdict = "JUDGE_ESCALATE_HUMAN"
-            subreason = "WORKTREE_CHANGED_DURING_EVAL"
 
-        tier1_summary = {
-            "verify_probe_rc": v_rc,
-            "base_check": base_check_verdict,
-            "merge_tree_clean": merge_tree_clean,
-            "collisions_rc": collisions_rc,
-            "ocr_preview": ocr_preview_status,
-            "gitnexus_risk": gitnexus_risk,
-            "gitnexus_degraded": gitnexus_degraded,
-            "symbol_test_refs": symbol_test_refs,
-        }
-        tier2_summary = {
-            "ocr_review": ocr_status,
-            "ocr_counts": ocr_counts,
-            "coderabbit": coderabbit_status,
-            "coderabbit_counts": cr_counts,
-            "lrc": lrc_status,
-            "lrc_counts": lrc_counts,
-        }
+            tier1_summary = {
+                "verify_probe_rc": v_rc,
+                "base_check": base_check_verdict,
+                "merge_tree_clean": merge_tree_clean,
+                "collisions_rc": collisions_rc,
+                "ocr_preview": ocr_preview_status,
+                "gitnexus_risk": gitnexus_risk,
+                "gitnexus_degraded": gitnexus_degraded,
+                "symbol_test_refs": symbol_test_refs,
+            }
+            tier2_summary = {
+                "ocr_review": ocr_status,
+                "ocr_counts": ocr_counts,
+                "coderabbit": coderabbit_status,
+                "coderabbit_counts": cr_counts,
+                "lrc": lrc_status,
+                "lrc_counts": lrc_counts,
+            }
 
-        ledger_entry = {
-            "timestamp": now_iso,
-            "date": sweep_date,
-            "repo": repo,
-            "digest_status": cand_status,
-            "digest_path": str(cand_digest) if cand_digest else "",
-            "worktree": str(wt_dir),
-            "worktree_key": str(wt_dir),
-            "branch": wt_branch,
-            "base_sha": base_sha,
-            "head_sha": head_sha,
-            "lens": lens,
-            "verdict": verdict,
-            "subreason": subreason,
-            "diff_files": files_changed,
-            "diff_loc": diff_loc,
-            "ocr_review": ocr_status,
-            "coderabbit": coderabbit_status,
-            "lrc": lrc_status,
-            "tier1": tier1_summary,
-            "tier2": tier2_summary,
-            "lrc_executed": lrc_executed,
-        }
-        try:
+            ledger_entry = {
+                "timestamp": now_iso,
+                "date": sweep_date,
+                "repo": repo,
+                "digest_status": cand_status,
+                "digest_path": str(cand_digest) if cand_digest else "",
+                "worktree": str(wt_dir),
+                "worktree_key": str(wt_dir),
+                "branch": wt_branch,
+                "base_sha": base_sha,
+                "head_sha": head_sha,
+                "lens": lens,
+                "verdict": verdict,
+                "subreason": subreason,
+                "diff_files": files_changed,
+                "diff_loc": diff_loc,
+                "ocr_review": ocr_status,
+                "coderabbit": coderabbit_status,
+                "lrc": lrc_status,
+                "tier1": tier1_summary,
+                "tier2": tier2_summary,
+                "lrc_executed": lrc_executed,
+            }
             append_ledger_row(ledger_entry)
         finally:
             if lrc_lock_fh is not None:

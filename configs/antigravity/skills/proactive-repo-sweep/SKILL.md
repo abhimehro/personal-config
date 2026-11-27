@@ -222,13 +222,24 @@ why in the digest.
 
    If verification fails, the right response depends on **which** gate failed:
 
-   - A gate the sweep itself controls — a tamper-evident build/test path, the
-     semantic test-coverage gate, or the `--numeric-check-cmd` assertion — is
-     caused by the change by construction. Record the report with
-     `Substatus: HARNESS_OR_COVERAGE_VIOLATION` and leave the candidate worktree
-     and branch in place for the companion `[PROACTIVE-JUDGE-SHADOW]` slot
-     (`antigravity-proactive-ctl.sh judge`) to write the `0600` `JUDGE_REJECT`
-     receipt to `judge-shadow-ledger.jsonl` and retire them automatically:
+   - A gate the sweep itself controls — a tamper-evident build/test path or the
+     semantic test-coverage gate — is caused by the change by construction.
+     Record the report with `Substatus: HARNESS_OR_COVERAGE_VIOLATION` and leave
+     the candidate worktree and branch in place for the companion
+     `[PROACTIVE-JUDGE-SHADOW]` slot (`antigravity-proactive-ctl.sh judge`) to
+     write the `0600` `JUDGE_REJECT` receipt to `judge-shadow-ledger.jsonl` and
+     retire them automatically. If `--numeric-check-cmd` failed (research `bolt`
+     tolerance assertion, which the Judge probe stubs to `true`), record the
+     report (`Status: NO_ACTIONABLE_FINDINGS`,
+     `Substatus: NUMERIC_EQUIVALENCE_FAILED`) and force-remove the uncommitted
+     worktree only after confirming the digest and worktree variables are
+     non-empty:
+
+     ```bash
+     [[ -s "$DIGEST_PATH" && -n "$WT_PATH" && -n "$BRANCH_NAME" ]] && \
+       git -C "$HOME/dev/<repo>" worktree remove --force "$WT_PATH" && \
+       git -C "$HOME/dev/<repo>" branch -D "$BRANCH_NAME"
+     ```
 
    - A failure in the repository's own test or build command is **not**
      automatically the candidate's fault. Jules stranded four good PRs on base

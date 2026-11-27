@@ -1105,13 +1105,12 @@ cmd_verify() {
 		fi
 	fi
 
+	local v_test_rc=0
 	(
-		cd "${wt_path}"
-		"${py_env[@]}" bash -c "${test_cmd}"
-		if [[ -n ${numeric_cmd} ]]; then
-			"${py_env[@]}" bash -c "${numeric_cmd}"
-		fi
-	)
+		cd "${wt_path}" &&
+			"${py_env[@]}" bash -c "${test_cmd}" &&
+			{ [[ -z ${numeric_cmd} ]] || "${py_env[@]}" bash -c "${numeric_cmd}"; }
+	) || v_test_rc=$?
 
 	local v_head="" v_tree=""
 	v_head="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
@@ -1125,7 +1124,7 @@ cmd_verify() {
 			fi
 		fi
 		rm -f "${v_tmp_idx}"
-		python3 - "${meta_file}" "${v_head}" "${v_tree}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" "${explicit_test_cmd}" <<'PY'
+		python3 - "${meta_file}" "${v_head}" "${v_tree}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" "${explicit_test_cmd}" "${v_test_rc}" <<'PY'
 import fcntl
 import json
 import os
@@ -1139,6 +1138,7 @@ allow_tests = sys.argv[4] == "1"
 allow_harness = sys.argv[5] == "1"
 expected_count = sys.argv[6]
 custom_test_cmd = sys.argv[7]
+test_rc = int(sys.argv[8])
 
 lock_path = meta_path.with_name("proactive-meta.lock")
 with open(lock_path, "a+", encoding="utf-8") as lock_fh:
@@ -1156,15 +1156,22 @@ with open(lock_path, "a+", encoding="utf-8") as lock_fh:
         meta["verify_expected_test_count"] = expected_count
         if custom_test_cmd:
             meta["verify_custom_test_cmd"] = custom_test_cmd
+            meta["verify_custom_test_rc"] = test_rc
         else:
             meta.pop("verify_custom_test_cmd", None)
+            meta.pop("verify_custom_test_rc", None)
     else:
         meta.pop("verify_head_sha", None)
+        if custom_test_cmd:
+            meta["verify_custom_test_cmd"] = custom_test_cmd
+            meta["verify_custom_test_rc"] = test_rc
+        else:
+            meta.pop("verify_custom_test_cmd", None)
+            meta.pop("verify_custom_test_rc", None)
         meta.pop("verify_tree_sha", None)
         meta.pop("verify_allow_test_edits", None)
         meta.pop("verify_allow_harness_changes", None)
         meta.pop("verify_expected_test_count", None)
-        meta.pop("verify_custom_test_cmd", None)
 
     tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -1172,6 +1179,9 @@ with open(lock_path, "a+", encoding="utf-8") as lock_fh:
         handle.write(json.dumps(meta, indent=2) + "\n")
     os.replace(tmp, meta_path)
 PY
+	fi
+	if [[ ${v_test_rc} -ne 0 ]]; then
+		exit "${v_test_rc}"
 	fi
 }
 
@@ -1289,7 +1299,7 @@ cmd_check_collisions() {
 			require_fresh_origin_ref "${repo_path}"
 		fi
 
-		local cand="" cand_base="" cand_paths="" cand_rel="" cand_dirty="" cand_branch=""
+		local cand="" cand_base="" cand_dirty="" cand_branch=""
 		for cand in ${candidate_dirs[@]+"${candidate_dirs[@]}"}; do
 			cand_dirty="$(git -C "${cand}" status --porcelain 2>/dev/null | head -1)"
 			# A candidate whose work already merged is not a collision: its paths
@@ -1309,20 +1319,14 @@ cmd_check_collisions() {
 				echo "[ERROR] candidate worktree ${cand} has no recorded base_sha; refusing to under-report collisions" >&2
 				exit 6
 			fi
-			cand_paths="$({
-				git -C "${cand}" diff --no-renames --name-only "${cand_base}" 2>/dev/null
-				git -C "${cand}" ls-files --others --exclude-standard 2>/dev/null
-			} | sort -u)"
-			while IFS= read -r cand_rel; do
-				[[ -n ${cand_rel} ]] || continue
-				wt_records+="${cand_rel}"$'\t'"${cand}"$'\t'"${cand_branch}"$'\n'
-			done <<<"${cand_paths}"
+			wt_records+="${cand}"$'\t'"${cand_base}"$'\t'"${cand_branch}"$'\n'
 		done
 	fi
 
 	python3 - "${prs_json}" "${wt_records}" "${target_files[@]}" <<'PY'
 import json
 import os
+import subprocess
 import sys
 
 prs = json.loads(sys.argv[1])
@@ -1356,10 +1360,27 @@ for line in wt_blob.splitlines():
     parts = line.split("\t")
     if len(parts) != 3:
         continue
-    rel, wt_dir, branch = parts[0].strip(), parts[1].strip(), parts[2].strip()
-    if os.path.normpath(rel) in targets:
+    wt_dir, cand_base, branch = parts[0], parts[1].strip(), parts[2].strip()
+    df = subprocess.run(
+        ["git", "-C", wt_dir, "diff", "--no-renames", "--name-only", "-z", cand_base],
+        capture_output=True,
+    )
+    ls = subprocess.run(
+        ["git", "-C", wt_dir, "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+    )
+    if df.returncode != 0 or ls.returncode != 0:
+        sys.stderr.write(f"[ERROR] unable to enumerate changed files for candidate worktree {wt_dir}\n")
+        sys.exit(6)
+    touched = {
+        os.path.normpath(os.fsdecode(part))
+        for raw in (df.stdout or b"", ls.stdout or b"")
+        for part in raw.split(b"\x00")
+        if part
+    }
+    for hit in sorted(touched & targets):
         label = f"branch {branch}" if branch else "detached HEAD"
-        collisions.append(f"COLLISION: live candidate worktree {wt_dir} ({label}) already touches {os.path.normpath(rel)}")
+        collisions.append(f"COLLISION: live candidate worktree {wt_dir} ({label}) already touches {hit}")
 
 if collisions:
     for message in collisions:
