@@ -294,6 +294,7 @@ configs/.config/fish/functions/*
 !configs/.config/fish/completions/op.fish
 !configs/.config/fish/functions/op-ready.fish
 !configs/.config/fish/functions/cursor-op.fish
+!configs/.config/fish/functions/codex-op.fish
 !configs/.config/fish/functions/_op_inject.fish
 !configs/.config/fish/functions/nm-*.fish
 !configs/.config/fish/functions/__ensure_dracula_theme.fish
