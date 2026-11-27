@@ -2662,7 +2662,8 @@ git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 # (14) Devin 4721723707: is-active timeout (rc=124) fails closed as active,
 #      while confirmed inactive worktree (rc=1) is skipped
-S16_ACT_DIR="$(mktemp -d)"
+S16_ACT_DIR="${TEST_DIR}/s16-act-dir"
+mkdir -p "${S16_ACT_DIR}"
 cp "${CTL_SCRIPT}" "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
 chmod +x "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
 WT_HARD_TO="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
