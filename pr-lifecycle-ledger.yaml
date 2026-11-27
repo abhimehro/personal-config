@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1764
+ledger_revision: 1767
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -55416,7 +55416,9 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - configs/weekly-pulse-runner.json
+  - prompt-exports/weekly-pulse-v1.1-shadow.md
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -55452,7 +55454,8 @@ items:
   classification: UNKNOWN
   risk_class: UNKNOWN
   sensitive_paths: []
-  changed_paths: []
+  changed_paths:
+  - .github/workflows/dependency-review.yml
   guardrail_outcome: NOT_RUN
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
@@ -55470,6 +55473,42 @@ items:
   handoffs: []
   revision: 0
   updated_at_utc: '2026-11-26T14:58:22Z'
+- key: abhimehro/personal-config#2838@326cd645384036a53c9ffc8972ad363981f36fb9
+  repository: abhimehro/personal-config
+  pr: 2838
+  url: https://github.com/abhimehro/personal-config/pull/2838
+  base_sha: e290f95f78ac16a5f6cd9e6eb82e295523ccdc25
+  head_sha: 326cd645384036a53c9ffc8972ad363981f36fb9
+  author:
+    login: dependabot[bot]
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: UNKNOWN
+  risk_class: UNKNOWN
+  sensitive_paths: []
+  changed_paths: []
+  guardrail_outcome: NOT_RUN
+  lifecycle_state: STAGE1_INTAKE
+  current_owner: stage1
+  next_owner: stage1
+  terminal_disposition: null
+  safe_default: Leave open; no merge or close until Stage 1 guardrails run.
+  next_action: 'Stage 1: run guardrails on newly ingested open PR (ingested 2026-11-27
+    by reconcile).'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2838
+  attempts:
+    evidence: 0
+    recovery: 0
+    mutations: 0
+  handoffs: []
+  revision: 0
+  updated_at_utc: '2026-11-27T14:45:12Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
