@@ -268,16 +268,17 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
   `THROTTLED`, or `MISSED` (written by
   `antigravity-proactive-ctl.sh audit-missed --date YYYY-MM-DD --repo <repo>` if
   a scheduled wake did not run)
-- **Substatus:** `NONE` | `FLOAT_REORDER_DRIFT` | `GATE_FAILURE` |
-  `PRE_EXISTING_FAILURE` (flag pure reordered `pandas`/`numpy` summation drift
+- **Substatus:** `NONE` | `FLOAT_REORDER_DRIFT` | `NUMERIC_EQUIVALENCE_FAILED` |
+  `HARNESS_OR_COVERAGE_VIOLATION` | `GATE_FAILURE` | `PRE_EXISTING_FAILURE`
+  (flag pure reordered `pandas`/`numpy` summation drift
   `1e-10 < max_rel_diff <= 1e-7` under `Status: CLEAN_NO_OP` +
-  `Substatus:
-  FLOAT_REORDER_DRIFT` after discarding the candidate so
-  float-reorder noise is tracked separately from real `GATE_FAILURE`
-  regressions). The sweep only ever writes the first three;
-  `PRE_EXISTING_FAILURE` is appended by `base-check` during the post-sweep Judge
-  slot in a `## Base-Check Classification` section, along with its `Verdict`
-  (`NO_FAILURE` | `FLAKE_ON_RETRY` | `PRE_EXISTING_ON_BASE` |
+  `Substatus: FLOAT_REORDER_DRIFT`, or non-reorder numeric tolerance failures
+  under `Status: CLEAN_NO_OP` + `Substatus: NUMERIC_EQUIVALENCE_FAILED`, after
+  discarding the candidate so numeric rejections are tracked separately from
+  real `GATE_FAILURE` suite regressions). The sweep only ever writes the first
+  five; `PRE_EXISTING_FAILURE` is appended by `base-check` during the post-sweep
+  Judge slot in a `## Base-Check Classification` section, along with its
+  `Verdict` (`NO_FAILURE` | `FLAKE_ON_RETRY` | `PRE_EXISTING_ON_BASE` |
   `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` retires the candidate
   automatically (`JUDGE_REJECT`, removing the worktree/branch after writing the
   shadow-ledger receipt); for `NO_FAILURE`, `FLAKE_ON_RETRY`, or

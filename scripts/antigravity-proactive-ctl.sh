@@ -2542,8 +2542,10 @@ def check_local_worktree_collisions(repo_dir, exclude_wt, changed_files):
 
 
 def is_active_candidate_wt(wt_dir, meta):
-    rc_act, _, _ = run_bounded([worktree_sh, "is-active", "--worktree", str(wt_dir)], timeout_s=20)
-    return rc_act == 0
+    if not wt_dir.is_dir():
+        return False
+    rc_act, _, _ = run_bounded([worktree_sh, "is-active", "--worktree", str(wt_dir)], timeout_s=60)
+    return rc_act != 1
 
 
 def compute_wt_tree_sha(wt_dir):
