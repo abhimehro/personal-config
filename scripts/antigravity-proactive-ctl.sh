@@ -1679,6 +1679,7 @@ cmd_base_check() {
 	local wt_path=""
 	local digest=""
 	local test_cmd=""
+	local no_split=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -1701,6 +1702,10 @@ cmd_base_check() {
 			require_flag_value "base-check" "$1" "$#"
 			test_cmd="$2"
 			shift 2
+			;;
+		--no-split)
+			no_split=1
+			shift
 			;;
 		*)
 			echo "[ERROR] Unknown flag for base-check: $1" >&2
@@ -1761,12 +1766,16 @@ cmd_base_check() {
 	# instead of paying for the whole suite twice. A literal '&&' inside a quoted
 	# argument would split wrongly; none of the current repo mappings contain one.
 	local segments=()
-	local rest="${test_cmd}"
-	while [[ ${rest} == *"&&"* ]]; do
-		segments+=("$(trim_test_segment "${rest%%&&*}")")
-		rest="${rest#*&&}"
-	done
-	segments+=("$(trim_test_segment "${rest}")")
+	if [[ ${no_split} -eq 1 ]]; then
+		segments=("${test_cmd}")
+	else
+		local rest="${test_cmd}"
+		while [[ ${rest} == *"&&"* ]]; do
+			segments+=("$(trim_test_segment "${rest%%&&*}")")
+			rest="${rest#*&&}"
+		done
+		segments+=("$(trim_test_segment "${rest}")")
+	fi
 
 	BASE_CHECK_REPO="${wt_path}"
 	BASE_CHECK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/proactive-basecheck.XXXXXX")"
@@ -2533,31 +2542,8 @@ def check_local_worktree_collisions(repo_dir, exclude_wt, changed_files):
 
 
 def is_active_candidate_wt(wt_dir, meta):
-    rc_d, dirty_out, _ = run_bounded(["git", "-C", str(wt_dir), "status", "--porcelain", "--untracked-files=all"], timeout_s=10)
-    if rc_d != 0 or dirty_out.strip():
-        return True
-    base_sha = meta.get("base_sha", "")
-    default_branch = meta.get("default_branch", "main") or "main"
-    if not base_sha:
-        return False
-    rc_v, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", f"{base_sha}^{{commit}}"], timeout_s=10)
-    if rc_v != 0:
-        return True
-    rc_a, ahead_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-list", "--count", f"{base_sha}..HEAD"], timeout_s=10)
-    if rc_a != 0 or not ahead_out.strip():
-        return True
-    if int(ahead_out.strip()) <= 0:
-        return False
-    rc_o, _, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", "--verify", "--quiet", f"origin/{default_branch}"], timeout_s=10)
-    if rc_o == 0:
-        rc_m, _, _ = run_bounded(["git", "-C", str(wt_dir), "merge-base", "--is-ancestor", "HEAD", f"origin/{default_branch}"], timeout_s=10)
-        if rc_m == 0:
-            return False
-        rc_ut, ut_out, _ = run_bounded(["git", "-C", str(wt_dir), "rev-parse", f"origin/{default_branch}^{{tree}}"], timeout_s=10)
-        rc_mt, mt_out, _ = run_bounded(["git", "-C", str(wt_dir), "merge-tree", "--write-tree", f"origin/{default_branch}", "HEAD"], timeout_s=15)
-        if rc_ut == 0 and rc_mt == 0 and ut_out.strip() and mt_out.strip().splitlines()[0] == ut_out.strip():
-            return False
-    return True
+    rc_act, _, _ = run_bounded([worktree_sh, "is-active", "--worktree", str(wt_dir)], timeout_s=20)
+    return rc_act == 0
 
 
 def compute_wt_tree_sha(wt_dir):
@@ -3306,6 +3292,19 @@ for repo in target_repos:
                 )
             )
 
+            prior_unusable_retry = bool(
+                not skip_tier2
+                and (
+                    retry_base_check_unusable
+                    or any(
+                        r.get("worktree") == str(wt_dir)
+                        and r.get("subreason") == "BASE_CHECK_UNUSABLE"
+                        and (not r.get("head_sha") or r.get("head_sha") == head_sha)
+                        for r in LEDGER_ROWS
+                    )
+                )
+            )
+
             # Fast deterministic policy & semantic coverage probe (replays exact saved verify overrides without mutating receipt).
             verify_cmd = [worktree_sh, "verify", "--worktree", str(wt_dir), "--lens", lens, "--probe-only", "--test-cmd", "true"]
             if repo in RESEARCH_REPOS and lens == "bolt":
@@ -3353,7 +3352,7 @@ for repo in target_repos:
                             continue
                         cached_verdict = m_bcv.group(1).strip()
                         inconclusive = cached_verdict == "BASE_PREREQ_FAILED" or cached_verdict.startswith("EXIT_")
-                        if inconclusive and (force_rejudge or retry_base_check_unusable):
+                        if inconclusive and (force_rejudge or prior_unusable_retry):
                             break
                         if cached_verdict == "CAUSED_BY_CHANGE":
                             cached_reused = True
@@ -3374,7 +3373,7 @@ for repo in target_repos:
                         bc_cmd.extend(["--digest", str(cand_digest)])
                     custom_test_cmd = meta.get("verify_custom_test_cmd")
                     if custom_test_cmd and custom_cmd_matches:
-                        bc_cmd.extend(["--test-cmd", str(custom_test_cmd)])
+                        bc_cmd.extend(["--no-split", "--test-cmd", str(custom_test_cmd)])
                     bc_rc, bc_out, _ = run_bounded(bc_cmd, timeout_s=300)
                     m_out = re.search(r"(?m)^VERDICT:\s*([A-Z_]+)$", bc_out)
                     if m_out:

@@ -2591,6 +2591,73 @@ PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_RETRY}" >/dev/null 2>&1 || rm -rf "${WT_HARD_RETRY}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
+# (14) Devin 29UT + 29TH: dirty UNJUDGED BASE_CHECK_UNUSABLE retries online without --force-rejudge,
+#      and failed custom --test-cmd with 'cd ... && ...' replays as a single shell invocation
+WT_HARD_DIRTY_RETRY="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf '# dirty retry line\n' >>"${WT_HARD_DIRTY_RETRY}/src/mod.py"
+DIRTY_RETRY_FP="$(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null "${CTL_SCRIPT}" base-check --repo ctrld-sync --worktree "${WT_HARD_DIRTY_RETRY}" --test-cmd "true" | awk -F': ' '/^CONTENT_FINGERPRINT:/{print $2}')"
+cat >"${S16_HARD_REPORTS}/2026-12-24-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-24 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_DIRTY_RETRY}
+
+## Base-Check Classification
+
+- Verdict: BASE_PREREQ_FAILED
+- Substatus: PRE_EXISTING_FAILURE
+- Worktree: ${WT_HARD_DIRTY_RETRY}
+- Content Fingerprint: ${DIRTY_RETRY_FP}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-24-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "dirty candidate initially records BASE_CHECK_UNUSABLE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-24 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "next online judge retries dirty UNJUDGED BASE_CHECK_UNUSABLE without --force-rejudge" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-24 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "dirty candidate online retry bypassed cached BASE_PREREQ_FAILED" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_DIRTY_RETRY}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 2, rows
+assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
+assert w[1]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[1]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_DIRTY_RETRY}" >/dev/null 2>&1 || rm -rf "${WT_HARD_DIRTY_RETRY}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+WT_HARD_CDCMD="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf '# cd regression test edit\n' >>"${WT_HARD_CDCMD}/src/mod.py"
+printf 'cand marker\n' >"${WT_HARD_CDCMD}/src/only_in_cand.marker"
+cat >"${S16_HARD_REPORTS}/2026-12-25-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-25 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: GATE_FAILURE
+- Lens: code-health
+- Worktree: ${WT_HARD_CDCMD}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-25-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "custom 'cd src && ...' fails candidate verification while persisting command" 1 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_CDCMD}" --lens code-health --test-cmd "cd src && test -f mod.py && test ! -f only_in_cand.marker"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge replays custom 'cd src && ...' as single shell and detects CAUSED_BY_CHANGE" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-25 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records BASE_CHECK_CAUSED_BY_CHANGE JUDGE_REJECT for 'cd ... && ...' command" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CDCMD}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["base_check"] == "CAUSED_BY_CHANGE", w[0]
+assert w[0]["verdict"] == "JUDGE_REJECT", w[0]
+assert w[0]["subreason"] == "BASE_CHECK_CAUSED_BY_CHANGE", w[0]
+PYTEST
+
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
 [[ ${FAIL} -eq 0 ]]

@@ -2946,6 +2946,29 @@ cmd_print_test_cmd() {
 	echo
 }
 
+cmd_is_active() {
+	local wt_path=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--worktree)
+			wt_path="${2:-}"
+			shift 2
+			;;
+		*)
+			echo "[ERROR] Unknown flag for is-active: $1" >&2
+			exit 1
+			;;
+		esac
+	done
+	[[ -n ${wt_path} && -d ${wt_path} ]] || return 1
+	local dirty=""
+	if ! dirty="$(git -C "${wt_path}" status --porcelain --untracked-files=all 2>/dev/null)"; then
+		return 0
+	fi
+	[[ -n ${dirty} ]] && return 0
+	has_unreviewed_worktree_commits "${wt_path}"
+}
+
 main() {
 	if [[ $# -lt 1 ]]; then
 		usage >&2
@@ -2965,6 +2988,9 @@ main() {
 		;;
 	check-throttle)
 		cmd_check_throttle "$@"
+		;;
+	is-active)
+		cmd_is_active "$@"
 		;;
 	set-state)
 		cmd_set_state "$@"

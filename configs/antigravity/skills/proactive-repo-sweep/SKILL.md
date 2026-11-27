@@ -229,11 +229,12 @@ why in the digest.
      `[PROACTIVE-JUDGE-SHADOW]` slot (`antigravity-proactive-ctl.sh judge`) to
      write the `0600` `JUDGE_REJECT` receipt to `judge-shadow-ledger.jsonl` and
      retire them automatically. If `--numeric-check-cmd` failed (research `bolt`
-     tolerance assertion, which the Judge probe stubs to `true`), record the
-     report (`Status: NO_ACTIONABLE_FINDINGS`,
-     `Substatus: NUMERIC_EQUIVALENCE_FAILED`) and force-remove the uncommitted
-     worktree only after confirming the digest and worktree variables are
-     non-empty:
+     tolerance assertion, which the Judge probe stubs to `true`), record
+     `Status: CLEAN_NO_OP` (`Substatus: FLOAT_REORDER_DRIFT` when strictly
+     verified float-reorder noise per `proactive-bolt`, or
+     `Substatus: NUMERIC_EQUIVALENCE_FAILED` otherwise) and force-remove the
+     uncommitted worktree only after confirming the digest and worktree
+     variables are non-empty:
 
      ```bash
      [[ -s "$DIGEST_PATH" && -n "$WT_PATH" && -n "$BRANCH_NAME" ]] && \
