@@ -270,6 +270,33 @@ if [[ $MAINT_LOGS_CLEANED -gt 0 ]]; then
 	CLEANED_ITEMS=$((CLEANED_ITEMS + MAINT_LOGS_CLEANED))
 fi
 
+# 9b) Rotate launchd stdout/stderr redirects
+# launchd appends to these files forever; the app's own RotatingFileHandler
+# only covers its configured log_file, not the plist StandardOutPath /
+# StandardErrorPath targets. Truncate in place (preserving the inode) so
+# launchd keeps writing to the same file descriptor.
+LAUNCHD_LOG_MAX_MB="${LAUNCHD_LOG_MAX_MB:-10}"
+LAUNCHD_LOG_DIRS=(
+	"$HOME/Library/Logs/email-security-pipeline"
+	"$HOME/Library/Logs/maintenance"
+)
+LAUNCHD_LOGS_ROTATED=0
+for ldir in "${LAUNCHD_LOG_DIRS[@]}"; do
+	[[ -d $ldir ]] || continue
+	while IFS= read -r lfile; do
+		[[ -f $lfile ]] || continue
+		lsize_mb=$(( $(stat -f '%z' "$lfile" 2>/dev/null || echo 0) / 1048576 ))
+		if [[ $lsize_mb -ge $LAUNCHD_LOG_MAX_MB ]]; then
+			: >"$lfile"
+			log_info "Truncated ${lfile} (was ${lsize_mb}MB)"
+			LAUNCHD_LOGS_ROTATED=$((LAUNCHD_LOGS_ROTATED + 1))
+		fi
+	done < <(find "$ldir" -maxdepth 1 -type f \( -name "*.out" -o -name "*.err" \) 2>/dev/null)
+done
+if [[ $LAUNCHD_LOGS_ROTATED -gt 0 ]]; then
+	CLEANED_ITEMS=$((CLEANED_ITEMS + LAUNCHD_LOGS_ROTATED))
+fi
+
 # 10) Report disk space after cleanup
 DISK_AFTER=$(percent_used "/")
 DISK_SAVED=$((DISK_BEFORE - DISK_AFTER))
