@@ -1,0 +1,113 @@
+[mcp_servers.gemini-api-docs-mcp]
+url = "https://gemini-api-docs-mcp.dev"
+
+[mcp_servers."Brave Search"]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-brave-search"]
+
+# Key forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_vars = ["BRAVE_API_KEY"]
+
+[mcp_servers.Context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.Exa]
+command = "npx"
+args = ["-y", "exa-mcp-server"]
+
+# Key forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_vars = ["EXA_API_KEY"]
+
+[mcp_servers.Filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "~/dev/"]
+
+[mcp_servers.GitHub]
+url = "https://api.githubcopilot.com/mcp/"
+
+[mcp_servers.Linear]
+url = "https://mcp.linear.app/sse"
+
+[mcp_servers.Memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+
+[mcp_servers.Notion]
+url = "https://mcp.notion.com/mcp"
+
+[mcp_servers.Perplexity]
+command = "npx"
+args = ["-y", "server-perplexity-ask"]
+
+# Key forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_vars = ["PERPLEXITY_API_KEY"]
+
+[mcp_servers.Playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]
+
+[mcp_servers.Sequential_thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[mcp_servers.Tavily]
+command = "npx"
+args = ["-y", "tavily-mcp"]
+
+# Key forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_vars = ["TAVILY_API_KEY"]
+
+[mcp_servers.Tavily_Expert]
+url = "https://tavily.api.tadata.com/mcp/tavily/cohort-jasmine-dialect-r8wdqh"
+
+[mcp_servers.applescript_execute]
+command = "npx"
+args = ["-y", "@peakmojo/applescript-mcp"]
+
+[mcp_servers.deepwiki]
+url = "https://mcp.deepwiki.com/mcp"
+
+[mcp_servers.deja]
+command = "/opt/homebrew/bin/deja"
+args = ["mcp"]
+
+[mcp_servers.devin]
+url = "https://mcp.devin.ai/mcp"
+
+# Token forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_http_headers = { Authorization = "DEVIN_MCP_AUTH_HEADER" }
+
+[mcp_servers.firecrawl-mcp]
+command = "npx"
+args = ["-y", "firecrawl-mcp"]
+
+# Key forwarded from shell environment (see docs/MCP_SECRETS_MANAGEMENT.md)
+env_vars = ["FIRECRAWL_API_KEY"]
+
+[mcp_servers.gen-pdf]
+command = "npx"
+args = ["-y", "mcp-remote", "https://gen-pdf.com/mcp"]
+
+[mcp_servers.lunar]
+command = "/Applications/Lunar.app/Contents/Helpers/lunarCLI"
+args = ["mcp", "serve"]
+
+[mcp_servers.plan]
+url = "https://plan.agent-native.com/_agent-native/mcp"
+
+[mcp_servers.prisma]
+command = "npx"
+args = ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"]
+
+[mcp_servers.sonarqube]
+command = "sonar"
+args = ["run", "mcp"]
+
+[mcp_servers.stitch]
+command = "/opt/homebrew/bin/node"
+args = [
+  "/opt/homebrew/lib/node_modules/@google/stitch/dist/stitch.js",
+  "mcp",
+  "start",
+]

@@ -1,0 +1,17 @@
+{
+  "vendor": "ardia",
+  "skill": "cua-driver",
+  "upstream": "trycua/cua cua-driver-rs-v0.38.0",
+  "version": "0.38.0",
+  "files": [
+    "BROWSER.md",
+    "EMBEDDING.md",
+    "MACOS.md",
+    "README.md",
+    "RECORDING.md",
+    "RUNTIME.md",
+    "SKILL.md",
+    "VISUAL.md",
+    "WORKFLOW.md"
+  ]
+}
