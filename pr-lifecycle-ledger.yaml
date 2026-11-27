@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1767
+ledger_revision: 1768
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -55452,11 +55452,12 @@ items:
       - allowlist_login
   author_type: BOT
   classification: UNKNOWN
-  risk_class: UNKNOWN
-  sensitive_paths: []
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - workflows_and_permissions
   changed_paths:
   - .github/workflows/dependency-review.yml
-  guardrail_outcome: NOT_RUN
+  guardrail_outcome: REVIEW_SECURITY
   lifecycle_state: STAGE1_INTAKE
   current_owner: stage1
   next_owner: stage1
@@ -55472,7 +55473,9 @@ items:
     mutations: 0
   handoffs: []
   revision: 0
-  updated_at_utc: '2026-11-26T14:58:22Z'
+  updated_at_utc: '2026-11-27T14:48:15Z'
+  guardrail_source: path_eval
+  guardrail_evidence: null
 - key: abhimehro/personal-config#2838@326cd645384036a53c9ffc8972ad363981f36fb9
   repository: abhimehro/personal-config
   pr: 2838
