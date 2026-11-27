@@ -273,16 +273,16 @@ Write `$HOME/.gemini/antigravity/proactive-reports/YYYY-MM-DD-<repo>.md`
   (flag pure reordered `pandas`/`numpy` summation drift
   `1e-10 < max_rel_diff <= 1e-7` under `Status: CLEAN_NO_OP` +
   `Substatus: FLOAT_REORDER_DRIFT`, or non-reorder numeric tolerance failures
-  under `Status: CLEAN_NO_OP` + `Substatus: NUMERIC_EQUIVALENCE_FAILED`, after
-  discarding the candidate so numeric rejections are tracked separately from
-  real `GATE_FAILURE` suite regressions). The sweep only ever writes the first
-  five; `PRE_EXISTING_FAILURE` is appended by `base-check` during the post-sweep
-  Judge slot in a `## Base-Check Classification` section, along with its
-  `Verdict` (`NO_FAILURE` | `FLAKE_ON_RETRY` | `PRE_EXISTING_ON_BASE` |
-  `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` retires the candidate
-  automatically (`JUDGE_REJECT`, removing the worktree/branch after writing the
-  shadow-ledger receipt); for `NO_FAILURE`, `FLAKE_ON_RETRY`, or
-  `PRE_EXISTING_ON_BASE`, Judge transitions the dirty candidate to `JUDGED`
+  under `Status: CLEAN_NO_OP` + `Substatus: NUMERIC_EQUIVALENCE_FAILED`, when
+  discarding the candidate after writing the digest so numeric rejections are
+  tracked separately from real `GATE_FAILURE` suite regressions). The sweep only
+  ever writes the first five; `PRE_EXISTING_FAILURE` is appended by `base-check`
+  during the post-sweep Judge slot in a `## Base-Check Classification` section,
+  along with its `Verdict` (`NO_FAILURE` | `FLAKE_ON_RETRY` |
+  `PRE_EXISTING_ON_BASE` | `CAUSED_BY_CHANGE`). Only `CAUSED_BY_CHANGE` retires
+  the candidate automatically (`JUDGE_REJECT`, removing the worktree/branch
+  after writing the shadow-ledger receipt); for `NO_FAILURE`, `FLAKE_ON_RETRY`,
+  or `PRE_EXISTING_ON_BASE`, Judge transitions the dirty candidate to `JUDGED`
   (`--allow-dirty-fingerprint` pinned to its evaluated content fingerprint) and
   escalates it (`JUDGE_ESCALATE_HUMAN`) with explicit
   `promote | reject | expire` options so any base breakage can be filed

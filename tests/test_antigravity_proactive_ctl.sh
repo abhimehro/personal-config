@@ -2657,6 +2657,87 @@ assert w[0]["tier1"]["base_check"] == "CAUSED_BY_CHANGE", w[0]
 assert w[0]["verdict"] == "JUDGE_REJECT", w[0]
 assert w[0]["subreason"] == "BASE_CHECK_CAUSED_BY_CHANGE", w[0]
 PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CDCMD}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CDCMD}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (14) Devin 4721723707: is-active timeout (rc=124) fails closed as active,
+#      while confirmed inactive worktree (rc=1) is skipped
+S16_ACT_DIR="$(mktemp -d)"
+cp "${CTL_SCRIPT}" "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
+chmod +x "${S16_ACT_DIR}/antigravity-proactive-ctl.sh"
+WT_HARD_TO="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_to():\n    return 10\n' >"${WT_HARD_TO}/src/extra_to.py"
+git -C "${WT_HARD_TO}" add src/extra_to.py
+git -C "${WT_HARD_TO}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_to"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_TO}" --lens code-health --test-cmd "true" >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-26-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-26 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_TO}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-26-ctrld-sync.md"
+
+WT_HARD_INACT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_inact():\n    return 11\n' >"${WT_HARD_INACT}/src/extra_inact.py"
+git -C "${WT_HARD_INACT}" add src/extra_inact.py
+git -C "${WT_HARD_INACT}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_inact"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_INACT}" --lens code-health --test-cmd "true" >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-27-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-27 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_INACT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-27-ctrld-sync.md"
+
+cat >"${S16_ACT_DIR}/proactive-worktree.sh" <<MOCK
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "is-active" ]]; then
+	wt_arg=""
+	shift || true
+	while [[ \$# -gt 0 ]]; do
+		case "\$1" in
+		--worktree)
+			wt_arg="\${2:-}"
+			shift 2
+			;;
+		*)
+			shift
+			;;
+		esac
+	done
+	if [[ "\${wt_arg}" == "${WT_HARD_TO}" ]]; then
+		exit 124
+	fi
+	if [[ "\${wt_arg}" == "${WT_HARD_INACT}" ]]; then
+		exit 1
+	fi
+fi
+exec "${WT_SCRIPT}" "\$@"
+MOCK
+chmod +x "${S16_ACT_DIR}/proactive-worktree.sh"
+
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge fails closed on is-active timeout (rc=124) and skips inactive (rc=1)" 0 \
+	"${S16_ACT_DIR}/antigravity-proactive-ctl.sh" judge --repo ctrld-sync --date 2026-12-26 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger evaluates timeout candidate and skips confirmed inactive candidate" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_TO}" "${WT_HARD_INACT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+to_rows = [r for r in rows if r.get("worktree") == sys.argv[2]]
+inact_rows = [r for r in rows if r.get("worktree") == sys.argv[3]]
+assert len(to_rows) == 1, f"expected timeout worktree to fail closed as active: {to_rows}"
+assert len(inact_rows) == 0, f"expected confirmed inactive worktree to be skipped: {inact_rows}"
+PYTEST
+rm -rf "${S16_ACT_DIR}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_TO}" >/dev/null 2>&1 || rm -rf "${WT_HARD_TO}"
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_INACT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_INACT}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"
