@@ -165,17 +165,18 @@ decisions record — is in
   with mandatory `--numeric-check-cmd`, read-only `sentinel`, never `palette`)
   vs core repos (`bolt`, `code-health`, `palette`, read-only `sentinel`). When
   `--stagger` is passed without explicit `--cron` / `--triage-cron`,
-  `stage-repo` assigns deterministic non-overlapping weekday slots
-  (`CRON_TZ=America/Chicago`, 25-minute spacing with a +20-minute Judge
-  companion): `ctrld-sync` (`08:15` / `08:35`), `email-security-pipeline`
-  (`08:40` / `09:00`), `personal-config` (`09:05` / `09:25`),
-  `Hydrograph_Versus_Seatek_Sensors_Project` (`09:30` / `09:50`),
-  `Seatek_Analysis` (`09:55` / `10:15`), `series_correction_project_updated`
-  (`10:20` / `10:40`), and `repoprompt-ce` (`10:45` / `11:05`). Without
-  `--stagger`, `stage-repo` preserves the `08:15` / `08:35` default schedule.
-  `disable` also tears down staged `proactive-sweep-*` / `proactive-triage-*`
-  sidecars only when their directory carries `.managed-by-proactive-ctl`,
-  leaving unrelated user sidecars untouched.
+  `stage-repo` assigns deterministic staggered weekday start times
+  (`CRON_TZ=America/Chicago`, 25-minute start-time spacing with a +20-minute
+  Judge companion — note that staggering gives each repo a distinct start time
+  rather than serializing overlapping long runs): `ctrld-sync` (`08:15` /
+  `08:35`), `email-security-pipeline` (`08:40` / `09:00`), `personal-config`
+  (`09:05` / `09:25`), `Hydrograph_Versus_Seatek_Sensors_Project` (`09:30` /
+  `09:50`), `Seatek_Analysis` (`09:55` / `10:15`),
+  `series_correction_project_updated` (`10:20` / `10:40`), and `repoprompt-ce`
+  (`10:45` / `11:05`). Without `--stagger`, `stage-repo` preserves the `08:15` /
+  `08:35` default schedule. `disable` also tears down staged `proactive-sweep-*`
+  / `proactive-triage-*` sidecars only when their directory carries
+  `.managed-by-proactive-ctl`, leaving unrelated user sidecars untouched.
 
   `judge [--repo <name> ...] [--all-repos] [--date <YYYY-MM-DD>] [--cron "<expr>"]
   [--skip-tier2] [--with-lrc] [--force-rejudge]`
@@ -279,7 +280,7 @@ decisions record — is in
 ./scripts/antigravity-proactive-ctl.sh doctor --all-repos
 ./scripts/antigravity-proactive-ctl.sh doctor --fix --repo ctrld-sync
 
-# Stage disabled sweep + Judge/triage sidecars (add --stagger for non-overlapping multi-repo weekday slots)
+# Stage disabled sweep + Judge/triage sidecars (add --stagger for staggered start-time slots across repos)
 ./scripts/antigravity-proactive-ctl.sh stage-repo --repo Seatek_Analysis --stagger
 
 # Run post-sweep Judge evaluation (full Tier 1 + Tier 2 stack, or offline Tier 1 only via --skip-tier2)

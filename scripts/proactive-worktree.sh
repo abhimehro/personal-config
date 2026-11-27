@@ -794,7 +794,13 @@ PY
 		echo "[ERROR] No undefined-name checker available (tried ruff, uv run ruff, repo .venv, pyflakes); refusing to emit a pass from the AST parse floor alone. Install the pinned linter (python3 -m pip install -r requirements.txt, which carries ruff) and re-run." >&2
 		return 2
 	fi
-	(cd "${wt_path}" && env -u VIRTUAL_ENV "${F82_CMD[@]}" "$@")
+	local f82_rc=0
+	(cd "${wt_path}" && env -u VIRTUAL_ENV "${F82_CMD[@]}" "$@") || f82_rc=$?
+	if [[ ${f82_rc} -ge 2 ]]; then
+		echo "[ERROR] Undefined-name checker execution failed (exit ${f82_rc}); refusing to misclassify as a candidate policy violation." >&2
+		return 2
+	fi
+	return "${f82_rc}"
 }
 
 # Semantic test-coverage gate: a hunk that applies cleanly can still delete
@@ -950,6 +956,7 @@ cmd_verify() {
 	local allow_harness=0
 	local allow_tests=0
 	local expected_test_count=""
+	local probe_only=0
 
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
@@ -980,6 +987,10 @@ cmd_verify() {
 		--expected-test-count)
 			expected_test_count="$2"
 			shift 2
+			;;
+		--probe-only)
+			probe_only=1
+			shift
 			;;
 		*)
 			echo "[ERROR] Unknown flag for verify: $1" >&2
@@ -1075,6 +1086,7 @@ cmd_verify() {
 		echo "[WARN] --expected-test-count given but no Python test file changed; the semantic gate had nothing to enforce" >&2
 	fi
 
+	local explicit_test_cmd="${test_cmd}"
 	if [[ -z ${test_cmd} ]]; then
 		test_cmd="$(default_test_cmd_for_repo "${repo_name}")"
 	fi
@@ -1101,10 +1113,20 @@ cmd_verify() {
 		fi
 	)
 
-	local v_head=""
+	local v_head="" v_tree=""
 	v_head="$(git -C "${wt_path}" rev-parse --verify --quiet HEAD 2>/dev/null || true)"
-	if [[ -n ${v_head} ]] && [[ -f ${meta_file} ]]; then
-		python3 - "${meta_file}" "${v_head}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" <<'PY'
+	if [[ ${probe_only} -eq 0 ]] && [[ -n ${v_head} ]] && [[ -f ${meta_file} ]]; then
+		local v_tmp_idx=""
+		v_tmp_idx="$(mktemp "${TMPDIR:-/tmp}/proactive-verify-idx.XXXXXX")"
+		rm -f "${v_tmp_idx}"
+		if GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" read-tree HEAD >/dev/null 2>&1; then
+			if GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" add -A >/dev/null 2>&1; then
+				v_tree="$(GIT_INDEX_FILE="${v_tmp_idx}" git -C "${wt_path}" write-tree 2>/dev/null || true)"
+			fi
+		fi
+		rm -f "${v_tmp_idx}"
+		python3 - "${meta_file}" "${v_head}" "${v_tree}" "${allow_tests}" "${allow_harness}" "${expected_test_count}" "${explicit_test_cmd}" <<'PY'
+import fcntl
 import json
 import os
 import pathlib
@@ -1112,27 +1134,43 @@ import sys
 
 meta_path = pathlib.Path(sys.argv[1])
 head_sha = sys.argv[2]
-allow_tests = sys.argv[3] == "1"
-allow_harness = sys.argv[4] == "1"
-expected_count = sys.argv[5]
+tree_sha = sys.argv[3]
+allow_tests = sys.argv[4] == "1"
+allow_harness = sys.argv[5] == "1"
+expected_count = sys.argv[6]
+custom_test_cmd = sys.argv[7]
 
-meta = json.loads(meta_path.read_text(encoding="utf-8"))
-if allow_tests or allow_harness or expected_count:
-    meta["verify_head_sha"] = head_sha
-    meta["verify_allow_test_edits"] = allow_tests
-    meta["verify_allow_harness_changes"] = allow_harness
-    meta["verify_expected_test_count"] = expected_count
-else:
-    meta.pop("verify_head_sha", None)
-    meta.pop("verify_allow_test_edits", None)
-    meta.pop("verify_allow_harness_changes", None)
-    meta.pop("verify_expected_test_count", None)
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    if allow_tests or allow_harness or expected_count or custom_test_cmd:
+        meta["verify_head_sha"] = head_sha
+        if tree_sha:
+            meta["verify_tree_sha"] = tree_sha
+        else:
+            meta.pop("verify_tree_sha", None)
+        meta["verify_allow_test_edits"] = allow_tests
+        meta["verify_allow_harness_changes"] = allow_harness
+        meta["verify_expected_test_count"] = expected_count
+        if custom_test_cmd:
+            meta["verify_custom_test_cmd"] = custom_test_cmd
+        else:
+            meta.pop("verify_custom_test_cmd", None)
+    else:
+        meta.pop("verify_head_sha", None)
+        meta.pop("verify_tree_sha", None)
+        meta.pop("verify_allow_test_edits", None)
+        meta.pop("verify_allow_harness_changes", None)
+        meta.pop("verify_expected_test_count", None)
+        meta.pop("verify_custom_test_cmd", None)
 
-tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
-fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-with os.fdopen(fd, "w", encoding="utf-8") as handle:
-    handle.write(json.dumps(meta, indent=2) + "\n")
-os.replace(tmp, meta_path)
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
 PY
 	fi
 }
@@ -1663,6 +1701,7 @@ cmd_set_state() {
 
 	python3 - "${wt_git_dir}/proactive-meta.json" "${new_state}" "${head_sha}" "${verdict}" "${subreason}" "${wt_path}" "${dirty}" "${allow_dirty_fp}" "${expected_dirty_fp}" <<'PY'
 import datetime as dt
+import fcntl
 import hashlib
 import json
 import os
@@ -1739,65 +1778,70 @@ if dirty and allow_dirty_fp and state in ("JUDGED", "EXPIRED") and not dirty_fp:
 if state == "JUDGED" and expected_dirty_fp and (not dirty or dirty_fp != expected_dirty_fp):
     sys.stderr.write("[ERROR] set-state: dirty content fingerprint changed or worktree became clean after evaluation\n")
     sys.exit(2)
-meta = json.loads(meta_path.read_text(encoding="utf-8"))
-prev_state = meta.get("lifecycle_state", "UNSET")
-exp_fp = ""
-if state == "EXPIRED":
-    cur_state = meta.get("lifecycle_state", "")
-    cur_judged_sha = meta.get("judged_head_sha", "")
-    if cur_state != "JUDGED" or not cur_judged_sha or cur_judged_sha != head_sha:
-        sys.stderr.write(
-            f"[ERROR] set-state EXPIRED requires an active JUDGED worktree matching HEAD {head_sha} (got state={cur_state or 'UNSET'} judged_head={cur_judged_sha or 'NONE'})\n"
-        )
-        sys.exit(2)
-    if dirty:
-        live_fp = compute_content_fingerprint(wt_dir_str, head_sha)
-        if not live_fp or not meta.get("judged_dirty_fingerprint") or meta.get("judged_dirty_fingerprint") != live_fp:
-            sys.stderr.write("[ERROR] set-state EXPIRED requires matching judged_dirty_fingerprint for dirty worktree\n")
-            sys.exit(2)
-        exp_fp = live_fp
-    elif meta.get("judged_dirty_fingerprint"):
-        sys.stderr.write("[ERROR] set-state EXPIRED refuses to expire clean snapshot from dirty JUDGED evidence\n")
-        sys.exit(2)
-meta["lifecycle_state"] = state
-if state == "JUDGED":
-    meta["judged_head_sha"] = head_sha
-    meta["judged_at"] = now_str
-    if dirty_fp:
-        meta["judged_dirty_fingerprint"] = dirty_fp
-    else:
-        meta.pop("judged_dirty_fingerprint", None)
-    if verdict:
-        meta["judge_verdict"] = verdict
-    if subreason:
-        meta["judge_subreason"] = subreason
-elif state == "EXPIRED":
-    meta["expired_head_sha"] = head_sha
-    meta["expired_at"] = now_str
-    if exp_fp:
-        meta["expired_dirty_fingerprint"] = exp_fp
-    else:
-        meta.pop("expired_dirty_fingerprint", None)
-    if subreason:
-        meta["expire_reason"] = subreason
-elif state == "REJECTED":
-    meta["rejected_head_sha"] = head_sha
-    meta["rejected_at"] = now_str
-    if verdict:
-        meta["judge_verdict"] = verdict
-    if subreason:
-        meta["judge_subreason"] = subreason
-elif state == "UNJUDGED":
-    meta.pop("judged_head_sha", None)
-    meta.pop("expired_head_sha", None)
-    meta.pop("judged_dirty_fingerprint", None)
-    meta.pop("expired_dirty_fingerprint", None)
 
-tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
-fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-with os.fdopen(fd, "w", encoding="utf-8") as handle:
-    handle.write(json.dumps(meta, indent=2) + "\n")
-os.replace(tmp, meta_path)
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    prev_state = meta.get("lifecycle_state", "UNSET")
+    exp_fp = ""
+    if state == "EXPIRED":
+        cur_state = meta.get("lifecycle_state", "")
+        cur_judged_sha = meta.get("judged_head_sha", "")
+        if cur_state != "JUDGED" or not cur_judged_sha or cur_judged_sha != head_sha:
+            sys.stderr.write(
+                f"[ERROR] set-state EXPIRED requires an active JUDGED worktree matching HEAD {head_sha} (got state={cur_state or 'UNSET'} judged_head={cur_judged_sha or 'NONE'})\n"
+            )
+            sys.exit(2)
+        if dirty:
+            live_fp = compute_content_fingerprint(wt_dir_str, head_sha)
+            if not live_fp or not meta.get("judged_dirty_fingerprint") or meta.get("judged_dirty_fingerprint") != live_fp:
+                sys.stderr.write("[ERROR] set-state EXPIRED requires matching judged_dirty_fingerprint for dirty worktree\n")
+                sys.exit(2)
+            exp_fp = live_fp
+        elif meta.get("judged_dirty_fingerprint"):
+            sys.stderr.write("[ERROR] set-state EXPIRED refuses to expire clean snapshot from dirty JUDGED evidence\n")
+            sys.exit(2)
+    meta["lifecycle_state"] = state
+    if state == "JUDGED":
+        meta["judged_head_sha"] = head_sha
+        meta["judged_at"] = now_str
+        if dirty_fp:
+            meta["judged_dirty_fingerprint"] = dirty_fp
+        else:
+            meta.pop("judged_dirty_fingerprint", None)
+        if verdict:
+            meta["judge_verdict"] = verdict
+        if subreason:
+            meta["judge_subreason"] = subreason
+    elif state == "EXPIRED":
+        meta["expired_head_sha"] = head_sha
+        meta["expired_at"] = now_str
+        if exp_fp:
+            meta["expired_dirty_fingerprint"] = exp_fp
+        else:
+            meta.pop("expired_dirty_fingerprint", None)
+        if subreason:
+            meta["expire_reason"] = subreason
+    elif state == "REJECTED":
+        meta["rejected_head_sha"] = head_sha
+        meta["rejected_at"] = now_str
+        if verdict:
+            meta["judge_verdict"] = verdict
+        if subreason:
+            meta["judge_subreason"] = subreason
+    elif state == "UNJUDGED":
+        meta.pop("judged_head_sha", None)
+        meta.pop("expired_head_sha", None)
+        meta.pop("judged_dirty_fingerprint", None)
+        meta.pop("expired_dirty_fingerprint", None)
+
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
 sys.stderr.write(f"SET_STATE: worktree={wt_dir_str} {prev_state}->{state} head={head_sha}\n")
 PY
 }
@@ -1840,6 +1884,7 @@ cmd_reopen() {
 
 	python3 - "${wt_git_dir}/proactive-meta.json" "${head_sha}" "${dirty}" <<'PY'
 import datetime as dt
+import fcntl
 import json
 import os
 import pathlib
@@ -1850,31 +1895,35 @@ head_sha = sys.argv[2]
 dirty = sys.argv[3]
 now_str = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-meta = json.loads(meta_path.read_text(encoding="utf-8"))
-cur_state = meta.get("lifecycle_state", "")
-if cur_state != "EXPIRED":
-    sys.stderr.write(f"[ERROR] reopen requires lifecycle_state == EXPIRED (got {cur_state or 'UNSET'})\n")
-    sys.exit(2)
-if "original_created_at" not in meta and meta.get("created_at"):
-    meta["original_created_at"] = meta["created_at"]
-meta["reopened_at"] = now_str
-had_dirty_judgment = bool(meta.get("judged_dirty_fingerprint"))
-meta.pop("expired_head_sha", None)
-meta.pop("expired_at", None)
-meta.pop("expired_dirty_fingerprint", None)
+lock_path = meta_path.with_name("proactive-meta.lock")
+with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+    os.chmod(lock_path, 0o600)
+    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    cur_state = meta.get("lifecycle_state", "")
+    if cur_state != "EXPIRED":
+        sys.stderr.write(f"[ERROR] reopen requires lifecycle_state == EXPIRED (got {cur_state or 'UNSET'})\n")
+        sys.exit(2)
+    if "original_created_at" not in meta and meta.get("created_at"):
+        meta["original_created_at"] = meta["created_at"]
+    meta["reopened_at"] = now_str
+    had_dirty_judgment = bool(meta.get("judged_dirty_fingerprint"))
+    meta.pop("expired_head_sha", None)
+    meta.pop("expired_at", None)
+    meta.pop("expired_dirty_fingerprint", None)
 
-if not dirty and head_sha and meta.get("judged_head_sha") == head_sha and not had_dirty_judgment:
-    meta["lifecycle_state"] = "JUDGED"
-else:
-    meta["lifecycle_state"] = "UNJUDGED"
-    meta.pop("judged_head_sha", None)
-    meta.pop("judged_dirty_fingerprint", None)
+    if not dirty and head_sha and meta.get("judged_head_sha") == head_sha and not had_dirty_judgment:
+        meta["lifecycle_state"] = "JUDGED"
+    else:
+        meta["lifecycle_state"] = "UNJUDGED"
+        meta.pop("judged_head_sha", None)
+        meta.pop("judged_dirty_fingerprint", None)
 
-tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
-fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-with os.fdopen(fd, "w", encoding="utf-8") as handle:
-    handle.write(json.dumps(meta, indent=2) + "\n")
-os.replace(tmp, meta_path)
+    tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(meta, indent=2) + "\n")
+    os.replace(tmp, meta_path)
 print(f"REOPENED: state={meta['lifecycle_state']} head={head_sha}")
 PY
 }
@@ -2063,6 +2112,7 @@ cmd_check_throttle() {
 					bucket="$(
 						python3 - "${wt_git_dir}/proactive-meta.json" "${max_age_days}" "${now_epoch}" "${candidate_dir}" "${dirty}" "${head_sha}" "${auto_expire}" <<'PY'
 import datetime as dt
+import fcntl
 import hashlib
 import json
 import os
@@ -2186,19 +2236,47 @@ if age_anchor:
 if eff_state == "JUDGED":
     if age_days > max_age:
         if auto_expire:
-            meta["lifecycle_state"] = "EXPIRED"
-            meta["expired_head_sha"] = head_sha
-            meta["expired_at"] = dt.datetime.fromtimestamp(now_ts, dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-            meta["expire_reason"] = "SLA_7D_AUTO_EXPIRE"
-            if live_fp:
-                meta["expired_dirty_fingerprint"] = live_fp
-            else:
-                meta.pop("expired_dirty_fingerprint", None)
-            tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
-            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(json.dumps(meta, indent=2) + "\n")
-            os.replace(tmp, meta_path)
+            lock_path = meta_path.with_name("proactive-meta.lock")
+            with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+                os.chmod(lock_path, 0o600)
+                fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                cur_raw = meta.get("lifecycle_state", "UNJUDGED")
+                cur_jsha = meta.get("judged_head_sha", "")
+                cur_exp_sha = meta.get("expired_head_sha") or cur_jsha
+                if cur_raw == "EXPIRED" and head_sha and cur_exp_sha == head_sha:
+                    print("EXPIRED")
+                    sys.exit(0)
+                cur_dirty_fp = meta.get("judged_dirty_fingerprint") or ""
+                fp_matches = (
+                    (bool(live_fp) and bool(cur_dirty_fp) and cur_dirty_fp == live_fp)
+                    if dirty
+                    else (not cur_dirty_fp)
+                )
+                if cur_raw != "JUDGED" or not head_sha or cur_jsha != head_sha or not fp_matches:
+                    print("UNJUDGED")
+                    sys.exit(0)
+                cur_anchor = meta.get("reopened_at") or meta.get("created_at", "")
+                cur_age_days = 0.0
+                if cur_anchor:
+                    cur_dt = dt.datetime.strptime(cur_anchor, "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
+                    cur_age_days = (now_ts - int(cur_dt.timestamp())) / 86400.0
+                if cur_age_days <= max_age:
+                    print("JUDGED")
+                    sys.exit(0)
+                meta["lifecycle_state"] = "EXPIRED"
+                meta["expired_head_sha"] = head_sha
+                meta["expired_at"] = dt.datetime.fromtimestamp(now_ts, dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                meta["expire_reason"] = "SLA_7D_AUTO_EXPIRE"
+                if live_fp:
+                    meta["expired_dirty_fingerprint"] = live_fp
+                else:
+                    meta.pop("expired_dirty_fingerprint", None)
+                tmp = meta_path.with_name(f".{meta_path.name}.tmp.{os.getpid()}")
+                fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(json.dumps(meta, indent=2) + "\n")
+                os.replace(tmp, meta_path)
             sys.stderr.write(
                 f"[INFO] Auto-expired >{max_age}d judged candidate worktree on disk (preserved): {cand_dir}\n"
             )

@@ -2445,10 +2445,12 @@ check_exit "check-throttle rejects zero --max-judged-open (exit 1)" 1 \
 	--max-judged-open "0"
 PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle normalizes leading-zero 08 safely (exit 0)" 0 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
-	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "08" --max-open "09" --max-age-days "30"
+	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "08" --max-open "09" --max-age-days "30" \
+	--now-epoch "1763596800"
 PATH="${S19_MOCK_BIN}:${PATH}" check_exit "check-throttle enforces leading-zero --max-judged-open 01 against single JUDGED candidate (exit 5)" 5 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
-	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "01" --max-open "09" --max-age-days "30"
+	--include-worktrees --repo-path "${S19_CLONE}" --max-judged-open "01" --max-open "09" --max-age-days "30" \
+	--now-epoch "1763596800"
 check_grep "check-throttle reports judged_cap=1 for leading-zero 01 override" "judged_cap=1" "${TEST_DIR}/check.log"
 
 # 19.8 Dirty vs staged vs clean lifecycle security hardening regressions
@@ -2473,12 +2475,16 @@ printf 'wt_v1=1\n' >"${WT_S19_C}/src/gamma.py"
 # Note WT_S19_A is JUDGED and WT_S19_C was dirty-JUDGED; changing only index invalidates WT_S19_C back to UNJUDGED (--max-open 1 hits 5)
 PATH="${S19_MOCK_BIN}:${PATH}" check_exit "changing only staged index content invalidates dirty JUDGED fingerprint" 5 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
-	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30"
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30" \
+	--now-epoch "1763596800"
+check_grep "index-change failure hit unjudged-cap rather than age limit" "unreviewed local candidate worktrees" "${TEST_DIR}/check.log"
 git -C "${WT_S19_C}" reset -q HEAD src/gamma.py
 git -C "${WT_S19_C}" checkout -q -- src/gamma.py
 PATH="${S19_MOCK_BIN}:${PATH}" check_exit "cleaning dirty-JUDGED worktree without re-judging keeps it UNJUDGED" 5 \
 	"${TARGET_SCRIPT}" check-throttle --repo abhimehro/ctrld-sync --worktree-root "${S19_WT_ROOT}" \
-	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30"
+	--include-worktrees --repo-path "${S19_CLONE}" --max-open "1" --max-age-days "30" \
+	--now-epoch "1763596800"
+check_grep "clean-revert failure hit unjudged-cap rather than age limit" "unreviewed local candidate worktrees" "${TEST_DIR}/check.log"
 
 echo ""
 echo "Summary: PASS=${PASS} FAIL=${FAIL}"

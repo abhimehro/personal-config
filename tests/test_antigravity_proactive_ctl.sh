@@ -2350,6 +2350,22 @@ assert len(w) == 1, rows
 assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
 assert w[0]["subreason"] == "BASE_CHECK_UNUSABLE", w[0]
 PYTEST
+# Devin d_w: --force-rejudge bypasses cached BASE_PREREQ_FAILED and replaces it via live base-check
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge --force-rejudge bypasses cached BASE_PREREQ_FAILED and runs live base-check" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-18 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}" --force-rejudge
+check "ledger records live base-check recovery (PRE_EXISTING_ON_BASE / JUDGE_PASS_ROUTINE) after --force-rejudge" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CACHED_FAIL}" "${S16_HARD_REPORTS}/2026-12-18-ctrld-sync.md" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 2, rows
+assert w[1]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[1]
+assert w[1]["verdict"] == "JUDGE_PASS_ROUTINE", w[1]
+digest_txt = pathlib.Path(sys.argv[3]).read_text()
+assert digest_txt.count("## Base-Check Classification") == 2, digest_txt
+assert "- Verdict: PRE_EXISTING_ON_BASE" in digest_txt, digest_txt
+PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CACHED_FAIL}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CACHED_FAIL}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
@@ -2395,6 +2411,131 @@ assert w[0]["tier1"]["base_check"] == "PRE_EXISTING_ON_BASE", w[0]
 assert w[0]["subreason"] != "BASE_CHECK_UNUSABLE", w[0]
 PYTEST
 git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_NEWEST}" >/dev/null 2>&1 || rm -rf "${WT_HARD_NEWEST}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (10) Devin dg-R: truncated open PR listing skips Tier 2 cloud reviewers while subreason is OPEN_PR_COLLISIONS_UNVERIFIED
+S16_TRUNC_BIN="${TEST_DIR}/s16-trunc-bin"
+mkdir -p "${S16_TRUNC_BIN}"
+cat >"${S16_TRUNC_BIN}/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$1" == "pr" && "$2" == "list" ]]; then
+	echo '[{"number":99,"title":"big pr","isDraft":false,"createdAt":"2026-11-26T00:00:00Z","changedFiles":5,"files":[{"path":"other.py"}]}]'
+	exit 0
+fi
+if [[ "$1" == "auth" && "$2" == "status" ]]; then
+	echo "Logged in to github.com as test"
+	exit 0
+fi
+exit 0
+MOCK
+chmod +x "${S16_TRUNC_BIN}/gh"
+WT_HARD_TRUNC="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def extra_trunc():\n    return 6\n' >"${WT_HARD_TRUNC}/src/extra_trunc.py"
+git -C "${WT_HARD_TRUNC}" add src/extra_trunc.py
+git -C "${WT_HARD_TRUNC}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add extra_trunc"
+cat >"${S16_HARD_REPORTS}/2026-12-20-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-20 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_TRUNC}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-20-ctrld-sync.md"
+: >"${S16_HARD_OCR_LOG}"
+: >"${S16_CR_LOG}"
+PATH="${S16_TRUNC_BIN}:${S16_HARD_BIN}:${PATH}" check_exit "judge skips Tier 2 when PR collision listing is truncated (exit 5)" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-20 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "truncated PR collisions skipped cloud ocr review and coderabbit" \
+	bash -c "test ! -s '${S16_HARD_OCR_LOG}' && test ! -s '${S16_CR_LOG}'"
+check "ledger records OPEN_PR_COLLISIONS_UNVERIFIED with skipped Tier 2" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_TRUNC}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["subreason"] == "OPEN_PR_COLLISIONS_UNVERIFIED", w[0]
+assert w[0]["ocr_review"] == "skipped" and w[0]["coderabbit"] == "skipped", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_TRUNC}" >/dev/null 2>&1 || rm -rf "${WT_HARD_TRUNC}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (11) CodeRabbit #6: verify --allow-test-edits run BEFORE commit persists via verify_tree_sha across commit
+WT_HARD_PRECOMMIT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def helper():\n    return 77\n' >"${WT_HARD_PRECOMMIT}/src/mod.py"
+printf 'import unittest\nfrom src.mod import helper\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        self.assertEqual(helper(), 77)\n' >"${WT_HARD_PRECOMMIT}/tests/test_mod.py"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "verify before commit records verify_tree_sha" 0 \
+	"${WT_SCRIPT}" verify --worktree "${WT_HARD_PRECOMMIT}" --lens code-health --test-cmd "true" --allow-test-edits
+git -C "${WT_HARD_PRECOMMIT}" -c user.email="test@example.com" -c user.name="Test" commit -aq -m "commit tested tree after verify"
+cat >"${S16_HARD_REPORTS}/2026-12-21-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-21 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_PRECOMMIT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-21-ctrld-sync.md"
+PATH="${S16_HARD_BIN}:${PATH}" check_exit "judge honors verify --allow-test-edits across exact-tree commit" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-21 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records JUDGE_PASS_ROUTINE for pre-commit verified tree" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_PRECOMMIT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["tier1"]["verify_probe_rc"] == 0, w[0]
+assert w[0]["verdict"] == "JUDGE_PASS_ROUTINE", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_PRECOMMIT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_PRECOMMIT}"
+git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
+
+# (12) CodeRabbit #2: per-symbol CRITICAL test reference check escalates when CRITICAL alpha has 0 refs even if LOW beta is tested
+S16_CRIT_BIN="${TEST_DIR}/s16-crit-bin"
+mkdir -p "${S16_CRIT_BIN}"
+cat >"${S16_CRIT_BIN}/node" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"run.cjs impact alpha"* ]]; then
+	echo '{"risk":"CRITICAL"}'
+	exit 0
+fi
+if [[ "$*" == *"run.cjs impact"* ]]; then
+	echo '{"risk":"LOW"}'
+	exit 0
+fi
+exit 0
+MOCK
+chmod +x "${S16_CRIT_BIN}/node"
+WT_HARD_CRIT="$(PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" prepare --repo abhimehro/ctrld-sync --repo-path "${S16_HARD_CLONE}" --lens code-health --worktree-root "${S16_HARD_WT}")"
+printf 'def alpha():\n    return 1\ndef beta():\n    return 2\n' >"${WT_HARD_CRIT}/src/crit_mod.py"
+printf 'import unittest\nfrom src.crit_mod import beta\n\nclass T2(unittest.TestCase):\n    def test_beta(self):\n        self.assertEqual(beta(), 2)\n' >"${WT_HARD_CRIT}/tests/test_crit.py"
+git -C "${WT_HARD_CRIT}" add src/crit_mod.py tests/test_crit.py
+git -C "${WT_HARD_CRIT}" -c user.email="test@example.com" -c user.name="Test" commit -q -m "add alpha and beta"
+PATH="${S16_HARD_BIN}:${PATH}" "${WT_SCRIPT}" verify --worktree "${WT_HARD_CRIT}" --lens code-health --test-cmd "true" --allow-test-edits >/dev/null
+cat >"${S16_HARD_REPORTS}/2026-12-22-ctrld-sync.md" <<EOF
+# Proactive Sweep Digest (2026-12-22 - ctrld-sync)
+
+- Status: CANDIDATE_READY
+- Substatus: NONE
+- Lens: code-health
+- Worktree: ${WT_HARD_CRIT}
+EOF
+chmod 600 "${S16_HARD_REPORTS}/2026-12-22-ctrld-sync.md"
+PATH="${S16_CRIT_BIN}:${S16_HARD_BIN}:${PATH}" check_exit "judge escalates untested CRITICAL symbol even when LOW symbol has test refs" 0 \
+	"${CTL_SCRIPT}" judge --repo ctrld-sync --date 2026-12-22 \
+	--worktree-root "${S16_HARD_WT}" --repo-root-parent "${S16_HARD_REPOS}"
+check "ledger records CRITICAL_UNTESTED_BLAST_RADIUS when CRITICAL alpha has zero test refs" \
+	python3 - "${S16_HARD_HOME}/.gemini/antigravity/proactive-reports/judge-shadow-ledger.jsonl" "${WT_HARD_CRIT}" <<'PYTEST'
+import json, pathlib, sys
+rows = [json.loads(l) for l in pathlib.Path(sys.argv[1]).read_text().splitlines() if l.strip()]
+w = [r for r in rows if r.get("worktree") == sys.argv[2]]
+assert len(w) == 1, rows
+assert w[0]["verdict"] == "JUDGE_ESCALATE_HUMAN", w[0]
+assert w[0]["subreason"] == "CRITICAL_UNTESTED_BLAST_RADIUS", w[0]
+PYTEST
+git -C "${S16_HARD_CLONE}" worktree remove --force "${WT_HARD_CRIT}" >/dev/null 2>&1 || rm -rf "${WT_HARD_CRIT}"
 git -C "${S16_HARD_CLONE}" worktree prune >/dev/null 2>&1 || true
 
 echo ""
