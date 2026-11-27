@@ -12,6 +12,13 @@ trap 'printf "\n\033[0;31m👋 Setup cancelled by user. Goodbye!\033[0m\n"; exit
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Repos that must carry a `.gitnexusrc` with embeddings enabled.
+GITNEXUS_REPOS=(
+	"$HOME/dev/personal-config"
+	"$HOME/dev/ctrld-sync"
+	"$HOME/dev/Seatek_Analysis"
+)
+
 BOLD='\033[1m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
@@ -79,6 +86,30 @@ sync_configs() {
 	bash "$REPO_ROOT/scripts/sync_all_configs.sh"
 	bash "$REPO_ROOT/scripts/verify_all_configs.sh"
 	log_ok "Dotfiles linked and verified."
+}
+
+ensure_gitnexusrc() {
+	header "GitNexus Embeddings Config"
+	# GitNexus reads `.gitnexusrc` from the repo root. The file is untracked in
+	# some repos, so a fresh clone silently loses `embeddings: true` and every
+	# local `gitnexus analyze` runs with embeddings off. Seed it when missing.
+	local repo
+	local created=0
+	for repo in "$@"; do
+		local target="$repo/.gitnexusrc"
+		[[ -d $repo ]] || continue
+		if [[ -f $target ]]; then
+			continue
+		fi
+		printf '{\n  "embeddings": true\n}\n' >"$target"
+		log_info "Created $target"
+		created=$((created + 1))
+	done
+	if [[ $created -eq 0 ]]; then
+		log_ok "All .gitnexusrc files present."
+	else
+		log_ok "Seeded $created .gitnexusrc file(s)."
+	fi
 }
 
 install_maintenance() {
@@ -227,6 +258,7 @@ main() {
 	check_requirements
 	install_cli_tooling
 	sync_configs
+	ensure_gitnexusrc "${GITNEXUS_REPOS[@]}"
 	install_maintenance
 	remove_legacy_agents
 	prepare_network_tools
