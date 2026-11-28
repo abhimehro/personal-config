@@ -10,19 +10,28 @@ from gh_token_env import load_gh_token_env
 from pr_reference import parse_pr_reference, parse_repo_name
 
 
-def run_gh(repo, pr):
-    """Call ``gh pr view`` and return JSON, or None on failure/timeout."""
+def run_gh(repo_or_cmd, pr=None):
+    """Call ``gh`` and return parsed JSON, or None on failure/timeout.
+
+    Accommodates both ``run_gh(cmd_list)`` and ``run_gh(repo, pr)`` conventions.
+    """
     env = load_gh_token_env()
-    cmd = [
-        "gh",
-        "pr",
-        "view",
-        str(pr),
-        "-R",
-        str(repo),
-        "--json",
-        "files,updatedAt,mergeStateStatus",
-    ]
+    if pr is not None:
+        cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr),
+            "-R",
+            str(repo_or_cmd),
+            "--json",
+            "files,updatedAt,mergeStateStatus",
+        ]
+        target_desc = f"{repo_or_cmd}#{pr}"
+    else:
+        cmd = repo_or_cmd
+        target_desc = cmd[0] if cmd else "gh"
+
     try:
         result = subprocess.run(
             cmd,
@@ -33,7 +42,10 @@ def run_gh(repo, pr):
             check=False,
         )
     except subprocess.TimeoutExpired:
-        print(f"gh pr view timed out for {repo}#{pr}", file=sys.stderr)
+        if pr is not None:
+            print(f"gh pr view timed out for {target_desc}", file=sys.stderr)
+        else:
+            print(f"gh command timed out: {target_desc}", file=sys.stderr)
         return None
     if result.returncode != 0:
         return None
