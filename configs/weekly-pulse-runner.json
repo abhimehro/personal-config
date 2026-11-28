@@ -1,0 +1,52 @@
+{
+  "name": "weekly-pulse-synthesis-factory",
+  "prompt_version": "v1.1-shadow",
+  "prompt_file": "prompt-exports/weekly-pulse-v1.1-shadow.md",
+  "run_mode": "SHADOW",
+  "shadow_trial_window": {
+    "start_date": "2026-11-29",
+    "end_date": "2026-12-06"
+  },
+  "schedule": {
+    "timezone": "America/Chicago",
+    "cron_local": "0 18 * * 0",
+    "cron_utc_winter_cst": "0 0 * * 1",
+    "note": "Use cron_local with TZ=America/Chicago when supported; use cron_utc_winter_cst on UTC-only runners like GitHub Actions during CST. Before dispatch, derive the Chicago calendar date, require it to fall within shadow_trial_window, and inject WINDOW_END_ISO for Sunday at 18:00 America/Chicago."
+  },
+  "runtime_parameters": {
+    "WINDOW_END_ISO_ADAPTER": "At dispatch, resolve the scheduled Sunday at 18:00 America/Chicago as an RFC 3339 timestamp with its UTC offset (for example, 2026-11-29T18:00:00-06:00) and inject it as WINDOW_END_ISO.",
+    "WINDOW_DAYS": 7,
+    "WINDOW_BOUNDS": "[start, end)",
+    "WINDOW_TIMEZONE": "America/Chicago",
+    "STALE_PR_DAYS": 5,
+    "PROMPT_VERSION": "v1.1-shadow",
+    "STATIC_TARGET_REPOS": [
+      "abhimehro/Seatek_Analysis",
+      "abhimehro/ctrld-sync",
+      "abhimehro/repoprompt-ce",
+      "abhimehro/personal-config"
+    ],
+    "NOTION_WEEKLY_PULSE_DB_URL": "https://app.notion.com/p/4207419416de8122a60ddda25fd35cfa",
+    "NOTION_WEEKLY_PULSE_DS": "collection://42074194-16de-81f8-adec-000ba7be89f7",
+    "NOTION_PROJECTS_DS": "collection://20574194-16de-8090-8655-000bd40500e0",
+    "NOTION_REPOS_DS": "collection://30474194-16de-8155-9bed-000bfedaaa93",
+    "NOTION_ISSUE_CANDIDATES_URL": "https://app.notion.com/p/929044358cfd45b4801b30ca8172d37d",
+    "CAPACITIES_HANDOFF_ENABLED": false
+  },
+  "secrets": {
+    "github_token_env": "GH_TOKEN",
+    "secret_manager": "Proton Pass / 1Password",
+    "required_github_scopes_readonly": [
+      "Contents: Read",
+      "Pull requests: Read",
+      "Issues: Read",
+      "Metadata: Read"
+    ]
+  },
+  "guardrails": {
+    "github_read_only": true,
+    "notion_allowed_write_ds": "collection://42074194-16de-81f8-adec-000ba7be89f7",
+    "notion_required_status": "Review",
+    "idempotency_title_pattern": "Weekly Pulse - YYYY-MM-DD"
+  }
+}
