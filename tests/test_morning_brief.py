@@ -361,6 +361,7 @@ class TestScoreLinearIssue(unittest.TestCase):
             issue_cycle, self.TODAY_ISO, self.TODAY_DATE
         ) > mb.score_linear_issue(issue_no_cycle, self.TODAY_ISO, self.TODAY_DATE)
 
+
     def test_score_never_negative(self):
         issue = self._issue(updatedAt="2020-01-01T00:00:00Z")
         assert mb.score_linear_issue(issue, self.TODAY_ISO, self.TODAY_DATE) >= 0
@@ -370,6 +371,29 @@ class TestScoreLinearIssue(unittest.TestCase):
         score = mb.score_linear_issue({}, self.TODAY_ISO, self.TODAY_DATE)
         assert isinstance(score, int)
         assert score >= 0
+
+
+class TestCalculateLabelBonuses(unittest.TestCase):
+    def test_empty_labels(self):
+        self.assertEqual(mb._calculate_label_bonuses([]), 0)
+
+    def test_single_matching_label(self):
+        self.assertEqual(mb._calculate_label_bonuses(["bug"]), 25)
+        self.assertEqual(mb._calculate_label_bonuses(["hotfix"]), 30)
+        self.assertEqual(mb._calculate_label_bonuses(["p0"]), 40)
+
+    def test_multiple_matching_labels(self):
+        # bug (25) + p0 (40) = 65
+        self.assertEqual(mb._calculate_label_bonuses(["bug", "p0"]), 65)
+        # feature (10) + improvement (5) = 15
+        self.assertEqual(mb._calculate_label_bonuses(["feature", "improvement"]), 15)
+
+    def test_substring_match(self):
+        # "type: bug" contains "bug" (25)
+        self.assertEqual(mb._calculate_label_bonuses(["type: bug"]), 25)
+
+    def test_non_matching_labels(self):
+        self.assertEqual(mb._calculate_label_bonuses(["frontend", "backend", "docs"]), 0)
 
 
 # ============================================================
