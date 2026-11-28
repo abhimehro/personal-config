@@ -335,6 +335,7 @@ class TestStateTransitions(unittest.TestCase):
 
     def test_ready_for_review_advances_to_in_review(self) -> None:
         todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
+        backlog_state = self._make_state("Backlog", "backlog", "backlog-id")
         in_prog_state = self._make_state(
             "In Progress", "started", self.state_map["inProgress"]
         )
@@ -342,6 +343,7 @@ class TestStateTransitions(unittest.TestCase):
             "In Review", "started", self.state_map["inReview"]
         )
         done_state = self._make_state("Done", "completed", self.state_map["done"])
+        canceled_state = self._make_state("Canceled", "canceled", "canceled-id")
 
         ctx = PRContext(
             event_name="pull_request",
@@ -359,22 +361,43 @@ class TestStateTransitions(unittest.TestCase):
         )
 
         # Todo -> In Review
-        target, _ = compute_state_transition(todo_state, "links", ctx, self.state_map)
+        target, reason = compute_state_transition(
+            todo_state, "links", ctx, self.state_map
+        )
         self.assertEqual(target, self.state_map["inReview"])
+        self.assertIn("ready for review -> transition to In Review", reason)
+
+        # Backlog -> In Review
+        target, reason = compute_state_transition(
+            backlog_state, "links", ctx, self.state_map
+        )
+        self.assertEqual(target, self.state_map["inReview"])
+        self.assertIn("ready for review -> transition to In Review", reason)
 
         # In Progress -> In Review
-        target, _ = compute_state_transition(
+        target, reason = compute_state_transition(
             in_prog_state, "links", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["inReview"])
+        self.assertIn("ready for review -> transition to In Review", reason)
 
         # Already In Review -> No-op
-        target, _ = compute_state_transition(in_rev_state, "links", ctx, self.state_map)
+        target, reason = compute_state_transition(
+            in_rev_state, "links", ctx, self.state_map
+        )
         self.assertIsNone(target)
+        self.assertIn("Already in In Review", reason)
 
         # Done -> Do not regress!
         target, reason = compute_state_transition(
             done_state, "links", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("refusing to regress", reason)
+
+        # Canceled -> Do not regress!
+        target, reason = compute_state_transition(
+            canceled_state, "links", ctx, self.state_map
         )
         self.assertIsNone(target)
         self.assertIn("refusing to regress", reason)
@@ -428,6 +451,12 @@ class TestStateTransitions(unittest.TestCase):
         in_rev_state = self._make_state(
             "In Review", "started", self.state_map["inReview"]
         )
+        in_prog_state = self._make_state(
+            "In Progress", "started", self.state_map["inProgress"]
+        )
+        todo_state = self._make_state("Todo", "unstarted", self.state_map["todo"])
+        backlog_state = self._make_state("Backlog", "backlog", "backlog-id")
+        canceled_state = self._make_state("Canceled", "canceled", "canceled-id")
         done_state = self._make_state("Done", "completed", self.state_map["done"])
 
         ctx = PRContext(
@@ -445,18 +474,52 @@ class TestStateTransitions(unittest.TestCase):
             commit_messages=(),
         )
 
-        # From In Review -> Todo
-        target, _ = compute_state_transition(
-            in_rev_state, "closes", ctx, self.state_map
+        # From In Review -> Todo, across every RelationshipType literal
+        for rel in ("closes", "contributes", "links"):
+            target, reason = compute_state_transition(
+                in_rev_state, rel, ctx, self.state_map
+            )
+            self.assertEqual(target, self.state_map["todo"])
+            self.assertIn("transition to Todo", reason)
+
+        # From In Progress -> Todo
+        target, reason = compute_state_transition(
+            in_prog_state, "closes", ctx, self.state_map
         )
         self.assertEqual(target, self.state_map["todo"])
+        self.assertIn("transition to Todo", reason)
 
-        # From Done -> Do NOT regress
+        # Already in Todo -> no transition. Note the reason is the generic
+        # "retained" string, not "Already in Todo; no-op": that message sits
+        # behind `if curr_id == todo_id` inside a branch guarded by
+        # curr_id in {in_review, in_progress} or curr_type == "started", which
+        # a Todo state (type "unstarted") can never satisfy.
+        target, reason = compute_state_transition(
+            todo_state, "closes", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("current state 'Todo' retained", reason)
+
+        # From Backlog -> retain, it is not active work
+        target, reason = compute_state_transition(
+            backlog_state, "closes", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("current state 'Backlog' retained", reason)
+
+        # From Canceled -> do NOT regress a terminal state
+        target, reason = compute_state_transition(
+            canceled_state, "closes", ctx, self.state_map
+        )
+        self.assertIsNone(target)
+        self.assertIn("preserving manual or terminal state", reason)
+
+        # From Done -> do NOT regress a terminal state
         target, reason = compute_state_transition(
             done_state, "closes", ctx, self.state_map
         )
         self.assertIsNone(target)
-        self.assertIn("preserving", reason)
+        self.assertIn("preserving manual or terminal state", reason)
 
 
 class TestRecapCommentAndDiffBacklink(unittest.TestCase):
