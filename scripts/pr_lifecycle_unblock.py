@@ -10,6 +10,7 @@ pr_lifecycle_unblock_rows; this module wires them into the CLI plan.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import subprocess
 import sys
@@ -266,12 +267,26 @@ def _matching_ledger_items(
 def _scan_repo(scan: _ScanSpec, *, run: Any) -> tuple[list[dict[str, Any]], int]:
     """Route every fetched PR in a repo; return (actions, comment-fetch count)."""
     actions: list[dict[str, Any]] = []
-    fetched = 0
-    for pr in scan.prs:
-        if _is_excluded(scan.repo, pr, scan.exclusions):
-            continue
-        fetched += int(_needs_comment_fetch(pr))
-        _load_full_comments(pr, run=run)
+    unexcluded_prs = [
+        pr for pr in scan.prs if not _is_excluded(scan.repo, pr, scan.exclusions)
+    ]
+    prs_to_fetch = [pr for pr in unexcluded_prs if _needs_comment_fetch(pr)]
+    fetched = len(prs_to_fetch)
+
+    # ⚡ Bolt Optimization: Concurrently prefetch comments for PRs to eliminate N+1 sequential I/O latency
+    if prs_to_fetch:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=min(len(prs_to_fetch), 8)
+        ) as executor:
+            list(
+                executor.map(
+                    lambda item: _load_full_comments(item, run=run), prs_to_fetch
+                )
+            )
+
+    for pr in unexcluded_prs:
+        if not _needs_comment_fetch(pr):
+            _load_full_comments(pr, run=run)
         verdict = classify_pr_identity(pr, scan.policy)
         actions.extend(
             route_pr(
